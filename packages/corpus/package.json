@@ -10,9 +10,12 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
-    "check": "node src/cli/check.ts"
+    "check": "node src/cli/check.ts",
+    "generate": "node src/cli/generate.ts"
   },
   "dependencies": {
+    "bwip-js": "^4.11.4",
+    "sharp": "^0.35.5",
     "zod": "catalog:"
   },
   "devDependencies": {
