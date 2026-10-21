@@ -11,7 +11,9 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "check": "node src/cli/check.ts",
-    "generate": "node src/cli/generate.ts"
+    "generate": "node src/cli/generate.ts",
+    "fetch-web": "node src/cli/fetch-web.ts",
+    "corpus": "pnpm generate && pnpm fetch-web && pnpm check"
   },
   "dependencies": {
     "bwip-js": "^4.11.4",
