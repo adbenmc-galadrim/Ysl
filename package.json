@@ -1,0 +1,21 @@
+{
+  "name": "courrier-ysl",
+  "private": true,
+  "scripts": {
+    "lint": "turbo run lint",
+    "check-types": "turbo run check-types",
+    "storybook": "turbo run dev --filter=@repo/ui",
+    "build-storybook": "turbo run build-storybook",
+    "visual": "pnpm --filter @repo/ui visual",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,yml,yaml,css,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.10.9",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.12"
+  }
+}

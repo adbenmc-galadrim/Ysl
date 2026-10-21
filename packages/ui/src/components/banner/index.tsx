@@ -1,0 +1,88 @@
+import type { ReactNode } from 'react';
+
+import { Icon, type IconName } from '#icons';
+import { tv, type VariantProps } from '#lib/tv';
+
+/**
+ * Text and fill share one hue per tone: an orange banner is about something
+ * waiting, red about something late, blue about something to know, grey
+ * about where a parcel stands.
+ */
+export const bannerVariants = tv({
+  slots: {
+    root: 'flex items-center rounded-card pr-3',
+    icon: 'shrink-0',
+    title: 'font-semibold',
+    description: 'mt-1',
+  },
+  variants: {
+    tone: {
+      orange: { root: 'bg-orange-soft text-orange-strong' },
+      red: { root: 'bg-red-soft text-red' },
+      blue: { root: 'bg-blue-soft text-blue-strong' },
+      /** Something done: a handover recorded, a check passed. */
+      green: { root: 'bg-green-soft text-green' },
+      grey: { root: 'bg-fill text-ink', description: 'text-muted' },
+    },
+    size: {
+      /** 15 / 13: a notice inside a list or a sheet. */
+      md: {
+        root: 'gap-3 py-3.5 pl-3.5',
+        title: 'text-15',
+        description: 'text-13 leading-[18px]',
+      },
+      /** 16 / 14 with a 22 px icon: the state card of a record. */
+      lg: {
+        root: 'gap-[11px] pt-3 pb-3.5 pl-[13px]',
+        title: 'text-16',
+        description: 'text-14',
+      },
+    },
+  },
+  defaultVariants: { tone: 'grey', size: 'md' },
+});
+
+export type BannerProps = VariantProps<typeof bannerVariants> & {
+  icon: IconName;
+  title: ReactNode;
+  description?: ReactNode;
+  /** Slot overrides, e.g. a tighter `root` where the design is fixed. */
+  classNames?: Partial<Record<keyof typeof bannerVariants.slots, string>>;
+  className?: string;
+};
+
+/**
+ * A tinted card with an icon, a bold line and an explanation: pending
+ * changes while offline, a parcel waiting too long, a step to remember.
+ * It informs; the action it calls for lives elsewhere on the screen.
+ */
+export function Banner({
+  icon,
+  title,
+  description,
+  tone,
+  size,
+  classNames,
+  className,
+}: BannerProps) {
+  const s = bannerVariants({ tone, size });
+  return (
+    <div className={s.root({ class: [className, classNames?.root] })}>
+      <Icon
+        name={icon}
+        size={size === 'lg' ? 22 : 20}
+        className={s.icon({ class: classNames?.icon })}
+      />
+      {/* Stretched so that, in a banner of fixed height, the text keeps to
+          the top while the icon stays centred. */}
+      <div className="flex min-w-0 flex-1 flex-col self-stretch">
+        <p className={s.title({ class: classNames?.title })}>{title}</p>
+        {description && (
+          <p className={s.description({ class: classNames?.description })}>
+            {description}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

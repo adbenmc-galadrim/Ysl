@@ -1,0 +1,10 @@
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "verbatimModuleSyntax": true
+  },
+  // `.storybook` is spelled out as a glob: TypeScript's wildcards skip
+  // dot-prefixed segments, so a bare directory entry would match nothing.
+  "include": ["src", ".storybook/*.ts", ".storybook/*.tsx"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,30 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+
+<Meta title="Introduction" />
+
+# Courrier YSL
+
+L’application du service courrier de Saint Laurent : réception des colis par
+scan de l’étiquette, notification des salariés, remise contre QR code ou
+signature. Une PWA pour iPhone, utilisable hors ligne.
+
+Ce Storybook reprend **toutes les maquettes Penpot**, écran par écran.
+
+- **Fondations** : couleurs, typographie, icônes, arrondis.
+- **Composants** : les briques réutilisables, chacune avec ses variantes.
+- **Écrans** : chaque écran des maquettes, rangé comme dans Penpot
+  (03 Démarrage → 09 Zones d’ombre). Ils sont composés des mêmes briques et
+  pilotés par des données fictives : on peut en modifier les props dans
+  l’onglet _Controls_.
+
+## Tailles d’écran
+
+Les maquettes sont dessinées pour un iPhone 15 (393 × 852). Le menu
+_Viewport_ de la barre d’outils permet de vérifier chaque écran sur iPhone SE,
+iPhone 15 Pro Max, iPad mini et le poste ordinateur.
+
+## Fidélité aux maquettes
+
+Chaque écran est comparé pixel par pixel à son export Penpot
+(`pnpm visual`). Le rapport donne, par écran, la part de pixels qui diffèrent
+et une planche maquette / rendu / différences dans `visual/out/`.

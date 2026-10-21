@@ -1,0 +1,30 @@
+/*
+ * Stylesheet for the preview iframe only — the same imports an app makes, so
+ * stories render against the real tokens and the real web fonts.
+ */
+@import '@fontsource/inter-tight/400.css';
+@import '@fontsource/inter-tight/500.css';
+@import '@fontsource/inter-tight/600.css';
+@import '@fontsource/inter-tight/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/archivo/500.css';
+@import '@fontsource/archivo/700.css';
+@import '@fontsource/archivo/800.css';
+@import 'tailwindcss';
+@import '../styles.css';
+
+/* The iPhone 15 the mockups are drawn in: 50 px of status bar above the
+ * content, 34 px of home indicator below it. */
+.device {
+  --safe-top: 50px;
+  --safe-bottom: 34px;
+}
+
+/* Screen stories run edge to edge, like the installed PWA. */
+.sb-main-fullscreen,
+.sb-show-main.sb-main-fullscreen {
+  margin: 0;
+  padding: 0;
+}
