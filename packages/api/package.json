@@ -19,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@repo/auth": "workspace:*",
     "@repo/contract": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
