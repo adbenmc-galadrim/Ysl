@@ -1,10 +1,28 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalDependencies": [".env"],
+  "globalEnv": [
+    "NODE_ENV",
+    "CI",
+    "SKIP_ENV_VALIDATION",
+    "WEB_PORT",
+    "SERVER_PORT",
+    "POSTGRES_PORT",
+    "CORS_ORIGIN",
+    "DATABASE_URL",
+    "PUBLIC_APP_NAME",
+    "PUBLIC_SERVER_URL",
+    "LOG_LEVEL"
+  ],
   "tasks": {
     "lint": { "dependsOn": ["^lint"] },
     "check-types": { "dependsOn": ["^check-types"] },
     "dev": { "cache": false, "persistent": true },
-    "build-storybook": { "outputs": ["storybook-static/**"] }
+    "build": { "outputs": ["dist/**"] },
+    "test": { "cache": false },
+    "build-storybook": { "outputs": ["storybook-static/**"] },
+    "db:generate": { "cache": false },
+    "db:migrate": { "cache": false }
   }
 }

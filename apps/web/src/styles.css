@@ -1,0 +1,19 @@
+@import '@fontsource/inter-tight/400.css';
+@import '@fontsource/inter-tight/500.css';
+@import '@fontsource/inter-tight/600.css';
+@import '@fontsource/inter-tight/700.css';
+@import 'tailwindcss';
+@import '@repo/ui/styles.css';
+
+html,
+body,
+#app {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-fill);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

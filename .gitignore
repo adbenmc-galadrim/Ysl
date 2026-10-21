@@ -5,3 +5,8 @@ storybook-static
 test-results
 packages/ui/visual/out
 *.log
+dist
+.env
+.env.*
+!.env.example
+coverage

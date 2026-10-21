@@ -2,12 +2,19 @@
   "name": "courrier-ysl",
   "private": true,
   "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@repo/web --filter=@repo/server",
     "lint": "turbo run lint",
     "check-types": "turbo run check-types",
+    "test": "turbo run test",
     "storybook": "turbo run dev --filter=@repo/ui",
     "build-storybook": "turbo run build-storybook",
     "visual": "pnpm --filter @repo/ui visual",
-    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,yml,yaml,css,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,yml,yaml,css,md}\"",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
