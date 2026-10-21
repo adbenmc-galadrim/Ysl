@@ -1,6 +1,8 @@
 import { serve } from '@hono/node-server';
+import { getConnInfo } from '@hono/node-server/conninfo';
 import { trpcServer } from '@hono/trpc-server';
-import { appRouter } from '@repo/api';
+import { appRouter, createTRPCContext } from '@repo/api';
+import { auth, CLIENT_IP_HEADER } from '@repo/auth';
 import { closeDb, pingDb } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
@@ -35,6 +37,7 @@ app.use(
     origin: env.CORS_ORIGIN,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
+    credentials: true,
     maxAge: 86400,
   }),
 );
@@ -55,10 +58,30 @@ app.get('/ready', async (c) => {
   }
 });
 
+app.on(['GET', 'POST'], '/api/auth/*', (c) => {
+  // The rate limit keys on the socket address, never on a client-sent header.
+  const headers = new Headers(c.req.raw.headers);
+  headers.set(CLIENT_IP_HEADER, getConnInfo(c).remote.address ?? '');
+  return auth.handler(new Request(c.req.raw, { headers }));
+});
+
 app.use(
   '/trpc/*',
   trpcServer({
     router: appRouter,
+    createContext: async (opts) => {
+      const headers = opts.req.headers;
+      const session = await auth.api
+        .getSession({ headers })
+        .catch((error: unknown) => {
+          logger.warn(
+            { reason: error instanceof Error ? error.message : String(error) },
+            'session lookup failed',
+          );
+          return null;
+        });
+      return createTRPCContext({ headers, session });
+    },
     onError: ({ error, path, type }) => {
       const fields = { path, type, code: error.code };
       if (getHTTPStatusCodeFromError(error) >= 500) {
