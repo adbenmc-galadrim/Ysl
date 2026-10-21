@@ -12,3 +12,12 @@ export function toUserRole(value: unknown): UserRole {
   const parsed = userRole.safeParse(value);
   return parsed.success ? parsed.data : DEFAULT_USER_ROLE;
 }
+
+export const MIN_PASSWORD_LENGTH = 8;
+
+export const MAX_PASSWORD_LENGTH = 128;
+
+export const password = z
+  .string()
+  .min(MIN_PASSWORD_LENGTH)
+  .max(MAX_PASSWORD_LENGTH);

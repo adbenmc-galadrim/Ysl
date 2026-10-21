@@ -15,7 +15,8 @@
     "db:down": "docker compose down",
     "db:generate": "turbo run db:generate",
     "db:migrate": "turbo run db:migrate",
-    "auth:generate": "turbo run auth:generate"
+    "auth:generate": "turbo run auth:generate",
+    "auth:create-user": "pnpm --filter @repo/auth auth:create-user"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
