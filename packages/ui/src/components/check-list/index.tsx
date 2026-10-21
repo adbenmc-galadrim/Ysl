@@ -24,7 +24,7 @@ export function CheckList({ items, className }: CheckListProps) {
   return (
     <ul
       className={cn(
-        'flex flex-col gap-2.5 rounded-card border border-separator pt-[17px] pr-[15px] pb-[23px] pl-5',
+        'flex flex-col gap-2.5 rounded-panel border border-separator pt-[17px] pr-[15px] pb-[23px] pl-5',
         className,
       )}
     >

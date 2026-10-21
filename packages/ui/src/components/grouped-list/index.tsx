@@ -48,7 +48,7 @@ export function GroupedList({
 }) {
   return (
     <div
-      className={cn('overflow-hidden rounded-card bg-white text-ink', className)}
+      className={cn('overflow-hidden rounded-control bg-white text-ink', className)}
     >
       {children}
     </div>
@@ -93,7 +93,7 @@ export function GroupedSection({
  * "Synchronisation" by its green cloud before reading it.
  */
 export const settingsIconVariants = tv({
-  base: 'inline-flex size-7 shrink-0 items-center justify-center rounded-chip text-white',
+  base: 'inline-flex size-7 shrink-0 items-center justify-center rounded-icon text-white',
   variants: {
     color: {
       ink: 'bg-ink',

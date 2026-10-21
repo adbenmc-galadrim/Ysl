@@ -29,7 +29,7 @@ export function ChoiceTile({
       className={cn(
         // `pb-px`: Penpot sets the label 22 px down the 64 px tile, half a
         // pixel above true centre.
-        'flex h-16 min-w-0 cursor-pointer items-center gap-2 rounded-card pr-2.5 pb-px pl-4 text-left text-16',
+        'flex h-16 min-w-0 cursor-pointer items-center gap-2 rounded-control pr-2.5 pb-px pl-4 text-left text-16',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue',
         'transition-[filter] active:brightness-95',
         selected

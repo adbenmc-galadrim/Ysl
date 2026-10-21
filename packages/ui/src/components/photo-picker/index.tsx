@@ -29,7 +29,7 @@ export function PhotoPicker({
         aria-label={addLabel}
         onClick={onAdd}
         className={cn(
-          'flex size-[104px] shrink-0 cursor-pointer items-center justify-center rounded-card bg-fill text-ink',
+          'flex size-[104px] shrink-0 cursor-pointer items-center justify-center rounded-control bg-fill text-ink',
           'outline-none focus-visible:ring-2 focus-visible:ring-blue active:brightness-95',
         )}
       >

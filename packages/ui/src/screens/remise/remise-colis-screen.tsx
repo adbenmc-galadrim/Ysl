@@ -70,7 +70,7 @@ export function RemiseColisScreen({
         tone="green"
         icon="check"
         title={verified}
-        classNames={{ root: 'h-[52px] items-start pt-4 pb-0' }}
+        classNames={{ root: 'h-[52px] items-start rounded-control pt-4 pb-0' }}
         className="mt-5"
       />
       <SectionHeader title="Ses colis" count={parcels.length} className="mt-[26px]" />
@@ -99,13 +99,13 @@ export function RemiseColisScreen({
         block
         onClick={onScan}
         // The mockup sets icon and label 15 px left of the middle.
-        className="relative mt-[25px] gap-2.5 border-0 pr-[30px] pl-0 text-15"
+        className="relative mt-[25px] gap-2.5 rounded-control border-0 pr-[30px] pl-0 text-15"
       >
         <svg aria-hidden="true" className="absolute inset-0 size-full overflow-visible">
           <rect
             x="0.5"
             y="0.5"
-            rx="7.5"
+            rx="13.5"
             fill="none"
             strokeDasharray="10 10"
             className="h-[calc(100%-1px)] w-[calc(100%-1px)] stroke-border"
@@ -126,7 +126,7 @@ export function RemiseColisScreen({
           icon="info"
           title="Un recommandé : la signature sera demandée."
           classNames={{
-            root: 'h-[52px] items-start pt-4 pb-0',
+            root: 'h-[52px] items-start rounded-control pt-4 pb-0',
             title: 'text-14 font-normal',
           }}
           className="mt-4"

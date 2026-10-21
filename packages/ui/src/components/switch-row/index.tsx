@@ -30,7 +30,7 @@ export function SwitchRow({
       onClick={() => !disabled && onCheckedChange?.(!checked)}
       className={cn(
         // `pb-px`: Penpot centres the label half a pixel high.
-        'flex h-[60px] cursor-pointer items-center gap-3 rounded-card bg-fill pr-4 pb-px pl-4',
+        'flex h-[60px] cursor-pointer items-center gap-3 rounded-control bg-fill pr-4 pb-px pl-4',
         disabled && 'cursor-default',
         className,
       )}

@@ -149,57 +149,92 @@
   --text-34: 34px;
   --text-34--line-height: 41px;
 
-  /* The shape scale after the "less rounded" pass: 8 for anything you press
-   * or type into, 6 for chips and small buttons, 4 for tags. Square marks —
-   * icon tiles, avatars, icon buttons — have their own scale so they can be
-   * switched to circles without touching buttons and fields. Every value is
-   * overridable at runtime: see the `data-radius` presets below. */
-  --radius-tag: 4px;
-  --radius-chip: 6px;
-  --radius-control: 8px;
-  --radius-card: 8px;
-  --radius-sheet: 12px;
-  --radius-tile-sm: var(--radius-chip);
-  --radius-tile: var(--radius-control);
-  --radius-tile-lg: var(--radius-sheet);
+  /* The shape scale of the mockups. Anything you press is a pill: buttons,
+   * chips, tags, toggles. Fields, grouped lists and the small cards among
+   * them are rounded 14, cards 16, the large panels 18 and the sheets 24. App-icon squares (settings icons, the
+   * app mark) round a quarter of their side, as iOS does. Round marks — icon
+   * tiles, avatars, icon buttons — have their own scale so they can be
+   * switched to squares without touching buttons and fields. The desktop
+   * screen is denser and keeps tighter corners. Every value is overridable
+   * at runtime: see the `data-radius` presets below. */
+  --radius-tag: 999px;
+  --radius-chip: 999px;
+  --radius-button: 999px;
+  --radius-control: 14px;
+  --radius-card: 16px;
+  --radius-panel: 18px;
+  --radius-sheet: 24px;
+  --radius-icon: 25%;
+  --radius-desk: 8px;
+  --radius-tile-sm: 999px;
+  --radius-tile: 999px;
+  --radius-tile-lg: 999px;
 }
 
 /*
  * Corner presets. Set on <html> (`data-radius`, `data-tiles`); the app can
  * expose them as a setting and Storybook drives them from its toolbar.
- * "maquettes" is the default above and needs no attribute.
+ * "maquettes" is the default above and needs no attribute. Each preset sets
+ * the round marks too; `data-tiles='rondes'` then forces them back to
+ * circles whatever the preset.
  */
 :root[data-radius='carre'] {
   --radius-tag: 0px;
   --radius-chip: 0px;
+  --radius-button: 0px;
   --radius-control: 0px;
   --radius-card: 0px;
+  --radius-panel: 0px;
   --radius-sheet: 0px;
+  --radius-icon: 0px;
+  --radius-desk: 0px;
+  --radius-tile-sm: 0px;
+  --radius-tile: 0px;
+  --radius-tile-lg: 0px;
 }
 
+/* The "less rounded" pass the mockups once went through: no pills, 8 for
+ * anything you press or type into, rounded squares instead of circles. */
 :root[data-radius='leger'] {
-  --radius-tag: 2px;
-  --radius-chip: 3px;
-  --radius-control: 4px;
-  --radius-card: 4px;
-  --radius-sheet: 6px;
+  --radius-tag: 4px;
+  --radius-chip: 6px;
+  --radius-button: 8px;
+  --radius-control: 8px;
+  --radius-card: 8px;
+  --radius-panel: 8px;
+  --radius-sheet: 12px;
+  --radius-icon: 20%;
+  --radius-desk: 6px;
+  --radius-tile-sm: 6px;
+  --radius-tile: 8px;
+  --radius-tile-lg: 12px;
 }
 
+/* Halfway to the mockups: soft corners everywhere, still no pills. */
 :root[data-radius='doux'] {
   --radius-tag: 6px;
   --radius-chip: 10px;
+  --radius-button: 12px;
   --radius-control: 12px;
   --radius-card: 12px;
+  --radius-panel: 14px;
   --radius-sheet: 16px;
+  --radius-icon: 22%;
+  --radius-desk: 8px;
+  --radius-tile-sm: 10px;
+  --radius-tile: 12px;
+  --radius-tile-lg: 24px;
 }
 
-/* The first version of the mockups: pill buttons and chips, round tiles. */
+/* Rounder than the mockups: fields become pills too, cards and sheets
+ * open up. */
 :root[data-radius='arrondi'] {
-  --radius-tag: 8px;
-  --radius-chip: 999px;
   --radius-control: 999px;
-  --radius-card: 14px;
-  --radius-sheet: 20px;
+  --radius-card: 24px;
+  --radius-panel: 28px;
+  --radius-sheet: 32px;
+  --radius-icon: 30%;
+  --radius-desk: 999px;
 }
 
 :root[data-tiles='rondes'] {

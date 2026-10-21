@@ -38,7 +38,7 @@ export function DesktopShell({
     <div className={cn('flex h-full min-h-0 w-full bg-white text-ink', className)}>
       <aside className="flex w-[220px] shrink-0 flex-col border-r border-separator bg-sidebar px-3 pt-5">
         <div className="flex items-center gap-2.5 px-2">
-          <span className="inline-flex size-8 items-center justify-center rounded-chip bg-ink text-white">
+          <span className="inline-flex size-8 items-center justify-center rounded-icon bg-ink text-white">
             <Icon name="package" size={18} />
           </span>
           <span className="truncate text-15 font-semibold">{brand}</span>
@@ -53,7 +53,7 @@ export function DesktopShell({
                 aria-current={current ? 'page' : undefined}
                 onClick={() => onNavigate?.(item.id)}
                 className={cn(
-                  'flex h-[34px] cursor-pointer items-center gap-[11px] rounded-chip pl-[13px] text-left text-14 outline-none',
+                  'flex h-[34px] cursor-pointer items-center gap-[11px] rounded-desk pl-[13px] text-left text-14 outline-none',
                   'focus-visible:ring-2 focus-visible:ring-blue',
                   current
                     ? 'bg-sidebar-active font-semibold'

@@ -31,7 +31,7 @@ export const ColisAbime: Story = {
   parameters: { reference: '09-zones-d-ombre/reception--colis-abime' },
   args: {
     reason: 'Carton abîmé',
-    photos: <LabelThumb width={104} height={104} radius={8} tone="deep" />,
+    photos: <LabelThumb width={104} height={104} radius={14} tone="deep" />,
     remark: 'Coin enfoncé, emballage intérieur intact',
   },
 };

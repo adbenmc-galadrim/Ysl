@@ -15,8 +15,8 @@ export function EmployeePhone({ code, qr }: EmployeePhoneProps) {
   // `-ml-px` puts the 200 px phone on a whole pixel in the 393 px frame,
   // as Penpot does, instead of centring it on a half one.
   return (
-    <div className="relative mt-10 -ml-px h-[300px] w-[200px] rounded-card bg-scene-phone p-2">
-      <div className="flex h-full flex-col items-center rounded-card bg-white">
+    <div className="relative mt-10 -ml-px h-[300px] w-[200px] rounded-[28px] bg-scene-phone p-2">
+      <div className="flex h-full flex-col items-center rounded-[22px] bg-white">
         <QrCode matrix={qr} module={10} className="mt-[52px] rounded-none" />
         <span className="mt-[13px] font-mono text-22 font-semibold text-black">
           {code}

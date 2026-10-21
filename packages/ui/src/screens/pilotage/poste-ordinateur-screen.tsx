@@ -105,8 +105,9 @@ export function PosteOrdinateurScreen({
       <div className="flex flex-col pt-[22px] pr-5 pb-8 pl-8">
         <header className="flex items-center gap-3">
           <h1 className="mr-auto text-26 font-bold">Colis</h1>
-          <SearchField size="sm" className="w-[260px] min-w-[160px] shrink" />
-          <Button size="sm" className="w-[88px] text-14">
+          {/* The desktop keeps tighter corners than the phone's pills. */}
+          <SearchField size="sm" className="w-[260px] min-w-[160px] shrink rounded-desk" />
+          <Button size="sm" className="w-[88px] rounded-desk text-14">
             Exporter
           </Button>
         </header>

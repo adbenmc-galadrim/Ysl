@@ -14,7 +14,7 @@ export function CameraPanel({
 }: ComponentProps<'div'>) {
   return (
     <div
-      className={cn('rounded-card bg-night text-white', className)}
+      className={cn('rounded-panel bg-night text-white', className)}
       {...props}
     />
   );

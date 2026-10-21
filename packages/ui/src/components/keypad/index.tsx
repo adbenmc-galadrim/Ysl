@@ -4,7 +4,8 @@ import { cn } from '#lib/tv';
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 const keyClass = [
-  'flex h-[54px] cursor-pointer items-center justify-center rounded-control bg-fill',
+  // Keys are drawn 2 px tighter than the fields above them.
+  'flex h-[54px] cursor-pointer items-center justify-center rounded-[calc(var(--radius-control)-2px)] bg-fill',
   'text-24 font-medium text-ink outline-none select-none',
   'focus-visible:ring-2 focus-visible:ring-blue',
   'transition-[filter] active:brightness-90',

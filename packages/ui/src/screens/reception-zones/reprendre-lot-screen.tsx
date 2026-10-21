@@ -54,7 +54,7 @@ export function ReprendreLotScreen({
           </li>
         ))}
         {hidden > 0 && (
-          <li className="flex aspect-[52/64] items-center justify-center rounded-chip bg-fill text-16 font-semibold">
+          <li className="flex aspect-[52/64] items-center justify-center rounded-[8px] bg-fill text-16 font-semibold">
             +{hidden}
           </li>
         )}

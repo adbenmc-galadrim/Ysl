@@ -24,7 +24,7 @@ export function LinkCard({
     <button
       type={type}
       className={cn(
-        'flex h-14 w-full cursor-pointer items-center gap-3 rounded-card bg-fill pr-[3px] pl-3.5 text-left text-15',
+        'flex h-14 w-full cursor-pointer items-center gap-3 rounded-control bg-fill pr-[3px] pl-3.5 text-left text-15',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue active:brightness-95',
         className,
       )}

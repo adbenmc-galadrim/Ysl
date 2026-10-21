@@ -20,7 +20,7 @@ export function QrCode({ matrix, module = 9, label, className }: QrCodeProps) {
   return (
     <span
       className={cn(
-        'inline-flex shrink-0 rounded-chip bg-white pt-2.5 pr-[9px] pb-[9px] pl-2.5',
+        'inline-flex shrink-0 rounded-[calc(var(--radius-card)/2)] bg-white pt-2.5 pr-[9px] pb-[9px] pl-2.5',
         className,
       )}
     >

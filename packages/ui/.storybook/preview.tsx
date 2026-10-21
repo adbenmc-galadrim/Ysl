@@ -38,16 +38,18 @@ const withCorners: Decorator = (Story, { globals }) => {
 const preview: Preview = {
   globalTypes: {
     radius: {
-      description: 'Arrondi des boutons, champs et cartes',
+      description: 'Arrondi des boutons, champs, cartes et pastilles',
       toolbar: {
         title: 'Arrondis',
         icon: 'component',
+        // From the squarest to the roundest; the mockups sit just before
+        // the last one.
         items: [
           { value: 'carre', title: 'Carrés (0 px)' },
-          { value: 'leger', title: 'Légers (2 à 6 px)' },
-          { value: 'maquettes', title: 'Maquettes (4 à 12 px)' },
-          { value: 'doux', title: 'Doux (6 à 16 px)' },
-          { value: 'arrondi', title: 'Arrondis (pilules)' },
+          { value: 'leger', title: 'Légers (4 à 12 px, sans pilules)' },
+          { value: 'doux', title: 'Doux (6 à 16 px, sans pilules)' },
+          { value: 'maquettes', title: 'Maquettes (pilules, 14 à 24 px)' },
+          { value: 'arrondi', title: 'Arrondis (tout en pilules, 24 à 32 px)' },
         ],
         dynamicTitle: true,
       },
@@ -59,7 +61,7 @@ const preview: Preview = {
         icon: 'circle',
         items: [
           { value: 'auto', title: 'Pastilles : suivent les arrondis' },
-          { value: 'rondes', title: 'Pastilles : rondes' },
+          { value: 'rondes', title: 'Pastilles : toujours rondes' },
         ],
         dynamicTitle: true,
       },

@@ -28,7 +28,7 @@ export function EmailRecipient({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-[52px] w-full cursor-pointer items-center gap-2.5 rounded-card bg-white pr-2.5 pl-3.5 text-left',
+        'flex h-[52px] w-full cursor-pointer items-center gap-2.5 rounded-control bg-white pr-2.5 pl-3.5 text-left',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue active:bg-fill-2',
         className,
       )}
@@ -37,7 +37,7 @@ export function EmailRecipient({
         name={name}
         initials={initials}
         tone="ink"
-        className="size-8 rounded-chip text-12"
+        className="size-8 rounded-tile-sm text-12"
       />
       {/* Penpot centres the two lines 1.5 px above the middle. */}
       <span className="mb-[3px] flex min-w-0 flex-1 flex-col gap-px">
@@ -66,7 +66,7 @@ function QrGlyph({ className }: { className?: string }) {
     <svg
       viewBox="0 0 72 72"
       aria-hidden="true"
-      className={cn('size-[72px] shrink-0 rounded-tag bg-white', className)}
+      className={cn('size-[72px] shrink-0 rounded-[calc(var(--radius-card)/4)] bg-white', className)}
     >
       {cells.map(([col, row]) => (
         <g key={`${col}-${row}`} transform={`translate(${4 + col * 21.3} ${4 + row * 21.3})`}>
@@ -117,7 +117,8 @@ export function EmailDraft({
       <h2 className="mt-1 text-15 font-semibold">{subject}</h2>
       <hr className="mt-3 border-separator" />
       <p className="mt-[13px] text-13 leading-[18px]">{body}</p>
-      <div className="mt-4 flex items-start gap-4 rounded-card bg-fill p-3">
+      {/* Blocks nested in the card are rounded 4 px tighter than it. */}
+      <div className="mt-4 flex items-start gap-4 rounded-[calc(var(--radius-card)-4px)] bg-fill p-3">
         <QrGlyph />
         <div className="mt-1.5 flex flex-col gap-[3px]">
           <span className="text-11 text-muted">Code de retrait</span>
@@ -136,7 +137,7 @@ export function EmailDraft({
       <hr className="mt-4 border-separator" />
       <p className="mt-[13px] text-12 leading-[17px] text-muted">{footer}</p>
       {note && (
-        <div className="mt-3 flex flex-col rounded-card bg-orange-soft px-3.5 pt-3 pb-6">
+        <div className="mt-3 flex flex-col rounded-[calc(var(--radius-card)-4px)] bg-orange-soft px-3.5 pt-3 pb-6">
           <span className="text-12 font-semibold text-orange-strong">
             {note.label}
           </span>

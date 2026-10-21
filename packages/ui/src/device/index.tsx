@@ -93,10 +93,10 @@ export function BrowserWindow({
   return (
     <div
       className={cn(
-        'relative flex h-dvh w-full flex-col overflow-hidden rounded-sheet bg-white',
+        'relative flex h-dvh w-full flex-col overflow-hidden rounded-[12px] bg-white',
         // Penpot strokes the frame inside, over the page: an overlay rather
         // than a border, which would push the page 1 px in.
-        'after:pointer-events-none after:absolute after:inset-0 after:rounded-sheet after:border after:border-border',
+        'after:pointer-events-none after:absolute after:inset-0 after:rounded-[12px] after:border after:border-border',
       )}
     >
       <div
@@ -108,7 +108,7 @@ export function BrowserWindow({
           <span className="size-3 rounded-full bg-mac-minimize" />
           <span className="size-3 rounded-full bg-mac-zoom" />
         </span>
-        <span className="flex h-[22px] w-[440px] max-w-[50%] items-start justify-center rounded-chip bg-white pt-[3px] text-12 text-muted">
+        <span className="flex h-[22px] w-[440px] max-w-[50%] items-start justify-center rounded-[6px] bg-white pt-[3px] text-12 text-muted">
           {url}
         </span>
       </div>

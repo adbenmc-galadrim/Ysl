@@ -238,7 +238,7 @@ export function LabelZoom({
         </span>
         {glare && (
           <span
-            className="absolute top-[34px] h-[30px] rounded-card bg-white/60"
+            className="absolute top-[34px] h-[30px] rounded-[calc(var(--radius-card)-3px)] bg-white/60"
             style={{ left: glare.left + 14, width: glare.width }}
           />
         )}
@@ -274,7 +274,7 @@ export function LabelZoomButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-9 cursor-pointer items-center justify-center rounded-chip bg-white text-black outline-none focus-visible:ring-2 focus-visible:ring-blue"
+      className="flex size-9 cursor-pointer items-center justify-center rounded-tile-sm bg-white text-black outline-none focus-visible:ring-2 focus-visible:ring-blue"
     >
       <Icon name="zoom" size={18} />
     </button>
