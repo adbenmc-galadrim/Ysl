@@ -8,12 +8,18 @@ const isProduction = process.env.NODE_ENV === 'production';
 const localOnly = (schema: z.ZodURL, value: string) =>
   isProduction ? schema : schema.default(value);
 
+const DEV_AUTH_SECRET = 'development-only-secret-change-me-0123456789';
+
 export const env = createEnv({
   server: {
     SERVER_PORT: z.coerce.number().default(SERVER_PORT),
     WEB_PORT: z.coerce.number().default(WEB_PORT),
     CORS_ORIGIN: localOnly(z.url(), `http://localhost:${WEB_PORT}`),
     DATABASE_URL: localOnly(z.url(), DEFAULT_DATABASE_URL),
+    BETTER_AUTH_SECRET: isProduction
+      ? z.string().min(32)
+      : z.string().min(32).default(DEV_AUTH_SECRET),
+    BETTER_AUTH_URL: localOnly(z.url(), `http://localhost:${SERVER_PORT}`),
     LOG_LEVEL: z
       .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
       .default('info'),
