@@ -150,7 +150,7 @@ export function CameraControls({
             type="button"
             onClick={onOpenList}
             aria-label={`${count} colis lus, voir la liste`}
-            className="flex h-[52px] cursor-pointer items-center gap-2 rounded-control bg-night pl-[18px] text-16 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ios-blue"
+            className="flex h-[52px] cursor-pointer items-center gap-2 rounded-button bg-night pl-[18px] text-16 font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ios-blue"
           >
             <Icon name="list" size={20} />
             <span className="w-10 text-center">{count}</span>

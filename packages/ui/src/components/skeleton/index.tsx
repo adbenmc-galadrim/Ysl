@@ -53,7 +53,7 @@ export function SkeletonRow({ separator = true, className }: SkeletonRowProps) {
           separator && 'pb-5',
         )}
       >
-        <Skeleton width={160} height={14} radius={2} className="max-w-full" />
+        <Skeleton width={160} height={14} className="max-w-full" />
         <Skeleton width={110} height={12} className="mt-2 max-w-full" />
         <Skeleton width={190} height={10} className="mt-1.5 max-w-full" />
       </span>
@@ -75,7 +75,7 @@ export function SkeletonSection({ rows = 3, className }: SkeletonSectionProps) {
       className={cn('flex flex-col', className)}
     >
       <span className="flex h-6 items-center">
-        <Skeleton width={200} height={20} radius={4} className="max-w-full" />
+        <Skeleton width={200} height={20} className="max-w-full" />
       </span>
       <div className="mt-6">
         {Array.from({ length: rows }, (_, i) => (

@@ -76,7 +76,7 @@ export function ColisEnSouffranceScreen({
       </ChipGroup>
       <p className="mt-[22px] text-13 font-medium text-muted">Expéditeur</p>
       <p className="mt-1 text-17 font-medium">{sender}</p>
-      <div className="mt-5 flex h-[60px] items-center justify-between gap-3 rounded-card bg-fill px-4">
+      <div className="mt-5 flex h-[60px] items-center justify-between gap-3 rounded-control bg-fill px-4">
         <span id="notify-label" className="text-16">
           {`Prévenir ${recipient} du retour`}
         </span>

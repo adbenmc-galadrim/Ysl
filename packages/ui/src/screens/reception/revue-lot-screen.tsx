@@ -28,7 +28,7 @@ export type RevueLotScreenProps = {
 };
 
 /** The 44 px photo thumbnail, drawn at its exact box. */
-const thumb = <LabelThumb width={44} height={44} barMargin={4} />;
+const thumb = <LabelThumb width={44} height={44} radius={8} barMargin={4} />;
 
 /**
  * Batch review, between the burst and saving. What needs the agent comes

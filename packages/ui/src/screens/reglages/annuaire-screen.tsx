@@ -50,7 +50,7 @@ export function AnnuaireScreen({
         title={importTitle}
         description={importDetail}
         className="mt-4"
-        classNames={{ root: 'pt-3 pb-[22px]', description: 'leading-4' }}
+        classNames={{ root: 'rounded-control pt-3 pb-[22px]', description: 'leading-4' }}
       />
       <div className="relative">
         {byLetter(people).map(([letter, group], s) => (

@@ -35,7 +35,7 @@ export function ActionCard({
 }: ActionCardProps) {
   const lg = size === 'lg';
   return (
-    <div className={cn('rounded-card bg-white text-ink', className)}>
+    <div className={cn('rounded-control bg-white text-ink', className)}>
       <div
         className={cn(
           'flex items-start',

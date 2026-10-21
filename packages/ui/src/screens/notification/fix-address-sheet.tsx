@@ -67,7 +67,7 @@ export function FixAddressSheet({
           />
         )}
       </Field>
-      <div className="mt-5 flex h-[52px] items-center gap-2.5 rounded-card bg-fill px-3 text-15">
+      <div className="mt-5 flex h-[52px] items-center gap-2.5 rounded-control bg-fill px-3 text-15">
         <Checkbox
           checked={updateDirectory}
           onCheckedChange={onUpdateDirectoryChange}

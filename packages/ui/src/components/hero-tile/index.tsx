@@ -2,7 +2,7 @@ import { Icon, type IconName } from '#icons';
 import { tv, type VariantProps } from '#lib/tv';
 
 /**
- * The big rounded square that opens a start-up or permission screen. It is
+ * The big disc that opens a start-up or permission screen. It is
  * the one picture of the screen, so it says in a glance what is asked
  * (the camera) or what went wrong (the camera, struck out in red).
  */
@@ -20,7 +20,7 @@ export const heroTileVariants = tv({
       /** 100: the same screen when something went wrong. */
       lg: 'size-[100px] rounded-tile-lg',
       /** 64: the app mark above a sign-in form. */
-      md: 'size-16 rounded-tile',
+      md: 'size-16 rounded-icon',
     },
   },
   defaultVariants: { tone: 'fill', size: 'xl' },

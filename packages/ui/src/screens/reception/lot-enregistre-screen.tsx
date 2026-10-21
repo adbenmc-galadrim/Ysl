@@ -7,11 +7,7 @@ import { IconTile, type IconTileProps } from '#components/icon-tile';
 import { Screen } from '#components/screen';
 import { Icon } from '#icons';
 
-/**
- * The saved mark: a check in a rounded square on a pale green disc. The
- * square is filled black because the Penpot export renders it so; the
- * mockup is the reference, so the badge follows it.
- */
+/** The saved mark: a check in a circle on a pale green disc. */
 function SavedBadge() {
   return (
     <span
@@ -19,14 +15,12 @@ function SavedBadge() {
       className="flex size-20 items-center justify-center self-center rounded-full bg-green/12"
     >
       <svg viewBox="0 0 44 44" width={44} height={44} className="text-green">
-        <rect
-          x={3.67}
-          y={3.67}
-          width={36.67}
-          height={36.67}
-          rx={6}
+        <circle
+          cx={22}
+          cy={22}
+          r={18.33}
           strokeWidth={2}
-          className="fill-black stroke-current"
+          className="fill-none stroke-current"
         />
         <path
           d="M16.5 22l3.67 3.67 7.33-7.33"
@@ -98,7 +92,7 @@ export function LotEnregistreScreen({
         <p className="mt-2 text-center text-15 text-muted">{span}</p>
       </div>
 
-      <GroupedList className="mt-8 ring-1 ring-separator ring-inset">
+      <GroupedList className="mt-8 rounded-panel ring-1 ring-separator ring-inset">
         {outcomes.map((outcome) => (
           <GroupedRow
             key={outcome.title}

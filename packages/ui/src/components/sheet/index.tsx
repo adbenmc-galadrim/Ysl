@@ -52,7 +52,7 @@ export function Sheet({
           className={cn(
             // Scrolls rather than losing its title off the top when a long
             // sheet meets a short phone (375 × 667).
-            'mx-auto flex max-h-full w-full max-w-[480px] flex-col overflow-y-auto rounded-t-card bg-white px-5 pt-2 pb-[calc(var(--safe-bottom)+18px)] text-ink',
+            'mx-auto flex max-h-full w-full max-w-[480px] flex-col overflow-y-auto rounded-t-sheet bg-white px-5 pt-2 pb-[calc(var(--safe-bottom)+18px)] text-ink',
             className,
           )}
         >

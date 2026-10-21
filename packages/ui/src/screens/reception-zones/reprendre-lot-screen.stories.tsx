@@ -32,6 +32,7 @@ export const ReprendreLeLot: Story = {
       <LabelThumb
         width={52}
         height={64}
+        radius={8}
         tone={i % 2 ? 'light' : 'mid'}
         className="h-auto w-full"
       />

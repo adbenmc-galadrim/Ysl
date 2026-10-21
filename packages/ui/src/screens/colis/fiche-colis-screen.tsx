@@ -83,7 +83,7 @@ export function FicheColisScreen({
         icon={state.icon}
         title={state.title}
         description={state.description}
-        className="mt-[15px]"
+        className="mt-[15px] rounded-control"
       />
       <StatusTimeline steps={steps} className="mt-6" />
       <LabelPhoto className="mt-5" />

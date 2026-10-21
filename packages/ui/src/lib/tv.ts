@@ -38,9 +38,13 @@ const config: TWMConfig = {
         radius: [
           'tag',
           'chip',
+          'button',
           'control',
           'card',
+          'panel',
           'sheet',
+          'icon',
+          'desk',
           'tile-sm',
           'tile',
           'tile-lg',

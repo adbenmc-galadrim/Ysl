@@ -18,7 +18,7 @@ export function NumberedSteps({ steps, className }: NumberedStepsProps) {
         <li key={i} className="flex items-start gap-3.5 text-16">
           <span
             aria-hidden="true"
-            className="flex size-8 shrink-0 items-center justify-center rounded-chip bg-fill text-14 font-bold"
+            className="flex size-8 shrink-0 items-center justify-center rounded-tile-sm bg-fill text-14 font-bold"
           >
             {i + 1}
           </span>

@@ -14,8 +14,8 @@ export type SwitchProps = Omit<
 
 /**
  * The iOS toggle, at its native 51 × 31 size so it sits in a 52 px row like
- * the system one — but squared off to the 6 px chip radius of the app's
- * "less rounded" pass, knob included.
+ * the system one. Track and knob take the chip radius, so a squarer preset
+ * squares both.
  */
 export function Switch({
   checked,

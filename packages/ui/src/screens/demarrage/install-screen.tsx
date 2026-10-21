@@ -40,7 +40,7 @@ export function InstallScreen({
       {/* Safari's address bar starts under the 44 px status bar of a
           browser tab, not under the 50 px safe area of the installed app. */}
       <div className="flex h-[52px] shrink-0 items-center justify-center bg-fill px-[60px] mt-11">
-        <span className="flex h-8 w-full max-w-[400px] items-center justify-center truncate rounded-control bg-white text-14 text-ink-2">
+        <span className="flex h-8 w-full max-w-[400px] items-center justify-center truncate rounded-[10px] bg-white text-14 text-ink-2">
           {host}
         </span>
       </div>
@@ -68,7 +68,7 @@ export function InstallScreen({
             className={cn(
               'flex text-muted',
               icon === 'share' &&
-                '-mx-[9px] -my-[10px] items-center justify-center rounded-control px-[9px] py-[10px] text-blue ring-2 ring-blue ring-inset',
+                '-mx-[9px] -my-[10px] items-center justify-center rounded-full px-[9px] py-[10px] text-blue ring-2 ring-blue ring-inset',
             )}
           >
             <Icon name={icon} size={24} />

@@ -21,7 +21,7 @@ export function LabelPhoto({
       role="img"
       aria-label={alt}
       className={cn(
-        'flex h-[148px] items-center justify-center overflow-hidden rounded-card bg-kraft',
+        'flex h-[148px] items-center justify-center overflow-hidden rounded-control bg-kraft',
         className,
       )}
     >

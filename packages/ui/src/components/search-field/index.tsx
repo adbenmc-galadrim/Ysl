@@ -20,9 +20,10 @@ export const searchFieldVariants = tv({
   variants: {
     size: {
       lg: { root: 'h-[52px] gap-2.5 rounded-control pl-4 text-17' },
-      // Penpot sets the 44 px field's text 1.5 px above centre.
+      // Penpot sets the 44 px field's text 1.5 px above centre, and rounds
+      // the shorter field 2 px tighter.
       md: {
-        root: 'h-11 gap-[9px] rounded-control pl-[13px] text-16',
+        root: 'h-11 gap-[9px] rounded-[calc(var(--radius-control)-2px)] pl-[13px] text-16',
         input: 'pb-[3px]',
       },
       /** 48: the field a screen is about, under its title ("Qui retire ?"). */

@@ -134,11 +134,16 @@ export const Icones: Story = {
  * story shows the values of the preset currently selected.
  */
 const RADII: { token: string; use: string }[] = [
-  { token: 'tag', use: '4 px — étiquettes' },
-  { token: 'chip', use: '6 px — puces, petits boutons' },
-  { token: 'control', use: '8 px — boutons, champs, carrés d’icône' },
-  { token: 'sheet', use: '12 px — feuilles, grands visuels' },
-  { token: 'tile', use: 'pastilles : carrés d’icône, avatars' },
+  { token: 'tag', use: 'pilule — étiquettes' },
+  { token: 'chip', use: 'pilule — puces, petits boutons, interrupteurs' },
+  { token: 'button', use: 'pilule — boutons de 52 et 44 px' },
+  { token: 'control', use: '14 px — champs, listes groupées, petites cartes' },
+  { token: 'card', use: '16 px — cartes, bandeaux, toasts' },
+  { token: 'panel', use: '18 px — résumés, panneaux de la caméra' },
+  { token: 'sheet', use: '24 px — feuilles' },
+  { token: 'icon', use: '25 % — icônes de réglages, logo de l’app' },
+  { token: 'desk', use: '8 px — poste ordinateur' },
+  { token: 'tile', use: 'rond — pastilles : carrés d’icône, avatars' },
 ];
 
 export const Arrondis: Story = {

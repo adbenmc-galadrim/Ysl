@@ -4,7 +4,7 @@ import { Icon, type IconName } from '#icons';
 import { cn, tv, type VariantProps } from '#lib/tv';
 
 const tileVariants = tv({
-  base: 'flex size-[100px] items-center justify-center rounded-sheet text-white',
+  base: 'flex size-[100px] items-center justify-center rounded-tile-lg text-white',
   variants: {
     tone: {
       green: 'bg-green',

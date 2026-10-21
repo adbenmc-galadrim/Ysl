@@ -38,9 +38,9 @@ export const buttonVariants = tv({
     },
     size: {
       /** 52 px: the bottom bar actions. */
-      lg: 'h-[52px] gap-[9px] rounded-control px-5 text-17',
+      lg: 'h-[52px] gap-[9px] rounded-button px-5 text-17',
       /** 44 px: actions inside a sheet or a card. */
-      md: 'h-[44px] gap-2 rounded-control px-4 text-16',
+      md: 'h-[44px] gap-2 rounded-button px-4 text-16',
       /** 36 px: filters and segmented choices. */
       sm: 'h-[36px] gap-1.5 rounded-chip px-3.5 text-15',
       /** 32 px: the inline action on a list row or a section header. */

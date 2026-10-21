@@ -39,7 +39,8 @@ export function ParcelCheckRow({
         onClick={onToggle}
         className="flex w-full cursor-pointer items-center gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue"
       >
-        <LabelThumb size={44} />
+        {/* 8 px once the 36 px drawing is scaled to 44. */}
+        <LabelThumb size={44} radius={(8 * 36) / 44} />
         <span className="flex min-w-0 flex-1 flex-col self-start pt-[3px]">
           <span className="truncate text-17 font-semibold">{title}</span>
           {detail && (

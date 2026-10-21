@@ -43,7 +43,7 @@ export function DataTable<T>({
     <div role="table" aria-label={label} className={cn('flex flex-col', className)}>
       <div
         role="row"
-        className="grid h-9 items-center rounded-chip bg-sidebar px-4"
+        className="grid h-9 items-center rounded-desk bg-sidebar px-4"
         style={{ gridTemplateColumns: template }}
       >
         {columns.map((column) => (

@@ -49,7 +49,7 @@ export function SignaturePad({
   return (
     <div
       className={cn(
-        'relative flex touch-none flex-col justify-end overflow-hidden rounded-card bg-fill px-8 pb-[63px]',
+        'relative flex touch-none flex-col justify-end overflow-hidden rounded-[calc(var(--radius-sheet)-4px)] bg-fill px-8 pb-[63px]',
         className,
       )}
     >
