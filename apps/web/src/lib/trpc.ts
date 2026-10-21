@@ -8,6 +8,7 @@ export const trpcClient = createTRPCClient<AppRouter>({
   links: [
     httpBatchLink({
       url: `${env.PUBLIC_SERVER_URL}/trpc`,
+      fetch: (url, init) => fetch(url, { ...init, credentials: 'include' }),
     }),
   ],
 });
