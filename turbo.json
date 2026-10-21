@@ -25,6 +25,7 @@
     "test": { "cache": false },
     "build-storybook": { "outputs": ["storybook-static/**"] },
     "db:generate": { "cache": false },
-    "db:migrate": { "cache": false }
+    "db:migrate": { "cache": false },
+    "auth:generate": { "cache": false }
   }
 }
