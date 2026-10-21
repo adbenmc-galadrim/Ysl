@@ -57,6 +57,9 @@ catalogs:
     tailwindcss:
       specifier: ^4.3.3
       version: 4.3.3
+    tsx:
+      specifier: ^4.23.11
+      version: 4.23.15
     typescript:
       specifier: 6.0.3
       version: 6.0.3
@@ -80,6 +83,52 @@ importers:
       turbo:
         specifier: ^2.10.9
         version: 2.11.10
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+
+  apps/server:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^2.1.0
+        version: 2.1.5(hono@4.13.13)
+      '@hono/trpc-server':
+        specifier: ^0.4.2
+        version: 0.4.2(@trpc/server@11.18.0(typescript@6.0.3))(hono@4.13.13)
+      '@repo/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@repo/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@repo/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      '@trpc/server':
+        specifier: 'catalog:'
+        version: 11.18.0(typescript@6.0.3)
+      hono:
+        specifier: ^4.13.1
+        version: 4.13.13
+    devDependencies:
+      '@repo/eslint-config':
+        specifier: workspace:*
+        version: link:../../packages/eslint-config
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.5
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
+      pino-pretty:
+        specifier: 'catalog:'
+        version: 13.2.0
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.15
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -914,6 +963,19 @@ packages:
 
   '@fontsource/inter-tight@5.3.0':
     resolution: {integrity: sha512-uRwIrjKSUcCKIFeO2qm3yECA9phwge6Y1qQZvUmwqFgiIVWUELwwuq7pFlmlpPtO33ZtFQVOXQGNuvna1JPs6A==}
+
+  '@hono/node-server@2.1.5':
+    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      hono: ^4 || ^5.0.0-0
+
+  '@hono/trpc-server@0.4.2':
+    resolution: {integrity: sha512-3TDrc42CZLgcTFkXQba+y7JlRWRiyw1AqhLqztWyNS2IFT+3bHld0lxKdGBttCtGKHYx0505dM67RMazjhdZqw==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      '@trpc/server': ^10.10.0 || >11.0.0-rc
+      hono: '>=4.0.0'
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -2383,6 +2445,10 @@ packages:
 
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
+
+  hono@4.13.13:
+    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+    engines: {node: '>=16.9.0'}
 
   ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}
@@ -3959,6 +4025,15 @@ snapshots:
 
   '@fontsource/inter-tight@5.3.0': {}
 
+  '@hono/node-server@2.1.5(hono@4.13.13)':
+    dependencies:
+      hono: 4.13.13
+
+  '@hono/trpc-server@0.4.2(@trpc/server@11.18.0(typescript@6.0.3))(hono@4.13.13)':
+    dependencies:
+      '@trpc/server': 11.18.0(typescript@6.0.3)
+      hono: 4.13.13
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -5379,6 +5454,8 @@ snapshots:
       function-bind: 1.1.2
 
   help-me@5.0.0: {}
+
+  hono@4.13.13: {}
 
   ignore@5.3.2: {}
 
