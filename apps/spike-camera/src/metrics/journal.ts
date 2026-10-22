@@ -1,3 +1,5 @@
+import type { CaptureMode } from '#/camera/capture';
+
 export type JournalEvent = {
   kind: 'event';
   at: number;
@@ -5,7 +7,32 @@ export type JournalEvent = {
   detail?: string;
 };
 
-export type JournalEntry = JournalEvent;
+export type JournalCapture = {
+  kind: 'capture';
+  at: number;
+  index: number;
+  burst?: number;
+  mode: CaptureMode;
+  width: number;
+  height: number;
+  sourceWidth: number;
+  sourceHeight: number;
+  bytes: number;
+  durationMs: number;
+  heapBytes?: number;
+};
+
+export type JournalEntry = JournalEvent | JournalCapture;
+
+export type CaptureStats = {
+  count: number;
+  maxIntervalMs?: number;
+  p95IntervalMs?: number;
+  maxDurationMs?: number;
+  p95DurationMs?: number;
+  restarts: number;
+  failures: number;
+};
 
 export type Device = Record<string, string | number | boolean>;
 
@@ -30,6 +57,42 @@ function readSessions(store: KeyValueStore): Session[] {
   } catch {
     return [];
   }
+}
+
+function percentile(values: number[], rank: number): number | undefined {
+  if (values.length === 0) return undefined;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.ceil((rank / 100) * sorted.length) - 1];
+}
+
+function max(values: number[]): number | undefined {
+  return values.length === 0 ? undefined : Math.max(...values);
+}
+
+export function captureStats(entries: readonly JournalEntry[]): CaptureStats {
+  const captures = entries.filter(
+    (entry): entry is JournalCapture => entry.kind === 'capture',
+  );
+  const intervals = captures.flatMap((capture, index) => {
+    const previous = captures[index - 1];
+    return previous &&
+      capture.burst !== undefined &&
+      capture.burst === previous.burst
+      ? [capture.at - previous.at]
+      : [];
+  });
+  const durations = captures.map((capture) => capture.durationMs);
+  const events = entries.filter((entry) => entry.kind === 'event');
+  return {
+    count: captures.length,
+    maxIntervalMs: max(intervals),
+    p95IntervalMs: percentile(intervals, 95),
+    maxDurationMs: max(durations),
+    p95DurationMs: percentile(durations, 95),
+    restarts: events.filter((event) => event.name === 'stream-restarted')
+      .length,
+    failures: events.filter((event) => event.name.endsWith('-failed')).length,
+  };
 }
 
 export class Journal {
@@ -59,6 +122,14 @@ export class Journal {
 
   log(name: string, detail?: string): void {
     this.push({ kind: 'event', at: this.now(), name, detail });
+  }
+
+  capture(capture: Omit<JournalCapture, 'kind' | 'index'>): number {
+    const index =
+      this.session.entries.filter((entry) => entry.kind === 'capture').length +
+      1;
+    this.push({ kind: 'capture', index, ...capture });
+    return index;
   }
 
   close(): void {
