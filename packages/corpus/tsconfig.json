@@ -1,12 +1,9 @@
 {
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true,
-    "lib": ["es2023"],
-    "types": ["node"],
-    "verbatimModuleSyntax": true
+    "lib": ["es2022"],
+    "types": ["node"]
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "out"]
+  "include": ["src", "tests", "vitest.config.ts"],
+  "exclude": ["node_modules"]
 }

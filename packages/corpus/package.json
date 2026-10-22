@@ -4,15 +4,19 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#*": "./src/*.ts"
+    "#*": [
+      "./src/*.ts",
+      "./src/*/index.ts",
+      "./src/*"
+    ]
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
-    "check": "node src/cli/check.ts",
-    "generate": "node src/cli/generate.ts",
-    "fetch-web": "node src/cli/fetch-web.ts",
+    "check": "tsx src/cli/check.ts",
+    "generate": "tsx src/cli/generate.ts",
+    "fetch-web": "tsx src/cli/fetch-web.ts",
     "corpus": "pnpm generate && pnpm fetch-web && pnpm check"
   },
   "dependencies": {
@@ -25,6 +29,7 @@
     "@repo/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "eslint": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
