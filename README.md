@@ -64,9 +64,10 @@ https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Cooli
 Les deux images se construisent depuis la racine du dépôt. L'API applique les migrations
 Drizzle à chaque démarrage, avant d'ouvrir son port.
 
-Chaque push sur `main` lance `.github/workflows/deploy.yml` : lint, types et tests, puis
-déploiement via l'API Coolify. L'auto-deploy de Coolify reste coupé pour ne pas déployer
-deux fois. Le workflow se relance à la main depuis l'onglet Actions.
+Chaque push sur la branche `prod` lance `.github/workflows/deploy.yml` : lint, types et
+tests, puis déploiement via l'API Coolify. Mettre en production revient à avancer `prod`
+sur `main` (`git push origin main:prod`). L'auto-deploy de Coolify reste coupé pour ne pas
+déployer deux fois. Le workflow se relance à la main depuis l'onglet Actions.
 
 Pour créer un compte en production, depuis le terminal du conteneur de l'API dans Coolify :
 

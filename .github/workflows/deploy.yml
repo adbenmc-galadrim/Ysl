@@ -1,6 +1,6 @@
-# Vérifie puis déploie main sur shinseo.fr via l'API Coolify.
-# Coolify construit les images sur le serveur à partir du commit poussé ;
-# l'auto-deploy de Coolify doit rester coupé pour ne pas déployer deux fois.
+# Vérifie puis déploie la branche prod sur shinseo.fr via l'API Coolify.
+# Les ressources Coolify suivent la branche prod et construisent les images sur
+# le serveur ; leur auto-deploy doit rester coupé pour ne pas déployer deux fois.
 #
 # Réglages du dépôt (Settings → Secrets and variables → Actions) :
 #   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy »)
@@ -10,7 +10,7 @@ name: Déploiement
 
 on:
   push:
-    branches: [main]
+    branches: [prod]
   workflow_dispatch:
 
 concurrency:
