@@ -24,6 +24,18 @@ describe('check digits on the examples of §4.6', () => {
     expect(check(value)).toBe(value.at(-1));
   });
 
+  it.each([
+    '6A12097809701',
+    '6M12728292896',
+    '6G56659126882',
+    '6V00000005197',
+    '6C14506243878',
+    '6C14507771554',
+    '8R41995579485',
+  ])('Colissimo specimen %s from the official documentation', (value) => {
+    expect(colissimoCheck(value.slice(2, -1))).toBe(value.at(-1));
+  });
+
   it('DPD 10464000209404, printed Y on the real label', () => {
     expect(dpdCheck('10464000209404')).toBe('Y');
   });

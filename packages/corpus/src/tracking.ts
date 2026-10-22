@@ -25,7 +25,7 @@ export const dhlCheck = (body: string) => String(Number(body) % 7);
 
 export const colissimoCheck = (body: string) => {
   const sum = toDigits(body).reduce(
-    (acc, digit, i) => acc + digit * (i % 2 === 0 ? 3 : 1),
+    (acc, digit, i) => acc + digit * (i % 2 === 0 ? 1 : 3),
     0,
   );
   return String((10 - (sum % 10)) % 10);
