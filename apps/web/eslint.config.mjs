@@ -6,6 +6,11 @@ const apiIsTypeOnly = {
   message: 'Import type only: the browser must not bundle the routers.',
 };
 
+const authIsClientOnly = {
+  name: '@repo/auth',
+  message: 'The browser imports @repo/auth/client, never the server entry.',
+};
+
 const serverEnvStaysOut = {
   name: '@repo/shared/env/server',
   message: 'The browser reads @repo/shared/env/web.',
@@ -22,7 +27,7 @@ export default [
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
-          paths: [apiIsTypeOnly, serverEnvStaysOut],
+          paths: [apiIsTypeOnly, authIsClientOnly, serverEnvStaysOut],
         },
       ],
       '@typescript-eslint/only-throw-error': [

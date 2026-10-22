@@ -14,7 +14,7 @@ export type SignInScreenProps = {
 };
 
 /**
- * Sign-in with the mailroom's shared account. The app mark sits where a
+ * Sign-in with the agent's own account, one per person. The app mark sits where a
  * logo would, and the button stays in the thumb zone like every other
  * screen's main action.
  */

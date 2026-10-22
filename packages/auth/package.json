@@ -1,0 +1,39 @@
+{
+  "name": "@repo/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts"
+  },
+  "imports": {
+    "#*": [
+      "./src/*.ts",
+      "./src/*/index.ts",
+      "./src/*"
+    ]
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "auth:generate": "better-auth generate --config src/auth.ts --output ../db/src/schema/auth.ts --yes",
+    "auth:create-user": "tsx src/scripts/create-user.ts"
+  },
+  "dependencies": {
+    "@repo/contract": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/shared": "workspace:*",
+    "better-auth": "catalog:",
+    "drizzle-orm": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "auth": "1.7.12",
+    "eslint": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

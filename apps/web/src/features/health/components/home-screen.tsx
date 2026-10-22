@@ -1,6 +1,7 @@
 import { env } from '@repo/shared/env/web';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, PageIntro, StatusPill } from '@repo/ui';
+import { AccountCard } from '#/features/auth/components/account-card';
 import { useHealthQuery } from '#/features/health/api/get-health';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -49,6 +50,7 @@ export function HomeScreen() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-8 px-6 py-16">
       <PageIntro title={env.PUBLIC_APP_NAME} description={t('home.subtitle')} />
+      <AccountCard />
       <section
         aria-labelledby="status-heading"
         className="flex flex-col gap-4 rounded-card bg-white p-6"

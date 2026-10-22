@@ -1,9 +1,23 @@
+import type { Session } from '@repo/auth';
+import { toUserRole, type UserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
-const t = initTRPC.create({
+export function createTRPCContext({
+  headers,
+  session,
+}: {
+  headers: Headers;
+  session: Session | null;
+}) {
+  return { headers, session };
+}
+
+export type Context = ReturnType<typeof createTRPCContext>;
+
+const t = initTRPC.context<Context>().create({
   errorFormatter: ({ shape, error }) =>
     error.code === 'INTERNAL_SERVER_ERROR'
       ? { ...shape, message: translate('error.internal') }
@@ -13,3 +27,27 @@ const t = initTRPC.create({
 export const router = t.router;
 
 export const publicProcedure = t.procedure;
+
+export function roleOf(session: Session): UserRole {
+  return toUserRole(session.user.role);
+}
+
+export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.session) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: translate('error.unauthorized'),
+    });
+  }
+  return next({ ctx: { ...ctx, session: ctx.session } });
+});
+
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (roleOf(ctx.session) !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('error.forbidden'),
+    });
+  }
+  return next();
+});
