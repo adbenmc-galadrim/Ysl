@@ -1,11 +1,16 @@
 import viteReact from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const PORT = 3102;
+const listen = {
+  host: '127.0.0.1',
+  port: 3102,
+  strictPort: true,
+  allowedHosts: ['.ts.net'],
+};
 
 export default defineConfig({
-  server: { port: PORT, strictPort: true, allowedHosts: ['.ts.net'] },
-  preview: { port: PORT, strictPort: true, allowedHosts: ['.ts.net'] },
+  server: listen,
+  preview: listen,
   resolve: { tsconfigPaths: true },
   plugins: [viteReact()],
 });
