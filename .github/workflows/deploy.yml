@@ -1,0 +1,79 @@
+# Vérifie puis déploie main sur shinseo.fr via l'API Coolify.
+# Coolify construit les images sur le serveur à partir du commit poussé ;
+# l'auto-deploy de Coolify doit rester coupé pour ne pas déployer deux fois.
+#
+# Réglages du dépôt (Settings → Secrets and variables → Actions) :
+#   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy »)
+#   variable COOLIFY_URL             https://coolify.shinseo.fr
+#   variable COOLIFY_RESOURCE_UUIDS  UUID de l'API puis du web, séparés par une virgule
+name: Déploiement
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, types et tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint check-types test
+
+  deploy:
+    name: Déploiement Coolify
+    needs: checks
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ysl.shinseo.fr
+    env:
+      COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
+    steps:
+      - name: Déclenche le déploiement
+        id: trigger
+        run: |
+          response=$(curl --silent --show-error --fail-with-body \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=false")
+          echo "$response" | jq .
+          echo "deployments=$(echo "$response" | jq -r '[.deployments[].deployment_uuid] | join(" ")')" >> "$GITHUB_OUTPUT"
+
+      - name: Attend la fin du déploiement
+        env:
+          DEPLOYMENTS: ${{ steps.trigger.outputs.deployments }}
+        run: |
+          deadline=$(( $(date +%s) + 15 * 60 ))
+          for deployment in $DEPLOYMENTS; do
+            while :; do
+              status=$(curl --silent --show-error --fail-with-body \
+                --header "Authorization: Bearer $COOLIFY_TOKEN" \
+                "$COOLIFY_URL/api/v1/deployments/$deployment" | jq -r .status)
+              echo "$deployment : $status"
+              case "$status" in
+                finished) break ;;
+                failed|cancelled*) exit 1 ;;
+              esac
+              if [ "$(date +%s)" -ge "$deadline" ]; then
+                echo "Délai dépassé, voir les logs dans Coolify."
+                exit 1
+              fi
+              sleep 10
+            done
+          done
