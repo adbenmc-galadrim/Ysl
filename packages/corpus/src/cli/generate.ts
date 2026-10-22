@@ -1,17 +1,19 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { photograph } from '#synthetic/photo';
 import { annotate, plan } from '#synthetic/plan';
+import { outDir } from '#cli/output';
 
 const { values } = parseArgs({
   options: {
+    out: { type: 'string' },
     seed: { type: 'string', default: '20261022' },
     'per-carrier': { type: 'string', default: '12' },
   },
 });
 
-const out = resolve(import.meta.dirname, '../../out/synthetic');
+const out = join(outDir(values.out), 'synthetic');
 mkdirSync(out, { recursive: true });
 
 const planned = plan(Number(values.seed), Number(values['per-carrier']));

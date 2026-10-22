@@ -2,11 +2,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { basename, join, resolve } from 'node:path';
+import { parseArgs } from 'node:util';
 import sharp from 'sharp';
 import { manifestSchema, type Label } from '#schema';
+import { outDir } from '#cli/output';
 
 const root = resolve(import.meta.dirname, '../..');
-const out = join(root, 'out/web');
+const { values } = parseArgs({ options: { out: { type: 'string' } } });
+const out = join(outDir(values.out), 'web');
 mkdirSync(out, { recursive: true });
 
 const labels = manifestSchema.parse(

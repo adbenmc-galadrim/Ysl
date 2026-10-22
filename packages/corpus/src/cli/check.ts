@@ -3,10 +3,12 @@ import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { coverage } from '#coverage';
 import { missingFiles, readManifest } from '#manifest';
+import { outDir } from '#cli/output';
 
-const { values } = parseArgs({ options: { private: { type: 'string' } } });
-
-const out = resolve(import.meta.dirname, '../../out');
+const { values } = parseArgs({
+  options: { private: { type: 'string' }, out: { type: 'string' } },
+});
+const out = outDir(values.out);
 const manifests = [
   join(out, 'synthetic/labels.json'),
   join(out, 'web/labels.json'),
