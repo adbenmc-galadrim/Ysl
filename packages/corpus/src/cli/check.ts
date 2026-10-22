@@ -12,10 +12,16 @@ const out = outDir(values.out);
 const manifests = [
   join(out, 'synthetic/labels.json'),
   join(out, 'web/labels.json'),
-  ...(values.private
-    ? [join(resolve(values.private), 'annotations.json')]
-    : []),
 ].filter((file) => existsSync(file));
+
+if (values.private) {
+  const annotations = join(resolve(values.private), 'annotations.json');
+  if (!existsSync(annotations)) {
+    console.error(`${annotations} introuvable`);
+    process.exit(1);
+  }
+  manifests.push(annotations);
+}
 
 const labels = manifests.flatMap(readManifest);
 const report = coverage(labels);

@@ -16,7 +16,20 @@ const { values } = parseArgs({
 const out = join(outDir(values.out), 'synthetic');
 mkdirSync(out, { recursive: true });
 
-const planned = plan(Number(values.seed), Number(values['per-carrier']));
+const seed = Number(values.seed);
+const perCarrier = Number(values['per-carrier']);
+if (
+  !Number.isInteger(seed) ||
+  !Number.isInteger(perCarrier) ||
+  perCarrier < 1
+) {
+  console.error(
+    '--seed et --per-carrier attendent des entiers, --per-carrier ≥ 1',
+  );
+  process.exit(1);
+}
+
+const planned = plan(seed, perCarrier);
 for (const [i, p] of planned.entries()) {
   writeFileSync(join(out, `${p.id}.jpg`), await photograph(p));
   process.stdout.write(`\r${i + 1}/${planned.length} ${p.id}    `);

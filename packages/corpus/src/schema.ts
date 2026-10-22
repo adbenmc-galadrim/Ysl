@@ -45,12 +45,17 @@ const webOriginSchema = z.object({
   pdf: z
     .object({
       page: z.int().positive(),
-      crop: z.object({
-        left: z.number().min(0).max(1),
-        top: z.number().min(0).max(1),
-        width: z.number().positive().max(1),
-        height: z.number().positive().max(1),
-      }),
+      crop: z
+        .object({
+          left: z.number().min(0).max(1),
+          top: z.number().min(0).max(1),
+          width: z.number().positive().max(1),
+          height: z.number().positive().max(1),
+        })
+        .refine(
+          (c) => c.left + c.width <= 1 && c.top + c.height <= 1,
+          'le cadrage sort de la page',
+        ),
     })
     .optional(),
 });

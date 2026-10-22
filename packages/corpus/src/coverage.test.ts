@@ -75,6 +75,39 @@ describe('labelSchema', () => {
     ).toBe(false);
   });
 
+  it('refuses a web label whose origin has no license', () => {
+    expect(
+      labelSchema.safeParse({
+        ...label(1, 'dhl-paket'),
+        source: 'web',
+        origin: {
+          url: 'https://example.org/a.jpg',
+          page: 'https://example.org/a',
+          sha1: 'a'.repeat(40),
+          license: '',
+          author: 'inconnu',
+        },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('refuses a PDF crop that leaves the page', () => {
+    expect(
+      labelSchema.safeParse({
+        ...label(1, 'dpd'),
+        source: 'web',
+        origin: {
+          url: 'https://example.org/a.pdf',
+          page: 'https://example.org/a.pdf',
+          sha1: 'a'.repeat(40),
+          license: 'CC0',
+          author: 'inconnu',
+          pdf: { page: 1, crop: { left: 0.6, top: 0, width: 0.5, height: 1 } },
+        },
+      }).success,
+    ).toBe(false);
+  });
+
   it('refuses n/N where n exceeds N', () => {
     expect(
       labelSchema.safeParse({
