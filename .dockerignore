@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/storybook-static
+**/test-results
+**/*.log
+**/.DS_Store
+.git
+.github
+.env
+.env.*
+docs
+packages/ui/visual/out
