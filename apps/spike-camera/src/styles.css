@@ -17,7 +17,8 @@ body {
   display: none !important;
 }
 
-button {
+button,
+.button {
   font: inherit;
   color: inherit;
   background: #2a2a2a;
@@ -28,6 +29,19 @@ button {
 
 button:disabled {
   opacity: 0.5;
+}
+
+.native {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.button {
+  display: inline-block;
+  font-size: 13px;
+  padding: 6px 10px;
 }
 
 button.primary {

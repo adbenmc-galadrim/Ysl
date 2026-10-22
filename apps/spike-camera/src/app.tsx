@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { grab, shoot, type CaptureMode, type Shot } from '#/camera/capture';
+import { readNative } from '#/camera/native';
 import { clearPhotos, savePhoto } from '#/camera/opfs';
 import type { CameraStream } from '#/camera/stream';
 import { exportJournal } from '#/metrics/export';
@@ -120,13 +121,13 @@ export function App({ journal, camera }: AppProps) {
     at: number,
     mode: CaptureMode,
     shot: Shot,
-    burst: number | undefined,
+    extra: { burst?: number; orientation?: number } = {},
   ) => {
     const name = `${journal.session.id}-${at}.jpg`;
     await savePhoto(name, shot.photo);
     const index = journal.capture({
       at,
-      burst,
+      ...extra,
       mode,
       width: shot.width,
       height: shot.height,
@@ -147,8 +148,52 @@ export function App({ journal, camera }: AppProps) {
     const { bitmap, mode } = await grab(video, camera.track, (reason) =>
       journal.log('grabframe-failed', errorDetail(reason)),
     );
-    await record(startedAt, at, mode, await shoot(bitmap), burst);
+    await record(startedAt, at, mode, await shoot(bitmap), { burst });
   };
+
+  const importFiles = (input: HTMLInputElement) => {
+    const files = [...(input.files ?? [])];
+    input.value = '';
+    void run(async () => {
+      for (const file of files) {
+        const startedAt = performance.now();
+        const at = Date.now();
+        const { bitmap, orientation } = await readNative(file);
+        journal.log(
+          'native-file',
+          `${file.type || 'type inconnu'} · ${(file.size / 1000).toFixed(0)} ko · EXIF ${orientation ?? 'absente'}`,
+        );
+        await record(startedAt, at, 'native', await shoot(bitmap), {
+          orientation,
+        });
+      }
+    });
+  };
+
+  const nativeButtons = (
+    <span className="native">
+      <label className="button">
+        Photo native
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(event) => importFiles(event.currentTarget)}
+        />
+      </label>
+      <label className="button">
+        Importer
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(event) => importFiles(event.currentTarget)}
+        />
+      </label>
+    </span>
+  );
 
   const run = async (task: () => Promise<void>) => {
     setBusy(true);
@@ -257,12 +302,16 @@ export function App({ journal, camera }: AppProps) {
                 disabled={busy}
                 onClick={shutter}
               />
-              <span />
+              {nativeButtons}
             </div>
           ) : (
-            <button type="button" className="primary" onClick={start}>
-              Démarrer la caméra
-            </button>
+            <div className="controls">
+              <span />
+              <button type="button" className="primary" onClick={start}>
+                Démarrer la caméra
+              </button>
+              {nativeButtons}
+            </div>
           )}
         </div>
       </section>
@@ -289,11 +338,13 @@ function describeEntry(entry: JournalEntry): string {
   if (entry.kind === 'event') {
     return entry.detail ? `${entry.name} · ${entry.detail}` : entry.name;
   }
+  const exif =
+    entry.orientation === undefined ? '' : ` · EXIF ${entry.orientation}`;
   const heap =
     entry.heapBytes === undefined
       ? ''
       : ` · tas ${(entry.heapBytes / 1_000_000).toFixed(0)} Mo`;
-  return `capture ${entry.index} · ${entry.mode} · ${entry.width}×${entry.height} · ${(entry.bytes / 1000).toFixed(0)} ko · ${Math.round(entry.durationMs)} ms${heap}`;
+  return `capture ${entry.index} · ${entry.mode} · ${entry.width}×${entry.height} · ${(entry.bytes / 1000).toFixed(0)} ko · ${Math.round(entry.durationMs)} ms${exif}${heap}`;
 }
 
 type JournalViewProps = {

@@ -19,6 +19,7 @@ export type JournalCapture = {
   sourceHeight: number;
   bytes: number;
   durationMs: number;
+  orientation?: number;
   heapBytes?: number;
 };
 
