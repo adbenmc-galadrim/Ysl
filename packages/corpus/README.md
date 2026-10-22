@@ -40,17 +40,20 @@ pnpm --filter @repo/corpus fetch-web --out ~/goinfre/ysl/tmp/corpus
 pnpm --filter @repo/corpus check --out ~/goinfre/ysl/tmp/corpus --private ~/goinfre/ysl/tmp/corpus/real
 ```
 
-Les images vont dans `out/` du package, ou dans le dossier donné par `--out`.
-`corpus` génère la synthèse, télécharge les étiquettes web en vérifiant leur
-sha1 (les spécimens PDF demandent `pdftoppm`, de poppler :
-`brew install poppler`), puis contrôle la couverture. `check` refuse un corpus
-sous 100 images ou avec moins de 6 transporteurs à 10 images, une entrée web
-sans licence, un fichier absent ; il compte les annotations encore à relire
-(`reviewed: false`).
+`corpus` écrit toujours dans `out/` du package ; `--out` choisit un autre
+dossier, commande par commande. `corpus` génère la synthèse, télécharge les
+étiquettes web en vérifiant leur sha1 (les spécimens PDF demandent `pdftoppm`,
+de poppler : `brew install poppler` ; pour 17 fichiers Commons servis en
+miniature, le sha1 est celui de la miniature, que Wikimedia peut régénérer),
+puis contrôle la couverture. `check` refuse un corpus sous 100 images ou avec
+moins de 6 transporteurs à 10 images, une entrée web sans licence, un fichier
+absent ; il compte les annotations encore à relire (`reviewed: false`).
 
 ## Ajouter de vraies photos
 
-1. Déposer les photos dans le dossier privé (HEIC accepté).
+1. Déposer les photos dans le dossier privé. `check` accepte le HEIC de
+   l'iPhone, mais sharp ne le lit pas : pour les traiter, les convertir
+   (`sips -s format jpeg IMG.heic --out IMG.jpg`).
 2. Ajouter une entrée par photo dans son `annotations.json` : `source: "real"`,
    `file` relatif au dossier, `reviewed: false` tant qu'elle n'est pas relue.
 3. `check --private <dossier>`.
