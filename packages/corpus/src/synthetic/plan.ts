@@ -85,7 +85,7 @@ export const plan = (seed: number, perCarrier: number): Planned[] => {
       return {
         id: `synthetic-${carrier}-${String(i + 1).padStart(2, '0')}`,
         carrier,
-        tracking: trackingFor[carrier === 'la-poste' ? 'la-poste' : carrier](r),
+        tracking: trackingFor[carrier](r),
         recipient: `${r.pick(firstNames)} ${r.pick(lastNames)}`,
         sender: r.pick(senders),
         pieces: { index: r.int(1, total), total },
