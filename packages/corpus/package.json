@@ -1,0 +1,36 @@
+{
+  "name": "@repo/corpus",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#*": [
+      "./src/*.ts",
+      "./src/*/index.ts",
+      "./src/*"
+    ]
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "tsx src/cli/check.ts",
+    "generate": "tsx src/cli/generate.ts",
+    "fetch-web": "tsx src/cli/fetch-web.ts",
+    "corpus": "pnpm generate && pnpm fetch-web && pnpm check"
+  },
+  "dependencies": {
+    "bwip-js": "^4.11.4",
+    "sharp": "^0.35.5",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
