@@ -13,6 +13,8 @@ export const carriers = [
   'gls',
   'tnt',
   'hermes',
+  'usps',
+  'royal-mail',
   'amazon',
   'other',
 ] as const;
@@ -40,6 +42,17 @@ const webOriginSchema = z.object({
   sha1: z.string().regex(/^[0-9a-f]{40}$/),
   license: z.string().min(1),
   author: z.string().min(1),
+  pdf: z
+    .object({
+      page: z.int().positive(),
+      crop: z.object({
+        left: z.number().min(0).max(1),
+        top: z.number().min(0).max(1),
+        width: z.number().positive().max(1),
+        height: z.number().positive().max(1),
+      }),
+    })
+    .optional(),
 });
 
 export const labelSchema = z

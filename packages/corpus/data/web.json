@@ -1519,5 +1519,1286 @@
       "license": "Public domain",
       "author": "USPS"
     }
+  },
+  {
+    "id": "web-flickr-ups-next-day-air-sample",
+    "source": "web",
+    "file": "web-flickr-ups-next-day-air-sample.jpg",
+    "carrier": "ups",
+    "tracking": "1Z71EY050191430493",
+    "recipient": null,
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 0.45,
+    "difficulties": ["maxicode", "partial", "tilt"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/3543/3339340111_3fbb3e6c3f_b.jpg",
+      "page": "https://www.flickr.com/photos/28721989@N00/3339340111",
+      "sha1": "22672867558988dd632c399f764121c697819f5a",
+      "license": "CC BY 2.0",
+      "author": "ladyada"
+    }
+  },
+  {
+    "id": "web-flickr-iceland-post-colis-postal",
+    "source": "web",
+    "file": "web-flickr-iceland-post-colis-postal.jpg",
+    "carrier": "other",
+    "tracking": null,
+    "recipient": null,
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["glare", "tilt"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/3374/3240786500_edd4ebe8f1_b.jpg",
+      "page": "https://www.flickr.com/photos/37996646802@N01/3240786500",
+      "sha1": "9037a3a815c1c16de8ee94587f530dadf158aadd",
+      "license": "CC0 1.0",
+      "author": "cogdogblog"
+    }
+  },
+  {
+    "id": "web-flickr-royal-mail-recorded-delivery-1993",
+    "source": "web",
+    "file": "web-flickr-royal-mail-recorded-delivery-1993.jpg",
+    "carrier": "royal-mail",
+    "tracking": "RC13781267GB",
+    "recipient": null,
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/2669/4160609187_251de89e4b_b.jpg",
+      "page": "https://www.flickr.com/photos/28179929@N08/4160609187",
+      "sha1": "619a8d1bcdd56945712ad4b29b0ab4afbabcfabb",
+      "license": "CC BY-SA 2.0",
+      "author": "sludgegulper"
+    }
+  },
+  {
+    "id": "web-flickr-royal-mail-recorded-delivery-early-1990s",
+    "source": "web",
+    "file": "web-flickr-royal-mail-recorded-delivery-early-1990s.jpg",
+    "carrier": "royal-mail",
+    "tracking": "V169668",
+    "recipient": null,
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/2787/4160609379_78453aa159_b.jpg",
+      "page": "https://www.flickr.com/photos/28179929@N08/4160609379",
+      "sha1": "483c15f02094ddab6b66b9ab8227d2f52198c0fb",
+      "license": "CC BY-SA 2.0",
+      "author": "sludgegulper"
+    }
+  },
+  {
+    "id": "web-flickr-fedex-home-delivery-crumpled",
+    "source": "web",
+    "file": "web-flickr-fedex-home-delivery-crumpled.jpg",
+    "carrier": "fedex",
+    "tracking": null,
+    "recipient": null,
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["crumpled", "glare", "partial"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/4128/5176582024_3fc8d19f7b_b.jpg",
+      "page": "https://www.flickr.com/photos/75257943@N00/5176582024",
+      "sha1": "ca4ce0b6ec21800dfa7d4bf5d7d5259509d8445c",
+      "license": "CC BY-SA 2.0",
+      "author": "bmajoros"
+    }
+  },
+  {
+    "id": "web-flickr-usps-handwritten-envelope",
+    "source": "web",
+    "file": "web-flickr-usps-handwritten-envelope.jpg",
+    "carrier": "usps",
+    "tracking": null,
+    "recipient": null,
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["blur"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/3232/2538205316_5ed2d50802_b.jpg",
+      "page": "https://www.flickr.com/photos/35448539@N00/2538205316",
+      "sha1": "5393345e5c0d82a992c658d9b7731b9bfdfe8e40",
+      "license": "CC BY 2.0",
+      "author": "blakespot"
+    }
+  },
+  {
+    "id": "web-flickr-mad-magazine-handwritten-envelope",
+    "source": "web",
+    "file": "web-flickr-mad-magazine-handwritten-envelope.jpg",
+    "carrier": "other",
+    "tracking": null,
+    "recipient": null,
+    "sender": "MAD",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["tilt"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/3212/2798838787_a4e26b4d34_b.jpg",
+      "page": "https://www.flickr.com/photos/37996580417@N01/2798838787",
+      "sha1": "3488e53d6b5e953b73a13e6e8e8dd6df89c995dc",
+      "license": "CC BY-SA 2.0",
+      "author": "gruntzooki"
+    }
+  },
+  {
+    "id": "web-flickr-walrus-shipping-form",
+    "source": "web",
+    "file": "web-flickr-walrus-shipping-form.jpg",
+    "carrier": "other",
+    "tracking": null,
+    "recipient": "Point Defiance Zoo & Aquarium",
+    "sender": null,
+    "pieces": null,
+    "weightKg": 680.4,
+    "difficulties": ["partial"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://live.staticflickr.com/3033/2880161378_ee3134ecbe_b.jpg",
+      "page": "https://www.flickr.com/photos/53326337@N00/2880161378",
+      "sha1": "cec854c41a98da4c7f9496313fe37b3588ecbb08",
+      "license": "CC BY-SA 2.0",
+      "author": "quinn.anya"
+    }
+  },
+  {
+    "id": "guide-colissimo-domicile-sans-signature",
+    "source": "web",
+    "file": "guide-colissimo-domicile-sans-signature.png",
+    "carrier": "colissimo",
+    "tracking": "6A12097809701",
+    "recipient": "lastName firstName",
+    "sender": "companyName",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 3.0,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 18,
+        "crop": {
+          "left": 0.095,
+          "top": 0.17,
+          "width": 0.55,
+          "height": 0.58
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-relais-pickup",
+    "source": "web",
+    "file": "guide-colissimo-relais-pickup.png",
+    "carrier": "colissimo",
+    "tracking": "6M12728292896",
+    "recipient": "lastName firstName",
+    "sender": "companyName",
+    "pieces": null,
+    "weightKg": 3.0,
+    "difficulties": ["blur"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 19,
+        "crop": {
+          "left": 0.095,
+          "top": 0.155,
+          "width": 0.55,
+          "height": 0.58
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-flash-sans-signature-6g",
+    "source": "web",
+    "file": "guide-colissimo-flash-sans-signature-6g.png",
+    "carrier": "colissimo",
+    "tracking": "6G56659126882",
+    "recipient": "LASTNAME FIRSTNAME",
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 0.4,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 20,
+        "crop": {
+          "left": 0.095,
+          "top": 0.14,
+          "width": 0.51,
+          "height": 0.43
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-flash-avec-signature-6v",
+    "source": "web",
+    "file": "guide-colissimo-flash-avec-signature-6v.png",
+    "carrier": "colissimo",
+    "tracking": "6V00000005197",
+    "recipient": "LASTNAME FIRSTNAME",
+    "sender": null,
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 21,
+        "crop": {
+          "left": 0.095,
+          "top": 0.165,
+          "width": 0.51,
+          "height": 0.43
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-international-australie-ems",
+    "source": "web",
+    "file": "guide-colissimo-international-australie-ems.png",
+    "carrier": "colissimo",
+    "tracking": "EY946052074FR",
+    "recipient": "YAMAMOTO KADERATE",
+    "sender": "SENDER COMP",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 22,
+        "crop": {
+          "left": 0.095,
+          "top": 0.15,
+          "width": 0.56,
+          "height": 0.475
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-international-ddp-fedex",
+    "source": "web",
+    "file": "guide-colissimo-international-ddp-fedex.png",
+    "carrier": "colissimo",
+    "tracking": "393711491718",
+    "recipient": "NOVAK STEEVE",
+    "sender": "LA POSTE COLISSIMO",
+    "pieces": null,
+    "weightKg": 1.1,
+    "difficulties": ["partial"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 23,
+        "crop": {
+          "left": 0.095,
+          "top": 0.165,
+          "width": 0.56,
+          "height": 0.525
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-code-barre-client-reference",
+    "source": "web",
+    "file": "guide-colissimo-code-barre-client-reference.png",
+    "carrier": "colissimo",
+    "tracking": "6C14506243878",
+    "recipient": "LASTNAME FIRSTNAME",
+    "sender": "COMPANYNAME",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 0.25,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 24,
+        "crop": {
+          "left": 0.095,
+          "top": 0.15,
+          "width": 0.515,
+          "height": 0.535
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-code-barre-client-numero-colis",
+    "source": "web",
+    "file": "guide-colissimo-code-barre-client-numero-colis.png",
+    "carrier": "colissimo",
+    "tracking": "6C14507771554",
+    "recipient": "LASTNAME FIRSTNAME",
+    "sender": "COMPANYNAME",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 0.25,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 25,
+        "crop": {
+          "left": 0.09,
+          "top": 0.14,
+          "width": 0.515,
+          "height": 0.53
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-colissimo-retour-national",
+    "source": "web",
+    "file": "guide-colissimo-retour-national.png",
+    "carrier": "colissimo",
+    "tracking": "8R41995579485",
+    "recipient": "COLISSIMO",
+    "sender": "ROCK",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "page": "https://www.colissimo.entreprise.laposte.fr/sites/default/files/2022-04/DT_Flexibilite_Expedition_Web_Service_Affranchissement_202204_FR.pdf",
+      "sha1": "ccdd51520e165ddded66425b74f620657217d9fd",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "La Poste Colissimo",
+      "pdf": {
+        "page": 26,
+        "crop": {
+          "left": 0.12,
+          "top": 0.205,
+          "width": 0.575,
+          "height": 0.51
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-example-monitor-company",
+    "source": "web",
+    "file": "guide-dpd-geolabel-example-monitor-company.png",
+    "carrier": "dpd",
+    "tracking": "05160000000083",
+    "recipient": "Monitor Company",
+    "sender": "Modivo SA",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 1.0,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 6,
+        "crop": {
+          "left": 0.185,
+          "top": 0.17,
+          "width": 0.285,
+          "height": 0.305
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-home-business-john-doe",
+    "source": "web",
+    "file": "guide-dpd-geolabel-home-business-john-doe.png",
+    "carrier": "dpd",
+    "tracking": "05160000000084",
+    "recipient": "John Doe",
+    "sender": "Modivo SA",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 1.0,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 42,
+        "crop": {
+          "left": 0.175,
+          "top": 0.255,
+          "width": 0.355,
+          "height": 0.395
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-small-sans-aztec-express12",
+    "source": "web",
+    "file": "guide-dpd-geolabel-small-sans-aztec-express12.png",
+    "carrier": "dpd",
+    "tracking": "01632532948375",
+    "recipient": "Perfect Barcode Ltd",
+    "sender": "Service courrier GeoPost",
+    "pieces": {
+      "index": 1,
+      "total": 3
+    },
+    "weightKg": 5,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 44,
+        "crop": {
+          "left": 0.24,
+          "top": 0.165,
+          "width": 0.485,
+          "height": 0.35
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-pudo-product-exchange",
+    "source": "web",
+    "file": "guide-dpd-geolabel-pudo-product-exchange.png",
+    "carrier": "dpd",
+    "tracking": "01632532948375",
+    "recipient": "Perfect Flowers Ltd",
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 3
+    },
+    "weightKg": 5,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 46,
+        "crop": {
+          "left": 0.17,
+          "top": 0.205,
+          "width": 0.33,
+          "height": 0.315
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-pictogramme-10kg",
+    "source": "web",
+    "file": "guide-dpd-geolabel-pictogramme-10kg.png",
+    "carrier": "dpd",
+    "tracking": "05168959387351",
+    "recipient": "Roland Berger Stiftung",
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 10,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 48,
+        "crop": {
+          "left": 0.1,
+          "top": 0.23,
+          "width": 0.355,
+          "height": 0.345
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-pictogramme-20kg",
+    "source": "web",
+    "file": "guide-dpd-geolabel-pictogramme-20kg.png",
+    "carrier": "dpd",
+    "tracking": "05168959387351",
+    "recipient": "Roland Berger Stiftung",
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": null,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 49,
+        "crop": {
+          "left": 0.12,
+          "top": 0.14,
+          "width": 0.315,
+          "height": 0.305
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-geolabel-food-fresh",
+    "source": "web",
+    "file": "guide-dpd-geolabel-food-fresh.png",
+    "carrier": "dpd",
+    "tracking": "05455100026603",
+    "recipient": "Bio LTD France",
+    "sender": null,
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 1,
+    "difficulties": ["blur", "vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2024/12/Geolabel._Specification_ver._6.0.pdf",
+      "sha1": "ee7477bbc53b2e3efa71e1f18e86b7927ef07133",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 50,
+        "crop": {
+          "left": 0.12,
+          "top": 0.175,
+          "width": 0.33,
+          "height": 0.345
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-belux-routing-sample-autriche",
+    "source": "web",
+    "file": "guide-dpd-belux-routing-sample-autriche.png",
+    "carrier": "dpd",
+    "tracking": "09885100000101",
+    "recipient": "Routing Sample",
+    "sender": "Testkunde DPD",
+    "pieces": {
+      "index": 1,
+      "total": 3
+    },
+    "weightKg": 5.0,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "sha1": "b487b6a6e141cd3950568fcb7c48bc2eaa5e6b3b",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 10,
+        "crop": {
+          "left": 0.255,
+          "top": 0.195,
+          "width": 0.48,
+          "height": 0.465
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-belux-aztec-home-business",
+    "source": "web",
+    "file": "guide-dpd-belux-aztec-home-business.png",
+    "carrier": "dpd",
+    "tracking": "09885100000014",
+    "recipient": "Perfect Barcode Ltd",
+    "sender": "Testkunde DPD",
+    "pieces": {
+      "index": 1,
+      "total": 3
+    },
+    "weightKg": 5.0,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "sha1": "b487b6a6e141cd3950568fcb7c48bc2eaa5e6b3b",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 24,
+        "crop": {
+          "left": 0.17,
+          "top": 0.195,
+          "width": 0.29,
+          "height": 0.255
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-belux-aztec-pudo",
+    "source": "web",
+    "file": "guide-dpd-belux-aztec-pudo.png",
+    "carrier": "dpd",
+    "tracking": "09885100000014",
+    "recipient": "Perfect Barcode Ltd",
+    "sender": "Testkunde DPD",
+    "pieces": {
+      "index": 1,
+      "total": 3
+    },
+    "weightKg": 5.0,
+    "difficulties": ["vertical-text"],
+    "reviewed": false,
+    "origin": {
+      "url": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "page": "https://it-integration.dpd.be/wp-content/uploads/sites/6/2021/11/CCI-Selfprinter-Specs-DPD-Belux-GeoLABEL-v202108.pdf",
+      "sha1": "b487b6a6e141cd3950568fcb7c48bc2eaa5e6b3b",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Belux",
+      "pdf": {
+        "page": 24,
+        "crop": {
+          "left": 0.155,
+          "top": 0.56,
+          "width": 0.305,
+          "height": 0.29
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-dpd-romania-routing-label",
+    "source": "web",
+    "file": "guide-dpd-romania-routing-label.png",
+    "carrier": "dpd",
+    "tracking": "51963801171",
+    "recipient": "RECIPIENT NAME",
+    "sender": "SENDER NAME",
+    "pieces": {
+      "index": 1,
+      "total": 1
+    },
+    "weightKg": 5,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://api.dpd.ro/api/docs/examples/RoutingLabelSpecification_dpd.pdf",
+      "page": "https://api.dpd.ro/api/docs/examples/RoutingLabelSpecification_dpd.pdf",
+      "sha1": "ebf0ad7d681f16fe365dd152c0d105b19586e8be",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "DPD Romania",
+      "pdf": {
+        "page": 1,
+        "crop": {
+          "left": 0.255,
+          "top": 0.143,
+          "width": 0.49,
+          "height": 0.506
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-4x4",
+    "source": "web",
+    "file": "guide-usps-priority-mail-4x4.png",
+    "carrier": "usps",
+    "tracking": "9205591234567803239401",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 17,
+        "crop": {
+          "left": 0.17,
+          "top": 0.085,
+          "width": 0.485,
+          "height": 0.365
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-return",
+    "source": "web",
+    "file": "guide-usps-priority-mail-return.png",
+    "carrier": "usps",
+    "tracking": "9201991234567800160502",
+    "recipient": "INTERNET RETURNS DEPT",
+    "sender": "BIG AND GROWING BUSINESS CO.",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 21,
+        "crop": {
+          "left": 0.165,
+          "top": 0.085,
+          "width": 0.49,
+          "height": 0.552
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-open-distribute",
+    "source": "web",
+    "file": "guide-usps-priority-mail-open-distribute.png",
+    "carrier": "usps",
+    "tracking": "9212391234567800711005",
+    "recipient": null,
+    "sender": "ABC COMPANY",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 23,
+        "crop": {
+          "left": 0.42,
+          "top": 0.085,
+          "width": 0.4,
+          "height": 0.36
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-express-epostage",
+    "source": "web",
+    "file": "guide-usps-priority-mail-express-epostage.png",
+    "carrier": "usps",
+    "tracking": "9270191234567800061506",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 25,
+        "crop": {
+          "left": 0.17,
+          "top": 0.1,
+          "width": 0.485,
+          "height": 0.54
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-ground-advantage-hazmat-surface",
+    "source": "web",
+    "file": "guide-usps-ground-advantage-hazmat-surface.png",
+    "carrier": "usps",
+    "tracking": "9236291234567800123450",
+    "recipient": "RONALD RECIPIENT",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 27,
+        "crop": {
+          "left": 0.165,
+          "top": 0.155,
+          "width": 0.49,
+          "height": 0.565
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-smart-locker",
+    "source": "web",
+    "file": "guide-usps-priority-mail-smart-locker.png",
+    "carrier": "usps",
+    "tracking": "9205591234567803233454",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 29,
+        "crop": {
+          "left": 0.17,
+          "top": 0.085,
+          "width": 0.485,
+          "height": 0.55
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-bulk-parcel-return-service",
+    "source": "web",
+    "file": "guide-usps-bulk-parcel-return-service.png",
+    "carrier": "usps",
+    "tracking": "9270291234567806150300",
+    "recipient": "POSTAGE DUE UNIT",
+    "sender": "NEMO NIHILOV",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 31,
+        "crop": {
+          "left": 0.17,
+          "top": 0.1,
+          "width": 0.485,
+          "height": 0.555
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-standard-mail-bprs-outbound",
+    "source": "web",
+    "file": "guide-usps-standard-mail-bprs-outbound.png",
+    "carrier": "usps",
+    "tracking": "9270291234567800061503",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 32,
+        "crop": {
+          "left": 0.17,
+          "top": 0.085,
+          "width": 0.485,
+          "height": 0.555
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-ground-advantage-usps-ship",
+    "source": "web",
+    "file": "guide-usps-ground-advantage-usps-ship.png",
+    "carrier": "usps",
+    "tracking": "9200191234567862060302",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 49,
+        "crop": {
+          "left": 0.17,
+          "top": 0.175,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-ground-advantage-epostage",
+    "source": "web",
+    "file": "guide-usps-ground-advantage-epostage.png",
+    "carrier": "usps",
+    "tracking": "9234691234567862060304",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 49,
+        "crop": {
+          "left": 0.525,
+          "top": 0.175,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-express-evs",
+    "source": "web",
+    "file": "guide-usps-priority-mail-express-evs.png",
+    "carrier": "usps",
+    "tracking": "9270191234567800061506",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 49,
+        "crop": {
+          "left": 0.17,
+          "top": 0.54,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-cubic",
+    "source": "web",
+    "file": "guide-usps-priority-mail-cubic.png",
+    "carrier": "usps",
+    "tracking": "9205591234567803239401",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 49,
+        "crop": {
+          "left": 0.525,
+          "top": 0.54,
+          "width": 0.285,
+          "height": 0.318
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-signature-confirmation",
+    "source": "web",
+    "file": "guide-usps-priority-mail-signature-confirmation.png",
+    "carrier": "usps",
+    "tracking": "9210891234567862060308",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 50,
+        "crop": {
+          "left": 0.17,
+          "top": 0.13,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-hold-for-pickup",
+    "source": "web",
+    "file": "guide-usps-priority-mail-hold-for-pickup.png",
+    "carrier": "usps",
+    "tracking": "9277291234567803024904",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 50,
+        "crop": {
+          "left": 0.525,
+          "top": 0.13,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-hazmat",
+    "source": "web",
+    "file": "guide-usps-priority-mail-hazmat.png",
+    "carrier": "usps",
+    "tracking": "9211691234567803239409",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 50,
+        "crop": {
+          "left": 0.175,
+          "top": 0.505,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-priority-mail-cubic-soft-pack",
+    "source": "web",
+    "file": "guide-usps-priority-mail-cubic-soft-pack.png",
+    "carrier": "usps",
+    "tracking": "9205591234567803239401",
+    "recipient": "RONALD RECEIVER",
+    "sender": "INTERNET SALES DEPT",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 50,
+        "crop": {
+          "left": 0.53,
+          "top": 0.505,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
+  },
+  {
+    "id": "guide-usps-ground-advantage-return",
+    "source": "web",
+    "file": "guide-usps-ground-advantage-return.png",
+    "carrier": "usps",
+    "tracking": "9202091234567800141392",
+    "recipient": "INTERNET RETURNS DEPT",
+    "sender": "BIG AND GROWING BUSINESS CO.",
+    "pieces": null,
+    "weightKg": null,
+    "difficulties": [],
+    "reviewed": false,
+    "origin": {
+      "url": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "page": "https://postalpro.usps.com/mnt/glusterfs/2024-04/Parcel%20Labeling%20Guide%203.4.2.pdf",
+      "sha1": "b837597faacca0f433f1f78176b92613bc97adfb",
+      "license": "Documentation officielle du transporteur, droits réservés : non redistribuée",
+      "author": "USPS",
+      "pdf": {
+        "page": 51,
+        "crop": {
+          "left": 0.17,
+          "top": 0.13,
+          "width": 0.285,
+          "height": 0.325
+        }
+      }
+    }
   }
 ]
