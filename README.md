@@ -51,6 +51,33 @@ par l'administrateur.
 En production, `BETTER_AUTH_SECRET` (32 caractères au moins) et `BETTER_AUTH_URL` (URL
 publique de l'API) sont obligatoires ; en local, des valeurs de développement s'appliquent.
 
+## Déploiement
+
+La production tourne sur Coolify : https://ysl.shinseo.fr pour l'app,
+https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Coolify.
+
+| Ressource | Build | Variables |
+| --- | --- | --- |
+| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` au build |
+
+Les deux images se construisent depuis la racine du dépôt. L'API applique les migrations
+Drizzle à chaque démarrage, avant d'ouvrir son port.
+
+Chaque push sur `main` lance `.github/workflows/deploy.yml` : lint, types et tests, puis
+déploiement via l'API Coolify. L'auto-deploy de Coolify reste coupé pour ne pas déployer
+deux fois. Le workflow se relance à la main depuis l'onglet Actions.
+
+Pour créer un compte en production, depuis le terminal du conteneur de l'API dans Coolify :
+
+```bash
+cd /app/packages/auth
+AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-user.ts --email admin@example.com --name "Admin" --role admin
+```
+
+Ce terminal est interactif, le script n'y lit donc pas l'entrée standard : le mot de
+passe passe par `AUTH_USER_PASSWORD`.
+
 ## Commandes
 
 | Commande | Effet |
