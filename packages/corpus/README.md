@@ -43,7 +43,7 @@ pnpm --filter @repo/corpus check --out ~/goinfre/ysl/tmp/corpus --private ~/goin
 `corpus` écrit toujours dans `out/` du package ; `--out` choisit un autre
 dossier, commande par commande. `corpus` génère la synthèse, télécharge les
 étiquettes web en vérifiant leur sha1 (les spécimens PDF demandent `pdftoppm`,
-de poppler : `brew install poppler` ; pour 17 fichiers Commons servis en
+de poppler : `brew install poppler` ; pour 26 fichiers Commons servis en
 miniature, le sha1 est celui de la miniature, que Wikimedia peut régénérer),
 puis contrôle la couverture. `check` refuse un corpus sous 100 images ou avec
 moins de 6 transporteurs à 10 images, une entrée web sans licence, un fichier
