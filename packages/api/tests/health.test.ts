@@ -4,9 +4,15 @@ const pingDb = vi.hoisted(() => vi.fn<() => Promise<void>>());
 
 vi.mock('@repo/db', () => ({ pingDb }));
 
-const { appRouter } = await import('#root');
+vi.mock('@repo/auth', () => ({ auth: { api: {} }, isAPIError: () => false }));
 
-const caller = () => appRouter.createCaller({});
+const { appRouter } = await import('#root');
+const { createTRPCContext } = await import('#lib/trpc');
+
+const caller = () =>
+  appRouter.createCaller(
+    createTRPCContext({ headers: new Headers(), session: null }),
+  );
 
 describe('health.check', () => {
   beforeEach(() => {
