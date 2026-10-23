@@ -31,6 +31,7 @@ export * from '#components/email-preview';
 export * from '#components/empty-state';
 export * from '#components/field';
 export * from '#components/filter-chip';
+export * from '#components/glow';
 export * from '#components/grouped-list';
 export * from '#components/hero-tile';
 export * from '#components/icon-button';
