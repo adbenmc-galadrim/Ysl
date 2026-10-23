@@ -84,6 +84,29 @@ AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-
 Ce terminal est interactif, le script n'y lit donc pas l'entrée standard : le mot de
 passe passe par `AUTH_USER_PASSWORD`.
 
+## App installée sur l'iPhone
+
+L'app est une PWA : sur iPhone, elle s'utilise installée sur l'écran d'accueil. Ouverte
+dans un onglet Safari, elle n'affiche que l'écran « Installez l'app » (Partager, puis « Sur
+l'écran d'accueil »). Sur ordinateur, elle s'ouvre normalement.
+
+- Le service worker (`sw.js`, généré par `vite-plugin-pwa`) met l'app en cache au premier
+  lancement : relancée en mode avion, elle s'ouvre sans réseau. Il ne s'enregistre qu'en
+  build de production ; pour l'essayer en local, avec
+  `SKIP_ENV_VALIDATION=1 PUBLIC_APP_NAME=Courrier PUBLIC_SERVER_URL=http://localhost:3101`
+  devant chaque commande : `pnpm --filter @repo/web build` puis
+  `pnpm --filter @repo/web preview` (http://localhost:3100).
+- Une nouvelle version attend un geste de l'utilisateur (mode `prompt`) : elle n'est jamais
+  appliquée au milieu d'un lot.
+- `/version.json` donne l'heure du build : `curl -s https://ysl.shinseo.fr/version.json`.
+- nginx sert `index.html`, `sw.js`, `version.json` et `manifest.webmanifest` en `no-cache`
+  pour qu'un déploiement soit vu au lancement suivant.
+- Les icônes (`apps/web/public/`) se régénèrent depuis `icon.svg` :
+  `pnpm --filter @repo/web generate-icons`.
+
+Vérifier sur l'iPhone : ouvrir l'app dans Safari, l'installer, l'ouvrir une fois en ligne,
+passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'affiche.
+
 ## Commandes
 
 | Commande | Effet |
