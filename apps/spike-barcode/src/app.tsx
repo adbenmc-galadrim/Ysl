@@ -270,9 +270,7 @@ export function App({ journal, camera, decoder }: AppProps) {
         {last && (
           <ResultPanel
             trial={last}
-            onVerdict={(verdict) =>
-              journal.updateTrial(last.id, { verdict, carrier })
-            }
+            onVerdict={(verdict) => journal.updateTrial(last.id, { verdict })}
             onNote={(note) => journal.updateTrial(last.id, { note })}
           />
         )}
