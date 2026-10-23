@@ -2,16 +2,18 @@ import { cn } from '#lib/tv';
 
 export type MailIconProps = {
   size: 38 | 40;
+  className?: string;
 };
 
 /** Mail's icon: a blue gradient square with a white envelope. */
-export function MailIcon({ size }: MailIconProps) {
+export function MailIcon({ size, className }: MailIconProps) {
   return (
     <span
       aria-hidden="true"
       className={cn(
         'flex shrink-0 items-center justify-center bg-linear-to-b from-site-mail to-site-mail-2',
         size === 38 ? 'size-[38px] rounded-[9px]' : 'size-10 rounded-[10px]',
+        className,
       )}
     >
       <svg

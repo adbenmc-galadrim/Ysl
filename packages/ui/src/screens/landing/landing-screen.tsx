@@ -36,21 +36,21 @@ const CONTAINER = 'mx-auto w-full max-w-[480px] px-5 xl:max-w-[1240px]';
 const EYEBROW =
   'text-[12px] leading-[15px] font-semibold tracking-[1.6px] uppercase xl:text-13 xl:leading-4 xl:tracking-[2px]';
 
-/** The code that opens the app, the app mark in its centre. */
+/** A QR code with the app mark in its centre. */
 function AppQr({
-  host,
+  value,
   size,
   radius,
   className,
 }: {
-  host: string;
+  value: string;
   size: number;
   radius: number;
   className?: string;
 }) {
   return (
     <BrandedQr
-      value={`https://${host}`}
+      value={value}
       size={size}
       radius={radius}
       logo={<AppMark size={size * QR_LOGO} edge="halo" />}
@@ -152,7 +152,7 @@ function Hero({ host }: { host: string }) {
             Comment ça marche
           </a>
           <div className="mt-10 hidden h-40 w-[500px] gap-6 rounded-[24px] bg-white/80 p-5 ring-1 ring-black/6 ring-inset xl:flex">
-            <AppQr host={host} size={120} radius={14} />
+            <AppQr value={`https://${host}`} size={120} radius={14} />
             <div className="pt-3">
               <p className="text-[19px] leading-[23px] font-semibold">
                 Scannez. Installez. C’est parti.
@@ -256,12 +256,8 @@ function NotificationCard() {
       <p className="hidden text-13 leading-4 text-site-subtle xl:block">iPhone de Camille</p>
       <div className="flex h-[92px] gap-3 rounded-[22px] bg-white pt-[15px] pr-3.5 pl-3.5 shadow-site-card ring-1 ring-black/6 ring-inset xl:-mx-1 xl:mt-4 xl:h-[100px] xl:gap-3.5 xl:bg-site-fill-2/80 xl:pt-4 xl:shadow-none xl:ring-0">
         <span className="mt-px xl:mt-0.5">
-          <span className="xl:hidden">
-            <MailIcon size={38} />
-          </span>
-          <span className="hidden xl:block">
-            <MailIcon size={40} />
-          </span>
+          <MailIcon size={38} className="xl:hidden" />
+          <MailIcon size={40} className="hidden xl:flex" />
         </span>
         <div className="flex-1">
           <div className="flex items-start justify-between">
@@ -291,13 +287,7 @@ function HandoverCard() {
   return (
     <div className={cn(CARD, 'flex gap-4 p-4 xl:flex-wrap xl:gap-6 xl:p-6 xl:pb-[25px]')}>
       <BrandedQr value={PICKUP_CODE} size={118} radius={14} className="xl:hidden" />
-      <BrandedQr
-        value={PICKUP_CODE}
-        size={130}
-        radius={16}
-        logo={<AppMark size={130 * QR_LOGO} edge="halo" />}
-        className="hidden xl:block"
-      />
+      <AppQr value={PICKUP_CODE} size={130} radius={16} className="hidden xl:block" />
       <div>
         <p className="mt-1.5 text-[11px] leading-[14px] font-semibold tracking-[1.2px] text-site-subtle xl:mt-2 xl:tracking-[1.4px]">
           CODE DE RETRAIT
@@ -581,7 +571,7 @@ function Install({ host }: { host: string }) {
       <div className="relative mt-8 xl:mt-12">
         <ol className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 [scrollbar-width:none] xl:mx-auto xl:max-w-[1240px] xl:justify-between xl:gap-0 xl:overflow-visible">
           <li className="hidden h-[360px] w-[274px] shrink-0 flex-col items-center rounded-[26px] bg-white pt-8 shadow-site-raised ring-1 ring-black/8 ring-inset xl:flex">
-            <AppQr host={host} size={200} radius={0} />
+            <AppQr value={`https://${host}`} size={200} radius={0} />
             <p className="mt-[30px] text-18 leading-[22px] font-bold">Scannez avec l’iPhone</p>
             <p className="mt-2 text-14 leading-[21px] text-site-muted">
               Visez-le avec l’appareil photo.
@@ -635,7 +625,7 @@ function Closing({ host }: { host: string }) {
             <span className="block font-semibold">Scannez pour ouvrir</span>
             <span className="mt-1 block text-site-muted">sur l’iPhone →</span>
           </p>
-          <AppQr host={host} size={140} radius={14} />
+          <AppQr value={`https://${host}`} size={140} radius={14} />
         </div>
       </div>
     </section>

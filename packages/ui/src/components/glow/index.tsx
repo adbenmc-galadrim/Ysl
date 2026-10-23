@@ -33,6 +33,8 @@ export type GlowProps = {
  * a radial gradient. A CSS blur filter would do the same at runtime, but on
  * a layer this large it costs a full-screen repaint on scroll — and headless
  * Chrome renders it unblurred. The colour comes from the text colour.
+ * It is absolutely positioned behind its siblings: the parent needs
+ * `relative isolate`.
  */
 export function Glow({ x, y, w, h, alpha, sigma, className }: GlowProps) {
   const a = w / 2;
