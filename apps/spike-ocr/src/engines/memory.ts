@@ -14,6 +14,8 @@ function trackExports(result: unknown): void {
 
 let installed = false;
 
+// Redefines the WebAssembly globals to track created memories; must run before
+// any engine is loaded.
 export function installWasmMemoryProbe(): void {
   if (installed) return;
   installed = true;

@@ -1,3 +1,5 @@
+// Tesseract's classic worker loads this via importScripts and cannot import
+// src/engines/memory.ts; this probe tracks WebAssembly memory sizes instead.
 const memories = new Set();
 const track = (value) => {
   if (Object.prototype.toString.call(value) === '[object WebAssembly.Memory]') {
