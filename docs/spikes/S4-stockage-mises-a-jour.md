@@ -91,8 +91,62 @@ compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localS
 
 ## Résultats
 
-À remplir après le passage sur l'iPhone.
+Passage du 23/10/2026, de 15 h 55 à 16 h 13, PWA installée, journal exporté (5 sessions).
+Safari 27.0.1 d'après l'agent utilisateur, qui fige la version d'iOS (`iPhone OS 18_7`).
+
+| Mesure               | Valeur                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| `standalone`         | `true` ; OPFS et service worker présents                                                          |
+| `persist()`          | `persisted` à `false` au premier lancement, `persist()` accordé aussitôt, sans invite             |
+| Quota                | 39,3 Go annoncés par `estimate()` ; 1,37 Go utilisés en fin de test                               |
+| Colis écrits         | 364, numérotés de 1 à 364 sans trou, 364 photos de 3,94 Mo                                        |
+| Écriture d'une photo | OPFS : médiane 5 ms, p95 7 ms, max 1 034 ms (la toute première) ; Dexie : médiane 1 ms, max 19 ms |
+| Cadence              | un colis toutes les 475 ms (génération de la photo comprise), p95 484 ms                          |
+| Contrôles            | 8 contrôles d'intégrité, tous « aucune perte », 0 orpheline                                       |
+
+**Mode avion et app tuée.** App tuée puis relancée en mode avion : elle s'ouvre hors
+ligne, 100 colis sur 100. Hors ligne, `registration.update()` échoue
+(`TypeError: Script … sw.js load failed`) et `version.json` ne répond pas : journalisé,
+sans message ni blocage.
+
+**Verrouillage pendant une écriture.** La page passe masquée au colis 257 ; l'écriture se
+met en pause pendant le verrouillage (34 s) et reprend seule au retour, colis 258, dès
+`page-visible`. Lot terminé à 100 sur 100, contrôle sans perte.
+
+**App tuée pendant une écriture.** Tuée après 64 colis du lot : au lancement suivant,
+« Écriture interrompue » est signalée ; 364 attendus, 364 présents, aucune photo orpheline.
+
+**Mise à jour v2** (déploiement forcé du même commit). Au retour au premier plan,
+`version.json` voit la nouvelle version en 39 ms et le nouveau service worker attend en
+357 ms ; le bandeau apparaît. « Mettre à jour » recharge l'app en v2, contrôle sans perte.
+
+**Mise à jour v3, forcée.** Au retour au premier plan, `version.json` voit la v3 en
+385 ms. Aucun service worker en attente n'est journalisé dans les 54 s qui suivent, avant
+le geste : « Forcer la mise à jour » supprime le service worker du spike et son cache
+(1 et 1), recharge en v3, contrôle sans perte, app de nouveau prête hors ligne.
+
+**Éviction.** Non observée : l'étape 10 (plusieurs jours sans ouvrir l'app) reste à faire.
 
 ## Verdict
 
-À remplir après le passage sur l'iPhone.
+| Critère                         | Verdict | Preuve                                                                   |
+| ------------------------------- | ------- | ------------------------------------------------------------------------ |
+| Aucune perte, mode avion        | **go**  | relance hors ligne, 100 sur 100                                          |
+| Aucune perte, app tuée          | **go**  | écriture interrompue signalée, 364 sur 364, 0 orpheline                  |
+| Aucune perte, verrouillage      | **go**  | pause de 34 s puis reprise seule, lot complet, contrôle sans perte       |
+| `persist()`                     | **go**  | accordé sans invite en PWA installée                                     |
+| Mise à jour sans réinstallation | **go**  | v2 détectée en moins de 0,4 s au retour et appliquée ; v3 par « Forcer » |
+| Éviction après inactivité       | à voir  | observation de plusieurs jours, rapportée plus tard                      |
+
+**Conséquence.** Dexie et OPFS tiennent les scénarios : D3 (Dexie + outbox) est
+confirmée, PowerSync n'a pas à être réexaminé. À reporter dans l'app :
+
+- garder l'ordre d'écriture photo dans OPFS puis ligne et outbox en une transaction, et
+  un contrôle au lancement ;
+- demander `persist()` au lancement, sans attendre un geste ;
+- une écriture en cours se suspend au verrouillage et reprend seule : pas de reprise à
+  coder, mais un lot doit tolérer une pause longue ;
+- `version.json` est le signal le plus rapide et le plus sûr : le bandeau doit s'appuyer
+  sur lui autant que sur le service worker en attente (la v3 n'a pas produit de service
+  worker en attente dans les 54 s observées) ;
+- « Forcer la mise à jour » fonctionne sans toucher aux données : à garder comme recours.
