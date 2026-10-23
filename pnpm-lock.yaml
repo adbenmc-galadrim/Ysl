@@ -33,6 +33,9 @@ catalogs:
     '@types/react-dom':
       specifier: ^19.2.2
       version: 19.3.0
+    '@vitejs/plugin-react':
+      specifier: ^6.0.1
+      version: 6.1.2
     better-auth:
       specifier: ^1.6.26
       version: 1.7.12
@@ -170,7 +173,7 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
-        specifier: ^6.0.1
+        specifier: 'catalog:'
         version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
       eslint:
         specifier: 'catalog:'
@@ -255,7 +258,7 @@ importers:
         specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
       '@vitejs/plugin-react':
-        specifier: ^6.0.1
+        specifier: 'catalog:'
         version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
       eslint:
         specifier: 'catalog:'
