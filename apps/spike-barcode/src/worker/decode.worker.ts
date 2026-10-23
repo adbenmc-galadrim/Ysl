@@ -136,7 +136,7 @@ const decode = async (
     croppedMs: null as number | null,
     candidates: null as number | null,
   };
-  if (forceMaxiCode || symbols.length === 0) {
+  if (forceMaxiCode || exhaustive || symbols.length === 0) {
     const { raster, scale } = fullRaster();
     const t0 = performance.now();
     const read = await readMaxiCode(raster, readMaxiPure);
