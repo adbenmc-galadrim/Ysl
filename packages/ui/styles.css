@@ -109,6 +109,52 @@
   --color-mac-minimize: #febc2e;
   --color-mac-zoom: #28c840;
 
+  /* The landing page (page 10 of Penpot). It is a product page, not an app
+   * screen, so it borrows Apple's marketing greys: a softer near-black ink,
+   * #f5f5f7 panels, and the light-appearance system colours darkened for
+   * small text on white. */
+  --color-site-ink: #1d1d1f;
+  --color-site-ink-2: #424245;
+  --color-site-muted: #6e6e73;
+  --color-site-subtle: #86868b;
+  --color-site-fill: #f5f5f7;
+  --color-site-fill-2: #e8e8ed;
+  --color-site-fill-3: #ececf0;
+  --color-site-blue: #007aff;
+  --color-site-blue-ink: #0066cc;
+  --color-site-orange-ink: #c93400;
+  --color-site-green-ink: #248a3d;
+  --color-site-purple: #bf5af2;
+  --color-site-purple-ink: #8944ab;
+  --color-site-yellow: #ffcc00;
+  /* "Code lu": dark green on the iOS green badge */
+  --color-site-green-deep: #003d14;
+  /* The hero: a warm paper wash, and the bright room the camera films */
+  --color-site-wash: #f6f0e8;
+  --color-site-wash-2: #fbf8f4;
+  --color-site-wash-3: #fefdfc;
+  --color-site-wall: #f6f2ec;
+  --color-site-wall-2: #e8dfd3;
+  --color-site-desk: #ddd0bf;
+  --color-site-desk-2: #cdbca6;
+  --color-site-room: #efe9e1;
+  --color-site-shadow: #6b5440;
+  /* The parcel in the viewfinder: a lit face over darker board, pale tape */
+  --color-site-box: #ad8c66;
+  --color-site-box-lit: #be9d76;
+  --color-site-tape: #d0b48e;
+  --color-site-ups: #351c15;
+  --color-site-ups-gold: #ffb500;
+  --color-site-label-ink: #444444;
+  /* The closing band fades from grey into kraft */
+  --color-site-kraft-wash: #f3ede5;
+  --color-site-kraft-wash-2: #ecdfcd;
+  /* App icons drawn in the mockups: Mail, and the home-screen wallpaper */
+  --color-site-mail: #1e90ff;
+  --color-site-mail-2: #0a60ff;
+  --color-site-wallpaper: #2b3a55;
+  --color-site-wallpaper-2: #5b3a55;
+
   --font-sans: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --font-label: 'Archivo', ui-sans-serif, sans-serif;
@@ -274,4 +320,23 @@
     rgb(242 242 247 / 0) 0,
     var(--color-fill) 30%
   );
+}
+
+/* Landing page shadows: a card resting on the page, the QR card lifted a
+ * little higher, the phone floating over the hero, the label stuck on the
+ * parcel. */
+@utility shadow-site-card {
+  box-shadow: 0 10px 30px rgb(29 29 31 / 0.06);
+}
+
+@utility shadow-site-raised {
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.08);
+}
+
+@utility shadow-site-phone {
+  box-shadow: 0 24px 48px rgb(29 29 31 / 0.1);
+}
+
+@utility shadow-site-label {
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
 }
