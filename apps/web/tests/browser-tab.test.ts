@@ -18,7 +18,7 @@ const context = (overrides: Partial<DisplayContext>): DisplayContext => ({
 });
 
 describe('isIosBrowserTab', () => {
-  it('asks to install when the app is opened in a Safari tab on an iPhone', () => {
+  it('shows the landing when the app is opened in a Safari tab on an iPhone', () => {
     expect(isIosBrowserTab(context({}))).toBe(true);
   });
 
@@ -39,7 +39,7 @@ describe('isIosBrowserTab', () => {
     ).toBe(false);
   });
 
-  it('asks an iPad to install even though Safari presents it as a Mac', () => {
+  it('shows an iPad the landing even though Safari presents it as a Mac', () => {
     expect(
       isIosBrowserTab(context({ userAgent: MAC, maxTouchPoints: 5 })),
     ).toBe(true);
