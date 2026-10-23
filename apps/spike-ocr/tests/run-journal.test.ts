@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { RunJournal, RUN_KEY, type KeyValueStore } from '#/metrics/run-journal';
+import {
+  PARTIAL_KEY,
+  RunJournal,
+  RUN_KEY,
+  type KeyValueStore,
+} from '#/metrics/run-journal';
 import type { SeriesResult } from '#/metrics/types';
 
 function memoryStore(): KeyValueStore {
@@ -93,5 +98,40 @@ describe('RunJournal', () => {
 
     expect(second.interrupted).toBeUndefined();
     expect(second.history.map((entry) => entry.outcome)).toEqual(['complete']);
+  });
+
+  it('ignores the partial result left by an earlier series', () => {
+    const store = memoryStore();
+    const first = new RunJournal(store, () => 1);
+    first.begin(run);
+    first.checkpoint(
+      series({
+        photos: [
+          { id: 'p1', name: 'p1', ok: true, prepMs: 1, ocrMs: 2, totalMs: 3 },
+        ],
+      }),
+    );
+    first.begin({
+      configId: 'tesseract-wasm',
+      label: 'Tesseract · WASM',
+      source: 'pack',
+      total: 50,
+    });
+
+    const second = new RunJournal(store, () => 2);
+
+    expect(second.history[0]?.configId).toBe('tesseract-wasm');
+    expect(second.history[0]?.label).toBe('Tesseract · WASM');
+    expect(second.history[0]?.photos).toEqual([]);
+  });
+
+  it('clears the partial result when a series closes', () => {
+    const store = memoryStore();
+    const journal = new RunJournal(store, () => 1);
+    journal.begin(run);
+    journal.checkpoint(series());
+    journal.close(series());
+
+    expect(store.getItem(PARTIAL_KEY)).toBeNull();
   });
 });

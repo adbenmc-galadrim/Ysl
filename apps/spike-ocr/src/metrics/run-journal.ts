@@ -74,6 +74,7 @@ export class RunJournal {
   begin(
     run: Omit<RunState, 'photo' | 'photoId' | 'closed' | 'startedAt'>,
   ): void {
+    this.store.removeItem(PARTIAL_KEY);
     this.write({
       ...run,
       startedAt: this.now(),
@@ -94,6 +95,7 @@ export class RunJournal {
     if (run) this.write({ ...run, closed: true });
     this.results = [...this.results, result].slice(-KEPT_RESULTS);
     this.save(RESULTS_KEY, this.results);
+    this.store.removeItem(PARTIAL_KEY);
   }
 
   checkpoint(partial: SeriesResult): void {
