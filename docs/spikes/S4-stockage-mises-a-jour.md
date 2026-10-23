@@ -72,10 +72,9 @@ compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localS
    30 s, puis déverrouiller. Noter si la session a continué ou s'est arrêtée. Laisser
    finir, ou toucher **Arrêter**. **Contrôler** : noter le nombre de colis affiché après (attendu : avant + colis écrits,
    égal aux colis attendus du registre), aucune perte (orphelines notées).
-6. **Écrire 100 colis** et, vers le milieu, **tuer l'app** : noter juste avant le nombre
-   de colis écrits affiché dans l'écran. La relancer : « Session précédente interrompue »
-   ou « Écriture interrompue » attendu, contrôle sans colis manquant : colis présents
-   égal au nombre noté (± le colis en cours), orphelines notées.
+6. **Écrire 100 colis** et, vers le milieu, **tuer l'app**. La relancer : « Écriture
+   interrompue » attendu. Contrôle : colis présents égal aux colis attendus (registre),
+   aucune perte, orphelines notées (au plus une, la photo de l'écriture coupée).
 7. Couper le mode avion. Noter la version, puis demander la v2 à l'agent et attendre son
    « déployé ». Passer sur une autre app, revenir : bandeau attendu ; noter le délai
    (`detection-delay` dans le journal). **Mettre à jour** : la version change, contrôle
@@ -85,7 +84,7 @@ compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localS
 9. Journal › **Terminer la session**, puis **Exporter le journal** (AirDrop vers le Mac).
 10. Noter le nombre de colis avant de laisser l'app. La laisser installée sans l'ouvrir
     plusieurs jours, puis la relancer et comparer : 0 colis signifie que le stockage a été
-    effacé, même si le contrôle dit « aucune perte » (« stockage vide »), parce que le
+    effacé, même si le contrôle n'y voit pas de perte (« Stockage vide »), parce que le
     registre `localStorage` a été effacé avec. Sinon le contrôle dit si Safari a effacé
     une partie du stockage. Si l'observation arrive trop tard, elle sera
     rapportée dans une prochaine PR.

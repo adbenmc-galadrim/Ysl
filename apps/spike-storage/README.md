@@ -14,7 +14,8 @@ livrées.
 En production : https://ysl.shinseo.fr/spike-storage/. L'image de `apps/web` construit le
 spike et nginx le sert sous `/spike-storage/` (`apps/web/Dockerfile`, `apps/web/nginx.conf`).
 
-Publier une nouvelle version sans nouveau commit (la version est l'heure du build) :
+Publier une nouvelle version sans nouveau commit (la version est l'heure du build) ; `force`
+reconstruit sans cache les deux images du déploiement, API comprise :
 
 ```sh
 gh workflow run deploy.yml --ref prod -f force=true
@@ -32,7 +33,8 @@ pnpm --filter @repo/spike-storage tailnet   # https://<mac>.<tailnet>.ts.net/spi
 Le service worker et l'installation PWA exigent HTTPS (ou `127.0.0.1`).
 
 Le spike partage l'origine de l'app : base Dexie `spike-storage`, dossier OPFS
-`spike-storage`, journal dans la clé `localStorage` `spike-storage:journal`. Son service
+`spike-storage`, journal et registre des colis validés dans les clés `localStorage`
+`spike-storage:journal` et `spike-storage:committed`. Son service
 worker ne contrôle que `/spike-storage/`.
 
 Pour le retirer (le rapport dans `docs/spikes/` reste) : supprimer `apps/spike-storage` ; dans `apps/web/Dockerfile`, retirer
