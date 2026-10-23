@@ -1,11 +1,23 @@
 {
   "extends": "@repo/typescript-config/react-library.json",
-  "include": ["src", "tests", "bench", "vitest.config.ts"],
+  "include": [
+    "src",
+    "tests",
+    "bench",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
   "compilerOptions": {
     "paths": {
-      "#/*": ["./src/*"]
+      "#/*": [
+        "./src/*"
+      ]
     },
-    "types": ["node", "emscripten"],
+    "types": [
+      "node",
+      "emscripten",
+      "vite/client"
+    ],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
