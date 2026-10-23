@@ -1,4 +1,4 @@
-export const PHOTOS_DIRECTORY = 'captures';
+export const PHOTOS_DIRECTORY = 'spike-camera';
 
 export type SaveRequest = { id: number; name: string; blob: Blob };
 export type SaveReply =

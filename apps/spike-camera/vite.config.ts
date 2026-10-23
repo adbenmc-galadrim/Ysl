@@ -9,6 +9,7 @@ const listen = {
 };
 
 export default defineConfig({
+  base: '/spike-camera/',
   server: listen,
   preview: listen,
   resolve: { tsconfigPaths: true },
