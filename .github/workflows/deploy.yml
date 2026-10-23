@@ -3,7 +3,8 @@
 # le serveur ; leur auto-deploy doit rester coupé pour ne pas déployer deux fois.
 #
 # Réglages du dépôt (Settings → Secrets and variables → Actions) :
-#   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy »)
+#   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy » seul ; le
+#                                    suivi du déploiement se fait dans Coolify)
 #   variable COOLIFY_URL             https://coolify.shinseo.fr
 #   variable COOLIFY_RESOURCE_UUIDS  UUID de l'API puis du web, séparés par une virgule
 name: Déploiement
@@ -47,33 +48,8 @@ jobs:
       RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
     steps:
       - name: Déclenche le déploiement
-        id: trigger
         run: |
           response=$(curl --silent --show-error --fail-with-body --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=false")
           echo "$response" | jq .
-          echo "deployments=$(echo "$response" | jq -r '[.deployments[].deployment_uuid] | join(" ")')" >> "$GITHUB_OUTPUT"
-
-      - name: Attend la fin du déploiement
-        env:
-          DEPLOYMENTS: ${{ steps.trigger.outputs.deployments }}
-        run: |
-          deadline=$(( $(date +%s) + 15 * 60 ))
-          for deployment in $DEPLOYMENTS; do
-            while :; do
-              status=$(curl --silent --show-error --fail-with-body \
-                --header "Authorization: Bearer $COOLIFY_TOKEN" \
-                "$COOLIFY_URL/api/v1/deployments/$deployment" | jq -r .status)
-              echo "$deployment : $status"
-              case "$status" in
-                finished) break ;;
-                failed|cancelled*) exit 1 ;;
-              esac
-              if [ "$(date +%s)" -ge "$deadline" ]; then
-                echo "Délai dépassé, voir les logs dans Coolify."
-                exit 1
-              fi
-              sleep 10
-            done
-          done
