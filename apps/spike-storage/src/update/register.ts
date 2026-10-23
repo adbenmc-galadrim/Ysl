@@ -1,4 +1,5 @@
 import { registerSW } from 'virtual:pwa-register';
+import { errorDetail } from '#/errors';
 import { checkVersion } from '#/update/version';
 
 type Log = (name: string, detail?: string) => void;
@@ -11,12 +12,6 @@ export type UpdateState = {
 };
 
 const CHECK_INTERVAL_MS = 5 * 60_000;
-
-function errorDetail(error: unknown): string {
-  return error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error);
-}
 
 export class Updater {
   private state: UpdateState = {

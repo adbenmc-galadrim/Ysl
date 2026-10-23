@@ -1,3 +1,4 @@
+import { errorDetail } from '#/errors';
 import type { SpikeDatabase } from '#/storage/db';
 import type { GeneratedPhoto } from '#/storage/photo';
 
@@ -15,12 +16,6 @@ export type WriterState = { running: boolean; done: number; total: number };
 
 export const SESSION_SIZE = 100;
 export const SESSION_INTERVAL_MS = 300;
-
-function errorDetail(error: unknown): string {
-  return error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error);
-}
 
 function isQuotaError(error: unknown): boolean {
   return error instanceof Error && error.name === 'QuotaExceededError';

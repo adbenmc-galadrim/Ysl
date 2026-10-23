@@ -4,6 +4,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { errorDetail } from '#/errors';
 import { exportJournal } from '#/export';
 import type { Journal } from '#/journal';
 import type { SpikeDatabase } from '#/storage/db';
@@ -43,12 +44,6 @@ function yesNo(value: unknown): string {
 
 function megabytes(bytes: number | undefined): string {
   return bytes === undefined ? '–' : `${(bytes / 1_048_576).toFixed(1)} Mo`;
-}
-
-function errorDetail(error: unknown): string {
-  return error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error);
 }
 
 function ids(list: readonly (number | string)[]): string {
