@@ -85,6 +85,24 @@ describe('journal', () => {
     expect(journal.parcel).toBe(4);
   });
 
+  it('drops a damaged decode result instead of crashing the journal view', () => {
+    const trial = {
+      id: 'b',
+      at: 1,
+      parcel: 1,
+      mode: 'native',
+      carrier: 'gls',
+      verdict: null,
+      note: '',
+      result: { steps: [] },
+    };
+    const journal = new Journal(
+      memoryStore(JSON.stringify({ parcel: 1, trials: [trial] })),
+      device,
+    );
+    expect(journal.trials[0]?.result).toBeNull();
+  });
+
   it('keeps working when storage refuses writes', () => {
     const journal = new Journal(
       {

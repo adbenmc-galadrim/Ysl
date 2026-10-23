@@ -69,7 +69,10 @@ export const readStored = (store: KeyValueStore): Stored => {
     const trials = Array.isArray(parsed.trials)
       ? parsed.trials.filter(isTrial).map((t) => ({
           ...t,
-          result: t.result ?? null,
+          result:
+            isRecord(t.result) && Array.isArray(t.result.symbols)
+              ? t.result
+              : null,
           error: t.error ?? null,
         }))
       : [];
