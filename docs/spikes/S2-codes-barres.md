@@ -23,6 +23,11 @@ Le critère se compte sur les étiquettes **web et réelles dont le tracking est
 (130). La synthèse, dont les codes sont générés propres, est donnée à part comme témoin :
 elle vérifie le lecteur, pas la difficulté réelle.
 
+Le brief visait les étiquettes « avec un code visible », mais le corpus ne dit pas si un
+code est visible sur la photo : la base retenue compte toutes les étiquettes à tracking
+connu, y compris des déclarations douanières sans code. Le rapport donne donc deux bornes :
+**70,8 %** sur ces 130 étiquettes, **86,8 %** sur les 106 où au moins un code est lu.
+
 Une étiquette compte comme lue quand le tracking de sa vérité terrain se retrouve dans le
 contenu d'au moins un code (`src/decode/match.ts`) : en clair, sans séparateurs, sans sa
 clé de contrôle (Colissimo dans l'Aztec), ou recomposé (UPS dans le MaxiCode).
@@ -132,7 +137,8 @@ spécimens PDF à 105 ppi.
 | Sans recadrage   |                      0 |                 0 |
 | Recadrage maison | 1 (tracking recomposé) |                10 |
 
-Sans recadrage, zxing ne lit aucun MaxiCode en photo. Avec le recadrage maison, 10 sur 12
+Web + réelles : les 5 UPS (dont la photo réelle) et un DPD marqué « maxicode » dans le
+corpus. Sans recadrage, zxing ne lit aucun MaxiCode en photo. Avec le recadrage maison, 10 sur 12
 en synthèse (les 2 échecs sont floue et bruitée), testé jusqu'à 45° et 90° de rotation.
 Sur la photo réelle UPS, l'œil de bœuf et l'angle sont trouvés, mais la légère
 perspective (photo prise de biais) n'est pas corrigée par une simple rotation : la lecture
