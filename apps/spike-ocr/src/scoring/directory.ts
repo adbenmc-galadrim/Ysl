@@ -1,3 +1,8 @@
+import { seeded } from '@repo/corpus/random';
+import {
+  firstNames as FIRST_NAMES,
+  lastNames as LAST_NAMES,
+} from '@repo/corpus/identities';
 import { bestSubstringDistance, normalizeWords } from '#/scoring/text';
 
 export type DirectoryMatch = {
@@ -15,76 +20,7 @@ export const DIRECTORY_SIZE = 120;
 export const MIN_MATCH_SCORE = 0.6;
 export const TOP_MATCHES = 3;
 
-const FIRST_NAMES = [
-  'Camille',
-  'Louise',
-  'Hugo',
-  'Léa',
-  'Nathan',
-  'Inès',
-  'Jules',
-  'Chloé',
-  'Arthur',
-  'Manon',
-  'Théo',
-  'Zoé',
-  'Gabriel',
-  'Jade',
-  'Raphaël',
-  'Lina',
-  'Sacha',
-  'Alice',
-  'Noah',
-  'Rose',
-  'Éloïse',
-  'Maël',
-  'Agathe',
-  'Yanis',
-  'Mathis',
-  'Clara',
-  'Lucas',
-  'Emma',
-];
-
-const LAST_NAMES = [
-  'Bernard',
-  'Lefèvre',
-  'Moreau',
-  'Garnier',
-  'Rousseau',
-  'Fontaine',
-  'Chevalier',
-  'Blanchard',
-  'Mercier',
-  'Lambert',
-  'Faure',
-  'Girard',
-  'Dupuis',
-  'Nguyen',
-  'Perrin',
-  'Morin',
-  'Roux',
-  'Fournier',
-  'Gauthier',
-  'Barbier',
-  'Colin',
-  'Masson',
-  'Renard',
-  'Picard',
-];
-
 const ALPHABET = 'ABCDEFGHIJKLMNOPRSTUVY';
-
-function mulberry32(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function nearHomonym(name: string, random: () => number): string | undefined {
   const parts = name.split(' ');
@@ -108,7 +44,7 @@ export function buildDirectory(
   recipients: readonly string[],
   { size = DIRECTORY_SIZE, seed = 20261023 }: DirectoryOptions = {},
 ): string[] {
-  const random = mulberry32(seed);
+  const random = seeded(seed).next;
   const seen = new Set<string>();
   const entries: string[] = [];
   const add = (name: string | undefined): boolean => {
