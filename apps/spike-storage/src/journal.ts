@@ -31,7 +31,7 @@ function readSessions(store: KeyValueStore): Session[] {
 
 export class Journal {
   readonly session: Session;
-  readonly interrupted: Session | undefined;
+  interrupted: Session | undefined;
   private readonly history: Session[];
   private readonly listeners = new Set<() => void>();
   private version = 0;
@@ -56,6 +56,13 @@ export class Journal {
 
   log(name: string, detail?: string): void {
     this.session.entries.push({ at: this.now(), name, detail });
+    this.save();
+  }
+
+  clear(): void {
+    this.session.entries.length = 0;
+    this.interrupted = undefined;
+    this.history.splice(0, this.history.length, this.session);
     this.save();
   }
 

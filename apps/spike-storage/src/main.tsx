@@ -2,6 +2,10 @@ import { createRoot } from 'react-dom/client';
 import { App } from '#/app';
 import { readDevice } from '#/device';
 import { Journal } from '#/journal';
+import { SpikeDatabase } from '#/storage/db';
+import { savePhoto } from '#/storage/opfs';
+import { generatePhoto } from '#/storage/photo';
+import { Writer } from '#/storage/writer';
 import { Updater } from '#/update/register';
 import '#/styles.css';
 
@@ -17,6 +21,15 @@ const updater = new Updater(
 );
 updater.start();
 
+const db = new SpikeDatabase();
+const writer = new Writer({
+  db,
+  savePhoto,
+  makePhoto: generatePhoto,
+  log: (name, detail) => journal.log(name, detail),
+  sessionId: journal.session.id,
+});
+
 const rootElement = document.getElementById('app');
 
 if (rootElement) {
@@ -24,8 +37,9 @@ if (rootElement) {
     <App
       journal={journal}
       updater={updater}
+      writer={writer}
+      db={db}
       version={__APP_VERSION__}
-      writing={false}
     />,
   );
 }
