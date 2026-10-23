@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-import { AppBrand } from '#components/app-mark';
+import { AppBrand, AppMark } from '#components/app-mark';
+import { BrandedQr } from '#components/branded-qr';
 import { CheckDisc } from '#components/check-disc';
 import { Glow } from '#components/glow';
 import { MailIcon } from '#components/mail-icon';
@@ -14,7 +15,6 @@ import {
 import { Plane } from '#components/plane';
 import { ScanScene } from '#components/scan-scene';
 import { cn } from '#lib/tv';
-import { InstallQr, PickupQr } from '#screens/landing/landing-art';
 
 /*
  * The landing page: what someone sees on courrier.ysl.fr before installing
@@ -34,6 +34,29 @@ const CONTAINER = 'mx-auto w-full max-w-[480px] px-5 xl:max-w-[1240px]';
 
 const EYEBROW =
   'text-[12px] leading-[15px] font-semibold tracking-[1.6px] uppercase xl:text-13 xl:leading-4 xl:tracking-[2px]';
+
+/** The code that opens the app, the app mark in its centre. */
+function AppQr({
+  host,
+  size,
+  radius,
+  className,
+}: {
+  host: string;
+  size: number;
+  radius: number;
+  className?: string;
+}) {
+  return (
+    <BrandedQr
+      value={`https://${host}`}
+      size={size}
+      radius={radius}
+      logo={<AppMark size={size / 5} edge="halo" />}
+      className={className}
+    />
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Hero                                                                       */
@@ -128,7 +151,7 @@ function Hero({ host }: { host: string }) {
             Comment ça marche
           </a>
           <div className="mt-10 hidden h-40 w-[500px] gap-6 rounded-[24px] bg-white/80 p-5 ring-1 ring-black/6 ring-inset xl:flex">
-            <InstallQr size={120} radius={14} />
+            <AppQr host={host} size={120} radius={14} />
             <div className="pt-3">
               <p className="text-[19px] leading-[23px] font-semibold">
                 Scannez. Installez. C’est parti.
@@ -261,17 +284,25 @@ function NotificationCard() {
   );
 }
 
+const PICKUP_CODE = '4821';
+
 function HandoverCard() {
   return (
     <div className={cn(CARD, 'flex gap-4 p-4 xl:flex-wrap xl:gap-6 xl:p-6 xl:pb-[25px]')}>
-      <PickupQr className="xl:hidden" />
-      <InstallQr size={130} radius={16} className="hidden xl:block" />
+      <BrandedQr value={PICKUP_CODE} size={118} radius={14} className="xl:hidden" />
+      <BrandedQr
+        value={PICKUP_CODE}
+        size={130}
+        radius={16}
+        logo={<AppMark size={26} edge="halo" />}
+        className="hidden xl:block"
+      />
       <div>
         <p className="mt-1.5 text-[11px] leading-[14px] font-semibold tracking-[1.2px] text-site-subtle xl:mt-2 xl:tracking-[1.4px]">
           CODE DE RETRAIT
         </p>
         <p className="mt-1 font-mono text-34 leading-[41px] font-semibold tracking-[3px] xl:mt-1.5 xl:text-[40px] xl:leading-[48px] xl:tracking-[4px]">
-          4821
+          {PICKUP_CODE}
         </p>
         <p className="mt-[17px] flex h-[30px] w-[140px] items-center gap-1.5 rounded-[15px] bg-ios-green/16 pl-3 text-13 leading-4 font-semibold text-site-green-ink xl:mt-[18px] xl:h-8 xl:w-[150px] xl:gap-2 xl:rounded-[16px] xl:text-14 xl:leading-[17px]">
           <span className="size-2.5 rounded-full bg-ios-green" />
@@ -549,7 +580,7 @@ function Install({ host }: { host: string }) {
       <div className="relative mt-8 xl:mt-12">
         <ol className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 [scrollbar-width:none] xl:mx-auto xl:max-w-[1240px] xl:justify-between xl:gap-0 xl:overflow-visible">
           <li className="hidden h-[360px] w-[274px] shrink-0 flex-col items-center rounded-[26px] bg-white pt-8 shadow-site-raised ring-1 ring-black/8 ring-inset xl:flex">
-            <InstallQr size={200} radius={0} />
+            <AppQr host={host} size={200} radius={0} />
             <p className="mt-[30px] text-18 leading-[22px] font-bold">Scannez avec l’iPhone</p>
             <p className="mt-2 text-14 leading-[21px] text-site-muted">
               Visez-le avec l’appareil photo.
@@ -579,7 +610,7 @@ function Install({ host }: { host: string }) {
 /* Closing and footer                                                         */
 /* -------------------------------------------------------------------------- */
 
-function Closing() {
+function Closing({ host }: { host: string }) {
   return (
     <section className={cn(CONTAINER, 'mt-9 xl:mt-24')}>
       <a
@@ -603,7 +634,7 @@ function Closing() {
             <span className="block font-semibold">Scannez pour ouvrir</span>
             <span className="mt-1 block text-site-muted">sur l’iPhone →</span>
           </p>
-          <InstallQr size={140} radius={14} />
+          <AppQr host={host} size={140} radius={14} />
         </div>
       </div>
     </section>
@@ -649,7 +680,7 @@ export function LandingScreen({ host = 'courrier.ysl.fr', version = '1.0' }: Lan
         <Journey />
         <Offline />
         <Install host={host} />
-        <Closing />
+        <Closing host={host} />
       </main>
       <Footer version={version} />
     </div>
