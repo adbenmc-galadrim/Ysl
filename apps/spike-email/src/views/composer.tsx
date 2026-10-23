@@ -81,8 +81,9 @@ export function Composer({ journal, templates }: ComposerProps) {
     });
   };
 
+  const template = templates.get(composition.templateId) ?? templates.list()[0];
+
   const applyTemplate = () => {
-    const template = templates.get(composition.templateId);
     if (!template) return;
     const values = templateValues(composition.fields, composition.replyTo);
     const subject = render(template.subject, values);
@@ -120,8 +121,11 @@ export function Composer({ journal, templates }: ComposerProps) {
   };
 
   const onShare = () => {
-    if (!qr) return;
     const id = record({ target: 'share', ...baseTrial() });
+    if (!qr) {
+      journal.update(id, { outcome: qrError ?? 'QR non chargé' });
+      return;
+    }
     void shareWithQr(qr, composition.subject, composition.body).then(
       (outcome) => journal.update(id, { outcome }),
     );
@@ -186,7 +190,7 @@ export function Composer({ journal, templates }: ComposerProps) {
         <div className="row">
           <select
             aria-label="Modèle"
-            value={composition.templateId}
+            value={template?.id}
             onChange={(event) => edit({ templateId: event.target.value })}
           >
             {templates.list().map((item) => (
@@ -224,7 +228,7 @@ export function Composer({ journal, templates }: ComposerProps) {
             )}
           </div>
         </details>
-        {unknown.length > 0 && (
+        {unknown.length > 0 && composition.source.startsWith('modèle') && (
           <p className="warning">
             Variables inconnues, laissées telles quelles :{' '}
             {unknown.map((name) => `{${name}}`).join(', ')}
@@ -290,12 +294,7 @@ export function Composer({ journal, templates }: ComposerProps) {
               <small>URL {url.length.toLocaleString('fr-FR')} car.</small>
             </a>
           ))}
-          <button
-            type="button"
-            className="target"
-            disabled={!qr || !canShareFile(qr)}
-            onClick={onShare}
-          >
+          <button type="button" className="target" onClick={onShare}>
             Partager avec le QR
             <small>
               {qrError ??
@@ -311,7 +310,11 @@ export function Composer({ journal, templates }: ComposerProps) {
         <fieldset>
           <legend>Dernier essai</legend>
           <TrialSummary trial={last} />
-          <VerdictForm key={last.id} journal={journal} trial={last} />
+          <VerdictForm
+            key={`${last.id}-${last.note ?? ''}`}
+            journal={journal}
+            trial={last}
+          />
         </fieldset>
       )}
     </section>

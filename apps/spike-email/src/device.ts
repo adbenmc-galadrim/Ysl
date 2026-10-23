@@ -8,7 +8,10 @@ export function readDevice(): Device {
     userAgent: navigator.userAgent,
     standalone,
     share: typeof navigator.share === 'function',
-    canShareFiles: typeof navigator.canShare === 'function',
+    canShareFiles:
+      navigator.canShare?.({
+        files: [new File([''], 'test.png', { type: 'image/png' })],
+      }) === true,
     screen: `${screen.width}×${screen.height} @${window.devicePixelRatio}x`,
   };
 }
