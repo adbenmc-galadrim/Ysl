@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { readCapabilities, type Capabilities } from '#/capabilities';
+import { appBase } from '#/base';
+import { importFiles, loadPack } from '#/pack/pack';
+import type { PhotoSource } from '#/pack/types';
 
 function yesNo(value: boolean): string {
   return value ? 'oui' : 'non';
@@ -14,9 +17,15 @@ function gpuLabel(gpu: Capabilities['gpu']): string {
 
 export function App() {
   const [capabilities, setCapabilities] = useState<Capabilities>();
+  const [pack, setPack] = useState<PhotoSource[]>([]);
+  const [packError, setPackError] = useState<string>();
+  const [imported, setImported] = useState<PhotoSource[]>([]);
 
   useEffect(() => {
     void readCapabilities().then(setCapabilities);
+    loadPack(appBase).then(setPack, (error: unknown) =>
+      setPackError(error instanceof Error ? error.message : String(error)),
+    );
   }, []);
 
   return (
@@ -59,6 +68,27 @@ export function App() {
         ) : (
           <p className="muted">Lecture des capacités…</p>
         )}
+      </section>
+      <section aria-label="Photos">
+        <h2>Photos</h2>
+        <p data-testid="pack">
+          Pack synthétique : {packError ?? `${pack.length} photos`}
+        </p>
+        <label className="button">
+          Importer depuis la photothèque
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(event) =>
+              setImported(importFiles(event.target.files ?? []))
+            }
+          />
+        </label>
+        <p className="muted" data-testid="imported">
+          {imported.length} photo(s) importée(s)
+        </p>
       </section>
     </main>
   );

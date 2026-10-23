@@ -6,25 +6,30 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "pnpm run assets && vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "tailnet": "tailscale status >/dev/null || { echo 'Tailscale est arrêté : lancer tailscale up' >&2; exit 1; }; tailscale serve --bg 3106",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build-pack": "tsx scripts/build-pack.ts",
+    "assets": "pnpm run build-pack"
   },
   "dependencies": {
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
+    "@repo/corpus": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
