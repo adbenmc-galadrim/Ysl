@@ -7,9 +7,26 @@ import {
 } from '#/compose/draft';
 import { buildUrl, splitAddresses, TARGETS, type Target } from '#/compose/urls';
 import type { Journal, Trial } from '#/journal';
+import { canShareFile, loadQrFile, shareWithQr } from '#/share/qr';
+import {
+  render,
+  templateValues,
+  type TemplateFields,
+} from '#/templates/render';
+import type { TemplateStore } from '#/templates/store';
 import { TrialSummary, VerdictForm } from '#/views/verdict';
 
 const LEAVE_WINDOW_MS = 2_000;
+
+const FIELD_LABELS: Record<keyof TemplateFields, string> = {
+  prénom: 'Prénom',
+  nom: 'Nom',
+  code: 'Code de retrait',
+  colis: 'Colis (un par ligne)',
+  lieu: 'Lieu',
+  horaires: 'Horaires',
+  agent: 'Signature',
+};
 
 function watchLeave(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -29,16 +46,26 @@ function watchLeave(): Promise<boolean> {
 
 type ComposerProps = {
   journal: Journal;
+  templates: TemplateStore;
 };
 
-export function Composer({ journal }: ComposerProps) {
+export function Composer({ journal, templates }: ComposerProps) {
   const [composition, setComposition] = useState<Composition>(() =>
     readComposition(localStorage),
   );
   const [caseId, setCaseId] = useState(CASES[0]?.id ?? '');
   const [lastId, setLastId] = useState<string>();
+  const [unknown, setUnknown] = useState<string[]>([]);
+  const [qr, setQr] = useState<File>();
+  const [qrError, setQrError] = useState<string>();
 
   useEffect(() => saveComposition(localStorage, composition), [composition]);
+
+  useEffect(() => {
+    loadQrFile().then(setQr, (error: unknown) =>
+      setQrError(error instanceof Error ? error.message : String(error)),
+    );
+  }, []);
 
   const edit = (patch: Partial<Composition>) =>
     setComposition((current) => ({ ...current, ...patch }));
@@ -53,6 +80,23 @@ export function Composer({ journal }: ComposerProps) {
       source: chosen.id,
     });
   };
+
+  const applyTemplate = () => {
+    const template = templates.get(composition.templateId);
+    if (!template) return;
+    const values = templateValues(composition.fields, composition.replyTo);
+    const subject = render(template.subject, values);
+    const body = render(template.body, values);
+    setUnknown([...new Set([...subject.unknown, ...body.unknown])]);
+    edit({
+      subject: subject.text,
+      body: body.text,
+      source: `modèle ${template.name}`,
+    });
+  };
+
+  const editField = (name: keyof TemplateFields, value: string) =>
+    edit({ fields: { ...composition.fields, [name]: value } });
 
   const record = (trial: Omit<Trial, 'id' | 'at'>): string => {
     const id = journal.add(trial);
@@ -73,6 +117,14 @@ export function Composer({ journal }: ComposerProps) {
   const onOpen = (target: Target, url: string) => () => {
     const id = record({ target, urlLength: url.length, ...baseTrial() });
     void watchLeave().then((left) => journal.update(id, { left }));
+  };
+
+  const onShare = () => {
+    if (!qr) return;
+    const id = record({ target: 'share', ...baseTrial() });
+    void shareWithQr(qr, composition.subject, composition.body).then(
+      (outcome) => journal.update(id, { outcome }),
+    );
   };
 
   const last = journal.trials.find((trial) => trial.id === lastId);
@@ -127,6 +179,57 @@ export function Composer({ journal }: ComposerProps) {
             onChange={(event) => edit({ replyTo: event.target.value })}
           />
         </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Modèle</legend>
+        <div className="row">
+          <select
+            aria-label="Modèle"
+            value={composition.templateId}
+            onChange={(event) => edit({ templateId: event.target.value })}
+          >
+            {templates.list().map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={applyTemplate}>
+            Appliquer
+          </button>
+        </div>
+        <details>
+          <summary>Valeurs des variables</summary>
+          <div className="fields">
+            {(Object.keys(FIELD_LABELS) as (keyof TemplateFields)[]).map(
+              (name) => (
+                <label key={name}>
+                  {FIELD_LABELS[name]}
+                  {name === 'colis' ? (
+                    <textarea
+                      rows={3}
+                      value={composition.fields[name]}
+                      onChange={(event) => editField(name, event.target.value)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={composition.fields[name]}
+                      onChange={(event) => editField(name, event.target.value)}
+                    />
+                  )}
+                </label>
+              ),
+            )}
+          </div>
+        </details>
+        {unknown.length > 0 && (
+          <p className="warning">
+            Variables inconnues, laissées telles quelles :{' '}
+            {unknown.map((name) => `{${name}}`).join(', ')}
+          </p>
+        )}
       </fieldset>
 
       <fieldset>
@@ -187,6 +290,20 @@ export function Composer({ journal }: ComposerProps) {
               <small>URL {url.length.toLocaleString('fr-FR')} car.</small>
             </a>
           ))}
+          <button
+            type="button"
+            className="target"
+            disabled={!qr || !canShareFile(qr)}
+            onClick={onShare}
+          >
+            Partager avec le QR
+            <small>
+              {qrError ??
+                (qr && !canShareFile(qr)
+                  ? 'partage de fichiers indisponible'
+                  : 'feuille de partage, PNG joint')}
+            </small>
+          </button>
         </div>
       </fieldset>
 
