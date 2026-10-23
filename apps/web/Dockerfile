@@ -16,7 +16,8 @@ COPY . .
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --offline --frozen-lockfile \
       --filter @repo/web... --filter @repo/spike-camera... \
-      --filter @repo/spike-storage... --filter @repo/spike-email...
+      --filter @repo/spike-storage... --filter @repo/spike-email... \
+      --filter @repo/spike-barcode...
 
 ARG PUBLIC_APP_NAME=Courrier
 ARG PUBLIC_SERVER_URL
@@ -24,7 +25,8 @@ ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME \
     PUBLIC_SERVER_URL=$PUBLIC_SERVER_URL
 RUN pnpm --filter @repo/web build && pnpm --filter @repo/spike-camera build \
     && pnpm --filter @repo/spike-storage build \
-    && pnpm --filter @repo/spike-email build
+    && pnpm --filter @repo/spike-email build \
+    && pnpm --filter @repo/spike-barcode build
 
 FROM nginx:1.29-alpine AS runner
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
@@ -32,6 +34,7 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 COPY --from=build /app/apps/spike-camera/dist /usr/share/nginx/html/spike-camera
 COPY --from=build /app/apps/spike-storage/dist /usr/share/nginx/html/spike-storage
 COPY --from=build /app/apps/spike-email/dist /usr/share/nginx/html/spike-email
+COPY --from=build /app/apps/spike-barcode/dist /usr/share/nginx/html/spike-barcode
 EXPOSE 80
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=5 \
