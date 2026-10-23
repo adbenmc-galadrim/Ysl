@@ -6,11 +6,13 @@
     "#/*": "./src/*"
   },
   "scripts": {
+    "bench": "tsx bench/run.ts",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@repo/corpus": "workspace:*",
     "sharp": "^0.35.5",
     "zxing-wasm": "3.1.6"
   },
@@ -21,6 +23,7 @@
     "@types/node": "catalog:",
     "bwip-js": "^4.11.4",
     "eslint": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
