@@ -1,0 +1,55 @@
+# Vérifie puis déploie la branche prod sur shinseo.fr via l'API Coolify.
+# Les ressources Coolify suivent la branche prod et construisent les images sur
+# le serveur ; leur auto-deploy doit rester coupé pour ne pas déployer deux fois.
+#
+# Réglages du dépôt (Settings → Secrets and variables → Actions) :
+#   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy » seul ; le
+#                                    suivi du déploiement se fait dans Coolify)
+#   variable COOLIFY_URL             https://coolify.shinseo.fr
+#   variable COOLIFY_RESOURCE_UUIDS  UUID de l'API puis du web, séparés par une virgule
+name: Déploiement
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, types et tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint check-types test
+
+  deploy:
+    name: Déploiement Coolify
+    needs: checks
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ysl.shinseo.fr
+    env:
+      COOLIFY_URL: ${{ vars.COOLIFY_URL }}
+      COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+      RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
+    steps:
+      - name: Déclenche le déploiement
+        run: |
+          response=$(curl --silent --show-error --fail-with-body --request POST \
+            --header "Authorization: Bearer $COOLIFY_TOKEN" \
+            "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=false")
+          echo "$response" | jq .
