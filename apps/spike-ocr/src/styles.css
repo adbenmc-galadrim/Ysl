@@ -82,3 +82,85 @@ h2 {
   margin: 0;
   word-break: break-word;
 }
+
+section {
+  background: #1b1b1b;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.alert {
+  background: #4a1f1f;
+  border: 1px solid #a33;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.controls label:not(.button) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #9a9a9a;
+}
+
+.button {
+  display: inline-block;
+  font-size: 14px;
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+progress {
+  width: 100%;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 640px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 4px 8px 4px 0;
+  vertical-align: top;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.thumb {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+}
+
+.lines,
+.journal {
+  margin: 8px 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.journal {
+  list-style: none;
+  padding-left: 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
