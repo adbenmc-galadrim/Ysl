@@ -8,6 +8,20 @@
       "when": 1792626058172,
       "tag": "0000_faulty_longshot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792797711827,
+      "tag": "0001_schema_initial",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792797712199,
+      "tag": "0002_curseur_sync",
+      "breakpoints": true
     }
   ]
 }

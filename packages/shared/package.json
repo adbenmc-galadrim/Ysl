@@ -9,7 +9,8 @@
     "./env/ports": "./src/env/ports.ts",
     "./load-env": "./src/load-env.ts",
     "./logger": "./src/logger/index.ts",
-    "./i18n": "./src/i18n/index.ts"
+    "./i18n": "./src/i18n/index.ts",
+    "./id": "./src/id.ts"
   },
   "imports": {
     "#*": [
@@ -27,6 +28,7 @@
     "@t3-oss/env-core": "^0.13.1",
     "dotenv": "catalog:",
     "pino": "catalog:",
+    "uuid": "^14.0.3",
     "zod": "catalog:"
   },
   "devDependencies": {

@@ -1,0 +1,569 @@
+Project courrier {
+  database_type: 'PostgreSQL'
+  Note: '''
+  Schéma serveur de Courrier, tiré des migrations 0000 à 0002 de packages/db/drizzle.
+  Base partagée entre clients : chaque table métier porte organization_id ; les clés
+  étrangères métier sont composites (organization_id, id) et une ligne ne change
+  jamais d'organisation. Un utilisateur appartient à une organisation
+  (organization_member). Aucune photo côté serveur (D8).
+  id : UUID v7 généré par le client (vérifié, aucun défaut serveur). deleted_at :
+  suppression logique. server_xid : transaction de la dernière écriture, posée par le
+  trigger stamp_server_xid ; un pull depuis C renvoie C <= server_xid < xmin du
+  snapshot, et xmin devient le curseur suivant (aucun verrou). Les SET NULL des clés
+  composites ne vident que la colonne de référence ; aucune suppression en cascade. event est en ajout seul
+  (purge sous app.purge), handover et notification ne listent que des colis de leur
+  organisation, sync_op garde les op_id appliqués par sync.push.
+  '''
+}
+
+Table "account" {
+  "id" text [pk, not null]
+  "account_id" text [not null]
+  "provider_id" text [not null]
+  "user_id" text [not null]
+  "access_token" text
+  "refresh_token" text
+  "id_token" text
+  "access_token_expires_at" timestamp
+  "refresh_token_expires_at" timestamp
+  "scope" text
+  "password" text
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null]
+
+  Indexes {
+    user_id [type: btree, name: "account_userId_idx"]
+  }
+}
+
+Table "rate_limit" {
+  "id" text [pk, not null]
+  "key" text [not null]
+  "count" integer [not null]
+  "last_request" bigint [not null]
+
+  Indexes {
+    key [unique, name: "rate_limit_key_unique"]
+  }
+}
+
+Table "session" {
+  "id" text [pk, not null]
+  "expires_at" timestamp [not null]
+  "token" text [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null]
+  "ip_address" text
+  "user_agent" text
+  "user_id" text [not null]
+  "impersonated_by" text
+
+  Indexes {
+    token [unique, name: "session_token_unique"]
+    user_id [type: btree, name: "session_userId_idx"]
+  }
+}
+
+Table "user" {
+  "id" text [pk, not null]
+  "name" text [not null]
+  "email" text [not null]
+  "email_verified" boolean [not null, default: false]
+  "image" text
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+  "role" text
+  "banned" boolean [default: false]
+  "ban_reason" text
+  "ban_expires" timestamp
+
+  Indexes {
+    email [unique, name: "user_email_unique"]
+  }
+}
+
+Table "verification" {
+  "id" text [pk, not null]
+  "identifier" text [not null]
+  "value" text [not null]
+  "expires_at" timestamp [not null]
+  "created_at" timestamp [not null, default: `now()`]
+  "updated_at" timestamp [not null, default: `now()`]
+
+  Indexes {
+    identifier [type: btree, name: "verification_identifier_idx"]
+  }
+}
+
+Table "contact" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "name" text [not null]
+  "name_norm" text [not null]
+  "email" text
+  "created_by" text
+  "usage_count" integer [not null, default: 0]
+  "last_used_at" timestamptz
+
+  Checks {
+    `coalesce(uuid_extract_version("contact"."id"), 0) = 7` [name: 'contact_id_v7']
+    `"contact"."usage_count" >= 0` [name: 'contact_usage_count_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "contact_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "contact_organization_id_idx"]
+    (organization_id, name_norm) [type: btree, name: "contact_name_norm_idx", note: 'partiel : where deleted_at is null']
+    (organization_id, last_used_at) [type: btree, name: "contact_last_used_at_idx"]
+  }
+}
+
+Table "directory_person" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "last_name" text [not null]
+  "first_name" text [not null]
+  "name_norm" text [not null]
+  "email" text [not null]
+  "department" text
+  "site" text
+  "source" text [not null, default: 'manuel']
+  "active" boolean [not null, default: true]
+
+  Checks {
+    `coalesce(uuid_extract_version("directory_person"."id"), 0) = 7` [name: 'directory_person_id_v7']
+    `"directory_person"."source" in ('manuel', 'entra')` [name: 'directory_person_source_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "directory_person_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "directory_person_organization_id_idx"]
+    (organization_id, `lower("email")`) [type: btree, unique, name: "directory_person_email_idx", note: 'partiel : where deleted_at is null']
+    (organization_id, name_norm) [type: btree, name: "directory_person_name_norm_idx", note: 'partiel : where deleted_at is null']
+  }
+}
+
+Table "event" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "entity" text [not null]
+  "entity_id" uuid [not null]
+  "type" text [not null]
+  "actor_id" text
+  "at" timestamptz [not null]
+  "detail" jsonb
+
+  Checks {
+    `coalesce(uuid_extract_version("event"."id"), 0) = 7` [name: 'event_id_v7']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "event_cursor_idx"]
+    (entity_id, at) [type: btree, name: "event_entity_id_idx"]
+    (organization_id, at) [type: btree, name: "event_at_idx"]
+  }
+}
+
+Table "handover" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "parcel_ids" "uuid[]" [not null]
+  "person_id" uuid
+  "contact_id" uuid
+  "recipient_name" text [not null]
+  "delegate_name" text
+  "method" text [not null]
+  "agent_id" text [not null]
+  "at" timestamptz [not null]
+  "cancelled_at" timestamptz
+
+  Checks {
+    `coalesce(uuid_extract_version("handover"."id"), 0) = 7` [name: 'handover_id_v7']
+    `"handover"."method" in ('qr', 'pin', 'signature', 'manuel')` [name: 'handover_method_check']
+    `"handover"."person_id" is null or "handover"."contact_id" is null` [name: 'handover_single_recipient']
+    `btrim("handover"."recipient_name") <> ''` [name: 'handover_recipient_name_check']
+    `cardinality("handover"."parcel_ids") >= 1` [name: 'handover_parcels_check']
+    `"handover"."cancelled_at" is null or "handover"."cancelled_at" >= "handover"."at"` [name: 'handover_cancel_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "handover_cursor_idx"]
+    parcel_ids [type: gin, name: "handover_parcel_ids_idx"]
+    person_id [type: btree, name: "handover_person_id_idx", note: 'partiel : where person_id is not null']
+    contact_id [type: btree, name: "handover_contact_id_idx", note: 'partiel : where contact_id is not null']
+    (organization_id, at) [type: btree, name: "handover_at_idx"]
+  }
+}
+
+Table "pickup_code" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "person_id" uuid
+  "contact_id" uuid
+  "token_hash" text [not null]
+  "pin_hash" text [not null]
+  "expires_at" timestamptz [not null]
+  "used_at" timestamptz
+
+  Checks {
+    `coalesce(uuid_extract_version("pickup_code"."id"), 0) = 7` [name: 'pickup_code_id_v7']
+    `num_nonnulls("pickup_code"."person_id", "pickup_code"."contact_id") = 1` [name: 'pickup_code_single_recipient']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "pickup_code_cursor_idx"]
+    token_hash [type: btree, unique, name: "pickup_code_token_hash_idx"]
+    person_id [type: btree, unique, name: "pickup_code_active_person_idx", note: 'partiel : where used_at is null and deleted_at is null']
+    contact_id [type: btree, unique, name: "pickup_code_active_contact_idx", note: 'partiel : where used_at is null and deleted_at is null']
+    (organization_id, person_id) [type: btree, name: "pickup_code_person_id_idx", note: 'partiel : where person_id is not null']
+    (organization_id, contact_id) [type: btree, name: "pickup_code_contact_id_idx", note: 'partiel : where contact_id is not null']
+    (organization_id, expires_at) [type: btree, name: "pickup_code_expires_at_idx"]
+  }
+}
+
+Table "email_template" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "type" text [not null]
+  "name" text [not null]
+  "subject" text [not null]
+  "body" text [not null]
+  "is_default" boolean [not null, default: false]
+  "owner_id" text [not null]
+
+  Checks {
+    `coalesce(uuid_extract_version("email_template"."id"), 0) = 7` [name: 'email_template_id_v7']
+    `"email_template"."type" in ('avis', 'relance', 'resume_service')` [name: 'email_template_type_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "email_template_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "email_template_organization_id_idx"]
+    owner_id [type: btree, name: "email_template_owner_id_idx"]
+    (owner_id, type) [type: btree, unique, name: "email_template_default_idx", note: 'partiel : where is_default and deleted_at is null']
+  }
+}
+
+Table "notification" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "type" text [not null]
+  "person_id" uuid
+  "contact_id" uuid
+  "recipients" "text[]" [not null]
+  "cc" "text[]" [not null, default: `'{}'::text[]`]
+  "parcel_ids" "uuid[]" [not null]
+  "template_id" uuid
+  "prepared_at" timestamptz [not null]
+  "prepared_by" text [not null]
+  "sent_at" timestamptz
+
+  Checks {
+    `coalesce(uuid_extract_version("notification"."id"), 0) = 7` [name: 'notification_id_v7']
+    `"notification"."type" in ('avis', 'relance', 'resume_service')` [name: 'notification_type_check']
+    `"notification"."person_id" is null or "notification"."contact_id" is null` [name: 'notification_single_recipient']
+    `cardinality("notification"."parcel_ids") >= 1` [name: 'notification_parcels_check']
+    `cardinality("notification"."recipients") >= 1` [name: 'notification_recipients_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "notification_cursor_idx"]
+    parcel_ids [type: gin, name: "notification_parcel_ids_idx"]
+    person_id [type: btree, name: "notification_person_id_idx", note: 'partiel : where person_id is not null']
+    contact_id [type: btree, name: "notification_contact_id_idx", note: 'partiel : where contact_id is not null']
+    template_id [type: btree, name: "notification_template_id_idx", note: 'partiel : where template_id is not null']
+  }
+}
+
+Table "organization" {
+  "id" uuid [pk, not null]
+  "name" text [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+}
+
+Table "organization_member" {
+  "user_id" text [pk, not null]
+  "organization_id" uuid [not null]
+
+  Indexes {
+    (organization_id, user_id) [type: btree, unique, name: "organization_member_organization_user_idx"]
+  }
+}
+
+Table "batch" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "agent_id" text [not null]
+  "started_at" timestamptz [not null]
+  "ended_at" timestamptz
+  "parcel_count" integer [not null, default: 0]
+
+  Checks {
+    `coalesce(uuid_extract_version("batch"."id"), 0) = 7` [name: 'batch_id_v7']
+    `"batch"."parcel_count" >= 0` [name: 'batch_parcel_count_check']
+    `"batch"."ended_at" is null or "batch"."ended_at" >= "batch"."started_at"` [name: 'batch_period_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "batch_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "batch_organization_id_idx"]
+  }
+}
+
+Table "parcel" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "batch_id" uuid
+  "type" text [not null, default: 'colis']
+  "status" text [not null]
+  "carrier" text
+  "tracking" text
+  "tracking_norm" text
+  "person_id" uuid
+  "contact_id" uuid
+  "read_name" text
+  "notification_email" text
+  "department" text
+  "sender_id" uuid
+  "sender_name" text
+  "piece_n" integer
+  "piece_total" integer
+  "weight_kg" numeric(8,3)
+  "carrier_service" text
+  "reference" text
+  "location" text
+  "notes" text
+  "received_at" timestamptz [not null]
+  "received_by" text [not null]
+  "validated_at" timestamptz
+  "notified_at" timestamptz
+  "last_notified_at" timestamptz
+  "delivered_at" timestamptz
+  "delivered_by" text
+
+  Checks {
+    `coalesce(uuid_extract_version("parcel"."id"), 0) = 7` [name: 'parcel_id_v7']
+    `"parcel"."type" in ('colis', 'recommande', 'sans_suivi')` [name: 'parcel_type_check']
+    `"parcel"."status" in ('a_completer', 'recu', 'notifie', 'remis', 'retourne')` [name: 'parcel_status_check']
+    `"parcel"."person_id" is null or "parcel"."contact_id" is null` [name: 'parcel_single_recipient']
+    `("parcel"."status" = 'remis') = ("parcel"."delivered_at" is not null and "parcel"."delivered_by" is not null)` [name: 'parcel_delivery_check']
+    `("parcel"."piece_n" is null or "parcel"."piece_n" >= 1) and ("parcel"."piece_total" is null or ("parcel"."piece_total" >= 1 and ("parcel"."piece_n" is null or "parcel"."piece_n" <= "parcel"."piece_total")))` [name: 'parcel_pieces_check']
+    `"parcel"."weight_kg" is null or "parcel"."weight_kg" >= 0` [name: 'parcel_weight_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "parcel_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "parcel_organization_id_idx"]
+    (organization_id, tracking_norm) [type: btree, name: "parcel_tracking_norm_idx", note: 'partiel : where tracking_norm is not null']
+    (organization_id, status, received_at) [type: btree, name: "parcel_open_status_idx", note: 'partiel : where deleted_at is null and status in (\'a_completer\', \'recu\', \'notifie\')']
+    (organization_id, `coalesce("last_notified_at","notified_at")`) [type: btree, name: "parcel_overdue_idx", note: 'partiel : where deleted_at is null and status = \'notifie\'']
+    batch_id [type: btree, name: "parcel_batch_id_idx", note: 'partiel : where batch_id is not null']
+    person_id [type: btree, name: "parcel_person_id_idx", note: 'partiel : where person_id is not null']
+    contact_id [type: btree, name: "parcel_contact_id_idx", note: 'partiel : where contact_id is not null']
+    sender_id [type: btree, name: "parcel_sender_id_idx", note: 'partiel : where sender_id is not null']
+    (organization_id, delivered_at) [type: btree, name: "parcel_delivered_at_idx", note: 'partiel : where delivered_at is not null']
+  }
+}
+
+Table "sender" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "display_name" text [not null]
+  "name_norm" text [not null]
+  "address" text
+  "seen_count" integer [not null, default: 0]
+  "last_seen_at" timestamptz
+
+  Checks {
+    `coalesce(uuid_extract_version("sender"."id"), 0) = 7` [name: 'sender_id_v7']
+    `"sender"."seen_count" >= 0` [name: 'sender_seen_count_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "sender_cursor_idx"]
+    (organization_id, id) [type: btree, unique, name: "sender_organization_id_idx"]
+    (organization_id, name_norm) [type: btree, name: "sender_name_norm_idx", note: 'partiel : where deleted_at is null']
+  }
+}
+
+Table "sender_account" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "carrier" text [not null]
+  "account_number" text [not null]
+  "sender_id" uuid [not null]
+  "confirmations" integer [not null, default: 0]
+
+  Checks {
+    `coalesce(uuid_extract_version("sender_account"."id"), 0) = 7` [name: 'sender_account_id_v7']
+    `"sender_account"."confirmations" >= 0` [name: 'sender_account_confirmations_check']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "sender_account_cursor_idx"]
+    (organization_id, `lower("carrier")`, `upper(regexp_replace("account_number",'[[:space:]]','','g'))`) [type: btree, unique, name: "sender_account_carrier_number_idx", note: 'partiel : where deleted_at is null']
+    sender_id [type: btree, name: "sender_account_sender_id_idx"]
+  }
+}
+
+Table "setting" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "key" text [not null]
+  "value" jsonb [not null]
+  "updated_by" text
+
+  Checks {
+    `coalesce(uuid_extract_version("setting"."id"), 0) = 7` [name: 'setting_id_v7']
+  }
+
+  Indexes {
+    (organization_id, server_xid, id) [type: btree, name: "setting_cursor_idx"]
+    (organization_id, key) [type: btree, unique, name: "setting_key_idx", note: 'partiel : where deleted_at is null']
+  }
+}
+
+Table "sync_op" {
+  "organization_id" uuid [not null]
+  "op_id" uuid [not null]
+  "user_id" text [not null]
+  "entity" text [not null]
+  "entity_id" uuid [not null]
+  "status" smallint [not null]
+  "applied_at" timestamptz [not null, default: `now()`]
+
+  Checks {
+    `"sync_op"."entity" in ('directory_person', 'contact', 'sender', 'sender_account', 'batch', 'parcel', 'email_template', 'notification', 'pickup_code', 'handover', 'event', 'setting')` [name: 'sync_op_entity_check']
+  }
+
+  Indexes {
+    (organization_id, op_id) [pk, name: "sync_op_organization_id_op_id_pk"]
+    applied_at [type: btree, name: "sync_op_applied_at_idx"]
+  }
+}
+
+Ref "account_user_id_user_id_fk":"user"."id" <? "account"."user_id" [update: no action, delete: cascade]
+
+Ref "session_user_id_user_id_fk":"user"."id" <? "session"."user_id" [update: no action, delete: cascade]
+
+Ref "contact_organization_id_organization_id_fk":"organization"."id" <? "contact"."organization_id" [update: no action, delete: no action]
+
+Ref "directory_person_organization_id_organization_id_fk":"organization"."id" <? "directory_person"."organization_id" [update: no action, delete: no action]
+
+Ref "event_organization_id_organization_id_fk":"organization"."id" <? "event"."organization_id" [update: no action, delete: no action]
+
+Ref "handover_organization_id_organization_id_fk":"organization"."id" <? "handover"."organization_id" [update: no action, delete: no action]
+
+Ref "pickup_code_organization_id_organization_id_fk":"organization"."id" <? "pickup_code"."organization_id" [update: no action, delete: no action]
+
+Ref "email_template_organization_id_organization_id_fk":"organization"."id" <? "email_template"."organization_id" [update: no action, delete: no action]
+
+Ref "notification_organization_id_organization_id_fk":"organization"."id" <? "notification"."organization_id" [update: no action, delete: no action]
+
+Ref "organization_member_user_id_user_id_fk":"user"."id" <? "organization_member"."user_id" [update: no action, delete: cascade]
+
+Ref "organization_member_organization_id_organization_id_fk":"organization"."id" <? "organization_member"."organization_id" [update: no action, delete: no action]
+
+Ref "batch_organization_id_organization_id_fk":"organization"."id" <? "batch"."organization_id" [update: no action, delete: no action]
+
+Ref "parcel_organization_id_organization_id_fk":"organization"."id" <? "parcel"."organization_id" [update: no action, delete: no action]
+
+Ref "sender_organization_id_organization_id_fk":"organization"."id" <? "sender"."organization_id" [update: no action, delete: no action]
+
+Ref "sender_account_organization_id_organization_id_fk":"organization"."id" <? "sender_account"."organization_id" [update: no action, delete: no action]
+
+Ref "setting_organization_id_organization_id_fk":"organization"."id" <? "setting"."organization_id" [update: no action, delete: no action]
+
+Ref "sync_op_organization_id_organization_id_fk":"organization"."id" <? "sync_op"."organization_id" [update: no action, delete: no action]
+
+Ref "contact_created_by_fk":"organization_member".("organization_id", "user_id") ?<? "contact".("organization_id", "created_by") [delete: no action]
+
+Ref "sender_account_sender_id_fk":"sender".("organization_id", "id") <? "sender_account".("organization_id", "sender_id") [delete: no action]
+
+Ref "batch_agent_id_fk":"organization_member".("organization_id", "user_id") <? "batch".("organization_id", "agent_id") [delete: no action]
+
+Ref "parcel_batch_id_fk":"batch".("organization_id", "id") ?<? "parcel".("organization_id", "batch_id") [delete: no action]
+
+Ref "parcel_person_id_fk":"directory_person".("organization_id", "id") ?<? "parcel".("organization_id", "person_id") [delete: set null]
+
+Ref "parcel_contact_id_fk":"contact".("organization_id", "id") ?<? "parcel".("organization_id", "contact_id") [delete: set null]
+
+Ref "parcel_sender_id_fk":"sender".("organization_id", "id") ?<? "parcel".("organization_id", "sender_id") [delete: set null]
+
+Ref "parcel_received_by_fk":"organization_member".("organization_id", "user_id") <? "parcel".("organization_id", "received_by") [delete: no action]
+
+Ref "parcel_delivered_by_fk":"organization_member".("organization_id", "user_id") ?<? "parcel".("organization_id", "delivered_by") [delete: no action]
+
+Ref "email_template_owner_id_fk":"organization_member".("organization_id", "user_id") <? "email_template".("organization_id", "owner_id") [delete: no action]
+
+Ref "notification_person_id_fk":"directory_person".("organization_id", "id") ?<? "notification".("organization_id", "person_id") [delete: set null]
+
+Ref "notification_contact_id_fk":"contact".("organization_id", "id") ?<? "notification".("organization_id", "contact_id") [delete: set null]
+
+Ref "notification_template_id_fk":"email_template".("organization_id", "id") ?<? "notification".("organization_id", "template_id") [delete: set null]
+
+Ref "notification_prepared_by_fk":"organization_member".("organization_id", "user_id") <? "notification".("organization_id", "prepared_by") [delete: no action]
+
+Ref "pickup_code_person_id_fk":"directory_person".("organization_id", "id") ?<? "pickup_code".("organization_id", "person_id") [delete: no action]
+
+Ref "pickup_code_contact_id_fk":"contact".("organization_id", "id") ?<? "pickup_code".("organization_id", "contact_id") [delete: no action]
+
+Ref "handover_person_id_fk":"directory_person".("organization_id", "id") ?<? "handover".("organization_id", "person_id") [delete: set null]
+
+Ref "handover_contact_id_fk":"contact".("organization_id", "id") ?<? "handover".("organization_id", "contact_id") [delete: set null]
+
+Ref "handover_agent_id_fk":"organization_member".("organization_id", "user_id") <? "handover".("organization_id", "agent_id") [delete: no action]
+
+Ref "event_actor_id_fk":"organization_member".("organization_id", "user_id") ?<? "event".("organization_id", "actor_id") [delete: no action]
+
+Ref "setting_updated_by_fk":"organization_member".("organization_id", "user_id") ?<? "setting".("organization_id", "updated_by") [delete: no action]
+
+Ref "sync_op_user_id_fk":"organization_member".("organization_id", "user_id") <? "sync_op".("organization_id", "user_id") [delete: no action]
