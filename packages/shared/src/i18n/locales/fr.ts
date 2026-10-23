@@ -33,4 +33,13 @@ export const fr = {
   'home.status.down': 'Indisponible',
   'home.status.unreachable': 'Injoignable',
   'home.status.retry': 'Actualiser',
+  'install.title': 'Installez l’app',
+  'install.description':
+    'Elle fonctionnera sans réseau et gardera vos colis en mémoire. Sans installation, Safari peut effacer les données après 7 jours.',
+  'install.step.share': '1. Touchez Partager',
+  'install.step.shareHint': 'en bas de Safari',
+  'install.step.add': '2. Choisissez «\u00a0Sur l’écran d’accueil\u00a0»',
+  'install.step.addHint': 'puis touchez Ajouter',
+  'install.step.open': '3. Ouvrez {{appName}}',
+  'install.step.openHint': 'depuis la nouvelle icône',
 } as const;

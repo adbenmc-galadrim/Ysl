@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "bwip-js": "^4.11.4",
-    "sharp": "^0.35.5",
+    "sharp": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {

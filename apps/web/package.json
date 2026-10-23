@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "generate-routes": "tsr generate",
+    "generate-icons": "tsx scripts/generate-icons.ts",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run"
@@ -41,8 +42,12 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
+    "sharp": "catalog:",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "catalog:"
+    "vite-plugin-pwa": "catalog:",
+    "vitest": "catalog:",
+    "workbox-window": "catalog:"
   }
 }
