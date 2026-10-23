@@ -1,20 +1,19 @@
 import type { ReactNode } from 'react';
 
 import { AppBrand } from '#components/app-mark';
+import { CheckDisc } from '#components/check-disc';
+import { MailIcon } from '#components/mail-icon';
+import { ParcelThumb, type KraftTone } from '#components/parcel-thumb';
+import { Plane } from '#components/plane';
 import { cn } from '#lib/tv';
 import {
-  CheckDisc,
   HomeScreenPhone,
   InstallQr,
-  MailIcon,
   ParcelListPhone,
-  ParcelThumb,
   PickupQr,
-  Plane,
   SafariPhone,
   ScanScene,
   ShareSheetPhone,
-  type KraftTone,
 } from '#screens/landing/landing-art';
 
 /*

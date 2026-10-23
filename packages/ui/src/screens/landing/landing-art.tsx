@@ -1,6 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 import { AppMark } from '#components/app-mark';
+import { CheckDisc } from '#components/check-disc';
+import { ParcelThumb } from '#components/parcel-thumb';
 import { cn } from '#lib/tv';
 
 /*
@@ -329,82 +331,6 @@ export function ScanScene({
   );
 }
 
-/** The check in a green disc, used on the read card and the photos. */
-export function CheckDisc({
-  size,
-  d,
-  stroke,
-  className,
-}: {
-  size: number;
-  d: string;
-  stroke: number;
-  className?: string;
-}) {
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      width={size}
-      height={size}
-      className={cn('shrink-0', className)}
-    >
-      <circle cx={size / 2} cy={size / 2} r={size / 2} className="fill-ios-green" />
-      <path
-        d={d}
-        className="fill-none stroke-white"
-        strokeWidth={stroke}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Parcel pictures                                                            */
-/* -------------------------------------------------------------------------- */
-
-const KRAFT = {
-  kraft: 'bg-kraft',
-  mid: 'bg-kraft-mid',
-  light: 'bg-kraft-light',
-  deep: 'bg-kraft-deep',
-  dark: 'bg-kraft-dark',
-} as const;
-
-export type KraftTone = keyof typeof KRAFT;
-
-/** A list thumbnail: a square of kraft with its paper label. */
-export function ParcelThumb({
-  size,
-  tone,
-  className,
-}: {
-  size: 40 | 44;
-  tone: KraftTone;
-  className?: string;
-}) {
-  const small = size === 40;
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'relative block shrink-0',
-        small ? 'size-10 rounded-[9px]' : 'size-11 rounded-[10px]',
-        KRAFT[tone],
-        className,
-      )}
-    >
-      <span
-        className={cn(
-          'absolute rounded-[2px] bg-paper',
-          small ? 'top-2.5 left-2 h-4 w-6' : 'top-2.5 left-[9px] h-[18px] w-[26px]',
-        )}
-      />
-    </span>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /* QR codes                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -539,59 +465,6 @@ export function PickupQr({ className }: { className?: string }) {
         <rect key={`${x}-${y}`} x={x} y={y} width={7} height={7} rx={1.5} className="fill-black" />
       ))}
     </svg>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Icons drawn in the mockups                                                 */
-/* -------------------------------------------------------------------------- */
-
-const PLANE = {
-  24: 'M12,0L15,10L24,14L24,18L15,15L14,22L17,25L17,27L12,26L7,27L7,25L10,22L9,15L0,18L0,14L9,10Z',
-  28: 'M14,0L17.5,12L28,17L28,21.5L17.5,18L16.5,26L20,29.5L20,32L14,30.5L8,32L8,29.5L11.5,26L10.5,18L0,21.5L0,17L10.5,12Z',
-  16: 'M8,0L10,7L16,10L16,12.5L10,10.5L9.5,15L11.5,17L11.5,18.5L8,17.5L4.5,18.5L4.5,17L6.5,15L6,10.5L0,12.5L0,10L6,7Z',
-} as const;
-
-const PLANE_BOX = { 24: [24, 27], 28: [28, 32], 16: [16, 18.5] } as const;
-
-/** The flight-mode plane, at the three sizes the page draws it. */
-export function Plane({
-  size,
-  className,
-}: {
-  size: keyof typeof PLANE;
-  className?: string;
-}) {
-  const [w, h] = PLANE_BOX[size];
-  return (
-    <svg aria-hidden="true" viewBox={`0 0 ${w} ${h}`} width={w} height={h} className={className}>
-      <path d={PLANE[size]} />
-    </svg>
-  );
-}
-
-/** Mail's icon: a blue gradient square with a white envelope. */
-export function MailIcon({ size }: { size: 38 | 40 }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'flex shrink-0 items-center justify-center bg-linear-to-b from-site-mail to-site-mail-2',
-        size === 38 ? 'size-[38px] rounded-[9px]' : 'size-10 rounded-[10px]',
-      )}
-    >
-      <svg
-        viewBox="0 0 20 16"
-        width={20}
-        height={16}
-        className="overflow-visible fill-none stroke-white"
-        strokeWidth={1.8}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M0,0L20,0L20,16L0,16ZM0,0L10,8L20,0" />
-      </svg>
-    </span>
   );
 }
 
