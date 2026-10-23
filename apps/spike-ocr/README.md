@@ -112,4 +112,8 @@ retirer le bloc `/spike-ocr/` ; dans `pnpm-workspace.yaml`, retirer `protobufjs`
 `tesseract.js` de `allowBuilds` ; dans `.gitignore`, retirer les trois lignes
 `apps/spike-ocr/public/…`. Puis `pnpm install` pour le lockfile.
 
+Restent en place : `playwright` au catalog de `pnpm-workspace.yaml` (aussi utilisé par
+`packages/ui`) et les `exports` de `packages/corpus` (`./schema`, `./random`, `./identities`),
+sans effet une fois le spike retiré.
+
 Le spike partage l'origine de l'app : ses clés `localStorage` sont préfixées `spike-ocr:`.
