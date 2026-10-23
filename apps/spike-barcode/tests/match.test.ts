@@ -59,6 +59,19 @@ describe('matchTracking', () => {
     expect(recomposeUps('[)>\u001d01\u001dUPSN')).toEqual([]);
   });
 
+  it('recomposes a UPS tracking from 1Z + 8 characters and the service class', () => {
+    const maxi =
+      '[)>\u001e01\u001d9612345 \u001d276\u001d068\u001d1Z12345678\u001dUPSN\u001dAB12C3\u001d062\u001d\u001d1/1\u001d4\u001dN\u001d\u001dVILLE\u001d\u001e\u0004';
+    expect(recomposeUps(maxi)).toEqual(['1ZAB12C36812345678']);
+    expect(
+      matchTracking('1ZAB12C36812345678', [sym('MaxiCode', maxi)], 'ups'),
+    ).toMatchObject({ status: 'read', rule: 'ups-recomposed' });
+    expect(
+      matchTracking('1ZAB12C30112345678', [sym('MaxiCode', maxi)], 'ups')
+        .status,
+    ).toBe('code-sans-tracking');
+  });
+
   it('reports a code without tracking, and no code', () => {
     expect(
       matchTracking('XA123456789FR', [sym('Code128', '421250750011')]),
