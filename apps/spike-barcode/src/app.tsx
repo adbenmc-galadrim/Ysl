@@ -78,7 +78,7 @@ export function App({ journal, camera, decoder }: AppProps) {
   const [view, setView] = useState<View>('scan');
   const [carrier, setCarrier] = useState<string>('other');
   const [forceMaxiCode, setForceMaxiCode] = useState(false);
-  const [exhaustive, setExhaustive] = useState(false);
+  const [exhaustive, setExhaustive] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [lastId, setLastId] = useState<string>();
@@ -271,7 +271,7 @@ export function App({ journal, camera, decoder }: AppProps) {
           <ResultPanel
             trial={last}
             onVerdict={(verdict) =>
-              journal.updateTrial(last.id, { verdict, carrier: last.carrier })
+              journal.updateTrial(last.id, { verdict, carrier })
             }
             onNote={(note) => journal.updateTrial(last.id, { note })}
           />
