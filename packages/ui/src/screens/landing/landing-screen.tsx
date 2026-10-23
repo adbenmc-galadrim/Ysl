@@ -4,17 +4,16 @@ import { AppBrand } from '#components/app-mark';
 import { CheckDisc } from '#components/check-disc';
 import { MailIcon } from '#components/mail-icon';
 import { ParcelThumb, type KraftTone } from '#components/parcel-thumb';
+import {
+  HomeScreenPhone,
+  ParcelListPhone,
+  SafariPhone,
+  ShareSheetPhone,
+} from '#components/phone-mockup';
 import { Plane } from '#components/plane';
 import { ScanScene } from '#components/scan-scene';
 import { cn } from '#lib/tv';
-import {
-  HomeScreenPhone,
-  InstallQr,
-  ParcelListPhone,
-  PickupQr,
-  SafariPhone,
-  ShareSheetPhone,
-} from '#screens/landing/landing-art';
+import { InstallQr, PickupQr } from '#screens/landing/landing-art';
 
 /*
  * The landing page: what someone sees on courrier.ysl.fr before installing

@@ -53,6 +53,7 @@ export * from '#components/parcel-row';
 export * from '#components/parcel-section';
 export * from '#components/parcel-thumb';
 export * from '#components/person-option';
+export * from '#components/phone-mockup';
 export * from '#components/photo-picker';
 export * from '#components/pickup-code';
 export * from '#components/piece-dots';
