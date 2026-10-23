@@ -98,6 +98,16 @@ const preview: Preview = {
           styles: { width: '744px', height: '1133px' },
           type: 'tablet',
         },
+        landingPhone: {
+          name: 'Landing, téléphone (maquette 390 px)',
+          styles: { width: '390px', height: '844px' },
+          type: 'mobile',
+        },
+        landingDesktop: {
+          name: 'Landing, ordinateur (maquette 1440 px)',
+          styles: { width: '1440px', height: '900px' },
+          type: 'desktop',
+        },
         desktop: {
           name: 'Poste ordinateur',
           styles: { width: '1280px', height: '800px' },
