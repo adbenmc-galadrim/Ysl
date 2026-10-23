@@ -1,7 +1,11 @@
 import { cn } from '#lib/tv';
 
+export type MailIconProps = {
+  size: 38 | 40;
+};
+
 /** Mail's icon: a blue gradient square with a white envelope. */
-export function MailIcon({ size }: { size: 38 | 40 }) {
+export function MailIcon({ size }: MailIconProps) {
   return (
     <span
       aria-hidden="true"

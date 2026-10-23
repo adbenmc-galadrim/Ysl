@@ -182,6 +182,12 @@ const READ_CARD = {
 
 const CARD_CHECK = 'M10,18L16,24L27,12';
 
+export type ScanSceneProps = {
+  /** `phone` for the 390 px layout, `desk` for the desktop one. */
+  size: Size;
+  className?: string;
+};
+
 /**
  * The room the camera films: a parcel on a desk, its barcode just read. The
  * room is bright on purpose — the page is white and the picture dissolves
@@ -189,12 +195,6 @@ const CARD_CHECK = 'M10,18L16,24L27,12';
  * room runs edge to edge whatever the width; what is in it keeps the 390 px
  * stage of the mockup, centred.
  */
-export type ScanSceneProps = {
-  /** `phone` for the 390 px layout, `desk` for the desktop one. */
-  size: Size;
-  className?: string;
-};
-
 export function ScanScene({ size, className }: ScanSceneProps) {
   const s = SCENE[size];
   const card = READ_CARD[size];

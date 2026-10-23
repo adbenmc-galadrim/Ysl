@@ -10,16 +10,14 @@ const KRAFT = {
 
 export type KraftTone = keyof typeof KRAFT;
 
-/** A list thumbnail: a square of kraft with its paper label. */
-export function ParcelThumb({
-  size,
-  tone,
-  className,
-}: {
+export type ParcelThumbProps = {
   size: 40 | 44;
   tone: KraftTone;
   className?: string;
-}) {
+};
+
+/** A list thumbnail: a square of kraft with its paper label. */
+export function ParcelThumb({ size, tone, className }: ParcelThumbProps) {
   const small = size === 40;
   return (
     <span

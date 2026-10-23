@@ -147,8 +147,12 @@ const LIST_PARCELS = [
   { name: 'Inès Garnier', meta: 'RH · hier', tone: 'dark', status: 'bg-ios-orange-light' },
 ] as const;
 
+export type ParcelListPhoneProps = {
+  className?: string;
+};
+
 /** The parcel list of the app, on the phone that floats over the hero. */
-export function ParcelListPhone({ className }: { className?: string }) {
+export function ParcelListPhone({ className }: ParcelListPhoneProps) {
   return (
     <div
       aria-hidden="true"

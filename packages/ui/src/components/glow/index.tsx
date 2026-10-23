@@ -16,12 +16,6 @@ function erf(x: number) {
 const blurred = (a: number, d: number, sigma: number) =>
   0.5 * (erf((a - d) / (sigma * Math.SQRT2)) + erf((a + d) / (sigma * Math.SQRT2)));
 
-/**
- * A soft colour bloom behind a section: Penpot's blurred ellipse, drawn as
- * a radial gradient. A CSS blur filter would do the same at runtime, but on
- * a layer this large it costs a full-screen repaint on scroll — and headless
- * Chrome renders it unblurred. The colour comes from the text colour.
- */
 export type GlowProps = {
   /** The ellipse as drawn in Penpot, before its blur. */
   x: number;
@@ -34,6 +28,12 @@ export type GlowProps = {
   className: string;
 };
 
+/**
+ * A soft colour bloom behind a section: Penpot's blurred ellipse, drawn as
+ * a radial gradient. A CSS blur filter would do the same at runtime, but on
+ * a layer this large it costs a full-screen repaint on scroll — and headless
+ * Chrome renders it unblurred. The colour comes from the text colour.
+ */
 export function Glow({ x, y, w, h, alpha, sigma, className }: GlowProps) {
   const a = w / 2;
   const b = h / 2;

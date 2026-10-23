@@ -6,14 +6,13 @@ const PLANE = {
 
 const PLANE_BOX = { 24: [24, 27], 28: [28, 32], 16: [16, 18.5] } as const;
 
-/** The flight-mode plane, at the three sizes the page draws it. */
-export function Plane({
-  size,
-  className,
-}: {
+export type PlaneProps = {
   size: keyof typeof PLANE;
   className?: string;
-}) {
+};
+
+/** The flight-mode plane, at the three sizes the page draws it. */
+export function Plane({ size, className }: PlaneProps) {
   const [w, h] = PLANE_BOX[size];
   return (
     <svg aria-hidden="true" viewBox={`0 0 ${w} ${h}`} width={w} height={h} className={className}>
