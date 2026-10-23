@@ -74,7 +74,7 @@ compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localS
    égal aux colis attendus du registre), aucune perte (orphelines notées).
 6. **Écrire 100 colis** et, vers le milieu, **tuer l'app**. La relancer : « Écriture
    interrompue » attendu. Contrôle : colis présents égal aux colis attendus (registre),
-   aucune perte, orphelines notées (au plus une, la photo de l'écriture coupée).
+   aucune perte, orphelines notées (au plus une de plus qu'à l'étape 5 : la photo de l'écriture coupée).
 7. Couper le mode avion. Noter la version, puis demander la v2 à l'agent et attendre son
    « déployé ». Passer sur une autre app, revenir : bandeau attendu ; noter le délai
    (`detection-delay` dans le journal). **Mettre à jour** : la version change, contrôle
