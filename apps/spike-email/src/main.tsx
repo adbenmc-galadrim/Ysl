@@ -6,6 +6,7 @@ import { TemplateStore } from '#/templates/store';
 import '#/styles.css';
 
 const journal = new Journal(localStorage, readDevice());
+journal.markLoad();
 const templates = new TemplateStore(localStorage);
 
 const rootElement = document.getElementById('app');

@@ -54,7 +54,6 @@ export function Composer({ journal, templates }: ComposerProps) {
     readComposition(localStorage),
   );
   const [caseId, setCaseId] = useState(CASES[0]?.id ?? '');
-  const [lastId, setLastId] = useState<string>();
   const [unknown, setUnknown] = useState<string[]>([]);
   const [qr, setQr] = useState<File>();
   const [qrError, setQrError] = useState<string>();
@@ -101,7 +100,6 @@ export function Composer({ journal, templates }: ComposerProps) {
 
   const record = (trial: Omit<Trial, 'id' | 'at'>): string => {
     const id = journal.add(trial);
-    setLastId(id);
     return id;
   };
 
@@ -131,7 +129,7 @@ export function Composer({ journal, templates }: ComposerProps) {
     );
   };
 
-  const last = journal.trials.find((trial) => trial.id === lastId);
+  const last = journal.trials.at(-1);
   const urls = TARGETS.map(({ target, label }) => ({
     target,
     label,
@@ -309,7 +307,7 @@ export function Composer({ journal, templates }: ComposerProps) {
       {last && (
         <fieldset>
           <legend>Dernier essai</legend>
-          <TrialSummary trial={last} />
+          <TrialSummary trial={last} reloaded={journal.reloadedAfter(last)} />
           <VerdictForm
             key={`${last.id}-${last.note ?? ''}`}
             journal={journal}

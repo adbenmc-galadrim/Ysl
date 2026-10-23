@@ -21,22 +21,26 @@ export type Device = Record<string, string | number | boolean>;
 
 export type KeyValueStore = Pick<Storage, 'getItem' | 'setItem'>;
 
-type Saved = { trials: Trial[] };
+type Saved = { trials: Trial[]; loads: number[] };
 
 const STORAGE_KEY = 'spike-email:journal';
 
-function readTrials(store: KeyValueStore): Trial[] {
+function readSaved(store: KeyValueStore): Saved {
   try {
     const raw = store.getItem(STORAGE_KEY);
     const parsed = (raw ? JSON.parse(raw) : {}) as Partial<Saved> | null;
-    return Array.isArray(parsed?.trials) ? parsed.trials : [];
+    return {
+      trials: Array.isArray(parsed?.trials) ? parsed.trials : [],
+      loads: Array.isArray(parsed?.loads) ? parsed.loads : [],
+    };
   } catch {
-    return [];
+    return { trials: [], loads: [] };
   }
 }
 
 export class Journal {
   private items: Trial[];
+  private loadedAt: number[];
   private readonly listeners = new Set<() => void>();
   private version = 0;
   private saveFailed = false;
@@ -46,11 +50,26 @@ export class Journal {
     readonly device: Device,
     private readonly now: () => number = Date.now,
   ) {
-    this.items = readTrials(store);
+    const saved = readSaved(store);
+    this.items = saved.trials;
+    this.loadedAt = saved.loads;
   }
 
   get trials(): readonly Trial[] {
     return this.items;
+  }
+
+  get loads(): readonly number[] {
+    return this.loadedAt;
+  }
+
+  markLoad(): void {
+    this.loadedAt = [...this.loadedAt, this.now()];
+    this.save();
+  }
+
+  reloadedAfter(trial: Trial): boolean {
+    return this.loadedAt.some((at) => at > trial.at);
   }
 
   get notSaved(): boolean {
@@ -74,11 +93,12 @@ export class Journal {
 
   clear(): void {
     this.items = [];
+    this.loadedAt = [];
     this.save();
   }
 
   toJSON() {
-    return { device: this.device, trials: this.items };
+    return { device: this.device, loads: this.loadedAt, trials: this.items };
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -90,7 +110,10 @@ export class Journal {
 
   private save(): void {
     try {
-      this.store.setItem(STORAGE_KEY, JSON.stringify({ trials: this.items }));
+      this.store.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ trials: this.items, loads: this.loadedAt }),
+      );
       this.saveFailed = false;
     } catch {
       this.saveFailed = true;

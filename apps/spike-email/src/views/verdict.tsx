@@ -17,7 +17,13 @@ export function clock(at: number): string {
   return new Date(at).toLocaleTimeString('fr-FR');
 }
 
-export function TrialSummary({ trial }: { trial: Trial }) {
+export function TrialSummary({
+  trial,
+  reloaded,
+}: {
+  trial: Trial;
+  reloaded: boolean;
+}) {
   const left =
     trial.left === undefined
       ? ''
@@ -32,6 +38,7 @@ export function TrialSummary({ trial }: { trial: Trial }) {
       {trial.urlLength === undefined ? '' : ` · URL ${trial.urlLength}`}
       {left}
       {trial.outcome ? ` · ${trial.outcome}` : ''}
+      {reloaded ? ' · page rechargée ensuite' : ''}
     </p>
   );
 }

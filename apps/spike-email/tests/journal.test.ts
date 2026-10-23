@@ -52,8 +52,26 @@ describe('Journal', () => {
 
     expect(exported).toEqual({
       device: { standalone: true },
+      loads: [],
       trials: [{ id: '1-1', at: 1, ...trial }],
     });
+  });
+
+  it('tells that iOS reloaded the page after a trial', () => {
+    const store = memoryStore();
+    let now = 1;
+    const journal = new Journal(store, {}, () => now);
+    journal.markLoad();
+    now = 2;
+    journal.add(trial);
+    now = 3;
+
+    const reloaded = new Journal(store, {}, () => now);
+    reloaded.markLoad();
+
+    expect(reloaded.loads).toEqual([1, 3]);
+    expect(reloaded.reloadedAfter(reloaded.trials[0]!)).toBe(true);
+    expect(journal.reloadedAfter(journal.trials[0]!)).toBe(false);
   });
 
   it('flags a journal the browser refused to save', () => {

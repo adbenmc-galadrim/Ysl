@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { exportJournal } from '#/export';
 import type { Journal } from '#/journal';
-import { TrialSummary, VerdictForm } from '#/views/verdict';
+import { clock, TrialSummary, VerdictForm } from '#/views/verdict';
 
 export function JournalView({ journal }: { journal: Journal }) {
   const [status, setStatus] = useState<string>();
@@ -29,6 +29,11 @@ export function JournalView({ journal }: { journal: Journal }) {
           </div>
         ))}
       </dl>
+      <p className="status">
+        Chargements de la page : {journal.loads.length}
+        {journal.loads.length > 0 &&
+          ` (dernier à ${clock(journal.loads[journal.loads.length - 1] ?? 0)})`}
+      </p>
       {journal.notSaved && (
         <p className="warning">
           Le journal n’a pas pu être enregistré : l’exporter avant de quitter.
@@ -53,7 +58,10 @@ export function JournalView({ journal }: { journal: Journal }) {
       <ol className="trials">
         {trials.map((trial) => (
           <li key={trial.id}>
-            <TrialSummary trial={trial} />
+            <TrialSummary
+              trial={trial}
+              reloaded={journal.reloadedAfter(trial)}
+            />
             <VerdictForm
               key={trial.note ?? ''}
               journal={journal}
