@@ -38,6 +38,11 @@ function htmlWording(appName: string): Plugin {
           children: appName,
           injectTo: 'head-prepend',
         },
+        {
+          tag: 'meta',
+          attrs: { name: 'apple-mobile-web-app-title', content: appName },
+          injectTo: 'head',
+        },
       ],
     }),
   };
@@ -84,7 +89,28 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
-        manifest: false,
+        manifest: {
+          name: appName,
+          short_name: appName,
+          lang: DEFAULT_LOCALE,
+          start_url: '/',
+          scope: '/',
+          display: 'standalone',
+          orientation: 'portrait',
+          background_color: '#ffffff',
+          theme_color: '#ffffff',
+          icons: [
+            { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+            {
+              src: '/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+            { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+          ],
+        },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
           globIgnores: ['version.json'],
