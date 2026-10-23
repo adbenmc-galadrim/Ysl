@@ -11,6 +11,8 @@ export type UpdateState = {
   lastCheckAt: number | undefined;
 };
 
+type DetectionKind = 'version-different' | 'sw-waiting';
+
 const CHECK_INTERVAL_MS = 5 * 60_000;
 
 export class Updater {
@@ -24,6 +26,7 @@ export class Updater {
   private registration: ServiceWorkerRegistration | undefined;
   private applyWaiting: ((reload?: boolean) => Promise<void>) | undefined;
   private returnedAt: number | undefined;
+  private readonly reported = new Set<DetectionKind>();
 
   constructor(
     private readonly log: Log,
@@ -41,7 +44,7 @@ export class Updater {
       onNeedRefresh: () => {
         this.log('sw-waiting');
         this.patch({ worker: 'mise à jour en attente', needRefresh: true });
-        this.reportDelay();
+        this.reportDelay('sw-waiting');
       },
       onOfflineReady: () => this.log('offline-ready'),
       onRegisterError: (error: unknown) =>
@@ -50,6 +53,7 @@ export class Updater {
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState !== 'visible') return;
       this.returnedAt = Date.now();
+      this.reported.clear();
       void this.check('retour au premier plan');
     });
     setInterval(() => {
@@ -82,18 +86,23 @@ export class Updater {
   force = async (): Promise<void> => {
     this.log('force-update-started');
     try {
-      const registrations =
+      const scope = new URL('./', document.baseURI).href;
+      const all =
         'serviceWorker' in navigator
           ? await navigator.serviceWorker.getRegistrations()
           : [];
+      const registrations = all.filter(
+        (registration) => registration.scope === scope,
+      );
       await Promise.all(
         registrations.map((registration) => registration.unregister()),
       );
-      const keys = 'caches' in window ? await caches.keys() : [];
+      const allKeys = 'caches' in window ? await caches.keys() : [];
+      const keys = allKeys.filter((key) => key.includes(scope));
       await Promise.all(keys.map((key) => caches.delete(key)));
       this.log(
         'force-update-reload',
-        `${registrations.length} service worker, ${keys.length} caches`,
+        `${scope} · service workers supprimés ${registrations.length}, gardés ${all.length - registrations.length} · caches supprimés ${keys.length}, gardés ${allKeys.length - keys.length}`,
       );
       location.reload();
     } catch (error) {
@@ -124,14 +133,14 @@ export class Updater {
     this.patch({ remoteVersion: result.remote });
     if (result.kind === 'different') {
       this.log('version-different', result.remote);
-      this.reportDelay();
+      this.reportDelay('version-different');
     }
   }
 
-  private reportDelay(): void {
-    if (this.returnedAt === undefined) return;
-    this.log('detection-delay', `${Date.now() - this.returnedAt} ms`);
-    this.returnedAt = undefined;
+  private reportDelay(kind: DetectionKind): void {
+    if (this.returnedAt === undefined || this.reported.has(kind)) return;
+    this.reported.add(kind);
+    this.log('detection-delay', `${kind} · ${Date.now() - this.returnedAt} ms`);
   }
 
   private patch(change: Partial<UpdateState>): void {
