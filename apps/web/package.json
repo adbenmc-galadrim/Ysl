@@ -42,12 +42,12 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
-    "sharp": "^0.35.5",
+    "sharp": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-pwa": "^2.0.0",
+    "vite-plugin-pwa": "catalog:",
     "vitest": "catalog:",
-    "workbox-window": "^7.4.1"
+    "workbox-window": "catalog:"
   }
 }
