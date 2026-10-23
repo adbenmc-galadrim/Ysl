@@ -1,5 +1,5 @@
 # Image de production de l'app web. Le contexte de build est la racine du dépôt :
-#   docker build -f apps/web/Dockerfile --build-arg PUBLIC_SERVER_URL=https://… .
+#   docker build -f apps/web/Dockerfile --build-arg PUBLIC_SERVER_URL=https://… --build-arg PUBLIC_APP_URL=https://… .
 # Vite fige PUBLIC_* dans le bundle : changer l'URL de l'API demande un rebuild.
 
 FROM node:22-slim AS base
@@ -25,8 +25,10 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 ARG PUBLIC_APP_NAME=Courrier
 ARG PUBLIC_SERVER_URL
+ARG PUBLIC_APP_URL
 ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME \
-    PUBLIC_SERVER_URL=$PUBLIC_SERVER_URL
+    PUBLIC_SERVER_URL=$PUBLIC_SERVER_URL \
+    PUBLIC_APP_URL=$PUBLIC_APP_URL
 RUN pnpm --filter @repo/web build && pnpm --filter @repo/spike-camera build \
     && pnpm --filter @repo/spike-storage build \
     && pnpm --filter @repo/spike-email build \
