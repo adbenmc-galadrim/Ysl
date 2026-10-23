@@ -15,7 +15,8 @@
     "test": "vitest run",
     "build-pack": "tsx scripts/build-pack.ts",
     "assets": "pnpm run build-pack && pnpm run fetch-models",
-    "fetch-models": "tsx scripts/fetch-models.ts"
+    "fetch-models": "tsx scripts/fetch-models.ts",
+    "bench": "tsx scripts/bench.ts"
   },
   "dependencies": {
     "onnxruntime-web": "1.30.0",
@@ -33,6 +34,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
+    "playwright": "1.62.1",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
