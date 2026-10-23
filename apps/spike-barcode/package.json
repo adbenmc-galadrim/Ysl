@@ -19,7 +19,6 @@
     "@repo/corpus": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "sharp": "^0.35.5",
     "zxing-wasm": "3.1.6"
   },
   "devDependencies": {
@@ -32,6 +31,7 @@
     "@vitejs/plugin-react": "catalog:",
     "bwip-js": "^4.11.4",
     "eslint": "catalog:",
+    "sharp": "^0.35.5",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
