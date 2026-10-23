@@ -3,7 +3,6 @@ import {
   boolean,
   check,
   index,
-  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -12,19 +11,19 @@ import {
 } from 'drizzle-orm/pg-core';
 import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export const notificationType = pgEnum('notification_type', [
+export const NOTIFICATION_TYPES = [
   'avis',
   'relance',
   'resume_service',
-]);
+] as const;
 
 export const emailTemplate = pgTable(
   'email_template',
   {
     ...syncColumns(),
-    type: notificationType('type').notNull(),
+    type: text('type', { enum: NOTIFICATION_TYPES }).notNull(),
     name: text('name').notNull(),
     subject: text('subject').notNull(),
     body: text('body').notNull(),
@@ -34,7 +33,8 @@ export const emailTemplate = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    serverSeqIndex('email_template', table.serverSeq),
+    ...syncConstraints('email_template', table),
+    oneOf('email_template_type_check', table.type, NOTIFICATION_TYPES),
     index('email_template_owner_id_idx').on(table.ownerId),
     uniqueIndex('email_template_default_idx')
       .on(table.ownerId, table.type)
@@ -46,16 +46,22 @@ export const notification = pgTable(
   'notification',
   {
     ...syncColumns(),
-    type: notificationType('type').notNull(),
-    personId: uuid('person_id').references(() => directoryPerson.id),
-    contactId: uuid('contact_id').references(() => contact.id),
+    type: text('type', { enum: NOTIFICATION_TYPES }).notNull(),
+    personId: uuid('person_id').references(() => directoryPerson.id, {
+      onDelete: 'set null',
+    }),
+    contactId: uuid('contact_id').references(() => contact.id, {
+      onDelete: 'set null',
+    }),
     recipients: text('recipients').array().notNull(),
     cc: text('cc')
       .array()
       .default(sql`'{}'::text[]`)
       .notNull(),
     parcelIds: uuid('parcel_ids').array().notNull(),
-    templateId: uuid('template_id').references(() => emailTemplate.id),
+    templateId: uuid('template_id').references(() => emailTemplate.id, {
+      onDelete: 'set null',
+    }),
     preparedAt: timestamp('prepared_at', { withTimezone: true }).notNull(),
     preparedBy: text('prepared_by')
       .notNull()
@@ -63,12 +69,30 @@ export const notification = pgTable(
     sentAt: timestamp('sent_at', { withTimezone: true }),
   },
   (table) => [
-    serverSeqIndex('notification', table.serverSeq),
-    index('notification_parcel_ids_idx').using('gin', table.parcelIds),
+    ...syncConstraints('notification', table),
+    oneOf('notification_type_check', table.type, NOTIFICATION_TYPES),
     check(
       'notification_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,
     ),
+    check(
+      'notification_parcels_check',
+      sql`cardinality(${table.parcelIds}) >= 1`,
+    ),
+    check(
+      'notification_recipients_check',
+      sql`cardinality(${table.recipients}) >= 1`,
+    ),
+    index('notification_parcel_ids_idx').using('gin', table.parcelIds),
+    index('notification_person_id_idx')
+      .on(table.personId)
+      .where(sql`${table.personId} is not null`),
+    index('notification_contact_id_idx')
+      .on(table.contactId)
+      .where(sql`${table.contactId} is not null`),
+    index('notification_template_id_idx')
+      .on(table.templateId)
+      .where(sql`${table.templateId} is not null`),
   ],
 );
 

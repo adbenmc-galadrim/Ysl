@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core';
 import { user } from '#schema/auth';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { syncColumns, syncConstraints } from '#schema/sync';
 
 export const setting = pgTable(
   'setting',
@@ -9,14 +9,12 @@ export const setting = pgTable(
     ...syncColumns(),
     key: text('key').notNull(),
     value: jsonb('value').notNull(),
-    updatedBy: text('updated_by').references(() => user.id, {
-      onDelete: 'set null',
-    }),
+    updatedBy: text('updated_by').references(() => user.id),
   },
   (table) => [
-    serverSeqIndex('setting', table.serverSeq),
+    ...syncConstraints('setting', table),
     uniqueIndex('setting_key_idx')
-      .on(table.key)
+      .on(table.organizationId, table.key)
       .where(sql`${table.deletedAt} is null`),
   ],
 );

@@ -1,21 +1,17 @@
 import { sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   integer,
-  pgEnum,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { user } from '#schema/auth';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export const directorySource = pgEnum('directory_source', [
-  'manuel',
-  'csv',
-  'entra',
-]);
+export const DIRECTORY_SOURCES = ['manuel', 'entra'] as const;
 
 export const directoryPerson = pgTable(
   'directory_person',
@@ -23,16 +19,20 @@ export const directoryPerson = pgTable(
     ...syncColumns(),
     lastName: text('last_name').notNull(),
     firstName: text('first_name').notNull(),
+    nameNorm: text('name_norm').notNull(),
     email: text('email').notNull(),
     department: text('department'),
     site: text('site'),
-    source: directorySource('source').notNull(),
+    source: text('source', { enum: DIRECTORY_SOURCES })
+      .default('manuel')
+      .notNull(),
     active: boolean('active').default(true).notNull(),
   },
   (table) => [
-    serverSeqIndex('directory_person', table.serverSeq),
+    ...syncConstraints('directory_person', table),
+    oneOf('directory_person_source_check', table.source, DIRECTORY_SOURCES),
     uniqueIndex('directory_person_email_idx')
-      .on(sql`lower(${table.email})`)
+      .on(table.organizationId, sql`lower(${table.email})`)
       .where(sql`${table.deletedAt} is null`),
   ],
 );
@@ -42,12 +42,14 @@ export const contact = pgTable(
   {
     ...syncColumns(),
     name: text('name').notNull(),
+    nameNorm: text('name_norm').notNull(),
     email: text('email'),
-    createdBy: text('created_by').references(() => user.id, {
-      onDelete: 'set null',
-    }),
+    createdBy: text('created_by').references(() => user.id),
     usageCount: integer('usage_count').default(0).notNull(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },
-  (table) => [serverSeqIndex('contact', table.serverSeq)],
+  (table) => [
+    ...syncConstraints('contact', table),
+    check('contact_usage_count_check', sql`${table.usageCount} >= 0`),
+  ],
 );

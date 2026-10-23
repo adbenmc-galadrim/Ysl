@@ -4,7 +4,6 @@ import {
   index,
   integer,
   numeric,
-  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -13,21 +12,17 @@ import {
 import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { sender } from '#schema/sender';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export const parcelType = pgEnum('parcel_type', [
-  'colis',
-  'recommande',
-  'sans_suivi',
-]);
+export const PARCEL_TYPES = ['colis', 'recommande', 'sans_suivi'] as const;
 
-export const parcelStatus = pgEnum('parcel_status', [
+export const PARCEL_STATUSES = [
   'a_completer',
   'recu',
   'notifie',
   'remis',
   'retourne',
-]);
+] as const;
 
 export const batch = pgTable(
   'batch',
@@ -40,7 +35,14 @@ export const batch = pgTable(
     endedAt: timestamp('ended_at', { withTimezone: true }),
     parcelCount: integer('parcel_count').default(0).notNull(),
   },
-  (table) => [serverSeqIndex('batch', table.serverSeq)],
+  (table) => [
+    ...syncConstraints('batch', table),
+    check('batch_parcel_count_check', sql`${table.parcelCount} >= 0`),
+    check(
+      'batch_period_check',
+      sql`${table.endedAt} is null or ${table.endedAt} >= ${table.startedAt}`,
+    ),
+  ],
 );
 
 export const parcel = pgTable(
@@ -48,21 +50,27 @@ export const parcel = pgTable(
   {
     ...syncColumns(),
     batchId: uuid('batch_id').references(() => batch.id),
-    type: parcelType('type').default('colis').notNull(),
-    status: parcelStatus('status').notNull(),
+    type: text('type', { enum: PARCEL_TYPES }).default('colis').notNull(),
+    status: text('status', { enum: PARCEL_STATUSES }).notNull(),
     carrier: text('carrier'),
     tracking: text('tracking'),
     trackingNorm: text('tracking_norm'),
-    personId: uuid('person_id').references(() => directoryPerson.id),
-    contactId: uuid('contact_id').references(() => contact.id),
+    personId: uuid('person_id').references(() => directoryPerson.id, {
+      onDelete: 'set null',
+    }),
+    contactId: uuid('contact_id').references(() => contact.id, {
+      onDelete: 'set null',
+    }),
     readName: text('read_name'),
     notificationEmail: text('notification_email'),
     department: text('department'),
-    senderId: uuid('sender_id').references(() => sender.id),
+    senderId: uuid('sender_id').references(() => sender.id, {
+      onDelete: 'set null',
+    }),
     senderName: text('sender_name'),
     pieceN: integer('piece_n'),
     pieceTotal: integer('piece_total'),
-    weightKg: numeric('weight_kg', { precision: 8, scale: 3 }),
+    weightKg: numeric('weight_kg', { precision: 8, scale: 3, mode: 'number' }),
     carrierService: text('carrier_service'),
     reference: text('reference'),
     location: text('location'),
@@ -72,20 +80,54 @@ export const parcel = pgTable(
       .notNull()
       .references(() => user.id),
     validatedAt: timestamp('validated_at', { withTimezone: true }),
+    notifiedAt: timestamp('notified_at', { withTimezone: true }),
+    lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
     deliveredAt: timestamp('delivered_at', { withTimezone: true }),
     deliveredBy: text('delivered_by').references(() => user.id),
   },
   (table) => [
-    serverSeqIndex('parcel', table.serverSeq),
-    index('parcel_tracking_norm_idx').on(table.trackingNorm),
-    index('parcel_batch_id_idx').on(table.batchId),
-    index('parcel_person_id_idx').on(table.personId),
-    index('parcel_contact_id_idx').on(table.contactId),
-    index('parcel_sender_id_idx').on(table.senderId),
+    ...syncConstraints('parcel', table),
+    oneOf('parcel_type_check', table.type, PARCEL_TYPES),
+    oneOf('parcel_status_check', table.status, PARCEL_STATUSES),
     check(
       'parcel_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,
     ),
+    check(
+      'parcel_delivery_check',
+      sql`(${table.status} = 'remis') = (${table.deliveredAt} is not null and ${table.deliveredBy} is not null)`,
+    ),
+    check(
+      'parcel_pieces_check',
+      sql`${table.pieceTotal} is null or (${table.pieceTotal} >= 1 and (${table.pieceN} is null or ${table.pieceN} between 1 and ${table.pieceTotal}))`,
+    ),
+    check(
+      'parcel_weight_check',
+      sql`${table.weightKg} is null or ${table.weightKg} >= 0`,
+    ),
+    index('parcel_tracking_norm_idx')
+      .on(table.organizationId, table.trackingNorm)
+      .where(sql`${table.trackingNorm} is not null`),
+    index('parcel_open_status_idx')
+      .on(table.organizationId, table.status, table.receivedAt)
+      .where(
+        sql`${table.deletedAt} is null and ${table.status} in ('a_completer', 'recu', 'notifie')`,
+      ),
+    index('parcel_batch_id_idx')
+      .on(table.batchId)
+      .where(sql`${table.batchId} is not null`),
+    index('parcel_person_id_idx')
+      .on(table.personId)
+      .where(sql`${table.personId} is not null`),
+    index('parcel_contact_id_idx')
+      .on(table.contactId)
+      .where(sql`${table.contactId} is not null`),
+    index('parcel_sender_id_idx')
+      .on(table.senderId)
+      .where(sql`${table.senderId} is not null`),
+    index('parcel_delivered_at_idx')
+      .on(table.deliveredAt)
+      .where(sql`${table.deliveredAt} is not null`),
   ],
 );
 

@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
+  check,
   index,
   integer,
   pgTable,
@@ -8,7 +9,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { syncColumns, syncConstraints } from '#schema/sync';
 
 export const sender = pgTable(
   'sender',
@@ -21,8 +22,9 @@ export const sender = pgTable(
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   },
   (table) => [
-    serverSeqIndex('sender', table.serverSeq),
-    index('sender_name_norm_idx').on(table.nameNorm),
+    ...syncConstraints('sender', table),
+    index('sender_name_norm_idx').on(table.organizationId, table.nameNorm),
+    check('sender_seen_count_check', sql`${table.seenCount} >= 0`),
   ],
 );
 
@@ -34,14 +36,23 @@ export const senderAccount = pgTable(
     accountNumber: text('account_number').notNull(),
     senderId: uuid('sender_id')
       .notNull()
-      .references(() => sender.id),
+      .references(() => sender.id, { onDelete: 'cascade' }),
     confirmations: integer('confirmations').default(0).notNull(),
   },
   (table) => [
-    serverSeqIndex('sender_account', table.serverSeq),
+    ...syncConstraints('sender_account', table),
     uniqueIndex('sender_account_carrier_number_idx')
-      .on(table.carrier, table.accountNumber)
+      .on(
+        table.organizationId,
+        sql`lower(${table.carrier})`,
+        sql`upper(btrim(${table.accountNumber}))`,
+      )
       .where(sql`${table.deletedAt} is null`),
+    index('sender_account_sender_id_idx').on(table.senderId),
+    check(
+      'sender_account_confirmations_check',
+      sql`${table.confirmations} >= 0`,
+    ),
   ],
 );
 

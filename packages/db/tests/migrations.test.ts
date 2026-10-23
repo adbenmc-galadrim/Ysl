@@ -13,22 +13,63 @@ const client = new PGlite();
 const db = drizzle({ client, schema });
 
 const agentId = 'agent-1';
+const organizationId = newId();
+const otherOrganizationId = newId();
+const org = { organizationId };
 
-function newPerson(email: string) {
+async function expectViolation(write: Promise<unknown>, constraint: string) {
+  const error: unknown = await write.then(
+    () => undefined,
+    (caught: unknown) => caught,
+  );
+  const cause = (error as { cause?: { message?: string; constraint?: string } })
+    ?.cause;
+  expect(
+    [cause?.constraint, cause?.message, (error as Error)?.message].join(' '),
+  ).toContain(constraint);
+}
+
+function newPerson(email: string, organization = organizationId) {
   return {
     id: newId(),
+    organizationId: organization,
     lastName: 'Martin',
     firstName: 'Camille',
+    nameNorm: 'martin camille',
     email,
-    source: 'csv' as const,
   };
+}
+
+function newParcel() {
+  return {
+    id: newId(),
+    ...org,
+    status: 'recu' as const,
+    receivedAt: new Date(),
+    receivedBy: agentId,
+  };
+}
+
+async function serverSeqOf(id: string) {
+  const [row] = await db
+    .select({ serverSeq: schema.parcel.serverSeq })
+    .from(schema.parcel)
+    .where(eq(schema.parcel.id, id));
+  return row?.serverSeq;
 }
 
 beforeAll(async () => {
   await migrate(db, { migrationsFolder });
+  await db.insert(schema.organization).values([
+    { id: organizationId, name: 'Service courrier' },
+    { id: otherOrganizationId, name: 'Autre client' },
+  ]);
   await db
     .insert(schema.user)
     .values({ id: agentId, name: 'Agent', email: 'agent@example.test' });
+  await db
+    .insert(schema.organizationMember)
+    .values({ userId: agentId, ...org });
 });
 
 afterAll(async () => {
@@ -36,13 +77,15 @@ afterAll(async () => {
 });
 
 describe('migrations', () => {
-  it('create every table of the initial schema on an empty database', async () => {
+  it('create every table of the schema on an empty database', async () => {
     const { rows } = await client.query<{ tablename: string }>(
       "select tablename from pg_tables where schemaname = 'public'",
     );
 
     expect(rows.map((row) => row.tablename)).toEqual(
       expect.arrayContaining([
+        'organization',
+        'organization_member',
         'directory_person',
         'contact',
         'sender',
@@ -55,95 +98,230 @@ describe('migrations', () => {
         'handover',
         'event',
         'setting',
+        'sync_op',
       ]),
     );
   });
 
-  it('bump the sync cursor on insert and update of every synced table', async () => {
+  it('give every synced table an insert and an update cursor trigger', async () => {
     const { rows: synced } = await client.query<{ table_name: string }>(
       "select table_name from information_schema.columns where table_schema = 'public' and column_name = 'server_seq'",
     );
-    const { rows: bumped } = await client.query<{ relname: string }>(
-      `select c.relname
+    const { rows: triggers } = await client.query<{ tgname: string }>(
+      `select t.tgname
          from pg_trigger t
-         join pg_class c on c.oid = t.tgrelid
          join pg_proc p on p.oid = t.tgfoid
-        where p.proname = 'bump_server_seq'
-          and not t.tgisinternal
-          and t.tgtype & 23 = 23`,
+        where p.proname = 'bump_server_seq' and not t.tgisinternal`,
     );
+    const names = triggers.map((row) => row.tgname);
 
     expect(synced).toHaveLength(12);
-    expect(bumped.map((row) => row.relname).sort()).toEqual(
-      synced.map((row) => row.table_name).sort(),
-    );
+    for (const { table_name } of synced) {
+      expect(names).toContain(`${table_name}_bump_server_seq_insert`);
+      expect(names).toContain(`${table_name}_bump_server_seq_update`);
+    }
   });
+});
 
+describe('identifiers', () => {
   it('leave identifiers to the client', async () => {
     await expect(
-      client.query("insert into contact (name) values ('Sans identifiant')"),
-    ).rejects.toThrow();
+      client.query(
+        `insert into contact (organization_id, name, name_norm) values ('${organizationId}', 'Sans identifiant', 'sans identifiant')`,
+      ),
+    ).rejects.toThrow(/null value in column "id"/);
   });
 
-  it('move the sync cursor forward on every write', async () => {
-    const id = newId();
+  it('refuse an identifier that is not a UUID v7', async () => {
+    await expectViolation(
+      db.insert(schema.contact).values({
+        id: '0b6f1d5e-3c4a-4f8e-9a2b-7c1d2e3f4a5b',
+        ...org,
+        name: 'Livreur',
+        nameNorm: 'livreur',
+      }),
+      'contact_id_v7',
+    );
+  });
+});
+
+describe('sync cursor', () => {
+  it('number an insert, whatever the client sends', async () => {
     const [inserted] = await db
       .insert(schema.parcel)
-      .values({
-        id,
-        status: 'recu',
-        receivedAt: new Date(),
-        receivedBy: agentId,
-        serverSeq: 1_000_000,
-      })
-      .returning();
-    const [updated] = await db
-      .update(schema.parcel)
-      .set({ notes: 'Étagère B' })
-      .where(eq(schema.parcel.id, id))
+      .values({ ...newParcel(), serverSeq: 1_000_000 })
       .returning();
 
-    expect(inserted?.id).toBe(id);
     expect(inserted?.serverSeq).toBeLessThan(1_000_000);
-    expect(updated?.serverSeq).toBeGreaterThan(inserted?.serverSeq ?? 0);
-
-    const [setting] = await db
-      .insert(schema.setting)
-      .values({ id: newId(), key: 'pickup_hours', value: '9 h - 12 h' })
-      .returning();
-
-    expect(setting?.serverSeq).toBeGreaterThan(updated?.serverSeq ?? 0);
   });
 
+  it('move forward on a real update only', async () => {
+    const parcel = newParcel();
+    await db.insert(schema.parcel).values(parcel);
+    const inserted = await serverSeqOf(parcel.id);
+
+    await db
+      .update(schema.parcel)
+      .set({ notes: 'Étagère B' })
+      .where(eq(schema.parcel.id, parcel.id));
+    const updated = await serverSeqOf(parcel.id);
+
+    await db
+      .update(schema.parcel)
+      .set({ notes: 'Étagère B' })
+      .where(eq(schema.parcel.id, parcel.id));
+
+    expect(updated).toBeGreaterThan(inserted ?? Infinity);
+    expect(await serverSeqOf(parcel.id)).toBe(updated);
+  });
+
+  it('hold the organization lock until commit', async () => {
+    await client.transaction(async (tx) => {
+      await tx.query(
+        `insert into setting (id, organization_id, key, value) values ('${newId()}', '${organizationId}', 'lock_probe', '1')`,
+      );
+      const { rows } = await tx.query<{ count: number }>(
+        "select count(*)::int as count from pg_locks where locktype = 'advisory' and classid = 7417",
+      );
+
+      expect(rows[0]?.count).toBe(1);
+    });
+  });
+});
+
+describe('integrity', () => {
   it('refuse a parcel addressed to both a person and a contact', async () => {
     const person = newPerson('camille.martin@example.test');
     const contactId = newId();
     await db.insert(schema.directoryPerson).values(person);
-    await db
-      .insert(schema.contact)
-      .values({ id: contactId, name: 'Livreur du traiteur' });
+    await db.insert(schema.contact).values({
+      id: contactId,
+      ...org,
+      name: 'Livreur du traiteur',
+      nameNorm: 'livreur du traiteur',
+    });
 
-    await expect(
-      db.insert(schema.parcel).values({
-        id: newId(),
-        status: 'recu',
-        personId: person.id,
-        contactId,
-        receivedAt: new Date(),
-        receivedBy: agentId,
-      }),
-    ).rejects.toThrow();
+    await expectViolation(
+      db
+        .insert(schema.parcel)
+        .values({ ...newParcel(), personId: person.id, contactId }),
+      'parcel_single_recipient',
+    );
   });
 
-  it('refuse two directory entries with the same email, deleted ones aside', async () => {
+  it('refuse a delivered parcel without who and when', async () => {
+    await expectViolation(
+      db.insert(schema.parcel).values({ ...newParcel(), status: 'remis' }),
+      'parcel_delivery_check',
+    );
+  });
+
+  it('refuse a piece number beyond the total', async () => {
+    await expectViolation(
+      db
+        .insert(schema.parcel)
+        .values({ ...newParcel(), pieceN: 3, pieceTotal: 2 }),
+      'parcel_pieces_check',
+    );
+  });
+
+  it('refuse an unknown status', async () => {
+    await expectViolation(
+      client.query(
+        `insert into parcel (id, organization_id, status, received_at, received_by) values ('${newId()}', '${organizationId}', 'perdu', now(), '${agentId}')`,
+      ),
+      'parcel_status_check',
+    );
+  });
+
+  it('refuse a handover of no parcel', async () => {
+    await expectViolation(
+      db.insert(schema.handover).values({
+        id: newId(),
+        ...org,
+        parcelIds: [],
+        recipientName: 'Camille Martin',
+        method: 'qr',
+        agentId,
+        at: new Date(),
+      }),
+      'handover_parcels_check',
+    );
+  });
+
+  it('keep the event log append-only, soft delete aside', async () => {
+    const id = newId();
+    await db.insert(schema.event).values({
+      id,
+      ...org,
+      entity: 'parcel',
+      entityId: newId(),
+      type: 'received',
+      actorId: agentId,
+      at: new Date(),
+    });
+
+    await expectViolation(
+      db
+        .update(schema.event)
+        .set({ detail: { forged: true } })
+        .where(eq(schema.event.id, id)),
+      'append-only',
+    );
+    await expect(
+      db
+        .update(schema.event)
+        .set({ deletedAt: new Date() })
+        .where(eq(schema.event.id, id)),
+    ).resolves.toBeDefined();
+  });
+
+  it('keep the parcels of a person who leaves, and tell the devices', async () => {
+    const person = newPerson('sacha.leroy@example.test');
+    await db.insert(schema.directoryPerson).values(person);
+    const parcel = { ...newParcel(), personId: person.id };
+    await db.insert(schema.parcel).values(parcel);
+    await db.insert(schema.pickupCode).values({
+      id: newId(),
+      ...org,
+      personId: person.id,
+      tokenHash: 'token-leaver',
+      pinHash: 'pin-hash',
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+    const before = await serverSeqOf(parcel.id);
+
+    await db
+      .delete(schema.directoryPerson)
+      .where(eq(schema.directoryPerson.id, person.id));
+    const [kept] = await db
+      .select()
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, parcel.id));
+
+    expect(kept?.personId).toBeNull();
+    expect(kept?.serverSeq).toBeGreaterThan(before ?? Infinity);
+  });
+});
+
+describe('uniqueness', () => {
+  it('refuse two directory entries with the same email, deleted ones and other organizations aside', async () => {
     const first = newPerson('dominique.durand@example.test');
     await db.insert(schema.directoryPerson).values(first);
 
-    await expect(
+    await expectViolation(
       db
         .insert(schema.directoryPerson)
         .values(newPerson('Dominique.Durand@example.test')),
-    ).rejects.toThrow();
+      'directory_person_email_idx',
+    );
+    await expect(
+      db
+        .insert(schema.directoryPerson)
+        .values(
+          newPerson('dominique.durand@example.test', otherOrganizationId),
+        ),
+    ).resolves.toBeDefined();
 
     await db
       .update(schema.directoryPerson)
@@ -157,17 +335,18 @@ describe('migrations', () => {
     ).resolves.toBeDefined();
   });
 
-  it('keep one setting per key, deleted ones aside', async () => {
+  it('keep one setting per key and organization, deleted ones aside', async () => {
     const firstId = newId();
     await db
       .insert(schema.setting)
-      .values({ id: firstId, key: 'reminder_days', value: [2, 5] });
+      .values({ id: firstId, ...org, key: 'reminder_days', value: [2, 5] });
 
-    await expect(
+    await expectViolation(
       db
         .insert(schema.setting)
-        .values({ id: newId(), key: 'reminder_days', value: [3] }),
-    ).rejects.toThrow();
+        .values({ id: newId(), ...org, key: 'reminder_days', value: [3] }),
+      'setting_key_idx',
+    );
 
     await db
       .update(schema.setting)
@@ -177,7 +356,7 @@ describe('migrations', () => {
     await expect(
       db
         .insert(schema.setting)
-        .values({ id: newId(), key: 'reminder_days', value: [3] }),
+        .values({ id: newId(), ...org, key: 'reminder_days', value: [3] }),
     ).resolves.toBeDefined();
   });
 
@@ -186,17 +365,19 @@ describe('migrations', () => {
     await db.insert(schema.directoryPerson).values(person);
     const code = (tokenHash: string) => ({
       id: newId(),
+      ...org,
       personId: person.id,
       tokenHash,
       pinHash: 'pin-hash',
-      expiresAt: new Date(),
+      expiresAt: new Date(Date.now() + 86_400_000),
     });
     const first = code('token-1');
     await db.insert(schema.pickupCode).values(first);
 
-    await expect(
+    await expectViolation(
       db.insert(schema.pickupCode).values(code('token-2')),
-    ).rejects.toThrow();
+      'pickup_code_active_person_idx',
+    );
 
     await db
       .update(schema.pickupCode)
@@ -208,9 +389,23 @@ describe('migrations', () => {
     ).resolves.toBeDefined();
   });
 
+  it('refuse a pickup code that covers nobody', async () => {
+    await expectViolation(
+      db.insert(schema.pickupCode).values({
+        id: newId(),
+        ...org,
+        tokenHash: 'token-nobody',
+        pinHash: 'pin-hash',
+        expiresAt: new Date(Date.now() + 86_400_000),
+      }),
+      'pickup_code_single_recipient',
+    );
+  });
+
   it('keep one default email template per owner and type', async () => {
     const template = () => ({
       id: newId(),
+      ...org,
       type: 'avis' as const,
       name: 'Avis de passage',
       subject: 'Colis en attente',
@@ -220,40 +415,40 @@ describe('migrations', () => {
     });
     await db.insert(schema.emailTemplate).values(template());
 
-    await expect(
+    await expectViolation(
       db.insert(schema.emailTemplate).values(template()),
-    ).rejects.toThrow();
+      'email_template_default_idx',
+    );
   });
 
-  it('refuse a pickup code that covers nobody', async () => {
-    await expect(
-      db.insert(schema.pickupCode).values({
-        id: newId(),
-        tokenHash: 'token-hash',
-        pinHash: 'pin-hash',
-        expiresAt: new Date(),
-      }),
-    ).rejects.toThrow();
-  });
-
-  it('keep one sender per carrier account, deleted ones aside', async () => {
+  it('keep one sender per carrier account, whatever the case, deleted ones aside', async () => {
     const senderId = newId();
     await db.insert(schema.sender).values({
       id: senderId,
+      ...org,
       displayName: 'Atelier Nord',
       nameNorm: 'atelier nord',
     });
-    const account = {
+    const firstId = newId();
+    await db.insert(schema.senderAccount).values({
+      id: firstId,
+      ...org,
       carrier: 'ups',
       accountNumber: '1A2B3C',
       senderId,
-    };
-    const firstId = newId();
-    await db.insert(schema.senderAccount).values({ id: firstId, ...account });
+    });
+    const duplicate = () => ({
+      id: newId(),
+      ...org,
+      carrier: 'UPS',
+      accountNumber: ' 1a2b3c',
+      senderId,
+    });
 
-    await expect(
-      db.insert(schema.senderAccount).values({ id: newId(), ...account }),
-    ).rejects.toThrow();
+    await expectViolation(
+      db.insert(schema.senderAccount).values(duplicate()),
+      'sender_account_carrier_number_idx',
+    );
 
     await db
       .update(schema.senderAccount)
@@ -261,7 +456,7 @@ describe('migrations', () => {
       .where(eq(schema.senderAccount.id, firstId));
 
     await expect(
-      db.insert(schema.senderAccount).values({ id: newId(), ...account }),
+      db.insert(schema.senderAccount).values(duplicate()),
     ).resolves.toBeDefined();
   });
 });

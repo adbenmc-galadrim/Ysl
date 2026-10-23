@@ -7,7 +7,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from '#schema/auth';
-import { serverSeqIndex, syncColumns } from '#schema/sync';
+import { syncColumns, syncConstraints } from '#schema/sync';
 
 export const event = pgTable(
   'event',
@@ -16,14 +16,13 @@ export const event = pgTable(
     entity: text('entity').notNull(),
     entityId: uuid('entity_id').notNull(),
     type: text('type').notNull(),
-    actorId: text('actor_id').references(() => user.id, {
-      onDelete: 'set null',
-    }),
+    actorId: text('actor_id').references(() => user.id),
     at: timestamp('at', { withTimezone: true }).notNull(),
     detail: jsonb('detail'),
   },
   (table) => [
-    serverSeqIndex('event', table.serverSeq),
-    index('event_entity_idx').on(table.entity, table.entityId),
+    ...syncConstraints('event', table),
+    index('event_entity_id_idx').on(table.entityId, table.at),
+    index('event_at_idx').on(table.at),
   ],
 );

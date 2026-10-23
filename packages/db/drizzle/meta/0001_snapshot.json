@@ -1,5 +1,5 @@
 {
-  "id": "ad422901-adbe-4c67-b724-62999eabac0a",
+  "id": "253c8a53-4195-41a0-98c3-ff2a8afe510d",
   "prevId": "c01c45d2-9e5d-4508-b294-d7cf3b215d12",
   "version": "7",
   "dialect": "postgresql",
@@ -110,12 +110,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -162,9 +158,7 @@
         "rate_limit_key_unique": {
           "name": "rate_limit_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -253,12 +247,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -268,9 +258,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -359,9 +347,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -445,6 +431,12 @@
           "primaryKey": true,
           "notNull": true
         },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -478,6 +470,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "name_norm": {
+          "name": "name_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "email": {
           "name": "email",
           "type": "text",
@@ -505,9 +503,15 @@
         }
       },
       "indexes": {
-        "contact_server_seq_idx": {
-          "name": "contact_server_seq_idx",
+        "contact_cursor_idx": {
+          "name": "contact_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -522,24 +526,38 @@
         }
       },
       "foreignKeys": {
+        "contact_organization_id_organization_id_fk": {
+          "name": "contact_organization_id_organization_id_fk",
+          "tableFrom": "contact",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "contact_created_by_user_id_fk": {
           "name": "contact_created_by_user_id_fk",
           "tableFrom": "contact",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "contact_id_v7": {
+          "name": "contact_id_v7",
+          "value": "uuid_extract_version(\"contact\".\"id\") = 7"
+        },
+        "contact_usage_count_check": {
+          "name": "contact_usage_count_check",
+          "value": "\"contact\".\"usage_count\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.directory_person": {
@@ -550,6 +568,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -591,6 +615,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "name_norm": {
+          "name": "name_norm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "email": {
           "name": "email",
           "type": "text",
@@ -611,10 +641,10 @@
         },
         "source": {
           "name": "source",
-          "type": "directory_source",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'manuel'"
         },
         "active": {
           "name": "active",
@@ -625,9 +655,15 @@
         }
       },
       "indexes": {
-        "directory_person_server_seq_idx": {
-          "name": "directory_person_server_seq_idx",
+        "directory_person_cursor_idx": {
+          "name": "directory_person_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -644,6 +680,12 @@
           "name": "directory_person_email_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "lower(\"email\")",
               "asc": true,
               "isExpression": true,
@@ -657,11 +699,30 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "directory_person_organization_id_organization_id_fk": {
+          "name": "directory_person_organization_id_organization_id_fk",
+          "tableFrom": "directory_person",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "directory_person_id_v7": {
+          "name": "directory_person_id_v7",
+          "value": "uuid_extract_version(\"directory_person\".\"id\") = 7"
+        },
+        "directory_person_source_check": {
+          "name": "directory_person_source_check",
+          "value": "\"directory_person\".\"source\" in ('manuel', 'entra')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.event": {
@@ -672,6 +733,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -739,9 +806,15 @@
         }
       },
       "indexes": {
-        "event_server_seq_idx": {
-          "name": "event_server_seq_idx",
+        "event_cursor_idx": {
+          "name": "event_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -754,17 +827,32 @@
           "method": "btree",
           "with": {}
         },
-        "event_entity_idx": {
-          "name": "event_entity_idx",
+        "event_entity_id_idx": {
+          "name": "event_entity_id_idx",
           "columns": [
             {
-              "expression": "entity",
+              "expression": "entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "entity_id",
+              "expression": "at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "event_at_idx": {
+          "name": "event_at_idx",
+          "columns": [
+            {
+              "expression": "at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -777,24 +865,34 @@
         }
       },
       "foreignKeys": {
+        "event_organization_id_organization_id_fk": {
+          "name": "event_organization_id_organization_id_fk",
+          "tableFrom": "event",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "event_actor_id_user_id_fk": {
           "name": "event_actor_id_user_id_fk",
           "tableFrom": "event",
           "tableTo": "user",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
+          "columnsFrom": ["actor_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "event_id_v7": {
+          "name": "event_id_v7",
+          "value": "uuid_extract_version(\"event\".\"id\") = 7"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.handover": {
@@ -805,6 +903,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -852,6 +956,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "recipient_name": {
+          "name": "recipient_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "delegate_name": {
           "name": "delegate_name",
           "type": "text",
@@ -860,16 +970,9 @@
         },
         "method": {
           "name": "method",
-          "type": "handover_method",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "signature_photo_id": {
-          "name": "signature_photo_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
         },
         "agent_id": {
           "name": "agent_id",
@@ -891,9 +994,15 @@
         }
       },
       "indexes": {
-        "handover_server_seq_idx": {
-          "name": "handover_server_seq_idx",
+        "handover_cursor_idx": {
+          "name": "handover_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -920,45 +1029,89 @@
           "concurrently": false,
           "method": "gin",
           "with": {}
+        },
+        "handover_person_id_idx": {
+          "name": "handover_person_id_idx",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"handover\".\"person_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "handover_contact_id_idx": {
+          "name": "handover_contact_id_idx",
+          "columns": [
+            {
+              "expression": "contact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"handover\".\"contact_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "handover_at_idx": {
+          "name": "handover_at_idx",
+          "columns": [
+            {
+              "expression": "at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
+        "handover_organization_id_organization_id_fk": {
+          "name": "handover_organization_id_organization_id_fk",
+          "tableFrom": "handover",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "handover_person_id_directory_person_id_fk": {
           "name": "handover_person_id_directory_person_id_fk",
           "tableFrom": "handover",
           "tableTo": "directory_person",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "handover_contact_id_contact_id_fk": {
           "name": "handover_contact_id_contact_id_fk",
           "tableFrom": "handover",
           "tableTo": "contact",
-          "columnsFrom": [
-            "contact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["contact_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "handover_agent_id_user_id_fk": {
           "name": "handover_agent_id_user_id_fk",
           "tableFrom": "handover",
           "tableTo": "user",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -967,9 +1120,25 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "handover_id_v7": {
+          "name": "handover_id_v7",
+          "value": "uuid_extract_version(\"handover\".\"id\") = 7"
+        },
+        "handover_method_check": {
+          "name": "handover_method_check",
+          "value": "\"handover\".\"method\" in ('qr', 'pin', 'signature', 'manuel')"
+        },
         "handover_single_recipient": {
           "name": "handover_single_recipient",
           "value": "\"handover\".\"person_id\" is null or \"handover\".\"contact_id\" is null"
+        },
+        "handover_parcels_check": {
+          "name": "handover_parcels_check",
+          "value": "cardinality(\"handover\".\"parcel_ids\") >= 1"
+        },
+        "handover_cancel_check": {
+          "name": "handover_cancel_check",
+          "value": "\"handover\".\"cancelled_at\" is null or \"handover\".\"cancelled_at\" >= \"handover\".\"at\""
         }
       },
       "isRLSEnabled": false
@@ -982,6 +1151,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -1049,9 +1224,15 @@
         }
       },
       "indexes": {
-        "pickup_code_server_seq_idx": {
-          "name": "pickup_code_server_seq_idx",
+        "pickup_code_cursor_idx": {
+          "name": "pickup_code_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -1113,30 +1294,31 @@
         }
       },
       "foreignKeys": {
+        "pickup_code_organization_id_organization_id_fk": {
+          "name": "pickup_code_organization_id_organization_id_fk",
+          "tableFrom": "pickup_code",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "pickup_code_person_id_directory_person_id_fk": {
           "name": "pickup_code_person_id_directory_person_id_fk",
           "tableFrom": "pickup_code",
           "tableTo": "directory_person",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "pickup_code_contact_id_contact_id_fk": {
           "name": "pickup_code_contact_id_contact_id_fk",
           "tableFrom": "pickup_code",
           "tableTo": "contact",
-          "columnsFrom": [
-            "contact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["contact_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -1144,9 +1326,17 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "pickup_code_id_v7": {
+          "name": "pickup_code_id_v7",
+          "value": "uuid_extract_version(\"pickup_code\".\"id\") = 7"
+        },
         "pickup_code_single_recipient": {
           "name": "pickup_code_single_recipient",
           "value": "num_nonnulls(\"pickup_code\".\"person_id\", \"pickup_code\".\"contact_id\") = 1"
+        },
+        "pickup_code_expiry_check": {
+          "name": "pickup_code_expiry_check",
+          "value": "\"pickup_code\".\"expires_at\" > \"pickup_code\".\"created_at\""
         }
       },
       "isRLSEnabled": false
@@ -1159,6 +1349,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -1190,8 +1386,7 @@
         },
         "type": {
           "name": "type",
-          "type": "notification_type",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1228,9 +1423,15 @@
         }
       },
       "indexes": {
-        "email_template_server_seq_idx": {
-          "name": "email_template_server_seq_idx",
+        "email_template_cursor_idx": {
+          "name": "email_template_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -1282,16 +1483,21 @@
         }
       },
       "foreignKeys": {
+        "email_template_organization_id_organization_id_fk": {
+          "name": "email_template_organization_id_organization_id_fk",
+          "tableFrom": "email_template",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "email_template_owner_id_user_id_fk": {
           "name": "email_template_owner_id_user_id_fk",
           "tableFrom": "email_template",
           "tableTo": "user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1299,7 +1505,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "email_template_id_v7": {
+          "name": "email_template_id_v7",
+          "value": "uuid_extract_version(\"email_template\".\"id\") = 7"
+        },
+        "email_template_type_check": {
+          "name": "email_template_type_check",
+          "value": "\"email_template\".\"type\" in ('avis', 'relance', 'resume_service')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.notification": {
@@ -1310,6 +1525,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -1341,8 +1562,7 @@
         },
         "type": {
           "name": "type",
-          "type": "notification_type",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1403,9 +1623,15 @@
         }
       },
       "indexes": {
-        "notification_server_seq_idx": {
-          "name": "notification_server_seq_idx",
+        "notification_cursor_idx": {
+          "name": "notification_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -1432,58 +1658,99 @@
           "concurrently": false,
           "method": "gin",
           "with": {}
+        },
+        "notification_person_id_idx": {
+          "name": "notification_person_id_idx",
+          "columns": [
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notification\".\"person_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_contact_id_idx": {
+          "name": "notification_contact_id_idx",
+          "columns": [
+            {
+              "expression": "contact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notification\".\"contact_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_template_id_idx": {
+          "name": "notification_template_id_idx",
+          "columns": [
+            {
+              "expression": "template_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"notification\".\"template_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
+        "notification_organization_id_organization_id_fk": {
+          "name": "notification_organization_id_organization_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "notification_person_id_directory_person_id_fk": {
           "name": "notification_person_id_directory_person_id_fk",
           "tableFrom": "notification",
           "tableTo": "directory_person",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "notification_contact_id_contact_id_fk": {
           "name": "notification_contact_id_contact_id_fk",
           "tableFrom": "notification",
           "tableTo": "contact",
-          "columnsFrom": [
-            "contact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["contact_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "notification_template_id_email_template_id_fk": {
           "name": "notification_template_id_email_template_id_fk",
           "tableFrom": "notification",
           "tableTo": "email_template",
-          "columnsFrom": [
-            "template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["template_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "notification_prepared_by_user_id_fk": {
           "name": "notification_prepared_by_user_id_fk",
           "tableFrom": "notification",
           "tableTo": "user",
-          "columnsFrom": [
-            "prepared_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["prepared_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1492,11 +1759,103 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "notification_id_v7": {
+          "name": "notification_id_v7",
+          "value": "uuid_extract_version(\"notification\".\"id\") = 7"
+        },
+        "notification_type_check": {
+          "name": "notification_type_check",
+          "value": "\"notification\".\"type\" in ('avis', 'relance', 'resume_service')"
+        },
         "notification_single_recipient": {
           "name": "notification_single_recipient",
           "value": "\"notification\".\"person_id\" is null or \"notification\".\"contact_id\" is null"
+        },
+        "notification_parcels_check": {
+          "name": "notification_parcels_check",
+          "value": "cardinality(\"notification\".\"parcel_ids\") >= 1"
+        },
+        "notification_recipients_check": {
+          "name": "notification_recipients_check",
+          "value": "cardinality(\"notification\".\"recipients\") >= 1"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.organization": {
+      "name": "organization",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.organization_member": {
+      "name": "organization_member",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "organization_member_user_id_user_id_fk": {
+          "name": "organization_member_user_id_user_id_fk",
+          "tableFrom": "organization_member",
+          "tableTo": "user",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "organization_member_organization_id_organization_id_fk": {
+          "name": "organization_member_organization_id_organization_id_fk",
+          "tableFrom": "organization_member",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.batch": {
@@ -1507,6 +1866,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -1563,9 +1928,15 @@
         }
       },
       "indexes": {
-        "batch_server_seq_idx": {
-          "name": "batch_server_seq_idx",
+        "batch_cursor_idx": {
+          "name": "batch_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -1580,16 +1951,21 @@
         }
       },
       "foreignKeys": {
+        "batch_organization_id_organization_id_fk": {
+          "name": "batch_organization_id_organization_id_fk",
+          "tableFrom": "batch",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "batch_agent_id_user_id_fk": {
           "name": "batch_agent_id_user_id_fk",
           "tableFrom": "batch",
           "tableTo": "user",
-          "columnsFrom": [
-            "agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["agent_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1597,7 +1973,20 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "batch_id_v7": {
+          "name": "batch_id_v7",
+          "value": "uuid_extract_version(\"batch\".\"id\") = 7"
+        },
+        "batch_parcel_count_check": {
+          "name": "batch_parcel_count_check",
+          "value": "\"batch\".\"parcel_count\" >= 0"
+        },
+        "batch_period_check": {
+          "name": "batch_period_check",
+          "value": "\"batch\".\"ended_at\" is null or \"batch\".\"ended_at\" >= \"batch\".\"started_at\""
+        }
+      },
       "isRLSEnabled": false
     },
     "public.parcel": {
@@ -1608,6 +1997,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -1645,16 +2040,14 @@
         },
         "type": {
           "name": "type",
-          "type": "parcel_type",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "default": "'colis'"
         },
         "status": {
           "name": "status",
-          "type": "parcel_status",
-          "typeSchema": "public",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -1778,6 +2171,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "notified_at": {
+          "name": "notified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_notified_at": {
+          "name": "last_notified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "delivered_at": {
           "name": "delivered_at",
           "type": "timestamp with time zone",
@@ -1792,9 +2197,15 @@
         }
       },
       "indexes": {
-        "parcel_server_seq_idx": {
-          "name": "parcel_server_seq_idx",
+        "parcel_cursor_idx": {
+          "name": "parcel_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -1811,6 +2222,12 @@
           "name": "parcel_tracking_norm_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "tracking_norm",
               "isExpression": false,
               "asc": true,
@@ -1818,6 +2235,35 @@
             }
           ],
           "isUnique": false,
+          "where": "\"parcel\".\"tracking_norm\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "parcel_open_status_idx": {
+          "name": "parcel_open_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"parcel\".\"deleted_at\" is null and \"parcel\".\"status\" in ('a_completer', 'recu', 'notifie')",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1833,6 +2279,7 @@
             }
           ],
           "isUnique": false,
+          "where": "\"parcel\".\"batch_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1848,6 +2295,7 @@
             }
           ],
           "isUnique": false,
+          "where": "\"parcel\".\"person_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1863,6 +2311,7 @@
             }
           ],
           "isUnique": false,
+          "where": "\"parcel\".\"contact_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1878,22 +2327,44 @@
             }
           ],
           "isUnique": false,
+          "where": "\"parcel\".\"sender_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "parcel_delivered_at_idx": {
+          "name": "parcel_delivered_at_idx",
+          "columns": [
+            {
+              "expression": "delivered_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"parcel\".\"delivered_at\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
+        "parcel_organization_id_organization_id_fk": {
+          "name": "parcel_organization_id_organization_id_fk",
+          "tableFrom": "parcel",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "parcel_batch_id_batch_id_fk": {
           "name": "parcel_batch_id_batch_id_fk",
           "tableFrom": "parcel",
           "tableTo": "batch",
-          "columnsFrom": [
-            "batch_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["batch_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1901,51 +2372,35 @@
           "name": "parcel_person_id_directory_person_id_fk",
           "tableFrom": "parcel",
           "tableTo": "directory_person",
-          "columnsFrom": [
-            "person_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["person_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "parcel_contact_id_contact_id_fk": {
           "name": "parcel_contact_id_contact_id_fk",
           "tableFrom": "parcel",
           "tableTo": "contact",
-          "columnsFrom": [
-            "contact_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["contact_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "parcel_sender_id_sender_id_fk": {
           "name": "parcel_sender_id_sender_id_fk",
           "tableFrom": "parcel",
           "tableTo": "sender",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["sender_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "parcel_received_by_user_id_fk": {
           "name": "parcel_received_by_user_id_fk",
           "tableFrom": "parcel",
           "tableTo": "user",
-          "columnsFrom": [
-            "received_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["received_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1953,12 +2408,8 @@
           "name": "parcel_delivered_by_user_id_fk",
           "tableFrom": "parcel",
           "tableTo": "user",
-          "columnsFrom": [
-            "delivered_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["delivered_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1967,9 +2418,33 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
+        "parcel_id_v7": {
+          "name": "parcel_id_v7",
+          "value": "uuid_extract_version(\"parcel\".\"id\") = 7"
+        },
+        "parcel_type_check": {
+          "name": "parcel_type_check",
+          "value": "\"parcel\".\"type\" in ('colis', 'recommande', 'sans_suivi')"
+        },
+        "parcel_status_check": {
+          "name": "parcel_status_check",
+          "value": "\"parcel\".\"status\" in ('a_completer', 'recu', 'notifie', 'remis', 'retourne')"
+        },
         "parcel_single_recipient": {
           "name": "parcel_single_recipient",
           "value": "\"parcel\".\"person_id\" is null or \"parcel\".\"contact_id\" is null"
+        },
+        "parcel_delivery_check": {
+          "name": "parcel_delivery_check",
+          "value": "(\"parcel\".\"status\" = 'remis') = (\"parcel\".\"delivered_at\" is not null and \"parcel\".\"delivered_by\" is not null)"
+        },
+        "parcel_pieces_check": {
+          "name": "parcel_pieces_check",
+          "value": "\"parcel\".\"piece_total\" is null or (\"parcel\".\"piece_total\" >= 1 and (\"parcel\".\"piece_n\" is null or \"parcel\".\"piece_n\" between 1 and \"parcel\".\"piece_total\"))"
+        },
+        "parcel_weight_check": {
+          "name": "parcel_weight_check",
+          "value": "\"parcel\".\"weight_kg\" is null or \"parcel\".\"weight_kg\" >= 0"
         }
       },
       "isRLSEnabled": false
@@ -1982,6 +2457,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -2044,9 +2525,15 @@
         }
       },
       "indexes": {
-        "sender_server_seq_idx": {
-          "name": "sender_server_seq_idx",
+        "sender_cursor_idx": {
+          "name": "sender_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -2063,6 +2550,12 @@
           "name": "sender_name_norm_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "name_norm",
               "isExpression": false,
               "asc": true,
@@ -2075,11 +2568,30 @@
           "with": {}
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "sender_organization_id_organization_id_fk": {
+          "name": "sender_organization_id_organization_id_fk",
+          "tableFrom": "sender",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sender_id_v7": {
+          "name": "sender_id_v7",
+          "value": "uuid_extract_version(\"sender\".\"id\") = 7"
+        },
+        "sender_seen_count_check": {
+          "name": "sender_seen_count_check",
+          "value": "\"sender\".\"seen_count\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.sender_account": {
@@ -2090,6 +2602,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -2146,9 +2664,15 @@
         }
       },
       "indexes": {
-        "sender_account_server_seq_idx": {
-          "name": "sender_account_server_seq_idx",
+        "sender_account_cursor_idx": {
+          "name": "sender_account_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -2165,15 +2689,21 @@
           "name": "sender_account_carrier_number_idx",
           "columns": [
             {
-              "expression": "carrier",
+              "expression": "organization_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             },
             {
-              "expression": "account_number",
-              "isExpression": false,
+              "expression": "lower(\"carrier\")",
               "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "upper(btrim(\"account_number\"))",
+              "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
@@ -2182,27 +2712,56 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "sender_account_sender_id_idx": {
+          "name": "sender_account_sender_id_idx",
+          "columns": [
+            {
+              "expression": "sender_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
+        "sender_account_organization_id_organization_id_fk": {
+          "name": "sender_account_organization_id_organization_id_fk",
+          "tableFrom": "sender_account",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "sender_account_sender_id_sender_id_fk": {
           "name": "sender_account_sender_id_sender_id_fk",
           "tableFrom": "sender_account",
           "tableTo": "sender",
-          "columnsFrom": [
-            "sender_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
+          "columnsFrom": ["sender_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sender_account_id_v7": {
+          "name": "sender_account_id_v7",
+          "value": "uuid_extract_version(\"sender_account\".\"id\") = 7"
+        },
+        "sender_account_confirmations_check": {
+          "name": "sender_account_confirmations_check",
+          "value": "\"sender_account\".\"confirmations\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.setting": {
@@ -2213,6 +2772,12 @@
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -2262,9 +2827,15 @@
         }
       },
       "indexes": {
-        "setting_server_seq_idx": {
-          "name": "setting_server_seq_idx",
+        "setting_cursor_idx": {
+          "name": "setting_cursor_idx",
           "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
             {
               "expression": "server_seq",
               "isExpression": false,
@@ -2281,6 +2852,12 @@
           "name": "setting_key_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "key",
               "isExpression": false,
               "asc": true,
@@ -2295,17 +2872,118 @@
         }
       },
       "foreignKeys": {
+        "setting_organization_id_organization_id_fk": {
+          "name": "setting_organization_id_organization_id_fk",
+          "tableFrom": "setting",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "setting_updated_by_user_id_fk": {
           "name": "setting_updated_by_user_id_fk",
           "tableFrom": "setting",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "setting_id_v7": {
+          "name": "setting_id_v7",
+          "value": "uuid_extract_version(\"setting\".\"id\") = 7"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.sync_op": {
+      "name": "sync_op",
+      "schema": "",
+      "columns": {
+        "op_id": {
+          "name": "op_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity": {
+          "name": "entity",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "sync_op_applied_at_idx": {
+          "name": "sync_op_applied_at_idx",
+          "columns": [
+            {
+              "expression": "applied_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "sync_op_organization_id_organization_id_fk": {
+          "name": "sync_op_organization_id_organization_id_fk",
+          "tableFrom": "sync_op",
+          "tableTo": "organization",
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "sync_op_user_id_user_id_fk": {
+          "name": "sync_op_user_id_user_id_fk",
+          "tableFrom": "sync_op",
+          "tableTo": "user",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -2316,56 +2994,7 @@
       "isRLSEnabled": false
     }
   },
-  "enums": {
-    "public.directory_source": {
-      "name": "directory_source",
-      "schema": "public",
-      "values": [
-        "manuel",
-        "csv",
-        "entra"
-      ]
-    },
-    "public.handover_method": {
-      "name": "handover_method",
-      "schema": "public",
-      "values": [
-        "qr",
-        "pin",
-        "signature",
-        "manuel"
-      ]
-    },
-    "public.notification_type": {
-      "name": "notification_type",
-      "schema": "public",
-      "values": [
-        "avis",
-        "relance",
-        "resume_service"
-      ]
-    },
-    "public.parcel_status": {
-      "name": "parcel_status",
-      "schema": "public",
-      "values": [
-        "a_completer",
-        "recu",
-        "notifie",
-        "remis",
-        "retourne"
-      ]
-    },
-    "public.parcel_type": {
-      "name": "parcel_type",
-      "schema": "public",
-      "values": [
-        "colis",
-        "recommande",
-        "sans_suivi"
-      ]
-    }
-  },
+  "enums": {},
   "schemas": {},
   "sequences": {
     "public.sync_seq": {
