@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { DEFAULT_TEMPLATE_ID } from '#/templates/default';
-import { render, VARIABLES } from '#/templates/render';
+import { DEFAULT_FIELDS, DEFAULT_TEMPLATE_ID } from '#/templates/default';
+import { render, templateValues, VARIABLES } from '#/templates/render';
 import type { TemplateStore } from '#/templates/store';
 
 type TemplatesViewProps = {
@@ -9,6 +9,8 @@ type TemplatesViewProps = {
 };
 
 const KNOWN = Object.fromEntries(VARIABLES.map((name) => [name, name]));
+
+const PREVIEW_VALUES = templateValues(DEFAULT_FIELDS, 'courrier@exemple.fr');
 
 export function TemplatesView({ templates, onChange }: TemplatesViewProps) {
   const [selectedId, setSelectedId] = useState(DEFAULT_TEMPLATE_ID);
@@ -130,6 +132,16 @@ export function TemplatesView({ templates, onChange }: TemplatesViewProps) {
             {unknown.map((name) => `{${name}}`).join(', ')}
           </p>
         )}
+      </fieldset>
+
+      <fieldset>
+        <legend>Aperçu (valeurs d’exemple)</legend>
+        <p className="preview-subject">
+          {render(selected.subject, PREVIEW_VALUES).text}
+        </p>
+        <pre className="preview">
+          {render(selected.body, PREVIEW_VALUES).text}
+        </pre>
       </fieldset>
 
       <p className="muted">

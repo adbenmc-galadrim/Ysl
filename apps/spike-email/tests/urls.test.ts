@@ -59,27 +59,35 @@ describe('buildUrl', () => {
 
   it('carries the same content to every app', () => {
     const fields = draft({
-      to: 'a@exemple.fr',
+      to: 'a@exemple.fr, b@exemple.fr',
       cc: 'c@exemple.fr',
       bcc: 'd@exemple.fr',
-      subject: 'Objet',
-      body: 'Corps',
+      subject: 'Colis A & B = 2 ?',
+      body: 'Élodie\n#4821 à 100 %',
     });
     const expected = {
-      to: 'a@exemple.fr',
       cc: 'c@exemple.fr',
       bcc: 'd@exemple.fr',
-      subject: 'Objet',
-      body: 'Corps',
+      subject: 'Colis A & B = 2 ?',
+      body: 'Élodie\r\n#4821 à 100 %',
     };
 
+    expect(Object.fromEntries(params(buildUrl('mailto', fields)))).toEqual(
+      expected,
+    );
+    expect(buildUrl('mailto', fields)).toMatch(
+      /^mailto:a@exemple\.fr,b@exemple\.fr\?/,
+    );
     for (const [target, prefix] of [
       ['outlook', 'ms-outlook://compose?'],
       ['gmail', 'googlegmail:///co?'],
     ] as [Target, string][]) {
       const url = buildUrl(target, fields);
       expect(url.startsWith(prefix)).toBe(true);
-      expect(Object.fromEntries(params(url))).toEqual(expected);
+      expect(Object.fromEntries(params(url))).toEqual({
+        to: 'a@exemple.fr,b@exemple.fr',
+        ...expected,
+      });
     }
   });
 

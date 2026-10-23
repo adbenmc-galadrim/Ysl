@@ -254,3 +254,18 @@ details summary {
   gap: 8px;
   margin-top: 8px;
 }
+
+.preview-subject {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.preview {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 14px;
+  color: #ddd;
+}

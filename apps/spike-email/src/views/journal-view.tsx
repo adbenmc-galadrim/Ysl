@@ -54,7 +54,11 @@ export function JournalView({ journal }: { journal: Journal }) {
         {trials.map((trial) => (
           <li key={trial.id}>
             <TrialSummary trial={trial} />
-            <VerdictForm journal={journal} trial={trial} />
+            <VerdictForm
+              key={trial.note ?? ''}
+              journal={journal}
+              trial={trial}
+            />
           </li>
         ))}
       </ol>
