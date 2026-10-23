@@ -27,8 +27,10 @@ HTTPS activé sur le tailnet). Arrêter le partage : `tailscale serve --https=44
 Le spike partage l'origine de l'app : ses photos vont dans le dossier OPFS `spike-camera`
 et son journal dans la clé `localStorage` `spike-camera:sessions`.
 
-Pour le retirer : supprimer `apps/spike-camera`, les deux lignes du Dockerfile et le bloc
-`/spike-camera/` de `nginx.conf`.
+Pour le retirer : supprimer `apps/spike-camera` ; dans `apps/web/Dockerfile`, retirer
+`--filter @repo/spike-camera...` de l'installation, `&& pnpm --filter @repo/spike-camera build`
+et le `COPY` du `dist` du spike ; dans `apps/web/nginx.conf`, retirer les deux blocs
+`/spike-camera/`. Puis `pnpm install` pour le lockfile.
 
 ## Ce que fait l'app
 
