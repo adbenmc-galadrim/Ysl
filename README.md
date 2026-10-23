@@ -96,8 +96,8 @@ l'écran d'accueil »). Sur ordinateur, elle s'ouvre normalement.
   `SKIP_ENV_VALIDATION=1 PUBLIC_APP_NAME=Courrier PUBLIC_SERVER_URL=http://localhost:3101`
   devant chaque commande : `pnpm --filter @repo/web build` puis
   `pnpm --filter @repo/web preview` (http://localhost:3100).
-- Une nouvelle version attend un geste de l'utilisateur (mode `prompt`) : elle n'est jamais
-  appliquée au milieu d'un lot.
+- Une nouvelle version n'est jamais appliquée d'office (mode `prompt`) : elle attend la
+  fermeture de l'app et s'applique au lancement suivant, jamais au milieu d'un lot.
 - `/version.json` donne l'heure du build : `curl -s https://ysl.shinseo.fr/version.json`.
 - nginx sert `index.html`, `sw.js`, `version.json` et `manifest.webmanifest` en `no-cache`
   pour qu'un déploiement soit vu au lancement suivant.
