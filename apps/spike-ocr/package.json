@@ -14,11 +14,15 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "build-pack": "tsx scripts/build-pack.ts",
-    "assets": "pnpm run build-pack"
+    "assets": "pnpm run build-pack && pnpm run fetch-models",
+    "fetch-models": "tsx scripts/fetch-models.ts"
   },
   "dependencies": {
+    "onnxruntime-web": "1.30.0",
+    "ppu-paddle-ocr": "6.6.1",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "tesseract.js": "7.0.0"
   },
   "devDependencies": {
     "@repo/corpus": "workspace:*",

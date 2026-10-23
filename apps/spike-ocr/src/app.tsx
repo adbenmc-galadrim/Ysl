@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { readCapabilities, type Capabilities } from '#/capabilities';
 import { appBase } from '#/base';
+import { ENGINE_CONFIGS } from '#/engines/configs';
+import type { OcrLine } from '#/engines/types';
+import { OcrClient } from '#/worker/client';
 import { importFiles, loadPack } from '#/pack/pack';
 import type { PhotoSource } from '#/pack/types';
 
@@ -20,6 +23,44 @@ export function App() {
   const [pack, setPack] = useState<PhotoSource[]>([]);
   const [packError, setPackError] = useState<string>();
   const [imported, setImported] = useState<PhotoSource[]>([]);
+  const [configId, setConfigId] = useState(ENGINE_CONFIGS[0]?.id ?? '');
+  const [trial, setTrial] = useState<string>();
+  const [lines, setLines] = useState<OcrLine[]>([]);
+
+  const runTrial = async () => {
+    const photo = [...imported, ...pack][0];
+    if (!photo) return;
+    const client = new OcrClient(`${location.origin}${appBase}`);
+    setLines([]);
+    setTrial('chargement…');
+    try {
+      const loaded = await client.load(configId);
+      if (loaded.type !== 'loaded') {
+        setTrial(
+          loaded.type === 'load-failed' ? `échec : ${loaded.error}` : '?',
+        );
+        return;
+      }
+      const warmed = await client.warmup();
+      if (warmed.type !== 'warmed') {
+        setTrial(
+          `échec du préchauffage : ${warmed.type === 'failed' ? warmed.error : '?'}`,
+        );
+        return;
+      }
+      const result = await client.recognize(await photo.blob());
+      setLines(result.lines);
+      setTrial(
+        `chargement ${Math.round(loaded.loadMs)} ms · préparation ${Math.round(result.timings.prepMs)} ms · OCR ${Math.round(result.timings.ocrMs)} ms · ${result.lines.length} lignes`,
+      );
+    } catch (error) {
+      setTrial(
+        `échec : ${error instanceof Error ? error.message : String(error)}`,
+      );
+    } finally {
+      client.terminate();
+    }
+  };
 
   useEffect(() => {
     void readCapabilities().then(setCapabilities);
@@ -89,6 +130,34 @@ export function App() {
         <p className="muted" data-testid="imported">
           {imported.length} photo(s) importée(s)
         </p>
+      </section>
+      <section aria-label="Essai">
+        <h2>Essai sur une photo</h2>
+        <select
+          value={configId}
+          onChange={(event) => setConfigId(event.target.value)}
+        >
+          {ENGINE_CONFIGS.map((config) => (
+            <option key={config.id} value={config.id}>
+              {config.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => void runTrial()}
+        >
+          Lancer
+        </button>
+        <p className="muted" data-testid="trial">
+          {trial}
+        </p>
+        <ol data-testid="lines">
+          {lines.map((line, index) => (
+            <li key={index}>{line.text}</li>
+          ))}
+        </ol>
       </section>
     </main>
   );

@@ -11,3 +11,6 @@ dist
 !.env.example
 coverage
 packages/corpus/out
+apps/spike-ocr/public/models
+apps/spike-ocr/public/corpus
+apps/spike-ocr/public/runtime
