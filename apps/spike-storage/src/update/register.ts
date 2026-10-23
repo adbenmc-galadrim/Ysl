@@ -31,6 +31,7 @@ export class Updater {
   constructor(
     private readonly log: Log,
     private readonly localVersion: string,
+    private readonly beforeReload: (reason: string) => void,
   ) {}
 
   start(): void {
@@ -80,6 +81,7 @@ export class Updater {
 
   apply = (): void => {
     this.log('update-applied');
+    this.beforeReload('mise à jour');
     void this.applyWaiting?.(true);
   };
 
@@ -104,6 +106,7 @@ export class Updater {
         'force-update-reload',
         `${scope} · service workers supprimés ${registrations.length}, gardés ${all.length - registrations.length} · caches supprimés ${keys.length}, gardés ${allKeys.length - keys.length}`,
       );
+      this.beforeReload('forçage de la mise à jour');
       location.reload();
     } catch (error) {
       this.log('force-update-failed', errorDetail(error));

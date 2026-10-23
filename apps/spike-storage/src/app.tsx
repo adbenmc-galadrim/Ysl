@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { errorDetail } from '#/errors';
 import { exportJournal } from '#/export';
 import type { Journal } from '#/journal';
@@ -206,7 +201,7 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
       });
   };
 
-  const { session: journalSession, interrupted } = journal;
+  const { session: journalSession, interrupted, writeInterrupted } = journal;
 
   return (
     <div className="app">
@@ -242,6 +237,16 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
             Session précédente interrompue ({clock(interrupted.startedAt)},{' '}
             {interrupted.entries.length} entrées) : plantage, rechargement ou
             app tuée.
+          </p>
+        )}
+        {writeInterrupted && (
+          <p className="warning">
+            Écriture interrompue : la session du{' '}
+            {clock(writeInterrupted.startedAt)} n'avait pas terminé son écriture
+            {writeInterrupted.closeReason
+              ? ` (fermée par ${writeInterrupted.closeReason})`
+              : ''}
+            .
           </p>
         )}
         <dl className="device">
@@ -381,9 +386,11 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
           <button
             type="button"
             disabled={journalSession.closedAt !== undefined}
-            onClick={() => journal.close()}
+            onClick={() => journal.close('manuel')}
           >
-            {journalSession.closedAt ? 'Session terminée' : 'Terminer la session'}
+            {journalSession.closedAt
+              ? 'Session terminée'
+              : 'Terminer la session'}
           </button>
         </div>
         {shared && <p className="status">Journal {shared}.</p>}

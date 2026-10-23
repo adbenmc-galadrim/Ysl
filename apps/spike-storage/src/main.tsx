@@ -14,12 +14,20 @@ journal.log('app-started', __APP_VERSION__);
 if (journal.interrupted) {
   journal.log('previous-session-interrupted', journal.interrupted.id);
 }
+if (journal.writeInterrupted) {
+  journal.log('previous-write-interrupted', journal.writeInterrupted.id);
+}
 
 const updater = new Updater(
   (name, detail) => journal.log(name, detail),
   __APP_VERSION__,
+  (reason) => journal.close(reason),
 );
 updater.start();
+window.addEventListener('pagehide', () => journal.close('pagehide'));
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) journal.reopen();
+});
 
 const db = new SpikeDatabase();
 const writer = new Writer({
