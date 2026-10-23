@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "exports": {
+    "./schema": "./src/schema.ts",
+    "./random": "./src/random.ts",
+    "./identities": "./src/synthetic/identities.ts",
+    "./src/*": "./src/*"
+  },
   "imports": {
     "#*": [
       "./src/*.ts",

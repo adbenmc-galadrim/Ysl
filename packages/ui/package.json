@@ -47,7 +47,7 @@
     "eslint": "catalog:",
     "eslint-plugin-storybook": "^10.5.7",
     "pixelmatch": "^7.1.0",
-    "playwright": "1.62.1",
+    "playwright": "catalog:",
     "pngjs": "^7.0.0",
     "react": "catalog:",
     "react-dom": "catalog:",
