@@ -518,8 +518,6 @@ export const render = (
     const y = Math.floor((m.row * height + height / 2) / GRID.rows);
     paint(x - 3, y - 3, x + 3, y + 3);
   });
-  paint(0, 0, 0, 0);
-  paint(width - 1, height - 1, width - 1, height - 1);
   return { data, width, height };
 };
 
