@@ -49,7 +49,7 @@ jobs:
       - name: Déclenche le déploiement
         id: trigger
         run: |
-          response=$(curl --silent --show-error --fail-with-body \
+          response=$(curl --silent --show-error --fail-with-body --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=false")
           echo "$response" | jq .
