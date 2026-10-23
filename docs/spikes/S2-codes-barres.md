@@ -247,7 +247,7 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
   affiche chaque symbole (format, contenu, position), le temps de chaque étape, l'étape
   qui a lu, et le MaxiCode avec et sans recadrage.
 - « Toutes les étapes » (cochée par défaut) enchaîne toute la cascade même après un premier code lu ;
-  « Forcer le MaxiCode recadré » le tente même si un autre code est lu.
+  « Forcer le MaxiCode recadré » ne sert que si « Toutes les étapes » est décochée.
 - Chaque essai se rattache à un **colis n°** (« Colis suivant »), avec transporteur et
   verdict : « Tracking lu », « Code lu sans tracking », « Rien lu ».
 - **Journal** : essais par colis et par mode, taux par mode et par transporteur ;
@@ -266,7 +266,8 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
    chaque essai ; « Colis suivant ».
 3. Pour les colis à 2D, vérifier que le contenu affiché correspond à l'étiquette (tracking,
    code postal, nom).
-4. UPS : un essai avec « Forcer le MaxiCode recadré », étiquette bien de face puis de biais.
+4. UPS : un essai étiquette bien de face, puis un de biais ; noter le MaxiCode avec et sans
+   recadrage.
 5. Rafale : 20 « Lire » d'affilée sur des colis différents ; noter les temps affichés et
    tout plantage ou rechargement.
 6. Exporter le journal par AirDrop vers le Mac.
