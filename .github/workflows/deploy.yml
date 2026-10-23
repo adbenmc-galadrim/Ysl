@@ -13,6 +13,11 @@ on:
   push:
     branches: [prod]
   workflow_dispatch:
+    inputs:
+      force:
+        description: Reconstruire les images sans cache (même commit, nouvelle version)
+        type: boolean
+        default: false
 
 concurrency:
   group: deploy-production
@@ -46,10 +51,11 @@ jobs:
       COOLIFY_URL: ${{ vars.COOLIFY_URL }}
       COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
+      FORCE: ${{ inputs.force && 'true' || 'false' }}
     steps:
       - name: Déclenche le déploiement
         run: |
           response=$(curl --silent --show-error --fail-with-body --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
-            "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=false")
+            "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=$FORCE")
           echo "$response" | jq .
