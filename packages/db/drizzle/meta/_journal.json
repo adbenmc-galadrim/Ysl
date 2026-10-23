@@ -12,14 +12,14 @@
     {
       "idx": 1,
       "version": "7",
-      "when": 1792795405291,
+      "when": 1792796538477,
       "tag": "0001_schema_initial",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1792795405667,
+      "when": 1792796538854,
       "tag": "0002_curseur_sync",
       "breakpoints": true
     }

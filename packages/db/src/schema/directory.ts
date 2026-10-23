@@ -2,13 +2,13 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  index,
   integer,
   pgTable,
   text,
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { user } from '#schema/auth';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
 export const DIRECTORY_SOURCES = ['manuel', 'entra'] as const;
@@ -34,6 +34,9 @@ export const directoryPerson = pgTable(
     uniqueIndex('directory_person_email_idx')
       .on(table.organizationId, sql`lower(${table.email})`)
       .where(sql`${table.deletedAt} is null`),
+    index('directory_person_name_norm_idx')
+      .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))
+      .where(sql`${table.deletedAt} is null`),
   ],
 );
 
@@ -44,12 +47,19 @@ export const contact = pgTable(
     name: text('name').notNull(),
     nameNorm: text('name_norm').notNull(),
     email: text('email'),
-    createdBy: text('created_by').references(() => user.id),
+    createdBy: text('created_by'),
     usageCount: integer('usage_count').default(0).notNull(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },
   (table) => [
     ...syncConstraints('contact', table),
     check('contact_usage_count_check', sql`${table.usageCount} >= 0`),
+    index('contact_name_norm_idx')
+      .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))
+      .where(sql`${table.deletedAt} is null`),
+    index('contact_last_used_at_idx').on(
+      table.organizationId,
+      table.lastUsedAt,
+    ),
   ],
 );

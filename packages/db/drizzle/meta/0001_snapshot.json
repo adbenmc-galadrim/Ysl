@@ -1,5 +1,5 @@
 {
-  "id": "253c8a53-4195-41a0-98c3-ff2a8afe510d",
+  "id": "3f0fc419-b7e1-4e72-bf26-f4345dc548d8",
   "prevId": "c01c45d2-9e5d-4508-b294-d7cf3b215d12",
   "version": "7",
   "dialect": "postgresql",
@@ -457,12 +457,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "name": {
           "name": "name",
@@ -513,7 +513,78 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contact_organization_id_idx": {
+          "name": "contact_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contact_name_norm_idx": {
+          "name": "contact_name_norm_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name_norm",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_pattern_ops"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"contact\".\"deleted_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "contact_last_used_at_idx": {
+          "name": "contact_last_used_at_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_used_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -534,15 +605,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "contact_created_by_user_id_fk": {
-          "name": "contact_created_by_user_id_fk",
-          "tableFrom": "contact",
-          "tableTo": "user",
-          "columnsFrom": ["created_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -551,7 +613,7 @@
       "checkConstraints": {
         "contact_id_v7": {
           "name": "contact_id_v7",
-          "value": "uuid_extract_version(\"contact\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"contact\".\"id\"), 0) = 7"
         },
         "contact_usage_count_check": {
           "name": "contact_usage_count_check",
@@ -596,12 +658,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "last_name": {
           "name": "last_name",
@@ -665,13 +727,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "directory_person_organization_id_idx": {
+          "name": "directory_person_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -697,6 +786,29 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "directory_person_name_norm_idx": {
+          "name": "directory_person_name_norm_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name_norm",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last",
+              "opclass": "text_pattern_ops"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"directory_person\".\"deleted_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -716,7 +828,7 @@
       "checkConstraints": {
         "directory_person_id_v7": {
           "name": "directory_person_id_v7",
-          "value": "uuid_extract_version(\"directory_person\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"directory_person\".\"id\"), 0) = 7"
         },
         "directory_person_source_check": {
           "name": "directory_person_source_check",
@@ -761,12 +873,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "entity": {
           "name": "entity",
@@ -816,13 +928,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "event_organization_id_idx": {
+          "name": "event_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -852,6 +991,12 @@
           "name": "event_at_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "at",
               "isExpression": false,
               "asc": true,
@@ -873,15 +1018,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "event_actor_id_user_id_fk": {
-          "name": "event_actor_id_user_id_fk",
-          "tableFrom": "event",
-          "tableTo": "user",
-          "columnsFrom": ["actor_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -890,7 +1026,7 @@
       "checkConstraints": {
         "event_id_v7": {
           "name": "event_id_v7",
-          "value": "uuid_extract_version(\"event\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"event\".\"id\"), 0) = 7"
         }
       },
       "isRLSEnabled": false
@@ -931,12 +1067,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "parcel_ids": {
           "name": "parcel_ids",
@@ -1004,13 +1140,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "handover_organization_id_idx": {
+          "name": "handover_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1066,6 +1229,12 @@
           "name": "handover_at_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "at",
               "isExpression": false,
               "asc": true,
@@ -1087,33 +1256,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "handover_person_id_directory_person_id_fk": {
-          "name": "handover_person_id_directory_person_id_fk",
-          "tableFrom": "handover",
-          "tableTo": "directory_person",
-          "columnsFrom": ["person_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "handover_contact_id_contact_id_fk": {
-          "name": "handover_contact_id_contact_id_fk",
-          "tableFrom": "handover",
-          "tableTo": "contact",
-          "columnsFrom": ["contact_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "handover_agent_id_user_id_fk": {
-          "name": "handover_agent_id_user_id_fk",
-          "tableFrom": "handover",
-          "tableTo": "user",
-          "columnsFrom": ["agent_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1122,7 +1264,7 @@
       "checkConstraints": {
         "handover_id_v7": {
           "name": "handover_id_v7",
-          "value": "uuid_extract_version(\"handover\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"handover\".\"id\"), 0) = 7"
         },
         "handover_method_check": {
           "name": "handover_method_check",
@@ -1131,6 +1273,10 @@
         "handover_single_recipient": {
           "name": "handover_single_recipient",
           "value": "\"handover\".\"person_id\" is null or \"handover\".\"contact_id\" is null"
+        },
+        "handover_recipient_name_check": {
+          "name": "handover_recipient_name_check",
+          "value": "btrim(\"handover\".\"recipient_name\") <> ''"
         },
         "handover_parcels_check": {
           "name": "handover_parcels_check",
@@ -1179,12 +1325,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "person_id": {
           "name": "person_id",
@@ -1234,13 +1380,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pickup_code_organization_id_idx": {
+          "name": "pickup_code_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1291,6 +1464,27 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "pickup_code_expires_at_idx": {
+          "name": "pickup_code_expires_at_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1302,24 +1496,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "pickup_code_person_id_directory_person_id_fk": {
-          "name": "pickup_code_person_id_directory_person_id_fk",
-          "tableFrom": "pickup_code",
-          "tableTo": "directory_person",
-          "columnsFrom": ["person_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "pickup_code_contact_id_contact_id_fk": {
-          "name": "pickup_code_contact_id_contact_id_fk",
-          "tableFrom": "pickup_code",
-          "tableTo": "contact",
-          "columnsFrom": ["contact_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1328,15 +1504,11 @@
       "checkConstraints": {
         "pickup_code_id_v7": {
           "name": "pickup_code_id_v7",
-          "value": "uuid_extract_version(\"pickup_code\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"pickup_code\".\"id\"), 0) = 7"
         },
         "pickup_code_single_recipient": {
           "name": "pickup_code_single_recipient",
           "value": "num_nonnulls(\"pickup_code\".\"person_id\", \"pickup_code\".\"contact_id\") = 1"
-        },
-        "pickup_code_expiry_check": {
-          "name": "pickup_code_expiry_check",
-          "value": "\"pickup_code\".\"expires_at\" > \"pickup_code\".\"created_at\""
         }
       },
       "isRLSEnabled": false
@@ -1377,12 +1549,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "type": {
           "name": "type",
@@ -1433,13 +1605,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "email_template_organization_id_idx": {
+          "name": "email_template_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1491,15 +1690,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "email_template_owner_id_user_id_fk": {
-          "name": "email_template_owner_id_user_id_fk",
-          "tableFrom": "email_template",
-          "tableTo": "user",
-          "columnsFrom": ["owner_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1508,7 +1698,7 @@
       "checkConstraints": {
         "email_template_id_v7": {
           "name": "email_template_id_v7",
-          "value": "uuid_extract_version(\"email_template\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"email_template\".\"id\"), 0) = 7"
         },
         "email_template_type_check": {
           "name": "email_template_type_check",
@@ -1553,12 +1743,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "type": {
           "name": "type",
@@ -1633,13 +1823,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_organization_id_idx": {
+          "name": "notification_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1717,42 +1934,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "notification_person_id_directory_person_id_fk": {
-          "name": "notification_person_id_directory_person_id_fk",
-          "tableFrom": "notification",
-          "tableTo": "directory_person",
-          "columnsFrom": ["person_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "notification_contact_id_contact_id_fk": {
-          "name": "notification_contact_id_contact_id_fk",
-          "tableFrom": "notification",
-          "tableTo": "contact",
-          "columnsFrom": ["contact_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "notification_template_id_email_template_id_fk": {
-          "name": "notification_template_id_email_template_id_fk",
-          "tableFrom": "notification",
-          "tableTo": "email_template",
-          "columnsFrom": ["template_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "notification_prepared_by_user_id_fk": {
-          "name": "notification_prepared_by_user_id_fk",
-          "tableFrom": "notification",
-          "tableTo": "user",
-          "columnsFrom": ["prepared_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1761,7 +1942,7 @@
       "checkConstraints": {
         "notification_id_v7": {
           "name": "notification_id_v7",
-          "value": "uuid_extract_version(\"notification\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"notification\".\"id\"), 0) = 7"
         },
         "notification_type_check": {
           "name": "notification_type_check",
@@ -1831,7 +2012,29 @@
           "notNull": true
         }
       },
-      "indexes": {},
+      "indexes": {
+        "organization_member_organization_user_idx": {
+          "name": "organization_member_organization_user_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "organization_member_user_id_user_id_fk": {
           "name": "organization_member_user_id_user_id_fk",
@@ -1894,12 +2097,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "agent_id": {
           "name": "agent_id",
@@ -1938,13 +2141,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "batch_organization_id_idx": {
+          "name": "batch_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1959,15 +2189,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "batch_agent_id_user_id_fk": {
-          "name": "batch_agent_id_user_id_fk",
-          "tableFrom": "batch",
-          "tableTo": "user",
-          "columnsFrom": ["agent_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1976,7 +2197,7 @@
       "checkConstraints": {
         "batch_id_v7": {
           "name": "batch_id_v7",
-          "value": "uuid_extract_version(\"batch\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"batch\".\"id\"), 0) = 7"
         },
         "batch_parcel_count_check": {
           "name": "batch_parcel_count_check",
@@ -2025,12 +2246,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "batch_id": {
           "name": "batch_id",
@@ -2207,13 +2428,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "parcel_organization_id_idx": {
+          "name": "parcel_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2336,6 +2584,12 @@
           "name": "parcel_delivered_at_idx",
           "columns": [
             {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
               "expression": "delivered_at",
               "isExpression": false,
               "asc": true,
@@ -2358,60 +2612,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "parcel_batch_id_batch_id_fk": {
-          "name": "parcel_batch_id_batch_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "batch",
-          "columnsFrom": ["batch_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "parcel_person_id_directory_person_id_fk": {
-          "name": "parcel_person_id_directory_person_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "directory_person",
-          "columnsFrom": ["person_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "parcel_contact_id_contact_id_fk": {
-          "name": "parcel_contact_id_contact_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "contact",
-          "columnsFrom": ["contact_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "parcel_sender_id_sender_id_fk": {
-          "name": "parcel_sender_id_sender_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "sender",
-          "columnsFrom": ["sender_id"],
-          "columnsTo": ["id"],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "parcel_received_by_user_id_fk": {
-          "name": "parcel_received_by_user_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "user",
-          "columnsFrom": ["received_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "parcel_delivered_by_user_id_fk": {
-          "name": "parcel_delivered_by_user_id_fk",
-          "tableFrom": "parcel",
-          "tableTo": "user",
-          "columnsFrom": ["delivered_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2420,7 +2620,7 @@
       "checkConstraints": {
         "parcel_id_v7": {
           "name": "parcel_id_v7",
-          "value": "uuid_extract_version(\"parcel\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"parcel\".\"id\"), 0) = 7"
         },
         "parcel_type_check": {
           "name": "parcel_type_check",
@@ -2440,7 +2640,7 @@
         },
         "parcel_pieces_check": {
           "name": "parcel_pieces_check",
-          "value": "\"parcel\".\"piece_total\" is null or (\"parcel\".\"piece_total\" >= 1 and (\"parcel\".\"piece_n\" is null or \"parcel\".\"piece_n\" between 1 and \"parcel\".\"piece_total\"))"
+          "value": "(\"parcel\".\"piece_n\" is null or \"parcel\".\"piece_n\" >= 1) and (\"parcel\".\"piece_total\" is null or (\"parcel\".\"piece_total\" >= 1 and (\"parcel\".\"piece_n\" is null or \"parcel\".\"piece_n\" <= \"parcel\".\"piece_total\")))"
         },
         "parcel_weight_check": {
           "name": "parcel_weight_check",
@@ -2485,12 +2685,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "display_name": {
           "name": "display_name",
@@ -2535,13 +2735,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sender_organization_id_idx": {
+          "name": "sender_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2559,10 +2786,12 @@
               "expression": "name_norm",
               "isExpression": false,
               "asc": true,
-              "nulls": "last"
+              "nulls": "last",
+              "opclass": "text_pattern_ops"
             }
           ],
           "isUnique": false,
+          "where": "\"sender\".\"deleted_at\" is null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2585,7 +2814,7 @@
       "checkConstraints": {
         "sender_id_v7": {
           "name": "sender_id_v7",
-          "value": "uuid_extract_version(\"sender\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"sender\".\"id\"), 0) = 7"
         },
         "sender_seen_count_check": {
           "name": "sender_seen_count_check",
@@ -2630,12 +2859,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "carrier": {
           "name": "carrier",
@@ -2674,13 +2903,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sender_account_organization_id_idx": {
+          "name": "sender_account_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2701,7 +2957,7 @@
               "nulls": "last"
             },
             {
-              "expression": "upper(btrim(\"account_number\"))",
+              "expression": "upper(regexp_replace(\"account_number\", '[[:space:]]', '', 'g'))",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
@@ -2738,15 +2994,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "sender_account_sender_id_sender_id_fk": {
-          "name": "sender_account_sender_id_sender_id_fk",
-          "tableFrom": "sender_account",
-          "tableTo": "sender",
-          "columnsFrom": ["sender_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2755,7 +3002,7 @@
       "checkConstraints": {
         "sender_account_id_v7": {
           "name": "sender_account_id_v7",
-          "value": "uuid_extract_version(\"sender_account\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"sender_account\".\"id\"), 0) = 7"
         },
         "sender_account_confirmations_check": {
           "name": "sender_account_confirmations_check",
@@ -2800,12 +3047,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "server_seq": {
-          "name": "server_seq",
+        "server_xid": {
+          "name": "server_xid",
           "type": "bigint",
           "primaryKey": false,
           "notNull": true,
-          "default": "nextval('sync_seq')"
+          "default": "pg_current_xact_id()::text::bigint"
         },
         "key": {
           "name": "key",
@@ -2837,13 +3084,40 @@
               "nulls": "last"
             },
             {
-              "expression": "server_seq",
+              "expression": "server_xid",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "setting_organization_id_idx": {
+          "name": "setting_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2880,15 +3154,6 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "setting_updated_by_user_id_fk": {
-          "name": "setting_updated_by_user_id_fk",
-          "tableFrom": "setting",
-          "tableTo": "user",
-          "columnsFrom": ["updated_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2897,7 +3162,7 @@
       "checkConstraints": {
         "setting_id_v7": {
           "name": "setting_id_v7",
-          "value": "uuid_extract_version(\"setting\".\"id\") = 7"
+          "value": "coalesce(uuid_extract_version(\"setting\".\"id\"), 0) = 7"
         }
       },
       "isRLSEnabled": false
@@ -2906,14 +3171,14 @@
       "name": "sync_op",
       "schema": "",
       "columns": {
-        "op_id": {
-          "name": "op_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
         "organization_id": {
           "name": "organization_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "op_id": {
+          "name": "op_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -2976,38 +3241,28 @@
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
-        },
-        "sync_op_user_id_user_id_fk": {
-          "name": "sync_op_user_id_user_id_fk",
-          "tableFrom": "sync_op",
-          "tableTo": "user",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "sync_op_organization_id_op_id_pk": {
+          "name": "sync_op_organization_id_op_id_pk",
+          "columns": ["organization_id", "op_id"]
+        }
+      },
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "sync_op_entity_check": {
+          "name": "sync_op_entity_check",
+          "value": "\"sync_op\".\"entity\" in ('directory_person', 'contact', 'sender', 'sender_account', 'batch', 'parcel', 'email_template', 'notification', 'pickup_code', 'handover', 'event', 'setting')"
+        }
+      },
       "isRLSEnabled": false
     }
   },
   "enums": {},
   "schemas": {},
-  "sequences": {
-    "public.sync_seq": {
-      "name": "sync_seq",
-      "schema": "public",
-      "increment": "1",
-      "startWith": "1",
-      "minValue": "1",
-      "maxValue": "9223372036854775807",
-      "cache": "1",
-      "cycle": false
-    }
-  },
+  "sequences": {},
   "roles": {},
   "policies": {},
   "views": {},

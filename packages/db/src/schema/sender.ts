@@ -23,7 +23,9 @@ export const sender = pgTable(
   },
   (table) => [
     ...syncConstraints('sender', table),
-    index('sender_name_norm_idx').on(table.organizationId, table.nameNorm),
+    index('sender_name_norm_idx')
+      .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))
+      .where(sql`${table.deletedAt} is null`),
     check('sender_seen_count_check', sql`${table.seenCount} >= 0`),
   ],
 );
@@ -34,9 +36,7 @@ export const senderAccount = pgTable(
     ...syncColumns(),
     carrier: text('carrier').notNull(),
     accountNumber: text('account_number').notNull(),
-    senderId: uuid('sender_id')
-      .notNull()
-      .references(() => sender.id, { onDelete: 'cascade' }),
+    senderId: uuid('sender_id').notNull(),
     confirmations: integer('confirmations').default(0).notNull(),
   },
   (table) => [
@@ -45,7 +45,7 @@ export const senderAccount = pgTable(
       .on(
         table.organizationId,
         sql`lower(${table.carrier})`,
-        sql`upper(btrim(${table.accountNumber}))`,
+        sql`upper(regexp_replace(${table.accountNumber}, '[[:space:]]', '', 'g'))`,
       )
       .where(sql`${table.deletedAt} is null`),
     index('sender_account_sender_id_idx').on(table.senderId),

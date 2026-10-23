@@ -9,7 +9,6 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
@@ -28,9 +27,7 @@ export const emailTemplate = pgTable(
     subject: text('subject').notNull(),
     body: text('body').notNull(),
     isDefault: boolean('is_default').default(false).notNull(),
-    ownerId: text('owner_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+    ownerId: text('owner_id').notNull(),
   },
   (table) => [
     ...syncConstraints('email_template', table),
@@ -47,25 +44,17 @@ export const notification = pgTable(
   {
     ...syncColumns(),
     type: text('type', { enum: NOTIFICATION_TYPES }).notNull(),
-    personId: uuid('person_id').references(() => directoryPerson.id, {
-      onDelete: 'set null',
-    }),
-    contactId: uuid('contact_id').references(() => contact.id, {
-      onDelete: 'set null',
-    }),
+    personId: uuid('person_id'),
+    contactId: uuid('contact_id'),
     recipients: text('recipients').array().notNull(),
     cc: text('cc')
       .array()
       .default(sql`'{}'::text[]`)
       .notNull(),
     parcelIds: uuid('parcel_ids').array().notNull(),
-    templateId: uuid('template_id').references(() => emailTemplate.id, {
-      onDelete: 'set null',
-    }),
+    templateId: uuid('template_id'),
     preparedAt: timestamp('prepared_at', { withTimezone: true }).notNull(),
-    preparedBy: text('prepared_by')
-      .notNull()
-      .references(() => user.id),
+    preparedBy: text('prepared_by').notNull(),
     sentAt: timestamp('sent_at', { withTimezone: true }),
   },
   (table) => [

@@ -9,7 +9,6 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { sender } from '#schema/sender';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
@@ -28,9 +27,7 @@ export const batch = pgTable(
   'batch',
   {
     ...syncColumns(),
-    agentId: text('agent_id')
-      .notNull()
-      .references(() => user.id),
+    agentId: text('agent_id').notNull(),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
     endedAt: timestamp('ended_at', { withTimezone: true }),
     parcelCount: integer('parcel_count').default(0).notNull(),
@@ -49,24 +46,18 @@ export const parcel = pgTable(
   'parcel',
   {
     ...syncColumns(),
-    batchId: uuid('batch_id').references(() => batch.id),
+    batchId: uuid('batch_id'),
     type: text('type', { enum: PARCEL_TYPES }).default('colis').notNull(),
     status: text('status', { enum: PARCEL_STATUSES }).notNull(),
     carrier: text('carrier'),
     tracking: text('tracking'),
     trackingNorm: text('tracking_norm'),
-    personId: uuid('person_id').references(() => directoryPerson.id, {
-      onDelete: 'set null',
-    }),
-    contactId: uuid('contact_id').references(() => contact.id, {
-      onDelete: 'set null',
-    }),
+    personId: uuid('person_id'),
+    contactId: uuid('contact_id'),
     readName: text('read_name'),
     notificationEmail: text('notification_email'),
     department: text('department'),
-    senderId: uuid('sender_id').references(() => sender.id, {
-      onDelete: 'set null',
-    }),
+    senderId: uuid('sender_id'),
     senderName: text('sender_name'),
     pieceN: integer('piece_n'),
     pieceTotal: integer('piece_total'),
@@ -76,14 +67,12 @@ export const parcel = pgTable(
     location: text('location'),
     notes: text('notes'),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
-    receivedBy: text('received_by')
-      .notNull()
-      .references(() => user.id),
+    receivedBy: text('received_by').notNull(),
     validatedAt: timestamp('validated_at', { withTimezone: true }),
     notifiedAt: timestamp('notified_at', { withTimezone: true }),
     lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),
     deliveredAt: timestamp('delivered_at', { withTimezone: true }),
-    deliveredBy: text('delivered_by').references(() => user.id),
+    deliveredBy: text('delivered_by'),
   },
   (table) => [
     ...syncConstraints('parcel', table),
@@ -99,7 +88,7 @@ export const parcel = pgTable(
     ),
     check(
       'parcel_pieces_check',
-      sql`${table.pieceTotal} is null or (${table.pieceTotal} >= 1 and (${table.pieceN} is null or ${table.pieceN} between 1 and ${table.pieceTotal}))`,
+      sql`(${table.pieceN} is null or ${table.pieceN} >= 1) and (${table.pieceTotal} is null or (${table.pieceTotal} >= 1 and (${table.pieceN} is null or ${table.pieceN} <= ${table.pieceTotal})))`,
     ),
     check(
       'parcel_weight_check',
@@ -126,7 +115,7 @@ export const parcel = pgTable(
       .on(table.senderId)
       .where(sql`${table.senderId} is not null`),
     index('parcel_delivered_at_idx')
-      .on(table.deliveredAt)
+      .on(table.organizationId, table.deliveredAt)
       .where(sql`${table.deliveredAt} is not null`),
   ],
 );

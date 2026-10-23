@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -50,12 +50,12 @@ function newParcel() {
   };
 }
 
-async function serverSeqOf(id: string) {
+async function serverXidOf(id: string) {
   const [row] = await db
-    .select({ serverSeq: schema.parcel.serverSeq })
+    .select({ serverXid: schema.parcel.serverXid })
     .from(schema.parcel)
     .where(eq(schema.parcel.id, id));
-  return row?.serverSeq;
+  return row?.serverXid;
 }
 
 beforeAll(async () => {
@@ -105,20 +105,20 @@ describe('migrations', () => {
 
   it('give every synced table an insert and an update cursor trigger', async () => {
     const { rows: synced } = await client.query<{ table_name: string }>(
-      "select table_name from information_schema.columns where table_schema = 'public' and column_name = 'server_seq'",
+      "select table_name from information_schema.columns where table_schema = 'public' and column_name = 'server_xid'",
     );
     const { rows: triggers } = await client.query<{ tgname: string }>(
       `select t.tgname
          from pg_trigger t
          join pg_proc p on p.oid = t.tgfoid
-        where p.proname = 'bump_server_seq' and not t.tgisinternal`,
+        where p.proname = 'stamp_server_xid' and not t.tgisinternal`,
     );
     const names = triggers.map((row) => row.tgname);
 
     expect(synced).toHaveLength(12);
     for (const { table_name } of synced) {
-      expect(names).toContain(`${table_name}_bump_server_seq_insert`);
-      expect(names).toContain(`${table_name}_bump_server_seq_update`);
+      expect(names).toContain(`${table_name}_stamp_server_xid_insert`);
+      expect(names).toContain(`${table_name}_stamp_server_xid_update`);
     }
   });
 });
@@ -149,22 +149,22 @@ describe('sync cursor', () => {
   it('number an insert, whatever the client sends', async () => {
     const [inserted] = await db
       .insert(schema.parcel)
-      .values({ ...newParcel(), serverSeq: 1_000_000 })
+      .values({ ...newParcel(), serverXid: 1_000_000_000_000 })
       .returning();
 
-    expect(inserted?.serverSeq).toBeLessThan(1_000_000);
+    expect(inserted?.serverXid).toBeLessThan(1_000_000_000_000);
   });
 
   it('move forward on a real update only', async () => {
     const parcel = newParcel();
     await db.insert(schema.parcel).values(parcel);
-    const inserted = await serverSeqOf(parcel.id);
+    const inserted = await serverXidOf(parcel.id);
 
     await db
       .update(schema.parcel)
       .set({ notes: 'Étagère B' })
       .where(eq(schema.parcel.id, parcel.id));
-    const updated = await serverSeqOf(parcel.id);
+    const updated = await serverXidOf(parcel.id);
 
     await db
       .update(schema.parcel)
@@ -172,20 +172,20 @@ describe('sync cursor', () => {
       .where(eq(schema.parcel.id, parcel.id));
 
     expect(updated).toBeGreaterThan(inserted ?? Infinity);
-    expect(await serverSeqOf(parcel.id)).toBe(updated);
+    expect(await serverXidOf(parcel.id)).toBe(updated);
   });
 
-  it('hold the organization lock until commit', async () => {
-    await client.transaction(async (tx) => {
-      await tx.query(
-        `insert into setting (id, organization_id, key, value) values ('${newId()}', '${organizationId}', 'lock_probe', '1')`,
-      );
-      const { rows } = await tx.query<{ count: number }>(
-        "select count(*)::int as count from pg_locks where locktype = 'advisory' and classid = 7417",
-      );
+  it('refuse to move a row to another organization', async () => {
+    const parcel = newParcel();
+    await db.insert(schema.parcel).values(parcel);
 
-      expect(rows[0]?.count).toBe(1);
-    });
+    await expectViolation(
+      db
+        .update(schema.parcel)
+        .set({ organizationId: otherOrganizationId })
+        .where(eq(schema.parcel.id, parcel.id)),
+      'cannot change',
+    );
   });
 });
 
@@ -249,7 +249,7 @@ describe('integrity', () => {
     );
   });
 
-  it('keep the event log append-only, soft delete aside', async () => {
+  it('keep the event log append-only, retention purge aside', async () => {
     const id = newId();
     await db.insert(schema.event).values({
       id,
@@ -268,12 +268,43 @@ describe('integrity', () => {
         .where(eq(schema.event.id, id)),
       'append-only',
     );
+    await expectViolation(
+      db.delete(schema.event).where(eq(schema.event.id, id)),
+      'append-only',
+    );
     await expect(
+      db.transaction(async (tx) => {
+        await tx.execute(sql`select set_config('app.purge', 'on', true)`);
+        await tx.delete(schema.event).where(eq(schema.event.id, id));
+      }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('refuse a reference to a row of another organization', async () => {
+    const stranger = newPerson('noe.bernard@example.test', otherOrganizationId);
+    await db.insert(schema.directoryPerson).values(stranger);
+
+    await expectViolation(
       db
-        .update(schema.event)
-        .set({ deletedAt: new Date() })
-        .where(eq(schema.event.id, id)),
-    ).resolves.toBeDefined();
+        .insert(schema.parcel)
+        .values({ ...newParcel(), personId: stranger.id }),
+      'parcel_person_id_fk',
+    );
+  });
+
+  it('refuse a handover listing a parcel of another organization', async () => {
+    await expectViolation(
+      db.insert(schema.handover).values({
+        id: newId(),
+        ...org,
+        parcelIds: [newId()],
+        recipientName: 'Camille Martin',
+        method: 'qr',
+        agentId,
+        at: new Date(),
+      }),
+      'outside its organization',
+    );
   });
 
   it('keep the parcels of a person who leaves, and tell the devices', async () => {
@@ -289,7 +320,7 @@ describe('integrity', () => {
       pinHash: 'pin-hash',
       expiresAt: new Date(Date.now() + 86_400_000),
     });
-    const before = await serverSeqOf(parcel.id);
+    const before = await serverXidOf(parcel.id);
 
     await db
       .delete(schema.directoryPerson)
@@ -300,7 +331,7 @@ describe('integrity', () => {
       .where(eq(schema.parcel.id, parcel.id));
 
     expect(kept?.personId).toBeNull();
-    expect(kept?.serverSeq).toBeGreaterThan(before ?? Infinity);
+    expect(kept?.serverXid).toBeGreaterThan(before ?? Infinity);
   });
 });
 
@@ -441,7 +472,7 @@ describe('uniqueness', () => {
       id: newId(),
       ...org,
       carrier: 'UPS',
-      accountNumber: ' 1a2b3c',
+      accountNumber: ' 1a 2b3c',
       senderId,
     });
 

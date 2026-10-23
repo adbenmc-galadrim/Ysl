@@ -19,18 +19,12 @@ export const handover = pgTable(
   {
     ...syncColumns(),
     parcelIds: uuid('parcel_ids').array().notNull(),
-    personId: uuid('person_id').references(() => directoryPerson.id, {
-      onDelete: 'set null',
-    }),
-    contactId: uuid('contact_id').references(() => contact.id, {
-      onDelete: 'set null',
-    }),
+    personId: uuid('person_id'),
+    contactId: uuid('contact_id'),
     recipientName: text('recipient_name').notNull(),
     delegateName: text('delegate_name'),
     method: text('method', { enum: HANDOVER_METHODS }).notNull(),
-    agentId: text('agent_id')
-      .notNull()
-      .references(() => user.id),
+    agentId: text('agent_id').notNull(),
     at: timestamp('at', { withTimezone: true }).notNull(),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
   },
@@ -40,6 +34,10 @@ export const handover = pgTable(
     check(
       'handover_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,
+    ),
+    check(
+      'handover_recipient_name_check',
+      sql`btrim(${table.recipientName}) <> ''`,
     ),
     check('handover_parcels_check', sql`cardinality(${table.parcelIds}) >= 1`),
     check(
@@ -53,7 +51,7 @@ export const handover = pgTable(
     index('handover_contact_id_idx')
       .on(table.contactId)
       .where(sql`${table.contactId} is not null`),
-    index('handover_at_idx').on(table.at),
+    index('handover_at_idx').on(table.organizationId, table.at),
   ],
 );
 
@@ -61,12 +59,8 @@ export const pickupCode = pgTable(
   'pickup_code',
   {
     ...syncColumns(),
-    personId: uuid('person_id').references(() => directoryPerson.id, {
-      onDelete: 'cascade',
-    }),
-    contactId: uuid('contact_id').references(() => contact.id, {
-      onDelete: 'cascade',
-    }),
+    personId: uuid('person_id'),
+    contactId: uuid('contact_id'),
     tokenHash: text('token_hash').notNull(),
     pinHash: text('pin_hash').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -81,13 +75,13 @@ export const pickupCode = pgTable(
     uniqueIndex('pickup_code_active_contact_idx')
       .on(table.contactId)
       .where(sql`${table.usedAt} is null and ${table.deletedAt} is null`),
+    index('pickup_code_expires_at_idx').on(
+      table.organizationId,
+      table.expiresAt,
+    ),
     check(
       'pickup_code_single_recipient',
       sql`num_nonnulls(${table.personId}, ${table.contactId}) = 1`,
-    ),
-    check(
-      'pickup_code_expiry_check',
-      sql`${table.expiresAt} > ${table.createdAt}`,
     ),
   ],
 );
