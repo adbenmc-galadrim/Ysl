@@ -12,12 +12,12 @@ flux caméra unique tient la rafale. Prototype : [`apps/spike-camera`](../../app
 
 ## Appareil
 
-iPhone (D5 : iOS 26), PWA installée sur l'écran d'accueil, servie en HTTPS par
-`tailscale serve`.
+iPhone (D5 : iOS 26), PWA installée sur l'écran d'accueil depuis
+https://ysl.shinseo.fr/spike-camera/.
 
 ## Protocole
 
-1. Sur l'iPhone, Tailscale connecté, ouvrir l'adresse du tailnet dans Safari, puis
+1. Sur l'iPhone, ouvrir https://ysl.shinseo.fr/spike-camera/ dans Safari, puis
    Partager › Sur l'écran d'accueil. Fermer Safari, lancer **Spike S1** depuis l'icône.
 2. Journal : vérifier `standalone true`, noter `imageCapture` et `opfs`.
 3. Capture › Démarrer la caméra, autoriser. Noter si iOS redemande l'autorisation aux

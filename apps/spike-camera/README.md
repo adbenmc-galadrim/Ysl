@@ -5,19 +5,30 @@ PWA installée sur iPhone, 50 captures d'affilée, reprise après verrouillage, 
 native et orientation EXIF. Le protocole et les résultats sont dans
 [`docs/spikes/S1-camera-rafale.md`](../../docs/spikes/S1-camera-rafale.md).
 
-À supprimer d'un bloc quand le mode rafale de l'app (YSL-23) est livré.
+À supprimer quand le mode rafale de l'app (YSL-23) est livré.
 
 ## Lancer
 
+En production : https://ysl.shinseo.fr/spike-camera/. L'image de `apps/web` construit le
+spike et nginx le sert sous `/spike-camera/` (`apps/web/Dockerfile`, `apps/web/nginx.conf`).
+
+En local :
+
 ```sh
 pnpm --filter @repo/spike-camera build
-pnpm --filter @repo/spike-camera preview   # http://127.0.0.1:3102
-pnpm --filter @repo/spike-camera tailnet   # https://<mac>.<tailnet>.ts.net
+pnpm --filter @repo/spike-camera preview   # http://127.0.0.1:3102/spike-camera/
+pnpm --filter @repo/spike-camera tailnet   # https://<mac>.<tailnet>.ts.net/spike-camera/
 ```
 
-`getUserMedia` et l'installation PWA exigent HTTPS : l'iPhone passe par `tailscale serve`
-(Tailscale démarré sur le Mac, app Tailscale sur l'iPhone, même compte, HTTPS activé sur le
-tailnet). Arrêter le partage : `tailscale serve --https=443 off`.
+`getUserMedia` et l'installation PWA exigent HTTPS : depuis le Mac, l'iPhone passe par
+`tailscale serve` (Tailscale démarré sur le Mac, app Tailscale sur l'iPhone, même compte,
+HTTPS activé sur le tailnet). Arrêter le partage : `tailscale serve --https=443 off`.
+
+Le spike partage l'origine de l'app : ses photos vont dans le dossier OPFS `spike-camera`
+et son journal dans la clé `localStorage` `spike-camera:sessions`.
+
+Pour le retirer : supprimer `apps/spike-camera`, les deux lignes du Dockerfile et le bloc
+`/spike-camera/` de `nginx.conf`.
 
 ## Ce que fait l'app
 
