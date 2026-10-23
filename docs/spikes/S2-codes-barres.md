@@ -34,7 +34,7 @@ défaut depuis jsDelivr est neutralisé à l'exécution et au build. Options : `
 `tryRotate`, `tryInvert`, `tryDownscale`, 15 formats (1D, PDF417, Aztec, Data Matrix, QR,
 MaxiCode). `BarcodeDetector` est ignoré : absent sur iOS (§6).
 
-Stratégie de lecture, la même dans le banc et dans le Worker de la PWA :
+Stratégie de lecture, les mêmes étapes dans le banc et dans le Worker de la PWA :
 
 1. image entière réduite à 1 600 px, puis 2 400 px ;
 2. tuiles pleine résolution de 2 048 px, recouvrement 512 px, chaque tuile sous la limite
@@ -43,6 +43,11 @@ Stratégie de lecture, la même dans le banc et dans le Worker de la PWA :
    droit, centré). Le recadrage maison cherche l'œil de bœuf (anneaux concentriques), en
    estime la taille et la rotation, puis extrait un carré redressé et rééchantillonné lu en
    mode pur.
+
+Le banc arrête la cascade dès que le tracking attendu est lu, ce que l'app ne peut pas
+savoir : ses taux sont un meilleur cas. La PWA enchaîne toutes les étapes par défaut
+(« Toutes les étapes ») et affiche tous les codes lus, pour que le test iPhone mesure la
+même chose sans connaître le tracking.
 
 ## Résultats du banc (corpus, 23/10/2026)
 
@@ -71,7 +76,8 @@ ainsi (38 étiquettes) :
 - **Code lu, tracking ailleurs** (14) : recommandés allemands (Internetmarke, Einschreiben)
   dont le Data Matrix est une franking signée et binaire, GLS dont le Data Matrix ne porte
   que le routage, USPS dont le Code 128 porte le code de routage. Le tracking y est
-  imprimé, pas encodé : c'est l'OCR (S3) qui le trouvera.
+  imprimé, pas encodé : c'est l'OCR (S3) qui le trouvera. Les 5 autres (DHL Paket, DHL
+  Express, Royal Mail, autres) n'ont livré qu'un code sans le tracking, non détaillé ici.
 - **Aucun code** (le reste) : miniatures Commons et Flickr floues ou très réduites,
   étiquettes anciennes (Royal Mail 1990), déclarations douanières sans code.
 
@@ -112,24 +118,26 @@ DHL Express, UPS et DPD à 83,3 % (images volontairement floues, bruitées ou fr
 | Code 39     |                                9 / 4 |                               — |
 | Aztec       |                                6 / 6 |                         16 / 16 |
 | PDF417      |                                4 / 2 |                           9 / 9 |
-| MaxiCode    |                      1 / 0 (recadré) |               10 / 10 (recadré) |
+| MaxiCode    |                      1 / 1 (recadré) |               10 / 10 (recadré) |
 
-L'Aztec, quand il est présent (Colissimo, Chronopost, DPD), est lu à chaque fois et porte
-toujours le tracking : c'est le code le plus fiable des étiquettes françaises.
+Ligne MaxiCode : variante « MaxiCode recadré » seule (la cascade, arrêtée plus tôt par un
+Code 128, en lit moins). Sur les photos et les étiquettes web où il a été lu, l'Aztec
+(Colissimo, Chronopost, DPD) porte toujours le tracking ; il est illisible sur les
+spécimens PDF à 105 ppi.
 
 ### MaxiCode
 
-| Variante         | Web + réelles (6) | Synthèse UPS (12) |
-| ---------------- | ----------------: | ----------------: |
-| Sans recadrage   |                 0 |                 0 |
-| Recadrage maison | 1 (sans tracking) |                10 |
+| Variante         |      Web + réelles (6) | Synthèse UPS (12) |
+| ---------------- | ---------------------: | ----------------: |
+| Sans recadrage   |                      0 |                 0 |
+| Recadrage maison | 1 (tracking recomposé) |                10 |
 
 Sans recadrage, zxing ne lit aucun MaxiCode en photo. Avec le recadrage maison, 10 sur 12
 en synthèse (les 2 échecs sont floue et bruitée), testé jusqu'à 45° et 90° de rotation.
 Sur la photo réelle UPS, l'œil de bœuf et l'angle sont trouvés, mais la légère
 perspective (photo prise de biais) n'est pas corrigée par une simple rotation : la lecture
-pure échoue. Le tracking UPS est lu de toute façon par le Code 128 de l'étiquette (4 / 5
-UPS lus).
+pure échoue. Le MaxiCode web lu (étiquette de face) donne bien le tracking recomposé. Le
+tracking UPS est lu de toute façon par le Code 128 de l'étiquette (4 / 5 UPS lus).
 
 **Piste gratuite** (D11) : estimer une homographie à partir de l'hexagone et des
 modules de l'œil de bœuf au lieu d'une rotation seule ; à reprendre avec le MaxiCode
@@ -146,9 +154,8 @@ maison (F30), le Code 128 suffisant pour le tracking d'ici là.
 | MaxiCode recadré  |       55 |      265 |                    297 |
 | Cascade           |       40 |      272 |                    509 |
 
-La cascade s'arrête dès que le tracking est lu : elle donne une borne du temps, l'app
-réelle ne connaissant pas le tracking attendu s'arrêtera sur le premier code valide
-(YSL-21). Un facteur 3 à 5 est à prévoir sur l'iPhone : mesuré par la PWA.
+La cascade du banc s'arrête dès que le tracking attendu est lu : ses temps sont une borne
+basse ; la PWA, qui enchaîne toutes les étapes, se rapproche de la somme des variantes. Un facteur 3 à 5 est à prévoir sur l'iPhone : mesuré par la PWA.
 
 ## Contenu des codes 2D
 
@@ -204,20 +211,22 @@ Tracking en clair, destinataire et **expéditeur** (`11Z`) présents.
 ```
 
 Le tracking n'est pas en clair : `1Z` + n° d'expéditeur + service + n° de colis se
-recomposent à partir de trois champs (`recomposeUps` dans `match.ts`). Pas de nom de
+recomposent à partir de trois champs : `1Z` + n° d'expéditeur (champ après `UPSN`) +
+2 derniers chiffres de la classe de service (`068` → `68`) + les 8 caractères qui suivent
+`1Z` (`recomposeUps` dans `match.ts`). Pas de nom de
 destinataire.
 
 ### Data Matrix
 
-| Émetteur                                  | Contenu                                                                                                                                 |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| La Poste (synthèse, lettre suivie)        | `FR00A001` + tracking + suffixe                                                                                                         |
-| Colissimo (synthèse)                      | tracking + code postal                                                                                                                  |
-| GLS (web, Allemagne)                      | routage à largeur fixe : `A` + pays + dépôt + code postal + code de tri + n° de client ; **pas de tracking** ; un second Data Matrix `A |     |     | ville |     |     |     | `   |
-| USPS (guides)                             | `420` + code postal `<GS>` + tracking IMpb (`92…`, 22 chiffres)                                                                         |
-| Deutsche Post Internetmarke, Einschreiben | `DEA` + franking binaire signée ; **pas de tracking lisible**                                                                           |
-| Deutsche Post ElectroReturn               | `DEAR01` + identifiant + code postal, chiffres en clair                                                                                 |
-| Amazon (web)                              | identifiant Amazon `ALxxxxxxxxxx`                                                                                                       |
+| Émetteur                                  | Contenu                                                                                                                                                                            |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| La Poste (synthèse, lettre suivie)        | `FR00A001` + tracking + suffixe                                                                                                                                                    |
+| Colissimo (synthèse)                      | tracking + code postal                                                                                                                                                             |
+| GLS (web, Allemagne)                      | routage à largeur fixe : `A` + pays + dépôt + code postal + code de tri + n° de client ; **pas de tracking** ; un second Data Matrix ne porte que la ville, entre des champs vides |
+| USPS (guides)                             | `420` + code postal `<GS>` + tracking IMpb (`92…`, 22 chiffres)                                                                                                                    |
+| Deutsche Post Internetmarke, Einschreiben | `DEA` + franking binaire signée ; **pas de tracking lisible**                                                                                                                      |
+| Deutsche Post ElectroReturn               | `DEAR01` + identifiant + code postal, chiffres en clair                                                                                                                            |
+| Amazon (web)                              | identifiant Amazon `ALxxxxxxxxxx`                                                                                                                                                  |
 
 Aucun Data Matrix GLS ni La Poste réel au service dans le corpus actuel : à relever au
 test iPhone.
@@ -231,7 +240,7 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
   photo d'iOS. Le décodage tourne dans un Web Worker, une image à la fois ; l'écran
   affiche chaque symbole (format, contenu, position), le temps de chaque étape, l'étape
   qui a lu, et le MaxiCode avec et sans recadrage.
-- « Toutes les étapes » enchaîne toute la cascade même après un premier code lu ;
+- « Toutes les étapes » (cochée par défaut) enchaîne toute la cascade même après un premier code lu ;
   « Forcer le MaxiCode recadré » le tente même si un autre code est lu.
 - Chaque essai se rattache à un **colis n°** (« Colis suivant »), avec transporteur et
   verdict : « Tracking lu », « Code lu sans tracking », « Rien lu ».
@@ -246,7 +255,8 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
    d'accueil, l'ouvrir depuis l'icône.
 2. Au service, sur **30 colis au moins** couvrant Colissimo, Chronopost, La Poste, DHL,
    UPS (MaxiCode), FedEx (PDF417), GLS et DPD. Pour chaque colis : choisir le
-   transporteur, « Lire » dans le viseur, puis « Photo native » ; donner le verdict de
+   transporteur, « Lire » dans le viseur, puis « Photo native » (« Toutes les étapes »
+   reste cochée) ; donner le verdict de
    chaque essai ; « Colis suivant ».
 3. Pour les colis à 2D, vérifier que le contenu affiché correspond à l'étiquette (tracking,
    code postal, nom).
