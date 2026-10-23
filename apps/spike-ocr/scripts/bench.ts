@@ -10,6 +10,7 @@ import {
 import { cpus, homedir, tmpdir } from 'node:os';
 import { basename, extname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { manifestSchema, type Label, type Source } from '@repo/corpus/schema';
 import { chromium, webkit, type Browser } from 'playwright';
 import { build, preview } from 'vite';
 import { ENGINE_CONFIGS } from '../src/engines/configs.ts';
@@ -22,16 +23,6 @@ import {
   type PhotoScore,
   type Accuracy,
 } from '../src/scoring/scoring.ts';
-
-type Source = 'synthetic' | 'web' | 'real';
-
-type Label = {
-  id: string;
-  file: string;
-  carrier: string;
-  recipient: string | null;
-  sender: string | null;
-};
 
 type SpikeWindow = {
   spikeOcr: {
@@ -82,9 +73,11 @@ const LABEL_FILES: Record<Source, string> = {
 function loadEntries(scratch: string): Entry[] {
   const entries: Entry[] = [];
   for (const source of sources) {
-    const labels = JSON.parse(
-      readFileSync(join(corpus, source, LABEL_FILES[source]), 'utf8'),
-    ) as Label[];
+    const labels = manifestSchema.parse(
+      JSON.parse(
+        readFileSync(join(corpus, source, LABEL_FILES[source]), 'utf8'),
+      ),
+    );
     for (const label of limit ? labels.slice(0, limit) : labels) {
       const original = join(corpus, source, label.file);
       if (!existsSync(original)) continue;
