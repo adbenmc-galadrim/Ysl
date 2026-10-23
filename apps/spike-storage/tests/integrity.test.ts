@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { OutboxEntry, Parcel } from '#/storage/db';
 import { checkIntegrity, type FileInfo } from '#/storage/integrity';
+import type { Registry } from '#/storage/registry';
+
+function photoName(id: number): string {
+  return `s-${id}-1.jpg`;
+}
 
 function parcel(id: number, seq = id): Parcel {
   return {
     id,
     seq,
     createdAt: id,
-    photoName: `photo-${id}.jpg`,
+    photoName: photoName(id),
     photoBytes: 100 + id,
     photoSha256: `sha-${id}`,
     sessionId: 's',
@@ -19,7 +24,7 @@ function outboxFor(parcelId: number): OutboxEntry {
 }
 
 function fileFor(id: number): FileInfo {
-  return { name: `photo-${id}.jpg`, size: 100 + id, sha256: `sha-${id}` };
+  return { name: photoName(id), size: 100 + id, sha256: `sha-${id}` };
 }
 
 function nominal() {
@@ -30,8 +35,28 @@ function nominal() {
   };
 }
 
-function run(data: ReturnType<typeof nominal>) {
-  return checkIntegrity(data.parcels, data.outbox, data.files);
+function run(
+  data: ReturnType<typeof nominal>,
+  registry: Registry | null = { count: 3, lastSeq: 3 },
+) {
+  return checkIntegrity(
+    data.parcels,
+    data.outbox,
+    data.files,
+    registry ?? undefined,
+  );
+}
+
+function range(from: number, to: number): number[] {
+  return Array.from({ length: to - from + 1 }, (_, index) => from + index);
+}
+
+function dataFor(parcelIds: number[], fileIds: number[]) {
+  return {
+    parcels: parcelIds.map((id) => parcel(id)),
+    outbox: parcelIds.map(outboxFor),
+    files: fileIds.map(fileFor),
+  };
 }
 
 describe('checkIntegrity', () => {
@@ -45,7 +70,7 @@ describe('checkIntegrity', () => {
 
   it('reports a parcel whose photo is missing', () => {
     const data = nominal();
-    data.files = data.files.filter((file) => file.name !== 'photo-2.jpg');
+    data.files = data.files.filter((file) => file.name !== photoName(2));
 
     const report = run(data);
 
@@ -102,5 +127,51 @@ describe('checkIntegrity', () => {
     expect(report.outboxWithoutParcel).toEqual([9]);
     expect(report.parcelsWithoutOutbox).toEqual([3]);
     expect(report.noLoss).toBe(false);
+  });
+
+  it('reports the last parcels vanishing from Dexie', () => {
+    const data = dataFor(range(1, 8), range(1, 10));
+
+    const report = run(data, { count: 10, lastSeq: 10 });
+
+    expect(report.missingParcels).toBe(2);
+    expect(report.tailLost).toBe(true);
+    expect(report.lostOrphans).toEqual([photoName(9), photoName(10)]);
+    expect(report.noLoss).toBe(false);
+  });
+
+  it('reports Dexie wiped while OPFS and the registry remain', () => {
+    const data = dataFor([], range(1, 10));
+
+    const report = run(data, { count: 10, lastSeq: 10 });
+
+    expect(report.missingParcels).toBe(10);
+    expect(report.registryInconsistent).toBe(true);
+    expect(report.noLoss).toBe(false);
+  });
+
+  it('reports a registry wiped while the data remain', () => {
+    const report = run(dataFor(range(1, 3), range(1, 3)), null);
+
+    expect(report.registryInconsistent).toBe(true);
+    expect(report.noLoss).toBe(false);
+  });
+
+  it('treats an empty storage without registry as a fresh state', () => {
+    const report = run(dataFor([], []), null);
+
+    expect(report.emptyStorage).toBe(true);
+    expect(report.noLoss).toBe(true);
+  });
+
+  it('tolerates an orphan whose seq was never committed', () => {
+    const data = dataFor(range(1, 3), range(1, 3));
+    data.files.push({ name: 's-4-1.jpg', size: 5 });
+
+    const report = run(data, { count: 3, lastSeq: 3 });
+
+    expect(report.orphanPhotos).toEqual(['s-4-1.jpg']);
+    expect(report.lostOrphans).toEqual([]);
+    expect(report.noLoss).toBe(true);
   });
 });

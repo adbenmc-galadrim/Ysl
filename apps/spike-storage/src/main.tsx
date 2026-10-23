@@ -5,6 +5,7 @@ import { Journal } from '#/journal';
 import { SpikeDatabase } from '#/storage/db';
 import { savePhoto } from '#/storage/opfs';
 import { generatePhoto } from '#/storage/photo';
+import { recordCommit } from '#/storage/registry';
 import { Writer } from '#/storage/writer';
 import { Updater } from '#/update/register';
 import '#/styles.css';
@@ -36,6 +37,7 @@ const writer = new Writer({
   makePhoto: generatePhoto,
   log: (name, detail) => journal.log(name, detail),
   sessionId: journal.session.id,
+  recordCommit: (seq) => recordCommit(localStorage, seq),
 });
 
 const rootElement = document.getElementById('app');

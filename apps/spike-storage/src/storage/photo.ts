@@ -60,7 +60,10 @@ function noise(): ImageData {
 }
 
 export async function sha256Hex(blob: Blob): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    await blob.arrayBuffer(),
+  );
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, '0'),
   ).join('');
@@ -80,4 +83,17 @@ export async function generatePhoto(seq: number): Promise<GeneratedPhoto> {
   context.fillText(`n° ${seq}`, WIDTH / 2, HEIGHT / 2);
   const blob = await toBlob('image/jpeg', QUALITY);
   return { blob, sha256: await sha256Hex(blob) };
+}
+
+export function photoNameFor(
+  sessionId: string,
+  seq: number,
+  attempt: number,
+): string {
+  return `${sessionId}-${seq}-${attempt}.jpg`;
+}
+
+export function seqFromPhotoName(name: string): number | undefined {
+  const match = /-(\d+)-\d+\.jpg$/.exec(name);
+  return match?.[1] === undefined ? undefined : Number(match[1]);
 }

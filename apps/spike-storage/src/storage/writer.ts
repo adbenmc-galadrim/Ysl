@@ -1,6 +1,6 @@
 import { errorDetail } from '#/errors';
 import type { SpikeDatabase } from '#/storage/db';
-import type { GeneratedPhoto } from '#/storage/photo';
+import { photoNameFor, type GeneratedPhoto } from '#/storage/photo';
 
 type Log = (name: string, detail?: string) => void;
 
@@ -10,6 +10,7 @@ export type WriterDeps = {
   makePhoto: (seq: number) => Promise<GeneratedPhoto>;
   log: Log;
   sessionId: string;
+  recordCommit: (seq: number) => void;
 };
 
 export type WriterState = { running: boolean; done: number; total: number };
@@ -29,6 +30,8 @@ export class Writer {
   private state: WriterState = { running: false, done: 0, total: 0 };
   private tail: Promise<void> = Promise.resolve();
   private stopRequested = false;
+  private attempt = 0;
+  private sessionRun: Promise<void> = Promise.resolve();
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly deps: WriterDeps) {}
@@ -40,7 +43,10 @@ export class Writer {
 
   getState = (): WriterState => this.state;
 
-  idle = (): Promise<void> => this.tail;
+  idle = async (): Promise<void> => {
+    await this.sessionRun;
+    await this.tail;
+  };
 
   writeOne = (): Promise<boolean> => {
     const run = this.tail.then(() => this.write());
@@ -55,11 +61,16 @@ export class Writer {
     if (this.state.running) this.stopRequested = true;
   };
 
-  async startSession(
+  startSession(
     total = SESSION_SIZE,
     intervalMs = SESSION_INTERVAL_MS,
   ): Promise<void> {
-    if (this.state.running) return;
+    if (this.state.running) return this.sessionRun;
+    this.sessionRun = this.runSession(total, intervalMs);
+    return this.sessionRun;
+  }
+
+  private async runSession(total: number, intervalMs: number): Promise<void> {
     this.stopRequested = false;
     this.patch({ running: true, done: 0, total });
     this.deps.log('write-session-started', `${total} colis`);
@@ -81,13 +92,15 @@ export class Writer {
   }
 
   private async write(): Promise<boolean> {
-    const { db, savePhoto, makePhoto, log, sessionId } = this.deps;
+    const { db, savePhoto, makePhoto, log, sessionId, recordCommit } =
+      this.deps;
     let seq = 0;
     try {
       const last = await db.parcels.orderBy('seq').last();
       seq = (last?.seq ?? 0) + 1;
       const photo = await makePhoto(seq);
-      const photoName = `${sessionId}-${seq}.jpg`;
+      this.attempt += 1;
+      const photoName = photoNameFor(sessionId, seq, this.attempt);
 
       const opfsStart = performance.now();
       await savePhoto(photoName, photo.blob);
@@ -105,6 +118,7 @@ export class Writer {
         });
         await db.outbox.add({ parcelId, createdAt, op: 'create' });
       });
+      recordCommit(seq);
       const end = performance.now();
 
       log(

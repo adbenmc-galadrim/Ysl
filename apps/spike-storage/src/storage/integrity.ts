@@ -1,6 +1,7 @@
 import type { OutboxEntry, Parcel, SpikeDatabase } from '#/storage/db';
 import { listPhotos, readPhoto } from '#/storage/opfs';
-import { sha256Hex } from '#/storage/photo';
+import { seqFromPhotoName, sha256Hex } from '#/storage/photo';
+import type { Registry } from '#/storage/registry';
 
 export type FileInfo = { name: string; size: number; sha256?: string };
 
@@ -14,6 +15,13 @@ export type IntegrityReport = {
   seqGaps: number[];
   outboxWithoutParcel: number[];
   parcelsWithoutOutbox: number[];
+  expectedParcels: number | undefined;
+  expectedLastSeq: number | undefined;
+  missingParcels: number;
+  tailLost: boolean;
+  lostOrphans: string[];
+  registryInconsistent: boolean;
+  emptyStorage: boolean;
   noLoss: boolean;
 };
 
@@ -21,6 +29,7 @@ export function checkIntegrity(
   parcels: readonly Parcel[],
   outbox: readonly OutboxEntry[],
   files: readonly FileInfo[],
+  registry: Registry | undefined,
 ): IntegrityReport {
   const filesByName = new Map(files.map((file) => [file.name, file]));
   const photoNames = new Set(parcels.map((parcel) => parcel.photoName));
@@ -37,7 +46,10 @@ export function checkIntegrity(
       parcelsWithoutPhoto.push(parcel.id);
     } else if (file.size !== parcel.photoBytes) {
       sizeMismatches.push(parcel.id);
-    } else if (file.sha256 !== undefined && file.sha256 !== parcel.photoSha256) {
+    } else if (
+      file.sha256 !== undefined &&
+      file.sha256 !== parcel.photoSha256
+    ) {
       shaMismatches.push(parcel.id);
     }
   }
@@ -58,6 +70,24 @@ export function checkIntegrity(
     .filter((parcel) => !outboxParcelIds.has(parcel.id))
     .map((parcel) => parcel.id);
 
+  const expectedParcels = registry?.count;
+  const missingParcels = Math.max(0, (expectedParcels ?? 0) - parcels.length);
+  const tailLost = registry !== undefined && maxSeq < registry.lastSeq;
+  const lostOrphans = orphanPhotos.filter((name) => {
+    const seq = seqFromPhotoName(name);
+    return (
+      registry !== undefined &&
+      seq !== undefined &&
+      seq <= registry.lastSeq &&
+      !seqs.has(seq)
+    );
+  });
+  const storageEmpty = parcels.length === 0 && files.length === 0;
+  const registryInconsistent = registry
+    ? registry.count > 0 && parcels.length === 0
+    : !storageEmpty || outbox.length > 0;
+  const emptyStorage = storageEmpty && (registry?.count ?? 0) === 0;
+
   return {
     parcels: parcels.length,
     files: files.length,
@@ -68,18 +98,30 @@ export function checkIntegrity(
     seqGaps,
     outboxWithoutParcel,
     parcelsWithoutOutbox,
+    expectedParcels,
+    expectedLastSeq: registry?.lastSeq,
+    missingParcels,
+    tailLost,
+    lostOrphans,
+    registryInconsistent,
+    emptyStorage,
     noLoss:
       parcelsWithoutPhoto.length === 0 &&
       sizeMismatches.length === 0 &&
       shaMismatches.length === 0 &&
       seqGaps.length === 0 &&
       outboxWithoutParcel.length === 0 &&
-      parcelsWithoutOutbox.length === 0,
+      parcelsWithoutOutbox.length === 0 &&
+      missingParcels === 0 &&
+      !tailLost &&
+      lostOrphans.length === 0 &&
+      !registryInconsistent,
   };
 }
 
 export async function runIntegrityCheck(
   db: SpikeDatabase,
+  registry: Registry | undefined,
 ): Promise<IntegrityReport> {
   const { parcels, outbox } = await db.transaction(
     'r',
@@ -98,8 +140,12 @@ export async function runIntegrityCheck(
     if (parcel?.photoBytes !== size) {
       files.push({ name, size });
     } else {
-      files.push({ name, size, sha256: await sha256Hex(await readPhoto(name)) });
+      files.push({
+        name,
+        size,
+        sha256: await sha256Hex(await readPhoto(name)),
+      });
     }
   }
-  return checkIntegrity(parcels, outbox, files);
+  return checkIntegrity(parcels, outbox, files, registry);
 }

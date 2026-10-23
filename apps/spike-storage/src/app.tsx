@@ -5,6 +5,7 @@ import type { Journal } from '#/journal';
 import type { SpikeDatabase } from '#/storage/db';
 import { runIntegrityCheck, type IntegrityReport } from '#/storage/integrity';
 import { clearPhotos } from '#/storage/opfs';
+import { readRegistry, resetRegistry } from '#/storage/registry';
 import {
   readPersisted,
   readStorage,
@@ -24,7 +25,11 @@ type AppProps = {
   version: string;
 };
 
-type Stats = { count: number; storage: StorageStatus };
+type Stats = {
+  count: number;
+  expected: number | undefined;
+  storage: StorageStatus;
+};
 type StoredReport = { at: number; reason: string; value: IntegrityReport };
 
 function clock(at: number): string {
@@ -50,7 +55,13 @@ function ids(list: readonly (number | string)[]): string {
 function reportSummary(report: IntegrityReport): string {
   return [
     report.noLoss ? 'aucune perte' : 'PERTE',
+    report.emptyStorage ? 'stockage vide' : 'stockage non vide',
+    `attendus ${report.expectedParcels ?? 'registre absent'}`,
     `${report.parcels} colis`,
+    `manquants ${report.missingParcels}`,
+    `queue perdue ${yesNo(report.tailLost)}`,
+    `orphelines validées ${report.lostOrphans.length}`,
+    `registre incohérent ${yesNo(report.registryInconsistent)}`,
     `${report.files} fichiers`,
     `sans photo ${report.parcelsWithoutPhoto.length}`,
     `orphelines ${report.orphanPhotos.length}`,
@@ -64,7 +75,17 @@ function reportSummary(report: IntegrityReport): string {
 
 function reportRows(report: IntegrityReport): [string, string][] {
   return [
-    ['colis (Dexie)', String(report.parcels)],
+    [
+      'colis attendus (registre)',
+      report.expectedParcels === undefined
+        ? 'registre absent'
+        : `${report.expectedParcels} (dernier n°${report.expectedLastSeq})`,
+    ],
+    ['colis présents (Dexie)', String(report.parcels)],
+    ['colis manquants', String(report.missingParcels)],
+    ['perte en queue', yesNo(report.tailLost)],
+    ["orphelines d'un colis validé", ids(report.lostOrphans)],
+    ['registre et base incohérents', yesNo(report.registryInconsistent)],
     ['fichiers (OPFS)', String(report.files)],
     ['lignes sans photo', ids(report.parcelsWithoutPhoto)],
     ['photos orphelines (tolérées)', ids(report.orphanPhotos)],
@@ -91,6 +112,7 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
     try {
       setStats({
         count: await db.parcels.count(),
+        expected: readRegistry(localStorage)?.count,
         storage: await readStorage(),
       });
     } catch (error) {
@@ -103,7 +125,7 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
       setChecking(true);
       try {
         await writer.idle();
-        const value = await runIntegrityCheck(db);
+        const value = await runIntegrityCheck(db, readRegistry(localStorage));
         journal.log('integrity-check', `${reason} · ${reportSummary(value)}`);
         setReport({ at: Date.now(), reason, value });
       } catch (error) {
@@ -160,6 +182,7 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
         Promise.all([db.parcels.clear(), db.outbox.clear()]),
       );
       await clearPhotos();
+      resetRegistry(localStorage);
       journal.clear();
       journal.log('cleared-all');
       setReport(undefined);
@@ -242,7 +265,8 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
         {writeInterrupted && (
           <p className="warning">
             Écriture interrompue : la session du{' '}
-            {clock(writeInterrupted.startedAt)} n'avait pas terminé son écriture
+            {clock(writeInterrupted.startedAt)} n&apos;avait pas terminé son
+            écriture
             {writeInterrupted.closeReason
               ? ` (fermée par ${writeInterrupted.closeReason})`
               : ''}
@@ -288,8 +312,12 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
             </dd>
           </div>
           <div>
-            <dt>colis</dt>
+            <dt>colis présents</dt>
             <dd>{stats?.count ?? '–'}</dd>
+          </div>
+          <div>
+            <dt>colis attendus (registre)</dt>
+            <dd>{stats ? (stats.expected ?? 'registre absent') : '–'}</dd>
           </div>
           <div>
             <dt>écriture</dt>
@@ -340,6 +368,11 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
         </div>
         {report && (
           <div className="report" data-no-loss={report.value.noLoss}>
+            {report.value.emptyStorage && (
+              <p className="status">
+                Stockage vide : état neuf, ou stockage effacé avec son registre.
+              </p>
+            )}
             <p className={report.value.noLoss ? 'status' : 'warning'}>
               <strong>
                 {report.value.noLoss ? 'Aucune perte' : 'Perte détectée'}
