@@ -1,0 +1,16 @@
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "include": ["src", "tests", "bench", "vitest.config.ts"],
+  "compilerOptions": {
+    "paths": {
+      "#/*": ["./src/*"]
+    },
+    "types": ["node", "emscripten"],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  }
+}
