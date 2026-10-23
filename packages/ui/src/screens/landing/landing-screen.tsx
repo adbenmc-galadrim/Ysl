@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
+import { AppBrand } from '#components/app-mark';
 import { cn } from '#lib/tv';
 import {
-  AppMark,
   CheckDisc,
   HomeScreenPhone,
   InstallQr,
@@ -105,26 +105,6 @@ function Glow({
 /* Hero                                                                       */
 /* -------------------------------------------------------------------------- */
 
-function Brand({ size }: { size: 'nav' | 'footer' }) {
-  const nav = size === 'nav';
-  return (
-    <span className="flex items-center gap-2.5 xl:gap-3">
-      <AppMark size={nav ? 30 : 28} edge="outline" className="xl:hidden" />
-      <AppMark size={32} edge="outline" className="hidden xl:block" />
-      <span
-        className={cn(
-          'font-semibold text-site-ink',
-          nav
-            ? 'text-17 leading-[21px] xl:text-18 xl:leading-[22px]'
-            : 'text-15 leading-[18px] xl:text-17 xl:leading-[21px]',
-        )}
-      >
-        Courrier
-      </span>
-    </span>
-  );
-}
-
 const NAV_LINKS = [
   { href: '#parcours', label: 'Le parcours' },
   { href: '#hors-ligne', label: 'Hors ligne' },
@@ -141,7 +121,7 @@ function Nav() {
         )}
       >
         <a href="#top" aria-label="Courrier, accueil">
-          <Brand size="nav" />
+          <AppBrand size="nav" />
         </a>
         <ul className="absolute left-[460px] hidden gap-11 xl:flex">
           {NAV_LINKS.map((link) => (
@@ -701,7 +681,7 @@ function Footer({ version }: { version: string }) {
     <footer className={cn(CONTAINER, 'pb-10 xl:pb-[60px]')}>
       <div className="mt-[62px] h-px bg-black/10 xl:mt-20" />
       <div className="mt-[27px] grid xl:mt-[35px] xl:grid-cols-[1fr_auto] xl:items-center">
-        <Brand size="footer" />
+        <AppBrand size="footer" />
         <p className="mt-5 text-13 leading-4 text-site-subtle xl:col-start-1 xl:mt-6 xl:text-14 xl:leading-[17px]">
           Service courrier · Saint Laurent
         </p>

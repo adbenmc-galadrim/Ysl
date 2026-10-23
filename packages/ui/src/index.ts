@@ -5,6 +5,7 @@
  */
 export * from '#components/action-card';
 export * from '#components/alphabet-index';
+export * from '#components/app-mark';
 export * from '#components/avatar';
 export * from '#components/banner';
 export * from '#components/bar-chart';

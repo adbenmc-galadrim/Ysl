@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 
+import { AppMark } from '#components/app-mark';
 import { cn } from '#lib/tv';
 
 /*
@@ -17,46 +18,6 @@ const box = ({ x, y, w, h }: Box): CSSProperties => ({
   width: w,
   height: h,
 });
-
-/* -------------------------------------------------------------------------- */
-/* App mark                                                                   */
-/* -------------------------------------------------------------------------- */
-
-export type AppMarkProps = {
-  size: number;
-  /**
-   * `outline` draws the hairline the mark needs on a white page; `halo` the
-   * white ring that cuts it out of a QR code.
-   */
-  edge?: 'none' | 'outline' | 'halo';
-  className?: string;
-};
-
-/** The app icon: a kraft parcel with its label, on a white square. */
-export function AppMark({ size, edge = 'none', className }: AppMarkProps) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'relative block shrink-0 bg-white',
-        edge === 'outline' && 'ring-1 ring-black/10 ring-inset',
-        className,
-      )}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size * 0.24,
-        boxShadow: edge === 'halo' ? `0 0 0 ${size * 0.1}px white` : undefined,
-      }}
-    >
-      <svg viewBox="0 0 100 100" className="absolute inset-0 size-full">
-        <rect x="19" y="27" width="62" height="50" rx="6" className="fill-kraft" />
-        <rect x="19" y="36" width="62" height="7" className="fill-kraft-light" />
-        <rect x="45.03" y="48" width="28.53" height="20" rx="2" className="fill-paper" />
-      </svg>
-    </span>
-  );
-}
 
 /* -------------------------------------------------------------------------- */
 /* Shipping label and the scene the camera films                              */
