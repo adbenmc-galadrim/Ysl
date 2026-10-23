@@ -5,7 +5,7 @@
     "paths": {
       "#/*": ["./src/*"]
     },
-    "types": ["vite/client"],
+    "types": ["vite/client", "vite-plugin-pwa/client"],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,

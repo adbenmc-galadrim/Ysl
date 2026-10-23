@@ -5,6 +5,26 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import viteReact from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
+
+const VERSION = new Date().toISOString();
+
+function versionFile(): Plugin {
+  const source = JSON.stringify({ version: VERSION, builtAt: VERSION });
+  return {
+    name: 'version-file',
+    configureServer(server) {
+      server.middlewares.use('/version.json', (_request, response) => {
+        response.setHeader('Content-Type', 'application/json');
+        response.setHeader('Cache-Control', 'no-store');
+        response.end(source);
+      });
+    },
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'version.json', source });
+    },
+  };
+}
 
 function htmlWording(appName: string): Plugin {
   return {
@@ -44,6 +64,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.PUBLIC_APP_NAME': JSON.stringify(appName),
       'import.meta.env.PUBLIC_SERVER_URL': JSON.stringify(serverUrl),
+      __APP_VERSION__: JSON.stringify(VERSION),
     },
     optimizeDeps: {
       exclude: ['@repo/shared'],
@@ -59,6 +80,19 @@ export default defineConfig(({ mode }) => {
         generatedRouteTree: './src/app/routeTree.gen.ts',
       }),
       viteReact(),
+      versionFile(),
+      VitePWA({
+        registerType: 'prompt',
+        injectRegister: false,
+        manifest: false,
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
+          globIgnores: ['version.json'],
+          navigateFallback: '/index.html',
+          navigateFallbackDenylist: [/^\/spike-/, /^\/version\.json$/],
+          cleanupOutdatedCaches: true,
+        },
+      }),
     ],
   };
 });
