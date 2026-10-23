@@ -14,6 +14,7 @@ import {
 } from '#components/phone-mockup';
 import { Plane } from '#components/plane';
 import { ScanScene } from '#components/scan-scene';
+import { QR_LOGO } from '#lib/qr';
 import { cn } from '#lib/tv';
 
 /*
@@ -52,7 +53,7 @@ function AppQr({
       value={`https://${host}`}
       size={size}
       radius={radius}
-      logo={<AppMark size={size / 5} edge="halo" />}
+      logo={<AppMark size={size * QR_LOGO} edge="halo" />}
       className={className}
     />
   );
@@ -294,7 +295,7 @@ function HandoverCard() {
         value={PICKUP_CODE}
         size={130}
         radius={16}
-        logo={<AppMark size={26} edge="halo" />}
+        logo={<AppMark size={130 * QR_LOGO} edge="halo" />}
         className="hidden xl:block"
       />
       <div>
