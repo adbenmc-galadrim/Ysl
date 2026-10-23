@@ -1,0 +1,40 @@
+{
+  "name": "@repo/spike-barcode",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "tailnet": "tailscale status >/dev/null || { echo 'Tailscale est arrêté : lancer tailscale up' >&2; exit 1; }; tailscale serve --bg 3105",
+    "bench": "tsx bench/run.ts",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@repo/corpus": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zxing-wasm": "3.1.6"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/emscripten": "^1.41.6",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "bwip-js": "^4.11.4",
+    "eslint": "catalog:",
+    "sharp": "^0.35.5",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
