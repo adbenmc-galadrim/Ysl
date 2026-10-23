@@ -5,6 +5,7 @@ import { CheckDisc } from '#components/check-disc';
 import { MailIcon } from '#components/mail-icon';
 import { ParcelThumb, type KraftTone } from '#components/parcel-thumb';
 import { Plane } from '#components/plane';
+import { ScanScene } from '#components/scan-scene';
 import { cn } from '#lib/tv';
 import {
   HomeScreenPhone,
@@ -12,7 +13,6 @@ import {
   ParcelListPhone,
   PickupQr,
   SafariPhone,
-  ScanScene,
   ShareSheetPhone,
 } from '#screens/landing/landing-art';
 

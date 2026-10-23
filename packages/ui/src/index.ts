@@ -62,6 +62,7 @@ export * from '#components/progress-row';
 export * from '#components/qr-code';
 export * from '#components/result-hero';
 export * from '#components/scan-fields';
+export * from '#components/scan-scene';
 export * from '#components/screen';
 export * from '#components/search-field';
 export * from '#components/section-header';
