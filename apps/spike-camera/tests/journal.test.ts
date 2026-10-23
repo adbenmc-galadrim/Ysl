@@ -52,6 +52,8 @@ describe('captureStats', () => {
 
     expect(stats.count).toBe(5);
     expect(stats.maxIntervalMs).toBe(900);
+    expect(stats.lastIntervalMs).toBe(900);
+    expect(stats.p95IntervalMs).toBe(900);
   });
 
   it('takes the 95th percentile by nearest rank', () => {

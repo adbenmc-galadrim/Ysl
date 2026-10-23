@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { readOrientation } from '#/camera/exif';
+import { readJpegInfo } from '#/camera/exif';
+
+const readOrientation = (buffer: ArrayBuffer) =>
+  readJpegInfo(buffer).orientation;
 
 type Order = 'II' | 'MM';
 
@@ -85,5 +88,17 @@ describe('readOrientation', () => {
       jpeg(segment(0xe1, [...EXIF, ...tiff('II', 6, 4)])),
     );
     expect(readOrientation(full.slice(0, 30).buffer)).toBeUndefined();
+  });
+
+  it('reads the frame size after the EXIF block, before any rotation', () => {
+    const exif = segment(0xe1, [...EXIF, ...tiff('II', 6)]);
+    const huffman = segment(0xc4, [0, 0, 0, 0, 0]);
+    const frame = segment(0xc2, [8, 0x0b, 0xd0, 0x0f, 0xc0, 3]);
+
+    expect(readJpegInfo(jpeg(exif, huffman, frame))).toEqual({
+      orientation: 6,
+      width: 4032,
+      height: 3024,
+    });
   });
 });

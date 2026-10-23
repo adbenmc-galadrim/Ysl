@@ -1,5 +1,6 @@
 const START_OF_IMAGE = 0xffd8;
 const START_OF_SCAN = 0xffda;
+const NOT_FRAME_MARKERS = new Set([0xffc4, 0xffc8, 0xffcc]);
 const APP1 = 0xffe1;
 const EXIF_HEADER = 0x45786966;
 const LITTLE_ENDIAN = 0x4949;
@@ -28,26 +29,41 @@ function readTiffOrientation(view: DataView, tiff: number): number | undefined {
   return undefined;
 }
 
-export function readOrientation(buffer: ArrayBuffer): number | undefined {
+export type JpegInfo = {
+  orientation?: number;
+  width?: number;
+  height?: number;
+};
+
+function isFrameMarker(marker: number): boolean {
+  return marker >= 0xffc0 && marker <= 0xffcf && !NOT_FRAME_MARKERS.has(marker);
+}
+
+export function readJpegInfo(buffer: ArrayBuffer): JpegInfo {
   const view = new DataView(buffer);
-  if (view.byteLength < 4 || view.getUint16(0) !== START_OF_IMAGE) {
-    return undefined;
-  }
+  const info: JpegInfo = {};
+  if (view.byteLength < 4 || view.getUint16(0) !== START_OF_IMAGE) return info;
   let offset = 2;
   while (offset + 4 <= view.byteLength) {
     const marker = view.getUint16(offset);
-    if (marker >> 8 !== 0xff || marker === START_OF_SCAN) return undefined;
+    if (marker >> 8 !== 0xff || marker === START_OF_SCAN) return info;
     const length = view.getUint16(offset + 2);
     const data = offset + 4;
     if (
       marker === APP1 &&
+      info.orientation === undefined &&
       data + 6 <= view.byteLength &&
       view.getUint32(data) === EXIF_HEADER &&
       view.getUint16(data + 4) === 0
     ) {
-      return readTiffOrientation(view, data + 6);
+      info.orientation = readTiffOrientation(view, data + 6);
+    }
+    if (isFrameMarker(marker) && data + 5 <= view.byteLength) {
+      info.height = view.getUint16(data + 1);
+      info.width = view.getUint16(data + 3);
+      return info;
     }
     offset += 2 + length;
   }
-  return undefined;
+  return info;
 }

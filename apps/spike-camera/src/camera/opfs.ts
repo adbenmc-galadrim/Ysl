@@ -23,6 +23,12 @@ function writer(): Worker {
       if (reply.ok) request.resolve();
       else request.reject(new Error(reply.error));
     });
+    worker.addEventListener('error', (event) => {
+      for (const request of pending.values()) {
+        request.reject(new Error(`Worker OPFS : ${event.message}`));
+      }
+      pending.clear();
+    });
   }
   return worker;
 }

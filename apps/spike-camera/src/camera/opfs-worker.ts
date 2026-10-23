@@ -1,4 +1,8 @@
-import { PHOTOS_DIRECTORY, type SaveReply, type SaveRequest } from './opfs';
+import {
+  PHOTOS_DIRECTORY,
+  type SaveReply,
+  type SaveRequest,
+} from '#/camera/opfs';
 
 type SyncAccessHandle = {
   truncate(size: number): void;

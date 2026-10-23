@@ -15,6 +15,7 @@ type View = 'capture' | 'journal';
 type Thumbnail = { index: number; url: string };
 
 const BURST_SIZE = 50;
+const BURST_SPACING_MS = 700;
 const KEPT_THUMBNAILS = 12;
 
 type AppProps = {
@@ -93,8 +94,16 @@ export function App({ journal, camera }: AppProps) {
         });
       }
     };
-    const onPageShow = (event: PageTransitionEvent) =>
+    const onPageShow = (event: PageTransitionEvent) => {
       journal.log('page-show', event.persisted ? 'bfcache' : undefined);
+      const video = videoRef.current;
+      if (video) {
+        camera.resume(video).catch((reason: unknown) => {
+          journal.log('resume-failed', errorDetail(reason));
+          setError(errorDetail(reason));
+        });
+      }
+    };
     const onPageHide = () => journal.log('page-hide');
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('pageshow', onPageShow);
@@ -158,20 +167,22 @@ export function App({ journal, camera }: AppProps) {
       for (const file of files) {
         const startedAt = performance.now();
         const at = Date.now();
-        const { bitmap, orientation } = await readNative(file);
+        const { bitmap, info } = await readNative(file);
+        const raw =
+          info.width === undefined ? '?' : `${info.width}×${info.height}`;
         journal.log(
           'native-file',
-          `${file.type || 'type inconnu'} · ${(file.size / 1000).toFixed(0)} ko · EXIF ${orientation ?? 'absente'}`,
+          `${file.type || 'type inconnu'} · ${(file.size / 1000).toFixed(0)} ko · brut ${raw} · EXIF ${info.orientation ?? 'absente'} · redressée ${bitmap.width}×${bitmap.height}`,
         );
         await record(startedAt, at, 'native', await shoot(bitmap), {
-          orientation,
+          orientation: info.orientation,
         });
       }
     });
   };
 
   const nativeButtons = (
-    <span className="native">
+    <span className="native" aria-disabled={busy}>
       <label className="button">
         Photo native
         <input
@@ -179,6 +190,7 @@ export function App({ journal, camera }: AppProps) {
           accept="image/*"
           capture="environment"
           hidden
+          disabled={busy}
           onChange={(event) => importFiles(event.currentTarget)}
         />
       </label>
@@ -189,6 +201,7 @@ export function App({ journal, camera }: AppProps) {
           accept="image/*"
           multiple
           hidden
+          disabled={busy}
           onChange={(event) => importFiles(event.currentTarget)}
         />
       </label>
@@ -216,7 +229,10 @@ export function App({ journal, camera }: AppProps) {
       journal.log('burst-started', `${BURST_SIZE} captures`);
       for (let left = BURST_SIZE; left > 0 && !stopBurst.current; left--) {
         setBurstLeft(left);
+        const startedAt = performance.now();
         await captureOnce(id);
+        const rest = BURST_SPACING_MS - (performance.now() - startedAt);
+        if (rest > 0) await new Promise((done) => setTimeout(done, rest));
       }
       journal.log(
         stopBurst.current ? 'burst-stopped' : 'burst-finished',
@@ -275,8 +291,11 @@ export function App({ journal, camera }: AppProps) {
           )}
           <p className="status">
             {camera.live ? 'Flux actif' : 'Caméra arrêtée'} · {stats.count}{' '}
-            captures · écart max {milliseconds(stats.maxIntervalMs)} · p95{' '}
-            {milliseconds(stats.p95IntervalMs)} · relances {stats.restarts}
+            captures · dernier écart {milliseconds(stats.lastIntervalMs)} · max{' '}
+            {milliseconds(stats.maxIntervalMs)} · p95{' '}
+            {milliseconds(stats.p95IntervalMs)} · relances {stats.restarts} ·
+            échecs {stats.failures}
+            {journal.interrupted ? ' · session précédente interrompue' : ''}
             {error ? ` · ${error}` : ''}
           </p>
           {camera.live ? (

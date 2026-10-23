@@ -19,6 +19,7 @@ export type JournalCapture = {
   sourceHeight: number;
   bytes: number;
   durationMs: number;
+  intervalMs?: number;
   orientation?: number;
   heapBytes?: number;
 };
@@ -27,6 +28,7 @@ export type JournalEntry = JournalEvent | JournalCapture;
 
 export type CaptureStats = {
   count: number;
+  lastIntervalMs?: number;
   maxIntervalMs?: number;
   p95IntervalMs?: number;
   maxDurationMs?: number;
@@ -74,18 +76,14 @@ export function captureStats(entries: readonly JournalEntry[]): CaptureStats {
   const captures = entries.filter(
     (entry): entry is JournalCapture => entry.kind === 'capture',
   );
-  const intervals = captures.flatMap((capture, index) => {
-    const previous = captures[index - 1];
-    return previous &&
-      capture.burst !== undefined &&
-      capture.burst === previous.burst
-      ? [capture.at - previous.at]
-      : [];
-  });
+  const intervals = captures.flatMap((capture) =>
+    capture.intervalMs === undefined ? [] : [capture.intervalMs],
+  );
   const durations = captures.map((capture) => capture.durationMs);
   const events = entries.filter((entry) => entry.kind === 'event');
   return {
     count: captures.length,
+    lastIntervalMs: intervals.at(-1),
     maxIntervalMs: max(intervals),
     p95IntervalMs: percentile(intervals, 95),
     maxDurationMs: max(durations),
@@ -125,11 +123,21 @@ export class Journal {
     this.push({ kind: 'event', at: this.now(), name, detail });
   }
 
-  capture(capture: Omit<JournalCapture, 'kind' | 'index'>): number {
-    const index =
-      this.session.entries.filter((entry) => entry.kind === 'capture').length +
-      1;
-    this.push({ kind: 'capture', index, ...capture });
+  capture(
+    capture: Omit<JournalCapture, 'kind' | 'index' | 'intervalMs'>,
+  ): number {
+    const captures = this.session.entries.filter(
+      (entry): entry is JournalCapture => entry.kind === 'capture',
+    );
+    const previous = captures.at(-1);
+    const intervalMs =
+      previous &&
+      capture.burst !== undefined &&
+      capture.burst === previous.burst
+        ? capture.at - previous.at
+        : undefined;
+    const index = captures.length + 1;
+    this.push({ kind: 'capture', index, intervalMs, ...capture });
     return index;
   }
 

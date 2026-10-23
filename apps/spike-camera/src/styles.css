@@ -38,6 +38,10 @@ button:disabled {
   gap: 6px;
 }
 
+.native[aria-disabled='true'] .button {
+  opacity: 0.5;
+}
+
 .button {
   display: inline-block;
   font-size: 13px;

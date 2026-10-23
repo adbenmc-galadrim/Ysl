@@ -1,13 +1,13 @@
-import { readOrientation } from '#/camera/exif';
+import { readJpegInfo, type JpegInfo } from '#/camera/exif';
 
-const EXIF_SEARCH_BYTES = 128 * 1024;
+const HEADER_BYTES = 256 * 1024;
 
 export async function readNative(
   file: File,
-): Promise<{ bitmap: ImageBitmap; orientation: number | undefined }> {
-  const head = await file.slice(0, EXIF_SEARCH_BYTES).arrayBuffer();
+): Promise<{ bitmap: ImageBitmap; info: JpegInfo }> {
+  const head = await file.slice(0, HEADER_BYTES).arrayBuffer();
   const bitmap = await createImageBitmap(file, {
     imageOrientation: 'from-image',
   });
-  return { bitmap, orientation: readOrientation(head) };
+  return { bitmap, info: readJpegInfo(head) };
 }

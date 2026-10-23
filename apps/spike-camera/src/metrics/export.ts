@@ -19,6 +19,6 @@ export async function exportJournal(journal: Journal): Promise<string> {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return 'téléchargé';
 }

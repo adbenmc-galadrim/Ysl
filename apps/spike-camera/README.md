@@ -38,8 +38,10 @@ Pour le retirer : supprimer `apps/spike-camera`, les deux lignes du Dockerfile e
 - Image par `ImageCapture.grabFrame()`, sinon `createImageBitmap(video)` ; JPEG 0,9 borné à
   16 Mpx, écrit aussitôt dans OPFS par un worker ; seules 12 vignettes de 200 px restent
   en mémoire.
-- **Rafale 50** : 50 captures enchaînées sans pause, l'écart entre deux captures mesure le
-  débit réel.
+- **Rafale 50** : une capture toutes les 700 ms, ou dès que la précédente est écrite si
+  elle a pris plus longtemps ; un écart au-delà d'une seconde trahit donc une capture lente.
+- Le flux est aussi relancé quand la piste se termine page visible, et vérifié au
+  `pageshow`.
 - **Photo native** (`<input capture>`) et **Importer** (photothèque, plusieurs) : orientation
   EXIF lue avant décodage, image redressée par `createImageBitmap`.
 - **Journal** : chaque capture et chaque événement du flux, conservé dans `localStorage` ;

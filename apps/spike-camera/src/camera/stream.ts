@@ -56,7 +56,13 @@ export class CameraStream {
     const track = stream.getVideoTracks()[0];
     track?.addEventListener('mute', () => this.log('track-muted'));
     track?.addEventListener('unmute', () => this.log('track-unmuted'));
-    track?.addEventListener('ended', () => this.log('track-ended'));
+    track?.addEventListener('ended', () => {
+      this.log('track-ended');
+      if (document.visibilityState !== 'visible') return;
+      this.start(video).catch((error: unknown) =>
+        this.log('restart-failed', String(error)),
+      );
+    });
     video.srcObject = stream;
     await video.play();
     this.log(
