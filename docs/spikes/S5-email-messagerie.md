@@ -27,7 +27,9 @@ possible.
   et `googlegmail:///co`. La longueur de chaque URL est affichée.
 - Chaque ouverture entre au journal : cible, source, nombre de destinataires, longueurs, et
   « app quittée » si la page est passée en arrière-plan dans les 2 s (sinon « resté ? » :
-  app absente, confirmation refusée ou lien bloqué).
+  app absente, confirmation refusée ou lien bloqué). Chaque chargement de la page est
+  compté : « page rechargée ensuite » signale qu'iOS a rechargé la PWA au retour de la
+  messagerie.
 - **Partager avec le QR** : feuille de partage iOS avec le QR du code 4821 en PNG joint,
   l'objet en titre et le corps en texte.
 - **Cas préparés** : accents et typographie, sauts de ligne, caractères réservés
@@ -48,7 +50,8 @@ possible.
 2. Composer : **À** = sa propre adresse ; **Adresse de réponse** = une seconde adresse à
    soi (elle reçoit les réponses « Ce n'est pas à moi »).
 3. Modèle **Retrait (maquette)** › Appliquer. Ouvrir dans **Mail**, vérifier destinataire,
-   objet et corps dans le brouillon, envoyer. Revenir dans le spike, saisir le verdict.
+   objet et corps dans le brouillon, envoyer. Revenir dans le spike : noter si la page a
+   été rechargée (le brouillon doit être intact), saisir le verdict dans « Dernier essai ».
    Recommencer avec **Outlook** puis **Gmail**.
 4. Ouvrir les mails reçus, dans Mail et dans Outlook : accents, puces, sauts de ligne ; les
    deux liens `mailto:` sont-ils cliquables ? Toucher « Ce n'est pas à moi » : un nouveau
@@ -83,7 +86,13 @@ possible.
 | Liens `mailto:` cliquables       |          |         |       |
 | Corps HTML                       |          |         |       |
 | Longueur maximale du corps       |          |         |       |
-| QR par la feuille de partage     |          |         |       |
+| Partage : QR joint ou inséré     |          |         |       |
+| Partage : objet et texte repris  |          |         |       |
+| Partage : destinataire à saisir  |          |         |       |
+| Partage : QR reçu lisible        |          |         |       |
+| Pièce jointe par `mailto:`       |          |         |       |
+| Retour dans la PWA : rechargée ? |          |         |       |
+| Brouillon et essai conservés     |          |         |       |
 
 ## Limites connues avant le test
 

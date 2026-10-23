@@ -36,10 +36,12 @@ et le `COPY` du `dist` du spike ; dans `apps/web/nginx.conf`, retirer les deux b
 - **Composer** : destinataires, objet, corps ; un modèle ou un cas préparé les remplit. Les
   liens Mail (`mailto:`), Outlook (`ms-outlook://compose`) et Gmail (`googlegmail:///co`)
   ouvrent le brouillon ; tout est encodé par `encodeURIComponent`, sauts de ligne en CRLF.
-- **Partager avec le QR** : feuille de partage avec `public/qr-retrait.png` (code 4821) joint.
+- **Partager avec le QR** : feuille de partage avec `public/qr-retrait.png` joint. Le QR
+  encode `4821` ; il a été produit par `qrencode -o public/qr-retrait.png -s 10 -m 4 -l M 4821`.
 - **Modèles** : variables `{prénom}`, `{nom}`, `{code}`, `{colis}`, `{lieu}`, `{horaires}`,
   `{agent}`, `{lien_pas_moi}`, `{lien_collegue}` ; une variable inconnue reste visible et
   signalée.
 - **Journal** : chaque ouverture, avec « app quittée » si la page est passée en arrière-plan
-  dans les 2 s ; verdict et note saisis à la main ; export JSON.
+  dans les 2 s ; chaque chargement de la page compté (« page rechargée ensuite ») ; verdict
+  et note saisis à la main ; export JSON.
 - Le brouillon en cours survit au retour de la messagerie (iOS recharge parfois la PWA).
