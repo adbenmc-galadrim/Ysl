@@ -129,7 +129,7 @@ function Hero({ host }: { host: string }) {
         <Glow x={-160} y={88} w={420} h={300} alpha={0.06} sigma={120} className="hidden text-site-blue xl:block" />
         <Glow x={740} y={-32} w={520} h={360} alpha={0.22} sigma={120} className="hidden text-kraft-light xl:block" />
         <div className="mt-[567px] xl:mt-0 xl:pt-[104px]">
-          <p className={cn(EYEBROW, 'text-site-green-ink')}>Service courrier · Saint Laurent</p>
+          <p className={cn(EYEBROW, 'text-site-green-ink')}>Service courrier</p>
           <h1 className="mt-[9px] w-[350px] text-[44px] leading-[44px] font-bold tracking-[-1.4px] xl:mt-3.5 xl:w-[560px] xl:text-[76px] xl:leading-[74.5px] xl:tracking-[-3px]">
             Visez.<br className="max-xl:hidden" /> C’est enregistré.
           </h1>
@@ -648,7 +648,7 @@ function Footer({ version }: { version: string }) {
       <div className="mt-[27px] grid xl:mt-[35px] xl:grid-cols-[1fr_auto] xl:items-center">
         <AppBrand size="footer" />
         <p className="mt-5 text-13 leading-4 text-site-subtle xl:col-start-1 xl:mt-6 xl:text-14 xl:leading-[17px]">
-          Service courrier · Saint Laurent
+          Service courrier
         </p>
         <p className="mt-1 text-13 leading-4 text-muted-2 xl:col-start-2 xl:row-start-1 xl:mt-0 xl:text-14 xl:leading-[17px]">
           Usage interne · Version {version}
