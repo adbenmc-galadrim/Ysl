@@ -2,7 +2,8 @@ export const PHOTOS_DIRECTORY = 'spike-storage';
 
 export type SaveRequest = { id: number; name: string; blob: Blob };
 export type SaveReply =
-  { id: number; ok: true } | { id: number; ok: false; error: string };
+  | { id: number; ok: true }
+  | { id: number; ok: false; error: { name: string; message: string } };
 
 export type StoredFile = { name: string; size: number };
 
@@ -27,7 +28,11 @@ function writer(): Worker {
       pending.delete(reply.id);
       if (!request) return;
       if (reply.ok) request.resolve();
-      else request.reject(new Error(reply.error));
+      else {
+        const error = new Error(reply.error.message);
+        error.name = reply.error.name;
+        request.reject(error);
+      }
     });
     worker.addEventListener('error', (event) => {
       for (const request of pending.values()) {

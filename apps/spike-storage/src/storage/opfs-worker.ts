@@ -33,6 +33,17 @@ async function save({ name, blob }: SaveRequest): Promise<void> {
   }
 }
 
+function describe(error: unknown): { name: string; message: string } {
+  if (typeof error === 'object' && error !== null) {
+    const { name, message } = error as { name?: unknown; message?: unknown };
+    return {
+      name: typeof name === 'string' ? name : 'Error',
+      message: typeof message === 'string' ? message : 'Erreur OPFS',
+    };
+  }
+  return { name: 'Error', message: String(error) };
+}
+
 self.addEventListener('message', (event: MessageEvent<SaveRequest>) => {
   const { id } = event.data;
   save(event.data).then(
@@ -41,7 +52,7 @@ self.addEventListener('message', (event: MessageEvent<SaveRequest>) => {
       self.postMessage({
         id,
         ok: false,
-        error: String(error),
+        error: describe(error),
       } satisfies SaveReply),
   );
 });
