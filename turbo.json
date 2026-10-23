@@ -15,6 +15,7 @@
     "BETTER_AUTH_URL",
     "PUBLIC_APP_NAME",
     "PUBLIC_SERVER_URL",
+    "PUBLIC_APP_URL",
     "LOG_LEVEL"
   ],
   "tasks": {

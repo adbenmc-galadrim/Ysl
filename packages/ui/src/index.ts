@@ -9,6 +9,7 @@ export * from '#components/avatar';
 export * from '#components/banner';
 export * from '#components/bar-chart';
 export * from '#components/bottom-bar';
+export * from '#components/branded-qr';
 export * from '#components/button';
 export * from '#components/camera-controls';
 export * from '#components/camera-panel';

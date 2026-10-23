@@ -62,7 +62,7 @@ https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Cooli
 | Ressource | Build | Variables |
 | --- | --- | --- |
 | API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` au build |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr`) au build |
 
 Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi les
 prototypes des spikes : https://ysl.shinseo.fr/spike-camera/ (S1),
@@ -93,7 +93,7 @@ l'écran d'accueil »). Sur ordinateur, elle s'ouvre normalement.
 - Le service worker (`sw.js`, généré par `vite-plugin-pwa`) met l'app en cache au premier
   lancement : relancée en mode avion, elle s'ouvre sans réseau. Il ne s'enregistre qu'en
   build de production ; pour l'essayer en local, avec
-  `SKIP_ENV_VALIDATION=1 PUBLIC_APP_NAME=Courrier PUBLIC_SERVER_URL=http://localhost:3101`
+  `SKIP_ENV_VALIDATION=1 PUBLIC_APP_NAME=Courrier PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100`
   devant chaque commande : `pnpm --filter @repo/web build` puis
   `pnpm --filter @repo/web preview` (http://localhost:3100).
 - Une nouvelle version n'est jamais appliquée d'office (mode `prompt`) : elle attend la
@@ -115,7 +115,7 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm lint` | ESLint, sans avertissement toléré |
 | `pnpm check-types` | Vérification TypeScript de tous les paquets |
 | `pnpm test` | Tests Vitest |
-| `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 pnpm build`) |
+| `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
 | `pnpm auth:create-user` | Crée un compte agent ou admin |

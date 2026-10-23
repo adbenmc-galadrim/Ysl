@@ -55,9 +55,12 @@ export default defineConfig(({ mode }) => {
   const serverUrl =
     process.env.PUBLIC_SERVER_URL ||
     (isProduction ? undefined : `http://localhost:${SERVER_PORT}`);
-  if (!appName || !serverUrl) {
+  const appUrl =
+    process.env.PUBLIC_APP_URL ||
+    (isProduction ? undefined : `http://localhost:${WEB_PORT}`);
+  if (!appName || !serverUrl || !appUrl) {
     throw new Error(
-      'PUBLIC_APP_NAME and PUBLIC_SERVER_URL are required for a production build.',
+      'PUBLIC_APP_NAME, PUBLIC_SERVER_URL and PUBLIC_APP_URL are required for a production build.',
     );
   }
 
@@ -69,6 +72,7 @@ export default defineConfig(({ mode }) => {
     define: {
       'import.meta.env.PUBLIC_APP_NAME': JSON.stringify(appName),
       'import.meta.env.PUBLIC_SERVER_URL': JSON.stringify(serverUrl),
+      'import.meta.env.PUBLIC_APP_URL': JSON.stringify(appUrl),
       __APP_VERSION__: JSON.stringify(VERSION),
     },
     optimizeDeps: {

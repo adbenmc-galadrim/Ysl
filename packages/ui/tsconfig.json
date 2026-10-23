@@ -5,6 +5,6 @@
   },
   // `.storybook` is spelled out as a glob: TypeScript's wildcards skip
   // dot-prefixed segments, so a bare directory entry would match nothing.
-  "include": ["src", ".storybook/*.ts", ".storybook/*.tsx"],
+  "include": ["src", "tests", "vitest.config.ts", ".storybook/*.ts", ".storybook/*.tsx"],
   "exclude": ["node_modules"]
 }
