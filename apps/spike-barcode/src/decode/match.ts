@@ -59,7 +59,7 @@ export const recomposeUps = (text: string): string[] => {
     const body = tail.replace(/^1Z/, '').replace(new RegExp(`^${shipper}`), '');
     if (/^[A-Z0-9]{10}$/.test(body)) found.push(`1Z${shipper}${body}`);
     const service = fields[i - 2]?.match(/^\d(\d{2})$/)?.[1];
-    if (service && /^[A-Z0-9]{8}$/.test(body)) {
+    if (service && tail.startsWith('1Z') && /^[A-Z0-9]{8}$/.test(body)) {
       found.push(`1Z${shipper}${service}${body}`);
     }
   });
