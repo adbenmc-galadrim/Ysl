@@ -149,7 +149,10 @@ export async function runSeries(options: RunOptions): Promise<SeriesResult> {
           totalMs: recognized.timings.totalMs,
           wasmHeapBytes: recognized.wasmHeapBytes,
           jsHeapBytes: recognized.jsHeapBytes,
-          lines: stored(recognized.lines),
+          // Imported photos are real: keep no recognized text at all.
+          ...(options.source === 'pack'
+            ? { lines: stored(recognized.lines) }
+            : {}),
         });
       } catch (error) {
         record.error = errorText(error);

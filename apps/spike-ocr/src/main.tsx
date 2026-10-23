@@ -14,6 +14,8 @@ Object.assign(window, {
     start: (request: Parameters<Controller['start']>[0]) =>
       controller.start(request),
     results: () => journal.history,
+    observe: (observer: Parameters<Controller['observe']>[0]) =>
+      controller.observe(observer),
   },
 });
 

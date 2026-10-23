@@ -19,6 +19,7 @@ import { buildDirectory } from '../src/scoring/directory.ts';
 import {
   accuracyOf,
   scorePhoto,
+  type PhotoScore,
   type Accuracy,
 } from '../src/scoring/scoring.ts';
 
@@ -33,7 +34,13 @@ type Label = {
 };
 
 type SpikeWindow = {
-  spikeOcr: { start: (request: unknown) => Promise<SeriesResult[]> };
+  spikeOcr: {
+    start: (request: unknown) => Promise<SeriesResult[]>;
+    observe: (
+      observer: (record: { name: string }, lines: unknown) => void,
+    ) => void;
+  };
+  benchLines: (name: string, lines: { text: string }[]) => void;
 };
 
 type Entry = { source: Source; label: Label; path: string; name: string };
@@ -137,11 +144,21 @@ type Cell = {
   overall: Accuracy;
 };
 
+function withoutText(score: PhotoScore): PhotoScore {
+  return {
+    ...(score.recipient && {
+      recipient: { correct: score.recipient.correct, top: [] },
+    }),
+    ...(score.sender && { sender: score.sender }),
+  };
+}
+
 function scoreCell(
   browser: string,
   result: SeriesResult,
   entries: readonly Entry[],
   dirs: Record<Source, string[]>,
+  texts: ReadonlyMap<string, string[]>,
 ): Cell {
   const byName = new Map(entries.map((entry) => [entry.name, entry]));
   const scored: { entry: Entry; score: ReturnType<typeof scorePhoto> }[] = [];
@@ -150,12 +167,15 @@ function scoreCell(
     if (!entry) return photo;
     const score = scorePhoto(
       entry.label,
-      photo.ok ? photo.lines?.map((line) => line.text) : undefined,
+      photo.ok ? texts.get(photo.name) : undefined,
       dirs[entry.source],
     );
     scored.push({ entry, score });
-    const kept: PhotoResult = { ...photo, score };
-    if (entry.source === 'real') delete kept.lines;
+    // Real photos keep only right/wrong: no OCR text and no directory name.
+    const kept: PhotoResult = {
+      ...photo,
+      score: entry.source === 'real' ? withoutText(score) : score,
+    };
     return kept;
   });
   const missing = entries.filter(
@@ -303,6 +323,24 @@ try {
               .querySelector('[data-testid=pack]')
               ?.textContent?.includes('photos'),
           );
+          const texts = new Map<string, string[]>();
+          await page.exposeFunction(
+            'benchLines',
+            (photoName: string, lines: { text: string }[]) =>
+              void texts.set(
+                photoName,
+                lines.map((line) => line.text),
+              ),
+          );
+          await page.evaluate(() =>
+            (window as unknown as SpikeWindow).spikeOcr.observe(
+              (record, lines) =>
+                (window as unknown as SpikeWindow).benchLines(
+                  record.name,
+                  lines as { text: string }[],
+                ),
+            ),
+          );
           await page.setInputFiles(
             'input[type=file]',
             entries.map((entry) => entry.path),
@@ -317,7 +355,7 @@ try {
             configId,
           );
           for (const result of results) {
-            const cell = scoreCell(name, result, entries, dirs);
+            const cell = scoreCell(name, result, entries, dirs, texts);
             cells.push(cell);
             console.log(
               `${name} ${configId} ${result.outcome} ${Math.round((Date.now() - tick) / 1000)} s · dest ${pct(cell.overall.recipient.rate)} · exp ${pct(cell.overall.sender.rate)}`,

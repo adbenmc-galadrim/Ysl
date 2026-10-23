@@ -46,6 +46,8 @@ export class Controller {
   private readonly listeners = new Set<() => void>();
   private stopRequested = false;
   private directory: string[] = [];
+  private observer:
+    ((record: PhotoResult, lines: OcrLine[]) => void) | undefined;
 
   constructor(
     readonly journal: RunJournal,
@@ -75,6 +77,11 @@ export class Controller {
 
   setImported(files: Iterable<File>): void {
     this.update({ imported: importFiles(files) });
+  }
+
+  // In-memory tap for the bench; nothing observed here is persisted.
+  observe(observer: (record: PhotoResult, lines: OcrLine[]) => void): void {
+    this.observer = observer;
   }
 
   refresh(): void {
@@ -108,8 +115,10 @@ export class Controller {
           baseUrl: this.baseUrl,
           journal: this.journal,
           onProgress: (progress) => this.update({ progress }),
-          onPhoto: (record, lines, blob) =>
-            this.showLast(configId, record, lines, blob, photos),
+          onPhoto: (record, lines, blob) => {
+            this.observer?.(record, lines);
+            this.showLast(configId, record, lines, blob, photos);
+          },
           shouldStop: () => this.stopRequested,
         });
         results.push(result);
