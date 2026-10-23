@@ -73,26 +73,83 @@ possible.
 
 ## Résultats
 
-À remplir après le passage sur l'iPhone.
+Passage du 23/10/2026, de 16 h 22 à 17 h 03, PWA installée, journal exporté (18 essais,
+2 chargements de page). Safari 27.0.1 d'après l'agent utilisateur, qui fige la version
+d'iOS (`iPhone OS 18_7`). `standalone`, `share` et `canShareFiles` : `true`. Messageries :
+Mail et Outlook sur un compte Gmail, app Gmail ; mails lus sur l'iPhone et dans Mail sur
+le Mac. Les verdicts ont été donnés de vive voix pendant le test ; le journal n'en garde
+qu'un.
 
-| Mesure                           | Mail iOS | Outlook | Gmail |
-| -------------------------------- | -------- | ------- | ----- |
-| S'ouvre depuis la PWA            |          |         |       |
-| Destinataire, objet, corps       |          |         |       |
-| Plusieurs destinataires, Cc, Cci |          |         |       |
-| Accents, typographie, emoji      |          |         |       |
-| Sauts de ligne, lignes vides     |          |         |       |
-| Caractères réservés              |          |         |       |
-| Liens `mailto:` cliquables       |          |         |       |
-| Corps HTML                       |          |         |       |
-| Longueur maximale du corps       |          |         |       |
-| Partage : QR joint ou inséré     |          |         |       |
-| Partage : objet et texte repris  |          |         |       |
-| Partage : destinataire à saisir  |          |         |       |
-| Partage : QR reçu lisible        |          |         |       |
-| Pièce jointe par `mailto:`       |          |         |       |
-| Retour dans la PWA : rechargée ? |          |         |       |
-| Brouillon et essai conservés     |          |         |       |
+| Mesure                           | Mail iOS                                               | Outlook                                    | Gmail      |
+| -------------------------------- | ------------------------------------------------------ | ------------------------------------------ | ---------- |
+| S'ouvre depuis la PWA            | oui, moins d'une seconde                               | oui si l'app est chargée (voir plus bas)   | oui        |
+| Destinataire, objet, corps       | oui                                                    | oui                                        | oui        |
+| Plusieurs destinataires, Cc, Cci | oui                                                    | oui                                        | non testé  |
+| Accents, typographie, emoji      | oui                                                    | oui (même rendu)                           | oui        |
+| Sauts de ligne, lignes vides     | oui ; indentation supprimée                            | même rendu                                 | même rendu |
+| Caractères réservés              | oui, objet et corps intacts                            | non testé                                  | non testé  |
+| Liens `mailto:` cliquables       | oui, mais affichés en clair                            | oui, mais affichés en clair                | même rendu |
+| Corps HTML                       | balises affichées telles quelles                       | non testé                                  | non testé  |
+| Longueur maximale du corps       | 100 000 car. reçus jusqu'à `FIN` (URL de 300 075 car.) | 100 000 car. reçus jusqu'à `FIN`           | non testé  |
+| Partage : QR joint ou inséré     | inséré en pied du corps                                | en pièce jointe                            | non testé  |
+| Partage : objet et texte repris  | texte oui, objet vide                                  | texte oui, objet = première ligne du texte | non testé  |
+| Partage : destinataire à saisir  | oui                                                    | oui                                        | non testé  |
+| Partage : QR reçu lisible        | oui (`4821`)                                           | oui                                        | non testé  |
+| Pièce jointe par `mailto:`       | impossible (texte seulement)                           | impossible                                 | impossible |
+| Retour dans la PWA : rechargée ? | non                                                    | non                                        | non        |
+| Brouillon et essai conservés     | oui                                                    | oui                                        | oui        |
+
+**Ouverture.** Les trois messageries s'ouvrent depuis la PWA installée et rendent le même
+texte. Le rendu est identique de l'une à l'autre : un seul gabarit texte suffit.
+
+**Apps déchargées.** Outlook avait été « déchargé » par iOS (app conservée sur l'écran
+d'accueil, binaire retiré). Dans cet état, `ms-outlook://` échoue avec « Safari ne peut pas
+ouvrir la page, car l'adresse n'est pas valide ». Après un lancement d'Outlook, le lien
+marche. Le partage vers Outlook affiche de même « Setup needed · Please open the Outlook app
+before continuing » tant que l'app n'a pas été ouverte. `mailto:` vers la messagerie par
+défaut n'a pas ce défaut.
+
+**Longueur.** Aucune limite atteinte : un corps de 100 000 caractères (URL de 300 075
+caractères) s'ouvre en moins d'une seconde et arrive entier dans Mail et dans Outlook.
+
+**Mise en forme.** Texte brut seulement : les balises HTML s'affichent telles quelles, les
+espaces en début de ligne sont supprimés. Les lignes vides, les puces `•`, les accents, la
+typographie française, les emoji et les caractères réservés (`& = ? # %`) arrivent intacts.
+
+**Liens de réponse.** Les liens `mailto:` imbriqués sont cliquables dans Mail (iPhone et Mac)
+et dans Outlook, et ouvrent un brouillon vers l'agent avec l'objet et le corps prévus. Mais
+le texte brut les affiche en entier et encodés (trois lignes de `%20`, `%C3%A0`…) : ils sont
+fonctionnels mais illisibles.
+
+**Expéditeur.** Le mail part du compte de l'utilisateur, sous son nom (ici « Genesis », nom
+du compte Gmail) : le salarié voit l'agent, pas « Service courrier ».
+
+**QR.** Seule la feuille de partage met le QR dans le mail : inséré en pied de mail dans
+Mail, en pièce jointe dans Outlook, lisible dans les deux. Le destinataire est toujours à
+saisir et l'objet n'est pas maîtrisé (vide dans Mail, première ligne du texte dans
+Outlook). Un essai Outlook n'a renvoyé aucun résultat de `navigator.share` au journal.
+
+**Modèles.** Création, modification, duplication, suppression, rétablissement et aperçu
+fonctionnent ; la variable inconnue reste visible et signalée. Après l'app tuée et relancée
+(second chargement de page à 16 h 58), le modèle « Relance » a servi à l'essai suivant :
+modèles, brouillon et journal survivent.
+
+**Détection « app quittée ».** Juste pour Mail (11 essais sur 11) et pour Outlook (deux
+échecs « adresse invalide » vus comme tels, l'essai réussi vu comme ouvert) ; elle a manqué
+l'ouverture de Gmail, plus lente que la fenêtre de 2 s. À ne pas réutiliser comme preuve
+d'ouverture dans l'app réelle.
+
+## Verdict
+
+**Go** pour D2 : l'e-mail prérempli par `mailto:`, envoyé depuis la messagerie de
+l'utilisateur, est la voie principale du MVP.
+
+| Critère   | Résultat                                                                                                          |
+| --------- | ----------------------------------------------------------------------------------------------------------------- |
+| Ouverture | ✅ Mail, Outlook et Gmail, destinataire, objet et corps ; Outlook seulement s'il est chargé                       |
+| Rendu     | ✅ accents, typographie, puces et lignes vides ; ⚠️ indentation supprimée                                         |
+| Limites   | ✅ documentées : texte brut, pas de HTML ni de pièce jointe, pas de limite de longueur jusqu'à 100 000 caractères |
+| Modèles   | ✅ prototype local concluant                                                                                      |
 
 ## Limites connues avant le test
 
@@ -128,6 +185,22 @@ possible.
 
 ## Conséquences
 
-À écrire avec le verdict : gabarit texte de YSL-66 (code en clair, QR ou non), YSL-61 (un
-mail par destinataire, geste par mail), YSL-62 (le repli `mailto:` devient la voie
-principale), YSL-63 (suivi des envois déclaratif).
+- **YSL-66 (gabarit d'e-mail)** : gabarit en texte brut. Code de retrait écrit en clair,
+  mis en avant en début de mail ; colis en puces `•`, aucune mise en forme par espaces. Pas
+  de QR dans le mail prérempli : le code suffit au comptoir (D6 : QR ou code).
+- **Liens de réponse** : ne pas imbriquer de `mailto:` brut. Choisir entre un lien court vers
+  l'app (`https://…/r/<jeton>`, qui ouvre ensuite le brouillon de réponse) et une consigne
+  « répondez à ce mail : pas à moi / un collègue passera ».
+- **YSL-62** : `mailto:` vers la messagerie par défaut devient la voie principale, plus un
+  simple repli. Outlook et Gmail restent en option, avec un message clair si l'app est
+  déchargée ou jamais ouverte.
+- **YSL-61** : un mail par destinataire, un geste « Envoyer » par mail ; pas de limite de
+  longueur pour regrouper beaucoup de colis.
+- **YSL-63** : suivi des envois déclaratif. L'app sait qu'elle a ouvert la messagerie, pas
+  que le mail est parti ; l'agent confirme.
+- **Modèles** : modèles par utilisateur côté serveur, copie locale hors ligne, liste fermée
+  de variables avec signalement des inconnues, modèle par défaut rétablissable.
+- **QR par la feuille de partage** : bonus possible, jamais la voie principale (destinataire
+  à ressaisir, objet non maîtrisé).
+- **Spike** : `apps/spike-email` reste déployé jusqu'à YSL-66, puis se retire (procédure
+  dans son README).
