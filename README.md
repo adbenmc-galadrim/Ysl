@@ -9,6 +9,8 @@ Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
 | `apps/web` | Application Vite, React 19, TanStack Router, Query et Form |
 | `apps/server` | API Hono qui sert le routeur tRPC |
 | `apps/spike-camera` | Prototype jetable du spike S1 (caméra et rafale), servi sous `/spike-camera/` |
+| `apps/spike-storage` | Prototype jetable du spike S4 (stockage et mises à jour), servi sous `/spike-storage/` |
+| `apps/spike-email` | Prototype jetable du spike S5 (e-mail par la messagerie du téléphone), servi sous `/spike-email/` |
 | `packages/api` | Routeur tRPC ; l'app web n'en importe que le type |
 | `packages/auth` | Better Auth : comptes, rôles agent et admin, client web |
 | `packages/contract` | Schémas zod partagés entre l'app et l'API |
@@ -62,9 +64,10 @@ https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Cooli
 | API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
 | App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` au build |
 
-Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi le
-prototype du spike S1 sous https://ysl.shinseo.fr/spike-camera/. L'API applique les migrations
-Drizzle à chaque démarrage, avant d'ouvrir son port.
+Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi les
+prototypes des spikes : https://ysl.shinseo.fr/spike-camera/ (S1),
+https://ysl.shinseo.fr/spike-storage/ (S4) et https://ysl.shinseo.fr/spike-email/ (S5).
+L'API applique les migrations Drizzle à chaque démarrage, avant d'ouvrir son port.
 
 Chaque push sur la branche `prod` lance `.github/workflows/deploy.yml` : lint, types et
 tests, puis déploiement via l'API Coolify. Mettre en production revient à avancer `prod`
