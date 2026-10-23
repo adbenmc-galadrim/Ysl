@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import sharp, { type Sharp } from 'sharp';
 import { readManifest, type Located } from '@repo/corpus/src/manifest.ts';
-import type { Raster } from '../src/decode/zxing.ts';
+import type { Raster } from '#/decode/zxing';
 
 export type BenchLabel = Located;
 

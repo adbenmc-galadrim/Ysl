@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchTracking, recomposeUps } from '../src/decode/match.ts';
+import { matchTracking, recomposeUps } from '#/decode/match';
 
 const sym = (format: string, text: string) => ({ format, text });
 

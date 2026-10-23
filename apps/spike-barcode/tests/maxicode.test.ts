@@ -5,9 +5,9 @@ import {
   locateBullseyes,
   readMaxiCode,
   straightenAll,
-} from '../src/decode/maxicode.ts';
-import { initZxingNode } from '../src/decode/node.ts';
-import { readSymbols, type Raster } from '../src/decode/zxing.ts';
+} from '#/decode/maxicode';
+import { initZxingNode } from '#/decode/node';
+import { readSymbols, type Raster } from '#/decode/zxing';
 
 const SOURCE =
   '[)>^03001^02996750010000^029250^029011^0291ZAB12C30412345675^029UPSN^029AB12C3^029089^029^0291/1^02910^029N^029^029PARIS^029FR^030^004';

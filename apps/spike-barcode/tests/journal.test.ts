@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildExport } from '../src/export.ts';
-import { Journal, STORAGE_KEY, type KeyValueStore } from '../src/journal.ts';
+import { buildExport } from '#/export';
+import { Journal, STORAGE_KEY, type KeyValueStore } from '#/journal';
 
 const memoryStore = (
   initial?: string,

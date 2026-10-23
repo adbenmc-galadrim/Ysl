@@ -5,8 +5,8 @@ import {
   dedupeSymbols,
   planTiles,
   readTiles,
-} from '../src/decode/tiles.ts';
-import type { Raster, Symbol } from '../src/decode/zxing.ts';
+} from '#/decode/tiles';
+import type { Raster, Symbol } from '#/decode/zxing';
 
 const quad = (x: number, y: number, size: number) => ({
   topLeft: { x, y },

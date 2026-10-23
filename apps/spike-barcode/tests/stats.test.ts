@@ -6,7 +6,7 @@ import {
   rate,
   timing,
   type Outcome,
-} from '../src/decode/stats.ts';
+} from '#/decode/stats';
 
 const outcome = (over: Partial<Outcome>): Outcome => ({
   source: 'web',

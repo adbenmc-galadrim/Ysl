@@ -5,8 +5,8 @@ import {
   timing,
   type Outcome,
   type Rate,
-} from '../src/decode/stats.ts';
-import type { MatchRule } from '../src/decode/match.ts';
+} from '#/decode/stats';
+import type { MatchRule } from '#/decode/match';
 
 export type Result = Outcome & {
   id: string;

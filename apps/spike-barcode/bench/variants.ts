@@ -1,6 +1,6 @@
-import { readMaxiCode } from '../src/decode/maxicode.ts';
-import { readTiles } from '../src/decode/tiles.ts';
-import { readSymbols, type Raster, type Symbol } from '../src/decode/zxing.ts';
+import { readMaxiCode } from '#/decode/maxicode';
+import { readTiles } from '#/decode/tiles';
+import { readSymbols, type Raster, type Symbol } from '#/decode/zxing';
 import type { BenchImage } from './corpus.ts';
 
 export type Oracle = (symbols: Symbol[]) => boolean;
