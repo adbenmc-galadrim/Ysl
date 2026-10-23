@@ -368,14 +368,13 @@ export function App({ journal, updater, writer, db, version }: AppProps) {
         </div>
         {report && (
           <div className="report" data-no-loss={report.value.noLoss}>
-            {report.value.emptyStorage && (
-              <p className="status">
-                Stockage vide : état neuf, ou stockage effacé avec son registre.
-              </p>
-            )}
             <p className={report.value.noLoss ? 'status' : 'warning'}>
               <strong>
-                {report.value.noLoss ? 'Aucune perte' : 'Perte détectée'}
+                {report.value.emptyStorage
+                  ? 'Stockage vide : état neuf, ou stockage effacé avec son registre'
+                  : report.value.noLoss
+                    ? 'Aucune perte'
+                    : 'Perte détectée'}
               </strong>{' '}
               · {clock(report.at)} · {report.reason}
             </p>

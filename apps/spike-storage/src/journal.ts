@@ -18,7 +18,7 @@ export type Session = {
 export type KeyValueStore = Pick<Storage, 'getItem' | 'setItem'>;
 
 const STORAGE_KEY = 'spike-storage:journal';
-const KEPT_SESSIONS = 5;
+const KEPT_SESSIONS = 30;
 const WRITE_STARTED = 'write-session-started';
 const WRITE_ENDED = new Set([
   'write-session-finished',
