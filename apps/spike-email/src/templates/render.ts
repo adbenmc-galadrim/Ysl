@@ -24,7 +24,7 @@ export const VARIABLES = [
 
 export type Rendered = { text: string; unknown: string[] };
 
-const PLACEHOLDER = /\{([\p{L}_]+)\}/gu;
+const PLACEHOLDER = /\{([\p{L}\p{N}_-]+)\}/gu;
 
 export function render(
   text: string,
@@ -51,8 +51,28 @@ export function parcelList(lines: string): string {
     .join('\n');
 }
 
-function replyLink(replyTo: string, subject: string, body: string): string {
-  return buildUrl('mailto', { to: replyTo, cc: '', bcc: '', subject, body });
+export const REPLY_NOT_MINE = {
+  subject: 'Ce n’est pas à moi',
+  body: 'Bonjour,\n\nCe colis ne m’est pas destiné.\n\nMerci',
+};
+
+export const REPLY_COLLEAGUE = {
+  subject: 'Un collègue passera',
+  body: 'Bonjour,\n\nUn collègue viendra retirer le colis à ma place :\n\nMerci',
+};
+
+export function replyLink(
+  replyTo: string,
+  reply: { subject: string; body: string },
+  code: string,
+): string {
+  return buildUrl('mailto', {
+    to: replyTo,
+    cc: '',
+    bcc: '',
+    subject: `${reply.subject} · code ${code}`,
+    body: reply.body,
+  });
 }
 
 export function templateValues(
@@ -62,15 +82,7 @@ export function templateValues(
   return {
     ...fields,
     colis: parcelList(fields.colis),
-    lien_pas_moi: replyLink(
-      replyTo,
-      `Ce n’est pas à moi · code ${fields.code}`,
-      'Bonjour,\n\nCe colis ne m’est pas destiné.\n\nMerci',
-    ),
-    lien_collegue: replyLink(
-      replyTo,
-      `Un collègue passera · code ${fields.code}`,
-      'Bonjour,\n\nUn collègue viendra retirer le colis à ma place :\n\nMerci',
-    ),
+    lien_pas_moi: replyLink(replyTo, REPLY_NOT_MINE, fields.code),
+    lien_collegue: replyLink(replyTo, REPLY_COLLEAGUE, fields.code),
   };
 }

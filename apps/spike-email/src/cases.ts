@@ -1,4 +1,5 @@
-import { buildUrl, type Draft } from '#/compose/urls';
+import type { Draft } from '#/compose/urls';
+import { REPLY_COLLEAGUE, REPLY_NOT_MINE, replyLink } from '#/templates/render';
 
 export type CaseContext = { replyTo: string };
 
@@ -20,16 +21,6 @@ export function numberedBody(length: number): string {
   }
   const body = lines.join('\n');
   return `${body.slice(0, length - 4)}\nFIN`;
-}
-
-function replyLink(replyTo: string, subject: string): string {
-  return buildUrl('mailto', {
-    to: replyTo,
-    cc: '',
-    bcc: '',
-    subject,
-    body: 'Bonjour,\n\nCe colis ne m’est pas destiné.\n\nMerci',
-  });
 }
 
 function long(length: number): Case {
@@ -109,10 +100,10 @@ export const CASES: readonly Case[] = [
         'Deux colis sont arrivés pour vous. Code de retrait : 4821.',
         '',
         'Ce n’est pas à moi :',
-        replyLink(replyTo, 'Ce n’est pas à moi · code 4821'),
+        replyLink(replyTo, REPLY_NOT_MINE, '4821'),
         '',
         'Un collègue passera :',
-        replyLink(replyTo, 'Un collègue passera · code 4821'),
+        replyLink(replyTo, REPLY_COLLEAGUE, '4821'),
         '',
         'Service courrier',
       ].join('\n'),
