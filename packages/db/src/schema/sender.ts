@@ -22,7 +22,7 @@ export const sender = pgTable(
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   },
   (table) => [
-    ...syncConstraints('sender', table),
+    ...syncConstraints('sender', table, { referenced: true }),
     index('sender_name_norm_idx')
       .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))
       .where(sql`${table.deletedAt} is null`),

@@ -29,7 +29,7 @@ export const directoryPerson = pgTable(
     active: boolean('active').default(true).notNull(),
   },
   (table) => [
-    ...syncConstraints('directory_person', table),
+    ...syncConstraints('directory_person', table, { referenced: true }),
     oneOf('directory_person_source_check', table.source, DIRECTORY_SOURCES),
     uniqueIndex('directory_person_email_idx')
       .on(table.organizationId, sql`lower(${table.email})`)
@@ -52,7 +52,7 @@ export const contact = pgTable(
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },
   (table) => [
-    ...syncConstraints('contact', table),
+    ...syncConstraints('contact', table, { referenced: true }),
     check('contact_usage_count_check', sql`${table.usageCount} >= 0`),
     index('contact_name_norm_idx')
       .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))

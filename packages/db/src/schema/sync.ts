@@ -37,17 +37,26 @@ type SyncTable = {
   serverXid: AnyPgColumn;
 };
 
-export function syncConstraints(name: string, table: SyncTable) {
+export function syncConstraints(
+  name: string,
+  table: SyncTable,
+  { referenced = false }: { referenced?: boolean } = {},
+) {
   return [
     index(`${name}_cursor_idx`).on(
       table.organizationId,
       table.serverXid,
       table.id,
     ),
-    uniqueIndex(`${name}_organization_id_idx`).on(
-      table.organizationId,
-      table.id,
-    ),
+    // Target of the composite (organization_id, id) foreign keys of 0002.
+    ...(referenced
+      ? [
+          uniqueIndex(`${name}_organization_id_idx`).on(
+            table.organizationId,
+            table.id,
+          ),
+        ]
+      : []),
     check(
       `${name}_id_v7`,
       sql`coalesce(uuid_extract_version(${table.id}), 0) = 7`,

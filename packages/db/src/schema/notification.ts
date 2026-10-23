@@ -30,7 +30,7 @@ export const emailTemplate = pgTable(
     ownerId: text('owner_id').notNull(),
   },
   (table) => [
-    ...syncConstraints('email_template', table),
+    ...syncConstraints('email_template', table, { referenced: true }),
     oneOf('email_template_type_check', table.type, NOTIFICATION_TYPES),
     index('email_template_owner_id_idx').on(table.ownerId),
     uniqueIndex('email_template_default_idx')

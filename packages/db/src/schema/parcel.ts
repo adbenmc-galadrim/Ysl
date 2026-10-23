@@ -33,7 +33,7 @@ export const batch = pgTable(
     parcelCount: integer('parcel_count').default(0).notNull(),
   },
   (table) => [
-    ...syncConstraints('batch', table),
+    ...syncConstraints('batch', table, { referenced: true }),
     check('batch_parcel_count_check', sql`${table.parcelCount} >= 0`),
     check(
       'batch_period_check',
@@ -75,7 +75,7 @@ export const parcel = pgTable(
     deliveredBy: text('delivered_by'),
   },
   (table) => [
-    ...syncConstraints('parcel', table),
+    ...syncConstraints('parcel', table, { referenced: true }),
     oneOf('parcel_type_check', table.type, PARCEL_TYPES),
     oneOf('parcel_status_check', table.status, PARCEL_STATUSES),
     check(
@@ -102,6 +102,12 @@ export const parcel = pgTable(
       .where(
         sql`${table.deletedAt} is null and ${table.status} in ('a_completer', 'recu', 'notifie')`,
       ),
+    index('parcel_overdue_idx')
+      .on(
+        table.organizationId,
+        sql`coalesce(${table.lastNotifiedAt}, ${table.notifiedAt})`,
+      )
+      .where(sql`${table.deletedAt} is null and ${table.status} = 'notifie'`),
     index('parcel_batch_id_idx')
       .on(table.batchId)
       .where(sql`${table.batchId} is not null`),

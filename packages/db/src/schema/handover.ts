@@ -75,6 +75,12 @@ export const pickupCode = pgTable(
     uniqueIndex('pickup_code_active_contact_idx')
       .on(table.contactId)
       .where(sql`${table.usedAt} is null and ${table.deletedAt} is null`),
+    index('pickup_code_person_id_idx')
+      .on(table.organizationId, table.personId)
+      .where(sql`${table.personId} is not null`),
+    index('pickup_code_contact_id_idx')
+      .on(table.organizationId, table.contactId)
+      .where(sql`${table.contactId} is not null`),
     index('pickup_code_expires_at_idx').on(
       table.organizationId,
       table.expiresAt,

@@ -312,14 +312,6 @@ describe('integrity', () => {
     await db.insert(schema.directoryPerson).values(person);
     const parcel = { ...newParcel(), personId: person.id };
     await db.insert(schema.parcel).values(parcel);
-    await db.insert(schema.pickupCode).values({
-      id: newId(),
-      ...org,
-      personId: person.id,
-      tokenHash: 'token-leaver',
-      pinHash: 'pin-hash',
-      expiresAt: new Date(Date.now() + 86_400_000),
-    });
     const before = await serverXidOf(parcel.id);
 
     await db
@@ -332,6 +324,60 @@ describe('integrity', () => {
 
     expect(kept?.personId).toBeNull();
     expect(kept?.serverXid).toBeGreaterThan(before ?? Infinity);
+  });
+
+  it('refuse to delete a person whose pickup code devices still hold', async () => {
+    const person = newPerson('lou.garnier@example.test');
+    await db.insert(schema.directoryPerson).values(person);
+    await db.insert(schema.pickupCode).values({
+      id: newId(),
+      ...org,
+      personId: person.id,
+      tokenHash: 'token-leaver',
+      pinHash: 'pin-hash',
+      expiresAt: new Date(Date.now() + 86_400_000),
+    });
+
+    await expectViolation(
+      db
+        .delete(schema.directoryPerson)
+        .where(eq(schema.directoryPerson.id, person.id)),
+      'pickup_code_person_id_fk',
+    );
+  });
+
+  it('refuse a handover listing the same parcel twice', async () => {
+    const parcel = newParcel();
+    await db.insert(schema.parcel).values(parcel);
+
+    await expectViolation(
+      db.insert(schema.handover).values({
+        id: newId(),
+        ...org,
+        parcelIds: [parcel.id, parcel.id],
+        recipientName: 'Camille Martin',
+        method: 'qr',
+        agentId,
+        at: new Date(),
+      }),
+      'lists a parcel twice',
+    );
+  });
+
+  it('stamp writes even with triggers disabled for replication', async () => {
+    const parcel = newParcel();
+    await db.insert(schema.parcel).values(parcel);
+    const before = await serverXidOf(parcel.id);
+
+    await db.transaction(async (tx) => {
+      await tx.execute(sql`set local session_replication_role = replica`);
+      await tx
+        .update(schema.parcel)
+        .set({ notes: 'Correction' })
+        .where(eq(schema.parcel.id, parcel.id));
+    });
+
+    expect(await serverXidOf(parcel.id)).toBeGreaterThan(before ?? Infinity);
   });
 });
 

@@ -282,27 +282,25 @@ CREATE UNIQUE INDEX "directory_person_organization_id_idx" ON "directory_person"
 CREATE UNIQUE INDEX "directory_person_email_idx" ON "directory_person" USING btree ("organization_id",lower("email")) WHERE "directory_person"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "directory_person_name_norm_idx" ON "directory_person" USING btree ("organization_id","name_norm" text_pattern_ops) WHERE "directory_person"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "event_cursor_idx" ON "event" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "event_organization_id_idx" ON "event" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "event_entity_id_idx" ON "event" USING btree ("entity_id","at");--> statement-breakpoint
 CREATE INDEX "event_at_idx" ON "event" USING btree ("organization_id","at");--> statement-breakpoint
 CREATE INDEX "handover_cursor_idx" ON "handover" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "handover_organization_id_idx" ON "handover" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "handover_parcel_ids_idx" ON "handover" USING gin ("parcel_ids");--> statement-breakpoint
 CREATE INDEX "handover_person_id_idx" ON "handover" USING btree ("person_id") WHERE "handover"."person_id" is not null;--> statement-breakpoint
 CREATE INDEX "handover_contact_id_idx" ON "handover" USING btree ("contact_id") WHERE "handover"."contact_id" is not null;--> statement-breakpoint
 CREATE INDEX "handover_at_idx" ON "handover" USING btree ("organization_id","at");--> statement-breakpoint
 CREATE INDEX "pickup_code_cursor_idx" ON "pickup_code" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "pickup_code_organization_id_idx" ON "pickup_code" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE UNIQUE INDEX "pickup_code_token_hash_idx" ON "pickup_code" USING btree ("token_hash");--> statement-breakpoint
 CREATE UNIQUE INDEX "pickup_code_active_person_idx" ON "pickup_code" USING btree ("person_id") WHERE "pickup_code"."used_at" is null and "pickup_code"."deleted_at" is null;--> statement-breakpoint
 CREATE UNIQUE INDEX "pickup_code_active_contact_idx" ON "pickup_code" USING btree ("contact_id") WHERE "pickup_code"."used_at" is null and "pickup_code"."deleted_at" is null;--> statement-breakpoint
+CREATE INDEX "pickup_code_person_id_idx" ON "pickup_code" USING btree ("organization_id","person_id") WHERE "pickup_code"."person_id" is not null;--> statement-breakpoint
+CREATE INDEX "pickup_code_contact_id_idx" ON "pickup_code" USING btree ("organization_id","contact_id") WHERE "pickup_code"."contact_id" is not null;--> statement-breakpoint
 CREATE INDEX "pickup_code_expires_at_idx" ON "pickup_code" USING btree ("organization_id","expires_at");--> statement-breakpoint
 CREATE INDEX "email_template_cursor_idx" ON "email_template" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
 CREATE UNIQUE INDEX "email_template_organization_id_idx" ON "email_template" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "email_template_owner_id_idx" ON "email_template" USING btree ("owner_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "email_template_default_idx" ON "email_template" USING btree ("owner_id","type") WHERE "email_template"."is_default" and "email_template"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "notification_cursor_idx" ON "notification" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "notification_organization_id_idx" ON "notification" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "notification_parcel_ids_idx" ON "notification" USING gin ("parcel_ids");--> statement-breakpoint
 CREATE INDEX "notification_person_id_idx" ON "notification" USING btree ("person_id") WHERE "notification"."person_id" is not null;--> statement-breakpoint
 CREATE INDEX "notification_contact_id_idx" ON "notification" USING btree ("contact_id") WHERE "notification"."contact_id" is not null;--> statement-breakpoint
@@ -314,6 +312,7 @@ CREATE INDEX "parcel_cursor_idx" ON "parcel" USING btree ("organization_id","ser
 CREATE UNIQUE INDEX "parcel_organization_id_idx" ON "parcel" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "parcel_tracking_norm_idx" ON "parcel" USING btree ("organization_id","tracking_norm") WHERE "parcel"."tracking_norm" is not null;--> statement-breakpoint
 CREATE INDEX "parcel_open_status_idx" ON "parcel" USING btree ("organization_id","status","received_at") WHERE "parcel"."deleted_at" is null and "parcel"."status" in ('a_completer', 'recu', 'notifie');--> statement-breakpoint
+CREATE INDEX "parcel_overdue_idx" ON "parcel" USING btree ("organization_id",coalesce("last_notified_at", "notified_at")) WHERE "parcel"."deleted_at" is null and "parcel"."status" = 'notifie';--> statement-breakpoint
 CREATE INDEX "parcel_batch_id_idx" ON "parcel" USING btree ("batch_id") WHERE "parcel"."batch_id" is not null;--> statement-breakpoint
 CREATE INDEX "parcel_person_id_idx" ON "parcel" USING btree ("person_id") WHERE "parcel"."person_id" is not null;--> statement-breakpoint
 CREATE INDEX "parcel_contact_id_idx" ON "parcel" USING btree ("contact_id") WHERE "parcel"."contact_id" is not null;--> statement-breakpoint
@@ -323,10 +322,8 @@ CREATE INDEX "sender_cursor_idx" ON "sender" USING btree ("organization_id","ser
 CREATE UNIQUE INDEX "sender_organization_id_idx" ON "sender" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE INDEX "sender_name_norm_idx" ON "sender" USING btree ("organization_id","name_norm" text_pattern_ops) WHERE "sender"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "sender_account_cursor_idx" ON "sender_account" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "sender_account_organization_id_idx" ON "sender_account" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE UNIQUE INDEX "sender_account_carrier_number_idx" ON "sender_account" USING btree ("organization_id",lower("carrier"),upper(regexp_replace("account_number", '[[:space:]]', '', 'g'))) WHERE "sender_account"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "sender_account_sender_id_idx" ON "sender_account" USING btree ("sender_id");--> statement-breakpoint
 CREATE INDEX "setting_cursor_idx" ON "setting" USING btree ("organization_id","server_xid","id");--> statement-breakpoint
-CREATE UNIQUE INDEX "setting_organization_id_idx" ON "setting" USING btree ("organization_id","id");--> statement-breakpoint
 CREATE UNIQUE INDEX "setting_key_idx" ON "setting" USING btree ("organization_id","key") WHERE "setting"."deleted_at" is null;--> statement-breakpoint
 CREATE INDEX "sync_op_applied_at_idx" ON "sync_op" USING btree ("applied_at");

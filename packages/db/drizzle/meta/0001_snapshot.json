@@ -1,5 +1,5 @@
 {
-  "id": "3f0fc419-b7e1-4e72-bf26-f4345dc548d8",
+  "id": "c73e56b3-8f28-4ec6-b28e-30ea4e5633a6",
   "prevId": "c01c45d2-9e5d-4508-b294-d7cf3b215d12",
   "version": "7",
   "dialect": "postgresql",
@@ -945,27 +945,6 @@
           "method": "btree",
           "with": {}
         },
-        "event_organization_id_idx": {
-          "name": "event_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "event_entity_id_idx": {
           "name": "event_entity_id_idx",
           "columns": [
@@ -1153,27 +1132,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "handover_organization_id_idx": {
-          "name": "handover_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1397,27 +1355,6 @@
           "method": "btree",
           "with": {}
         },
-        "pickup_code_organization_id_idx": {
-          "name": "pickup_code_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "pickup_code_token_hash_idx": {
           "name": "pickup_code_token_hash_idx",
           "columns": [
@@ -1461,6 +1398,50 @@
           ],
           "isUnique": true,
           "where": "\"pickup_code\".\"used_at\" is null and \"pickup_code\".\"deleted_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pickup_code_person_id_idx": {
+          "name": "pickup_code_person_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "person_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"pickup_code\".\"person_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pickup_code_contact_id_idx": {
+          "name": "pickup_code_contact_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "contact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"pickup_code\".\"contact_id\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1836,27 +1817,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "notification_organization_id_idx": {
-          "name": "notification_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2516,6 +2476,28 @@
           "method": "btree",
           "with": {}
         },
+        "parcel_overdue_idx": {
+          "name": "parcel_overdue_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"last_notified_at\", \"notified_at\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"parcel\".\"deleted_at\" is null and \"parcel\".\"status\" = 'notifie'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "parcel_batch_id_idx": {
           "name": "parcel_batch_id_idx",
           "columns": [
@@ -2920,27 +2902,6 @@
           "method": "btree",
           "with": {}
         },
-        "sender_account_organization_id_idx": {
-          "name": "sender_account_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "sender_account_carrier_number_idx": {
           "name": "sender_account_carrier_number_idx",
           "columns": [
@@ -3097,27 +3058,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "setting_organization_id_idx": {
-          "name": "setting_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
