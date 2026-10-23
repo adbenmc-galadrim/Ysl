@@ -11,15 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-
-type Label = {
-  id: string;
-  file: string;
-  carrier: string;
-  recipient: string | null;
-  sender: string | null;
-  difficulties: string[];
-};
+import { manifestSchema } from '@repo/corpus/schema';
+import type { PackItem, PackManifest } from '../src/pack/types.ts';
 
 const { values } = parseArgs({
   options: {
@@ -35,9 +28,9 @@ const seed = Number(values.seed);
 
 function upToDate(): boolean {
   if (!existsSync(manifestPath)) return false;
-  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
-    seed: number;
-  };
+  const manifest = JSON.parse(
+    readFileSync(manifestPath, 'utf8'),
+  ) as PackManifest;
   return manifest.seed === seed;
 }
 
@@ -64,9 +57,9 @@ try {
   if (run.status !== 0) {
     throw new Error('la génération du corpus synthétique a échoué');
   }
-  const labels = JSON.parse(
-    readFileSync(join(scratch, 'synthetic', 'labels.json'), 'utf8'),
-  ) as Label[];
+  const labels = manifestSchema.parse(
+    JSON.parse(readFileSync(join(scratch, 'synthetic', 'labels.json'), 'utf8')),
+  );
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const label of labels) {
@@ -75,7 +68,7 @@ try {
       join(target, label.file),
     );
   }
-  const items = labels.map((label) => ({
+  const items = labels.map((label): PackItem => ({
     id: label.id,
     file: label.file,
     carrier: label.carrier,
@@ -83,7 +76,8 @@ try {
     sender: label.sender,
     difficulties: label.difficulties,
   }));
-  writeFileSync(manifestPath, `${JSON.stringify({ seed, items }, null, 2)}\n`);
+  const manifest: PackManifest = { seed, items };
+  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`${items.length} photos dans ${target}`);
 } finally {
   rmSync(scratch, { recursive: true, force: true });
