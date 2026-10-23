@@ -10,6 +10,7 @@ pnpm visual                                 # compare every screen story
 pnpm visual -- --filter 04-reception        # a subset, by story id
 pnpm --filter @repo/ui check-types
 pnpm --filter @repo/ui lint
+pnpm --filter @repo/ui test                 # Vitest, tests/**/*.test.ts
 ```
 
 ## Layout
@@ -18,10 +19,12 @@ pnpm --filter @repo/ui lint
 styles.css            tokens (colours, type scale, radii) — read off Penpot
 reference/<page>/     Penpot exports: <screen>.png (2x) and <screen>.json
 visual/compare.mjs    pixel diff, writes visual/out/<ref>.sheet.png
+tests/                Vitest unit tests (QR matrix read back with jsQR)
 src/
   icons/              <Icon name size strokeWidth>, Lucide paths from Penpot
   device/             iOS status bar + home indicator, Storybook only
   lib/tv.ts           tailwind-variants, taught the custom scales
+  lib/qr.ts           QR encoder (level H) and the logo area of BrandedQr
   fixtures/           the demo mailroom shared by every story
   components/<name>/  index.tsx + <name>.stories.tsx — generic building blocks
   screens/<flow>/     one <screen>-screen.tsx per screen family + its stories

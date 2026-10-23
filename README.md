@@ -62,7 +62,7 @@ https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Cooli
 | Ressource | Build | Variables |
 | --- | --- | --- |
 | API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation) au build |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr`) au build |
 
 Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi les
 prototypes des spikes : https://ysl.shinseo.fr/spike-camera/ (S1),
