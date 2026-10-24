@@ -46,6 +46,12 @@ Un statut par opération, dans l'ordre envoyé :
 | 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger »                  |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
 
+Le suivi d'un colis (`tracking_norm`) n'est pas une clé naturelle : un même numéro peut
+être reçu deux fois (« Ajouter quand même », F10), l'index `parcel_tracking_norm_idx` n'est
+pas unique et le doublon se traite sur l'appareil, à la lecture
+(`docs/architecture/capture-rafale.md`, « Les doublons »). Deux appareils hors ligne qui
+scannent le même colis créent donc deux lignes, visibles toutes deux dans la liste.
+
 Un rejet 4xx est aussi consigné dans `sync_op`, avec son motif (`reason` : la
 contrainte et la ligne levée par le trigger ou la vérification, le seul SQLSTATE
 sinon, ou le motif du serveur ; des identifiants et des noms de colonnes, jamais une

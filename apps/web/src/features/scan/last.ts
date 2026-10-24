@@ -9,6 +9,17 @@ export function nameOf(draft: DraftParcel, t: TranslateFn): string {
   return t('parcel.recipient.unknown');
 }
 
+/** "UPS ···0622": the carrier, then the last digits of the number when there is one. */
+export function carrierMeta(
+  carrier: string | null,
+  tracking: string | null,
+  t: TranslateFn,
+): string {
+  const name = carrier ?? t('parcel.carrier.unknown');
+  const last4 = tracking ? tracking.slice(-4) : '';
+  return last4 ? `${name} ···${last4}` : name;
+}
+
 /**
  * The "Dernier ajouté" line: who, then carrier and last digits, or
  * "Lecture…" while it reads; a photo that gave nothing says so instead,
@@ -24,9 +35,7 @@ export function lastOf(draft: DraftParcel, t: TranslateFn): LastParcel {
   if (draft.reading === 'failed') {
     return { name, meta: t('scan.last.failed'), status: 'error' };
   }
-  const carrier = draft.carrier ?? t('parcel.carrier.unknown');
-  const last4 = draft.tracking ? draft.tracking.slice(-4) : '';
-  const meta = last4 ? `${carrier} ···${last4}` : carrier;
+  const meta = carrierMeta(draft.carrier, draft.tracking, t);
   if (draft.carrier && draft.tracking) return { name, meta };
   return { name, meta, status: 'warning' };
 }

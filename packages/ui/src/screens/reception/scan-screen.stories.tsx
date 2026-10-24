@@ -82,6 +82,19 @@ export const Doublon: Story = {
   },
 };
 
+/** The same label was received in an earlier batch: the title says when. */
+export const DoublonLotAnterieur: Story = {
+  name: 'Doublon, lot antérieur',
+  args: {
+    reading: {
+      kind: 'duplicate',
+      title: 'Déjà reçu le 23 octobre',
+      detail: 'Camille Morel, UPS ···0622, reçu à 10 h 42',
+      message: 'Ce colis n’a pas été ajouté une deuxième fois.',
+    },
+  },
+};
+
 export const EtiquetteIllisible: Story = {
   name: 'Étiquette illisible',
   parameters: {

@@ -12,10 +12,18 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { modelsReady, subscribeModels } from '#/features/offline/models-state';
 import { useSession } from '#/features/auth/api/use-session';
 import {
+  dropHeld,
+  findDuplicate,
+  holdDraft,
+  restoreDraft,
+  type Duplicate,
+} from '#/features/batch/duplicates';
+import {
   addDraft,
+  addTypedDraft,
   finishBatch,
   openBatch,
-  typeDraft,
+  typedDraft,
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
@@ -41,19 +49,26 @@ import {
   useTorchState,
 } from '#/features/camera/stream';
 import { db } from '#/features/db/database';
+import type { DraftParcel } from '#/features/db/schema';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
+import { readPhoto } from '#/features/photos/store';
+import {
+  duplicateReading,
+  parcelFields,
+  recipientOf,
+} from '#/features/scan/duplicate';
 import { lastOf } from '#/features/scan/last';
 import {
   readDraft,
   recoverPending,
   settled,
   trackWork,
-  type Symbols,
 } from '#/features/scan/reader';
 import { readImageFile } from '#/features/scan/read-file';
 import {
   failedReading,
   type ShotHint,
+  type ShownSymbol,
   toScanReading,
 } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
@@ -85,6 +100,9 @@ type Typing = { fix: string | null; value: string };
 
 /** What is on screen: nothing yet, the explanation, or the viewfinder. */
 type Opening = 'pending' | 'explain' | 'scan';
+
+/** The draft kept out of the batch while the duplicate alert is up, what it doubles, and who that is for. */
+type Held = { draft: DraftParcel; found: Duplicate; recipient: string };
 
 function ScanPage() {
   const navigate = useNavigate();
@@ -126,8 +144,43 @@ function ScanPage() {
   const shownDraft = useRef<string | null>(null);
   /** How that draft's shot looked, for the advice when nothing was read. */
   const shownShot = useRef<ShotHint | undefined>(undefined);
+  const held = useRef<Held | null>(null);
 
   useEffect(() => holdUpdates(), []);
+
+  /** Any way out of the alert but "Ajouter quand même" gives the draft up, photo included. */
+  const dropHeldDraft = () => {
+    const taken = held.current;
+    held.current = null;
+    if (taken) void dropHeld(db, photoFiles, taken.draft);
+  };
+  useEffect(() => dropHeldDraft, []);
+
+  /**
+   * A label already read (F10): the draft leaves the batch and the alert
+   * says what it doubles. `take` hands the draft over: out of the database
+   * for a photo, as it is for a typed number that was never written. False
+   * when there was nothing to hold, or no duplicate: the draft stays where
+   * it is.
+   */
+  const holdDuplicate = async (
+    draft: Pick<DraftParcel, 'id' | 'batchId' | 'createdAt'>,
+    trackingNorm: string | null,
+    take: () => Promise<DraftParcel | undefined>,
+  ): Promise<boolean> => {
+    const found = await findDuplicate(db, { ...draft, trackingNorm });
+    if (!found) return false;
+    const recipient =
+      found.kind === 'parcel' ? await recipientOf(db, found.parcel, t) : '';
+    const taken = await take();
+    if (!taken) return false;
+    dropHeldDraft();
+    held.current = { draft: taken, found, recipient };
+    unread.current = null;
+    shownDraft.current = null;
+    setReading(duplicateReading(found, recipient, t));
+    return true;
+  };
 
   useEffect(() => {
     const warm = () => {
@@ -219,14 +272,27 @@ function ScanPage() {
       const photo = await encodePhoto(clone);
       const draft = await addDraft(db, photoFiles, batch.id, photo);
       handed = true;
-      const { symbols, kept, failed } = await readDraft(
+      if (held.current) {
+        dropHeldDraft();
+        setReading({ kind: 'idle' });
+      }
+      const { symbols, kept, failed, trackingNorm } = await readDraft(
         db,
         queue,
         draft.id,
         bitmap,
         clone,
       );
+      if (
+        kept &&
+        (await holdDuplicate(draft, trackingNorm, () =>
+          holdDraft(db, draft.id),
+        ))
+      ) {
+        return;
+      }
       if (kept) {
+        if (held.current) dropHeldDraft();
         unread.current = symbols.length === 0 ? draft.id : null;
         shownDraft.current = draft.id;
         shownShot.current = shot;
@@ -257,7 +323,11 @@ function ScanPage() {
    * batch's work: "Terminer" never waits for it. Without a code, only a
    * name is worth replacing what the screen says.
    */
-  const showText = async (draftId: string, blob: Blob, symbols: Symbols) => {
+  const showText = async (
+    draftId: string,
+    blob: Blob,
+    symbols: readonly ShownSymbol[],
+  ) => {
     const text = await readText(db, draftId, blob);
     const worth = symbols.length > 0 || text.ocrName !== null;
     if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
@@ -302,6 +372,7 @@ function ScanPage() {
 
   const onUndo = () => {
     if (!view?.batch) return;
+    dropHeldDraft();
     unread.current = null;
     shownDraft.current = null;
     setReading({ kind: 'idle' });
@@ -322,16 +393,91 @@ function ScanPage() {
     onType();
   };
 
+  /**
+   * The number typed fills the unread draft it was asked for, else makes
+   * one; either way it is checked against the batch and the parcels first,
+   * and a duplicate is held before it lands. A number landing on an older
+   * draft counts from now: a reading that came in between is its original.
+   */
   const onTyped = async ({ fix, value }: Typing) => {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
     const typed = { carrier, tracking, trackingNorm };
-    const filled =
-      fix !== null &&
-      (await updateDraft(db, fix, { reading: 'typed', ...typed }));
-    if (!filled) {
-      const batch = await openBatch(db);
-      await typeDraft(db, batch.id, typed);
+    dropHeldDraft();
+    const fixing = fix !== null ? await db.draftParcel.get(fix) : undefined;
+    if (fixing) {
+      const fixed = { ...fixing, reading: 'typed' as const, ...typed };
+      const taken = await holdDuplicate(
+        { ...fixing, createdAt: new Date() },
+        trackingNorm,
+        async () => (await holdDraft(db, fixing.id)) && fixed,
+      );
+      if (taken) return;
+      if (await updateDraft(db, fixing.id, { reading: 'typed', ...typed })) {
+        return;
+      }
     }
+    const batch = await openBatch(db);
+    const draft = typedDraft(batch.id, typed);
+    if (
+      await holdDuplicate(draft, trackingNorm, () => Promise.resolve(draft))
+    ) {
+      return;
+    }
+    await addTypedDraft(db, draft);
+  };
+
+  /**
+   * "Voir le colis": the original's fields take the alert's place, in the
+   * batch as it was read, received before as the list knows it. Looking is
+   * deciding not to add: the double goes; scanning again offers it anew.
+   */
+  const onView = () => {
+    const taken = held.current;
+    if (!taken) return;
+    dropHeldDraft();
+    shownDraft.current = null;
+    const { found } = taken;
+    setReading(
+      found.kind === 'batch'
+        ? toScanReading({ symbols: found.draft.symbols }, t, {
+            ocrName: found.draft.ocrName,
+          })
+        : {
+            kind: 'read',
+            fields: parcelFields(found.parcel, taken.recipient, t),
+          },
+    );
+  };
+
+  /**
+   * "Ajouter quand même": the draft rejoins the batch as it was, its codes
+   * on screen as after any reading, and the text pass it missed while held
+   * runs now.
+   */
+  const onAddAnyway = () => {
+    const taken = held.current;
+    if (!taken) return;
+    held.current = null;
+    const { draft } = taken;
+    shownDraft.current = draft.id;
+    shownShot.current = undefined;
+    setReading(toScanReading({ symbols: draft.symbols }, t));
+    void trackWork(restoreDraft(db, draft)).then(() => {
+      if (draft.photoId && draft.ocrState === 'pending') {
+        void readHeldText(draft.id, draft.photoId, draft.symbols);
+      }
+    });
+  };
+
+  /** The text pass a held draft missed, outside the batch's work like any other. */
+  const readHeldText = async (
+    draftId: string,
+    photoId: string,
+    symbols: readonly ShownSymbol[],
+  ) => {
+    const photo = await db.photo.get(photoId);
+    if (photo)
+      await showText(draftId, await readPhoto(photoFiles, photo), symbols);
   };
 
   const onSubmit = () => {
@@ -348,6 +494,7 @@ function ScanPage() {
   const onDone = async () => {
     if (finishing.current) return;
     finishing.current = true;
+    dropHeldDraft();
     try {
       await settled();
       if (view?.batch) {
@@ -418,6 +565,8 @@ function ScanPage() {
             onFix={onType}
             onKeep={onKeep}
             onRetry={onRetry}
+            onView={onView}
+            onAddAnyway={onAddAnyway}
           />
           {typing && entry && (
             <SaisieManuelleSheet

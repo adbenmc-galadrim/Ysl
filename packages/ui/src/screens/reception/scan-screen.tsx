@@ -93,6 +93,10 @@ export type ScanScreenProps = {
   onFix?: () => void;
   /** Keeps the unread photo as it is and closes the notice. */
   onKeep?: () => void;
+  /** Shows the parcel the label was already read as. */
+  onView?: () => void;
+  /** Adds the duplicate to the batch after all. */
+  onAddAnyway?: () => void;
 };
 
 /**
@@ -122,6 +126,8 @@ export function ScanScreen({
   onRetry,
   onFix,
   onKeep,
+  onView,
+  onAddAnyway,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
   const blocked = reading.kind === 'blocked';
@@ -195,8 +201,12 @@ export function ScanScreen({
           className="mx-4"
           actions={
             <>
-              <CameraNoticeButton>Voir le colis</CameraNoticeButton>
-              <CameraNoticeButton>Ajouter quand même</CameraNoticeButton>
+              <CameraNoticeButton onClick={onView}>
+                Voir le colis
+              </CameraNoticeButton>
+              <CameraNoticeButton onClick={onAddAnyway}>
+                Ajouter quand même
+              </CameraNoticeButton>
             </>
           }
         >
