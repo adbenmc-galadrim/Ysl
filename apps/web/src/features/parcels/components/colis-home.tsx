@@ -46,6 +46,7 @@ export function ColisHome() {
             icon={banner.icon}
             title={banner.title}
             description={banner.description}
+            onClick={() => void navigate({ to: '/reglages/synchronisation' })}
             // Penpot fixes the orange card at 64 px; the red title runs on
             // two lines and needs the card to grow.
             classNames={{

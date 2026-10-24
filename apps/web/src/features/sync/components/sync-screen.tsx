@@ -1,10 +1,15 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { SynchronisationScreen, type SettingsGroup } from '@repo/ui';
+import {
+  SynchronisationScreen,
+  type SettingsGroup,
+  type SettingsItem,
+} from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { db } from '#/features/db/database';
 import { formatBytes } from '#/features/db/storage';
+import { formatTime } from '#/features/parcels/model';
 import { displayVersion } from '#/features/install/app-host';
 import { useStorageStatus } from '#/features/settings/api/use-storage-status';
 import { backupFile, buildBackup } from '#/features/sync/backup';
@@ -41,21 +46,29 @@ export function SyncScreen() {
   const device = useLiveQuery(countDevice, [], { parcels: 0, photoBytes: 0 });
   const changes = useLiveQuery(() => listWaitingChanges(db), [], []);
   const [checking, setChecking] = useState(false);
-  const [exporting, setExporting] = useState<'idle' | 'running' | 'failed'>(
-    'idle',
-  );
+  const [exporting, setExporting] = useState<
+    { state: 'idle' | 'running' | 'failed' } | { state: 'done'; at: Date }
+  >({ state: 'idle' });
   const card = syncCard(sync, t);
 
   const exportBackup = async () => {
-    if (exporting === 'running') return;
-    setExporting('running');
+    if (exporting.state === 'running') return;
+    setExporting({ state: 'running' });
     try {
       const now = new Date();
       const backup = await buildBackup(db, { now, app: version });
-      await shareFile(backupFile(backup, now), t('sync.export'));
-      setExporting('idle');
-    } catch {
-      setExporting('failed');
+      const outcome = await shareFile(
+        backupFile(backup, now),
+        t('sync.export'),
+      );
+      setExporting(
+        outcome === 'cancelled'
+          ? { state: 'idle' }
+          : { state: 'done', at: now },
+      );
+    } catch (error) {
+      console.error('Backup export failed', error);
+      setExporting({ state: 'failed' });
     }
   };
   const protectedStorage = storage.data?.persisted;
@@ -74,25 +87,31 @@ export function SyncScreen() {
         ]
           .filter(Boolean)
           .join(' '),
-        items: [
-          ...changes
-            .slice(0, SHOWN_CHANGES)
-            .map((change) => describeChange(change, t)),
-          {
+        items: (() => {
+          const exportRow: SettingsItem = {
             key: 'export',
             icon: 'share',
             color: 'blue',
             label: t('sync.export'),
             value:
-              exporting === 'running'
+              exporting.state === 'running'
                 ? t('sync.export.running')
-                : exporting === 'failed'
+                : exporting.state === 'failed'
                   ? t('sync.export.failed')
-                  : undefined,
+                  : exporting.state === 'done'
+                    ? t('sync.export.done', { time: formatTime(exporting.at) })
+                    : undefined,
             chevron: false,
             onPress: () => void exportBackup(),
-          },
-        ],
+          };
+          const rows = changes
+            .slice(0, SHOWN_CHANGES)
+            .map((change) => describeChange(change, t));
+          // Under the alert the export is what the card asks for: first row.
+          return card.state === 'alert'
+            ? [exportRow, ...rows]
+            : [...rows, exportRow];
+        })(),
       }
     : null;
 
