@@ -100,6 +100,20 @@ export const Vide: Story = {
   },
 };
 
+/** The update toast must reach an empty desk too: it takes the bar's place. */
+export const VideMiseAJour: Story = {
+  name: 'Vide, mise à jour',
+  args: {
+    ...Vide.args,
+    toast: (
+      <Toast
+        message="Nouvelle version disponible"
+        actionLabel="Mettre à jour"
+      />
+    ),
+  },
+};
+
 /** Rows touched offline say where their change stands instead of a chevron. */
 const PENDING: Record<string, string> = {
   [PARCELS.camille.id]: 'Non envoyé',

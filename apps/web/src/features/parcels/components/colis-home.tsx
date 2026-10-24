@@ -1,9 +1,16 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { Button, ColisScreen, EmptyState, RemettreActions } from '@repo/ui';
+import {
+  Button,
+  ColisScreen,
+  EmptyState,
+  RemettreActions,
+  Toast,
+} from '@repo/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { listParcelsQueryOptions } from '#/features/parcels/api/list-parcels';
 import { summarize, toSections } from '#/features/parcels/sections';
+import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
 import { useOnline } from '#/lib/use-online';
 
@@ -12,6 +19,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 export function ColisHome() {
   const navigate = useNavigate();
   const online = useOnline();
+  const update = useUpdate();
   const parcels = useQuery(listParcelsQueryOptions);
   const loading = useDelayedPending(parcels.isPending);
   const rows = parcels.data ?? [];
@@ -26,6 +34,15 @@ export function ColisHome() {
       summary={parcels.data ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
       loading={loading}
+      toast={
+        update.offered ? (
+          <Toast
+            message={t('update.available')}
+            actionLabel={t('update.apply')}
+            onAction={() => void applyUpdate()}
+          />
+        ) : undefined
+      }
       bottomBar={!empty}
       actions={<RemettreActions onHandover={handover} onScan={scan} />}
       onMenu={() => void navigate({ to: '/reglages' })}

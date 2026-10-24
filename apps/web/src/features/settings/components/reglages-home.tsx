@@ -6,11 +6,18 @@ import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { useCornerSetting } from '#/features/settings/corners';
 import { initialsOf } from '#/features/settings/initials';
+import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const version = displayVersion(__APP_VERSION__);
+
+const FORCE_STATE = {
+  idle: undefined,
+  forcing: t('settings.forceUpdate.running'),
+  failed: t('settings.forceUpdate.failed'),
+} as const;
 
 const SERVER_STATE = {
   up: t('settings.server.up'),
@@ -34,6 +41,7 @@ export function ReglagesHome() {
   const role = toUserRole(session.user.role);
   const server = useServerState();
   const corners = useCornerSetting();
+  const update = useUpdate();
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
   )?.title;
@@ -83,7 +91,18 @@ export function ReglagesHome() {
         icon: 'info',
         color: 'grey',
         label: t('settings.version', { version }),
+        value: update.available
+          ? t('settings.version.available')
+          : t('settings.version.upToDate'),
         chevron: false,
+      },
+      {
+        icon: 'refresh',
+        color: 'grey',
+        label: t('settings.forceUpdate'),
+        value: FORCE_STATE[update.forcing],
+        chevron: false,
+        onPress: () => void forceUpdate(),
       },
     ],
   };

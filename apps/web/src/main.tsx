@@ -3,14 +3,14 @@ import ReactDOM from 'react-dom/client';
 import { AppProvider } from '#/app/provider';
 import { router } from '#/app/router';
 import { bootCorners } from '#/features/settings/corners';
-import { registerServiceWorker } from '#/lib/service-worker';
+import { startUpdater } from '#/features/update/updater';
 import '#/styles.css';
 
 // The build injects a title for the first paint; HeadContent owns it once React mounts.
 document.querySelector('title[data-boot-title]')?.remove();
 
 bootCorners();
-registerServiceWorker();
+startUpdater();
 
 const rootElement = document.getElementById('app');
 
