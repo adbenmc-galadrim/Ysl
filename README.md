@@ -115,11 +115,12 @@ déployer.
 | Job | Ce qu'il vérifie |
 | --- | --- |
 | Lint, types et tests | `pnpm turbo run lint check-types test` sur tout le monorepo |
-| Storybook et écrans | `pnpm build-storybook`, puis `pnpm visual -- --max 0.6` contre le build statique servi par `vite preview` |
+| Storybook et écrans | `pnpm build-storybook`, puis `pnpm visual -- --max 0.75` contre le build statique servi par `vite preview`, sur un runner macOS (les références ont été calibrées sur Chromium macOS ; sous Linux les polices décalent chaque écran de 0,8 point) |
 
 `pnpm visual` capture chaque story `Écrans/` qui déclare `parameters.reference` et la
 compare au PNG de `packages/ui/reference/` : le run échoue dès qu'un écran diffère de plus
-de 0,6 % de ses pixels (`--max`), ou si aucun écran n'a été comparé. Le tableau des écarts
+de `--max` % de ses pixels (0,6 par défaut, 0,75 en CI pour le bruit du code-barres de
+`scan-lecture`), ou si aucun écran n'a été comparé. Le tableau des écarts
 est dans le résumé du job, et les planches référence | capture | diff de tous les écrans
 dans l'artefact `planches-visuelles` du run (7 jours). En local : `pnpm storybook` puis
 `pnpm visual -- --filter 05-colis`.

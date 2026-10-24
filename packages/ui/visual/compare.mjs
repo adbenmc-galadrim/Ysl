@@ -25,7 +25,7 @@ import pixelmatch from 'pixelmatch';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 
-import { markdown, verdict } from './report.mjs';
+import { markdown, parseMax, verdict } from './report.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const { values: args } = parseArgs({
@@ -36,7 +36,7 @@ const { values: args } = parseArgs({
     max: { type: 'string', default: '0.6' },
   },
 });
-const max = Number(args.max);
+const max = parseMax(args.max);
 
 const base = `http://localhost:${args.port}`;
 const out = path.join(root, 'visual', 'out');
@@ -83,6 +83,8 @@ for (const story of stories) {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
+  // The stylesheet is fetched after the root renders: a capture taken before
+  // the network settles is unstyled, and differs by several percent.
   await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story`, {
     waitUntil: 'networkidle',
   });

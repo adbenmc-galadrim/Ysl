@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markdown, verdict } from '../visual/report.mjs';
+import { markdown, parseMax, verdict } from '../visual/report.mjs';
 
 const under = {
   story: 'ecrans-colis--colis',
@@ -30,10 +30,23 @@ describe('verdict', () => {
   });
 });
 
+describe('parseMax', () => {
+  it('reads a percentage', () => {
+    expect(parseMax('0.6')).toBe(0.6);
+    expect(parseMax('0')).toBe(0);
+  });
+
+  it('rejects anything that would never fail a run', () => {
+    for (const value of ['', ' ', 'abc', 'NaN', 'Infinity', '-1'])
+      expect(() => parseMax(value)).toThrow(/--max/);
+  });
+});
+
 describe('markdown', () => {
   it('lists one row per screen with its mark', () => {
     const table = markdown(results, 0.6);
     expect(table.split('\n').filter(Boolean)).toHaveLength(4);
+    expect(table).toContain('Seuil 0.60 %');
     expect(table).toContain('| `05-colis/colis--colis` | 0.12 % | ✅ |');
     expect(table).toContain('| `04-reception/scan-lecture` | 0.61 % | ❌ |');
   });

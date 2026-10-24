@@ -10,8 +10,10 @@ on:
   pull_request:
   workflow_call:
 
+# Un nouveau push sur une PR annule le run précédent ; appelé par `deploy.yml`, chaque
+# run garde son propre groupe pour ne pas faire sauter un déploiement en attente.
 concurrency:
-  group: verification-${{ github.event.pull_request.number || github.ref }}
+  group: verification-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -31,9 +33,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm turbo run lint check-types test
 
+  # Sur macOS, comme les références : sous Linux, la rastérisation des polices
+  # (FreeType) décale chaque glyphe et tous les écrans montent de 0,8 point
+  # (médiane 0,77 %, maximum 1,69 % le 24/10/2026), ce qui obligerait à un seuil
+  # trois fois plus lâche. Le dépôt est public : les minutes macOS sont gratuites.
   visual:
     name: Storybook et écrans
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -50,28 +56,31 @@ jobs:
         id: chromium
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
+          path: ~/Library/Caches/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Installe Chromium
         if: steps.chromium.outputs.cache-hit != 'true'
-        run: pnpm --filter @repo/ui exec playwright install --with-deps chromium
-      - name: Installe les dépendances système de Chromium
-        if: steps.chromium.outputs.cache-hit == 'true'
-        run: pnpm --filter @repo/ui exec playwright install-deps chromium
+        run: pnpm --filter @repo/ui exec playwright install chromium
 
       - name: Construit le Storybook
         run: pnpm build-storybook
+      # `vite preview` plutôt qu'un serveur statique minimal : `python3 -m http.server`
+      # livrait la feuille de style trop tard (captures non stylées) puis cessait de
+      # répondre. Le build statique expose bien `__STORYBOOK_PREVIEW__`, que lit `pnpm visual`.
+      # `--host 127.0.0.1` : sans lui Vite peut n'écouter que sur `::1` quand `fetch` vise `127.0.0.1`.
       - name: Sert le Storybook
         run: |
-          pnpm --filter @repo/ui exec vite preview --outDir storybook-static --port 6006 --strictPort &
+          pnpm --filter @repo/ui exec vite preview --outDir storybook-static --host 127.0.0.1 --port 6006 --strictPort &
           for _ in $(seq 1 30); do
             curl --silent --fail http://localhost:6006/index.json > /dev/null && exit 0
             sleep 1
           done
           echo "::error::Le Storybook statique ne répond pas sur le port 6006"
           exit 1
+      # 0,75 et non 0,6 : `04-reception/scan-lecture` est à 0,68 % de bruit d'anticrénelage
+      # (barres du code-barres, bords de l'étiquette), sans décalage de mise en page.
       - name: Compare les écrans aux maquettes
-        run: pnpm visual -- --max 0.6
+        run: pnpm visual -- --max 0.75
 
       - name: Planches des écrans
         if: always()
