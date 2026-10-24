@@ -1,5 +1,6 @@
 /**
- * Pixel comparison of every screen story against its Penpot export.
+ * Pixel comparison of every screen story against its reference: the Penpot
+ * export, or a Storybook capture where the JSON says `"source": "storybook"`.
  *
  *   pnpm visual                      # all screens, Storybook on :6006
  *   pnpm visual -- --port 6101 --filter colis
@@ -68,6 +69,8 @@ for (const story of stories) {
   const context = await browser.newContext({
     viewport: { width: width / 2, height: height / 2 },
     deviceScaleFactor: 2,
+    // The landing plays its scenes on scroll; reduced motion freezes them in their final state.
+    reducedMotion: 'reduce',
   });
   const page = await context.newPage();
   await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story`);

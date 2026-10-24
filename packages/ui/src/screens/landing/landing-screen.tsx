@@ -10,6 +10,7 @@ export function LandingScreen() {
       url="https://courrier.ysl.fr"
       host="courrier.ysl.fr"
       version="1.0"
+      signInHref="/connexion"
     />
   );
 }

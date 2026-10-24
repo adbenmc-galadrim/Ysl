@@ -17,6 +17,7 @@ const COPY: LandingCopy = {
     offline: t('landing.nav.offline'),
     install: t('landing.nav.install'),
     cta: t('landing.nav.cta'),
+    signIn: t('landing.nav.signIn'),
   },
   hero: {
     eyebrow: t('landing.hero.eyebrow'),
@@ -123,7 +124,7 @@ const COPY: LandingCopy = {
   },
 };
 
-export function InstallLanding() {
+export function InstallLanding({ signInHref }: { signInHref?: string }) {
   return (
     <LandingPage
       copy={COPY}
@@ -131,6 +132,7 @@ export function InstallLanding() {
       url={url}
       host={host}
       version={version}
+      signInHref={signInHref}
     />
   );
 }

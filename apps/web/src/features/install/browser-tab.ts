@@ -15,9 +15,12 @@ function isIosDevice({ userAgent, maxTouchPoints }: DisplayContext) {
   );
 }
 
+export function isInstalledApp(context: DisplayContext) {
+  return context.standalone === true || context.displayModeStandalone;
+}
+
 export function isIosBrowserTab(context: DisplayContext) {
-  if (!isIosDevice(context)) return false;
-  return context.standalone !== true && !context.displayModeStandalone;
+  return isIosDevice(context) && !isInstalledApp(context);
 }
 
 export function currentDisplayContext(): DisplayContext {

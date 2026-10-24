@@ -8,6 +8,11 @@ import { cn } from '#lib/tv';
  * The phones the landing page draws: the three steps of the install guide
  * and the parcel list that floats over the hero. Pictures, not interface:
  * every one is `aria-hidden` and keeps the geometry of its Penpot layer.
+ *
+ * The parts that move are marked `data-*` so each card of the landing can
+ * play its gesture. Everything that is not part of the picture (the finger,
+ * the tap ripples) is invisible by default, so the still image, with reduced
+ * motion, is the finished one.
  */
 
 function PhoneFrame({
@@ -35,7 +40,10 @@ function PhoneFrame({
   );
 }
 
-/** Step 1: a page in Safari, its Partager button lit. */
+const FINGER =
+  'absolute size-6 rounded-full bg-site-ink/30 opacity-0 shadow-[0_0_0_1px_rgb(255_255_255/0.7)]';
+
+/** Step 1: a page in Safari, a finger comes down on Partager. */
 export function SafariPhone() {
   return (
     <PhoneFrame screen="bg-white">
@@ -53,7 +61,10 @@ export function SafariPhone() {
       <span className="absolute top-[120px] left-3.5 h-[60px] w-[118px] rounded-[8px] bg-fill" />
       <div className="absolute inset-x-0 top-[206px] h-[54px] bg-sidebar">
         <span className="absolute top-1.5 left-2.5 h-5 w-[126px] rounded-[7px] bg-separator" />
-        <span className="absolute top-6 left-[55px] size-9 rounded-full bg-ios-blue/15" />
+        <span
+          data-share-bg
+          className="absolute top-6 left-[55px] size-9 rounded-full bg-ios-blue/15"
+        />
         <svg
           viewBox="0 0 12 18"
           width={12}
@@ -66,20 +77,33 @@ export function SafariPhone() {
           <path d="M6,0L6,13M1,5L6,0L11,5M0,8L0,18L12,18L12,8" />
         </svg>
       </div>
+      <span
+        data-ripple
+        className="absolute top-[230px] left-[55px] size-9 rounded-full ring-2 ring-ios-blue opacity-0"
+      />
+      <span data-finger className={cn(FINGER, 'top-[236px] left-[61px]')} />
     </PhoneFrame>
   );
 }
 
-/** Step 2: Safari's share sheet, on « Sur l’écran d’accueil ». */
+/** Step 2: the share sheet rises, a finger picks « Sur l’écran d’accueil ». */
 export function ShareSheetPhone() {
   return (
     <PhoneFrame screen="bg-muted">
-      <div className="absolute inset-x-0 top-[92px] h-[168px] rounded-[16px] bg-fill">
+      <div
+        data-sheet
+        className="absolute inset-x-0 top-[92px] h-[168px] rounded-[16px] bg-fill"
+      >
         <span className="absolute top-1.5 left-[58px] h-1 w-[30px] rounded-[2px] bg-faint" />
         <div className="absolute top-5 left-2 h-[108px] w-[130px] overflow-hidden rounded-[10px] bg-white text-[10px] leading-3">
-          <span className="absolute top-[11px] left-2.5 text-black">Copier</span>
+          <span className="absolute top-[11px] left-2.5 text-black">
+            Copier
+          </span>
           <span className="absolute top-[35px] left-2.5 h-px w-[120px] bg-separator" />
-          <span className="absolute inset-x-0 top-9 h-9 bg-ios-blue/12" />
+          <span
+            data-hl
+            className="absolute inset-x-0 top-9 h-9 origin-left bg-ios-blue/12"
+          />
           <span className="absolute top-[47px] left-2.5 font-semibold text-ios-blue">
             Sur l’écran d’accueil
           </span>
@@ -95,9 +119,16 @@ export function ShareSheetPhone() {
             <path d="M3.5,0L3.5,7M0,3.5L7,3.5" />
           </svg>
           <span className="absolute top-[71px] left-2.5 h-px w-[120px] bg-separator" />
-          <span className="absolute top-[83px] left-2.5 text-black">Liste de lecture</span>
+          <span className="absolute top-[83px] left-2.5 text-black">
+            Liste de lecture
+          </span>
         </div>
       </div>
+      <span
+        data-ripple
+        className="absolute top-[155px] left-[113px] size-5 rounded-full ring-2 ring-ios-blue opacity-0"
+      />
+      <span data-finger className={cn(FINGER, 'top-[153px] left-[111px]')} />
     </PhoneFrame>
   );
 }
@@ -112,31 +143,56 @@ const HOME_ICONS = [
   [107, 84, 'bg-ios-green/90'],
 ] as const;
 
-const DOCK_ICONS = ['bg-ios-green', 'bg-site-blue', 'bg-white', 'bg-ios-orange-light'];
+const DOCK_ICONS = [
+  'bg-ios-green',
+  'bg-site-blue',
+  'bg-white',
+  'bg-ios-orange-light',
+];
 
 export type HomeScreenPhoneProps = {
   appName: string;
 };
 
-/** Step 3: the home screen, the app among the others. */
+/** Step 3: the home screen, the app lands among the others. */
 export function HomeScreenPhone({ appName }: HomeScreenPhoneProps) {
   return (
     <PhoneFrame screen="bg-linear-to-br from-site-wallpaper to-site-wallpaper-2">
       {HOME_ICONS.map(([x, y, tone]) => (
         <span
           key={`${x}-${y}`}
+          data-home-icon
           className={cn('absolute size-[26px] rounded-[6.5px]', tone)}
           style={{ left: x, top: y }}
         />
       ))}
-      <span className="absolute top-[81px] left-[42px] size-8 rounded-[9px] ring-[1.5px] ring-white ring-inset" />
-      <AppMark size={26} className="absolute top-[84px] left-[45px]" />
-      <span className="absolute top-[113px] left-[39px] w-[38px] text-center text-[6.5px] leading-2 font-semibold text-white">
+      <span
+        data-app-ring
+        className="absolute top-[81px] left-[42px] size-8 rounded-[9px] ring-[1.5px] ring-white ring-inset"
+      />
+      <span
+        data-app-halo
+        className="absolute top-[81px] left-[42px] size-8 rounded-[9px] opacity-0 ring-2 ring-white"
+      />
+      <span data-app-mark className="absolute top-[84px] left-[45px]">
+        <AppMark size={26} />
+      </span>
+      <span
+        data-app-label
+        className="absolute top-[113px] left-[39px] w-[38px] text-center text-[6.5px] leading-2 font-semibold text-white"
+      >
         {appName}
       </span>
-      <div className="absolute top-[208px] left-2 flex h-11 w-[130px] gap-1 rounded-[16px] bg-black/11 pt-[9px] pl-2.5">
+      <div
+        data-dock
+        className="absolute top-[208px] left-2 flex h-11 w-[130px] gap-1 rounded-[16px] bg-black/11 pt-[9px] pl-2.5"
+      >
         {DOCK_ICONS.map((tone) => (
-          <span key={tone} className={cn('size-[26px] rounded-[6.5px]', tone)} />
+          <span
+            key={tone}
+            data-home-icon
+            className={cn('size-[26px] rounded-[6.5px]', tone)}
+          />
         ))}
       </div>
     </PhoneFrame>
@@ -144,11 +200,36 @@ export function HomeScreenPhone({ appName }: HomeScreenPhoneProps) {
 }
 
 const LIST_PARCELS = [
-  { name: 'Camille Roux', meta: 'Comptabilité · 10 h 15', tone: 'kraft', status: 'bg-site-blue' },
-  { name: 'Hugo Bernard', meta: 'Juridique · il y a 2 h', tone: 'mid', status: 'bg-ios-orange-light' },
-  { name: 'Léa Martin', meta: 'Presse · 9 h 40', tone: 'light', status: 'bg-ios-green' },
-  { name: 'Nora Petit', meta: 'Studio · 8 h 55', tone: 'deep', status: 'bg-site-blue' },
-  { name: 'Inès Garnier', meta: 'RH · hier', tone: 'dark', status: 'bg-ios-orange-light' },
+  {
+    name: 'Camille Roux',
+    meta: 'Comptabilité · 10 h 15',
+    tone: 'kraft',
+    status: 'bg-site-blue',
+  },
+  {
+    name: 'Hugo Bernard',
+    meta: 'Juridique · il y a 2 h',
+    tone: 'mid',
+    status: 'bg-ios-orange-light',
+  },
+  {
+    name: 'Léa Martin',
+    meta: 'Presse · 9 h 40',
+    tone: 'light',
+    status: 'bg-ios-green',
+  },
+  {
+    name: 'Nora Petit',
+    meta: 'Studio · 8 h 55',
+    tone: 'deep',
+    status: 'bg-site-blue',
+  },
+  {
+    name: 'Inès Garnier',
+    meta: 'RH · hier',
+    tone: 'dark',
+    status: 'bg-ios-orange-light',
+  },
 ] as const;
 
 export type ParcelListPhoneProps = {
@@ -170,19 +251,30 @@ export function ParcelListPhone({ className }: ParcelListPhoneProps) {
         <p className="absolute top-4 left-7 text-15 leading-[18px] font-semibold text-site-ink">
           9:41
         </p>
-        <p className="mt-[58px] text-30 leading-9 font-bold text-site-ink">Colis</p>
-        <p className="mt-1 text-13 leading-4 text-site-muted">Aujourd’hui · 12 colis</p>
+        <p className="mt-[58px] text-30 leading-9 font-bold text-site-ink">
+          Colis
+        </p>
+        <p className="mt-1 text-13 leading-4 text-site-muted">
+          Aujourd’hui · 12 colis
+        </p>
         <ul className="mt-2.5">
           {LIST_PARCELS.map((p) => (
             <li key={p.name} className="relative flex h-16 w-44 gap-3 pt-2.5">
               <ParcelThumb size={44} tone={p.tone} />
               <div className="pt-0.5">
-                <p className="text-16 leading-5 font-semibold text-site-ink">{p.name}</p>
+                <p className="text-16 leading-5 font-semibold text-site-ink">
+                  {p.name}
+                </p>
                 <p className="mt-0.5 text-13 leading-4 whitespace-nowrap text-site-muted">
                   {p.meta}
                 </p>
               </div>
-              <span className={cn('absolute top-[27px] left-[166px] size-2.5 rounded-full', p.status)} />
+              <span
+                className={cn(
+                  'absolute top-[27px] left-[166px] size-2.5 rounded-full',
+                  p.status,
+                )}
+              />
               <span className="absolute top-[63px] left-14 h-px w-[120px] bg-separator" />
             </li>
           ))}

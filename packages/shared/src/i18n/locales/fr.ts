@@ -38,6 +38,7 @@ export const fr = {
   'landing.nav.offline': 'Hors ligne',
   'landing.nav.install': 'Installation',
   'landing.nav.cta': 'Installer',
+  'landing.nav.signIn': 'Se connecter',
   'landing.hero.eyebrow': 'Service courrier',
   'landing.hero.titleLead': 'Visez.',
   'landing.hero.titleTail': 'C’est enregistré.',
