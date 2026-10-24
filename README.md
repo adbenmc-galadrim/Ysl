@@ -136,8 +136,8 @@ retour aux colis.
 
 Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l'app leur
 passe les données et les actions. La liste des colis se lit dans la base locale de
-l'appareil (Dexie, voir `docs/architecture/stockage-local.md`) ; tant que la caméra ne
-démarre pas, les écrans Scan et Remise sont des coquilles.
+l'appareil (Dexie, voir `docs/architecture/stockage-local.md`). L'écran Scan filme en
+rafale (voir `docs/architecture/capture-rafale.md`) ; l'écran Remise reste une coquille.
 
 Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le
@@ -151,9 +151,10 @@ auto-hébergé (jamais de CDN) et précaché par le service worker. Tout se pass
 Worker, une image à la fois, avec une cascade qui s'arrête dès qu'un code est lu : image
 entière, puis tuiles en pleine résolution, puis MaxiCode recadré.
 
-Sur `/scan`, « Importer une photo » décode l'image choisie. Ce rendu est provisoire : les
-champs affichent le format et le contenu brut de chaque code lu. La caméra et la validation
-du suivi viennent dans de prochaines PR.
+Sur `/scan`, chaque appui sur l'obturateur (ou « Importer une photo ») ajoute un colis au
+lot et décode l'image en arrière-plan. Le rendu des champs est provisoire : ils affichent
+le format et le contenu brut de chaque code lu ; le numéro de suivi et le transporteur
+sont déduits pour la ligne « Dernier ajouté » et la liste des colis.
 
 ## App installée sur l'iPhone
 
