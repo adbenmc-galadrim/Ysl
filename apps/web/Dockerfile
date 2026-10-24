@@ -38,6 +38,7 @@ RUN pnpm --filter @repo/web build && pnpm --filter @repo/spike-camera build \
 
 FROM nginx:1.29-alpine AS runner
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/nginx/isolation.conf /etc/nginx/snippets/isolation.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 COPY --from=build /app/apps/spike-camera/dist /usr/share/nginx/html/spike-camera
 COPY --from=build /app/apps/spike-storage/dist /usr/share/nginx/html/spike-storage
