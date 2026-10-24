@@ -450,18 +450,22 @@ function ScanPage() {
     shownDraft.current = draft.id;
     shownShot.current = undefined;
     setReading(toScanReading({ symbols: draft.symbols }, t));
-    void trackWork(
-      restoreDraft(db, draft).then(async () => {
-        if (!draft.photoId || draft.ocrState !== 'pending') return;
-        const photo = await db.photo.get(draft.photoId);
-        if (!photo) return;
-        await showText(
-          draft.id,
-          await readPhoto(photoFiles, photo),
-          draft.symbols,
-        );
-      }),
-    );
+    void trackWork(restoreDraft(db, draft)).then(() => {
+      if (draft.photoId && draft.ocrState === 'pending') {
+        void readHeldText(draft.id, draft.photoId, draft.symbols);
+      }
+    });
+  };
+
+  /** The text pass a held draft missed, outside the batch's work like any other. */
+  const readHeldText = async (
+    draftId: string,
+    photoId: string,
+    symbols: readonly ShownSymbol[],
+  ) => {
+    const photo = await db.photo.get(photoId);
+    if (photo)
+      await showText(draftId, await readPhoto(photoFiles, photo), symbols);
   };
 
   const onSubmit = () => {
