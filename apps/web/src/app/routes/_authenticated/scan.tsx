@@ -9,6 +9,7 @@ import {
 } from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { modelsReady, subscribeModels } from '#/features/offline/models-state';
 import { useSession } from '#/features/auth/api/use-session';
 import {
   addDraft,
@@ -129,9 +130,14 @@ function ScanPage() {
   useEffect(() => holdUpdates(), []);
 
   useEffect(() => {
-    void ocrReader()
-      .warmup()
-      .catch(() => undefined);
+    const warm = () => {
+      if (!modelsReady()) return;
+      void ocrReader()
+        .warmup()
+        .catch(() => undefined);
+    };
+    warm();
+    return subscribeModels(warm);
   }, []);
 
   useEffect(() => {

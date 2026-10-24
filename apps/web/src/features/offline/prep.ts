@@ -5,6 +5,7 @@ import {
   type DownloadProgress,
 } from '#/features/offline/download';
 import { openModelsCache, readerUrls } from '#/features/offline/models-cache';
+import { setModelsSnapshot } from '#/features/offline/models-state';
 import type { ModelsSnapshot, ShellSnapshot } from '#/features/offline/packs';
 import { appScope } from '#/features/update/updater';
 import { isAppCache } from '#/features/update/version';
@@ -38,7 +39,10 @@ function set(patch: Partial<PrepSnapshot>) {
   for (const listener of listeners) listener();
 }
 
-const setModels = (models: ModelsSnapshot) => set({ models });
+const setModels = (models: ModelsSnapshot) => {
+  setModelsSnapshot(models);
+  set({ models });
+};
 
 async function precacheBytes(): Promise<number | null> {
   if (typeof caches === 'undefined') return null;
@@ -150,6 +154,7 @@ export function startOfflinePrep(): void {
 /** At sign-out: the next session starts the preparation again, like `stopSync`. */
 export function resetOfflinePrep(): void {
   started = false;
+  setModelsSnapshot(INITIAL_SNAPSHOT.models);
   set(INITIAL_SNAPSHOT);
 }
 
