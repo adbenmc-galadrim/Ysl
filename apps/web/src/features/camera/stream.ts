@@ -93,11 +93,19 @@ class CameraStream {
     await this.play();
   }
 
-  /** Forgets the element; the stream stays open for the next screen. */
+  /**
+   * Forgets the element; the stream stays open for the next screen, but
+   * the torch goes out with it: no other screen has a square to put it out.
+   */
   detach(video: HTMLVideoElement): void {
     if (this.video !== video) return;
     video.srcObject = null;
     this.video = undefined;
+    const { track } = this;
+    if (track && this.torch === 'on') {
+      this.setTorch('off');
+      void applyTorch(track, false).catch(() => undefined);
+    }
   }
 
   /** After a refusal or a failure: asks again. */
