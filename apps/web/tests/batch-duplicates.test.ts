@@ -45,6 +45,53 @@ beforeEach(async () => {
 });
 
 describe('findDuplicate', () => {
+  const pieces = (index: number, read: number[] = [index]) => ({
+    total: 3,
+    read,
+    key: 'ups:SHIP42',
+    photoIds: [],
+  });
+
+  it('takes the next piece of a parcel of the batch for what it is, not a duplicate', async () => {
+    await db.draftParcel.add(
+      draft({ id: 'first', createdAt: NOW, pieces: pieces(1) }),
+    );
+    const next = {
+      ...draft({ id: 'next', createdAt: later(10) }),
+      piece: { index: 2, total: 3, key: 'ups:SHIP42' },
+    };
+
+    await expect(findDuplicate(db, next)).resolves.toBeNull();
+  });
+
+  it('finds the parcel a piece already read belongs to', async () => {
+    await db.draftParcel.add(
+      draft({ id: 'first', createdAt: NOW, pieces: pieces(1, [1, 2]) }),
+    );
+    const again = {
+      ...draft({ id: 'again', createdAt: later(10), trackingNorm: 'OTHER' }),
+      piece: { index: 2, total: 3, key: 'ups:SHIP42' },
+    };
+
+    await expect(findDuplicate(db, again)).resolves.toMatchObject({
+      kind: 'batch',
+      draft: { id: 'first' },
+    });
+  });
+
+  it('holds the same number read again to be a duplicate when one side has no pieces', async () => {
+    await db.draftParcel.add(draft({ id: 'first', createdAt: NOW }));
+    const piece = {
+      ...draft({ id: 'piece', createdAt: later(10) }),
+      piece: { index: 2, total: 3, key: 'ups:SHIP42' },
+    };
+
+    await expect(findDuplicate(db, piece)).resolves.toMatchObject({
+      kind: 'batch',
+      draft: { id: 'first' },
+    });
+  });
+
   it('finds the older draft of the batch that bears the same number, however written', async () => {
     await db.draftParcel.add(
       draft({

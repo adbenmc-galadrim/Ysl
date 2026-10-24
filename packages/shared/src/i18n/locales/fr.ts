@@ -295,6 +295,7 @@ export const fr = {
   'scan.duplicate.day.yesterday': 'hier',
   'scan.duplicate.day.on': 'le {{date}}',
   'scan.duplicate.message': 'Ce colis n’a pas été ajouté une deuxième fois.',
+  'scan.recipient.same': 'Même destinataire que le précédent',
   'shell.loading': 'Chargement',
   'shell.notFound.title': 'Page introuvable',
   'shell.notFound.description': 'Cette adresse ne mène à aucun écran.',

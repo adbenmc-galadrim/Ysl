@@ -73,7 +73,10 @@ export function selectTracking(
   return best ?? null;
 }
 
-const toExtracted = ({ verdict }: SelectedTracking): ExtractedTracking => ({
+/** The tracking kept, as the batch stores it. */
+export const trackingOf = ({
+  verdict,
+}: SelectedTracking): ExtractedTracking => ({
   context: verdict.carrier,
   carrier: verdict.carrier ? carrierName(verdict.carrier, t) : null,
   tracking: verdict.value,
@@ -84,7 +87,7 @@ export function extractTracking(
   symbols: readonly CodeSymbol[],
 ): ExtractedTracking | null {
   const selected = selectTracking(symbols);
-  return selected ? toExtracted(selected) : null;
+  return selected ? trackingOf(selected) : null;
 }
 
 const describes = (code: ParsedCode) =>

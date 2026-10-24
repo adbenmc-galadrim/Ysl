@@ -22,6 +22,7 @@ import {
   ParcelLabel,
   type ParcelLabelProps,
 } from '#components/parcel-label';
+import { PieceDots, readPieces } from '#components/piece-dots';
 import {
   SCAN_FIELD_STATUS,
   ScanFields,
@@ -43,14 +44,30 @@ export type LastParcel = {
   status?: Exclude<ScanFieldStatus, 'ok'>;
 };
 
+/** One thing to do about the reading, as a button under the fields. */
+export type ScanAction = { label: string; onClick?: () => void };
+
+/**
+ * A parcel delivered as several boxes (F20): how many the label announces,
+ * which ones were read (1-based) and the one just read.
+ */
+export type ScanPieces = {
+  total: number;
+  read: readonly number[];
+  index: number;
+};
+
 /** What the scanner made of the label in front of it. */
 export type ScanReading =
-  /** Read: the fields, and the parcel added just before this one. */
+  /** Read: the fields, the parcel added just before this one, and an offer on it. */
   | {
       kind: 'read';
       fields: ScanField[];
       last?: LastParcel;
+      action?: ScanAction;
     }
+  /** One more piece of a parcel of the batch: the parcel it joins, and where it stands. */
+  | { kind: 'piece'; last: LastParcel; pieces: ScanPieces }
   /** Already in the batch: when, and what to do about it. */
   | { kind: 'duplicate'; title: string; detail: string; message: string }
   /** Nothing usable: why, and the two ways out; `keep` renames the second. */
@@ -97,7 +114,23 @@ export type ScanScreenProps = {
   onView?: () => void;
   /** Adds the duplicate to the batch after all. */
   onAddAnyway?: () => void;
+  /** Keeps the parcel with the pieces read so far, the missing one left out. */
+  onSavePartial?: () => void;
 };
+
+/** "La 3e pièce manque" for one gap, "2 pièces manquent" for more. */
+export function missingPiecesLabel({
+  total,
+  read,
+}: Pick<ScanPieces, 'total' | 'read'>): string | null {
+  const done = readPieces(read, total);
+  const missing = Array.from({ length: total }, (_, i) => i + 1).filter(
+    (n) => !done.has(n),
+  );
+  if (missing.length === 0) return null;
+  if (missing.length > 1) return `${missing.length} pièces manquent`;
+  return `La ${missing[0] === 1 ? '1re' : `${missing[0]}e`} pièce manque`;
+}
 
 /**
  * Reception, burst mode: the agent sweeps the camera over the parcels of a
@@ -128,6 +161,7 @@ export function ScanScreen({
   onKeep,
   onView,
   onAddAnyway,
+  onSavePartial,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
   const blocked = reading.kind === 'blocked';
@@ -169,6 +203,20 @@ export function ScanScreen({
           action={onUndo && { icon: 'undo', label: 'Annuler', onClick: onUndo }}
         />
       )}
+      {reading.kind === 'piece' && (
+        <LastScanPanel
+          className="mx-4 mt-3.5"
+          caption={`Colis en ${reading.pieces.total} pièces`}
+          title={reading.last.name}
+          meta={<LastParcelMeta {...reading.last} />}
+          trailing={
+            <PieceDots
+              total={reading.pieces.total}
+              read={reading.pieces.read}
+            />
+          }
+        />
+      )}
       {reading.kind === 'duplicate' && (
         <CameraNotice
           tone="warning"
@@ -192,9 +240,22 @@ export function ScanScreen({
       )}
 
       {reading.kind === 'read' && reading.fields.length > 0 && (
-        <CameraPanel className="mx-4 px-4 pt-[17px] pb-[18px]">
+        <CameraPanel
+          className={`mx-4 px-4 pt-[17px] ${reading.action ? 'pb-3' : 'pb-[18px]'}`}
+        >
           <ScanFields fields={reading.fields} />
+          {reading.action && (
+            <CameraNoticeButton
+              onClick={reading.action.onClick}
+              className="mt-[13px] h-[30px] w-full text-13"
+            >
+              {reading.action.label}
+            </CameraNoticeButton>
+          )}
         </CameraPanel>
+      )}
+      {reading.kind === 'piece' && (
+        <PiecePanel pieces={reading.pieces} onSavePartial={onSavePartial} />
       )}
       {reading.kind === 'duplicate' && (
         <CameraNotice
@@ -279,6 +340,40 @@ export function ScanScreen({
         />
       )}
     </CameraViewport>
+  );
+}
+
+/**
+ * "Pièce 2 sur 3 lue": a box of the same shipment is not a duplicate but
+ * the next piece, gathered under one parcel. While one is still on the
+ * trolley, the button keeps the parcel with the pieces read so far.
+ */
+function PiecePanel({
+  pieces,
+  onSavePartial,
+}: {
+  pieces: ScanPieces;
+  onSavePartial?: () => void;
+}) {
+  const missing = missingPiecesLabel(pieces);
+  const count = readPieces(pieces.read, pieces.total).size;
+  return (
+    <CameraPanel role="status" className="mx-4 px-4 pt-3.5 pb-3">
+      <p className="text-16 font-semibold">
+        Pièce {pieces.index} sur {pieces.total} lue
+      </p>
+      <p className="mt-[5px] text-14 text-night-muted">
+        Même numéro : pièces regroupées en un colis.
+      </p>
+      {missing && (
+        <CameraNoticeButton
+          onClick={onSavePartial}
+          className="mt-[13px] h-[30px] w-full text-13"
+        >
+          {missing} : enregistrer {count} sur {pieces.total}
+        </CameraNoticeButton>
+      )}
+    </CameraPanel>
   );
 }
 

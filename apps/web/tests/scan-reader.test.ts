@@ -142,6 +142,30 @@ describe('readDraft', () => {
     });
   });
 
+  it('writes the piece a structured code announces on the draft', async () => {
+    const maxicode = `[)>${RS}01${GS}9675007${GS}250${GS}004${GS}1Z99230623${GS}UPSN${GS}E6344W${GS}296${GS}SHIP42${GS}2/3${GS}3${GS}N${GS}${GS}PARIS`;
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const queue = new DecodeQueue(
+      () =>
+        Promise.resolve(
+          result([
+            symbol('Code128', '1ZE6344W0499230622'),
+            symbol('MaxiCode', maxicode),
+          ]),
+        ),
+      1,
+    );
+    await queue.acquire();
+
+    const reading = await readDraft(db, queue, draft.id, bitmap(), bitmap());
+
+    expect(reading.piece).toEqual({ index: 2, total: 3, key: 'ups:SHIP42' });
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      pieces: { total: 3, read: [2], key: 'ups:SHIP42', photoIds: [] },
+    });
+  });
+
   it('says so when the draft was undone during the reading', async () => {
     let finish: (value: DecodeResult) => void = () => undefined;
     let calls = 0;

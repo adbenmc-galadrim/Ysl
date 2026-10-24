@@ -123,6 +123,19 @@ export type DraftOcrLine = OcrLine;
 export type DraftBatch = { id: string; startedAt: Date };
 
 /**
+ * A parcel delivered as several boxes (F20, §4.6): how many the label announces,
+ * the pieces read so far (1-based), the key the pieces share (carrier and
+ * shipment number, else the tracking number) and the photos of the pieces
+ * after the first, which `photoId` holds.
+ */
+export type DraftPieces = {
+  total: number;
+  read: number[];
+  key: string;
+  photoIds: string[];
+};
+
+/**
  * A parcel of the batch in progress: one tap, one photo, the reading when
  * it lands. Local only, never queued; `finishBatch` turns it into a parcel.
  */
@@ -143,6 +156,8 @@ export type DraftParcel = {
   ocrName: string | null;
   /** Every line read, in the frame of the 1 600 px working image. */
   ocrLines: DraftOcrLine[];
+  /** Set when the label is one piece of several; absent on drafts stored before YSL-38. */
+  pieces?: DraftPieces | null;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */

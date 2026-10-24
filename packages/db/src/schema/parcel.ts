@@ -80,6 +80,7 @@ export const parcel = pgTable(
     department: text('department'),
     senderId: uuid('sender_id'),
     senderName: text('sender_name'),
+    /** Pieces received of a parcel in several boxes, over the pieces its label announces ("2 sur 3"), not the "n" printed on one box. */
     pieceN: integer('piece_n'),
     pieceTotal: integer('piece_total'),
     weightKg: numeric('weight_kg', { precision: 8, scale: 3, mode: 'number' }),
