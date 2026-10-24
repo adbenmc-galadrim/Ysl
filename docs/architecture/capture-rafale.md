@@ -192,6 +192,41 @@ lettres que portent UPS (`1Z…`), Colissimo (`8J…`), Chronopost ou La Poste.
   place (`updateDraft`, la photo reste), jamais un second colis. Un brouillon `typed` est réglé
   d'emblée : la reprise après relance ne le relit pas.
 
+## Les doublons (`features/batch/duplicates.ts`, F10)
+
+Un colis scanné deux fois ferait deux notifications. Dès que la lecture d'un brouillon
+pose un `trackingNorm` (code lu ou numéro saisi, normalisé par `normalizeTracking` :
+majuscules, sans espaces, tirets ni points), `findDuplicate` cherche le même numéro :
+
+- d'abord un brouillon **plus ancien** du lot (seul le plus jeune des deux est le
+  doublon : deux lectures du même code qui aboutissent ensemble ne se retirent pas l'une
+  l'autre) ;
+- sinon le colis **le plus récent** de la table `parcel` qui le porte et n'est pas
+  supprimé, de ce lot comme d'un lot antérieur, scanné ici ou arrivé par `sync.pull`
+  d'un autre appareil.
+
+L'alerte est **non bloquante** (cahier P1.4) : le cadre passe en jaune, le bandeau dit
+« Déjà dans ce lot » (nom, transporteur, 4 derniers chiffres, heure du premier scan) ou
+« Déjà reçu le 23 octobre » / « Déjà remis hier » (destinataire résolu par l'annuaire ou
+le contact, sinon le nom lu), et l'avis du bas « Ce colis n'a pas été ajouté une
+deuxième fois » offre deux sorties :
+
+- **Voir le colis** : dans ce lot, l'écran affiche les champs du colis d'origine (ses
+  codes rejoués par `toScanReading`) ; d'un lot antérieur, l'app ouvre la liste Colis
+  (la fiche colis attend YSL-48).
+- **Ajouter quand même** : le brouillon rejoint le lot tel quel.
+
+Entre les deux, le brouillon est **retenu** (`holdDraft`) : retiré de `draft_parcel`
+(compteur et « Dernier ajouté » ne le comptent plus) mais sa photo reste, pour qu'il
+revienne intact (`restoreDraft`, même identifiant). Toute autre sortie de l'alerte
+(capture suivante, nouvelle saisie, Annuler, la croix, Terminer, fermeture de l'écran)
+l'abandonne avec sa photo (`dropHeld` : le balayage des orphelins ne retire que les
+fichiers sans ligne `photo`). Un brouillon sans numéro n'est jamais un doublon ; la
+reprise d'une lecture après relance (`recoverPending`) ne fait pas le contrôle, faute
+d'écran pour l'alerte. Le serveur n'impose rien : « Ajouter quand même » rend la clé
+non unique par construction, l'index `parcel_tracking_norm_idx` n'est pas unique et
+`sync.push` ne répond jamais 409 pour un colis.
+
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
@@ -214,8 +249,7 @@ un lot »).
 
 ## Ce qui attend d'autres tickets
 
-Doublon dans le lot et en base (YSL-37, l'index `trackingNorm` des brouillons est posé),
-choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
+Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
 des codes 2D (YSL-25), liste du lot et revue (YSL-33), synchronisation des lignes
 promues (YSL-28), bip et flash à la capture (§6.6), capture automatique sur image nette
 (F06, lot L3).
