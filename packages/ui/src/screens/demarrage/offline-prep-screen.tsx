@@ -6,6 +6,8 @@ import { PageIntro } from '#components/page-intro';
 import { ProgressRow, type ProgressRowProps } from '#components/progress-row';
 import { Screen } from '#components/screen';
 import type { OfflinePack } from '#fixtures/offline';
+
+export type { OfflinePack };
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
