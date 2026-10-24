@@ -26,6 +26,7 @@ import {
   wasExplained,
 } from '#/features/camera/entry';
 import { cameraReading } from '#/features/camera/notice';
+import { shutterMode } from '#/features/camera/shutter';
 import {
   cameraPermission,
   cameraStream,
@@ -79,6 +80,7 @@ function ScanPage() {
   const close = () => void navigate({ to: '/' });
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
   const [opening, setOpening] = useState<Opening>(() =>
@@ -138,6 +140,12 @@ function ScanPage() {
   const onImportInstead = () => {
     withoutCamera();
     inputRef.current?.click();
+  };
+
+  /** From the refusal screen: the phone's own camera, which asks nothing of Safari. */
+  const onPhotoInstead = () => {
+    withoutCamera();
+    captureRef.current?.click();
   };
 
   /** Asking again is a choice: a new refusal shows the Réglages steps again. */
@@ -215,9 +223,15 @@ function ScanPage() {
     if (!finishing.current) void trackWork(shoot(grab));
   };
 
+  /** The viewfinder's frame, or the phone's camera when there is no stream. */
   const onShutter = () => {
+    const mode = shutterMode(camera, fallback);
+    if (mode === 'native') {
+      if (!finishing.current) captureRef.current?.click();
+      return;
+    }
     const video = videoRef.current;
-    if (!video || !cameraStream.live) return;
+    if (mode !== 'grab' || !video || !cameraStream.live) return;
     fire(() => grabFrame(video, cameraStream.track));
   };
 
@@ -305,14 +319,15 @@ function ScanPage() {
 
   if (opening === 'pending') return null;
 
-  /* The file input lives outside the screens: the chooser opened from one
-     screen must deliver its file to the input still mounted on the next. */
+  /* The file inputs live outside the screens: the chooser opened from one
+     screen must deliver its files to the input still mounted on the next.
+     `capture` opens the phone's camera for one shot; the other, the library. */
   return (
     <>
       {refused ? (
         <CameraDeniedScreen
           steps={SETTINGS_STEPS}
-          onPhoto={onImportInstead}
+          onPhoto={onPhotoInstead}
           onKeyboard={onTypeInstead}
           onRetry={onRetry}
         />
@@ -374,6 +389,14 @@ function ScanPage() {
         type="file"
         accept="image/*"
         multiple
+        className="hidden"
+        onChange={onFiles}
+      />
+      <input
+        ref={captureRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
         className="hidden"
         onChange={onFiles}
       />
