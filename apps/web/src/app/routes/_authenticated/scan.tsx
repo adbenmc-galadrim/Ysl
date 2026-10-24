@@ -19,6 +19,11 @@ import {
   type Duplicate,
 } from '#/features/batch/duplicates';
 import {
+  attachPiece,
+  findPieceGroup,
+  type PieceRead,
+} from '#/features/batch/pieces';
+import {
   addDraft,
   addTypedDraft,
   finishBatch,
@@ -58,6 +63,7 @@ import {
   recipientOf,
 } from '#/features/scan/duplicate';
 import { lastOf } from '#/features/scan/last';
+import { pieceReading } from '#/features/scan/piece';
 import {
   readDraft,
   recoverPending,
@@ -166,9 +172,10 @@ function ScanPage() {
   const holdDuplicate = async (
     draft: Pick<DraftParcel, 'id' | 'batchId' | 'createdAt'>,
     trackingNorm: string | null,
+    piece: PieceRead | null,
     take: () => Promise<DraftParcel | undefined>,
   ): Promise<boolean> => {
-    const found = await findDuplicate(db, { ...draft, trackingNorm });
+    const found = await findDuplicate(db, { ...draft, trackingNorm, piece });
     if (!found) return false;
     const recipient =
       found.kind === 'parcel' ? await recipientOf(db, found.parcel, t) : '';
@@ -272,20 +279,22 @@ function ScanPage() {
       const photo = await encodePhoto(clone);
       const draft = await addDraft(db, photoFiles, batch.id, photo);
       handed = true;
-      if (held.current) {
-        dropHeldDraft();
-        setReading({ kind: 'idle' });
-      }
-      const { symbols, kept, failed, trackingNorm } = await readDraft(
+      const wasHeld = held.current !== null;
+      if (wasHeld) dropHeldDraft();
+      setReading((shown) =>
+        wasHeld || shown.kind === 'piece' ? { kind: 'idle' } : shown,
+      );
+      const { symbols, kept, failed, trackingNorm, piece } = await readDraft(
         db,
         queue,
         draft.id,
         bitmap,
         clone,
       );
+      if (kept && piece && (await joinPieces(draft, piece))) return;
       if (
         kept &&
-        (await holdDuplicate(draft, trackingNorm, () =>
+        (await holdDuplicate(draft, trackingNorm, piece, () =>
           holdDraft(db, draft.id),
         ))
       ) {
@@ -316,6 +325,29 @@ function ScanPage() {
           : failedReading(t),
       );
     }
+  };
+
+  /**
+   * One box of a parcel in several (F11): a piece not read yet of a parcel
+   * of the batch joins it, and the screen says where the pieces stand. False
+   * when the label is the first piece seen, or one already read (then a
+   * duplicate): the draft stays where it is.
+   */
+  const joinPieces = async (
+    draft: DraftParcel,
+    piece: PieceRead,
+  ): Promise<boolean> => {
+    const group = await findPieceGroup(db, draft, piece.key);
+    if (!group?.pieces || group.pieces.read.includes(piece.index)) {
+      return false;
+    }
+    const joined = await attachPiece(db, group.id, draft, piece.index);
+    if (!joined?.pieces) return false;
+    if (held.current) dropHeldDraft();
+    unread.current = null;
+    shownDraft.current = null;
+    setReading(pieceReading(joined, joined.pieces, piece.index, t));
+    return true;
   };
 
   /**
@@ -384,6 +416,9 @@ function ScanPage() {
     setReading({ kind: 'idle' });
   };
 
+  /** "Enregistrer 2 sur 3": the parcel already stands so; the panel goes. */
+  const onSavePartial = () => setReading({ kind: 'idle' });
+
   /** While an unread label is on screen, any entry fills that draft. */
   const onType = () => setTyping({ fix: unread.current, value: '' });
 
@@ -409,6 +444,7 @@ function ScanPage() {
       const taken = await holdDuplicate(
         { ...fixing, createdAt: new Date() },
         trackingNorm,
+        null,
         async () => (await holdDraft(db, fixing.id)) && fixed,
       );
       if (taken) return;
@@ -419,7 +455,9 @@ function ScanPage() {
     const batch = await openBatch(db);
     const draft = typedDraft(batch.id, typed);
     if (
-      await holdDuplicate(draft, trackingNorm, () => Promise.resolve(draft))
+      await holdDuplicate(draft, trackingNorm, null, () =>
+        Promise.resolve(draft),
+      )
     ) {
       return;
     }
@@ -567,6 +605,7 @@ function ScanPage() {
             onRetry={onRetry}
             onView={onView}
             onAddAnyway={onAddAnyway}
+            onSavePartial={onSavePartial}
           />
           {typing && entry && (
             <SaisieManuelleSheet
