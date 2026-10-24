@@ -68,7 +68,7 @@ Corpus : 96 synthèse, 143 web, 5 réelles. Base du critère : 110 étiquettes.
 | Faux « sûrs » sur les autres champs      | destinataire 8,3 % (2 / 24), expéditeur 1,8 % (1 / 56) | idem, poids 2,0 % (1 / 49) | ≤ 2 %                           | non sur le destinataire                                |
 
 **Les quatre faux « sûrs » du tracking** portent tous sur une annotation `reviewed: false`
-et aucun n'est imputable au lecteur ni aux règles :
+et aucun n'est une lecture fausse ; le premier met aussi en cause la règle de comparaison :
 
 - `web-paketaufkleber-dhl-europack-national-deutschland-2016` : annotation à 18 chiffres,
   le Code 128 porte le SSCC à 20 chiffres (`00` devant) : même numéro sous deux formes ;
