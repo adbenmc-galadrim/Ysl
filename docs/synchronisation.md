@@ -37,21 +37,56 @@ faites. Le serveur les applique une par une, chacune dans sa transaction :
 
 Un statut par opération, dans l'ordre envoyé :
 
-| Statut | Sens                                                                                                                         | Côté appareil                                               |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 200    | appliquée, maintenant ou par un envoi précédent                                                                              | retirée de l'outbox                                         |
-| 400    | colonne inconnue, valeur invalide, `not null` manquant, garde-fou d'un trigger (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`) | `rejected`, à corriger                                      |
-| 403    | identifiant d'une autre organisation                                                                                         | `rejected`                                                  |
-| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                | `rejected`                                                  |
-| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage…         | `rejected`, le second part en « Corriger »                  |
-| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                   | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
+| Statut | Sens                                                                                                                                                                                                           | Côté appareil                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 200    | appliquée, maintenant ou par un envoi précédent                                                                                                                                                                | retirée de l'outbox                                         |
+| 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                      |
+| 403    | identifiant d'une autre organisation                                                                                                                                                                           | `rejected`                                                  |
+| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                  |
+| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger »                  |
+| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
 
-Un rejet 4xx est aussi consigné dans `sync_op` : la même opération renvoyée reçoit
-la même réponse. Le dernier écrit gagne **ligne par ligne**, et non champ par champ
-comme le §8.4 le prévoit (écart assumé tant qu'une ligne n'a qu'un auteur à la fois),
-dans l'ordre d'arrivée au serveur ; une suppression reste acquise, une copie en retard
-ne la défait pas. Les garde-fous des transitions de statut et de la remise (§8.4)
-viennent avec YSL-34.
+Un rejet 4xx est aussi consigné dans `sync_op`, avec son motif (`reason` : la
+contrainte ou le SQLSTATE, et le message de Postgres, jamais les paramètres) : la
+même opération renvoyée reçoit la même réponse, et `select * from sync_op where
+status = 409` est le journal des conflits du §8.4. Le dernier écrit gagne **ligne par
+ligne**, et non champ par champ comme le §8.4 le prévoit (écart assumé tant qu'une
+ligne n'a qu'un auteur à la fois), dans l'ordre d'arrivée au serveur ; une suppression
+reste acquise, une copie en retard ne la défait pas.
+
+## Garde-fous des statuts et de la remise
+
+Ticket YSL-34 (§8.3, §8.4). Des triggers de `packages/db` (migration
+`0004_transitions_statut`) tiennent le graphe des statuts, quel que soit l'auteur de
+l'écriture ; `sync.push` reconnaît chaque garde-fou au nom de contrainte que le
+trigger lève (`packages/api/src/features/sync/errors.ts`, `GUARDS`) et répond avec un
+message propre.
+
+| Garde-fou                   | Règle                                                                                                                                                 | Réponse |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `parcel_status_transition`  | `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne` ; `remis → notifie` ; rester sur place est toujours permis     | 409     |
+| `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne repasse `notifie` qu'une fois annulée chaque remise (`handover`) vivante qui le liste | 409     |
+| `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                            | 409     |
+| `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                              | 400     |
+
+Le graphe est aussi la constante `PARCEL_TRANSITIONS` de `@repo/db/schema`
+(`canTransition(from, to)`), que l'app peut consulter avant d'écrire ; un test de
+`packages/db` vérifie que le trigger accepte exactement ce qu'elle décrit. « Brouillon »
+n'existe que sur l'appareil (lot en cours) et n'atteint jamais le serveur.
+
+Ce que cela donne entre deux appareils :
+
+- **Remise écrasée.** L'appareil A remet le colis (`handover` + colis `remis`). L'appareil
+  B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : transition
+  `remis → recu` refusée en 409, la ligne du serveur ne bouge pas, l'opération de B part
+  en « Corriger ». Si la copie de B date d'un colis déjà `notifie`, c'est
+  `remis → notifie` : refusée tant que la remise de A est vivante.
+- **Annulation tracée.** Annuler une remise, c'est poser `cancelled_at` sur la
+  `handover` **puis** repasser le colis `notifie` (`delivered_at` et `delivered_by` à
+  nul), dans cet ordre dans l'outbox. La `handover` reste, annulée : c'est la trace.
+  Une copie en retard qui la renverrait sans `cancelled_at` est refusée.
+- **Modification ordinaire.** Changer l'emplacement ou les notes d'un colis remis passe,
+  tant que le statut et la preuve de remise ne bougent pas.
 
 ## `sync.pull`
 
