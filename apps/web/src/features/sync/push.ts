@@ -6,6 +6,7 @@ import {
   type PushOutput,
 } from '@repo/contract/sync';
 import type { CourrierDatabase, OutboxOp } from '#/features/db/schema';
+import { describeError } from '#/features/sync/errors';
 
 export type PushClient = (input: PushInput) => Promise<PushOutput>;
 
@@ -48,10 +49,6 @@ async function markTried(
     });
 }
 
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /**
  * Sends the queued operations in the order they were made, by batches, and
  * settles each one from the server's answer: applied ones leave the outbox,
@@ -78,7 +75,7 @@ export async function pushOutbox(
     try {
       output = await client(toInput(ops));
     } catch (error) {
-      await markTried(db, ops, describe(error));
+      await markTried(db, ops, describeError(error));
       return { stopped: 'failed', applied, rejected, error };
     }
 

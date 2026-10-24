@@ -1,26 +1,20 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSyncExternalStore } from 'react';
 import { db } from '#/features/db/database';
+import type { SyncRunStatus } from '#/features/sync/engine';
+import {
+  countOutbox,
+  EMPTY_OUTBOX,
+  type OutboxCounts,
+} from '#/features/sync/outbox-counts';
 import { syncEngine } from '#/features/sync/sync';
 import { useOnline } from '#/lib/use-online';
 
-export type SyncView = {
+export type SyncView = OutboxCounts & {
   online: boolean;
-  status: 'idle' | 'syncing' | 'offline' | 'error';
-  /** Changes made on this device that the server has not taken yet. */
-  pending: number;
-  /** Changes the server refused for good, waiting for a correction. */
-  rejected: number;
+  status: SyncRunStatus;
   lastSyncAt: Date | null;
 };
-
-async function countOutbox() {
-  const [pending, rejected] = await Promise.all([
-    db.outbox.where('state').equals('queued').count(),
-    db.outbox.where('state').equals('rejected').count(),
-  ]);
-  return { pending, rejected };
-}
 
 /** What the screens show of the synchronisation: live, from the engine and the outbox. */
 export function useSync(): SyncView {
@@ -30,7 +24,7 @@ export function useSync(): SyncView {
     syncEngine.getSnapshot,
     syncEngine.getSnapshot,
   );
-  const counts = useLiveQuery(countOutbox, [], { pending: 0, rejected: 0 });
+  const counts = useLiveQuery(() => countOutbox(db), [], EMPTY_OUTBOX);
   return {
     online,
     status: snapshot.status,

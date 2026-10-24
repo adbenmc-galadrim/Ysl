@@ -1,11 +1,12 @@
 import { SYNC_STATE_KEYS, type CourrierDatabase } from '#/features/db/schema';
+import { describeError } from '#/features/sync/errors';
 import { pullChanges, type PullClient } from '#/features/sync/pull';
 import { pushOutbox, type PushClient } from '#/features/sync/push';
 
-export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'error';
+export type SyncRunStatus = 'idle' | 'syncing' | 'offline' | 'error';
 
 export type SyncSnapshot = {
-  status: SyncStatus;
+  status: SyncRunStatus;
   /** When a push and a pull last both went through, on this device. */
   lastSyncAt: Date | null;
   lastError: string | null;
@@ -22,7 +23,7 @@ export type SyncEngineOptions = {
 };
 
 export type SyncRun = {
-  status: Exclude<SyncStatus, 'syncing'>;
+  status: Exclude<SyncRunStatus, 'syncing'>;
   applied: number;
   rejected: number;
   pulled: number;
@@ -37,10 +38,6 @@ export const INITIAL_SYNC_SNAPSHOT: SyncSnapshot = {
 function isUnauthorized(error: unknown): boolean {
   const data = (error as { data?: { code?: string } } | null)?.data;
   return data?.code === 'UNAUTHORIZED';
-}
-
-function describe(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /**
@@ -92,7 +89,7 @@ export function createSyncEngine({
       if (isUnauthorized(error)) onUnauthorized?.();
       set({
         status: online() ? 'error' : 'offline',
-        lastError: describe(error),
+        lastError: describeError(error),
       });
       return {
         status: online() ? 'error' : 'offline',

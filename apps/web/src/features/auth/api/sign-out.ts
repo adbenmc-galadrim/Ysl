@@ -9,7 +9,7 @@ import {
   prepareSignOut,
   SignOutBlockedError,
 } from '#/features/sync/sign-out-guard';
-import { syncEngine, syncNow } from '#/features/sync/sync';
+import { stopSync, syncNow } from '#/features/sync/sync';
 
 export { SignOutBlockedError };
 
@@ -31,7 +31,7 @@ export function useSignOut() {
       } catch (cause) {
         console.warn('Local data was not fully cleared', cause);
       }
-      syncEngine.reset();
+      stopSync();
       queryClient.clear();
       await router.navigate({ to: '/connexion', search: {} });
     },

@@ -19,29 +19,44 @@ export const syncEngine = createSyncEngine({
 
 export const syncNow = () => syncEngine.syncNow();
 
-let started = false;
+let stop: (() => void) | null = null;
 
 /**
  * Starts the triggers once, for a signed-in session: at once, when the
  * network comes back, when the app returns to the front, after every local
  * commit, and on a timer while visible. Background Sync does not exist on
- * iOS, so nothing runs while the app is closed.
+ * iOS, so nothing runs while the app is closed. `stopSync` undoes it all at
+ * sign-out.
  */
 export function startSync(): void {
-  if (started) return;
-  started = true;
+  if (stop) return;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  window.addEventListener('online', () => void syncNow());
-  window.addEventListener('offline', () => syncEngine.markOffline());
-  document.addEventListener('visibilitychange', () => {
+  const onOnline = () => void syncNow();
+  const onOffline = () => syncEngine.markOffline();
+  const onVisible = () => {
     if (document.visibilityState === 'visible') void syncNow();
-  });
-  setInterval(() => {
-    if (document.visibilityState === 'visible') void syncNow();
-  }, INTERVAL_MS);
-  onLocalCommit(() => {
+  };
+  const interval = setInterval(onVisible, INTERVAL_MS);
+  window.addEventListener('online', onOnline);
+  window.addEventListener('offline', onOffline);
+  document.addEventListener('visibilitychange', onVisible);
+  const unsubscribe = onLocalCommit(() => {
     clearTimeout(timer);
     timer = setTimeout(() => void syncNow(), AFTER_COMMIT_MS);
   });
+  stop = () => {
+    clearInterval(interval);
+    clearTimeout(timer);
+    window.removeEventListener('online', onOnline);
+    window.removeEventListener('offline', onOffline);
+    document.removeEventListener('visibilitychange', onVisible);
+    unsubscribe();
+  };
   void syncNow();
+}
+
+export function stopSync(): void {
+  stop?.();
+  stop = null;
+  syncEngine.reset();
 }

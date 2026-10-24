@@ -63,7 +63,7 @@ export function ReglagesHome() {
         onPress: () => void navigate({ to: '/reglages/synchronisation' }),
       },
       {
-        icon: 'cloud',
+        icon: 'upload',
         color: server === 'up' ? 'green' : 'grey',
         label: t('settings.server'),
         value: SERVER_STATE[server],

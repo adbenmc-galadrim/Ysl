@@ -5,12 +5,12 @@ import { prepareSignOut } from '#/features/sync/sign-out-guard';
 import { openTestDatabase, parcelRow } from './helpers/local-rows';
 
 describe('prepareSignOut', () => {
-  it('lets an empty outbox go without a request', async () => {
+  it('waits for one last synchronisation even with an empty outbox', async () => {
     const db = await openTestDatabase();
     const syncNow = vi.fn().mockResolvedValue(undefined);
 
     await expect(prepareSignOut(db, syncNow)).resolves.toEqual({ ok: true });
-    expect(syncNow).not.toHaveBeenCalled();
+    expect(syncNow).toHaveBeenCalledOnce();
   });
 
   it('tries one synchronisation, and lets go once the outbox is empty', async () => {

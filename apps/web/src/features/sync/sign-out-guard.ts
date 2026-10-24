@@ -12,16 +12,16 @@ export class SignOutBlockedError extends Error {
 
 /**
  * Signing out wipes the device, so the outbox goes first (§8.4). One last
- * synchronisation is tried; whatever is still queued afterwards, offline or
- * refused by the server for the moment, blocks the sign-out and is counted.
+ * synchronisation is run, or joined if one is going, so no page lands after
+ * the wipe; whatever is still queued afterwards, offline or refused by the
+ * server for the moment, blocks the sign-out and is counted.
  * Rejected changes do not block: sending them again would change nothing.
  */
 export async function prepareSignOut(
   db: CourrierDatabase,
   syncNow: () => Promise<unknown>,
 ): Promise<SignOutCheck> {
-  const queued = await db.outbox.where('state').equals('queued').count();
-  if (queued > 0) await syncNow();
+  await syncNow();
   const pending = await db.outbox.where('state').equals('queued').count();
   return pending === 0 ? { ok: true } : { ok: false, pending };
 }
