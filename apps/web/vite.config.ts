@@ -11,6 +11,17 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 const VERSION = new Date().toISOString();
 
+/** Kept out of the precache: the app fetches them itself (`features/offline`). */
+const READER_FILES = [
+  '**/*.onnx',
+  '**/*.traineddata',
+  '**/ort-wasm-simd-threaded*.wasm',
+  '**/tesseract-core-*.js',
+];
+const READER_FILE_PATTERN =
+  /\.(onnx|traineddata)$|\/ort-wasm-simd-threaded[^/]*\.wasm$|\/tesseract-core-[^/]*\.js$/;
+const MODELS_CACHE = 'courrier-models';
+
 function versionFile(): Plugin {
   const source = JSON.stringify({ version: VERSION, builtAt: VERSION });
   return {
@@ -121,10 +132,22 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: [
-            '**/*.{js,css,html,svg,png,webmanifest,woff2,wasm,onnx,txt,traineddata}',
+            '**/*.{js,mjs,css,html,svg,png,webmanifest,woff2,wasm,txt}',
           ],
-          maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
-          globIgnores: ['version.json'],
+          // The reader's heavy files are not precached: the app downloads
+          // them into `courrier-models` with a progress bar (YSL-35).
+          globIgnores: ['version.json', ...READER_FILES],
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          runtimeCaching: [
+            {
+              urlPattern: READER_FILE_PATTERN,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: MODELS_CACHE,
+                cacheableResponse: { statuses: [0, 200] },
+              },
+            },
+          ],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/spike-/, /^\/version\.json$/],
           cleanupOutdatedCaches: true,
