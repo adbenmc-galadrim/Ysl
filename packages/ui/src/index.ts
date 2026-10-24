@@ -40,6 +40,7 @@ export * from '#components/keypad';
 export * from '#components/keypad-field';
 export * from '#components/label-photo';
 export * from '#components/label-thumb';
+export * from '#components/landing-page';
 export * from '#components/large-title';
 export * from '#components/link-card';
 export * from '#components/list-row';

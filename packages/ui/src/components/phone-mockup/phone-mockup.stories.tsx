@@ -26,7 +26,7 @@ export const GuideDInstallation: Story = {
     <div className="flex gap-6 bg-site-fill p-6">
       <SafariPhone />
       <ShareSheetPhone />
-      <HomeScreenPhone />
+      <HomeScreenPhone appName="Courrier" />
     </div>
   ),
 };

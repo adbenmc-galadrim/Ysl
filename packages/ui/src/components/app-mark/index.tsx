@@ -59,10 +59,11 @@ export function AppMark({ size, edge = 'none', className }: AppMarkProps) {
 export type AppBrandProps = {
   /** `nav` for the top bar, `footer` for the foot of the page. */
   size: 'nav' | 'footer';
+  name: string;
 };
 
 /** The app mark and its name, as the landing page signs itself. */
-export function AppBrand({ size }: AppBrandProps) {
+export function AppBrand({ size, name }: AppBrandProps) {
   const nav = size === 'nav';
   return (
     <span className="flex items-center gap-2.5 xl:gap-3">
@@ -76,7 +77,7 @@ export function AppBrand({ size }: AppBrandProps) {
             : 'text-15 leading-[18px] xl:text-17 xl:leading-[21px]',
         )}
       >
-        Courrier
+        {name}
       </span>
     </span>
   );

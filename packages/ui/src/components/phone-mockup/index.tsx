@@ -114,8 +114,12 @@ const HOME_ICONS = [
 
 const DOCK_ICONS = ['bg-ios-green', 'bg-site-blue', 'bg-white', 'bg-ios-orange-light'];
 
-/** Step 3: the home screen, Courrier among the apps. */
-export function HomeScreenPhone() {
+export type HomeScreenPhoneProps = {
+  appName: string;
+};
+
+/** Step 3: the home screen, the app among the others. */
+export function HomeScreenPhone({ appName }: HomeScreenPhoneProps) {
   return (
     <PhoneFrame screen="bg-linear-to-br from-site-wallpaper to-site-wallpaper-2">
       {HOME_ICONS.map(([x, y, tone]) => (
@@ -128,7 +132,7 @@ export function HomeScreenPhone() {
       <span className="absolute top-[81px] left-[42px] size-8 rounded-[9px] ring-[1.5px] ring-white ring-inset" />
       <AppMark size={26} className="absolute top-[84px] left-[45px]" />
       <span className="absolute top-[113px] left-[39px] w-[38px] text-center text-[6.5px] leading-2 font-semibold text-white">
-        Courrier
+        {appName}
       </span>
       <div className="absolute top-[208px] left-2 flex h-11 w-[130px] gap-1 rounded-[16px] bg-black/11 pt-[9px] pl-2.5">
         {DOCK_ICONS.map((tone) => (

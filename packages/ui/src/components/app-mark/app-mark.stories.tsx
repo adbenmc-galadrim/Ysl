@@ -44,8 +44,8 @@ export const SurUnQr: Story = {
 export const Marque: Story = {
   render: () => (
     <div className="flex flex-col gap-6 text-site-ink">
-      <AppBrand size="nav" />
-      <AppBrand size="footer" />
+      <AppBrand size="nav" name="Courrier" />
+      <AppBrand size="footer" name="Courrier" />
     </div>
   ),
 };

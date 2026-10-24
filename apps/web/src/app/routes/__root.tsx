@@ -10,7 +10,7 @@ import {
   currentDisplayContext,
   isIosBrowserTab,
 } from '#/features/install/browser-tab';
-import { InstallScreen } from '#/features/install/components/install-screen';
+import { InstallLanding } from '#/features/install/components/install-landing';
 
 export type RouterContext = {
   queryClient: QueryClient;
@@ -26,7 +26,7 @@ function RootComponent() {
   return (
     <div className="flex min-h-screen flex-col">
       <HeadContent />
-      {browserTab ? <InstallScreen /> : <Outlet />}
+      {browserTab ? <InstallLanding /> : <Outlet />}
     </div>
   );
 }
