@@ -23,6 +23,7 @@ jobs:
   checks:
     name: Lint, types et tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -37,9 +38,12 @@ jobs:
   # (FreeType) décale chaque glyphe et tous les écrans montent de 0,8 point
   # (médiane 0,77 %, maximum 1,69 % le 24/10/2026), ce qui obligerait à un seuil
   # trois fois plus lâche. Le dépôt est public : les minutes macOS sont gratuites.
+  # Image épinglée : le seuil tient à la rastérisation de cette version (0,68 % mesuré
+  # sur `macos-26-arm64` le 24/10/2026, pour 0,75 % toléré).
   visual:
     name: Storybook et écrans
-    runs-on: macos-latest
+    runs-on: macos-26
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
