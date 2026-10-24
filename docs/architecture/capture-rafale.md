@@ -78,7 +78,9 @@ carré « Lampe » de la barre est **caché**, `ScanScreen.torch={false}`). Elle
 WebKit 280970) ; le carré passe en blanc (`torchOn`, `aria-pressed`). L'état est relu dans
 `getSettings().torch` à chaque ouverture du flux et au retour au premier plan : iOS éteint
 la lampe quand l'app passe derrière, et le carré suit la piste plutôt que la mémoire de
-l'app. Un refus d'`applyConstraints` laisse l'état tel que la piste le dit.
+l'app. Un refus d'`applyConstraints` laisse l'état tel que la piste le dit. Quitter l'écran
+Scan (`detach`) éteint la lampe : le flux reste ouvert pour la session, mais aucun autre
+écran n'a de carré pour l'éteindre.
 
 **Le cadre** est le `Viewfinder` de `CameraViewport` (quatre coins : blancs en recherche,
 jaunes pour un doublon, rouges quand rien n'a été lu), posé depuis YSL-23.
@@ -108,6 +110,12 @@ allumée à l'appui : F07, déconseillée sur les étiquettes plastifiées), « 
 l'iPhone immobile et rapprochez-vous. », sinon le conseil générique. Rien n'est stocké sur
 le brouillon ; le nom lu par l'OCR, s'il arrive, remplace l'encart comme avant.
 
+**Reste à vérifier sur un vrai iPhone** (PWA installée) : que le carré « Lampe » apparaît
+(`getCapabilities().torch`) et allume réellement la lampe ; qu'après un verrouillage ou un
+passage sur une autre app, le carré repasse sombre au retour ; que la lampe sur une
+étiquette plastifiée mène à « Reflet… ou éteignez la lampe » quand rien n'est lu, et une
+photo bougée à « Photo floue… » ; le coût de la mesure dans la cadence de la rafale.
+
 ## Le pipeline d'un appui (`routes/_authenticated/scan.tsx`)
 
 1. Une place dans la file de décodage (`DecodeQueue`, **2 en vol** au plus : un bitmap de
@@ -115,7 +123,8 @@ le brouillon ; le nom lu par l'OCR, s'il arrive, remplace l'encart comme avant.
    place couvre toute la lecture d'un appui, seconde passe comprise : jamais plus de deux
    images pleine résolution vivantes.
 2. `grabFrame` en pleine résolution (ou la photo importée, lue après l'attente de la
-   place), un clone pour la photo et une éventuelle seconde passe.
+   place), la mesure de netteté et de reflet (`frameQuality`, vignette 640 px sur le fil
+   principal), un clone pour la photo et une éventuelle seconde passe.
 3. Le lot ouvert (ou un nouveau), la photo encodée et écrite dans OPFS, puis le **brouillon**
    (`draft_parcel`, `reading: 'pending'`) : le compteur monte avant toute lecture.
 4. Décodage dans le Worker (`@repo/barcode`), cascade par défaut (arrêt dès qu'un code est
