@@ -47,7 +47,6 @@ async function main(): Promise<void> {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
 
-  const organization = await resolveOrganization(db, values.organization);
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,
@@ -56,6 +55,7 @@ async function main(): Promise<void> {
       role: role.data,
     },
   });
+  const organization = await resolveOrganization(db, values.organization);
   await attachToOrganization(db, user.id, organization.id);
 
   console.log(
