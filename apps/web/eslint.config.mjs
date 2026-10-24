@@ -6,6 +6,13 @@ const apiIsTypeOnly = {
   message: 'Import type only: the browser must not bundle the routers.',
 };
 
+const dbIsTypeOnly = {
+  name: '@repo/db/schema',
+  allowTypeImports: true,
+  message:
+    'Import type only: the browser mirrors the server schema, it never runs it.',
+};
+
 const authIsClientOnly = {
   name: '@repo/auth',
   message: 'The browser imports @repo/auth/client, never the server entry.',
@@ -27,7 +34,12 @@ export default [
       '@typescript-eslint/no-restricted-imports': [
         'error',
         {
-          paths: [apiIsTypeOnly, authIsClientOnly, serverEnvStaysOut],
+          paths: [
+            apiIsTypeOnly,
+            dbIsTypeOnly,
+            authIsClientOnly,
+            serverEnvStaysOut,
+          ],
         },
       ],
       '@typescript-eslint/only-throw-error': [
