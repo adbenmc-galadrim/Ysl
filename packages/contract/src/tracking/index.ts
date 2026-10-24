@@ -16,3 +16,4 @@ export {
   type ValidateTrackingOptions,
   validateTracking,
 } from './validate';
+export { type BarcodeTracking, trackingsInBarcode } from './barcode';
