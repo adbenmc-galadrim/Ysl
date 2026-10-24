@@ -1,5 +1,13 @@
 import { barcode } from '#synthetic/barcode';
 import {
+  chronopostAztec,
+  colissimoAztec,
+  dpdAztec,
+  fedexPdf417,
+  laPosteDataMatrix,
+  upsMaxiCode,
+} from '#synthetic/codes';
+import {
   recipientAddress,
   recipientCompany,
   type Sender,
@@ -43,13 +51,7 @@ const colissimo = async (p: Planned) => {
     text(55, 640, `Poids : ${weight(p)}`, { size: 24 }),
     text(400, 640, `Colis ${pieces(p)}`, { size: 24 }),
     text(55, 675, `Date : ${date(p)}`, { size: 20 }),
-    image(
-      560,
-      600,
-      190,
-      190,
-      await barcode('datamatrix', `${id}${recipientAddress.postcode}`),
-    ),
+    image(560, 600, 190, 190, await barcode('azteccode', colissimoAztec(p))),
     image(
       60,
       820,
@@ -89,16 +91,7 @@ const chronopost = async (p: Planned) =>
     }),
     text(40, 175, 'Expéditeur', { size: 18, weight: 'bold' }),
     lines(40, 205, from(p.sender), { size: 20 }),
-    image(
-      560,
-      150,
-      200,
-      200,
-      await barcode(
-        'azteccode',
-        `${p.tracking.value}|${recipientAddress.postcode}|${p.weightKg}`,
-      ),
-    ),
+    image(560, 150, 200, 200, await barcode('azteccode', chronopostAztec(p))),
     line(20, 370, 780, 370),
     text(40, 410, 'Destinataire', { size: 18, weight: 'bold' }),
     lines(40, 455, to(p), { size: 34, weight: 'bold', gap: 42 }),
@@ -121,13 +114,7 @@ const laPoste = async (p: Planned) =>
     rect(20, 300, 760, 600),
     rect(20, 300, 760, 70, { fill: '#ffcc00' }),
     text(40, 350, 'LA POSTE · Lettre suivie', { size: 34, weight: 'bold' }),
-    image(
-      40,
-      400,
-      200,
-      200,
-      await barcode('datamatrix', `FR00A001${p.tracking.value}0001`),
-    ),
+    image(40, 400, 200, 200, await barcode('datamatrix', laPosteDataMatrix(p))),
     text(270, 440, 'N° de suivi', { size: 20 }),
     text(270, 485, p.tracking.printed, {
       size: 32,
@@ -215,10 +202,7 @@ const dhlExpress = async (p: Planned) => {
 
 const ups = async (p: Planned) => {
   const t = p.tracking.value;
-  const maxicode = await barcode(
-    'maxicode',
-    `[)>^03001^02996${recipientAddress.postcode}^029250^029011^029${t}^029UPSN^029${t.slice(2, 8)}^029${(p.seed % 365) + 1}^029^029${pieces(p)}^029${Math.round(p.weightKg)}^029N^029^029${recipientAddress.city}^029FR^030^004`,
-  ).catch(() => barcode('maxicode', `${t} ${recipientAddress.postcode}`));
+  const maxicode = await barcode('maxicode', upsMaxiCode(p));
   return [
     rect(20, 20, 760, 1160),
     lines(40, 60, from(p.sender), { size: 18 }),
@@ -272,16 +256,7 @@ const fedex = async (p: Planned) =>
     text(760, 180, `SHIP DATE: ${date(p)}`, { size: 18, anchor: 'end' }),
     text(40, 270, 'TO', { size: 22, weight: 'bold' }),
     lines(80, 270, to(p), { size: 30, weight: 'bold', gap: 38 }),
-    image(
-      40,
-      480,
-      720,
-      180,
-      await barcode(
-        'pdf417',
-        `[)>06${p.tracking.value}${recipientAddress.postcode}${p.recipient}`,
-      ),
-    ),
+    image(40, 480, 720, 180, await barcode('pdf417', fedexPdf417(p))),
     text(40, 720, 'TRK#', { size: 22, weight: 'bold' }),
     text(130, 720, p.tracking.printed, {
       size: 44,
@@ -340,16 +315,7 @@ const dpd = async (p: Planned) => {
     text(40, 420, `Colis ${pieces(p)}`, { size: 22 }),
     text(40, 455, `Poids ${weight(p)}`, { size: 22 }),
     text(40, 490, `Réf. ${p.seed % 10000000}`, { size: 22 }),
-    image(
-      470,
-      395,
-      290,
-      290,
-      await barcode(
-        'azteccode',
-        `${t}|${p.recipient}|${pieces(p)}|${p.weightKg}|${p.sender.name}`,
-      ),
-    ),
+    image(470, 395, 290, 290, await barcode('azteccode', dpdAztec(p))),
     line(20, 700, 780, 700),
     text(40, 760, p.tracking.printed.slice(0, 4), { size: 46, weight: 'bold' }),
     text(155, 760, p.tracking.printed.slice(4), { size: 36 }),
