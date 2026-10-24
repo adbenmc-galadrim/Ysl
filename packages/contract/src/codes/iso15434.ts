@@ -119,6 +119,14 @@ const trackingsOf = (
       { value: field, context: carrier },
     ];
   }
+  // Seen on a FedEx PDF417: the 12-digit express number, then a 4-digit form
+  // code. The 34-digit ground field above ends with its number instead.
+  if (carrier === 'fedex' && /^\d{16}$/.test(field)) {
+    return [
+      { value: field.slice(0, 12), context: carrier },
+      { value: field, context: carrier },
+    ];
+  }
   return [
     carrier === null ? { value: field } : { value: field, context: carrier },
   ];

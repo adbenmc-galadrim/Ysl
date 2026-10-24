@@ -303,4 +303,15 @@ describe('ISO 15434 tolerance', () => {
       { value: '9622001560001234567100794808390594', context: 'fedex' },
     ]);
   });
+
+  it('reads the 12-digit number at the head of a 16-digit field', () => {
+    const text =
+      `[)>${RS}01${GS}` +
+      envelope('02', '75007', '250', '020', '7946447901310441', 'FDE') +
+      `${RS}${EOT}`;
+    expect(parseIso15434(text)?.trackings).toEqual([
+      { value: '794644790131', context: 'fedex' },
+      { value: '7946447901310441', context: 'fedex' },
+    ]);
+  });
 });
