@@ -53,6 +53,8 @@ describe('readSymbols', () => {
     await initZxingNode();
   });
 
+  // 3000 × 4000 px : 6 à 7 s sur le runner Ubuntu quand les autres packages
+  // testent en même temps, au-dessus des 5 s par défaut.
   it('reads a Code 128, a Data Matrix and a QR code in one pass', async () => {
     const symbols = await readSymbols(await label());
     const read = symbols.map((s) => [s.format, s.text]);
@@ -64,7 +66,7 @@ describe('readSymbols', () => {
         ['QRCode', 'SYNTH-QR-0003'],
       ]),
     );
-  });
+  }, 30_000);
 });
 
 describe('initZxing', () => {
