@@ -7,6 +7,7 @@ import {
   type TranslationKey,
 } from '@repo/shared/i18n';
 import type { ScanField, ScanReading } from '@repo/ui';
+import type { FrameVerdict } from '#/features/camera/quality';
 import { carrierName } from '#/features/scan/carriers';
 import {
   partyName,
@@ -117,20 +118,38 @@ function recipientField(
   return { label, value: t('scan.field.missing'), status: 'warning' };
 }
 
+/**
+ * What the shot looked like, for the advice when nothing was read (F05):
+ * the frame's verdict, and whether the torch was lit, which a glare on a
+ * plastic-covered label often comes from (F07).
+ */
+export type ShotHint = { quality: FrameVerdict; torchOn: boolean };
+
+/** The advice under "Aucun code lu": what to change before the next shot. */
+export function unreadableReading(
+  t: TranslateFn,
+  shot?: ShotHint,
+): ScanReading {
+  const hint =
+    shot?.quality === 'glare'
+      ? t(shot.torchOn ? 'scan.glare.torchHint' : 'scan.glare.hint')
+      : shot?.quality === 'blurry'
+        ? t('scan.blur.hint')
+        : t('scan.noCode.hint');
+  return { kind: 'unreadable', title: t('scan.noCode.title'), hint };
+}
+
 export function toScanReading(
   result: Pick<DecodeResult, 'symbols'>,
   t: TranslateFn,
   text?: TextHint,
+  shot?: ShotHint,
 ): ScanReading {
   if (result.symbols.length === 0) {
     if (text?.ocrName) {
       return { kind: 'read', fields: [recipientField(null, text, t)] };
     }
-    return {
-      kind: 'unreadable',
-      title: t('scan.noCode.title'),
-      hint: t('scan.noCode.hint'),
-    };
+    return unreadableReading(t, shot);
   }
   const selected = selectTracking(result.symbols);
   if (selected) {

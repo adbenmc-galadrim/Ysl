@@ -85,6 +85,10 @@ export const fr = {
   'scan.noCode.title': 'Aucun code lu',
   'scan.noCode.hint':
     'Rapprochez l’étiquette ou importez une photo plus nette.',
+  'scan.blur.hint': 'Photo floue. Tenez l’iPhone immobile et rapprochez-vous.',
+  'scan.glare.hint': 'Reflet sur l’étiquette. Inclinez légèrement le colis.',
+  'scan.glare.torchHint':
+    'Reflet sur l’étiquette. Inclinez légèrement le colis, ou éteignez la lampe.',
   'scan.failed.title': 'Lecture impossible',
   'scan.failed.hint': 'La photo n’a pas pu être lue. Réessayez.',
   'scan.format.Code128': 'Code 128',
