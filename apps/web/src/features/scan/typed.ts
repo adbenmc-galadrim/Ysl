@@ -71,9 +71,9 @@ function hintOf(
 /**
  * The agent's own number is the number (§4.5): it is kept whatever the
  * verdict says. The carrier is the verdict's own — a format and its key,
- * or a format alone for the carriers whose key is no criterion (`to-verify`)
- * — or nothing at all: never a carrier guessed on length, nor one whose key
- * rejected the number.
+ * or a format alone for the carriers whose key is no criterion (`to-verify`,
+ * which a mistyped number of the same length also reaches, see `hintOf`) —
+ * or nothing at all when no format fits or the only fitting key rejects it.
  */
 export function typedEntry(value: string, t: TranslateFn): TypedEntry {
   const verdict = validateTracking(value);
