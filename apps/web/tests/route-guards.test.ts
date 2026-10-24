@@ -32,6 +32,14 @@ describe('requireSession', () => {
       options: { to: '/connexion', search: { redirect: '/colis?tri=date' } },
     });
   });
+
+  it('shows the landing to a visitor without session who opens the home page', async () => {
+    await expect(
+      requireSession(queryClientWith(null), '/'),
+    ).rejects.toMatchObject({
+      options: { to: '/bienvenue' },
+    });
+  });
 });
 
 describe('requireAdmin', () => {

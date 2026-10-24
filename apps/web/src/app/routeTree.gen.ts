@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BienvenueRoute = BienvenueRouteImport.update({
+  id: '/bienvenue',
+  path: '/bienvenue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConnexionRoute = ConnexionRouteImport.update({
@@ -30,28 +36,37 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
 }
 export interface FileRoutesByTo {
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/connexion'
+  fullPaths: '/' | '/bienvenue' | '/connexion'
   fileRoutesByTo: FileRoutesByTo
-  to: '/connexion' | '/'
-  id: '__root__' | '/_authenticated' | '/connexion' | '/_authenticated/'
+  to: '/bienvenue' | '/connexion' | '/'
+  id:
+    | '__root__'
+    | '/_authenticated'
+    | '/bienvenue'
+    | '/connexion'
+    | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  BienvenueRoute: typeof BienvenueRoute
   ConnexionRoute: typeof ConnexionRoute
 }
 
@@ -62,6 +77,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bienvenue': {
+      id: '/bienvenue'
+      path: '/bienvenue'
+      fullPath: '/bienvenue'
+      preLoaderRoute: typeof BienvenueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/connexion': {
@@ -95,6 +117,7 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  BienvenueRoute: BienvenueRoute,
   ConnexionRoute: ConnexionRoute,
 }
 export const routeTree = rootRouteImport

@@ -7,6 +7,7 @@ import { safeRedirect } from '#/features/auth/redirect';
 export async function requireSession(queryClient: QueryClient, href: string) {
   const session = await queryClient.fetchQuery(sessionQueryOptions);
   if (!session) {
+    if (href === '/') throw redirect({ to: '/bienvenue' });
     throw redirect({ to: '/connexion', search: { redirect: href } });
   }
   return session;
