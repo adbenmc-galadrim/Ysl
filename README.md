@@ -166,8 +166,19 @@ l'écran d'accueil »). Sur ordinateur, elle s'ouvre normalement.
   `SKIP_ENV_VALIDATION=1 PUBLIC_APP_NAME=Courrier PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100`
   devant chaque commande : `pnpm --filter @repo/web build` puis
   `pnpm --filter @repo/web preview` (http://localhost:3100).
-- Une nouvelle version n'est jamais appliquée d'office (mode `prompt`) : elle attend la
-  fermeture de l'app et s'applique au lancement suivant, jamais au milieu d'un lot.
+- Une nouvelle version n'est jamais appliquée d'office (mode `prompt`). L'app compare
+  `/version.json` à sa propre version et demande au service worker de se mettre à jour au
+  lancement, à chaque retour au premier plan et toutes les 30 minutes
+  (`apps/web/src/features/update/`). Quand une version plus récente existe, l'écran Colis
+  affiche le toast « Nouvelle version disponible · Mettre à jour » ; il n'apparaît que là,
+  jamais pendant un lot (Scan, Remise), et « Mettre à jour » recharge l'app sur la
+  nouvelle version. Hors ligne, rien ne s'affiche.
+- Réglages › App › « Forcer la mise à jour » : désinscrit le service worker de l'app, vide
+  ses caches (ceux des spikes sont gardés) et recharge ; les données de l'iPhone ne sont
+  pas touchées. C'est le recours quand le toast n'apparaît pas.
+- Essayer en local : lancer `preview` sur un premier build, ouvrir http://localhost:3100,
+  puis relancer `pnpm --filter @repo/web build` dans un autre terminal : au retour sur
+  l'onglet (ou après un rechargement), le toast s'affiche.
 - `/version.json` donne l'heure du build : `curl -s https://ysl.shinseo.fr/version.json`.
 - nginx sert `index.html`, `sw.js`, `version.json` et `manifest.webmanifest` en `no-cache`
   pour qu'un déploiement soit vu au lancement suivant.
