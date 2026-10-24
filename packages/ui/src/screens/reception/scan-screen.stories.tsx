@@ -119,6 +119,7 @@ export const SaisieManuelleLettres: StoryObj<typeof SaisieManuelleScreen> = {
         count={12}
         label={SCANNED_LABEL}
         value={value.replace(/(.{4})(?=.)/g, '$1 ')}
+        letters
         onDigit={(d) => setValue((v) => v + d)}
         onLetter={(l) => setValue((v) => v + l)}
         onDelete={() => setValue((v) => v.slice(0, -1))}

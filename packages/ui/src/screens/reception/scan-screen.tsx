@@ -37,8 +37,8 @@ export type ScanReading =
     }
   /** Already in the batch: when, and what to do about it. */
   | { kind: 'duplicate'; title: string; detail: string; message: string }
-  /** Nothing usable: why, and the two ways out. */
-  | { kind: 'unreadable'; title: string; hint: string }
+  /** Nothing usable: why, and the two ways out; `keep` renames the second. */
+  | { kind: 'unreadable'; title: string; hint: string; keep?: string }
   /** The camera is starting: black until the first frame. */
   | { kind: 'starting'; title: string }
   /** The camera was refused or is missing: retry, or import a photo. */
@@ -190,7 +190,7 @@ export function ScanScreen({
                 Saisir le numéro
               </CameraNoticeButton>
               <CameraNoticeButton onClick={onKeep}>
-                Garder la photo
+                {reading.keep ?? 'Garder la photo'}
               </CameraNoticeButton>
             </>
           }
@@ -267,6 +267,8 @@ export type SaisieManuelleSheetProps = {
   submitLabel?: string;
   /** Over the app's own screen rather than around `behind`, see `Sheet`. */
   fixed?: boolean;
+  /** Opens the pad on the letters, see `Keypad`. */
+  letters?: boolean;
   onDigit?: (digit: string) => void;
   onLetter?: (letter: string) => void;
   onDelete?: () => void;
@@ -283,6 +285,7 @@ function SaisieManuelleBody({
   value,
   hint,
   submitLabel = 'Ajouter au lot',
+  letters,
   onDigit,
   onLetter,
   onDelete,
@@ -305,6 +308,7 @@ function SaisieManuelleBody({
       )}
       <Keypad
         className="mt-[27px]"
+        letters={letters}
         onDigit={onDigit}
         onLetter={onLetter}
         onDelete={onDelete}

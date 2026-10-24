@@ -47,6 +47,7 @@ export const Lettres: Story = {
       <div className="flex flex-col gap-10">
         <p className="font-mono text-20 font-medium">{value || ' '}</p>
         <Keypad
+          letters
           onDigit={(d) => setValue((v) => v + d)}
           onLetter={(l) => setValue((v) => v + l)}
           onDelete={() => setValue((v) => v.slice(0, -1))}

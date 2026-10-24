@@ -19,6 +19,8 @@ export type KeypadProps = {
   onDigit?: (digit: string) => void;
   /** Adds the "ABC" key, and the letter grid behind it. */
   onLetter?: (letter: string) => void;
+  /** Opens on the letters rather than the digits. */
+  letters?: boolean;
   onDelete?: () => void;
   className?: string;
 };
@@ -36,9 +38,10 @@ export function Keypad({
   onDigit,
   onLetter,
   onDelete,
+  letters: initialLetters = false,
   className,
 }: KeypadProps) {
-  const [letters, setLetters] = useState(false);
+  const [letters, setLetters] = useState(initialLetters);
   const erase = (
     <button
       type="button"
