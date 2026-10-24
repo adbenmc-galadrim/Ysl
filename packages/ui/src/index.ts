@@ -83,5 +83,6 @@ export * from '#components/switch';
 export * from '#components/switch-row';
 export * from '#components/toast';
 
+export * from '#foundations/corners';
 export * from '#icons';
 export { cn, cx, tv, type VariantProps } from '#lib/tv';
