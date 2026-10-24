@@ -1,23 +1,7 @@
+import { trackingContexts } from '@repo/contract/tracking';
 import { z } from 'zod';
 
-export const carriers = [
-  'colissimo',
-  'chronopost',
-  'la-poste',
-  'dhl-express',
-  'dhl-paket',
-  'deutsche-post',
-  'ups',
-  'fedex',
-  'dpd',
-  'gls',
-  'tnt',
-  'hermes',
-  'usps',
-  'royal-mail',
-  'amazon',
-  'other',
-] as const;
+export const carriers = trackingContexts;
 
 export const sources = ['synthetic', 'web', 'real'] as const;
 

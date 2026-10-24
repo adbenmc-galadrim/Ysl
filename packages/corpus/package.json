@@ -26,6 +26,7 @@
     "corpus": "pnpm generate && pnpm fetch-web && pnpm check"
   },
   "dependencies": {
+    "@repo/contract": "workspace:*",
     "bwip-js": "^4.11.4",
     "sharp": "catalog:",
     "zod": "catalog:"

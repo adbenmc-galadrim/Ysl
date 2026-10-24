@@ -1,55 +1,12 @@
+import {
+  dhlCheck,
+  dpdCheck,
+  fedexCheck,
+  gs1Check,
+  s10Check,
+  upsCheck,
+} from '@repo/contract/tracking';
 import type { Random } from '#random';
-
-const toDigits = (value: string) => [...value].map(Number);
-
-export const upsCheck = (body: string) => {
-  const sum = [...body].reduce((acc, char, i) => {
-    const value = /\d/.test(char)
-      ? Number(char)
-      : (char.charCodeAt(0) - 63) % 10;
-    return acc + (i % 2 === 1 ? value * 2 : value);
-  }, 0);
-  return String((10 - (sum % 10)) % 10);
-};
-
-export const fedexCheck = (body: string) => {
-  const weights = [3, 1, 7];
-  const sum = toDigits(body).reduce(
-    (acc, digit, i) => acc + digit * weights[i % 3]!,
-    0,
-  );
-  return String((sum % 11) % 10);
-};
-
-export const dhlCheck = (body: string) => String(Number(body) % 7);
-
-export const colissimoCheck = (body: string) => {
-  const sum = toDigits(body).reduce(
-    (acc, digit, i) => acc + digit * (i % 2 === 0 ? 1 : 3),
-    0,
-  );
-  return String((10 - (sum % 10)) % 10);
-};
-
-export const s10Check = (body: string) => {
-  const weights = [8, 6, 4, 2, 3, 5, 9, 7];
-  const sum = toDigits(body).reduce(
-    (acc, digit, i) => acc + digit * weights[i]!,
-    0,
-  );
-  const check = 11 - (sum % 11);
-  return String(check === 10 ? 0 : check === 11 ? 5 : check);
-};
-
-const mod3736 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ*';
-
-export const dpdCheck = (body: string) => {
-  const product = [...body].reduce((acc, char) => {
-    const sum = ((acc === 0 ? 36 : acc) + mod3736.indexOf(char)) % 36;
-    return ((sum === 0 ? 36 : sum) * 2) % 37;
-  }, 36);
-  return mod3736[(37 - product) % 36]!;
-};
 
 export type Tracking = { value: string; printed: string };
 
@@ -80,7 +37,7 @@ export const trackingFor = {
   },
   colissimo: (r: Random): Tracking => {
     const body = r.digits(10);
-    const value = `${r.pick(['6A', '6C', '8J', '8L', '8R'])}${body}${colissimoCheck(body)}`;
+    const value = `${r.pick(['6A', '6C', '8J', '8L', '8R'])}${body}${gs1Check(body)}`;
     return {
       value,
       printed: `${value.slice(0, 2)} ${value.slice(2, 5)} ${value.slice(5, 8)} ${value.slice(8, 11)} ${value.slice(11)}`,
