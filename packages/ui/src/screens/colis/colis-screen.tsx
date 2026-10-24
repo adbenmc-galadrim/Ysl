@@ -37,6 +37,9 @@ export type ColisScreenProps = {
   actions?: ReactNode;
   /** Replaces the sections, e.g. with an empty state. */
   children?: ReactNode;
+  onMenu?: () => void;
+  onSearch?: () => void;
+  onScan?: () => void;
 };
 
 /**
@@ -54,13 +57,16 @@ export function ColisScreen({
   bottomBar = true,
   actions,
   children,
+  onMenu,
+  onSearch,
+  onScan,
 }: ColisScreenProps) {
   const bar = bottomBar && (
     <BottomBar className={toast ? '-mt-2' : undefined}>
       {actions ?? (
         <>
-          <SearchTrigger />
-          <Button icon="scan" className="w-[145px]">
+          <SearchTrigger onClick={onSearch} />
+          <Button icon="scan" onClick={onScan} className="w-[145px]">
             Scanner
           </Button>
         </>
@@ -84,7 +90,7 @@ export function ColisScreen({
     >
       <div className="flex h-10 items-center justify-between">
         <StatusPill {...SYNC_PILL[sync]} />
-        <IconButton icon="menu" label="Menu" />
+        <IconButton icon="menu" label="Menu" onClick={onMenu} />
       </div>
       <LargeTitle title="Colis" subtitle={summary} className="mt-0.5" />
       {notice && <div className="mt-[15px]">{notice}</div>}

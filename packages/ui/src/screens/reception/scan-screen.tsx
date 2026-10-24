@@ -39,13 +39,20 @@ export type ScanReading =
 export type ScanScreenProps = {
   /** Parcels in the batch so far. */
   count: number;
-  /** The label the camera is pointed at. */
-  label: ParcelLabelProps;
+  /** The label the camera is pointed at; none before the camera starts. */
+  label?: ParcelLabelProps;
   reading: ScanReading;
   /** Hides the bottom row, when a sheet covers it. */
   controls?: boolean;
   /** Veil over the picture, see `CameraViewport`. */
   dim?: number;
+  onClose?: () => void;
+  onTorch?: () => void;
+  onOpenList?: () => void;
+  onShutter?: () => void;
+  onDone?: () => void;
+  onImport?: () => void;
+  onType?: () => void;
 };
 
 /**
@@ -60,25 +67,34 @@ export function ScanScreen({
   reading,
   controls = true,
   dim,
+  onClose,
+  onTorch,
+  onOpenList,
+  onShutter,
+  onDone,
+  onImport,
+  onType,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
   return (
     <CameraViewport
       subject={
-        <ParcelBox>
-          <ParcelLabel {...label} />
-        </ParcelBox>
+        label && (
+          <ParcelBox>
+            <ParcelLabel {...label} />
+          </ParcelBox>
+        )
       }
       frame={
-        reading.kind === 'duplicate'
-          ? 'warning'
-          : unreadable
-            ? 'error'
-            : 'idle'
+        reading.kind === 'duplicate' ? 'warning' : unreadable ? 'error' : 'idle'
       }
       dim={dim ?? (unreadable ? 0.25 : undefined)}
     >
-      <CameraTopBar title={`Lot : ${count} colis`} />
+      <CameraTopBar
+        title={`Lot : ${count} colis`}
+        onClose={onClose}
+        onTorch={onTorch}
+      />
 
       {reading.kind === 'read' && reading.last && (
         <LastScanPanel
@@ -139,9 +155,24 @@ export function ScanScreen({
       {controls && (
         <CameraControls
           count={count}
+          onOpenList={onOpenList}
+          onShutter={onShutter}
+          onDone={onDone}
           tools={{
-            start: <CameraTool icon="image" label="Importer une photo" />,
-            end: <CameraTool icon="keyboard" label="Saisir le numéro" />,
+            start: (
+              <CameraTool
+                icon="image"
+                label="Importer une photo"
+                onClick={onImport}
+              />
+            ),
+            end: (
+              <CameraTool
+                icon="keyboard"
+                label="Saisir le numéro"
+                onClick={onType}
+              />
+            ),
           }}
         />
       )}

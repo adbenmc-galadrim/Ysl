@@ -1,6 +1,14 @@
 import type { Decorator, Preview } from '@storybook/react-vite';
 
 import { Device, type DeviceTone } from '../src/device';
+import {
+  applyCorners,
+  CORNER_RADII,
+  CORNER_TILES,
+  DEFAULT_CORNERS,
+  isCornerRadius,
+  isCornerTiles,
+} from '../src/foundations/corners';
 
 import './preview.css';
 
@@ -21,17 +29,16 @@ const withDevice: Decorator = (Story, { parameters }) => {
 
 /**
  * The corner presets of `styles.css`, switched from the toolbar. They are set
- * on <html>, where the app would set them too, so every story — components,
+ * on <html>, where the app sets them too, so every story — components,
  * screens, docs — follows the same choice.
  */
 const withCorners: Decorator = (Story, { globals }) => {
-  const root = document.documentElement;
-  const radius = globals.radius as string | undefined;
-  const tiles = globals.tiles as string | undefined;
-  if (radius && radius !== 'maquettes') root.dataset.radius = radius;
-  else delete root.dataset.radius;
-  if (tiles === 'rondes') root.dataset.tiles = tiles;
-  else delete root.dataset.tiles;
+  applyCorners(document.documentElement, {
+    radius: isCornerRadius(globals.radius)
+      ? globals.radius
+      : DEFAULT_CORNERS.radius,
+    tiles: isCornerTiles(globals.tiles) ? globals.tiles : DEFAULT_CORNERS.tiles,
+  });
   return <Story />;
 };
 
@@ -42,15 +49,10 @@ const preview: Preview = {
       toolbar: {
         title: 'Arrondis',
         icon: 'component',
-        // From the squarest to the roundest; the mockups sit just before
-        // the last one.
-        items: [
-          { value: 'carre', title: 'Carrés (0 px)' },
-          { value: 'leger', title: 'Légers (4 à 12 px, sans pilules)' },
-          { value: 'doux', title: 'Doux (6 à 16 px, sans pilules)' },
-          { value: 'maquettes', title: 'Maquettes (pilules, 14 à 24 px)' },
-          { value: 'arrondi', title: 'Arrondis (tout en pilules, 24 à 32 px)' },
-        ],
+        items: CORNER_RADII.map((preset) => ({
+          value: preset.value,
+          title: `${preset.title} (${preset.detail})`,
+        })),
         dynamicTitle: true,
       },
     },
@@ -59,15 +61,15 @@ const preview: Preview = {
       toolbar: {
         title: 'Pastilles',
         icon: 'circle',
-        items: [
-          { value: 'auto', title: 'Pastilles : suivent les arrondis' },
-          { value: 'rondes', title: 'Pastilles : toujours rondes' },
-        ],
+        items: CORNER_TILES.map((preset) => ({
+          value: preset.value,
+          title: preset.title,
+        })),
         dynamicTitle: true,
       },
     },
   },
-  initialGlobals: { radius: 'maquettes', tiles: 'auto' },
+  initialGlobals: { ...DEFAULT_CORNERS },
   parameters: {
     controls: {
       matchers: {
