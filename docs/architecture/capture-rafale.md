@@ -133,11 +133,13 @@ photo bougée à « Photo floue… » ; le coût de la mesure dans la cadence de
    Aztec ; DHL Express, DHL Paket, Deutsche Post → Data Matrix ; La Poste → Data Matrix
    seul), une **seconde passe** `expect` relit le clone jusqu'à les trouver.
 5. Le brouillon reçoit le résultat (`read` / `unreadable` / `failed`, transporteur, suivi,
-   symboles bruts) ; l'écran affiche les champs lus (sauf si le brouillon a été annulé
-   entre-temps), le panneau « Dernier ajouté » suit la base (`useLiveQuery`).
+   symboles bruts, expéditeur proposé par les codes ou le dictionnaire des comptes) ;
+   l'écran affiche les champs lus (sauf si le brouillon a été annulé entre-temps), le
+   panneau « Dernier ajouté » suit la base (`useLiveQuery`).
 6. Une fois la place rendue, l'OCR (`@repo/ocr`, voir `ocr.md`) relit le JPEG stocké et
-   dépose ses lignes et le nom supposé sur le brouillon ; le champ Destinataire se met à
-   jour si l'écran montre encore ce colis. « Terminer » n'attend pas cette étape.
+   dépose ses lignes, le nom supposé et, si rien ne l'a encore fixé, l'expéditeur du bloc
+   `FROM` sur le brouillon ; les champs Destinataire et Expéditeur se mettent à jour si
+   l'écran montre encore ce colis. « Terminer » n'attend pas cette étape.
 
 Dès qu'un appui a donné au moins un code (étape 5, hors doublon retenu), l'écran le dit
 sans qu'on le regarde (`features/scan/feedback.ts`, F12) : un bip court (Web Audio, 1 760 Hz,
@@ -278,6 +280,44 @@ dans `readName` (`copyRecipient`). C'est une correction de l'agent (§4.3, rang 
 champ devient sûr, le colis sort en `recu`, et l'OCR qui atterrit ensuite ne touche que
 `ocrName`. Un numéro saisi au pavé n'a pas de panneau de champs, donc pas de bouton.
 
+## L'expéditeur (`features/scan/sender.ts`, `features/batch/senders.ts`, F19)
+
+L'expéditeur aide le salarié à reconnaître son colis. Il vient, dans l'ordre du §4.5 du
+cahier, de `extractSender` (`@repo/contract/extract`) :
+
+| Source                                                           | Confiance                         | Niveau     | D'où                                                               |
+| ---------------------------------------------------------------- | --------------------------------- | ---------- | ------------------------------------------------------------------ |
+| Code 2D structuré (FedEx `11Z`, GS1 `4310+`)                     | 0,97                              | sûr        | `ParsedCode.sender`                                                |
+| Compte transporteur connu (`sender_account`)                     | 0,90, puis 0,95 à 3 confirmations | sûr        | `shipperAccount` du code 2D ou du 1Z UPS (caractères 3 à 8), FedEx |
+| Bloc `FROM` égal à un expéditeur déjà vu (`sender.name_norm`)    | 0,85                              | à vérifier | `senderFromLines` (`@repo/ocr/sender`) + `normalizeName`           |
+| Bloc `FROM` proche d'un expéditeur déjà vu (Jaro-Winkler ≥ 0,92) | 0,70                              | à vérifier | idem                                                               |
+| Bloc `FROM` seul                                                 | 0,40                              | aucun      | supposition, affichée « Nom ? »                                    |
+
+Une correspondance au dictionnaire dérive du texte OCR : les deux ne comptent jamais comme
+deux sources indépendantes. Un code et le dictionnaire en désaccord : le code gagne, avec le
+malus de conflit (0,82, à vérifier).
+
+- `resolveSender` (`features/scan/sender.ts`) lit les comptes des codes, interroge Dexie
+  (`sender_account` par `[carrier+accountNumber]`, transporteur en minuscules et compte sans
+  espace en majuscules, forme de l'index unique du serveur ; `sender` entier pour le
+  rapprochement OCR) et écrit `draft.sender = { name, id, level, source, account }`.
+  `readDraft` l'appelle après les codes ; `readText` seulement si le brouillon n'a pas
+  d'expéditeur sûr.
+- À l'écran, une ligne « Expéditeur » n'apparaît que s'il y a une valeur : sûre sans marque,
+  sinon « Nom ? » en orange, comme le destinataire supposé par l'OCR.
+- À **Terminer**, `parcel.senderName` / `senderId` reçoivent les niveaux sûr et à vérifier
+  (§4.4 : prérempli, « À vérifier ») ; une supposition seule reste sur le brouillon et meurt
+  avec lui. Un expéditeur **sûr** enseigne le dictionnaire (`learnSenders`, §4.8) : la ligne
+  `sender` est créée ou retrouvée par `name_norm` (`seenCount`, `lastSeenAt`), le compte lu
+  sur les codes est créé ou confirmé (`confirmations`) ; un compte déjà possédé par un autre
+  expéditeur n'est pas touché. Ces lignes partent dans le même `commitLocal`, **avant** le
+  lot et les colis : le serveur applique les opérations dans l'ordre et `parcel.sender_id`
+  les référence. Les corrections de l'agent et leur partage sont YSL-60.
+- `normalizeName` (`@repo/shared/text`) est la règle figée de `name_norm` : forme de
+  compatibilité, sans diacritique, minuscules, lettres et chiffres ASCII, un espace entre
+  les mots, initiales recollées (`S.p.A.` et `SPA` partagent une clé). La changer réécrit
+  toutes les colonnes normalisées et force un pull complet.
+
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
@@ -287,7 +327,8 @@ jamais « fermé » : il disparaît à la promotion. Rouvrir `/scan` reprend don
 là (compteur, dernier ajouté).
 
 - **Annuler** (`undoLast`) retire le dernier brouillon et sa photo.
-- **Terminer** (`finishBatch`) écrit en une transaction, par `commitLocal`, une ligne `batch`
+- **Terminer** (`finishBatch`) écrit en une transaction, par `commitLocal`, ce que les
+  expéditeurs sûrs enseignent (`sender`, `sender_account`), puis une ligne `batch`
   et une ligne `parcel` par brouillon (`recu` avec transporteur, suivi **et** nom lu par un
   code 2D ; un nom seulement supposé par l'OCR laisse le colis en `a_completer` ;
   `receivedAt` = instant de l'appui,
@@ -303,7 +344,9 @@ un lot »).
 
 Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-58), liste
 du lot et revue (YSL-58), n/N par l'OCR, poids, service et référence à l'écran (YSL-41),
-capture automatique sur image nette (F06,
+expéditeur DPD du format 07 GeoPost (`S01` / `NotifSender*`, structure non publiée, aucun
+échantillon au corpus), expéditeur corrigé par l'agent et appris (YSL-60), fiche colis qui
+l'affiche et le modifie (YSL-48), capture automatique sur image nette (F06,
 lot L3). Pièces d'un colis : le regroupement ne joue qu'à la lecture dans l'écran Scan,
 pas à la reprise après relance (`recoverPending` écrit `pieces` sans regrouper : un envoi
 relu en trois cartons après une relance donne trois colis « 1 sur 3 ») ; les numéros de
