@@ -21,40 +21,60 @@ export class AlreadyAttachedError extends Error {
   }
 }
 
+export type OrganizationChoice =
+  | { kind: 'existing'; id: string; name: string }
+  | { kind: 'new'; name: string };
+
 /**
- * The organization a new or stray account should join: the one named, made
- * on the spot if needed; otherwise the only one there is, or a first one for
- * an empty database. Two or more without a name is a choice nobody should
- * make silently.
+ * The organization a new or stray account should join: the one named, to be
+ * made if it does not exist; otherwise the only one there is, or a first one
+ * for an empty database. Two or more without a name is a choice nobody
+ * should make silently. Reads only: the choice is made before the account
+ * exists, so a refusal leaves nothing behind.
  */
-export async function resolveOrganization(
+export async function chooseOrganization(
   db: AnyDb,
   name?: string,
-): Promise<{ id: string; name: string; created: boolean }> {
+): Promise<OrganizationChoice> {
   if (name) {
     const [existing] = await db
       .select()
       .from(organization)
       .where(eq(organization.name, name));
-    if (existing)
-      return { id: existing.id, name: existing.name, created: false };
-    return create(db, name);
+    return existing
+      ? { kind: 'existing', id: existing.id, name: existing.name }
+      : { kind: 'new', name };
   }
   const all = await db.select().from(organization);
   const [only] = all;
   if (all.length === 1 && only) {
-    return { id: only.id, name: only.name, created: false };
+    return { kind: 'existing', id: only.id, name: only.name };
   }
   if (all.length > 1) {
     throw new OrganizationChoiceError(all.map((row) => row.name));
   }
-  return create(db, DEFAULT_ORGANIZATION_NAME);
+  return { kind: 'new', name: DEFAULT_ORGANIZATION_NAME };
 }
 
-async function create(db: AnyDb, name: string) {
+/** Makes the chosen organization real, once there is an account to put in it. */
+export async function ensureOrganization(
+  db: AnyDb,
+  choice: OrganizationChoice,
+): Promise<{ id: string; name: string; created: boolean }> {
+  if (choice.kind === 'existing') {
+    return { id: choice.id, name: choice.name, created: false };
+  }
   const id = newId();
-  await db.insert(organization).values({ id, name });
-  return { id, name, created: true };
+  await db.insert(organization).values({ id, name: choice.name });
+  return { id, name: choice.name, created: true };
+}
+
+/** Both steps at once, for an account that already exists. */
+export async function resolveOrganization(
+  db: AnyDb,
+  name?: string,
+): Promise<{ id: string; name: string; created: boolean }> {
+  return ensureOrganization(db, await chooseOrganization(db, name));
 }
 
 /** Makes the account a member; refuses to move one that already belongs elsewhere. */

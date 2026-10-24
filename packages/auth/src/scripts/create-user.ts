@@ -6,7 +6,11 @@ import {
 } from '@repo/contract/auth';
 import { closeDb, db } from '@repo/db';
 import { auth } from '#auth';
-import { attachToOrganization, resolveOrganization } from '#organization';
+import {
+  attachToOrganization,
+  chooseOrganization,
+  ensureOrganization,
+} from '#organization';
 
 const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
 
@@ -47,6 +51,7 @@ async function main(): Promise<void> {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
 
+  const choice = await chooseOrganization(db, values.organization);
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,
@@ -55,7 +60,7 @@ async function main(): Promise<void> {
       role: role.data,
     },
   });
-  const organization = await resolveOrganization(db, values.organization);
+  const organization = await ensureOrganization(db, choice);
   await attachToOrganization(db, user.id, organization.id);
 
   console.log(

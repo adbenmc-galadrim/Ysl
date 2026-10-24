@@ -8,6 +8,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   AlreadyAttachedError,
   attachToOrganization,
+  chooseOrganization,
   DEFAULT_ORGANIZATION_NAME,
   OrganizationChoiceError,
   resolveOrganization,
@@ -81,6 +82,29 @@ describe('resolveOrganization', () => {
       name: 'Nouveau site',
       created: true,
     });
+  });
+});
+
+describe('chooseOrganization', () => {
+  it('decides without writing, so a refused account leaves nothing behind', async () => {
+    await expect(chooseOrganization(db)).resolves.toEqual({
+      kind: 'new',
+      name: DEFAULT_ORGANIZATION_NAME,
+    });
+    expect(await db.select().from(schema.organization)).toHaveLength(0);
+
+    await db.insert(schema.organization).values([
+      { id: newId(), name: 'A' },
+      { id: newId(), name: 'B' },
+    ]);
+    await expect(chooseOrganization(db)).rejects.toBeInstanceOf(
+      OrganizationChoiceError,
+    );
+    await expect(chooseOrganization(db, 'C')).resolves.toEqual({
+      kind: 'new',
+      name: 'C',
+    });
+    expect(await db.select().from(schema.organization)).toHaveLength(2);
   });
 });
 
