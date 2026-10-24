@@ -22,17 +22,26 @@ est une route), le flux survit donc dans le singleton, pas dans un composant.
 ## Le pipeline d'un appui (`routes/_authenticated/scan.tsx`)
 
 1. Une place dans la file de décodage (`DecodeQueue`, **2 en vol** au plus : un bitmap de
-   12 Mpx pèse ~48 Mo) ; au-delà, l'appui attend la fin de la plus ancienne lecture.
+   12 Mpx pèse ~48 Mo) ; au-delà, l'appui attend la fin de la plus ancienne lecture. La
+   place couvre toute la lecture d'un appui, seconde passe comprise : jamais plus de deux
+   images pleine résolution vivantes.
 2. `grabFrame` en pleine résolution, un clone pour la photo et une éventuelle seconde passe.
 3. Le lot ouvert (ou un nouveau), la photo encodée et écrite dans OPFS, puis le **brouillon**
    (`draft_parcel`, `reading: 'pending'`) : le compteur monte avant toute lecture.
 4. Décodage dans le Worker (`@repo/barcode`), cascade par défaut (arrêt dès qu'un code est
    lu). Si le suivi lu désigne un transporteur dont les symboles attendus manquent
-   (`CARRIER_FORMATS` : UPS → MaxiCode, FedEx → PDF417, GeoPost → Aztec, DHL → Data Matrix),
-   une **seconde passe** `expect` relit le clone jusqu'à les trouver.
+   (`CARRIER_FORMATS` : UPS → MaxiCode ; FedEx → PDF417 ; Colissimo, Chronopost, DPD →
+   Aztec ; DHL Express, DHL Paket, Deutsche Post → Data Matrix ; La Poste → Data Matrix
+   seul), une **seconde passe** `expect` relit le clone jusqu'à les trouver.
 5. Le brouillon reçoit le résultat (`read` / `unreadable` / `failed`, transporteur, suivi,
-   symboles bruts) ; l'écran affiche les champs lus, le panneau « Dernier ajouté » suit la
-   base (`useLiveQuery`).
+   symboles bruts) ; l'écran affiche les champs lus (sauf si le brouillon a été annulé
+   entre-temps), le panneau « Dernier ajouté » suit la base (`useLiveQuery`).
+
+Le Worker (`features/scan/decoder.ts`) et la liste des lectures en vol (`reader.ts`) vivent
+au niveau du module, comme la caméra : une lecture en vol quand l'agent quitte l'écran se
+termine et atterrit dans son brouillon, et « Terminer » l'attend même après un retour sur
+l'écran. À l'ouverture d'un lot repris après une relance de l'app, les brouillons restés
+`pending` sont relus depuis leur photo (`recoverPending`), ou marqués `failed` sans photo.
 
 Le suivi vient de `@repo/contract/tracking` (`trackingsInBarcode` puis `validateTracking`
 sur chaque code : le plus sûr gagne, un code rejeté ne compte pas) ; le nom lu attend l'OCR
@@ -56,13 +65,15 @@ que pour les transporteurs à code 2D utile. `thorough` reste pour la revue de l
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
-(`id, batchId, createdAt, trackingNorm`). Un seul lot ouvert à la fois : rouvrir `/scan`
-reprend le lot laissé ouvert (compteur, dernier ajouté).
+(`id, batchId, createdAt, trackingNorm`). Un seul lot à la fois, et un lot brouillon n'est
+jamais « fermé » : il disparaît à la promotion. Rouvrir `/scan` reprend donc le lot laissé
+là (compteur, dernier ajouté).
 
 - **Annuler** (`undoLast`) retire le dernier brouillon et sa photo.
 - **Terminer** (`finishBatch`) écrit en une transaction, par `commitLocal`, une ligne `batch`
-  et une ligne `parcel` par brouillon (`recu` avec transporteur et suivi, `a_completer`
-  sinon ; `receivedAt` = instant de l'appui, `receivedBy` = agent), rattache les photos
+  et une ligne `parcel` par brouillon (`recu` avec transporteur, suivi **et** nom lu, donc
+  `a_completer` pour tous tant que l'OCR n'est pas là ; `receivedAt` = instant de l'appui,
+  `receivedBy` = agent), rattache les photos
   (`photo.parcelId`), supprime les brouillons et renvoie à la liste des colis. Un lot vide
   ne laisse rien. La revue de lot (YSL-33) s'insérera entre Terminer et cette promotion.
 - La croix ferme l'écran sans toucher au lot.

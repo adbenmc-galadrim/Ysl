@@ -10,12 +10,13 @@ D8 (les photos ne quittent jamais l'iPhone).
 
 Code : `apps/web/src/features/db/`.
 
-- **Schéma versionné** (`schema.ts`, version 1) : une table par entité synchronisée du
+- **Schéma versionné** (`schema.ts`, version 2) : une table par entité synchronisée du
   serveur (`SYNCED_ENTITIES` de `packages/db`), sous le même nom (`parcel`,
-  `directory_person`, `event`, `setting`…), plus trois tables propres à l'appareil :
-  `outbox`, `photo`, `sync_state`. Un test vérifie que chaque entité du serveur a sa
-  table : ajouter une entité dans `packages/db` oblige à l'ajouter ici, dans une nouvelle
-  version Dexie.
+  `directory_person`, `event`, `setting`…), plus les tables propres à l'appareil :
+  `outbox`, `photo`, `sync_state` (version 1), `draft_batch` et `draft_parcel` (version 2,
+  le lot en cours, voir [`capture-rafale.md`](capture-rafale.md)). Un test vérifie que
+  chaque entité du serveur a sa table : ajouter une entité dans `packages/db` oblige à
+  l'ajouter ici, dans une nouvelle version Dexie.
 - **Types** : dérivés en type seulement de `@repo/db/schema` (`typeof parcel.$inferSelect`),
   sans `organizationId` (un appareil sert un seul service courrier ; le serveur pose
   l'organisation au push) et avec `serverXid` optionnel (absent tant que la ligne n'est
@@ -83,7 +84,6 @@ ligne** affiche l'espace occupé (`estimate().usage`) ou « Non persistant » si
 - `sync.push` / `sync.pull`, le curseur dans `sync_state`, la pastille « Synchronisation »
   et le vidage de la file avant la déconnexion : YSL-28. L'horizon du premier pull
   (événements récents seulement, historique d'une fiche à la demande) s'y décide.
-- Le lot en cours (colis « brouillon » jamais envoyés au serveur) et sa reprise :
-  YSL-23 et YSL-33, dans une version 2 du schéma.
-- Le ré-encodage des photos (1 600 px, qualité 0,8, EXIF retiré) et la vignette : YSL-23.
+- La revue du lot avant sa promotion en colis : YSL-33. La vignette des photos : quand un
+  écran l'affichera.
 - L'export de secours et le diagnostic des lignes sans fichier : YSL-36.
