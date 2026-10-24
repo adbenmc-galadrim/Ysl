@@ -26,6 +26,7 @@ import {
   wasExplained,
 } from '#/features/camera/entry';
 import { cameraReading } from '#/features/camera/notice';
+import { shutterMode } from '#/features/camera/shutter';
 import {
   cameraPermission,
   cameraStream,
@@ -41,6 +42,7 @@ import {
   trackWork,
   type Symbols,
 } from '#/features/scan/reader';
+import { readImageFile } from '#/features/scan/read-file';
 import { failedReading, toScanReading } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
@@ -78,6 +80,7 @@ function ScanPage() {
   const close = () => void navigate({ to: '/' });
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
   const [opening, setOpening] = useState<Opening>(() =>
@@ -137,6 +140,12 @@ function ScanPage() {
   const onImportInstead = () => {
     withoutCamera();
     inputRef.current?.click();
+  };
+
+  /** From the refusal screen: the phone's own camera, which asks nothing of Safari. */
+  const onPhotoInstead = () => {
+    withoutCamera();
+    captureRef.current?.click();
   };
 
   /** Asking again is a choice: a new refusal shows the Réglages steps again. */
@@ -214,18 +223,24 @@ function ScanPage() {
     if (!finishing.current) void trackWork(shoot(grab));
   };
 
+  /** The viewfinder's frame, or the phone's camera when there is no stream. */
   const onShutter = () => {
+    const mode = shutterMode(camera, fallback);
+    if (mode === 'native') {
+      if (!finishing.current) captureRef.current?.click();
+      return;
+    }
     const video = videoRef.current;
-    if (!video || !cameraStream.live) return;
+    if (mode !== 'grab' || !video || !cameraStream.live) return;
     fire(() => grabFrame(video, cameraStream.track));
   };
 
-  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
+  /** Each picture chosen is one parcel, in the order chosen: the queue paces them. */
+  const onFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
-    const file = input.files?.[0];
+    const files = [...(input.files ?? [])];
     input.value = '';
-    if (!file) return;
-    fire(() => createImageBitmap(file, { imageOrientation: 'from-image' }));
+    for (const file of files) fire(() => readImageFile(file));
   };
 
   const onUndo = () => {
@@ -304,14 +319,15 @@ function ScanPage() {
 
   if (opening === 'pending') return null;
 
-  /* The file input lives outside the screens: the chooser opened from one
-     screen must deliver its file to the input still mounted on the next. */
+  /* The file inputs live outside the screens: the chooser opened from one
+     screen must deliver its files to the input still mounted on the next.
+     `capture` opens the phone's camera for one shot; the other, the library. */
   return (
     <>
       {refused ? (
         <CameraDeniedScreen
           steps={SETTINGS_STEPS}
-          onPhoto={onImportInstead}
+          onPhoto={onPhotoInstead}
           onKeyboard={onTypeInstead}
           onRetry={onRetry}
         />
@@ -372,8 +388,17 @@ function ScanPage() {
         ref={inputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
-        onChange={onFile}
+        onChange={onFiles}
+      />
+      <input
+        ref={captureRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={onFiles}
       />
     </>
   );
