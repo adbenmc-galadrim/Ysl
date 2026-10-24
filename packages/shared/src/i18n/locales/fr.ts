@@ -42,6 +42,8 @@ export const fr = {
   'settings.server.down': 'Indisponible',
   'settings.server.unreachable': 'Injoignable',
   'settings.server.checking': 'Vérification…',
+  'settings.offline': 'Hors ligne',
+  'settings.offline.notPersisted': 'Non persistant',
   'settings.group.service': 'Service courrier',
   'settings.directory': 'Annuaire',
   'settings.pickup': 'Lieu et horaires de retrait',
