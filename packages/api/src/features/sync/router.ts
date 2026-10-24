@@ -1,4 +1,9 @@
-import { pullInput, pushInput, pushOutput } from '@repo/contract/sync';
+import {
+  pullInput,
+  pullOutput,
+  pushInput,
+  pushOutput,
+} from '@repo/contract/sync';
 import { db } from '@repo/db';
 import { memberProcedure, router } from '#lib/trpc';
 import { pull } from '#features/sync/pull';
@@ -7,6 +12,7 @@ import { push } from '#features/sync/push';
 export const syncRouter = router({
   pull: memberProcedure
     .input(pullInput)
+    .output(pullOutput)
     .query(({ ctx, input }) => pull(db, ctx.organizationId, input)),
   push: memberProcedure
     .input(pushInput)

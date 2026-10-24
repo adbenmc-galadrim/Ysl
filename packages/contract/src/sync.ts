@@ -135,20 +135,25 @@ export const pullInput = z.object({
 
 export type PullInput = z.infer<typeof pullInput>;
 
-export type PullChange<Row = Record<string, unknown>> = {
-  entity: SyncedEntity;
-  row: Row;
-};
+/** A server row of one entity, without its organization; dates stay dates (superjson). */
+export const pullChange = z.object({
+  entity: syncedEntity,
+  row: z.record(z.string(), z.unknown()).and(z.object({ id: z.uuid() })),
+});
+
+export type PullChange = z.infer<typeof pullChange>;
 
 /**
  * `reset` says the cursor was unusable (another generation, or beyond the
  * server's counter): the rows start from the beginning, and the device must
  * take them all. `cursor` is the next cursor once `next` is null.
  */
-export type PullOutput<Row = Record<string, unknown>> = {
-  generation: string;
-  reset: boolean;
-  rows: PullChange<Row>[];
-  next: PullPage | null;
-  cursor: number;
-};
+export const pullOutput = z.object({
+  generation: z.uuid(),
+  reset: z.boolean(),
+  rows: z.array(pullChange),
+  next: pullPage.nullable(),
+  cursor: z.number().int().nonnegative(),
+});
+
+export type PullOutput = z.infer<typeof pullOutput>;

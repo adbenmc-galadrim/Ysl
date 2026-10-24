@@ -55,7 +55,7 @@ async function pageOf(
   return rows;
 }
 
-function withoutOrganization(row: Row): Record<string, unknown> {
+function withoutOrganization(row: Row): PullChange['row'] {
   const { organizationId: _organizationId, ...rest } = row;
   void _organizationId;
   return rest;

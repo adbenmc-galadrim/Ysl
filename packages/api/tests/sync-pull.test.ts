@@ -29,7 +29,7 @@ afterAll(async () => {
 });
 
 const ids = (output: PullOutput) =>
-  output.rows.map((change) => change.row.id as string);
+  output.rows.map((change) => change.row.id);
 
 async function fullPull(cursor: PullOutput['cursor'] | null, limit = 50) {
   const pages: PullOutput[] = [];
@@ -117,7 +117,7 @@ describe('sync.pull', () => {
     });
     expect(pages[1]!.cursor).toBe(pages[0]!.cursor);
     const seen = pages.flatMap((page) =>
-      page.rows.map((change) => `${change.entity}:${change.row.id as string}`),
+      page.rows.map((change) => `${change.entity}:${change.row.id}`),
     );
     expect(seen).toEqual([
       `contact:${contact.id}`,
