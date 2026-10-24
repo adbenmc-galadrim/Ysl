@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "models": {
+      "inputs": ["scripts/fetch-models.ts"],
+      "outputs": ["models/**"]
+    }
+  }
+}

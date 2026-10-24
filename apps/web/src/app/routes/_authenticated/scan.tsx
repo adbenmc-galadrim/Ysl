@@ -22,10 +22,12 @@ import {
   recoverPending,
   settled,
   trackWork,
+  type Symbols,
 } from '#/features/scan/reader';
 import { failedReading, toScanReading } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
+import { ocrReader, readText } from '#/features/scan/text';
 import { holdUpdates } from '#/features/update/updater';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -63,8 +65,16 @@ function ScanPage() {
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
   const [typing, setTyping] = useState<Typing | null>(null);
   const unread = useRef<string | null>(null);
+  /** The draft the fields on screen belong to: a later text must not overwrite another's. */
+  const shownDraft = useRef<string | null>(null);
 
   useEffect(() => holdUpdates(), []);
+
+  useEffect(() => {
+    void ocrReader()
+      .warmup()
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -75,7 +85,12 @@ function ScanPage() {
 
   const batchId = view?.batch?.id;
   useEffect(() => {
-    if (batchId) void trackWork(recoverPending(db, photoFiles, queue, batchId));
+    if (!batchId) return;
+    void trackWork(
+      recoverPending(db, photoFiles, queue, batchId, undefined, (id, blob) =>
+        readText(db, id, blob),
+      ),
+    );
   }, [batchId, queue]);
 
   /** One tap, one parcel: the draft and its photo land before the reading. */
@@ -100,8 +115,10 @@ function ScanPage() {
       );
       if (kept) {
         unread.current = symbols.length === 0 ? draft.id : null;
+        shownDraft.current = draft.id;
         setReading(failed ? failedReading(t) : toScanReading({ symbols }, t));
       }
+      if (kept) void showText(draft.id, photo.blob, symbols);
     } catch (error) {
       if (!handed) {
         queue.release();
@@ -114,6 +131,19 @@ function ScanPage() {
           ? STORAGE_FAILED
           : failedReading(t),
       );
+    }
+  };
+
+  /**
+   * The text lands after the codes, whatever they gave, and outside the
+   * batch's work: "Terminer" never waits for it. Without a code, only a
+   * name is worth replacing what the screen says.
+   */
+  const showText = async (draftId: string, blob: Blob, symbols: Symbols) => {
+    const text = await readText(db, draftId, blob);
+    const worth = symbols.length > 0 || text.ocrName !== null;
+    if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
+      setReading(toScanReading({ symbols }, t, text));
     }
   };
 
@@ -138,6 +168,7 @@ function ScanPage() {
   const onUndo = () => {
     if (!view?.batch) return;
     unread.current = null;
+    shownDraft.current = null;
     setReading({ kind: 'idle' });
     void undoLast(db, photoFiles, view.batch.id);
   };

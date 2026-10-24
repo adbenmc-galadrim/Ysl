@@ -156,6 +156,15 @@ lot et décode l'image en arrière-plan. Le rendu des champs est provisoire : il
 le format et le contenu brut de chaque code lu ; le numéro de suivi et le transporteur
 sont déduits pour la ligne « Dernier ajouté » et la liste des colis.
 
+### OCR
+
+Le package `@repo/ocr` lit le texte imprimé avec PaddleOCR (PP-OCRv6 tiny, `onnxruntime-web`
+en WASM, 4 threads derrière COOP/COEP) et Tesseract.js v7 en repli, dans un Web Worker, une
+photo à la fois (voir `docs/architecture/ocr.md`). Les modèles ne sont pas dans le dépôt :
+`pnpm --filter @repo/ocr models` les télécharge (URL et sha256 épinglés) ; `pnpm build` et
+`pnpm dev` le font d'eux-mêmes, `pnpm --filter @repo/web build` seul non. Sur `/scan`, après
+les codes, l'OCR propose le destinataire avec un « ? » quand aucun code 2D ne le nomme.
+
 ## App installée sur l'iPhone
 
 L'app est une PWA : sur iPhone, elle s'utilise installée sur l'écran d'accueil. Ouverte

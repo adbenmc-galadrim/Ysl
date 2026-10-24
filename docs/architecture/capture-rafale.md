@@ -36,6 +36,9 @@ est une route), le flux survit donc dans le singleton, pas dans un composant.
 5. Le brouillon reçoit le résultat (`read` / `unreadable` / `failed`, transporteur, suivi,
    symboles bruts) ; l'écran affiche les champs lus (sauf si le brouillon a été annulé
    entre-temps), le panneau « Dernier ajouté » suit la base (`useLiveQuery`).
+6. Une fois la place rendue, l'OCR (`@repo/ocr`, voir `ocr.md`) relit le JPEG stocké et
+   dépose ses lignes et le nom supposé sur le brouillon ; le champ Destinataire se met à
+   jour si l'écran montre encore ce colis. « Terminer » n'attend pas cette étape.
 
 Le Worker (`features/scan/decoder.ts`) et la liste des lectures en vol (`reader.ts`) vivent
 au niveau du module, comme la caméra : une lecture en vol quand l'agent quitte l'écran se
@@ -44,8 +47,9 @@ l'écran. À l'ouverture d'un lot repris après une relance de l'app, les brouil
 `pending` sont relus depuis leur photo (`recoverPending`), ou marqués `failed` sans photo.
 
 Le suivi vient de `@repo/contract/tracking` (`trackingsInBarcode` puis `validateTracking`
-sur chaque code : le plus sûr gagne, un code rejeté ne compte pas) ; le nom lu attend l'OCR
-(YSL-26) ; les champs structurés des codes 2D arrivent avec YSL-25.
+sur chaque code : le plus sûr gagne, un code rejeté ne compte pas) ; les champs structurés
+des codes 2D viennent de `@repo/contract/codes` ; le nom lu vient d'un code 2D structuré
+(`readName`), sinon l'OCR le suppose (`ocrName`, affiché avec un « ? »).
 
 ### Coût mesuré du décodage (banc Mac, Node, étiquette synthétique UPS 3 000 × 4 000)
 
@@ -98,8 +102,9 @@ là (compteur, dernier ajouté).
 
 - **Annuler** (`undoLast`) retire le dernier brouillon et sa photo.
 - **Terminer** (`finishBatch`) écrit en une transaction, par `commitLocal`, une ligne `batch`
-  et une ligne `parcel` par brouillon (`recu` avec transporteur, suivi **et** nom lu, donc
-  `a_completer` pour tous tant que l'OCR n'est pas là ; `receivedAt` = instant de l'appui,
+  et une ligne `parcel` par brouillon (`recu` avec transporteur, suivi **et** nom lu par un
+  code 2D ; un nom seulement supposé par l'OCR laisse le colis en `a_completer` ;
+  `receivedAt` = instant de l'appui,
   `receivedBy` = agent), rattache les photos
   (`photo.parcelId`), supprime les brouillons et renvoie à la liste des colis. Un lot vide
   ne laisse rien. La revue de lot (YSL-33) s'insérera entre Terminer et cette promotion.
@@ -111,7 +116,7 @@ un lot »).
 ## Ce qui attend d'autres tickets
 
 Doublon dans le lot et en base (YSL-37, l'index `trackingNorm` des brouillons est posé),
-choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), OCR du
-nom (YSL-26), champs des codes 2D (YSL-25), torche (YSL-29), photo native
+choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
+des codes 2D (YSL-25), torche (YSL-29), photo native
 `capture` et import multiple (YSL-30), liste du lot et revue (YSL-33), synchronisation des
 lignes promues (YSL-28), bip et flash à la capture (§6.6).

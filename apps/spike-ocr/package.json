@@ -19,11 +19,11 @@
     "bench": "tsx scripts/bench.ts"
   },
   "dependencies": {
-    "onnxruntime-web": "1.30.0",
-    "ppu-paddle-ocr": "6.6.1",
+    "onnxruntime-web": "catalog:",
+    "ppu-paddle-ocr": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "tesseract.js": "7.0.0"
+    "tesseract.js": "catalog:"
   },
   "devDependencies": {
     "@repo/corpus": "workspace:*",

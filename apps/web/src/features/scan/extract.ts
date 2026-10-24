@@ -1,4 +1,9 @@
-import { parseCode, type ParsedCode } from '@repo/contract/codes';
+import {
+  parseCode,
+  parseSymbols,
+  type ParsedCode,
+  type Party,
+} from '@repo/contract/codes';
 import {
   type BarcodeTracking,
   type TrackingContext,
@@ -80,4 +85,43 @@ export function extractTracking(
 ): ExtractedTracking | null {
   const selected = selectTracking(symbols);
   return selected ? toExtracted(selected) : null;
+}
+
+const describes = (code: ParsedCode) =>
+  code.recipient !== undefined ||
+  code.pieces !== undefined ||
+  code.weightKg !== undefined;
+
+/**
+ * The structured code that goes with the tracking: the one it came from,
+ * else the one of the same number, else any code that describes the parcel.
+ */
+export function structuredCode(
+  symbols: readonly CodeSymbol[],
+  { verdict, parsed }: SelectedTracking,
+): ParsedCode | null {
+  if (parsed) return parsed;
+  const codes = parseSymbols(symbols);
+  return (
+    codes.find((code) =>
+      code.trackings.some((c) => c.value === verdict.value),
+    ) ??
+    codes.find(describes) ??
+    null
+  );
+}
+
+/** How a party is named: the person, else the company. */
+export const partyName = (party: Party | undefined): string | null =>
+  party?.name ?? party?.company ?? null;
+
+/** The recipient a structured code names, person first, else its company. */
+export function recipientInCodes(
+  symbols: readonly CodeSymbol[],
+): string | null {
+  const selected = selectTracking(symbols);
+  const code = selected
+    ? structuredCode(symbols, selected)
+    : (parseSymbols(symbols).find((c) => c.recipient !== undefined) ?? null);
+  return partyName(code?.recipient);
 }

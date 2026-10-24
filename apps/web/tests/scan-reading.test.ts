@@ -44,6 +44,27 @@ describe('toScanReading', () => {
     });
   });
 
+  it('shows the name the OCR read when no code or no tracking was read', () => {
+    const text = { ocrName: 'Camille Morel' };
+    expect(toScanReading({ symbols: [] }, t, text)).toEqual({
+      kind: 'read',
+      fields: [
+        { label: 'Destinataire', value: 'Camille Morel ?', status: 'warning' },
+      ],
+    });
+    expect(toScanReading({ symbols: [] }, t, { ocrName: null })).toMatchObject({
+      kind: 'unreadable',
+    });
+    expect(
+      toScanReading({ symbols: [symbol('QRCode', 'hello')] }, t, text),
+    ).toMatchObject({
+      fields: [
+        { label: 'QR', value: 'hello' },
+        { label: 'Destinataire', value: 'Camille Morel ?', status: 'warning' },
+      ],
+    });
+  });
+
   it('is unreadable without any symbol', () => {
     expect(toScanReading({ symbols: [] }, t)).toEqual({
       kind: 'unreadable',
@@ -150,6 +171,43 @@ describe('toScanReading with a structured 2D code', () => {
         { label: 'Poids', value: '1,36 kg' },
       ],
     });
+  });
+
+  it('shows the recipient the OCR guessed with a doubt, never over a code', () => {
+    const text = { ocrName: 'Camille Morel' };
+    const guessed = toScanReading(
+      { symbols: [symbol('Code128', '1ZE6344W0499230622')] },
+      t,
+      text,
+    );
+    expect(guessed).toMatchObject({
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: '1ZE6344W0499230622' },
+        { label: 'Destinataire', value: 'Camille Morel ?', status: 'warning' },
+      ],
+    });
+    const missing = toScanReading(
+      { symbols: [symbol('Code128', '1ZE6344W0499230622')] },
+      t,
+      { ocrName: null },
+    );
+    expect(missing).toMatchObject({
+      fields: [{}, {}, { value: 'Non lu', status: 'warning' }],
+    });
+    const named = toScanReading({ symbols: [symbol('Aztec', aztec)] }, t, {
+      ocrName: 'Camille Morel',
+    });
+    expect(named).toMatchObject({
+      fields: [
+        {},
+        {},
+        { label: 'Destinataire', value: 'CAMILLE MOREL' },
+        {},
+        {},
+      ],
+    });
+    expect(named.kind === 'read' && named.fields[2]?.status).toBeUndefined();
   });
 
   it('flags a tracking the carrier rules do not vouch for', () => {

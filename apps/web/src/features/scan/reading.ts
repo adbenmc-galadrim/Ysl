@@ -1,6 +1,6 @@
 import type { ReadableFormat } from '@repo/barcode';
 import type { DecodeResult } from '@repo/barcode/worker';
-import { parseSymbols, type ParsedCode } from '@repo/contract/codes';
+import type { ParsedCode } from '@repo/contract/codes';
 import {
   DEFAULT_LOCALE,
   type TranslateFn,
@@ -8,7 +8,12 @@ import {
 } from '@repo/shared/i18n';
 import type { ScanField, ScanReading } from '@repo/ui';
 import { carrierName } from '#/features/scan/carriers';
-import { type SelectedTracking, selectTracking } from '#/features/scan/extract';
+import {
+  partyName,
+  type SelectedTracking,
+  selectTracking,
+  structuredCode,
+} from '#/features/scan/extract';
 
 type FormatKey = Extract<TranslationKey, `scan.format.${string}`>;
 
@@ -48,38 +53,15 @@ function formatWeight(kg: number, t: TranslateFn): string {
   });
 }
 
-const describes = (code: ParsedCode) =>
-  code.recipient !== undefined ||
-  code.pieces !== undefined ||
-  code.weightKg !== undefined;
-
-/**
- * The structured code shown with the tracking: the one it came from, else
- * the one of the same number, else any code that describes the parcel.
- */
-function structuredCode(
-  symbols: readonly { format: string; text: string }[],
-  { verdict, parsed }: SelectedTracking,
-): ParsedCode | null {
-  if (parsed) return parsed;
-  const codes = parseSymbols(symbols);
-  return (
-    codes.find((code) =>
-      code.trackings.some((c) => c.value === verdict.value),
-    ) ??
-    codes.find(describes) ??
-    null
-  );
-}
-
 /** The fields of the tracking kept for the label, the same one the batch stores. */
 function trackingFields(
   { verdict }: SelectedTracking,
   parsed: ParsedCode | null,
+  text: TextHint,
   t: TranslateFn,
 ): ScanField[] {
   const carrier = verdict.carrier ?? parsed?.carrier ?? null;
-  const recipient = parsed?.recipient?.name ?? parsed?.recipient?.company;
+  const recipient = recipientField(parsed, text, t);
   const fields: ScanField[] = [
     {
       label: t('scan.field.carrier'),
@@ -92,11 +74,7 @@ function trackingFields(
       mono: true,
       ...(verdict.status === 'sure' ? {} : { status: 'warning' as const }),
     },
-    {
-      label: t('scan.field.recipient'),
-      value: recipient ?? t('scan.field.missing'),
-      ...(recipient ? {} : { status: 'warning' as const }),
-    },
+    recipient,
   ];
   if (parsed?.pieces) {
     fields.push({
@@ -113,11 +91,41 @@ function trackingFields(
   return fields;
 }
 
+/**
+ * What the OCR said of the recipient, once it has: a name, or nothing. The
+ * name alone is worth a field even when no code was read: that is where
+ * the OCR helps most.
+ */
+export type TextHint = { ocrName: string | null } | undefined;
+
+/**
+ * The recipient as the agent sees it: named by a code, no doubt; guessed by
+ * the OCR alone, with a question mark and a warning, as a value of the
+ * lowest rank is shown (§4.3 rank 7, §4.4); else missing.
+ */
+function recipientField(
+  parsed: ParsedCode | null,
+  text: TextHint,
+  t: TranslateFn,
+): ScanField {
+  const label = t('scan.field.recipient');
+  const sure = partyName(parsed?.recipient);
+  if (sure) return { label, value: sure };
+  if (text?.ocrName) {
+    return { label, value: `${text.ocrName} ?`, status: 'warning' };
+  }
+  return { label, value: t('scan.field.missing'), status: 'warning' };
+}
+
 export function toScanReading(
   result: Pick<DecodeResult, 'symbols'>,
   t: TranslateFn,
+  text?: TextHint,
 ): ScanReading {
   if (result.symbols.length === 0) {
+    if (text?.ocrName) {
+      return { kind: 'read', fields: [recipientField(null, text, t)] };
+    }
     return {
       kind: 'unreadable',
       title: t('scan.noCode.title'),
@@ -127,7 +135,10 @@ export function toScanReading(
   const selected = selectTracking(result.symbols);
   if (selected) {
     const parsed = structuredCode(result.symbols, selected);
-    return { kind: 'read', fields: trackingFields(selected, parsed, t) };
+    return {
+      kind: 'read',
+      fields: trackingFields(selected, parsed, text, t),
+    };
   }
   const fields: ScanField[] = result.symbols.map((symbol) => ({
     label: formatLabel(symbol.format, t),
@@ -135,6 +146,7 @@ export function toScanReading(
     mono: true,
     ...(symbol.isValid ? {} : { status: 'warning' as const }),
   }));
+  if (text?.ocrName) fields.push(recipientField(null, text, t));
   return { kind: 'read', fields };
 }
 

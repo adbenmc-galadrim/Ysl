@@ -1,11 +1,15 @@
 import type { DecodeResult } from '@repo/barcode/worker';
 import { listDrafts, updateDraft } from '#/features/batch/store';
-import type { CourrierDatabase, DraftSymbol } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  DraftParcel,
+  DraftSymbol,
+} from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
 import type { DecodeQueue } from '#/features/scan/decode-queue';
 import { missingFormats } from '#/features/scan/expected-formats';
-import { extractTracking } from '#/features/scan/extract';
+import { extractTracking, recipientInCodes } from '#/features/scan/extract';
 
 export type Symbols = DecodeResult['symbols'];
 
@@ -78,6 +82,7 @@ export async function readDraft(
       carrier: found?.carrier ?? null,
       tracking: found?.tracking ?? null,
       trackingNorm: found?.trackingNorm ?? null,
+      readName: recipientInCodes(symbols),
       symbols: bare(symbols),
     });
     return { draftId, symbols, kept, failed: false };
@@ -94,8 +99,18 @@ export async function readDraft(
 }
 
 /**
+ * Reads the printed text of a draft's stored photo, after its codes, whether
+ * they landed or failed: a Worker of codes that crashed says nothing of the
+ * photo. Not awaited: "Terminer" waits for the codes, never for the text.
+ */
+export type TextStep = (draftId: string, blob: Blob) => Promise<unknown>;
+
+const noText: TextStep = () => Promise.resolve();
+
+/**
  * A batch picked up after the app died mid-reading: the drafts still on
- * "pending" are read again from their stored photo, or marked failed.
+ * "pending" are read again from their stored photo, or marked failed; the
+ * ones whose codes landed but not their text get their text read.
  */
 export async function recoverPending(
   db: CourrierDatabase,
@@ -104,33 +119,71 @@ export async function recoverPending(
   batchId: string,
   toBitmap: (blob: Blob) => Promise<ImageBitmap> = (blob) =>
     createImageBitmap(blob),
+  text: TextStep = noText,
 ): Promise<void> {
   const drafts = await listDrafts(db, batchId);
   for (const draft of drafts) {
-    if (draft.reading !== 'pending' || inFlight.has(draft.id)) continue;
-    inFlight.add(draft.id);
-    let slot = false;
-    let bitmap: ImageBitmap | undefined;
-    try {
-      const photo = draft.photoId ? await db.photo.get(draft.photoId) : null;
-      if (!photo) throw new Error('No photo to read again');
-      await queue.acquire();
-      slot = true;
-      const blob = await readPhoto(files, photo);
-      bitmap = await toBitmap(blob);
-      const clone = await toBitmap(blob);
-      const first = bitmap;
-      slot = false;
-      bitmap = undefined;
-      await readDraft(db, queue, draft.id, first, clone);
-    } catch {
-      if (slot) queue.release();
-      bitmap?.close();
-      await updateDraft(db, draft.id, { reading: 'failed' }).catch(
-        () => undefined,
-      );
-    } finally {
-      inFlight.delete(draft.id);
+    if (inFlight.has(draft.id)) continue;
+    if (draft.reading === 'pending') {
+      await recoverReading(db, files, queue, draft, toBitmap, text);
+    } else if (draft.photoId && draft.ocrState === 'pending') {
+      await recoverText(db, files, draft, text);
     }
+  }
+}
+
+async function recoverReading(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  queue: DecodeQueue,
+  draft: DraftParcel,
+  toBitmap: (blob: Blob) => Promise<ImageBitmap>,
+  text: TextStep,
+): Promise<void> {
+  inFlight.add(draft.id);
+  let slot = false;
+  let bitmap: ImageBitmap | undefined;
+  try {
+    const photo = draft.photoId ? await db.photo.get(draft.photoId) : null;
+    if (!photo) throw new Error('No photo to read again');
+    await queue.acquire();
+    slot = true;
+    const blob = await readPhoto(files, photo);
+    bitmap = await toBitmap(blob);
+    const clone = await toBitmap(blob);
+    const first = bitmap;
+    slot = false;
+    bitmap = undefined;
+    const { kept } = await readDraft(db, queue, draft.id, first, clone);
+    if (kept) void text(draft.id, blob);
+  } catch {
+    if (slot) queue.release();
+    bitmap?.close();
+    await updateDraft(db, draft.id, {
+      reading: 'failed',
+      ocrState: 'skipped',
+    }).catch(() => undefined);
+  } finally {
+    inFlight.delete(draft.id);
+  }
+}
+
+async function recoverText(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  draft: DraftParcel,
+  text: TextStep,
+): Promise<void> {
+  inFlight.add(draft.id);
+  try {
+    const photo = draft.photoId ? await db.photo.get(draft.photoId) : null;
+    if (!photo) throw new Error('No photo to read again');
+    void text(draft.id, await readPhoto(files, photo));
+  } catch {
+    await updateDraft(db, draft.id, { ocrState: 'skipped' }).catch(
+      () => undefined,
+    );
+  } finally {
+    inFlight.delete(draft.id);
   }
 }

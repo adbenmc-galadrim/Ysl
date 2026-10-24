@@ -34,6 +34,9 @@ const draft = (overrides: Partial<DraftParcel>): DraftParcel => ({
   trackingNorm: null,
   readName: null,
   symbols: [],
+  ocrState: 'pending',
+  ocrName: null,
+  ocrLines: [],
   ...overrides,
 });
 
@@ -158,6 +161,14 @@ describe('promotedStatus', () => {
     expect(promotedStatus(draft({ ...full, readName: null }))).toBe(
       'a_completer',
     );
+  });
+
+  it('does not trust the name the OCR guessed', () => {
+    expect(
+      promotedStatus(
+        draft({ carrier: 'UPS', tracking: '1Z', ocrName: 'Camille Morel' }),
+      ),
+    ).toBe('a_completer');
   });
 });
 

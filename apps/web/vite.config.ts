@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import { withoutCdn } from '@repo/barcode/vite';
+import { ocrVite } from '@repo/ocr/vite';
 import { SERVER_PORT, WEB_PORT } from '@repo/shared/env/ports';
 import { DEFAULT_LOCALE } from '@repo/shared/i18n';
 import tailwindcss from '@tailwindcss/vite';
@@ -92,6 +93,7 @@ export default defineConfig(({ mode }) => {
       }),
       viteReact(),
       versionFile(),
+      ocrVite(),
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -118,7 +120,10 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2,wasm}'],
+          globPatterns: [
+            '**/*.{js,css,html,svg,png,webmanifest,woff2,wasm,onnx,txt,traineddata}',
+          ],
+          maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
           globIgnores: ['version.json'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/spike-/, /^\/version\.json$/],

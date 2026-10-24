@@ -15,7 +15,15 @@ export type DraftPhoto = { blob: Blob; width: number; height: number };
 export type DraftPatch = Partial<
   Pick<
     DraftParcel,
-    'reading' | 'carrier' | 'tracking' | 'trackingNorm' | 'readName' | 'symbols'
+    | 'reading'
+    | 'carrier'
+    | 'tracking'
+    | 'trackingNorm'
+    | 'readName'
+    | 'symbols'
+    | 'ocrState'
+    | 'ocrName'
+    | 'ocrLines'
   >
 >;
 
@@ -70,6 +78,9 @@ export async function addDraft(
     trackingNorm: null,
     readName: null,
     symbols: [],
+    ocrState: 'pending',
+    ocrName: null,
+    ocrLines: [],
   };
   await db.draftParcel.add(draft);
   return draft;
@@ -99,6 +110,9 @@ export async function typeDraft(
     reading: 'typed',
     readName: null,
     symbols: [],
+    ocrState: 'skipped',
+    ocrName: null,
+    ocrLines: [],
     ...typed,
   };
   await db.draftParcel.add(draft);
@@ -159,7 +173,8 @@ export type FinishOptions = { batchId: string; agentId: string; now?: Date };
 
 /**
  * Received when the mailroom can notify it: a carrier, a number and someone
- * to tell. Until the name is read (OCR, later), every draft needs a hand.
+ * to tell. Only a structured code names someone surely enough; a name the
+ * OCR guessed leaves the draft to a hand or to the directory.
  */
 export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
   return draft.carrier && draft.tracking && draft.readName
