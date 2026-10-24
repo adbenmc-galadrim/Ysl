@@ -7,7 +7,7 @@ import {
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { SaisieManuelleHint } from '@repo/ui';
 import type { TypedTracking } from '#/features/batch/store';
-import { CARRIER_LABELS } from '#/features/scan/extract';
+import { carrierName } from '#/features/scan/carriers';
 
 /** Longer than any tracking number read so far (FedEx 96: 22). */
 export const MAX_TYPED = 30;
@@ -78,7 +78,7 @@ function hintOf(
 export function typedEntry(value: string, t: TranslateFn): TypedEntry {
   const verdict = validateTracking(value);
   const context = verdict.status === 'rejected' ? null : verdict.carrier;
-  const carrier = context ? CARRIER_LABELS[context] : null;
+  const carrier = context ? carrierName(context, t) : null;
   return {
     carrier,
     tracking: verdict.value,
