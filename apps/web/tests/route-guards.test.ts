@@ -27,7 +27,9 @@ function thrownBy(run: () => void): unknown {
 describe('requireSession', () => {
   it('sends a visitor without session to the sign-in page, remembering where they were going', async () => {
     await expect(
-      requireSession(queryClientWith(null), '/colis?tri=date'),
+      requireSession(queryClientWith(null), '/colis?tri=date', {
+        installed: false,
+      }),
     ).rejects.toMatchObject({
       options: { to: '/connexion', search: { redirect: '/colis?tri=date' } },
     });
@@ -35,10 +37,16 @@ describe('requireSession', () => {
 
   it('shows the landing to a visitor without session who opens the home page', async () => {
     await expect(
-      requireSession(queryClientWith(null), '/'),
+      requireSession(queryClientWith(null), '/', { installed: false }),
     ).rejects.toMatchObject({
       options: { to: '/bienvenue' },
     });
+  });
+
+  it('sends the installed app without session to the sign-in page, not the landing', async () => {
+    await expect(
+      requireSession(queryClientWith(null), '/', { installed: true }),
+    ).rejects.toMatchObject({ options: { to: '/connexion' } });
   });
 });
 

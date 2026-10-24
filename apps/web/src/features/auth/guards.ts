@@ -4,10 +4,14 @@ import { redirect } from '@tanstack/react-router';
 import { sessionQueryOptions } from '#/features/auth/api/session';
 import { safeRedirect } from '#/features/auth/redirect';
 
-export async function requireSession(queryClient: QueryClient, href: string) {
+export async function requireSession(
+  queryClient: QueryClient,
+  href: string,
+  { installed }: { installed: boolean },
+) {
   const session = await queryClient.fetchQuery(sessionQueryOptions);
   if (!session) {
-    if (href === '/') throw redirect({ to: '/bienvenue' });
+    if (href === '/' && !installed) throw redirect({ to: '/bienvenue' });
     throw redirect({ to: '/connexion', search: { redirect: href } });
   }
   return session;
