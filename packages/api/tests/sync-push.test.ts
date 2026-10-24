@@ -320,6 +320,156 @@ describe('sync.push', () => {
     expect(results[0]).toMatchObject({ status: 403 });
   });
 
+  describe('guards of a delivery (§8.4)', () => {
+    const personId = newId();
+    const delivered = (overrides: Record<string, unknown> = {}) =>
+      localParcel({
+        personId,
+        status: 'remis',
+        deliveredAt: NOW,
+        deliveredBy: AGENT_ID,
+        ...overrides,
+      });
+    const handoverRow = (parcelId: string) => ({
+      id: newId(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      parcelIds: [parcelId],
+      personId,
+      contactId: null,
+      recipientName: 'Camille Martin',
+      delegateName: null,
+      method: 'qr',
+      agentId: AGENT_ID,
+      at: NOW,
+      cancelledAt: null,
+    });
+
+    beforeAll(async () => {
+      await db.insert(schema.directoryPerson).values({
+        id: personId,
+        organizationId: ORGANIZATION_ID,
+        lastName: 'Durand',
+        firstName: 'Lou',
+        nameNorm: 'durand lou',
+        email: 'lou.durand@example.test',
+      });
+    });
+
+    it('refuses a stale copy that would undo a delivery, and logs why', async () => {
+      const row = delivered();
+      await push(sync, writer, { ops: [op('parcel', row)] });
+      const stale = op('parcel', {
+        ...row,
+        status: 'recu',
+        deliveredAt: null,
+        deliveredBy: null,
+        notes: 'copie en retard',
+      });
+
+      const first = await push(sync, writer, { ops: [stale] });
+      const again = await push(sync, writer, { ops: [stale] });
+
+      expect(first.results[0]).toEqual({
+        opId: stale.opId,
+        status: 409,
+        message:
+          'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
+      });
+      expect(again.results[0]?.status).toBe(409);
+      expect(await parcel(row.id)).toMatchObject({
+        status: 'remis',
+        deliveredAt: NOW,
+        notes: null,
+      });
+      expect(await recorded(stale.opId)).toMatchObject({
+        status: 409,
+        reason: expect.stringMatching(
+          /^parcel_status_transition: .*remis to recu/,
+        ) as string,
+      });
+    });
+
+    it('undoes a delivery only after its handover is cancelled', async () => {
+      const row = delivered();
+      const handover = handoverRow(row.id);
+      const notified = {
+        ...row,
+        status: 'notifie',
+        deliveredAt: null,
+        deliveredBy: null,
+      };
+      await push(sync, writer, { ops: [op('parcel', row)] });
+
+      const beforeHandover = await push(sync, writer, {
+        ops: [op('parcel', notified)],
+      });
+      await push(sync, writer, { ops: [op('handover', handover)] });
+      const tooEarly = await push(sync, writer, {
+        ops: [op('parcel', notified)],
+      });
+      const cancelled = await push(sync, writer, {
+        ops: [
+          op('handover', { ...handover, cancelledAt: NOW }),
+          op('parcel', notified),
+        ],
+      });
+      const revived = await push(sync, writer, {
+        ops: [op('handover', handover)],
+      });
+
+      expect(beforeHandover.results[0]?.status).toBe(409);
+      expect(tooEarly.results[0]).toMatchObject({
+        status: 409,
+        message:
+          'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
+      });
+      expect(cancelled.results.map((result) => result.status)).toEqual([
+        200, 200,
+      ]);
+      expect((await parcel(row.id))?.status).toBe('notifie');
+      expect(revived.results[0]).toMatchObject({
+        status: 409,
+        message: 'Cette remise a été annulée ; l’annulation reste.',
+      });
+    });
+
+    it('keeps the proof of a delivery against an ordinary edit', async () => {
+      const row = delivered();
+      await push(sync, writer, { ops: [op('parcel', row)] });
+
+      const { results } = await push(sync, writer, {
+        ops: [
+          op('parcel', {
+            ...row,
+            deliveredBy: AGENT_ID,
+            deliveredAt: new Date('2026-10-25T08:00:00Z'),
+          }),
+          op('parcel', { ...row, notes: 'Étagère B' }),
+        ],
+      });
+
+      expect(results.map((result) => result.status)).toEqual([409, 200]);
+      expect(await parcel(row.id)).toMatchObject({
+        deliveredAt: NOW,
+        notes: 'Étagère B',
+      });
+    });
+
+    it('asks for a recipient before notifying', async () => {
+      const { results } = await push(sync, writer, {
+        ops: [op('parcel', localParcel({ status: 'notifie' }))],
+      });
+
+      expect(results[0]).toMatchObject({
+        status: 400,
+        message:
+          'Un destinataire est requis pour notifier ou remettre un colis.',
+      });
+    });
+  });
+
   it('stops the batch when the server could not take an operation', async () => {
     const failing = {
       transaction: () =>

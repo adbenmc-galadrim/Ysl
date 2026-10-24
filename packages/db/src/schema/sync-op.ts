@@ -24,6 +24,7 @@ export const syncOp = pgTable(
     entity: text('entity', { enum: SYNCED_ENTITIES }).notNull(),
     entityId: uuid('entity_id').notNull(),
     status: smallint('status').notNull(),
+    reason: text('reason'),
     appliedAt: timestamp('applied_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

@@ -1,7 +1,7 @@
 Project courrier {
   database_type: 'PostgreSQL'
   Note: '''
-  Schéma serveur de Courrier, tiré des migrations 0000 à 0002 de packages/db/drizzle.
+  Schéma serveur de Courrier, tiré des migrations 0000 à 0004 de packages/db/drizzle.
   Base partagée entre clients : chaque table métier porte organization_id ; les clés
   étrangères métier sont composites (organization_id, id) et une ligne ne change
   jamais d'organisation. Un utilisateur appartient à une organisation
@@ -12,7 +12,12 @@ Project courrier {
   snapshot, et xmin devient le curseur suivant (aucun verrou). Les SET NULL des clés
   composites ne vident que la colonne de référence ; aucune suppression en cascade. event est en ajout seul
   (purge sous app.purge), handover et notification ne listent que des colis de leur
-  organisation, sync_op garde les op_id appliqués par sync.push.
+  organisation, sync_op garde les op_id appliqués par sync.push et le motif des refus.
+  parcel suit le graphe des statuts du §8.3 (trigger parcel_status_guard) : une remise
+  garde sa preuve et ne s'annule que par une handover annulée (cancelled_at et
+  parcel_ids collants, trigger handover_cancel_sticky) ; notifie et remis exigent un destinataire
+  (parcel_recipient_check), donc le SET NULL d'une personne ou d'un contact échoue sur
+  un tel colis : on désactive, on ne supprime pas.
   '''
 }
 
@@ -382,6 +387,7 @@ Table "parcel" {
     `"parcel"."type" in ('colis', 'recommande', 'sans_suivi')` [name: 'parcel_type_check']
     `"parcel"."status" in ('a_completer', 'recu', 'notifie', 'remis', 'retourne')` [name: 'parcel_status_check']
     `"parcel"."person_id" is null or "parcel"."contact_id" is null` [name: 'parcel_single_recipient']
+    `"parcel"."status" not in ('notifie', 'remis') or num_nonnulls("parcel"."person_id", "parcel"."contact_id") = 1` [name: 'parcel_recipient_check']
     `("parcel"."status" = 'remis') = ("parcel"."delivered_at" is not null and "parcel"."delivered_by" is not null)` [name: 'parcel_delivery_check']
     `("parcel"."piece_n" is null or "parcel"."piece_n" >= 1) and ("parcel"."piece_total" is null or ("parcel"."piece_total" >= 1 and ("parcel"."piece_n" is null or "parcel"."piece_n" <= "parcel"."piece_total")))` [name: 'parcel_pieces_check']
     `"parcel"."weight_kg" is null or "parcel"."weight_kg" >= 0` [name: 'parcel_weight_check']
@@ -478,6 +484,7 @@ Table "sync_op" {
   "entity" text [not null]
   "entity_id" uuid [not null]
   "status" smallint [not null]
+  "reason" text
   "applied_at" timestamptz [not null, default: `now()`]
 
   Checks {

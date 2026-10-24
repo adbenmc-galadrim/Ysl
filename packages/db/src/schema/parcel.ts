@@ -23,6 +23,27 @@ export const PARCEL_STATUSES = [
   'retourne',
 ] as const;
 
+export type ParcelStatus = (typeof PARCEL_STATUSES)[number];
+
+/**
+ * The status graph of the specification (§8.3), as the parcel_status_guard
+ * trigger of drizzle/0004_transitions_statut.sql enforces it: a status may
+ * only move to one of the listed statuses (staying put is always allowed).
+ * `remis` goes back to `notifie` only once its handover is cancelled.
+ */
+export const PARCEL_TRANSITIONS: Record<ParcelStatus, readonly ParcelStatus[]> =
+  {
+    a_completer: ['recu'],
+    recu: ['notifie', 'remis', 'retourne'],
+    notifie: ['remis', 'retourne'],
+    remis: ['notifie'],
+    retourne: [],
+  };
+
+export function canTransition(from: ParcelStatus, to: ParcelStatus): boolean {
+  return from === to || PARCEL_TRANSITIONS[from].includes(to);
+}
+
 export const batch = pgTable(
   'batch',
   {
@@ -81,6 +102,10 @@ export const parcel = pgTable(
     check(
       'parcel_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,
+    ),
+    check(
+      'parcel_recipient_check',
+      sql`${table.status} not in ('notifie', 'remis') or num_nonnulls(${table.personId}, ${table.contactId}) = 1`,
     ),
     check(
       'parcel_delivery_check',

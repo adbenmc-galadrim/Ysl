@@ -11,8 +11,11 @@ import { logger } from '@repo/shared/logger';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
 import {
   type FailureStatus,
+  guardOf,
   isRetryable,
   messageOf,
+  REASON_MAX,
+  reasonOf,
   sqlState,
   statusOf,
   SyncRejected,
@@ -56,7 +59,7 @@ function valuesOf(table: SyncTable, op: SyncOp): Values {
   if (values.id !== undefined && values.id !== op.entityId) {
     throw new SyncRejected(
       SYNC_STATUS.badRequest,
-      `patch id ${JSON.stringify(values.id)} is not the entity ${op.entityId}`,
+      `patch id is not the entity ${op.entityId}`,
     );
   }
   values.id = op.entityId;
@@ -158,7 +161,12 @@ async function softDelete(
   }
 }
 
-function syncOpRow(op: SyncOp, writer: Writer, status: number) {
+function syncOpRow(
+  op: SyncOp,
+  writer: Writer,
+  status: number,
+  reason: string | null = null,
+) {
   return {
     organizationId: writer.organizationId,
     opId: op.opId,
@@ -166,6 +174,7 @@ function syncOpRow(op: SyncOp, writer: Writer, status: number) {
     entity: op.entity,
     entityId: op.entityId,
     status,
+    reason,
   };
 }
 
@@ -197,16 +206,20 @@ async function claim(
   return earlier?.status ?? SYNC_STATUS.applied;
 }
 
-/** Records a refusal so the same operation sent again gets the same answer. */
+/**
+ * Records a refusal, with why, so the same operation sent again gets the same
+ * answer and the conflicts of §8.4 can be read back (`sync_op.reason`).
+ */
 async function record(
   db: AnyDb,
   op: SyncOp,
   writer: Writer,
   status: number,
+  reason: string,
 ): Promise<void> {
   await db
     .insert(syncOpTable)
-    .values(syncOpRow(op, writer, status))
+    .values(syncOpRow(op, writer, status, reason.slice(0, REASON_MAX)))
     .onConflictDoNothing();
 }
 
@@ -243,18 +256,21 @@ async function applyOne(
         { ...fields, status: error.status, reason: error.reason },
         'sync op rejected',
       );
-      await record(db, op, writer, error.status);
+      await record(db, op, writer, error.status, error.reason);
       return { opId: op.opId, status: error.status, message: error.message };
     }
     const status: FailureStatus = isRetryable(error)
       ? SYNC_STATUS.retry
       : statusOf(error);
+    const guard = guardOf(error);
     logger.warn(
-      { ...fields, status, sqlState: sqlState(error), err: error },
+      { ...fields, status, guard, sqlState: sqlState(error), err: error },
       status === SYNC_STATUS.retry ? 'sync op deferred' : 'sync op rejected',
     );
-    if (status !== SYNC_STATUS.retry) await record(db, op, writer, status);
-    return { opId: op.opId, status, message: messageOf(status) };
+    if (status !== SYNC_STATUS.retry) {
+      await record(db, op, writer, status, reasonOf(error));
+    }
+    return { opId: op.opId, status, message: messageOf(status, guard) };
   }
 }
 
