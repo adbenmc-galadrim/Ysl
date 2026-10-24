@@ -18,6 +18,11 @@ import {
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
+import {
+  canUndo,
+  undoWindow,
+  type UndoWindow,
+} from '#/features/batch/undo-window';
 import { useBatch } from '#/features/batch/use-batch';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
 import { frameQuality } from '#/features/camera/quality';
@@ -96,6 +101,22 @@ function ScanPage() {
   /** The agent chose to work without the camera: it only reopens on a tap. */
   const [fallback, setFallback] = useState(false);
   const view = useBatch();
+  const [opened] = useState(() => Date.now());
+  const [undo, setUndo] = useState<UndoWindow>(null);
+  /** Only moves when a window closes: a window always opens later than it. */
+  const [now, setNow] = useState(opened);
+  const nextUndo = undoWindow(undo, view?.last, Date.now(), opened);
+  if (nextUndo !== undo) setUndo(nextUndo);
+  useEffect(() => {
+    if (!undo || undo.until === Infinity) return;
+    const { until } = undo;
+    const timer = setTimeout(
+      () => setNow(Math.max(until, Date.now())),
+      Math.max(0, until - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [undo]);
+  const undoable = canUndo(undo, now);
   const queue = decodeQueue();
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
   const [typing, setTyping] = useState<Typing | null>(null);
@@ -384,7 +405,7 @@ function ScanPage() {
             onClose={close}
             onTorch={() => void cameraStream.toggleTorch()}
             onShutter={onShutter}
-            onUndo={onUndo}
+            onUndo={undoable ? onUndo : undefined}
             onDone={() => void onDone()}
             onImport={() => inputRef.current?.click()}
             onType={onType}
