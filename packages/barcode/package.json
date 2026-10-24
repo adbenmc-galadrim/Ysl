@@ -1,0 +1,39 @@
+{
+  "name": "@repo/barcode",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./worker": "./src/worker/index.ts",
+    "./node": "./src/node.ts",
+    "./vite": "./src/vite.ts"
+  },
+  "imports": {
+    "#*": [
+      "./src/*.ts",
+      "./src/*/index.ts",
+      "./src/*"
+    ]
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zxing-wasm": "3.1.6"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/emscripten": "^1.41.6",
+    "@types/node": "catalog:",
+    "bwip-js": "^4.11.4",
+    "eslint": "catalog:",
+    "sharp": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
