@@ -104,7 +104,9 @@ class CameraStream {
     const { track } = this;
     if (track && this.torch === 'on') {
       this.setTorch('off');
-      void applyTorch(track, false).catch(() => undefined);
+      void applyTorch(track, false).catch(() => {
+        this.setTorch(torchCapability(track));
+      });
     }
   }
 
