@@ -1,3 +1,5 @@
+import { scanSoundOn } from '#/features/settings/sound';
+
 /** What a reading just taken earns: the beep follows the setting, the vibration the phone. The flash is the screen's, always. */
 export type Feedback = { beep: boolean; vibrate: boolean };
 
@@ -98,7 +100,7 @@ export class ScanFeedback {
   private readonly claimAudioSession: (on: boolean) => void;
 
   constructor({
-    isSoundOn = () => true,
+    isSoundOn = scanSoundOn,
     createContext = defaultContext,
     vibrate = defaultVibrate(),
     claimAudioSession = defaultClaimAudioSession,

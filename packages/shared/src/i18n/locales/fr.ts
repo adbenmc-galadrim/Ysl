@@ -108,6 +108,7 @@ export const fr = {
   'settings.directory': 'Annuaire',
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.group.app': 'App',
+  'settings.sound': 'Son au scan',
   'settings.version': 'Version {{version}}',
   'settings.version.upToDate': 'À jour',
   'settings.version.available': 'Nouvelle version',

@@ -5,6 +5,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { useCornerSetting } from '#/features/settings/corners';
+import { setScanSound, useScanSound } from '#/features/settings/sound';
 import { initialsOf } from '#/features/settings/initials';
 import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
@@ -47,6 +48,7 @@ export function ReglagesHome() {
   const storage = useStorageStatus();
   const sync = useSync();
   const corners = useCornerSetting();
+  const sound = useScanSound();
   const update = useUpdate();
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
@@ -100,6 +102,13 @@ export function ReglagesHome() {
   const app: SettingsGroup = {
     header: t('settings.group.app'),
     items: [
+      {
+        icon: 'volume',
+        color: 'grey',
+        label: t('settings.sound'),
+        toggle: sound,
+        onToggle: setScanSound,
+      },
       {
         icon: 'sun',
         color: 'grey',
