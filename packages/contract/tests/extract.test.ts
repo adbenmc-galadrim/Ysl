@@ -87,11 +87,11 @@ describe('extractFields — tracking', () => {
   it('does not trust a structured field whose number has no known shape', () => {
     const { tracking, carrier } = extractFields({
       symbols: [
-        { format: 'Aztec', text: dpdAztec('HA915306631336', 'X', 'CHRO') },
+        { format: 'Aztec', text: dpdAztec('HA123456789012', 'X', 'CHRO') },
       ],
     });
     expect(tracking).toMatchObject({
-      value: 'HA915306631336',
+      value: 'HA123456789012',
       confidence: CONFIDENCE.format1d,
       level: 'to-verify',
     });
