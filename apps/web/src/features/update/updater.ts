@@ -17,6 +17,7 @@ let state: UpdateState = INITIAL_UPDATE_STATE;
 const listeners = new Set<() => void>();
 let registration: ServiceWorkerRegistration | undefined;
 let skipWaiting: (() => Promise<void>) | undefined;
+let applying = false;
 
 function dispatch(event: UpdateEvent) {
   const next = reduceUpdate(state, event);
@@ -81,10 +82,15 @@ export function startUpdater() {
 
 /**
  * Drops the app's service worker and caches, then reloads: the next launch
- * downloads the current build. Data on the device is never touched.
+ * downloads the current build. Data on the device is never touched. Offline
+ * it refuses, since the reload would have nothing to show.
  */
 export async function forceUpdate() {
   if (state.forcing === 'forcing') return;
+  if (!navigator.onLine) {
+    dispatch({ type: 'force', state: 'failed' });
+    return;
+  }
   dispatch({ type: 'force', state: 'forcing' });
   try {
     const scope = appScope();
@@ -116,10 +122,12 @@ export async function forceUpdate() {
  * forced update so the tap always ends on the new version.
  */
 export async function applyUpdate() {
+  if (applying) return;
   if (!registration?.waiting || !skipWaiting) {
     await forceUpdate();
     return;
   }
+  applying = true;
   const tookOver = new Promise<boolean>((resolve) => {
     navigator.serviceWorker.addEventListener(
       'controllerchange',
@@ -132,7 +140,10 @@ export async function applyUpdate() {
     setTimeout(() => resolve(false), TAKEOVER_TIMEOUT_MS);
   });
   await skipWaiting();
-  if (!(await tookOver)) await forceUpdate();
+  if (!(await tookOver)) {
+    applying = false;
+    await forceUpdate();
+  }
 }
 
 /** Hides the update toast until released, e.g. for the length of a batch. */
