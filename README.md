@@ -143,6 +143,17 @@ l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<h
 premier rendu (`data-radius`, `data-tiles`). Storybook propose les mêmes presets dans sa
 barre d'outils.
 
+### Lecteur de codes-barres
+
+Le package `@repo/barcode` lit les codes 1D et 2D avec `zxing-wasm`. Le `.wasm` est
+auto-hébergé (jamais de CDN) et précaché par le service worker. Tout se passe dans un Web
+Worker, une image à la fois, avec une cascade qui s'arrête dès qu'un code est lu : image
+entière, puis tuiles en pleine résolution, puis MaxiCode recadré.
+
+Sur `/scan`, « Importer une photo » décode l'image choisie. Ce rendu est provisoire : les
+champs affichent le format et le contenu brut de chaque code lu. La caméra et la validation
+du suivi viennent dans de prochaines PR.
+
 ## App installée sur l'iPhone
 
 L'app est une PWA : sur iPhone, elle s'utilise installée sur l'écran d'accueil. Ouverte

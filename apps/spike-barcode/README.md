@@ -49,3 +49,5 @@ Supprimer `apps/spike-barcode` ; dans `apps/web/Dockerfile`, retirer
 `--filter @repo/spike-barcode...` de l'installation, `&& pnpm --filter @repo/spike-barcode build`
 et le `COPY` du `dist` du spike ; dans `apps/web/nginx.conf`, retirer les deux blocs
 `/spike-barcode/`. Puis `pnpm install` pour le lockfile.
+
+Le lecteur vit désormais dans `packages/barcode` : jusqu'à son retrait, le spike ne sert plus que de banc de mesure et de PWA de test sur iPhone.
