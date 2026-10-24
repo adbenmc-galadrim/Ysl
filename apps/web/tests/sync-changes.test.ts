@@ -80,7 +80,7 @@ describe('listWaitingChanges', () => {
     const [change] = await listWaitingChanges(db);
     expect(change).toMatchObject({ op: { opId: 'future' }, row: null });
     expect(describeChange(change!, t, NOW)).toMatchObject({
-      label: 'shelf',
+      label: 'Changement',
       icon: 'list',
       value: '10 h 42',
     });

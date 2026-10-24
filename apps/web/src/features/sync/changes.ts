@@ -98,12 +98,8 @@ function subject({ op, row }: WaitingChange, t: TranslateFn): string {
         (row as SyncedRows['email_template'] | null)?.name ??
         t('sync.change.entity.email_template')
       );
-    case 'setting': {
-      const setting = row as SyncedRows['setting'] | null;
-      return setting
-        ? t('sync.change.setting', { key: setting.key })
-        : t('sync.change.entity.setting');
-    }
+    case 'setting':
+      return t('sync.change.entity.setting');
     case 'batch':
       return t('sync.change.entity.batch');
     case 'sender_account':
@@ -115,7 +111,7 @@ function subject({ op, row }: WaitingChange, t: TranslateFn): string {
     case 'event':
       return t('sync.change.entity.event');
     default:
-      return op.entity;
+      return t('sync.change.entity.unknown');
   }
 }
 
