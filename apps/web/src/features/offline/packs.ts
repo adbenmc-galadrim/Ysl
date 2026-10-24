@@ -82,7 +82,7 @@ function directoryRow(
 
 function fractionOf({ bytes, total, files, filesDone }: DownloadProgress) {
   if (total !== null && total > 0) return Math.min(1, bytes / total);
-  return files === 0 ? 1 : filesDone / files;
+  return files === 0 ? 0 : filesDone / files;
 }
 
 function modelsRow({ state, progress }: ModelsSnapshot, t: TranslateFn) {

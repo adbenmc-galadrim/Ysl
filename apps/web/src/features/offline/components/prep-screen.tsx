@@ -5,6 +5,7 @@ import { formatBytes } from '#/features/db/storage';
 import { resumeDownload } from '#/features/offline/prep';
 import { markPrepared } from '#/features/offline/prepared';
 import { useOfflinePrep } from '#/features/offline/use-offline-prep';
+import { syncNow } from '#/features/sync/sync';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -22,6 +23,12 @@ export function PrepScreen() {
     void navigate({ to: '/' });
   };
 
+  /** The models, and the directory if its pull stopped too. */
+  const resume = () => {
+    void resumeDownload();
+    void syncNow({ force: true });
+  };
+
   if (paused) {
     return (
       <OfflinePrepScreen
@@ -37,12 +44,7 @@ export function PrepScreen() {
           />
         }
         actions={[
-          <Button
-            key="resume"
-            variant="secondary"
-            block
-            onClick={() => void resumeDownload()}
-          >
+          <Button key="resume" variant="secondary" block onClick={resume}>
             {remainingBytes === null
               ? t('prep.resume.unknown')
               : t('prep.resume', { size: formatBytes(remainingBytes) })}

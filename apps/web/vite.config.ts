@@ -137,7 +137,7 @@ export default defineConfig(({ mode }) => {
           // The reader's heavy files are not precached: the app downloads
           // them into `courrier-models` with a progress bar (YSL-35).
           globIgnores: ['version.json', ...READER_FILES],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          maximumFileSizeToCacheInBytes: 20 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: READER_FILE_PATTERN,

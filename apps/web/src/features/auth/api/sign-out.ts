@@ -4,6 +4,7 @@ import { useRouter } from '@tanstack/react-router';
 import { forgetSession } from '#/features/auth/session-cache';
 import { clearLocalData } from '#/features/db/clear';
 import { db } from '#/features/db/database';
+import { resetOfflinePrep } from '#/features/offline/prep';
 import { forgetPrepared } from '#/features/offline/prepared';
 import { hasPhotoStorage, photoFiles } from '#/features/photos/opfs';
 import {
@@ -34,6 +35,7 @@ export function useSignOut() {
     onSuccess: async () => {
       forgetSession(localStorage);
       forgetPrepared(localStorage);
+      resetOfflinePrep();
       await stopSync();
       try {
         await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);

@@ -23,10 +23,12 @@ const EMPTY_PROGRESS: DownloadProgress = {
   filesDone: 0,
 };
 
-let snapshot: PrepSnapshot = {
+const INITIAL_SNAPSHOT: PrepSnapshot = {
   models: { state: 'running', progress: EMPTY_PROGRESS },
   shell: { state: 'running', bytes: null },
 };
+
+let snapshot = INITIAL_SNAPSHOT;
 const listeners = new Set<() => void>();
 let started = false;
 let downloading: Promise<void> | null = null;
@@ -143,6 +145,12 @@ export function startOfflinePrep(): void {
     }
     await resumeDownload();
   })();
+}
+
+/** At sign-out: the next session starts the preparation again, like `stopSync`. */
+export function resetOfflinePrep(): void {
+  started = false;
+  set(INITIAL_SNAPSHOT);
 }
 
 export const subscribePrep = (listener: () => void) => {

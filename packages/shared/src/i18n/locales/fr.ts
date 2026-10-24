@@ -137,6 +137,13 @@ export const fr = {
   'sync.group.device.footer.unprotected':
     'Stockage non protégé : iOS peut effacer ces données après une longue inactivité. Ouvrez l’app régulièrement.',
   'sync.device.parcels': 'Colis',
+  'sync.device.photos': 'Photos d’étiquettes',
+  'sync.device.protected': 'Stockage protégé',
+  'sync.device.protected.yes': 'Oui',
+  'sync.device.protected.no': 'Non',
+  'sync.group.update': 'Mise à jour',
+  'sync.update.check': 'Rechercher une mise à jour',
+  'sync.update.checking': 'Recherche…',
   'prep.description':
     'L’app télécharge ce qu’il faut pour travailler sans réseau. Gardez le Wi-Fi le temps du téléchargement.',
   'prep.description.paused':
@@ -161,13 +168,6 @@ export const fr = {
   'prep.resume': 'Reprendre le téléchargement ({{size}})',
   'prep.resume.unknown': 'Reprendre le téléchargement',
   'prep.manual': 'Commencer en saisie manuelle',
-  'sync.device.photos': 'Photos d’étiquettes',
-  'sync.device.protected': 'Stockage protégé',
-  'sync.device.protected.yes': 'Oui',
-  'sync.device.protected.no': 'Non',
-  'sync.group.update': 'Mise à jour',
-  'sync.update.check': 'Rechercher une mise à jour',
-  'sync.update.checking': 'Recherche…',
   'settings.account.name': 'Nom',
   'settings.account.email': 'E-mail',
   'settings.account.role': 'Rôle',

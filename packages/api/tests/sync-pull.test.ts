@@ -28,7 +28,8 @@ afterAll(async () => {
   await client.close();
 });
 
-const ids = (output: PullOutput) => output.rows.map((change) => change.row.id);
+const ids = (output: PullOutput) =>
+  output.rows.map((change) => change.row.id);
 
 async function fullPull(cursor: PullOutput['cursor'] | null, limit = 50) {
   const pages: PullOutput[] = [];
