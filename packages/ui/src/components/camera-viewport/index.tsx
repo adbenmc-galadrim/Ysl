@@ -50,6 +50,11 @@ export function Viewfinder({ tone = 'idle', className }: ViewfinderProps) {
 
 export type CameraViewportProps = {
   /**
+   * The live `<video>` of the app, full bleed under the overlays. Without it
+   * the viewport draws its still — the wall, the desk — for a Storybook.
+   */
+  video?: ReactNode;
+  /**
    * What the camera films, centred under the viewfinder: a `ParcelBox` with
    * its `ParcelLabel`, a phone showing a QR code.
    */
@@ -84,6 +89,7 @@ export type CameraViewportProps = {
  * do not move with the screen height.
  */
 export function CameraViewport({
+  video,
   subject,
   frame = 'idle',
   dim,
@@ -98,8 +104,9 @@ export function CameraViewport({
         className,
       )}
     >
+      {video && <div className="absolute inset-0 bg-black">{video}</div>}
       {/* The desk: the parcel is held over it, so it starts at 58 %. */}
-      {floor && (
+      {!video && floor && (
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-[58%] bottom-0 bg-scene-floor"

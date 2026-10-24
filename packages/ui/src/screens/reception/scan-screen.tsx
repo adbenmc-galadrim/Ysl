@@ -20,6 +20,7 @@ import {
 } from '#components/parcel-label';
 import { ScanFields, type ScanField } from '#components/scan-fields';
 import { Sheet } from '#components/sheet';
+import type { ReactNode } from 'react';
 
 /** What the scanner made of the label in front of it. */
 export type ScanReading =
@@ -33,6 +34,10 @@ export type ScanReading =
   | { kind: 'duplicate'; title: string; detail: string; message: string }
   /** Nothing usable: why, and the two ways out. */
   | { kind: 'unreadable'; title: string; hint: string }
+  /** The camera is starting: black until the first frame. */
+  | { kind: 'starting'; title: string }
+  /** The camera was refused or is missing: retry, or import a photo. */
+  | { kind: 'blocked'; title: string; hint: string }
   /** Nothing to say yet, e.g. behind the manual entry sheet. */
   | { kind: 'idle' };
 
@@ -42,6 +47,8 @@ export type ScanScreenProps = {
   /** The label the camera is pointed at; none before the camera starts. */
   label?: ParcelLabelProps;
   reading: ScanReading;
+  /** The live `<video>` of the app, see `CameraViewport`. */
+  video?: ReactNode;
   /** Hides the bottom row, when a sheet covers it. */
   controls?: boolean;
   /** Veil over the picture, see `CameraViewport`. */
@@ -53,6 +60,10 @@ export type ScanScreenProps = {
   onDone?: () => void;
   onImport?: () => void;
   onType?: () => void;
+  /** Takes the last parcel out of the batch. */
+  onUndo?: () => void;
+  /** Asks for the camera again after a refusal. */
+  onRetry?: () => void;
 };
 
 /**
@@ -65,6 +76,7 @@ export function ScanScreen({
   count,
   label,
   reading,
+  video,
   controls = true,
   dim,
   onClose,
@@ -74,10 +86,15 @@ export function ScanScreen({
   onDone,
   onImport,
   onType,
+  onUndo,
+  onRetry,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
+  const blocked = reading.kind === 'blocked';
+  const starting = reading.kind === 'starting';
   return (
     <CameraViewport
+      video={video}
       subject={
         label && (
           <ParcelBox>
@@ -86,9 +103,15 @@ export function ScanScreen({
         )
       }
       frame={
-        reading.kind === 'duplicate' ? 'warning' : unreadable ? 'error' : 'idle'
+        reading.kind === 'duplicate'
+          ? 'warning'
+          : unreadable || blocked
+            ? 'error'
+            : starting
+              ? false
+              : 'idle'
       }
-      dim={dim ?? (unreadable ? 0.25 : undefined)}
+      dim={dim ?? (unreadable ? 0.25 : starting ? 1 : undefined)}
     >
       <CameraTopBar
         title={`Lot : ${count} colis`}
@@ -101,7 +124,7 @@ export function ScanScreen({
           className="mx-4 mt-3.5"
           title={reading.last.name}
           meta={reading.last.meta}
-          action={{ icon: 'undo', label: 'Annuler' }}
+          action={{ icon: 'undo', label: 'Annuler', onClick: onUndo }}
         />
       )}
       {reading.kind === 'duplicate' && (
@@ -115,9 +138,18 @@ export function ScanScreen({
         </CameraNotice>
       )}
 
-      <div className="flex-1" />
+      {starting ? (
+        <p
+          role="status"
+          className="flex flex-1 items-center justify-center text-16 text-night-muted"
+        >
+          {reading.title}
+        </p>
+      ) : (
+        <div className="flex-1" />
+      )}
 
-      {reading.kind === 'read' && (
+      {reading.kind === 'read' && reading.fields.length > 0 && (
         <CameraPanel className="mx-4 px-4 pt-[17px] pb-[18px]">
           <ScanFields fields={reading.fields} />
         </CameraPanel>
@@ -145,6 +177,26 @@ export function ScanScreen({
             <>
               <CameraNoticeButton>Saisir le numéro</CameraNoticeButton>
               <CameraNoticeButton>Garder la photo</CameraNoticeButton>
+            </>
+          }
+        >
+          {reading.hint}
+        </CameraNotice>
+      )}
+      {blocked && (
+        <CameraNotice
+          tone="danger"
+          icon="alert"
+          title={reading.title}
+          className="mx-4"
+          actions={
+            <>
+              <CameraNoticeButton onClick={onRetry}>
+                Réessayer
+              </CameraNoticeButton>
+              <CameraNoticeButton onClick={onImport}>
+                Importer une photo
+              </CameraNoticeButton>
             </>
           }
         >
