@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
+import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -52,6 +53,12 @@ const AuthenticatedReglagesIndexRoute =
     path: '/reglages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesCompteRoute =
+  AuthenticatedReglagesCompteRouteImport.update({
+    id: '/reglages/compte',
+    path: '/reglages/compte',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -59,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -67,6 +75,7 @@ export interface FileRoutesByTo {
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesById {
@@ -77,14 +86,28 @@ export interface FileRoutesById {
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/bienvenue' | '/connexion' | '/remise' | '/scan' | '/reglages/'
+    | '/'
+    | '/bienvenue'
+    | '/connexion'
+    | '/remise'
+    | '/scan'
+    | '/reglages/compte'
+    | '/reglages/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/bienvenue' | '/connexion' | '/remise' | '/scan' | '/' | '/reglages'
+  to:
+    | '/bienvenue'
+    | '/connexion'
+    | '/remise'
+    | '/scan'
+    | '/'
+    | '/reglages/compte'
+    | '/reglages'
   id:
     | '__root__'
     | '/_authenticated'
@@ -93,6 +116,7 @@ export interface FileRouteTypes {
     | '/_authenticated/remise'
     | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/'
   fileRoutesById: FileRoutesById
 }
@@ -153,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/compte': {
+      id: '/_authenticated/reglages/compte'
+      path: '/reglages/compte'
+      fullPath: '/reglages/compte'
+      preLoaderRoute: typeof AuthenticatedReglagesCompteRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -160,6 +191,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
 }
 
@@ -167,6 +199,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
 }
 
