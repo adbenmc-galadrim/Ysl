@@ -736,6 +736,7 @@ export type LandingPageProps = {
   url: string;
   /** Where the app lives, printed under the QR code. */
   host: string;
+  /** Printed in the footer, after the usage line. */
   version: string;
 };
 
