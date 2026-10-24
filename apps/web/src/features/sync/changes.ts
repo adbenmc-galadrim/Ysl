@@ -1,5 +1,6 @@
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { SettingsItem } from '@repo/ui';
+import { SYNCED_ENTITIES } from '@repo/contract/sync';
 import type {
   CourrierDatabase,
   OutboxOp,
@@ -14,13 +15,23 @@ export type WaitingChange<Entity extends SyncedEntity = SyncedEntity> = {
   row: SyncedRows[Entity] | null;
 };
 
-/** Everything still to send or refused, oldest first: what the export carries. */
+const isSynced = (entity: string): entity is SyncedEntity =>
+  (SYNCED_ENTITIES as readonly string[]).includes(entity);
+
+/**
+ * Everything still to send or refused, oldest first: what the export carries.
+ * An operation on an entity this build does not know (written by a newer
+ * app, read after a downgrade) keeps its place with no row: the export is
+ * the safety net, it must never fail on it.
+ */
 export async function listWaitingChanges(
   db: CourrierDatabase,
 ): Promise<WaitingChange[]> {
   const ops = await db.outbox.orderBy('clientTs').toArray();
   const rows = await Promise.all(
-    ops.map((op) => db.synced(op.entity).get(op.entityId)),
+    ops.map(async (op) =>
+      isSynced(op.entity) ? db.synced(op.entity).get(op.entityId) : null,
+    ),
   );
   return ops.map((op, index) => ({ op, row: rows[index] ?? null }));
 }
@@ -52,7 +63,7 @@ export function formatChangeTime(at: Date, now: Date): string {
 }
 
 function subject({ op, row }: WaitingChange, t: TranslateFn): string {
-  switch (op.entity) {
+  switch (op.entity as string) {
     case 'parcel': {
       const parcel = row as SyncedRows['parcel'] | null;
       const label = parcel?.tracking
@@ -103,6 +114,8 @@ function subject({ op, row }: WaitingChange, t: TranslateFn): string {
       return t('sync.change.entity.pickup_code');
     case 'event':
       return t('sync.change.entity.event');
+    default:
+      return op.entity;
   }
 }
 
@@ -119,7 +132,7 @@ export function describeChange(
       : subject(change, t);
   return {
     key: op.opId,
-    ...ENTITY_ROW[op.entity],
+    ...(ENTITY_ROW[op.entity] ?? { icon: 'list', color: 'grey' }),
     label,
     value:
       op.state === 'rejected'

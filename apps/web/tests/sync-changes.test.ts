@@ -71,6 +71,20 @@ describe('listWaitingChanges', () => {
     expect(changes[1]!.row).toMatchObject({ id: parcel.id });
     expect(changes[2]!.row).toBeNull();
   });
+
+  it('keeps an operation on an entity this build does not know, without a row', async () => {
+    const db = await openTestDatabase();
+    await db.outbox.add(
+      queued({ opId: 'future', entity: 'shelf' as OutboxOp['entity'] }),
+    );
+    const [change] = await listWaitingChanges(db);
+    expect(change).toMatchObject({ op: { opId: 'future' }, row: null });
+    expect(describeChange(change!, t, NOW)).toMatchObject({
+      label: 'shelf',
+      icon: 'list',
+      value: '10 h 42',
+    });
+  });
 });
 
 describe('describeChange', () => {
