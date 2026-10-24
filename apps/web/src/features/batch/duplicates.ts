@@ -23,7 +23,7 @@ export type DuplicateQuery = Pick<
 /**
  * Whether an older draft is what this label was already read as. One piece
  * of a parcel already in the batch is its parcel's double only when that
- * very piece was read (F11): the next piece joins it instead. A number read
+ * very piece was read (F20): the next piece joins it instead. A number read
  * again without pieces on one side is a double, whatever the other says.
  */
 function doubles(other: DraftParcel, draft: DuplicateQuery): boolean {

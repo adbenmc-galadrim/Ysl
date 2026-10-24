@@ -232,14 +232,14 @@ d'écran pour l'alerte. Le serveur n'impose rien : « Ajouter quand même » ren
 non unique par construction, l'index `parcel_tracking_norm_idx` n'est pas unique et
 `sync.push` ne répond jamais 409 pour un colis.
 
-## Colis en plusieurs pièces et même destinataire (`features/batch/pieces.ts`, `recipient.ts`, F11)
+## Colis en plusieurs pièces et même destinataire (`features/batch/pieces.ts`, `recipient.ts`, F20 et F11)
 
 Un envoi livré en plusieurs cartons porte sur chacun un code 2D qui annonce « 2/3 »
-(`ParsedCode.pieces`, UPS, FedEx, DPD, GS1). Pour le lot, c'est **un seul colis** :
-« Même numéro : pièces regroupées en un colis. »
+(`ParsedCode.pieces`, UPS, FedEx, DPD, GS1 ; F20, §4.6 du cahier). Pour le lot, c'est
+**un seul colis** : « Même numéro : pièces regroupées en un colis. »
 
-- À la lecture, `readDraft` écrit sur le brouillon `pieces = { total, read: [n], key,
-photoIds: [] }` (`pieceOf`). La **clé** est le numéro d'expédition du code
+- À la lecture, `readDraft` écrit sur le brouillon (`pieceOf`)
+  `pieces = { total, read: [n], key, photoIds: [] }`. La **clé** est le numéro d'expédition du code
   (`reference` : shipment ID UPS, GS1 401/402) préfixé du transporteur, sinon le numéro de
   suivi normalisé (DHL Express, Chronopost impriment le même numéro sur chaque carton). Un
   « 1/1 » (tout MaxiCode UPS) n'est pas un colis en plusieurs pièces ; les n/N lus par

@@ -48,7 +48,7 @@ export type LastParcel = {
 export type ScanAction = { label: string; onClick?: () => void };
 
 /**
- * A parcel delivered as several boxes (F11): how many the label announces,
+ * A parcel delivered as several boxes (F20): how many the label announces,
  * which ones were read (1-based) and the one just read.
  */
 export type ScanPieces = {
@@ -128,9 +128,8 @@ export function missingPiecesLabel({
     (n) => !done.has(n),
   );
   if (missing.length === 0) return null;
-  return missing.length === 1
-    ? `La ${missing[0]}e pièce manque`
-    : `${missing.length} pièces manquent`;
+  if (missing.length > 1) return `${missing.length} pièces manquent`;
+  return `La ${missing[0] === 1 ? '1re' : `${missing[0]}e`} pièce manque`;
 }
 
 /**
@@ -345,9 +344,9 @@ export function ScanScreen({
 }
 
 /**
- * "Pièce 2 sur 3 lue": the same number again is not a duplicate but the
- * next piece, gathered under one parcel. While one is still on the trolley,
- * the button keeps the parcel with the pieces read so far.
+ * "Pièce 2 sur 3 lue": a box of the same shipment is not a duplicate but
+ * the next piece, gathered under one parcel. While one is still on the
+ * trolley, the button keeps the parcel with the pieces read so far.
  */
 function PiecePanel({
   pieces,

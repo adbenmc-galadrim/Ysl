@@ -19,6 +19,9 @@ describe('missingPiecesLabel', () => {
     expect(missingPiecesLabel({ total: 3, read: [1, 3] })).toBe(
       'La 2e pièce manque',
     );
+    expect(missingPiecesLabel({ total: 3, read: [2, 3] })).toBe(
+      'La 1re pièce manque',
+    );
   });
 
   it('counts the pieces missing when there are several, none when complete', () => {

@@ -123,7 +123,7 @@ export type DraftOcrLine = OcrLine;
 export type DraftBatch = { id: string; startedAt: Date };
 
 /**
- * A parcel delivered as several boxes (F11): how many the label announces,
+ * A parcel delivered as several boxes (F20, §4.6): how many the label announces,
  * the pieces read so far (1-based), the key the pieces share (carrier and
  * shipment number, else the tracking number) and the photos of the pieces
  * after the first, which `photoId` holds.

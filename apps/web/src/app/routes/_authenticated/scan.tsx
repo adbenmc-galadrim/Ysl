@@ -339,7 +339,7 @@ function ScanPage() {
   };
 
   /**
-   * One box of a parcel in several (F11): a piece not read yet of a parcel
+   * One box of a parcel in several (F20): a piece not read yet of a parcel
    * of the batch joins it, and the screen says where the pieces stand. False
    * when the label is the first piece seen, or one already read (then a
    * duplicate): the draft stays where it is.

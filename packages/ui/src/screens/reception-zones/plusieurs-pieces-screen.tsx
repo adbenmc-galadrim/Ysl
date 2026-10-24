@@ -14,11 +14,13 @@ export type PlusieursPiecesScreenProps = {
 };
 
 /**
- * A parcel delivered as several boxes carries one tracking number on each.
- * Reading the same number again is then not a duplicate but the next piece,
- * so the pieces gather under one parcel and the dots show which are still
- * on the trolley. A piece that never came can be left out on purpose. The
- * app mounts `ScanScreen` with a `piece` reading; this is that state alone.
+ * A parcel delivered as several boxes carries on each a code that says
+ * "2/3" and what the boxes share (F20). Reading another box of the shipment
+ * is then not a duplicate but the next piece, so the pieces gather under
+ * one parcel and the dots show which are still on the trolley; the same box
+ * read twice is a duplicate. A piece that never came can be left out on
+ * purpose. The app mounts `ScanScreen` with a `piece` reading; this is that
+ * state alone.
  */
 export function PlusieursPiecesScreen({
   count,
