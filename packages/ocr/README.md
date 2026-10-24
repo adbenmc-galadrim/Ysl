@@ -26,7 +26,9 @@ Les modèles ne sont pas dans le dépôt : `pnpm --filter @repo/ocr models` les 
 | `tesseract/eng.traineddata`                     | 4,1 Mo |
 | `tesseract-core-simd-lstm.wasm.js`              | 3,9 Mo |
 
-Les deux binaires (`ort-wasm-simd-threaded.wasm`, `tesseract-core-simd-lstm.wasm.js`) viennent de `node_modules`, pas de `models/`. Tous sont importés en `?url` et passent dans les assets fingerprintés de l'app, donc dans le précache du service worker ; seules les langues Tesseract sont publiées sous un chemin stable (`ocr/tesseract/<lang>.traineddata`), parce que tesseract.js compose lui-même ce chemin.
+Les deux binaires (`ort-wasm-simd-threaded.wasm`, `tesseract-core-simd-lstm.wasm.js`) viennent de `node_modules`, pas de `models/`. Tous sont importés en `?url` et passent dans les assets fingerprintés de l'app ; seules les langues Tesseract sont publiées sous un chemin stable (`ocr/tesseract/<lang>.traineddata`), parce que tesseract.js compose lui-même ce chemin.
+
+Les gros fichiers (modèles ONNX, binaire onnxruntime, cœur et langues Tesseract) ne sont **pas** dans le précache du service worker : `readerAssetUrls(base)` (`@repo/ocr/assets`) les liste, et l'app les télécharge au premier lancement dans son cache `courrier-models` avec une barre de progression (écran Préparation hors ligne, YSL-35) ; le service worker les sert ensuite depuis ce cache (`runtimeCaching` `CacheFirst` dans `apps/web/vite.config.ts`). Les petits (dictionnaire, glue `.mjs` des threads, worker tesseract.js) restent précachés.
 
 ## Usage dans le navigateur
 

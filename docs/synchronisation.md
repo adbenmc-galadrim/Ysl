@@ -119,6 +119,12 @@ au-delà de la borne) : les lignes repartent de zéro et l'appareil les prend to
 Les suppressions étant logiques, rien n'est vidé localement ; la purge physique
 (YSL-55) traitera le reste.
 
+**Horizon du premier pull.** Un pull qui repart de zéro (premier lancement, `reset`)
+ne rend que les `event` des 90 derniers jours (`EVENT_HORIZON_DAYS`, sur `at`) : le
+journal fait l'essentiel des lignes d'un service et l'iPhone n'a besoin que des
+récents. Un pull par curseur rend tous les nouveaux événements, quel que soit leur
+`at`. L'historique complet d'une fiche se lira à la demande, dans une prochaine PR.
+
 ## Côté appareil
 
 - Toute écriture passe par `commitLocal` : la ligne et son opération d'outbox dans
@@ -130,6 +136,21 @@ Les suppressions étant logiques, rien n'est vidé localement ; la purge physiqu
   premier plan. Après un échec (réseau, 401, 503), les déclencheurs automatiques
   attendent 2 s, 4 s… jusqu'à 5 min ; « Synchroniser maintenant » et le retour du
   réseau n'attendent pas. Pas de Background Sync (absent d'iOS).
+- Préparation hors ligne (`/preparation`, `features/offline`) : après la
+  connexion, tant que l'appareil n'est pas marqué préparé (`courrier.prepared` en
+  `localStorage`, effacé à la déconnexion), toute route authentifiée y renvoie.
+  Trois lignes : **Annuaire** (le premier pull, fait quand le curseur existe ;
+  `pulled` du moteur donne les lignes reçues), **Lecture des étiquettes** (les gros
+  fichiers de `@repo/ocr/assets` téléchargés par la page dans le cache
+  `courrier-models`, fichier par fichier avec la progression en octets, servis
+  hors ligne par la route `CacheFirst` du service worker ; un fichier déjà en cache
+  n'est jamais retéléchargé, un fichier d'un autre build est retiré) et **Écrans et
+  polices** (le précache du service worker, fait quand un worker contrôle la
+  portée). Le téléchargement des modèles repart à chaque lancement de session s'il
+  manque des fichiers, jamais seul après une coupure en cours de session : « Reprendre
+  le téléchargement (N Mo) » ou l'ouverture suivante. « Commencer en saisie manuelle »
+  entre dans l'app sans attendre ; la lecture automatique s'active dès que les
+  fichiers sont là.
 - Écrans : pastille Colis (`À jour`, `Synchronisation`, `Hors ligne`), bannière
   « N changements en attente » quand le serveur est hors de portée, ligne Réglages ›
   Synchronisation et écran `/reglages/synchronisation` (état, « Synchroniser
