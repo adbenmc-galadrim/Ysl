@@ -1,11 +1,27 @@
 import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { Button, GroupedRow, GroupedSection, SettingsScreen } from '@repo/ui';
+import {
+  Banner,
+  Button,
+  GroupedRow,
+  GroupedSection,
+  SettingsScreen,
+} from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useSignOut } from '#/features/auth/api/sign-out';
+import { SignOutBlockedError, useSignOut } from '#/features/auth/api/sign-out';
 import { useSession } from '#/features/auth/api/use-session';
 
 const t = createTranslator(DEFAULT_LOCALE);
+
+/** What stopped the sign-out: changes still on the phone, or the server. */
+export function signOutMessage(error: unknown): string {
+  if (error instanceof SignOutBlockedError) {
+    return error.pending === 1
+      ? t('auth.signOut.blocked.one')
+      : t('auth.signOut.blocked.many', { count: error.pending });
+  }
+  return t('auth.signOut.failed');
+}
 
 export function AccountScreen() {
   const navigate = useNavigate();
@@ -41,6 +57,23 @@ export function AccountScreen() {
       >
         {t('auth.signOut')}
       </Button>
+      {signOut.isError ? (
+        <div role="alert">
+          <Banner
+            tone={
+              signOut.error instanceof SignOutBlockedError ? 'orange' : 'red'
+            }
+            icon={
+              signOut.error instanceof SignOutBlockedError ? 'cloud' : 'alert'
+            }
+            title={signOutMessage(signOut.error)}
+          />
+        </div>
+      ) : (
+        <p className="px-4 text-center text-13 text-muted">
+          {t('auth.signOut.wipe')}
+        </p>
+      )}
     </SettingsScreen>
   );
 }

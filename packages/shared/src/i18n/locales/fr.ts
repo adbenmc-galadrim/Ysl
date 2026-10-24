@@ -22,6 +22,13 @@ export const fr = {
     'Impossible de joindre le serveur. Vérifiez votre connexion.',
   'auth.signIn.error.unknown': 'La connexion a échoué. Réessayez.',
   'auth.signOut': 'Se déconnecter',
+  'auth.signOut.blocked.one':
+    '1 changement n’est pas encore envoyé au serveur. Retrouvez le réseau avant de vous déconnecter.',
+  'auth.signOut.blocked.many':
+    '{{count}} changements ne sont pas encore envoyés au serveur. Retrouvez le réseau avant de vous déconnecter.',
+  'auth.signOut.failed': 'La déconnexion a échoué. Réessayez.',
+  'auth.signOut.wipe':
+    'Se déconnecter efface les données de cet iPhone une fois tout envoyé.',
   'auth.role.agent': 'Agent',
   'auth.role.admin': 'Administrateur',
   'colis.summary': '{{count}} colis, dont {{todo}} à traiter',
