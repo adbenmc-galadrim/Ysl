@@ -3,7 +3,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, GroupedRow, GroupedSection, SettingsScreen } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useSignOut } from '#/features/auth/api/sign-out';
-import { useSession } from '#/features/settings/session';
+import { useSession } from '#/features/auth/api/use-session';
 
 const t = createTranslator(DEFAULT_LOCALE);
 

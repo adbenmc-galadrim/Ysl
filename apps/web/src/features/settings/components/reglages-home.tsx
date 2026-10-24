@@ -6,7 +6,7 @@ import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { useCornerSetting } from '#/features/settings/corners';
 import { initialsOf } from '#/features/settings/initials';
-import { useSession } from '#/features/settings/session';
+import { useSession } from '#/features/auth/api/use-session';
 
 const t = createTranslator(DEFAULT_LOCALE);
 

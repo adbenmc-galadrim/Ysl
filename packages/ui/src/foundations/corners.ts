@@ -10,7 +10,7 @@ export const CORNER_RADII = [
   { value: 'maquettes', title: 'Maquettes', detail: 'pilules, 14 à 24 px' },
   {
     value: 'arrondi',
-    title: 'Arrondis',
+    title: 'Pilules',
     detail: 'tout en pilules, 24 à 32 px',
   },
 ] as const;
@@ -19,8 +19,8 @@ export type CornerRadius = (typeof CORNER_RADII)[number]['value'];
 
 /** The round marks — icon squares, avatars — follow the preset, or stay round. */
 export const CORNER_TILES = [
-  { value: 'auto', title: 'Pastilles : suivent les arrondis' },
-  { value: 'rondes', title: 'Pastilles : toujours rondes' },
+  { value: 'auto', title: 'Pastilles selon les arrondis' },
+  { value: 'rondes', title: 'Pastilles toujours rondes' },
 ] as const;
 
 export type CornerTiles = (typeof CORNER_TILES)[number]['value'];
