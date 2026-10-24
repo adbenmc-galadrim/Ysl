@@ -13,6 +13,8 @@ export const fr = {
   'sync.op.delivered':
     'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
   'sync.op.cancelled': 'Cette remise a été annulée ; l’annulation reste.',
+  'sync.op.handoverParcels':
+    'Les colis d’une remise ne se retirent pas ; annulez la remise.',
   'sync.op.recipient':
     'Un destinataire est requis pour notifier ou remettre un colis.',
   'sync.op.retry':

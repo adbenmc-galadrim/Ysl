@@ -47,7 +47,9 @@ Un statut par opération, dans l'ordre envoyé :
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
 
 Un rejet 4xx est aussi consigné dans `sync_op`, avec son motif (`reason` : la
-contrainte ou le SQLSTATE, et le message de Postgres, jamais les paramètres) : la
+contrainte et la ligne levée par le trigger ou la vérification, le seul SQLSTATE
+sinon, ou le motif du serveur ; des identifiants et des noms de colonnes, jamais une
+valeur envoyée par l'appareil ni les paramètres de la requête) : la
 même opération renvoyée reçoit la même réponse, et `select * from sync_op where
 status = 409` est le journal des conflits du §8.4. Le dernier écrit gagne **ligne par
 ligne**, et non champ par champ comme le §8.4 le prévoit (écart assumé tant qu'une
@@ -62,12 +64,13 @@ l'écriture ; `sync.push` reconnaît chaque garde-fou au nom de contrainte que l
 trigger lève (`packages/api/src/features/sync/errors.ts`, `GUARDS`) et répond avec un
 message propre.
 
-| Garde-fou                   | Règle                                                                                                                                                 | Réponse |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `parcel_status_transition`  | `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne` ; `remis → notifie` ; rester sur place est toujours permis     | 409     |
-| `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne repasse `notifie` qu'une fois annulée chaque remise (`handover`) vivante qui le liste | 409     |
-| `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                            | 409     |
-| `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                              | 400     |
+| Garde-fou                   | Règle                                                                                                                                                                                                                                                              | Réponse |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `parcel_status_transition`  | `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne` ; `remis → notifie` ; rester sur place est toujours permis                                                                                                                  | 409     |
+| `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne repasse `notifie` que par une remise (`handover`) annulée qui le liste, et sans remise vivante qui le liste (une remise supprimée logiquement compte comme vivante tant qu'elle n'est pas annulée) | 409     |
+| `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                                                                                                                                         | 409     |
+| `handover_parcels_sticky`   | une `handover` garde ses `parcel_ids` : on annule une remise, on n'en retire pas un colis                                                                                                                                                                          | 409     |
+| `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                                                                                                                                           | 400     |
 
 Le graphe est aussi la constante `PARCEL_TRANSITIONS` de `@repo/db/schema`
 (`canTransition(from, to)`), que l'app peut consulter avant d'écrire ; un test de
@@ -80,7 +83,8 @@ Ce que cela donne entre deux appareils :
   B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : transition
   `remis → recu` refusée en 409, la ligne du serveur ne bouge pas, l'opération de B part
   en « Corriger ». Si la copie de B date d'un colis déjà `notifie`, c'est
-  `remis → notifie` : refusée tant que la remise de A est vivante.
+  `remis → notifie` : refusée tant qu'aucune remise annulée ne liste le colis, que la
+  `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement.
 - **Annulation tracée.** Annuler une remise, c'est poser `cancelled_at` sur la
   `handover` **puis** repasser le colis `notifie` (`delivered_at` et `delivered_by` à
   nul), dans cet ordre dans l'outbox. La `handover` reste, annulée : c'est la trace.
@@ -90,10 +94,10 @@ Ce que cela donne entre deux appareils :
 
 Deux limites, assumées : une copie en retard encore `remis` (un appareil qui a vu la
 remise mais pas son annulation) repasse par `notifie → remis`, qui est dans le graphe,
-et remet le colis avec son ancienne preuve ; et la remise elle-même s'envoie en deux
-opérations (colis `remis`, puis `handover`), entre lesquelles une annulation d'un autre
-appareil peut se glisser. Les deux demandent un écran de remise (YSL-75) qui envoie la
-`handover` avant le colis et relit le serveur avant d'annuler. Enfin,
+et remet le colis avec son ancienne preuve ; et un colis `remis` dont la `handover` a
+été refusée au push ne peut revenir à `notifie` qu'après l'envoi d'une `handover`
+annulée. Les deux demandent un écran de remise (YSL-75) qui envoie la `handover` avant
+le colis et relit le serveur avant d'annuler. Enfin,
 `parcel_recipient_check` fait échouer le `SET NULL` des clés `person_id` et
 `contact_id` sur un colis `notifie`/`remis` : une personne ou un contact qui a un tel
 colis se désactive, il ne se supprime pas.

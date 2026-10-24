@@ -88,6 +88,15 @@ async function insertHandover(parcelId: string, personId: string) {
   return id;
 }
 
+async function insertCancelledHandover(parcelId: string, personId: string) {
+  const id = await insertHandover(parcelId, personId);
+  await db
+    .update(schema.handover)
+    .set({ cancelledAt: AT })
+    .where(eq(schema.handover.id, id));
+  return id;
+}
+
 async function statusOf(id: string) {
   const [row] = await db
     .select({ status: schema.parcel.status })
@@ -134,6 +143,7 @@ describe('parcel status transitions', () => {
 
     for (const [from, to] of pairs) {
       const id = await insertParcel(from, personId);
+      if (from === 'remis') await insertCancelledHandover(id, personId);
       const failure = await setStatus(id, to);
       outcome[`${from} -> ${to}`] = failure === null;
       expected[`${from} -> ${to}`] = canTransition(from, to);
@@ -212,6 +222,45 @@ describe('parcel status transitions', () => {
     });
     expect(onceCancelled).toBeNull();
     expect(await statusOf(id)).toBe('notifie');
+  });
+
+  it('refuse to undo a delivery that has no cancelled handover', async () => {
+    const alone = await insertParcel('remis', personId);
+    const deleted = await insertParcel('remis', personId);
+    const handoverId = await insertHandover(deleted, personId);
+    await db
+      .update(schema.handover)
+      .set({ deletedAt: new Date('2026-10-24T11:00:00Z') })
+      .where(eq(schema.handover.id, handoverId));
+
+    expect(await setStatus(alone, 'notifie')).toMatchObject({
+      constraint: 'parcel_delivery_protected',
+    });
+    expect(await setStatus(deleted, 'notifie')).toMatchObject({
+      constraint: 'parcel_delivery_protected',
+    });
+  });
+
+  it('keep the parcels of a handover', async () => {
+    const first = await insertParcel('remis', personId);
+    const second = await insertParcel('remis', personId);
+    const handoverId = await insertHandover(first, personId);
+
+    const added = await failureOf(
+      db
+        .update(schema.handover)
+        .set({ parcelIds: [first, second] })
+        .where(eq(schema.handover.id, handoverId)),
+    );
+    const removed = await failureOf(
+      db
+        .update(schema.handover)
+        .set({ parcelIds: [second] })
+        .where(eq(schema.handover.id, handoverId)),
+    );
+
+    expect(added).toBeNull();
+    expect(removed).toMatchObject({ constraint: 'handover_parcels_sticky' });
   });
 
   it('keep a handover cancelled', async () => {

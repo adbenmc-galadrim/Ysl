@@ -394,16 +394,18 @@ describe('sync.push', () => {
     it('undoes a delivery only after its handover is cancelled', async () => {
       const row = delivered();
       const handover = handoverRow(row.id);
-      await push(sync, writer, {
-        ops: [op('parcel', row), op('handover', handover)],
-      });
       const notified = {
         ...row,
         status: 'notifie',
         deliveredAt: null,
         deliveredBy: null,
       };
+      await push(sync, writer, { ops: [op('parcel', row)] });
 
+      const beforeHandover = await push(sync, writer, {
+        ops: [op('parcel', notified)],
+      });
+      await push(sync, writer, { ops: [op('handover', handover)] });
       const tooEarly = await push(sync, writer, {
         ops: [op('parcel', notified)],
       });
@@ -417,6 +419,7 @@ describe('sync.push', () => {
         ops: [op('handover', handover)],
       });
 
+      expect(beforeHandover.results[0]?.status).toBe(409);
       expect(tooEarly.results[0]).toMatchObject({
         status: 409,
         message:

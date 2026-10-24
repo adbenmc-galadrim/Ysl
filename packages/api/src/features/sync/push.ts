@@ -58,7 +58,7 @@ function valuesOf(table: SyncTable, op: SyncOp): Values {
   if (values.id !== undefined && values.id !== op.entityId) {
     throw new SyncRejected(
       SYNC_STATUS.badRequest,
-      `patch id ${JSON.stringify(values.id)} is not the entity ${op.entityId}`,
+      `patch id is not the entity ${op.entityId}`,
     );
   }
   values.id = op.entityId;

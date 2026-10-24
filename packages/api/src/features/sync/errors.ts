@@ -54,6 +54,10 @@ export const GUARDS = {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.cancelled',
   },
+  handover_parcels_sticky: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.handoverParcels',
+  },
   parcel_recipient_check: {
     status: SYNC_STATUS.badRequest,
     key: 'sync.op.recipient',
@@ -162,7 +166,11 @@ export function messageOf(status: FailureStatus, guard?: Guard): string {
   return translate(guard ? GUARDS[guard].key : MESSAGE_KEYS[status]);
 }
 
-/** A write the server refuses before Postgres sees it; `reason` goes to the log only. */
+/**
+ * A write the server refuses before Postgres sees it. `reason` goes to the
+ * log and to `sync_op.reason`: identifiers and column names, never a value
+ * the device sent.
+ */
 export class SyncRejected extends Error {
   constructor(
     readonly status: Exclude<FailureStatus, 503>,

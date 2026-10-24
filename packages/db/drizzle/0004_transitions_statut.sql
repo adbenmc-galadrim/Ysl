@@ -11,10 +11,12 @@ ALTER TABLE "parcel" ADD CONSTRAINT "parcel_recipient_check" CHECK ("parcel"."st
 --> statement-breakpoint
 -- The status graph of §8.3 (PARCEL_TRANSITIONS in src/schema/parcel.ts), and
 -- the two guards of §8.4 on a delivery: a parcel handed over keeps its proof
--- (delivered_at, delivered_by) and leaves `remis` only once every handover
--- that lists it is cancelled, so a stale copy from a device that never saw
--- the handover cannot undo it. The constraint name tells sync.push which
--- answer to give (409 for both guards).
+-- (delivered_at, delivered_by) and leaves `remis` only through a cancelled
+-- handover: one that lists it must carry cancelled_at, and none that lists it
+-- may still be live (a logically deleted handover counts as live until it is
+-- cancelled). A stale copy from a device that never saw the handover, or that
+-- arrives before the handover itself, cannot undo it. The constraint name
+-- tells sync.push which answer to give (409 for both guards).
 CREATE FUNCTION "public"."parcel_status_guard"() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
 BEGIN
@@ -28,12 +30,19 @@ BEGIN
       RAISE EXCEPTION 'parcel % cannot go from % to %', OLD.id, OLD.status, NEW.status
         USING ERRCODE = 'check_violation', CONSTRAINT = 'parcel_status_transition';
     END IF;
-    IF OLD.status = 'remis' AND EXISTS (
-      SELECT 1 FROM "public"."handover"
-       WHERE "public"."handover".organization_id = OLD.organization_id
-         AND "public"."handover".parcel_ids @> ARRAY[OLD.id]
-         AND "public"."handover".cancelled_at IS NULL
-         AND "public"."handover".deleted_at IS NULL
+    IF OLD.status = 'remis' AND (
+      EXISTS (
+        SELECT 1 FROM "public"."handover"
+         WHERE "public"."handover".organization_id = OLD.organization_id
+           AND "public"."handover".parcel_ids @> ARRAY[OLD.id]
+           AND "public"."handover".cancelled_at IS NULL
+      )
+      OR NOT EXISTS (
+        SELECT 1 FROM "public"."handover"
+         WHERE "public"."handover".organization_id = OLD.organization_id
+           AND "public"."handover".parcel_ids @> ARRAY[OLD.id]
+           AND "public"."handover".cancelled_at IS NOT NULL
+      )
     ) THEN
       RAISE EXCEPTION 'parcel % is handed over: cancel the handover first', OLD.id
         USING ERRCODE = 'check_violation', CONSTRAINT = 'parcel_delivery_protected';
@@ -49,7 +58,9 @@ END;
 $$;
 --> statement-breakpoint
 -- A cancelled handover stays cancelled: the trace of the cancellation
--- (§8.3, "remise annulée, tracée") survives a stale copy of the row.
+-- (§8.3, "remise annulée, tracée") survives a stale copy of the row. And a
+-- handover keeps its parcels: taking one out would let the parcel leave
+-- `remis` with no cancelled handover behind it.
 CREATE FUNCTION "public"."handover_cancel_sticky"() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
 BEGIN
@@ -57,13 +68,17 @@ BEGIN
     RAISE EXCEPTION 'handover % stays cancelled', OLD.id
       USING ERRCODE = 'check_violation', CONSTRAINT = 'handover_cancel_sticky';
   END IF;
+  IF NOT (NEW.parcel_ids @> OLD.parcel_ids) THEN
+    RAISE EXCEPTION 'handover % keeps its parcels', OLD.id
+      USING ERRCODE = 'check_violation', CONSTRAINT = 'handover_parcels_sticky';
+  END IF;
   RETURN NEW;
 END;
 $$;
 --> statement-breakpoint
 CREATE TRIGGER "parcel_status_guard" BEFORE UPDATE OF "status", "delivered_at", "delivered_by" ON "parcel" FOR EACH ROW EXECUTE FUNCTION "public"."parcel_status_guard"();
 --> statement-breakpoint
-CREATE TRIGGER "handover_cancel_sticky" BEFORE UPDATE OF "cancelled_at" ON "handover" FOR EACH ROW EXECUTE FUNCTION "public"."handover_cancel_sticky"();
+CREATE TRIGGER "handover_cancel_sticky" BEFORE UPDATE OF "cancelled_at", "parcel_ids" ON "handover" FOR EACH ROW EXECUTE FUNCTION "public"."handover_cancel_sticky"();
 --> statement-breakpoint
 ALTER TABLE "parcel" ENABLE ALWAYS TRIGGER "parcel_status_guard";
 --> statement-breakpoint
