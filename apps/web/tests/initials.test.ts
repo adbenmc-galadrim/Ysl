@@ -3,7 +3,7 @@ import { initialsOf } from '#/features/settings/initials';
 
 describe('initialsOf', () => {
   it('takes the first and last names', () => {
-    expect(initialsOf('Karim Daoud')).toBe('KD');
+    expect(initialsOf('Prénom Nom')).toBe('PN');
     expect(initialsOf('Anne-Lise de la Tour')).toBe('AT');
   });
 
@@ -13,6 +13,6 @@ describe('initialsOf', () => {
   });
 
   it('keeps accents upper-cased', () => {
-    expect(initialsOf('élodie martin')).toBe('ÉM');
+    expect(initialsOf('émilie durand')).toBe('ÉD');
   });
 });
