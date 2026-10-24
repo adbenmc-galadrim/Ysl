@@ -21,3 +21,4 @@ export {
   type OcrLine,
 } from '#engines/types';
 export { TESSERACT_LANGUAGES, TESSERACT_LANGUAGES_DIR } from '#paths';
+export { recipientFromLines } from '#recipient';
