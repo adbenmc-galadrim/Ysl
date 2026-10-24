@@ -112,8 +112,11 @@ export async function pull(
     );
     if (page.length > room) {
       const last = kept[kept.length - 1];
-      if (!last) break;
-      next = { ...range, entity, after: { xid: last.serverXid, id: last.id } };
+      next = {
+        ...range,
+        entity,
+        after: last ? { xid: last.serverXid, id: last.id } : after,
+      };
       break;
     }
     after = null;

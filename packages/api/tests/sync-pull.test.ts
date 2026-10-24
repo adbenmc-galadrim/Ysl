@@ -58,6 +58,7 @@ async function generation() {
 
 async function clearParcels() {
   await db.delete(schema.parcel);
+  await db.delete(schema.contact);
 }
 
 describe('sync.pull', () => {
@@ -121,6 +122,29 @@ describe('sync.pull', () => {
     expect(seen).toEqual([
       `contact:${contact.id}`,
       ...rows.map((row) => `parcel:${row.id}`),
+    ]);
+    await db.delete(schema.contact).where(eq(schema.contact.id, contact.id));
+  });
+
+  it('keeps paging when a page fills up exactly at the end of an entity', async () => {
+    await clearParcels();
+    const contact = {
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      name: 'Coursier',
+      nameNorm: 'coursier',
+    };
+    await db.insert(schema.contact).values(contact);
+    const rows = [parcelRow(), parcelRow(), parcelRow()];
+    for (const row of rows) await db.insert(schema.parcel).values(row);
+
+    const pages = await fullPull(null, 1);
+
+    expect(pages.map((page) => page.rows.length)).toEqual([1, 1, 1, 1]);
+    expect(pages[0]!.rows[0]?.entity).toBe('contact');
+    expect(pages.flatMap((page) => ids(page))).toEqual([
+      contact.id,
+      ...rows.map((row) => row.id),
     ]);
     await db.delete(schema.contact).where(eq(schema.contact.id, contact.id));
   });
