@@ -3,13 +3,15 @@ import type { ReactNode } from 'react';
 import { cn } from '#lib/tv';
 
 /**
- * What the viewfinder says: `idle` while it looks, `warning` for a reading
- * that needs a look (a duplicate), `error` when nothing could be read.
+ * What the viewfinder says: `idle` while it looks, `success` the moment a
+ * label is read, `warning` for a reading that needs a look (a duplicate),
+ * `error` when nothing could be read.
  */
-export type ViewfinderTone = 'idle' | 'warning' | 'error';
+export type ViewfinderTone = 'idle' | 'success' | 'warning' | 'error';
 
 const CORNER_TONE: Record<ViewfinderTone, string> = {
   idle: 'bg-white',
+  success: 'bg-ios-green',
   warning: 'bg-ios-yellow',
   error: 'bg-ios-red',
 };
@@ -67,6 +69,11 @@ export type CameraViewportProps = {
    */
   dim?: number;
   /**
+   * The green veil of a reading just taken: it fades out on its own, and
+   * stays as a faint tint while on when motion is reduced.
+   */
+  flash?: boolean;
+  /**
    * Draws the lighter desk under the picture. Off for the handover, where
    * the camera faces the employee across the counter and sees only a wall.
    */
@@ -93,6 +100,7 @@ export function CameraViewport({
   subject,
   frame = 'idle',
   dim,
+  flash = false,
   floor = true,
   children,
   className,
@@ -125,6 +133,12 @@ export function CameraViewport({
           aria-hidden="true"
           className="absolute inset-0 bg-black"
           style={{ opacity: dim }}
+        />
+      )}
+      {flash && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 animate-scan-flash bg-ios-green motion-reduce:animate-none motion-reduce:opacity-25"
         />
       )}
       {frame && (

@@ -91,6 +91,8 @@ export type ScanScreenProps = {
   controls?: boolean;
   /** Veil over the picture, see `CameraViewport`. */
   dim?: number;
+  /** A label was just read: green corners and a green flash, for a moment. */
+  flash?: boolean;
   /** Shows the torch square, when the phone has one. */
   torch?: boolean;
   /** The torch is lit: the square turns white. */
@@ -146,6 +148,7 @@ export function ScanScreen({
   video,
   controls = true,
   dim,
+  flash,
   torch,
   torchOn,
   onClose,
@@ -166,6 +169,7 @@ export function ScanScreen({
   const unreadable = reading.kind === 'unreadable';
   const blocked = reading.kind === 'blocked';
   const starting = reading.kind === 'starting';
+  const confirmed = flash === true && reading.kind === 'read';
   return (
     <CameraViewport
       video={video}
@@ -183,9 +187,12 @@ export function ScanScreen({
             ? 'error'
             : starting
               ? false
-              : 'idle'
+              : confirmed
+                ? 'success'
+                : 'idle'
       }
       dim={dim ?? (unreadable ? 0.25 : starting ? 1 : undefined)}
+      flash={confirmed}
     >
       <CameraTopBar
         title={<span role="status">{`Lot : ${count} colis`}</span>}

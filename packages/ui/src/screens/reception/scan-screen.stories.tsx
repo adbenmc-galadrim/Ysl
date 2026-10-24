@@ -59,6 +59,12 @@ export const LectureMemeDestinataire: Story = {
   },
 };
 
+/** The instant the codes come back: the corners turn green and the picture flashes green, then the screen settles on "Lecture". */
+export const LectureConfirmee: Story = {
+  name: 'Lecture confirmée',
+  args: { ...Lecture.args, flash: true },
+};
+
 /** Right after the tap: the band says the reading is on its way. */
 export const LectureEnCours: Story = {
   name: 'Lecture en cours',

@@ -139,6 +139,18 @@ photo bougée à « Photo floue… » ; le coût de la mesure dans la cadence de
    dépose ses lignes et le nom supposé sur le brouillon ; le champ Destinataire se met à
    jour si l'écran montre encore ce colis. « Terminer » n'attend pas cette étape.
 
+Dès qu'un appui a donné au moins un code (étape 5, hors doublon retenu), l'écran le dit
+sans qu'on le regarde (`features/scan/feedback.ts`, F12) : un bip court (Web Audio, 1 760 Hz,
+100 ms, réglage « Son au scan »), une vibration de 80 ms là où `navigator.vibrate` existe
+(Android, ordinateur ; jamais sur iOS), et un flash vert du viseur pendant 600 ms (coins
+verts, voile qui s'efface, `prefers-reduced-motion` le fige). iOS ne laisse sonner qu'après
+un geste : le premier toucher de l'écran Scan crée et réveille le contexte audio
+(`unlock`, y compris l'état `interrupted` propre à iOS), et `navigator.audioSession.type
+= 'playback'` demande à passer outre l'interrupteur silencieux (rendu à `'auto'` quand le
+son est coupé et en quittant l'écran ; effet réel sur iPhone encore à confirmer, ainsi que le bip lui-même, qu'aucun
+test automatique n'entend). Une étiquette sans code, une lecture impossible ou un doublon
+n'ont pas de son (`confirmsReading`) : leur cadre rouge ou jaune et leur panneau suffisent.
+
 Le Worker (`features/scan/decoder.ts`) et la liste des lectures en vol (`reader.ts`) vivent
 au niveau du module, comme la caméra : une lecture en vol quand l'agent quitte l'écran se
 termine et atterrit dans son brouillon, et « Terminer » l'attend même après un retour sur
@@ -291,7 +303,7 @@ un lot »).
 
 Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-58), liste
 du lot et revue (YSL-58), n/N par l'OCR, poids, service et référence à l'écran (YSL-41),
-bip et flash à la capture (YSL-39, §6.6), capture automatique sur image nette (F06,
+capture automatique sur image nette (F06,
 lot L3). Pièces d'un colis : le regroupement ne joue qu'à la lecture dans l'écran Scan,
 pas à la reprise après relance (`recoverPending` écrit `pieces` sans regrouper : un envoi
 relu en trois cartons après une relance donne trois colis « 1 sur 3 ») ; les numéros de

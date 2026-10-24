@@ -28,6 +28,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Recherche: Story = { name: 'En recherche' };
 
+/** The moment a label is read: green corners and the green veil. */
+export const LectureConfirmee: Story = {
+  name: 'Lecture confirmée',
+  args: { frame: 'success', flash: true },
+};
+
 export const Doublon: Story = { args: { frame: 'warning' } };
 
 /** Unreadable shot: red corners over a dimmed picture. */
@@ -45,6 +51,7 @@ export const Cadre: StoryObj<typeof Viewfinder> = {
   render: () => (
     <div className="flex gap-4 bg-scene p-4">
       <Viewfinder />
+      <Viewfinder tone="success" />
       <Viewfinder tone="warning" />
       <Viewfinder tone="error" />
     </div>
