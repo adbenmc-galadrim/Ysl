@@ -73,7 +73,8 @@ export function guardOf(error: unknown): Guard | undefined {
     : undefined;
 }
 
-const REASON_MAX = 300;
+/** Longest `sync_op.reason`, whatever raised it. */
+export const REASON_MAX = 300;
 
 /**
  * What to keep of a refusal in `sync_op.reason`: the constraint and the line

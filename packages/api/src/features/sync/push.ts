@@ -14,6 +14,7 @@ import {
   guardOf,
   isRetryable,
   messageOf,
+  REASON_MAX,
   reasonOf,
   sqlState,
   statusOf,
@@ -218,7 +219,7 @@ async function record(
 ): Promise<void> {
   await db
     .insert(syncOpTable)
-    .values(syncOpRow(op, writer, status, reason))
+    .values(syncOpRow(op, writer, status, reason.slice(0, REASON_MAX)))
     .onConflictDoNothing();
 }
 
