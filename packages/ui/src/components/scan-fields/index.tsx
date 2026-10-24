@@ -48,7 +48,8 @@ export const scanFieldsVariants = tv({
   defaultVariants: { tone: 'dark' },
 });
 
-const STATUS = {
+/** The hue of a status per tone, shared with the band of the last parcel. */
+export const SCAN_FIELD_STATUS = {
   dark: {
     ok: 'text-ios-green-dark',
     warning: 'text-ios-orange',
@@ -69,7 +70,7 @@ export type ScanFieldsProps = VariantProps<typeof scanFieldsVariants> & {
  */
 export function ScanFields({ fields, tone = 'dark', className }: ScanFieldsProps) {
   const s = scanFieldsVariants({ tone });
-  const hue = STATUS[tone ?? 'dark'];
+  const hue = SCAN_FIELD_STATUS[tone ?? 'dark'];
   return (
     <dl className={s.root({ class: className })}>
       {fields.map((field, i) => {
