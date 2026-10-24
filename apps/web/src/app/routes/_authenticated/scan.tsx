@@ -41,6 +41,7 @@ import {
   trackWork,
   type Symbols,
 } from '#/features/scan/reader';
+import { readImageFile } from '#/features/scan/read-file';
 import { failedReading, toScanReading } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
@@ -220,12 +221,12 @@ function ScanPage() {
     fire(() => grabFrame(video, cameraStream.track));
   };
 
-  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
+  /** Each picture chosen is one parcel, in the order chosen: the queue paces them. */
+  const onFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
-    const file = input.files?.[0];
+    const files = [...(input.files ?? [])];
     input.value = '';
-    if (!file) return;
-    fire(() => createImageBitmap(file, { imageOrientation: 'from-image' }));
+    for (const file of files) fire(() => readImageFile(file));
   };
 
   const onUndo = () => {
@@ -372,8 +373,9 @@ function ScanPage() {
         ref={inputRef}
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
-        onChange={onFile}
+        onChange={onFiles}
       />
     </>
   );
