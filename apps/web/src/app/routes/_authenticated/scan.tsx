@@ -1,5 +1,10 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { SaisieManuelleSheet, ScanScreen, type ScanReading } from '@repo/ui';
+import {
+  CameraPermissionScreen,
+  SaisieManuelleSheet,
+  ScanScreen,
+  type ScanReading,
+} from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
@@ -13,7 +18,16 @@ import {
 } from '#/features/batch/store';
 import { useBatch } from '#/features/batch/use-batch';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
-import { cameraStream, useCameraState } from '#/features/camera/stream';
+import {
+  cameraEntry,
+  markExplained,
+  wasExplained,
+} from '#/features/camera/entry';
+import {
+  cameraPermission,
+  cameraStream,
+  useCameraState,
+} from '#/features/camera/stream';
 import { db } from '#/features/db/database';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
 import { lastOf } from '#/features/scan/last';
@@ -42,6 +56,12 @@ const BLOCKED: ScanReading = {
   title: t('scan.blocked.title'),
   hint: t('scan.blocked.hint'),
 };
+const OFF: ScanReading = {
+  kind: 'blocked',
+  title: t('scan.off.title'),
+  hint: t('scan.off.hint'),
+  retry: t('scan.off.retry'),
+};
 const STORAGE_FAILED: ScanReading = {
   kind: 'unreadable',
   title: t('scan.storageFailed.title'),
@@ -52,6 +72,9 @@ const STORAGE_FAILED: ScanReading = {
 /** The sheet, typing a new parcel or the number of an unread draft. */
 type Typing = { fix: string | null; value: string };
 
+/** What is on screen: nothing yet, the explanation, or the viewfinder. */
+type Opening = 'pending' | 'explain' | 'scan';
+
 function ScanPage() {
   const navigate = useNavigate();
   const session = useSession();
@@ -60,6 +83,11 @@ function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
+  const [opening, setOpening] = useState<Opening>(() =>
+    wasExplained() ? 'scan' : 'pending',
+  );
+  /** The agent chose to work without the camera: it only reopens on a tap. */
+  const [fallback, setFallback] = useState(false);
   const view = useBatch();
   const queue = decodeQueue();
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
@@ -77,11 +105,45 @@ function ScanPage() {
   }, []);
 
   useEffect(() => {
+    if (opening !== 'pending') return;
+    let cancelled = false;
+    void cameraPermission().then((permission) => {
+      if (!cancelled) setOpening(cameraEntry(false, permission));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [opening]);
+
+  const scanning = opening === 'scan';
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!scanning || fallback || !video) return;
     void cameraStream.attach(video);
     return () => cameraStream.detach(video);
-  }, []);
+  }, [scanning, fallback]);
+
+  const onAllow = () => {
+    markExplained();
+    setOpening('scan');
+  };
+
+  /** Working without the camera: the viewfinder stays off until asked. */
+  const withoutCamera = () => {
+    markExplained();
+    setFallback(true);
+    setOpening('scan');
+  };
+
+  const onImportInstead = () => {
+    withoutCamera();
+    inputRef.current?.click();
+  };
+
+  const onRetry = () => {
+    const video = videoRef.current;
+    void (video ? cameraStream.attach(video) : cameraStream.retry());
+  };
 
   const batchId = view?.batch?.id;
   useEffect(() => {
@@ -230,13 +292,32 @@ function ScanPage() {
         ? reading
         : camera === 'blocked' || camera === 'denied'
           ? BLOCKED
-          : camera !== 'live'
-            ? STARTING
-            : last
-              ? { kind: 'read', fields: [], last }
-              : reading;
+          : camera === 'idle' && fallback
+            ? OFF
+            : camera !== 'live'
+              ? STARTING
+              : last
+                ? { kind: 'read', fields: [], last }
+                : reading;
 
   const entry = typing && typedEntry(typing.value, t);
+
+  if (opening === 'pending') return null;
+
+  if (opening === 'explain') {
+    return (
+      <>
+        <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onFile}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -262,7 +343,7 @@ function ScanPage() {
         onType={onType}
         onFix={onType}
         onKeep={onKeep}
-        onRetry={() => void cameraStream.retry()}
+        onRetry={onRetry}
       />
       {typing && entry && (
         <SaisieManuelleSheet

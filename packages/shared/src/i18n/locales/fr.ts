@@ -105,6 +105,10 @@ export const fr = {
   'scan.starting': 'Activation…',
   'scan.blocked.title': 'iOS a bloqué la caméra',
   'scan.blocked.hint': 'Réessayez, ou importez une photo de l’étiquette.',
+  'scan.off.title': 'Caméra non activée',
+  'scan.off.hint':
+    'Activez-la pour scanner, ou importez une photo de l’étiquette.',
+  'scan.off.retry': 'Activer la caméra',
   'scan.reading': 'Lecture…',
   'scan.storageFailed.title': 'Photo non enregistrée',
   'scan.storageFailed.hint':

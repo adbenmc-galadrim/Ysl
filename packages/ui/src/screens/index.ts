@@ -4,6 +4,7 @@
  * until a ticket mounts them.
  */
 export * from '#screens/colis/colis-screen';
+export * from '#screens/demarrage/camera-permission-screen';
 export * from '#screens/reception/scan-screen';
 export * from '#screens/reglages/reglages-screen';
 export * from '#screens/reglages/settings-screen';

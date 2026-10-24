@@ -41,8 +41,8 @@ export type ScanReading =
   | { kind: 'unreadable'; title: string; hint: string; keep?: string }
   /** The camera is starting: black until the first frame. */
   | { kind: 'starting'; title: string }
-  /** The camera was refused or is missing: retry, or import a photo. */
-  | { kind: 'blocked'; title: string; hint: string }
+  /** The camera was refused, is missing or off: retry (`retry` renames it), or import a photo. */
+  | { kind: 'blocked'; title: string; hint: string; retry?: string }
   /** Nothing to say yet, e.g. behind the manual entry sheet. */
   | { kind: 'idle' };
 
@@ -207,7 +207,7 @@ export function ScanScreen({
           actions={
             <>
               <CameraNoticeButton onClick={onRetry}>
-                Réessayer
+                {reading.retry ?? 'Réessayer'}
               </CameraNoticeButton>
               <CameraNoticeButton onClick={onImport}>
                 Importer une photo
