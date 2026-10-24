@@ -289,7 +289,13 @@ un lot »).
 
 ## Ce qui attend d'autres tickets
 
-Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
-des codes 2D (YSL-25), liste du lot et revue (YSL-33), synchronisation des lignes
-promues (YSL-28), bip et flash à la capture (§6.6), capture automatique sur image nette
-(F06, lot L3).
+Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-58), liste
+du lot et revue (YSL-58), n/N par l'OCR, poids, service et référence à l'écran (YSL-41),
+bip et flash à la capture (YSL-39, §6.6), capture automatique sur image nette (F06,
+lot L3). Pièces d'un colis : le regroupement ne joue qu'à la lecture dans l'écran Scan,
+pas à la reprise après relance (`recoverPending` écrit `pieces` sans regrouper : un envoi
+relu en trois cartons après une relance donne trois colis « 1 sur 3 ») ; les numéros de
+suivi des cartons 2 à N disparaissent avec leur brouillon quand ils diffèrent du premier
+(UPS), donc un de ces cartons relu dans un lot suivant ne déclenche plus « Déjà reçu » ;
+rattacher une pièce à un colis déjà synchronisé ; « Même destinataire » après « Ajouter
+quand même ».
