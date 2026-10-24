@@ -10,7 +10,11 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { summarize, toSections } from '#/features/parcels/sections';
-import { showsPendingBanner, syncPill } from '#/features/sync/sync-value';
+import {
+  pendingBanner,
+  showsPendingBanner,
+  syncPill,
+} from '#/features/sync/sync-value';
 import { useSync } from '#/features/sync/use-sync';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
@@ -25,6 +29,7 @@ export function ColisHome() {
   const loading = useDelayedPending(parcels === undefined);
   const rows = parcels ?? [];
   const empty = parcels !== undefined && rows.length === 0;
+  const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
 
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
@@ -35,18 +40,17 @@ export function ColisHome() {
       summary={parcels ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
       notice={
-        showsPendingBanner(sync) ? (
+        banner ? (
           <Banner
-            tone="orange"
-            icon="cloud"
-            title={
-              sync.pending === 1
-                ? t('colis.pending.title.one')
-                : t('colis.pending.title.many', { count: sync.pending })
-            }
-            description={t('colis.pending.description')}
+            tone={banner.tone}
+            icon={banner.icon}
+            title={banner.title}
+            description={banner.description}
+            onClick={() => void navigate({ to: '/reglages/synchronisation' })}
+            // Penpot fixes the orange card at 64 px; the red title runs on
+            // two lines and needs the card to grow.
             classNames={{
-              root: 'h-16 py-[11px]',
+              root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
               description: 'mt-[3px] leading-4',
             }}
           />

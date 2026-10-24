@@ -51,7 +51,11 @@ export function SettingsScreen({
 
 /** One setting, as data: the Réglages screens are lists of these. */
 export type SettingsItem = {
+  /** Tells two rows with the same label apart; the label otherwise. */
+  key?: string;
   label: string;
+  /** Second grey line, for what does not fit next to the label (a name, a confirmation). */
+  subtitle?: string;
   icon?: SettingsIconProps['icon'];
   color?: SettingsIconProps['color'];
   value?: string;
@@ -75,11 +79,12 @@ export function SettingsGroupView({ header, footer, items }: SettingsGroup) {
     <GroupedSection header={header} footer={footer}>
       {items.map((item) => (
         <GroupedRow
-          key={item.label}
+          key={item.key ?? item.label}
           leading={
             item.icon && <SettingsIcon icon={item.icon} color={item.color} />
           }
           title={item.label}
+          subtitle={item.subtitle}
           value={item.value}
           onClick={item.onPress}
           accessory={

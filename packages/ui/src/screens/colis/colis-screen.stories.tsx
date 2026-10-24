@@ -160,7 +160,28 @@ export const HorsLigne: Story = {
         PENDING[parcel.id] && <ListRowValue>{PENDING[parcel.id]}</ListRowValue>,
     })),
     toast: (
-      <Toast message="Nouvelle version disponible" actionLabel="Mettre à jour" />
+      <Toast
+        message="Nouvelle version disponible"
+        actionLabel="Mettre à jour"
+      />
+    ),
+  },
+};
+
+/** Changes still on the phone after a day, even back online: to export. */
+export const EnAttenteDepuis24h: Story = {
+  name: 'En attente depuis 24 h',
+  args: {
+    ...HorsLigne.args,
+    sync: 'synced',
+    notice: (
+      <Banner
+        tone="red"
+        icon="alert"
+        title="4 changements en attente depuis plus de 24 h"
+        description="Exportez-les par sécurité dans Réglages › Synchronisation."
+        classNames={{ description: 'mt-[3px] leading-4' }}
+      />
     ),
   },
 };

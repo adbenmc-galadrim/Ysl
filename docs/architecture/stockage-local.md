@@ -87,4 +87,5 @@ ligne** affiche l'espace occupé (`estimate().usage`) ou « Non persistant » si
   (événements récents seulement, historique d'une fiche à la demande) s'y décide.
 - La revue du lot avant sa promotion en colis : YSL-33. La vignette des photos : quand un
   écran l'affichera.
-- L'export de secours et le diagnostic des lignes sans fichier : YSL-36.
+- L'export de secours : YSL-36 (`docs/synchronisation.md`, « Alerte et export de
+  secours »). Le diagnostic des lignes sans fichier reste à faire.

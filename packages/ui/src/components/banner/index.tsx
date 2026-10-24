@@ -49,12 +49,15 @@ export type BannerProps = VariantProps<typeof bannerVariants> & {
   /** Slot overrides, e.g. a tighter `root` where the design is fixed. */
   classNames?: Partial<Record<keyof typeof bannerVariants.slots, string>>;
   className?: string;
+  /** Makes the whole card a button: the alert that opens the screen where one acts. */
+  onClick?: () => void;
 };
 
 /**
  * A tinted card with an icon, a bold line and an explanation: pending
  * changes while offline, a parcel waiting too long, a step to remember.
- * It informs; the action it calls for lives elsewhere on the screen.
+ * It informs; with `onClick` the whole card opens the screen where one
+ * acts, so it only holds inline elements (a button cannot hold blocks).
  */
 export function Banner({
   icon,
@@ -64,10 +67,18 @@ export function Banner({
   size,
   classNames,
   className,
+  onClick,
 }: BannerProps) {
   const s = bannerVariants({ tone, size });
+  const Root = onClick ? 'button' : 'div';
   return (
-    <div className={s.root({ class: [className, classNames?.root] })}>
+    <Root
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={s.root({
+        class: [className, classNames?.root, onClick && 'w-full text-left'],
+      })}
+    >
       <Icon
         name={icon}
         size={size === 'lg' ? 22 : 20}
@@ -75,14 +86,20 @@ export function Banner({
       />
       {/* Stretched so that, in a banner of fixed height, the text keeps to
           the top while the icon stays centred. */}
-      <div className="flex min-w-0 flex-1 flex-col self-stretch">
-        <p className={s.title({ class: classNames?.title })}>{title}</p>
+      <span className="flex min-w-0 flex-1 flex-col self-stretch">
+        <span className={s.title({ class: ['block', classNames?.title] })}>
+          {title}
+        </span>
         {description && (
-          <p className={s.description({ class: classNames?.description })}>
+          <span
+            className={s.description({
+              class: ['block', classNames?.description],
+            })}
+          >
             {description}
-          </p>
+          </span>
         )}
-      </div>
-    </div>
+      </span>
+    </Root>
   );
 }
