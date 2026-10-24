@@ -76,9 +76,14 @@ jobs:
       COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
       FORCE: ${{ inputs.force && 'true' || 'false' }}
+      ENVIRONMENT: ${{ needs.target.outputs.environment }}
     steps:
       - name: Déclenche le déploiement
         run: |
+          if [ -z "$RESOURCE_UUIDS" ]; then
+            echo "::error::COOLIFY_RESOURCE_UUIDS manque dans l'environnement GitHub $ENVIRONMENT"
+            exit 1
+          fi
           response=$(curl --silent --show-error --fail-with-body --request POST \
             --header "Authorization: Bearer $COOLIFY_TOKEN" \
             "$COOLIFY_URL/api/v1/deploy?uuid=$RESOURCE_UUIDS&force=$FORCE")
