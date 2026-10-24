@@ -13,6 +13,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
+import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
+import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -33,35 +36,64 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRemiseRoute = AuthenticatedRemiseRouteImport.update({
+  id: '/remise',
+  path: '/remise',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReglagesIndexRoute =
+  AuthenticatedReglagesIndexRouteImport.update({
+    id: '/reglages/',
+    path: '/reglages/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/remise': typeof AuthenticatedRemiseRoute
+  '/scan': typeof AuthenticatedScanRoute
+  '/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/remise': typeof AuthenticatedRemiseRoute
+  '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/reglages': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/_authenticated/remise': typeof AuthenticatedRemiseRoute
+  '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bienvenue' | '/connexion'
+  fullPaths:
+    '/' | '/bienvenue' | '/connexion' | '/remise' | '/scan' | '/reglages/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/bienvenue' | '/connexion' | '/'
+  to: '/bienvenue' | '/connexion' | '/remise' | '/scan' | '/' | '/reglages'
   id:
     | '__root__'
     | '/_authenticated'
     | '/bienvenue'
     | '/connexion'
+    | '/_authenticated/remise'
+    | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/reglages/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,15 +132,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/remise': {
+      id: '/_authenticated/remise'
+      path: '/remise'
+      fullPath: '/remise'
+      preLoaderRoute: typeof AuthenticatedRemiseRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/scan': {
+      id: '/_authenticated/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof AuthenticatedScanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reglages/': {
+      id: '/_authenticated/reglages/'
+      path: '/reglages'
+      fullPath: '/reglages/'
+      preLoaderRoute: typeof AuthenticatedReglagesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
+  AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
+  AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

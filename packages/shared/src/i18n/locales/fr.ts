@@ -33,6 +33,8 @@ export const fr = {
   'home.status.down': 'Indisponible',
   'home.status.unreachable': 'Injoignable',
   'home.status.retry': 'Actualiser',
+  'settings.group.app': 'App',
+  'settings.version': 'Version {{version}}',
   'landing.nav.home': '{{appName}}, accueil',
   'landing.nav.journey': 'Le parcours',
   'landing.nav.offline': 'Hors ligne',
