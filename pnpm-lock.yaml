@@ -756,6 +756,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@repo/contract':
+        specifier: workspace:*
+        version: link:../contract
       '@repo/shared':
         specifier: workspace:*
         version: link:../shared

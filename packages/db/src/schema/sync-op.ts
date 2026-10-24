@@ -1,3 +1,4 @@
+import { SYNCED_ENTITIES } from '@repo/contract/sync';
 import {
   index,
   pgTable,
@@ -10,20 +11,7 @@ import {
 import { organization } from '#schema/organization';
 import { oneOf } from '#schema/sync';
 
-export const SYNCED_ENTITIES = [
-  'directory_person',
-  'contact',
-  'sender',
-  'sender_account',
-  'batch',
-  'parcel',
-  'email_template',
-  'notification',
-  'pickup_code',
-  'handover',
-  'event',
-  'setting',
-] as const;
+export { SYNCED_ENTITIES };
 
 export const syncOp = pgTable(
   'sync_op',
