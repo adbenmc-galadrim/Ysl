@@ -58,7 +58,7 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 | E-mail | `mailto:`, un à la fois, compte personnel | Envoi par le serveur (file d'attente, reprises, statut), adresse du service, QR et PIN de retrait |
 | Remise | Bouton « Marquer comme remis » | QR ou PIN scanné, signature en secours, journal |
 | Relance | Aucune | Relances automatiques, puis alerte à l'agent |
-| Données | `localStorage`, un seul téléphone | Base locale (IndexedDB) et photos dans OPFS, synchronisées avec le serveur, plusieurs appareils dont un ordinateur |
+| Données | `localStorage`, un seul téléphone | Base locale (IndexedDB) synchronisée avec le serveur, photos dans OPFS restées sur l'iPhone, plusieurs appareils dont un ordinateur |
 | Annuaire | Écrit dans le code public | Import CSV par un admin (MVP), puis synchronisation Entra ID (cible) |
 | Conservation | Aucune règle | Durées fixées avec le DPO, purge automatique |
 
@@ -652,7 +652,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | Tests | Vitest, Playwright | `^4.1.10` ; `^1.57.0` | Identique ; 2 ou 3 tests e2e de base + banc d'essai d'extraction |
 | Qualité | ESLint 9 + typescript-eslint, Prettier | `^9.39.1`, `^8.66.0` ; `^3.7.4` | Identique (`--max-warnings 0`) |
 | CI | GitHub Actions (3 jobs parallèles) | `checkout@v5`, `pnpm/action-setup@v6`, `setup-node@v6` | Identique |
-| Hébergement | Conteneur Docker du serveur + Postgres + stockage objet compatible S3, **en UE** | — | Hébergeur à choisir (décision D1). En-têtes COOP/COEP obligatoires pour le WASM multithread |
+| Hébergement | Conteneurs Docker du serveur et de l'app + Postgres, sur Coolify, **en UE** (Hetzner) | — | Décision D1. Pas de stockage objet : le serveur ne garde que les comptes et leurs annuaires (D7), les photos restent sur l'iPhone (D8). En-têtes COOP/COEP sur toute l'app pour le WASM multithread |
 
 ### 7.2 Choix du hors ligne : PowerSync ou alternative légère
 
@@ -724,16 +724,13 @@ flowchart LR
         UI <--> DX
     end
     subgraph Serveur["Serveur (UE)"]
-        API[Hono + tRPC<br/>auth, sync, photos]
+        API[Hono + tRPC<br/>auth, sync]
         PG[(PostgreSQL 17)]
-        S3[(Stockage objet<br/>photos)]
         WK[Workers<br/>e-mails, relances, purge,<br/>annuaire, suivi]
         API <--> PG
-        API --> S3
         WK <--> PG
     end
     DX -- "sync.push / sync.pull" --> API
-    OP -- "envoi des photos (file séparée)" --> API
     WK --> MAIL[Mailer<br/>Scaleway TEM puis Graph sendMail]
     WK --> DIR[Annuaire<br/>CSV puis Entra ID delta]
     WK -.-> TRK[TrackingProvider<br/>agrégateur, La Poste]
@@ -752,7 +749,7 @@ Clés primaires : UUID v7 générés par le client. Chaque table synchronisée p
 | `batch` | id, agent_id, started_at, ended_at, nb_colis | Lot de réception |
 | `parcel` | id, batch_id, type (`colis`, `recommande`, `sans_suivi`), statut, transporteur, tracking, tracking_norm, destinataire (`person_id` ou `contact_id`), nom_lu, email_notification, service, sender_id, sender_libre, piece_n, piece_total, poids_kg, service_transporteur, reference, emplacement, notes, received_at, received_by, validated_at, delivered_at, delivered_by | `tracking_norm` est indexé (doublons) |
 | `extraction` | parcel_id, version (modèles et règles), champs (valeur, source, confiance) en JSON, codes décodés (texte brut), texte OCR, durées par étape, rotation, provenance (`device`, `cloud`) | Diagnostic et corpus ; purge courte |
-| `photo` | id, parcel_id, type (`etiquette`, `signature`), chemin OPFS, clé objet, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
+| `photo` | id, parcel_id, type (`etiquette`, `signature`), chemin OPFS, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
 | `sender` | id, nom_affiche, nom_norm, adresse?, nb_vues, last_seen | Expéditeurs déjà vus |
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
 | `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, send_at, statut (`en_file`, `envoye`, `delivre`, `echec`), tentatives, message_id du fournisseur, erreur | Outbox serveur ; `delivre` seulement si le fournisseur le remonte |
@@ -804,8 +801,7 @@ stateDiagram-v2
 ### 8.5 Stockage des photos
 
 - **Sur l'appareil** : la photo est écrite dans OPFS dès la capture. Une vignette ≤ 200 px est gardée pour l'affichage. La photo est ré-encodée en JPEG ~1 600 px, qualité 0,8, ce qui supprime les métadonnées EXIF et GPS.
-- **Envoi** : une file séparée de la synchronisation des données. `PUT /api/photos/:id` (route Hono), idempotent grâce à l'identifiant et à l'empreinte sha256. L'envoi reprend à chaque démarrage. Seul le **recadrage de l'étiquette** est envoyé. La photo locale est purgée 7 jours après l'envoi confirmé (proposition).
-- **Serveur** : stockage objet en UE, privé ; accès par des URL signées de courte durée, réservées aux agents connectés.
+- **Pas d'envoi** : les photos restent sur l'iPhone et ne partent jamais au serveur (D8) ; le serveur n'a donc pas de stockage objet.
 - **Volume** : 20 à 100 photos par jour à 250-400 Ko **[estimation]**, soit 5 à 40 Mo par jour avant purge.
 - **Signatures** : même circuit, avec une durée de conservation propre (§9).
 
@@ -815,7 +811,6 @@ stateDiagram-v2
 | --- | --- | --- |
 | `/api/auth/*` | Better Auth | Connexion, session, déconnexion ; Entra ID en cible |
 | `sync.pull`, `sync.push` | tRPC | Synchronisation (§8.4) |
-| `PUT /api/photos/:id`, `GET /api/photos/:id` (URL signée) | Hono | Photos |
 | `directory.importCsv`, `directory.list` | tRPC (admin) | Annuaire |
 | `notifications.preview` | tRPC | Aperçu des e-mails avant validation du lot |
 | `notifications.retry`, `notifications.sendNow` | tRPC | Actions sur la file |
@@ -871,7 +866,6 @@ Propositions à valider par le DPO (décision D7).
 
 | Donnée | Proposition | Fondement |
 | --- | --- | --- |
-| Photo d'étiquette (serveur) | 90 jours après la remise | Besoin de litige court ; proposition |
 | Photo locale | 7 jours après l'envoi confirmé | Réduire l'exposition en cas de perte de l'appareil |
 | Signature | 3 à 12 mois | Fourchette du rapport 05 |
 | Données d'extraction (texte OCR, codes bruts) | 30 jours, sauf échantillons versés au corpus avec accord | Diagnostic |
@@ -956,14 +950,14 @@ Chaque décision est accompagnée d'une recommandation.
 
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
-| D1 | Hébergeur du serveur et domaine de l'app | Utilisateur + DSI | Hébergeur en UE (conteneur, Postgres, stockage objet), domaine maîtrisé par l'entreprise ; plus de GitHub Pages personnel |
+| D1 | Hébergeur du serveur et domaine de l'app | Utilisateur + DSI | Hébergeur en UE (conteneurs, Postgres), domaine maîtrisé par l'entreprise ; plus de GitHub Pages personnel |
 | D2 | E-mail pour le MVP | Utilisateur | Scaleway TEM (UE) sur un domaine du projet, validé par le spike S5 ; `mailto:` en repli ; Graph en cible |
 | D3 | Base hors ligne | Utilisateur | Dexie + outbox (§7.2) ; PowerSync seulement en cas de multi-sites ou de forte concurrence |
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
 | D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou PIN par défaut, signature en secours et obligatoire pour les recommandés ; pas de photo du salarié |
 | D7 | Durées de conservation | DPO | Valider ou ajuster le tableau du §9.2 |
-| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Oui, recadrage seulement, sans EXIF, purge à 90 jours après remise (pour la consultation sur ordinateur et les litiges) |
+| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone, jamais envoyées au serveur (réponse du client du 22/10/2026) |
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |

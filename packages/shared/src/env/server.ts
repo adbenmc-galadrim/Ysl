@@ -20,6 +20,7 @@ export const env = createEnv({
       ? z.string().min(32)
       : z.string().min(32).default(DEV_AUTH_SECRET),
     BETTER_AUTH_URL: localOnly(z.url(), `http://localhost:${SERVER_PORT}`),
+    TRUST_PROXY: z.stringbool().default(false),
     LOG_LEVEL: z
       .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
       .default('info'),
