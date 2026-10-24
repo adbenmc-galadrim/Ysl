@@ -5,7 +5,7 @@ import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { pull } from '#features/sync/pull';
+import { EVENT_HORIZON_DAYS, pull } from '#features/sync/pull';
 import {
   asAnyDb,
   openTestDb,
@@ -28,8 +28,7 @@ afterAll(async () => {
   await client.close();
 });
 
-const ids = (output: PullOutput) =>
-  output.rows.map((change) => change.row.id);
+const ids = (output: PullOutput) => output.rows.map((change) => change.row.id);
 
 async function fullPull(cursor: PullOutput['cursor'] | null, limit = 50) {
   const pages: PullOutput[] = [];
@@ -199,5 +198,46 @@ describe('sync.pull', () => {
 
     expect(output.generation).not.toBe(before!.generation);
     expect(output.reset).toBe(true);
+  });
+  it('skips the old events on a pull from zero, never on a pull from a cursor', async () => {
+    await clearParcels();
+    await db.delete(schema.event);
+    const now = new Date('2026-10-24T10:00:00Z');
+    const day = 24 * 60 * 60 * 1000;
+    const eventRow = (at: Date) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      entity: 'parcel',
+      entityId: newId(),
+      type: 'recu',
+      at,
+    });
+    const old = eventRow(
+      new Date(now.getTime() - (EVENT_HORIZON_DAYS + 30) * day),
+    );
+    const recent = eventRow(new Date(now.getTime() - 2 * day));
+    await db.insert(schema.event).values([old, recent]);
+
+    const first = await pull(
+      sync,
+      ORGANIZATION_ID,
+      { cursor: null, page: null, limit: 50 },
+      now,
+    );
+    const older = eventRow(new Date(now.getTime() - 400 * day));
+    await db.insert(schema.event).values(older);
+    const second = await pull(
+      sync,
+      ORGANIZATION_ID,
+      {
+        cursor: { generation: await generation(), xid: first.cursor },
+        page: null,
+        limit: 50,
+      },
+      now,
+    );
+
+    expect(ids(first)).toEqual([recent.id]);
+    expect(ids(second)).toEqual([older.id]);
   });
 });
