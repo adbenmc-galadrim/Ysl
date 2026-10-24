@@ -69,6 +69,45 @@ le flux, et un bitmap de 48 Mpx pèserait ~190 Mo. Le JPEG stocké reste à 1 60
 « Au-dessus du routeur » (§6.4) : le routeur n'a pas d'onglets persistants (chaque écran
 est une route), le flux survit donc dans le singleton, pas dans un composant.
 
+## Lampe et guidage de prise de vue (YSL-31, F05 et F07)
+
+**La lampe** (`features/camera/torch.ts`, état `torch` de `cameraStream`) n'existe que si la
+piste la propose : `track.getCapabilities().torch` (`torchCapability` → `none` sinon, et le
+carré « Lampe » de la barre est **caché**, `ScanScreen.torch={false}`). Elle s'allume par
+`applyConstraints({ advanced: [{ torch: true }] })`, la forme qu'iOS accepte (rapport 04,
+WebKit 280970) ; le carré passe en blanc (`torchOn`, `aria-pressed`). L'état est relu dans
+`getSettings().torch` à chaque ouverture du flux et au retour au premier plan : iOS éteint
+la lampe quand l'app passe derrière, et le carré suit la piste plutôt que la mémoire de
+l'app. Un refus d'`applyConstraints` laisse l'état tel que la piste le dit.
+
+**Le cadre** est le `Viewfinder` de `CameraViewport` (quatre coins : blancs en recherche,
+jaunes pour un doublon, rouges quand rien n'a été lu), posé depuis YSL-23.
+
+**Flou et reflet** sont mesurés **sur la photo prise**, pas sur le flux : en rafale l'agent
+appuie sans regarder l'écran, et une analyse à chaque image coûterait pendant le décodage.
+Juste après `grabFrame` (ou la lecture du fichier importé), `frameQuality` dessine une
+vignette de 640 px (canvas 2D, quelques millisecondes) et `assessFrame` en tire deux
+mesures :
+
+- **netteté** : variance du laplacien de la luminance rapportée à la variance de la
+  luminance (la part du contraste portée par les bords, indépendante de la scène) ; sous
+  `BLUR_BELOW` (0,25), rien n'a de bord. Mesuré sur les photos d'iPhone du corpus, à
+  640 px : nettes, 0,59 à 1,1 ; floutées de σ = 4 px (sur 4 032, où zxing ne lit déjà plus
+  4 étiquettes sur 5), 0,17 à 0,31 ; σ = 8 px, 0,02 à 0,04. Un flou qui défait le lecteur
+  se voit donc sur la vignette, de justesse : la mesure ne sait pas nommer un flou léger ;
+- **reflet** : part des pixels saturés (luminance ≥ 250) dans la moitié centrale de
+  l'image ; au-delà de `GLARE_ABOVE` (12 %), une tache brûlée couvre l'étiquette. Sur les
+  photos d'iPhone du corpus, le papier reste sous 240 (l'exposition le garde) : seul un
+  reflet spéculaire sature. Un scan au papier blanc pur importé de la photothèque passe
+  cette barre à tort (le conseil « Reflet » s'affiche si le scan est aussi illisible).
+
+Le verdict (`glare` prime sur `blurry` : la tache brûlée aplatit aussi les bords autour
+d'elle) ne sert qu'**à l'encart « Aucun code lu »** (`unreadableReading`) : « Reflet sur
+l'étiquette. Inclinez légèrement le colis. » (« …ou éteignez la lampe. » si elle était
+allumée à l'appui : F07, déconseillée sur les étiquettes plastifiées), « Photo floue. Tenez
+l'iPhone immobile et rapprochez-vous. », sinon le conseil générique. Rien n'est stocké sur
+le brouillon ; le nom lu par l'OCR, s'il arrive, remplace l'encart comme avant.
+
 ## Le pipeline d'un appui (`routes/_authenticated/scan.tsx`)
 
 1. Une place dans la file de décodage (`DecodeQueue`, **2 en vol** au plus : un bitmap de
@@ -168,5 +207,6 @@ un lot »).
 
 Doublon dans le lot et en base (YSL-37, l'index `trackingNorm` des brouillons est posé),
 choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
-des codes 2D (YSL-25), torche et guidage (YSL-31), liste du lot et revue (YSL-33),
-synchronisation des lignes promues (YSL-28), bip et flash à la capture (§6.6).
+des codes 2D (YSL-25), liste du lot et revue (YSL-33), synchronisation des lignes
+promues (YSL-28), bip et flash à la capture (§6.6), capture automatique sur image nette
+(F06, lot L3).
