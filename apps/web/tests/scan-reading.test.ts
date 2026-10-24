@@ -1,3 +1,4 @@
+import { EOT, GS, RS } from '@repo/contract/codes';
 import { createTranslator } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import { toScanReading } from '#/features/scan/reading';
@@ -62,5 +63,81 @@ describe('toScanReading', () => {
   it('falls back to the raw format name', () => {
     const reading = toScanReading({ symbols: [symbol('Foo', 'x')] }, t);
     expect(reading).toMatchObject({ fields: [{ label: 'Foo' }] });
+  });
+});
+
+describe('toScanReading with a structured 2D code', () => {
+  const aztec = [
+    `[)>${RS}01`,
+    '02',
+    '0075007',
+    '250',
+    '801',
+    '118J0229907975',
+    'GEOP',
+    '123456',
+    '',
+    '',
+    '001/002',
+    '00.50KG',
+    'N',
+    '24 RUE DE L UNIVERSITE',
+    'PARIS',
+    '',
+    'CAMILLE MOREL',
+  ].join(GS);
+
+  it('shows carrier, tracking and recipient instead of the raw codes', () => {
+    const reading = toScanReading(
+      { symbols: [symbol('Code128', 'AB123'), symbol('Aztec', aztec)] },
+      t,
+    );
+    expect(reading).toEqual({
+      kind: 'read',
+      fields: [
+        { label: 'Transporteur', value: 'Colissimo' },
+        { label: 'Suivi', value: '8J02299079750', mono: true },
+        { label: 'Destinataire', value: 'CAMILLE MOREL' },
+        { label: 'Colis', value: '1/2' },
+        { label: 'Poids', value: '0,5 kg' },
+      ],
+    });
+  });
+
+  it('flags a tracking the carrier rules do not vouch for', () => {
+    const chrono = aztec
+      .replace('118J0229907975', 'HA915306631JB')
+      .replace('GEOP', 'XXXX');
+    const reading = toScanReading({ symbols: [symbol('Aztec', chrono)] }, t);
+    expect(reading.kind === 'read' && reading.fields.slice(0, 2)).toEqual([
+      { label: 'Transporteur', value: 'Chronopost' },
+      { label: 'Suivi', value: 'HA915306631JB', mono: true, status: 'warning' },
+    ]);
+  });
+
+  it('keeps the raw rendering when a structured code has no tracking', () => {
+    const maxicode = `[)>${RS}01${GS}9675007${GS}250${GS}004${GS}1Z99230623${GS}UPSN${GS}E6344W${RS}${EOT}`;
+    const reading = toScanReading(
+      { symbols: [symbol('MaxiCode', maxicode)] },
+      t,
+    );
+    expect(reading).toMatchObject({
+      fields: [
+        {
+          label: 'MaxiCode',
+          value: '[)>·01·9675007·250·004·1Z99230623·UPSN·E6344W··',
+        },
+      ],
+    });
+  });
+
+  it('keeps the raw rendering when no parser claims the symbol', () => {
+    const reading = toScanReading(
+      { symbols: [symbol('DataMatrix', 'A27610115123456789012')] },
+      t,
+    );
+    expect(reading).toMatchObject({
+      fields: [{ label: 'Data Matrix', value: 'A27610115123456789012' }],
+    });
   });
 });

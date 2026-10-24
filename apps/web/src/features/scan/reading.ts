@@ -1,7 +1,13 @@
 import type { ReadableFormat } from '@repo/barcode';
 import type { DecodeResult } from '@repo/barcode/worker';
-import type { TranslateFn, TranslationKey } from '@repo/shared/i18n';
+import {
+  DEFAULT_LOCALE,
+  type TranslateFn,
+  type TranslationKey,
+} from '@repo/shared/i18n';
 import type { ScanField, ScanReading } from '@repo/ui';
+import { carrierName } from '#/features/scan/carriers';
+import { type SelectedTracking, selectTracking } from '#/features/scan/extract';
 
 type FormatKey = Extract<TranslationKey, `scan.format.${string}`>;
 
@@ -35,6 +41,52 @@ function formatLabel(format: string, t: TranslateFn): string {
   return key ? t(key) : format;
 }
 
+function formatWeight(kg: number, t: TranslateFn): string {
+  return t('scan.field.weightKg', {
+    kg: kg.toLocaleString(DEFAULT_LOCALE, { maximumFractionDigits: 2 }),
+  });
+}
+
+/** The fields of the tracking kept for the label, the same one the batch stores. */
+function trackingFields(
+  { verdict, parsed }: SelectedTracking,
+  t: TranslateFn,
+): ScanField[] {
+  const carrier = verdict.carrier ?? parsed?.carrier ?? null;
+  const recipient = parsed?.recipient?.name ?? parsed?.recipient?.company;
+  const fields: ScanField[] = [
+    {
+      label: t('scan.field.carrier'),
+      value: carrier ? carrierName(carrier, t) : t('scan.field.unknown'),
+      ...(carrier ? {} : { status: 'warning' as const }),
+    },
+    {
+      label: t('scan.field.tracking'),
+      value: verdict.value,
+      mono: true,
+      ...(verdict.status === 'sure' ? {} : { status: 'warning' as const }),
+    },
+    {
+      label: t('scan.field.recipient'),
+      value: recipient ?? t('scan.field.missing'),
+      ...(recipient ? {} : { status: 'warning' as const }),
+    },
+  ];
+  if (parsed?.pieces) {
+    fields.push({
+      label: t('scan.field.pieces'),
+      value: `${parsed.pieces.index}/${parsed.pieces.total}`,
+    });
+  }
+  if (parsed?.weightKg !== undefined) {
+    fields.push({
+      label: t('scan.field.weight'),
+      value: formatWeight(parsed.weightKg, t),
+    });
+  }
+  return fields;
+}
+
 export function toScanReading(
   result: Pick<DecodeResult, 'symbols'>,
   t: TranslateFn,
@@ -46,6 +98,8 @@ export function toScanReading(
       hint: t('scan.noCode.hint'),
     };
   }
+  const selected = selectTracking(result.symbols);
+  if (selected) return { kind: 'read', fields: trackingFields(selected, t) };
   const fields: ScanField[] = result.symbols.map((symbol) => ({
     label: formatLabel(symbol.format, t),
     value: displayText(symbol.text),
