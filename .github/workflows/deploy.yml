@@ -1,5 +1,5 @@
-# Vérifie puis déploie sur Coolify (shinseo.fr) : main sur staging, prod sur la
-# production. Les ressources Coolify suivent la même branche et construisent les
+# Vérifie (`ci.yml`) puis déploie sur Coolify (shinseo.fr) : main sur staging, prod
+# sur la production. Les ressources Coolify suivent la même branche et construisent les
 # images sur le serveur ; leur auto-deploy doit rester coupé pour ne pas déployer
 # deux fois.
 #
@@ -49,17 +49,8 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
   checks:
-    name: Lint, types et tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm turbo run lint check-types test
+    name: Vérification
+    uses: ./.github/workflows/ci.yml
 
   deploy:
     name: Déploiement Coolify
