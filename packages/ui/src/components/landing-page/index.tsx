@@ -1,663 +1,288 @@
-import type { ReactNode } from 'react';
+import { useGSAP } from '@gsap/react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
+import { useRef, type RefObject } from 'react';
 
-import { AppBrand, AppMark } from '#components/app-mark';
-import { BrandedQr } from '#components/branded-qr';
-import { CheckDisc } from '#components/check-disc';
-import { Glow } from '#components/glow';
-import { MailIcon } from '#components/mail-icon';
-import { ParcelThumb, type KraftTone } from '#components/parcel-thumb';
+import { Hero } from '#components/landing-page/header';
+import { playScenes } from '#components/landing-page/scenes';
 import {
-  HomeScreenPhone,
-  ParcelListPhone,
-  SafariPhone,
-  ShareSheetPhone,
-} from '#components/phone-mockup';
-import { Plane } from '#components/plane';
-import { ScanScene } from '#components/scan-scene';
-import { QR_LOGO } from '#lib/qr';
-import { cn } from '#lib/tv';
+  Closing,
+  Footer,
+  Install,
+  Journey,
+  Offline,
+} from '#components/landing-page/sections';
 
 /*
- * The landing page: what someone sees in a Safari tab before installing
- * the app. One component for both layouts — the phone is the base, the
- * desktop page takes over from `xl` — so the copy exists once.
+ * The landing page: what someone sees in a browser tab before installing the
+ * app. One component for both layouts — the phone is the base, the desktop
+ * page takes over from `xl` — so the copy exists once. Every card plays the
+ * scene it describes, once, when it comes into view. Nothing is pinned and
+ * nothing hijacks the scroll: the page scrolls natively, ScrollTrigger only
+ * reads it.
  *
- * Measures come from Penpot page 10, boards « I · Blanc fondu » (390 px)
- * and « I · Blanc fondu — ordinateur » (1440 px).
+ * Three tiers through gsap.matchMedia(): desktop, phone, and reduced motion,
+ * where nothing is set up at all and the page is its finished picture.
  */
 
-/**
- * Centres the content: 20 px gutters on the phone, 1200 px on desktop. In
- * between (tablets, small laptops) the phone layout stays a column: the
- * desktop grid needs its 1200 px.
- */
-const CONTAINER = 'mx-auto w-full max-w-[480px] px-5 xl:max-w-[1240px]';
+gsap.registerPlugin(useGSAP, ScrollTrigger, SplitText);
 
-const EYEBROW =
-  'text-[12px] leading-[15px] font-semibold tracking-[1.6px] uppercase xl:text-13 xl:leading-4 xl:tracking-[2px]';
-
-/** A QR code with the app mark in its centre. */
-function AppQr({
-  value,
-  size,
-  radius,
-  className,
-}: {
-  value: string;
-  size: number;
-  radius: number;
-  className?: string;
-}) {
-  return (
-    <BrandedQr
-      value={value}
-      size={size}
-      radius={radius}
-      logo={<AppMark size={size * QR_LOGO} edge="halo" />}
-      className={className}
-    />
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Hero                                                                       */
-/* -------------------------------------------------------------------------- */
-
-function Nav({ copy, appName }: { copy: LandingCopy['nav']; appName: string }) {
-  const links = [
-    { href: '#parcours', label: copy.journey },
-    { href: '#hors-ligne', label: copy.offline },
-    { href: '#installation', label: copy.install },
-  ];
-  return (
-    <div className="relative z-20 xl:bg-white/86">
-      <nav
-        className={cn(
-          CONTAINER,
-          'relative flex items-center justify-between pt-[17px] xl:h-[72px] xl:pt-0',
-        )}
-      >
-        <a href="#top" aria-label={copy.home}>
-          <AppBrand size="nav" name={appName} />
-        </a>
-        <ul className="absolute left-[460px] hidden gap-11 xl:flex">
-          {links.map((link) => (
-            <li key={link.href}>
-              <a href={link.href} className="text-15 leading-[18px] text-site-muted">
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-        <a
-          href="#installation"
-          className="flex h-8 w-[88px] items-center justify-center rounded-full bg-black/8 text-14 leading-[17px] font-semibold text-site-ink xl:h-9 xl:w-[100px] xl:bg-site-ink xl:text-15 xl:leading-[18px] xl:text-white"
-        >
-          {copy.cta}
-        </a>
-      </nav>
-      <span aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-px bg-black/8 xl:block" />
-    </div>
-  );
-}
-
-function Perks({ perks }: { perks: LandingCopy['hero']['perks'] }) {
-  return (
-    <ul className="mt-7 flex h-14 items-center rounded-[18px] bg-site-fill ring-1 ring-black/10 ring-inset xl:mt-10 xl:h-5 xl:rounded-none xl:bg-transparent xl:ring-0">
-      {perks.map((perk, i) => (
-        <li key={perk} className="contents">
-          {i > 0 && (
-            <span aria-hidden="true" className="h-6 w-px shrink-0 bg-black/10 xl:mx-6 xl:h-5" />
-          )}
-          <span className="flex-1 text-center text-13 leading-4 font-semibold xl:flex-none xl:text-16 xl:leading-5">
-            {perk}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Hero({ copy, appName, url }: { copy: LandingCopy; appName: string; url: string }) {
-  const hero = copy.hero;
-  return (
-    <header id="top" className="relative">
-      <ScanScene size="phone" className="absolute inset-x-0 top-0 -z-10 xl:hidden" />
-      <Nav copy={copy.nav} appName={appName} />
-      <div className={cn(CONTAINER, 'relative xl:h-[808px]')}>
-        <Glow x={-160} y={88} w={420} h={300} alpha={0.06} sigma={120} className="hidden text-site-blue xl:block" />
-        <Glow x={740} y={-32} w={520} h={360} alpha={0.22} sigma={120} className="hidden text-kraft-light xl:block" />
-        <div className="mt-[567px] xl:mt-0 xl:pt-[104px]">
-          <p className={cn(EYEBROW, 'text-site-green-ink')}>{hero.eyebrow}</p>
-          <h1 className="mt-[9px] w-[350px] text-[44px] leading-[44px] font-bold tracking-[-1.4px] xl:mt-3.5 xl:w-[560px] xl:text-[76px] xl:leading-[74.5px] xl:tracking-[-3px]">
-            {hero.titleLead}
-            <br className="max-xl:hidden" /> {hero.titleTail}
-          </h1>
-          <p className="mt-2.5 text-17 leading-[25px] text-site-muted xl:mt-[21px] xl:text-20 xl:leading-[30px]">
-            {hero.lineOne}
-            <br />
-            {hero.lineTwo}
-          </p>
-          <a
-            href="#installation"
-            className="mt-8 flex h-14 items-center justify-center rounded-full bg-site-ink text-17 leading-[21px] font-semibold text-white xl:hidden"
-          >
-            {hero.install}
-          </a>
-          <a
-            href="#parcours"
-            className="mt-4 block text-center text-15 leading-[18px] font-medium text-site-ink/70 xl:hidden"
-          >
-            {hero.howItWorks}
-          </a>
-          <div className="mt-10 hidden h-40 w-[500px] gap-6 rounded-[24px] bg-white/80 p-5 ring-1 ring-black/6 ring-inset xl:flex">
-            <AppQr value={url} size={120} radius={14} />
-            <div className="pt-3">
-              <p className="text-[19px] leading-[23px] font-semibold">
-                {hero.scanTitle}
-              </p>
-              <p className="mt-[7px] text-15 leading-[22px] text-site-muted">
-                {hero.scanText}
-              </p>
-              <a
-                href="#installation"
-                className="mt-8 block text-15 leading-[18px] font-medium text-site-blue-ink"
-                aria-label={hero.scanLinkLabel}
-              >
-                {hero.scanLink}
-              </a>
-            </div>
-          </div>
-          <Perks perks={hero.perks} />
-        </div>
-        <div className="absolute top-12 left-[640px] hidden overflow-hidden rounded-[32px] xl:block">
-          <ScanScene size="desk" />
-          <span aria-hidden="true" className="absolute inset-0 rounded-[32px] ring-1 ring-black/10 ring-inset" />
-        </div>
-        {/* Clipped where the next section starts, so the phone's shadow does
-            not spill under the heading below the fade. */}
-        <div className="absolute top-[268px] left-[500px] hidden h-[540px] w-[350px] overflow-hidden xl:block">
-          <ParcelListPhone className="absolute top-[60px] left-[60px]" />
-        </div>
-        <span
-          aria-hidden="true"
-          className="absolute top-[648px] left-[470px] hidden h-40 w-[420px] bg-linear-to-b from-site-wash-3/0 via-site-wash-3 via-45% to-site-wash-3 xl:block"
-        />
-      </div>
-    </header>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* The journey: received, notified, handed over                               */
-/* -------------------------------------------------------------------------- */
-
-const CARD =
-  'rounded-[22px] bg-white shadow-site-card ring-1 ring-black/6 ring-inset xl:rounded-[24px]';
-
-const PHOTO_CHECK = 'M3.5,7L6,9.5L10.5,4.5';
-
-function BatchPhoto({ tone, read }: { tone: KraftTone; read: boolean }) {
-  return (
-    <span
-      className={cn(
-        'relative size-[60px] shrink-0 rounded-[12px] xl:size-[76px] xl:rounded-[14px]',
-        tone === 'kraft' && 'bg-kraft',
-        tone === 'mid' && 'bg-kraft-mid',
-        tone === 'light' && 'bg-kraft-light',
-      )}
-    >
-      <span className="absolute top-4 left-3.5 h-6 w-8 rounded-[2px] bg-paper xl:top-5 xl:left-[18px] xl:h-[30px] xl:w-10" />
-      <span
-        className={cn(
-          'absolute top-7 left-[18px] h-2 w-6 xl:top-[35px] xl:left-[23px] xl:h-2.5 xl:w-[30px]',
-          read ? 'bg-label-ink-2' : 'bg-site-fill-3',
-        )}
-      />
-      <CheckDisc
-        size={14}
-        d={PHOTO_CHECK}
-        stroke={1.6}
-        className="absolute top-[42px] left-[42px] xl:top-[54px] xl:left-[54px] xl:size-4"
-      />
-    </span>
-  );
-}
-
-function BatchCard({ copy }: { copy: LandingCopy['journey']['batch'] }) {
-  return (
-    <div className={cn(CARD, 'px-[18px] pt-[18px] pb-[15px] xl:px-6 xl:pt-6 xl:pb-[25px]')}>
-      <div className="flex justify-between text-13 leading-4 xl:text-15 xl:leading-[18px]">
-        <span className="font-semibold">{copy.title}</span>
-        <span className="text-site-subtle">{copy.progress}</span>
-      </div>
-      <div className="mt-2.5 h-1 rounded-[2px] bg-site-fill-2 xl:mt-3">
-        <div className="h-full w-1/4 rounded-[2px] bg-site-blue" />
-      </div>
-      <div aria-hidden="true" className="mt-4 flex gap-2.5 xl:mt-5">
-        <BatchPhoto tone="kraft" read />
-        <BatchPhoto tone="mid" read={false} />
-        <BatchPhoto tone="light" read />
-        <span className="flex size-[60px] shrink-0 items-center justify-center rounded-[12px] bg-site-fill xl:size-[76px] xl:rounded-[14px]">
-          <span className="size-4 rounded-full ring-2 ring-faint ring-inset xl:size-5" />
-        </span>
-      </div>
-      <p className="mt-3.5 text-[12px] leading-[15px] text-site-subtle xl:mt-6 xl:text-14 xl:leading-[17px]">
-        {copy.names}
-      </p>
-    </div>
-  );
-}
-
-function NotificationCard({ copy }: { copy: LandingCopy['journey']['notification'] }) {
-  return (
-    <div className="xl:rounded-[24px] xl:bg-white xl:px-6 xl:pt-6 xl:pb-[25px] xl:shadow-site-card xl:ring-1 xl:ring-black/6 xl:ring-inset">
-      <p className="hidden text-13 leading-4 text-site-subtle xl:block">{copy.device}</p>
-      <div className="flex h-[92px] gap-3 rounded-[22px] bg-white pt-[15px] pr-3.5 pl-3.5 shadow-site-card ring-1 ring-black/6 ring-inset xl:-mx-1 xl:mt-4 xl:h-[100px] xl:gap-3.5 xl:bg-site-fill-2/80 xl:pt-4 xl:shadow-none xl:ring-0">
-        <span className="mt-px xl:mt-0.5">
-          <MailIcon size={38} className="xl:hidden" />
-          <MailIcon size={40} className="hidden xl:flex" />
-        </span>
-        <div className="flex-1">
-          <div className="flex items-start justify-between">
-            <span className="text-14 leading-[17px] font-semibold xl:text-15 xl:leading-[18px]">
-              {copy.sender}
-            </span>
-            <span className="mt-px text-[12px] leading-[15px] text-site-muted">{copy.time}</span>
-          </div>
-          <p className="mt-[3px] text-14 leading-[17px] font-medium xl:mt-1">
-            {copy.title}
-          </p>
-          <p className="mt-[3px] text-13 leading-4 text-site-ink-2 xl:mt-[5px]">
-            {copy.body}
-          </p>
-        </div>
-      </div>
-      <p className="mt-[22px] hidden text-14 leading-[17px] text-site-subtle xl:block">
-        {copy.footnote}
-      </p>
-    </div>
-  );
-}
-
-const PICKUP_CODE = '4821';
-
-function HandoverCard({ copy }: { copy: LandingCopy['journey']['handover'] }) {
-  return (
-    <div className={cn(CARD, 'flex gap-4 p-4 xl:flex-wrap xl:gap-6 xl:p-6 xl:pb-[25px]')}>
-      <BrandedQr value={PICKUP_CODE} size={118} radius={14} className="xl:hidden" />
-      <AppQr value={PICKUP_CODE} size={130} radius={16} className="hidden xl:block" />
-      <div>
-        <p className="mt-1.5 text-[11px] leading-[14px] font-semibold tracking-[1.2px] text-site-subtle xl:mt-2 xl:tracking-[1.4px]">
-          {copy.codeLabel}
-        </p>
-        <p className="mt-1 font-mono text-34 leading-[41px] font-semibold tracking-[3px] xl:mt-1.5 xl:text-[40px] xl:leading-[48px] xl:tracking-[4px]">
-          {PICKUP_CODE}
-        </p>
-        <p className="mt-[17px] flex h-[30px] w-[140px] items-center gap-1.5 rounded-[15px] bg-ios-green/16 pl-3 text-13 leading-4 font-semibold text-site-green-ink xl:mt-[18px] xl:h-8 xl:w-[150px] xl:gap-2 xl:rounded-[16px] xl:text-14 xl:leading-[17px]">
-          <span className="size-2.5 rounded-full bg-ios-green" />
-          {copy.handedAt}
-        </p>
-      </div>
-      <p className="hidden w-full text-14 leading-[17px] text-site-subtle xl:block">
-        {copy.signature}
-      </p>
-    </div>
-  );
-}
-
-type Step = {
-  label: string;
-  title: string;
-  text: string;
-  dot: string;
-  ink: string;
-  rail?: string;
-  card: ReactNode;
+const MEDIA = {
+  phone: '(max-width: 1279px) and (prefers-reduced-motion: no-preference)',
+  desk: '(min-width: 1280px) and (prefers-reduced-motion: no-preference)',
 };
 
-function journeySteps(copy: LandingCopy['journey']): Step[] {
-  return [
-    {
-      ...copy.received,
-      dot: 'bg-site-blue',
-      ink: 'text-site-blue-ink',
-      rail: 'from-ios-blue to-ios-orange',
-      card: <BatchCard copy={copy.batch} />,
+const qa = (root: HTMLElement, selector: string) =>
+  gsap.utils.toArray<HTMLElement>(selector, root);
+
+/** Headings and lead paragraphs rise line by line out of a mask. */
+function splitReveals(root: HTMLElement) {
+  qa(root, '[data-split]').forEach((el) => {
+    if (el.offsetParent === null) return;
+    SplitText.create(el, {
+      type: 'lines',
+      mask: 'lines',
+      autoSplit: true,
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises -- SplitText wants the tween back to re-run it on resplit
+      onSplit: (self) =>
+        gsap.from(self.lines, {
+          yPercent: 115,
+          duration: 0.9,
+          stagger: 0.09,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 92%',
+            toggleActions: 'play none none none',
+          },
+        }),
+    });
+  });
+}
+
+/**
+ * The journey: a rail is drawn by the scroll and each step lights as the rail
+ * reaches it. On desktop the three columns share one scrubbed timeline; on a
+ * phone each step lights (and un-lights, going back up) on its own and its
+ * stretch of rail is drawn while it crosses the screen.
+ */
+function journey(root: HTMLElement, desk: boolean) {
+  const steps = qa(root, '[data-step]');
+  const part = (li: HTMLElement, s: string) => li.querySelector<HTMLElement>(s);
+
+  if (desk) {
+    steps.forEach((li) => {
+      gsap.set(part(li, '[data-dot]'), { scale: 0.6, opacity: 0.35 });
+      gsap.set(part(li, '[data-body]'), { opacity: 0.3, y: 34 });
+      gsap.set(part(li, '[data-rail]'), { scaleX: 0 });
+    });
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '[data-steps]',
+        start: 'top 74%',
+        end: 'top 22%',
+        scrub: 0.6,
+      },
+    });
+    steps.forEach((li, i) => {
+      const at = i * 1.1;
+      tl.to(
+        part(li, '[data-dot]'),
+        { scale: 1, opacity: 1, duration: 0.35, ease: 'back.out(2.4)' },
+        at,
+      )
+        .to(
+          part(li, '[data-body]'),
+          { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+          at,
+        )
+        .set(part(li, '[data-ping]'), { opacity: 0.5, scale: 0.7 }, at + 0.1)
+        .to(
+          part(li, '[data-ping]'),
+          { opacity: 0, scale: 2, duration: 0.7, ease: 'power1.out' },
+          at + 0.1,
+        )
+        .to(
+          part(li, '[data-rail]'),
+          { scaleX: 1, duration: 0.9, ease: 'none' },
+          at + 0.2,
+        );
+    });
+    return;
+  }
+
+  steps.forEach((li) => {
+    const dot = part(li, '[data-dot]');
+    const body = part(li, '[data-body]');
+    const ping = part(li, '[data-ping]');
+    const rail = part(li, '[data-rail]');
+    gsap.set(dot, { scale: 0.5, opacity: 0.35 });
+    gsap.set(body, { opacity: 0.3, y: 26 });
+    gsap
+      .timeline({
+        scrollTrigger: {
+          trigger: li,
+          start: 'top 80%',
+          toggleActions: 'play none none reverse',
+        },
+      })
+      .to(
+        dot,
+        { scale: 1, opacity: 1, duration: 0.45, ease: 'back.out(2.4)' },
+        0,
+      )
+      .to(body, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.05)
+      .set(ping, { opacity: 0.5, scale: 0.7 }, 0.1)
+      .to(
+        ping,
+        { opacity: 0, scale: 2, duration: 0.7, ease: 'power1.out' },
+        0.1,
+      );
+    if (rail) {
+      gsap.fromTo(
+        rail,
+        { scaleY: 0 },
+        {
+          scaleY: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: li,
+            start: 'top 76%',
+            end: 'bottom+=58 66%',
+            scrub: 0.3,
+          },
+        },
+      );
+    }
+  });
+}
+
+/** Sections that come in once: the offline card, the install cards, the closing button. */
+function reveals(root: HTMLElement, desk: boolean) {
+  const once = (trigger: string, start: string) => ({
+    trigger,
+    start,
+    toggleActions: 'play none none none',
+  });
+  gsap.from('[data-offline]', {
+    y: 40,
+    opacity: 0,
+    duration: 0.9,
+    ease: 'power3.out',
+    scrollTrigger: once('[data-offline]', 'top 90%'),
+  });
+  gsap.from(qa(root, '[data-gallery] > [data-card]'), {
+    opacity: 0,
+    x: desk ? 60 : 36,
+    duration: 0.8,
+    stagger: 0.12,
+    ease: 'power3.out',
+    scrollTrigger: once('[data-gallery]', 'top 86%'),
+  });
+  if (desk) {
+    gsap.to('[data-sheen]', {
+      x: 1600,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '[data-closing]',
+        start: 'top 90%',
+        end: 'bottom 30%',
+        scrub: 0.5,
+      },
+    });
+  } else {
+    gsap.from('[data-closing-cta]', {
+      opacity: 0,
+      y: 24,
+      duration: 0.7,
+      ease: 'power3.out',
+      scrollTrigger: once('[data-closing-cta]', 'top 94%'),
+    });
+  }
+}
+
+const SCROLL_KEY = 'landing-page-scroll';
+
+/**
+ * ScrollTrigger measures the page by jumping to the top and back, which the
+ * site's `scroll-behavior: smooth` turns into a slide that cancels the
+ * router's own scroll restoration. So while this page lives scrolling is
+ * instant (anchor links keep their glide, asked for explicitly) and the
+ * position is restored here, from where the page was left.
+ */
+function useStableScroll(root: RefObject<HTMLDivElement | null>) {
+  useGSAP(
+    () => {
+      const el = root.current;
+      if (!el) return;
+      const html = document.documentElement;
+      const previous = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+
+      const save = () =>
+        sessionStorage.setItem(SCROLL_KEY, String(Math.round(window.scrollY)));
+      const onClick = (e: MouseEvent) => {
+        const link = (e.target as Element | null)?.closest<HTMLAnchorElement>(
+          'a[href^="#"]',
+        );
+        if (!link) return;
+        const target =
+          link.hash === '#top' || link.hash === '#'
+            ? document.body
+            : document.querySelector(link.hash);
+        if (!target) return;
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', link.hash);
+      };
+      window.addEventListener('pagehide', save);
+      el.addEventListener('click', onClick);
+
+      const saved = Number(sessionStorage.getItem(SCROLL_KEY) ?? 0);
+      if (saved > 0) window.scrollTo({ top: saved, behavior: 'instant' });
+
+      return () => {
+        window.removeEventListener('pagehide', save);
+        el.removeEventListener('click', onClick);
+        sessionStorage.removeItem(SCROLL_KEY);
+        html.style.scrollBehavior = previous;
+      };
     },
-    {
-      ...copy.notified,
-      dot: 'bg-ios-orange-light',
-      ink: 'text-site-orange-ink',
-      rail: 'from-ios-orange to-ios-green-dark',
-      card: <NotificationCard copy={copy.notification} />,
+    { scope: root },
+  );
+}
+
+function useNarrative(root: RefObject<HTMLDivElement | null>) {
+  useGSAP(
+    () => {
+      const el = root.current;
+      if (!el) return;
+      ScrollTrigger.config({ ignoreMobileResize: true });
+      const mm = gsap.matchMedia();
+
+      mm.add(MEDIA, (ctx) => {
+        const { phone, desk } = ctx.conditions as Record<
+          string,
+          boolean | undefined
+        >;
+        if (!phone && !desk) return; // reduced motion: the page stays as drawn
+        const wide = Boolean(desk);
+        splitReveals(el);
+        journey(el, wide);
+        reveals(el, wide);
+        return playScenes(el, wide);
+      });
+
+      const refresh = () => ScrollTrigger.refresh();
+      void document.fonts?.ready.then(refresh);
+      window.addEventListener('load', refresh);
+      return () => {
+        window.removeEventListener('load', refresh);
+        mm.revert();
+      };
     },
-    {
-      ...copy.handedOver,
-      dot: 'bg-ios-green',
-      ink: 'text-site-green-ink',
-      card: <HandoverCard copy={copy.handover} />,
-    },
-  ];
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  text,
-  titleClass,
-  textClass,
-}: {
-  eyebrow: string;
-  title: string;
-  text?: string;
-  titleClass: string;
-  textClass?: string;
-}) {
-  return (
-    <div className="xl:flex xl:items-end xl:justify-between">
-      <div>
-        <p className={cn(EYEBROW, 'text-site-subtle')}>{eyebrow}</p>
-        <h2 className={cn('font-bold', titleClass)}>{title}</h2>
-      </div>
-      {text && (
-        <p className={cn('text-15 leading-[23px] text-site-muted xl:mb-1.5 xl:w-[480px] xl:text-18 xl:leading-[27px]', textClass)}>
-          {text}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function Journey({ copy }: { copy: LandingCopy['journey'] }) {
-  return (
-    <section id="parcours" className="relative mt-12 xl:mt-0">
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 -top-[46px] -z-10 h-[1346px] bg-[linear-gradient(to_bottom,var(--color-white),var(--color-site-fill)_14%,var(--color-site-fill)_86%,var(--color-white))] xl:top-0 xl:h-[1024px]"
-      />
-      <Glow x={230} y={44} w={260} h={220} alpha={0.1} sigma={90} className="text-site-blue xl:hidden" />
-      <div className={cn(CONTAINER, 'relative')}>
-        <Glow x={-20} y={220} w={380} h={260} alpha={0.08} sigma={110} className="hidden text-site-blue xl:block" />
-        <Glow x={430} y={220} w={380} h={260} alpha={0.07} sigma={110} className="hidden text-ios-orange-light xl:block" />
-        <Glow x={860} y={220} w={380} h={260} alpha={0.07} sigma={110} className="hidden text-ios-green xl:block" />
-        <SectionHeading
-          eyebrow={copy.eyebrow}
-          title={copy.title}
-          text={copy.text}
-          titleClass="mt-[9px] w-[350px] text-34 leading-9 tracking-[-1px] xl:mt-3 xl:w-auto xl:text-[52px] xl:leading-[63px] xl:tracking-[-2px]"
-          textClass="hidden xl:block"
-        />
-        <ol className="mt-[42px] flex flex-col gap-[58px] xl:mt-[59px] xl:grid xl:grid-cols-3 xl:gap-6">
-          {journeySteps(copy).map((step) => (
-            <li key={step.label} className="relative pl-11 xl:pl-0">
-              {step.rail && (
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'absolute top-2 left-[15px] h-[calc(100%+58px)] w-0.5 bg-linear-to-b xl:top-[13px] xl:left-3.5 xl:h-0.5 xl:w-[calc(100%+24px)] xl:bg-linear-to-r',
-                    step.rail,
-                  )}
-                />
-              )}
-              <span
-                aria-hidden="true"
-                className="absolute -top-1.5 left-0.5 z-10 flex size-7 items-center justify-center rounded-full xl:relative xl:top-0 xl:left-0"
-              >
-                <span className={cn('absolute inset-0 rounded-full opacity-20', step.dot)} />
-                <span className={cn('relative size-3 rounded-full', step.dot)} />
-              </span>
-              <p
-                className={cn(
-                  'text-[12px] leading-[15px] font-bold tracking-[1.6px] whitespace-pre uppercase xl:mt-6 xl:text-13 xl:leading-4 xl:tracking-[1.8px]',
-                  step.ink,
-                )}
-              >
-                {step.label}
-              </p>
-              <h3 className="mt-[7px] text-26 leading-[29px] font-bold tracking-[-0.6px] xl:mt-2.5 xl:text-28 xl:leading-[31px] xl:tracking-[-0.8px]">
-                {step.title}
-              </h3>
-              <p className="mt-2 text-15 leading-[23px] text-site-muted xl:mt-2.5 xl:text-16 xl:leading-6">
-                {step.text}
-              </p>
-              <div className="mt-6 xl:mt-7">{step.card}</div>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Offline                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function OfflineQueue({ copy }: { copy: LandingCopy['offline'] }) {
-  const queue = [
-    { ...copy.queue[0], tone: 'deep' },
-    { ...copy.queue[1], tone: 'dark' },
-    { ...copy.queue[2], tone: 'light' },
-  ] as const;
-  return (
-    <div
-      aria-hidden="true"
-      className="-mt-4 hidden h-60 w-[500px] shrink-0 rounded-[22px] bg-site-fill px-5 xl:block"
-    >
-      <p className="flex h-[52px] items-center gap-3 text-15 leading-[18px] font-semibold">
-        <Plane size={16} className="fill-ios-orange-light" />
-        {copy.queueTitle}
-      </p>
-      <ul className="mt-3 flex flex-col gap-1">
-        {queue.map((p, i) => (
-          <li key={p.name} className="relative flex h-[52px] gap-3.5 pt-1.5">
-            <ParcelThumb size={40} tone={p.tone} />
-            <div className="flex-1 pt-px">
-              <p className="text-15 leading-[18px] font-semibold">{p.name}</p>
-              <p className="mt-[3px] text-13 leading-4 text-site-subtle">{p.meta}</p>
-            </div>
-            <span className="mt-[7px] flex h-[26px] w-[108px] items-center justify-center rounded-[13px] bg-ios-orange-light/16 text-13 leading-4 font-semibold text-site-orange-ink">
-              {copy.pending}
-            </span>
-            {i < queue.length - 1 && (
-              <span className="absolute right-0 bottom-0 left-[54px] h-px bg-black/8" />
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function OfflineChips({ copy }: { copy: LandingCopy['offline'] }) {
-  return (
-    <div aria-hidden="true" className="mt-5 flex items-center gap-2 xl:hidden">
-      <span className="flex h-10 w-[140px] items-center gap-2 rounded-[12px] bg-ios-orange-light/14 pl-3 text-14 leading-[17px] font-semibold text-site-orange-ink">
-        <span className="size-2.5 rounded-full bg-ios-orange-light" />
-        {copy.chipPending}
-      </span>
-      <svg
-        viewBox="0 0 14 10"
-        width={14}
-        height={10}
-        className="overflow-visible fill-none stroke-faint"
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M0,5L14,5M9,0L14,5L9,10" />
-      </svg>
-      <span className="flex h-10 w-[140px] items-center gap-2 rounded-[12px] bg-ios-green/14 pl-3 text-14 leading-[17px] font-semibold text-site-green-ink">
-        <span className="size-2.5 rounded-full bg-ios-green" />
-        {copy.chipSynced}
-      </span>
-    </div>
-  );
-}
-
-function Offline({ copy }: { copy: LandingCopy['offline'] }) {
-  return (
-    <section id="hors-ligne" className={cn(CONTAINER, 'mt-12 xl:mt-16')}>
-      <div className="rounded-[24px] bg-white px-5 pt-[22px] pb-[22px] shadow-site-card ring-1 ring-black/6 ring-inset xl:flex xl:h-80 xl:justify-between xl:rounded-[32px] xl:pt-14 xl:pr-10 xl:pl-14">
-        <div>
-          <div className="flex gap-4 xl:flex-col xl:gap-0">
-            <span className="flex size-11 shrink-0 items-start justify-center rounded-full bg-site-purple pt-2 xl:size-[52px] xl:pt-[9px]">
-              <Plane size={24} className="fill-white xl:hidden" />
-              <Plane size={28} className="hidden fill-white xl:block" />
-            </span>
-            <div className="mt-1 xl:mt-[26px]">
-              <p className="text-[12px] leading-[15px] font-bold tracking-[1.6px] text-site-purple-ink uppercase xl:text-13 xl:leading-4 xl:tracking-[1.8px]">
-                {copy.eyebrow}
-              </p>
-              <h2 className="mt-[3px] text-18 leading-[22px] font-bold xl:mt-2.5 xl:text-[40px] xl:leading-[48px] xl:tracking-[-1.4px]">
-                {copy.title}
-              </h2>
-            </div>
-          </div>
-          <p className="mt-5 text-15 leading-[23px] text-site-muted xl:mt-2 xl:text-17 xl:leading-[26px]">
-            {copy.text}
-          </p>
-          <OfflineChips copy={copy} />
-        </div>
-        <OfflineQueue copy={copy} />
-      </div>
-    </section>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Install                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function GestureCard({ index, title, phone }: { index: number; title: string; phone: ReactNode }) {
-  return (
-    <li className="flex h-[360px] w-[274px] shrink-0 snap-start flex-col items-center rounded-[26px] bg-site-fill pt-6 ring-1 ring-black/8 ring-inset">
-      {phone}
-      <p className="mt-[18px] flex w-full items-center gap-2.5 pl-[22px] text-16 leading-5 font-semibold">
-        <span className="flex size-[26px] items-center justify-center rounded-full bg-site-ink text-13 leading-4 font-bold text-white">
-          {index}
-        </span>
-        {title}
-      </p>
-    </li>
-  );
-}
-
-function Install({
-  copy,
-  appName,
-  url,
-  host,
-}: {
-  copy: LandingCopy['install'];
-  appName: string;
-  url: string;
-  host: string;
-}) {
-  const gestures = [
-    { title: copy.gestures[0], phone: <SafariPhone /> },
-    { title: copy.gestures[1], phone: <ShareSheetPhone /> },
-    { title: copy.gestures[2], phone: <HomeScreenPhone appName={appName} /> },
-  ];
-  return (
-    <section id="installation" className="relative mt-12 xl:mt-20">
-      <Glow x={-120} y={-27} w={320} h={260} alpha={0.16} sigma={100} className="text-kraft xl:hidden" />
-      <div className={CONTAINER}>
-        <SectionHeading
-          eyebrow={copy.eyebrow}
-          title={copy.title}
-          text={copy.text}
-          titleClass="mt-[9px] text-34 leading-9 tracking-[-1px] xl:mt-3 xl:text-[52px] xl:leading-[55px] xl:tracking-[-2px]"
-          textClass="mt-2.5 xl:mt-0"
-        />
-      </div>
-      <div className="relative mt-8 xl:mt-12">
-        <ol className="flex snap-x snap-mandatory scroll-px-5 gap-3 overflow-x-auto px-5 [scrollbar-width:none] xl:mx-auto xl:max-w-[1240px] xl:justify-between xl:gap-0 xl:overflow-visible">
-          <li className="hidden h-[360px] w-[274px] shrink-0 flex-col items-center rounded-[26px] bg-white pt-8 shadow-site-raised ring-1 ring-black/8 ring-inset xl:flex">
-            <AppQr value={url} size={200} radius={0} />
-            <p className="mt-[30px] text-18 leading-[22px] font-bold">{copy.scanTitle}</p>
-            <p className="mt-2 text-14 leading-[21px] text-site-muted">
-              {copy.scanText}
-            </p>
-            <p className="mt-[5px] font-mono text-13 leading-4 font-semibold text-blue">{host}</p>
-          </li>
-          {gestures.map((g, i) => (
-            <GestureCard key={g.title} index={i + 1} {...g} />
-          ))}
-        </ol>
-        {/* Tells the thumb the row scrolls: the next card fades out. */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-2.5 right-0 h-[380px] w-14 bg-linear-to-r from-white/0 to-white xl:hidden"
-        />
-      </div>
-      <div aria-hidden="true" className="mt-5 flex justify-center gap-2 xl:hidden">
-        <span className="h-2 w-5 rounded-full bg-site-ink" />
-        <span className="size-2 rounded-full bg-site-fill-2" />
-        <span className="size-2 rounded-full bg-site-fill-2" />
-      </div>
-    </section>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Closing and footer                                                         */
-/* -------------------------------------------------------------------------- */
-
-function Closing({ copy, url }: { copy: LandingCopy['closing']; url: string }) {
-  return (
-    <section className={cn(CONTAINER, 'mt-9 xl:mt-24')}>
-      <a
-        href="#installation"
-        className="flex h-14 items-center justify-center rounded-full bg-site-ink text-17 leading-[21px] font-semibold text-white xl:hidden"
-      >
-        {copy.install}
-      </a>
-      <p className="mt-4 px-3 text-center text-13 leading-4 text-site-subtle xl:hidden">
-        {copy.alreadyInstalled}
-      </p>
-      <div className="relative hidden h-[220px] rounded-[32px] bg-linear-to-br from-site-fill via-site-kraft-wash via-60% to-site-kraft-wash-2 pt-[60px] pl-14 xl:block">
-        <h2 className="text-[40px] leading-[48px] font-bold tracking-[-1.4px]">
-          {copy.title}
-        </h2>
-        <p className="mt-2 text-17 leading-[26px] text-site-muted">
-          {copy.text}
-        </p>
-        <div className="absolute top-10 right-9 flex gap-6">
-          <p className="mt-[52px] text-right text-15 leading-[18px]">
-            <span className="block font-semibold">{copy.scanTitle}</span>
-            <span className="mt-1 block text-site-muted">{copy.scanText}</span>
-          </p>
-          <AppQr value={url} size={140} radius={14} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Footer({
-  copy,
-  appName,
-  version,
-}: {
-  copy: LandingCopy['footer'];
-  appName: string;
-  version: string;
-}) {
-  return (
-    <footer className={cn(CONTAINER, 'pb-10 xl:pb-[60px]')}>
-      <div className="mt-[62px] h-px bg-black/10 xl:mt-20" />
-      <div className="mt-[27px] grid xl:mt-[35px] xl:grid-cols-[1fr_auto] xl:items-center">
-        <AppBrand size="footer" name={appName} />
-        <p className="mt-5 text-13 leading-4 text-site-subtle xl:col-start-1 xl:mt-6 xl:text-14 xl:leading-[17px]">
-          {copy.service}
-        </p>
-        <p className="mt-1 text-13 leading-4 text-muted-2 xl:col-start-2 xl:row-start-1 xl:mt-0 xl:text-14 xl:leading-[17px]">
-          {copy.usage} {version}
-        </p>
-      </div>
-    </footer>
+    { scope: root },
   );
 }
 
@@ -665,7 +290,14 @@ type JourneyStepCopy = { label: string; title: string; text: string };
 
 /** Every visible word of the landing page, and the labels read aloud. */
 export type LandingCopy = {
-  nav: { home: string; journey: string; offline: string; install: string; cta: string };
+  nav: {
+    home: string;
+    journey: string;
+    offline: string;
+    install: string;
+    cta: string;
+    signIn: string;
+  };
   hero: {
     eyebrow: string;
     titleLead: string;
@@ -738,11 +370,26 @@ export type LandingPageProps = {
   host: string;
   /** Printed in the footer, after the usage line. */
   version: string;
+  /** Where the « Se connecter » link of the nav leads. */
+  signInHref: string;
 };
 
-export function LandingPage({ copy, appName, url, host, version }: LandingPageProps) {
+export function LandingPage({
+  copy,
+  appName,
+  url,
+  host,
+  version,
+  signInHref,
+}: LandingPageProps) {
+  const root = useRef<HTMLDivElement>(null);
+  useStableScroll(root);
+  useNarrative(root);
   return (
-    <div className="relative isolate min-h-dvh overflow-x-clip bg-white text-site-ink">
+    <div
+      ref={root}
+      className="relative isolate min-h-dvh overflow-x-clip bg-white text-site-ink"
+    >
       <div
         aria-hidden="true"
         className="absolute inset-x-0 top-0 -z-10 hidden h-[900px] bg-linear-to-b from-site-wash via-site-wash-2 via-55% to-white xl:block"
@@ -751,7 +398,7 @@ export function LandingPage({ copy, appName, url, host, version }: LandingPagePr
         aria-hidden="true"
         className="absolute inset-x-0 bottom-0 -z-10 h-[353px] bg-linear-to-b from-white via-site-fill via-55% to-site-fill xl:h-[521px] xl:via-70%"
       />
-      <Hero copy={copy} appName={appName} url={url} />
+      <Hero copy={copy} appName={appName} url={url} signInHref={signInHref} />
       <main>
         <Journey copy={copy.journey} />
         <Offline copy={copy.offline} />

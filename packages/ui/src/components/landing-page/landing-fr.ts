@@ -8,6 +8,7 @@ export const LANDING_FR: LandingCopy = {
     offline: 'Hors ligne',
     install: 'Installation',
     cta: 'Installer',
+    signIn: 'Se connecter',
   },
   hero: {
     eyebrow: 'Service courrier',

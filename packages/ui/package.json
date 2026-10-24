@@ -28,6 +28,9 @@
     "@fontsource/archivo": "^5.2.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/inter-tight": "catalog:",
+    "@gsap/react": "^2.1.2",
+    "gsap": "^3.15.0",
+    "motion": "^14.6.0",
     "tailwind-merge": "catalog:",
     "tailwind-variants": "catalog:",
     "uqr": "^0.1.3"

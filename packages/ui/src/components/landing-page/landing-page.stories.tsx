@@ -18,6 +18,7 @@ const meta = {
     url: 'https://courrier.ysl.fr',
     host: 'courrier.ysl.fr',
     version: '1.0',
+    signInHref: '/connexion',
   },
 } satisfies Meta<typeof LandingPage>;
 

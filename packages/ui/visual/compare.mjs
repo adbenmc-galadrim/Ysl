@@ -68,6 +68,8 @@ for (const story of stories) {
   const context = await browser.newContext({
     viewport: { width: width / 2, height: height / 2 },
     deviceScaleFactor: 2,
+    // The landing plays its scenes on scroll; reduced motion freezes them in their final state.
+    reducedMotion: 'reduce',
   });
   const page = await context.newPage();
   await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story`);
