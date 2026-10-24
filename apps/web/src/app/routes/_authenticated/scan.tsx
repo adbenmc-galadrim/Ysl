@@ -228,7 +228,7 @@ function ScanPage() {
       ? { ...reading, last }
       : reading.kind !== 'idle'
         ? reading
-        : camera === 'blocked'
+        : camera === 'blocked' || camera === 'denied'
           ? BLOCKED
           : camera !== 'live'
             ? STARTING

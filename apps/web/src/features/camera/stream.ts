@@ -1,7 +1,13 @@
 import { useSyncExternalStore } from 'react';
 
-/** Where the camera stands: not asked yet, asked, filming, or refused. */
-export type CameraState = 'idle' | 'starting' | 'live' | 'blocked';
+/**
+ * Where the camera stands: not asked yet, asked, filming, refused by the
+ * agent or by iOS (`denied`), or failing for another reason (`blocked`).
+ */
+export type CameraState = 'idle' | 'starting' | 'live' | 'denied' | 'blocked';
+
+/** What `navigator.permissions` knows of the camera, when it knows it. */
+export type CameraPermission = 'prompt' | 'granted' | 'denied' | 'unknown';
 
 const CONSTRAINTS: MediaStreamConstraints = {
   audio: false,
@@ -17,6 +23,33 @@ export function hasCamera(): boolean {
     typeof navigator !== 'undefined' &&
     typeof navigator.mediaDevices?.getUserMedia === 'function'
   );
+}
+
+/**
+ * A refusal is not a failure: the agent (or iOS on their behalf) said no,
+ * and the way out is Réglages, not a retry. Anything else is the camera
+ * missing or busy.
+ */
+export function cameraFailure(error: unknown): 'denied' | 'blocked' {
+  if (
+    error instanceof DOMException &&
+    (error.name === 'NotAllowedError' || error.name === 'SecurityError')
+  ) {
+    return 'denied';
+  }
+  return 'blocked';
+}
+
+/** Asks the browser without triggering any prompt; `unknown` where unsupported. */
+export async function cameraPermission(): Promise<CameraPermission> {
+  try {
+    const status = await navigator.permissions.query({
+      name: 'camera',
+    });
+    return status.state;
+  } catch {
+    return 'unknown';
+  }
 }
 
 /**
@@ -60,7 +93,7 @@ class CameraStream {
     this.video = undefined;
   }
 
-  /** After a refusal: asks again. */
+  /** After a refusal or a failure: asks again. */
   retry(): Promise<void> {
     return this.open();
   }
@@ -98,8 +131,8 @@ class CameraStream {
       });
       await this.play();
       this.setState('live');
-    } catch {
-      this.setState('blocked');
+    } catch (error) {
+      this.setState(cameraFailure(error));
     }
   }
 
