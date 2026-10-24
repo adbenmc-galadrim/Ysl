@@ -2,7 +2,9 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import { syncCard } from '#/features/sync/sync-card';
 import {
+  pendingBanner,
   showsPendingBanner,
+  syncAlert,
   syncPill,
   syncValue,
 } from '#/features/sync/sync-value';
@@ -14,8 +16,27 @@ const view = (overrides = {}) => ({
   status: 'idle' as const,
   pending: 0,
   rejected: 0,
+  oldestAt: null as Date | null,
   lastSyncAt: new Date(2026, 9, 24, 11, 21),
   ...overrides,
+});
+
+const NOW = new Date(2026, 9, 24, 12, 0);
+const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000);
+const stale = (overrides = {}) =>
+  view({ pending: 3, oldestAt: hoursAgo(25), ...overrides });
+
+describe('syncAlert', () => {
+  it('fires once a waiting change is a day old, refused or not', () => {
+    expect(syncAlert(view(), NOW)).toBe(false);
+    expect(syncAlert(view({ pending: 3, oldestAt: hoursAgo(23) }), NOW)).toBe(
+      false,
+    );
+    expect(syncAlert(stale(), NOW)).toBe(true);
+    expect(syncAlert(view({ rejected: 1, oldestAt: hoursAgo(48) }), NOW)).toBe(
+      true,
+    );
+  });
 });
 
 describe('syncPill', () => {
@@ -41,6 +62,31 @@ describe('showsPendingBanner', () => {
     );
     expect(showsPendingBanner(view({ pending: 0, online: false }))).toBe(false);
   });
+
+  it('stays up online once the changes are a day old', () => {
+    expect(showsPendingBanner(stale(), NOW)).toBe(true);
+    expect(showsPendingBanner(stale({ status: 'syncing' }), NOW)).toBe(true);
+  });
+});
+
+describe('pendingBanner', () => {
+  it('turns red and asks for the export after a day, orange before', () => {
+    expect(pendingBanner(view({ pending: 2, online: false }), t, NOW)).toEqual({
+      tone: 'orange',
+      icon: 'cloud',
+      title: '2 changements en attente',
+      description: 'Enregistrés sur l’iPhone, envoyés au retour du réseau.',
+    });
+    expect(pendingBanner(stale({ rejected: 1 }), t, NOW)).toEqual({
+      tone: 'red',
+      icon: 'alert',
+      title: '4 changements en attente depuis plus de 24 h',
+      description: 'Exportez-les par sécurité dans Réglages › Synchronisation.',
+    });
+    expect(pendingBanner(stale({ pending: 1 }), t, NOW).title).toBe(
+      '1 changement en attente depuis plus de 24 h',
+    );
+  });
 });
 
 describe('syncValue', () => {
@@ -65,6 +111,13 @@ describe('syncValue', () => {
       color: 'red',
     });
     expect(syncValue(view(), t)).toEqual({ label: 'À jour', color: 'green' });
+  });
+
+  it('goes red with the whole count once the changes are a day old', () => {
+    expect(syncValue(stale({ rejected: 1, online: false }), t, NOW)).toEqual({
+      label: '4 en attente',
+      color: 'red',
+    });
   });
 });
 
@@ -97,6 +150,19 @@ describe('syncCard', () => {
     expect(syncCard(view({ rejected: 2 }), t)).toMatchObject({
       state: 'pending',
       title: '2 changements à corriger',
+    });
+  });
+
+  it('raises the alert after a day and tells how to act, online or not', () => {
+    expect(syncCard(stale(), t, NOW)).toEqual({
+      state: 'alert',
+      title: '3 changements en attente depuis plus de 24 h',
+      detail: 'Exportez-les par sécurité, puis synchronisez dès que possible.',
+    });
+    expect(syncCard(stale({ pending: 1, online: false }), t, NOW)).toEqual({
+      state: 'alert',
+      title: '1 changement en attente depuis plus de 24 h',
+      detail: 'Hors ligne. Exportez-les par sécurité.',
     });
   });
 

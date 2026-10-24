@@ -67,6 +67,11 @@ export const fr = {
   'colis.pending.title.many': '{{count}} changements en attente',
   'colis.pending.description':
     'Enregistrés sur l’iPhone, envoyés au retour du réseau.',
+  'colis.stale.title.one': '1 changement en attente depuis plus de 24 h',
+  'colis.stale.title.many':
+    '{{count}} changements en attente depuis plus de 24 h',
+  'colis.stale.description':
+    'Exportez-les par sécurité dans Réglages › Synchronisation.',
   'update.available': 'Nouvelle version disponible',
   'update.apply': 'Mettre à jour',
   'parcel.recipient.unknown': 'Destinataire inconnu',
@@ -130,6 +135,12 @@ export const fr = {
   'sync.detail.offline': 'Hors ligne, envoi au retour du réseau',
   'sync.detail.syncing': 'Synchronisation en cours…',
   'sync.detail.error': 'Le serveur n’a pas répondu, nouvel essai bientôt',
+  'sync.alert.title.one': '1 changement en attente depuis plus de 24 h',
+  'sync.alert.title.many':
+    '{{count}} changements en attente depuis plus de 24 h',
+  'sync.alert.detail':
+    'Exportez-les par sécurité, puis synchronisez dès que possible.',
+  'sync.alert.detail.offline': 'Hors ligne. Exportez-les par sécurité.',
   'sync.action': 'Synchroniser maintenant',
   'sync.group.device': 'Sur cet iPhone',
   'sync.group.device.footer':

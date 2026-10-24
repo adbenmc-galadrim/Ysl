@@ -30,6 +30,7 @@ export function useSync(): SyncView {
     status: snapshot.status,
     pending: counts.pending,
     rejected: counts.rejected,
+    oldestAt: counts.oldestAt,
     lastSyncAt: snapshot.lastSyncAt,
   };
 }

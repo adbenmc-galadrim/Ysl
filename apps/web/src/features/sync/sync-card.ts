@@ -1,9 +1,10 @@
 import type { TranslateFn } from '@repo/shared/i18n';
 import { formatTime, startOfDay } from '#/features/parcels/model';
+import { syncAlert } from '#/features/sync/sync-value';
 import type { SyncView } from '#/features/sync/use-sync';
 
 export type SyncCard = {
-  state: 'synced' | 'pending';
+  state: 'synced' | 'pending' | 'alert';
   title: string;
   detail: string;
 };
@@ -27,12 +28,24 @@ export function formatSyncTime(at: Date, now: Date): string {
 export function syncCard(
   sync: Pick<
     SyncView,
-    'online' | 'status' | 'pending' | 'rejected' | 'lastSyncAt'
+    'online' | 'status' | 'pending' | 'rejected' | 'lastSyncAt' | 'oldestAt'
   >,
   t: TranslateFn,
   now = new Date(),
 ): SyncCard {
   const waiting = sync.pending + sync.rejected;
+  if (syncAlert(sync, now)) {
+    return {
+      state: 'alert',
+      title:
+        waiting === 1
+          ? t('sync.alert.title.one')
+          : t('sync.alert.title.many', { count: waiting }),
+      detail: sync.online
+        ? t('sync.alert.detail')
+        : t('sync.alert.detail.offline'),
+    };
+  }
   const title =
     waiting === 0
       ? t('sync.state.synced')
