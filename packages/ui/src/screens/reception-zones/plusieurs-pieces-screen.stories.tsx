@@ -32,11 +32,17 @@ export const ColisEnPlusieursPieces: Story = {
   parameters: {
     reference: '09-zones-d-ombre/reception--colis-en-plusieurs-pieces',
   },
-  args: { pieces: { total: 3, read: 2 } },
+  args: { pieces: { total: 3, read: [1, 2] } },
+};
+
+/** The 2nd box never came: the gap is named by its number, not counted. */
+export const PieceManquante: Story = {
+  name: 'Pièce manquante au milieu',
+  args: { pieces: { total: 3, read: [1, 3] } },
 };
 
 /** Every piece read: nothing left to decide. */
 export const ToutesLesPieces: Story = {
   name: 'Toutes les pièces lues',
-  args: { pieces: { total: 3, read: 3 } },
+  args: { pieces: { total: 3, read: [1, 2, 3] } },
 };

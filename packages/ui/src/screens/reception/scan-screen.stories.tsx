@@ -41,6 +41,24 @@ export const Lecture: Story = {
   },
 };
 
+/** No one named on the label: the previous parcel's recipient is one tap away (F11). */
+export const LectureMemeDestinataire: Story = {
+  name: 'Lecture, même destinataire',
+  args: {
+    onUndo: () => undefined,
+    reading: {
+      kind: 'read',
+      last: { name: 'Camille Morel', meta: 'UPS ···0622' },
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: '1Z E63 44W 04 9923 0641', mono: true },
+        { label: 'Destinataire', value: 'Non lu', status: 'warning' },
+      ],
+      action: { label: 'Même destinataire que le précédent' },
+    },
+  },
+};
+
 /** Right after the tap: the band says the reading is on its way. */
 export const LectureEnCours: Story = {
   name: 'Lecture en cours',
