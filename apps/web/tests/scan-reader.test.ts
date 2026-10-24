@@ -1,0 +1,173 @@
+import 'fake-indexeddb/auto';
+import type { DecodeResult } from '@repo/barcode/worker';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { addDraft, openBatch } from '#/features/batch/store';
+import type { CourrierDatabase } from '#/features/db/schema';
+import { DecodeQueue } from '#/features/scan/decode-queue';
+import { readDraft, recoverPending } from '#/features/scan/reader';
+import { NOW, openTestDatabase } from './helpers/local-rows';
+import { MemoryFiles } from './helpers/memory-files';
+
+const symbol = (format: string, text: string): DecodeResult['symbols'][0] => ({
+  format,
+  text,
+  isValid: true,
+  position: {
+    topLeft: { x: 0, y: 0 },
+    topRight: { x: 1, y: 0 },
+    bottomRight: { x: 1, y: 1 },
+    bottomLeft: { x: 0, y: 1 },
+  },
+  orientation: 0,
+});
+
+const result = (symbols: DecodeResult['symbols']): DecodeResult => ({
+  symbols,
+  steps: [],
+  width: 1,
+  height: 1,
+  totalMs: 0,
+});
+
+const bitmap = () => {
+  let closed = false;
+  return {
+    close: () => {
+      closed = true;
+    },
+    get closed() {
+      return closed;
+    },
+  } as unknown as ImageBitmap & { closed: boolean };
+};
+
+const photo = () => ({
+  blob: new Blob(['etiquette'], { type: 'image/jpeg' }),
+  width: 1600,
+  height: 1200,
+});
+
+let db: CourrierDatabase;
+let files: MemoryFiles;
+
+beforeEach(async () => {
+  db = await openTestDatabase();
+  files = new MemoryFiles();
+});
+
+describe('readDraft', () => {
+  it('goes back for the carrier symbol it missed, then frees the slot', async () => {
+    const calls: unknown[] = [];
+    const queue = new DecodeQueue((_bitmap, options) => {
+      calls.push(options);
+      return Promise.resolve(
+        result(
+          calls.length === 1
+            ? [symbol('Code128', '1ZE6344W0499230622')]
+            : [symbol('MaxiCode', '[)>maxi')],
+        ),
+      );
+    }, 1);
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const [first, clone] = [bitmap(), bitmap()];
+    await queue.acquire();
+
+    const reading = await readDraft(db, queue, draft.id, first, clone);
+
+    expect(calls).toEqual([undefined, { expect: ['MaxiCode'] }]);
+    expect(reading.kept).toBe(true);
+    expect(reading.symbols.map((s) => s.format)).toEqual([
+      'Code128',
+      'MaxiCode',
+    ]);
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      reading: 'read',
+      carrier: 'UPS',
+      tracking: '1ZE6344W0499230622',
+      symbols: [
+        { format: 'Code128', text: '1ZE6344W0499230622' },
+        { format: 'MaxiCode', text: '[)>maxi' },
+      ],
+    });
+    expect(queue.pending).toBe(0);
+    expect(clone.closed).toBe(false);
+  });
+
+  it('says so when the draft was undone during the reading', async () => {
+    let finish: (value: DecodeResult) => void = () => undefined;
+    let calls = 0;
+    const queue = new DecodeQueue(
+      () =>
+        (calls += 1) === 1
+          ? new Promise((resolve) => {
+              finish = resolve;
+            })
+          : Promise.resolve(result([])),
+      1,
+    );
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await queue.acquire();
+    const reading = readDraft(db, queue, draft.id, bitmap(), bitmap());
+    await db.draftParcel.delete(draft.id);
+    finish(result([symbol('Code128', '1ZE6344W0499230622')]));
+
+    expect((await reading).kept).toBe(false);
+    expect(queue.pending).toBe(0);
+  });
+
+  it('marks the draft failed and frees the slot when the Worker fails', async () => {
+    const queue = new DecodeQueue(() => Promise.reject(new Error('worker')), 1);
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await queue.acquire();
+
+    const reading = await readDraft(db, queue, draft.id, bitmap(), bitmap());
+
+    expect(reading).toMatchObject({ kept: true, failed: true, symbols: [] });
+    expect((await db.draftParcel.get(draft.id))?.reading).toBe('failed');
+    expect(queue.pending).toBe(0);
+  });
+});
+
+describe('recoverPending', () => {
+  const toBitmap = () => Promise.resolve(bitmap());
+
+  it('reads a pending draft again from its photo, fails one without, leaves the rest', async () => {
+    const queue = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Code128', '1ZE6344W0499230622')])),
+      1,
+    );
+    const batch = await openBatch(db, NOW);
+    const orphan = await addDraft(db, files, batch.id, null, NOW);
+    const stuck = await addDraft(db, files, batch.id, photo(), NOW);
+    const done = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(done.id, { reading: 'read', carrier: 'DHL' });
+
+    await recoverPending(db, files, queue, batch.id, toBitmap);
+
+    expect((await db.draftParcel.get(orphan.id))?.reading).toBe('failed');
+    expect(await db.draftParcel.get(stuck.id)).toMatchObject({
+      reading: 'read',
+      carrier: 'UPS',
+    });
+    expect(await db.draftParcel.get(done.id)).toMatchObject({
+      reading: 'read',
+      carrier: 'DHL',
+    });
+    expect(queue.pending).toBe(0);
+  });
+
+  it('frees the slot and fails the draft when the photo cannot be read', async () => {
+    const queue = new DecodeQueue(() => Promise.resolve(result([])), 1);
+    const batch = await openBatch(db, NOW);
+    const stuck = await addDraft(db, files, batch.id, photo(), NOW);
+    files.files.clear();
+
+    await recoverPending(db, files, queue, batch.id, toBitmap);
+
+    expect((await db.draftParcel.get(stuck.id))?.reading).toBe('failed');
+    expect(queue.pending).toBe(0);
+  });
+});

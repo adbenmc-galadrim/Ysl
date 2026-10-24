@@ -102,6 +102,13 @@ export const fr = {
   'scan.format.DataMatrix': 'Data Matrix',
   'scan.format.QRCode': 'QR',
   'scan.format.MaxiCode': 'MaxiCode',
+  'scan.starting': 'Activation…',
+  'scan.blocked.title': 'iOS a bloqué la caméra',
+  'scan.blocked.hint': 'Réessayez, ou importez une photo de l’étiquette.',
+  'scan.reading': 'Lecture…',
+  'scan.storageFailed.title': 'Photo non enregistrée',
+  'scan.storageFailed.hint':
+    'Cet iPhone ne peut pas stocker la photo : quittez la navigation privée.',
   'shell.loading': 'Chargement',
   'shell.notFound.title': 'Page introuvable',
   'shell.notFound.description': 'Cette adresse ne mène à aucun écran.',
