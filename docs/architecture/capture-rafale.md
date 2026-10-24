@@ -44,6 +44,28 @@ et « Réessayer » ou « Activer la caméra » le lève, de sorte qu'un nouveau
 l'écran plein et ses étapes. Le choix de l'encart est une fonction pure (`notice.ts`,
 `cameraReading`).
 
+## Photo native et import de la photothèque (YSL-30, F03)
+
+Quand le flux ne vient pas, la photo reste possible par les sélecteurs du système, qui ne
+demandent rien à Safari. Deux `<input type="file">` vivent **hors des écrans**, montés une
+seule fois (un sélecteur ouvert depuis un écran qui se démonte perdrait son `change`) :
+
+- **`capture="environment"`** : l'appareil photo d'iOS, une photo. C'est ce que fait
+  l'**obturateur** dès que la caméra ne filme pas — refus, panne, ou repli choisi
+  (`shutter.ts`, `shutterMode` : `grab` en `live`, `native` en `denied` / `blocked` / `idle`
+  en repli, `none` pendant l'activation pour ne pas ouvrir l'appareil par-dessus le flux
+  qui arrive). « Une photo » de l'écran « La caméra est bloquée » l'ouvre aussi.
+- **`multiple`** : la photothèque, plusieurs photos à la fois. C'est « Importer une photo »
+  partout (barre d'outils, encarts, écran d'explication).
+
+Chaque fichier choisi suit **le pipeline d'un appui** ci-dessous, dans l'ordre choisi : la
+file de décodage le fait attendre sa place avant de décoder l'image, de sorte que l'import
+de dix photos n'en tient jamais plus de deux en mémoire. Une photo du téléphone (12 à
+48 Mpx, HEIC transcodé en JPEG par Safari tant que `accept` ne cite pas `image/heic`) est
+lue redressée (`imageOrientation: 'from-image'`, S1) puis **ramenée au grand côté du flux**
+(4 032 px, `read-file.ts`) avant d'entrer dans la file : le lecteur a été dimensionné pour
+le flux, et un bitmap de 48 Mpx pèserait ~190 Mo. Le JPEG stocké reste à 1 600 px.
+
 « Au-dessus du routeur » (§6.4) : le routeur n'a pas d'onglets persistants (chaque écran
 est une route), le flux survit donc dans le singleton, pas dans un composant.
 
@@ -53,7 +75,8 @@ est une route), le flux survit donc dans le singleton, pas dans un composant.
    12 Mpx pèse ~48 Mo) ; au-delà, l'appui attend la fin de la plus ancienne lecture. La
    place couvre toute la lecture d'un appui, seconde passe comprise : jamais plus de deux
    images pleine résolution vivantes.
-2. `grabFrame` en pleine résolution, un clone pour la photo et une éventuelle seconde passe.
+2. `grabFrame` en pleine résolution (ou la photo importée, lue après l'attente de la
+   place), un clone pour la photo et une éventuelle seconde passe.
 3. Le lot ouvert (ou un nouveau), la photo encodée et écrite dans OPFS, puis le **brouillon**
    (`draft_parcel`, `reading: 'pending'`) : le compteur monte avant toute lecture.
 4. Décodage dans le Worker (`@repo/barcode`), cascade par défaut (arrêt dès qu'un code est
@@ -145,6 +168,5 @@ un lot »).
 
 Doublon dans le lot et en base (YSL-37, l'index `trackingNorm` des brouillons est posé),
 choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), champs
-des codes 2D (YSL-25), torche (YSL-29), photo native
-`capture` et import multiple (YSL-30), liste du lot et revue (YSL-33), synchronisation des
-lignes promues (YSL-28), bip et flash à la capture (§6.6).
+des codes 2D (YSL-25), torche et guidage (YSL-31), liste du lot et revue (YSL-33),
+synchronisation des lignes promues (YSL-28), bip et flash à la capture (§6.6).
