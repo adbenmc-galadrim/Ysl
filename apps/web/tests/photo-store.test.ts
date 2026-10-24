@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CourrierDatabase } from '#/features/db/schema';
+import type { CourrierDatabase } from '#/features/db/schema';
 import type { PhotoFiles, StoredFile } from '#/features/photos/opfs';
 import {
   deletePhoto,
@@ -9,8 +9,7 @@ import {
   savePhoto,
   sweepOrphanPhotos,
 } from '#/features/photos/store';
-
-const NOW = new Date('2026-10-24T08:12:00Z');
+import { NOW, openTestDatabase } from './helpers/local-rows';
 
 class MemoryFiles implements PhotoFiles {
   readonly files = new Map<string, { blob: Blob; lastModified: number }>();
@@ -61,8 +60,7 @@ let db: CourrierDatabase;
 let files: MemoryFiles;
 
 beforeEach(async () => {
-  db = new CourrierDatabase(`photo-test-${newId()}`);
-  await db.open();
+  db = await openTestDatabase();
   files = new MemoryFiles();
 });
 
@@ -110,6 +108,8 @@ describe('sweepOrphanPhotos', () => {
   it('removes old orphan files only', async () => {
     const kept = photo();
     await savePhoto(db, files, kept, NOW);
+    files.files.get(`${kept.id}.jpg`)!.lastModified =
+      NOW.getTime() - 2 * ORPHAN_GRACE_MS;
     files.files.set('old-orphan.jpg', {
       blob: new Blob(['x']),
       lastModified: NOW.getTime() - ORPHAN_GRACE_MS - 1,

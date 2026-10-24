@@ -1,58 +1,18 @@
 import 'fake-indexeddb/auto';
-import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { commitLocal, MissingRowError } from '#/features/db/commit';
-import { CourrierDatabase, type LocalParcel } from '#/features/db/schema';
-
-const NOW = new Date('2026-10-24T08:12:00Z');
-
-function parcel(overrides: Partial<LocalParcel> = {}): LocalParcel {
-  return {
-    id: newId(),
-    createdAt: NOW,
-    updatedAt: new Date(0),
-    deletedAt: null,
-    batchId: null,
-    type: 'colis',
-    status: 'recu',
-    carrier: 'UPS',
-    tracking: '1ZE6344W0499230622',
-    trackingNorm: '1ZE6344W0499230622',
-    personId: null,
-    contactId: null,
-    readName: null,
-    notificationEmail: null,
-    department: null,
-    senderId: null,
-    senderName: null,
-    pieceN: null,
-    pieceTotal: null,
-    weightKg: null,
-    carrierService: null,
-    reference: null,
-    location: null,
-    notes: null,
-    receivedAt: NOW,
-    receivedBy: 'agent-1',
-    validatedAt: null,
-    notifiedAt: null,
-    lastNotifiedAt: null,
-    deliveredAt: null,
-    deliveredBy: null,
-    ...overrides,
-  };
-}
+import type { CourrierDatabase } from '#/features/db/schema';
+import { NOW, openTestDatabase, parcelRow } from './helpers/local-rows';
 
 let db: CourrierDatabase;
 
 beforeEach(async () => {
-  db = new CourrierDatabase(`commit-test-${newId()}`);
-  await db.open();
+  db = await openTestDatabase();
 });
 
 describe('commitLocal', () => {
   it('writes the row and its outbox operation together', async () => {
-    const row = parcel();
+    const row = parcelRow({ updatedAt: new Date(0) });
     const [opId] = await commitLocal(
       db,
       { upserts: [{ entity: 'parcel', row }] },
@@ -76,7 +36,7 @@ describe('commitLocal', () => {
   });
 
   it('deletes logically and queues the deletion', async () => {
-    const row = parcel();
+    const row = parcelRow();
     await db.parcel.put(row);
 
     await commitLocal(
@@ -95,11 +55,9 @@ describe('commitLocal', () => {
   });
 
   it('writes nothing when one change of the lot fails', async () => {
-    const row = parcel();
-
     await expect(
       commitLocal(db, {
-        upserts: [{ entity: 'parcel', row }],
+        upserts: [{ entity: 'parcel', row: parcelRow() }],
         deletes: [{ entity: 'parcel', id: 'missing' }],
       }),
     ).rejects.toBeInstanceOf(MissingRowError);
@@ -109,8 +67,8 @@ describe('commitLocal', () => {
   });
 
   it('keeps the operations in the order they were made', async () => {
-    const first = parcel();
-    const second = parcel();
+    const first = parcelRow();
+    const second = parcelRow();
     const ids = await commitLocal(db, {
       upserts: [
         { entity: 'parcel', row: first },
