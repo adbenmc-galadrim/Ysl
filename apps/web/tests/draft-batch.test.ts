@@ -88,6 +88,7 @@ describe('typeDraft', () => {
       ...typed,
     });
     expect(await db.photo.count()).toBe(0);
+    expect(await db.photo.where('parcelId').equals(id!).count()).toBe(0);
     expect(await db.draftParcel.count()).toBe(0);
   });
 

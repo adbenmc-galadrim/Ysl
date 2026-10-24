@@ -59,8 +59,10 @@ function hintOf(
 
 /**
  * The agent's own number is the number (§4.5): it is kept whatever the
- * verdict says. The verdict only names the carrier, when a format and its
- * key do, or hands over nothing at all — never a carrier guessed on length.
+ * verdict says. The carrier is the verdict's own — a format and its key,
+ * or a format alone for the carriers whose key is no criterion (`to-verify`)
+ * — or nothing at all: never a carrier guessed on length, nor one whose key
+ * rejected the number.
  */
 export function typedEntry(value: string, t: TranslateFn): TypedEntry {
   const verdict = validateTracking(value);

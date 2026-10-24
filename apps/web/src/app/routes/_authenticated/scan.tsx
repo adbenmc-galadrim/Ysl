@@ -107,7 +107,7 @@ function ScanPage() {
         bitmap?.close();
         clone?.close();
       }
-      unread.current = null;
+      if (!handed) unread.current = null;
       setReading(
         error instanceof StorageUnavailableError
           ? STORAGE_FAILED
@@ -165,8 +165,10 @@ function ScanPage() {
     if (!typing || typing.value === '' || finishing.current) return;
     const entry = typing;
     setTyping(null);
-    unread.current = null;
-    setReading({ kind: 'idle' });
+    if (unread.current === entry.fix || unread.current === null) {
+      unread.current = null;
+      setReading({ kind: 'idle' });
+    }
     void trackWork(onTyped(entry));
   };
 
