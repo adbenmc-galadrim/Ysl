@@ -160,6 +160,40 @@ récents. Un pull par curseur rend tous les nouveaux événements, quel que soit
   avec leur nombre. Sinon le compte est déconnecté, la synchro arrêtée, puis la base
   locale et les photos OPFS sont effacées.
 
+## Alerte et export de secours
+
+Ticket YSL-36 (F47, §8.4.7). Tant qu'un changement n'a pas atteint le serveur, le
+téléphone en est la seule copie : Safari peut effacer le stockage, l'iPhone peut
+lâcher.
+
+- **Alerte au-delà de 24 h** : dès qu'une opération de l'outbox (`queued` ou
+  `rejected`) a plus de 24 h (`clientTs` la plus ancienne, `STALE_AFTER_MS` dans
+  `features/sync/sync-value.ts`), la bannière de Colis passe en rouge
+  (« N changements en attente depuis plus de 24 h ») et reste affichée même en
+  ligne ; la carte de Réglages › Synchronisation passe en rouge et invite à exporter ;
+  la ligne Réglages compte en rouge. Le seuil se lit sur l'âge des opérations, pas
+  sur la dernière synchronisation : le moteur date celle-ci aussi après un push à
+  rejouer (503), elle ne prouve pas que tout est parti.
+- **Liste** : l'écran Synchronisation montre les opérations en attente, de la plus
+  ancienne à la plus récente (10 au plus, puis « et N autres ») : ce qu'elles
+  touchent (colis par la fin de son numéro, salarié par son nom, remise par son
+  destinataire…), l'heure du changement, « Refusé » pour celles que le serveur a
+  rejetées. Le groupe disparaît quand tout est envoyé.
+- **Export JSON** (`features/sync/backup.ts`) : le dernier bouton du groupe construit
+  un fichier `courrier-secours-AAAA-MM-JJ-HHMM.json` et le passe à la feuille de
+  partage (`navigator.share` avec fichier : Fichiers, AirDrop, Mail) ; sans partage
+  de fichiers (Safari sur Mac, Chromium), il se télécharge. Contenu :
+  `{ format: 'courrier-secours', version: 1, exportedAt, app, pending, rejected,
+  changes[] }`, chaque changement étant l'opération d'outbox (`opId`, `entity`,
+  `entityId`, `type`, `state`, `clientTs`, `attempts`, `lastError`, `patch`) avec la
+  ligne locale courante (`row`, `null` si elle a disparu). Jamais de photo ni de
+  signature (D8, §8.5) : les données seulement, dates en ISO 8601.
+- **S'en servir** : le fichier se relit tel quel ; un `patch` d'`upsert` est la ligne
+  entière à rejouer par `sync.push` (le même `op_id` reste idempotent), une
+  opération `rejected` dit pourquoi dans `lastError`. Pas d'import automatique :
+  la restauration passe par le serveur (`psql` ou un appel `sync.push` fabriqué),
+  à la main.
+
 ## Exploitation
 
 - **Restauration** (pg_dump/restore, PITR, changement d'hébergeur) : le compteur de
