@@ -143,6 +143,11 @@ export const fr = {
   'sync.alert.detail.offline': 'Hors ligne. Exportez-les par sécurité.',
   'sync.action': 'Synchroniser maintenant',
   'sync.changes.header': 'Changements en attente · {{count}}',
+  'sync.changes.footer':
+    'L’export contient les données en attente, pas les photos. Partagez-le (Fichiers, AirDrop, e-mail) pour les garder si l’iPhone lâche.',
+  'sync.export': 'Exporter les changements',
+  'sync.export.running': 'Export…',
+  'sync.export.failed': 'Échec',
   'sync.changes.more.one': 'Et 1 autre changement. ',
   'sync.changes.more.many': 'Et {{count}} autres changements. ',
   'sync.change.parcel': 'Colis ···{{tracking}}',
