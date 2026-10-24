@@ -20,6 +20,7 @@ import {
 } from '#/features/batch/store';
 import { useBatch } from '#/features/batch/use-batch';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
+import { frameQuality } from '#/features/camera/quality';
 import {
   cameraEntry,
   markExplained,
@@ -31,6 +32,7 @@ import {
   cameraPermission,
   cameraStream,
   useCameraState,
+  useTorchState,
 } from '#/features/camera/stream';
 import { db } from '#/features/db/database';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
@@ -43,7 +45,11 @@ import {
   type Symbols,
 } from '#/features/scan/reader';
 import { readImageFile } from '#/features/scan/read-file';
-import { failedReading, toScanReading } from '#/features/scan/reading';
+import {
+  failedReading,
+  type ShotHint,
+  toScanReading,
+} from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
 import { ocrReader, readText } from '#/features/scan/text';
@@ -83,6 +89,7 @@ function ScanPage() {
   const captureRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
+  const torch = useTorchState();
   const [opening, setOpening] = useState<Opening>(() =>
     wasExplained() ? 'scan' : 'pending',
   );
@@ -95,6 +102,8 @@ function ScanPage() {
   const unread = useRef<string | null>(null);
   /** The draft the fields on screen belong to: a later text must not overwrite another's. */
   const shownDraft = useRef<string | null>(null);
+  /** How that draft's shot looked, for the advice when nothing was read. */
+  const shownShot = useRef<ShotHint | undefined>(undefined);
 
   useEffect(() => holdUpdates(), []);
 
@@ -165,14 +174,19 @@ function ScanPage() {
     );
   }, [batchId, queue]);
 
-  /** One tap, one parcel: the draft and its photo land before the reading. */
-  const shoot = async (grab: () => Promise<ImageBitmap>) => {
+  /**
+   * One tap, one parcel: the draft and its photo land before the reading.
+   * `live` says the frame comes from the viewfinder, where the torch may
+   * have lit it; a photo from the library owes it nothing.
+   */
+  const shoot = async (grab: () => Promise<ImageBitmap>, live: boolean) => {
     await queue.acquire();
     let bitmap: ImageBitmap | undefined;
     let clone: ImageBitmap | undefined;
     let handed = false;
     try {
       bitmap = await grab();
+      const shot = shotHint(bitmap, live);
       clone = await createImageBitmap(bitmap);
       const batch = await openBatch(db);
       const photo = await encodePhoto(clone);
@@ -188,7 +202,12 @@ function ScanPage() {
       if (kept) {
         unread.current = symbols.length === 0 ? draft.id : null;
         shownDraft.current = draft.id;
-        setReading(failed ? failedReading(t) : toScanReading({ symbols }, t));
+        shownShot.current = shot;
+        setReading(
+          failed
+            ? failedReading(t)
+            : toScanReading({ symbols }, t, undefined, shot),
+        );
       }
       if (kept) void showText(draft.id, photo.blob, symbols);
     } catch (error) {
@@ -215,12 +234,23 @@ function ScanPage() {
     const text = await readText(db, draftId, blob);
     const worth = symbols.length > 0 || text.ocrName !== null;
     if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
-      setReading(toScanReading({ symbols }, t, text));
+      setReading(toScanReading({ symbols }, t, text, shownShot.current));
     }
   };
 
-  const fire = (grab: () => Promise<ImageBitmap>) => {
-    if (!finishing.current) void trackWork(shoot(grab));
+  /** Measured on the frame before the reader takes it; a canvas failure says nothing. */
+  const shotHint = (bitmap: ImageBitmap, live: boolean): ShotHint => {
+    let quality: ShotHint['quality'] = 'ok';
+    try {
+      quality = frameQuality(bitmap).verdict;
+    } catch {
+      // No 2D canvas: the generic advice will do.
+    }
+    return { quality, torchOn: live && cameraStream.torch === 'on' };
+  };
+
+  const fire = (grab: () => Promise<ImageBitmap>, live: boolean) => {
+    if (!finishing.current) void trackWork(shoot(grab, live));
   };
 
   /** The viewfinder's frame, or the phone's camera when there is no stream. */
@@ -232,7 +262,7 @@ function ScanPage() {
     }
     const video = videoRef.current;
     if (mode !== 'grab' || !video || !cameraStream.live) return;
-    fire(() => grabFrame(video, cameraStream.track));
+    fire(() => grabFrame(video, cameraStream.track), true);
   };
 
   /** Each picture chosen is one parcel, in the order chosen: the queue paces them. */
@@ -240,7 +270,7 @@ function ScanPage() {
     const input = event.currentTarget;
     const files = [...(input.files ?? [])];
     input.value = '';
-    for (const file of files) fire(() => readImageFile(file));
+    for (const file of files) fire(() => readImageFile(file), false);
   };
 
   const onUndo = () => {
@@ -349,7 +379,10 @@ function ScanPage() {
                 className="size-full object-cover"
               />
             }
+            torch={torch !== 'none'}
+            torchOn={torch === 'on'}
             onClose={close}
+            onTorch={() => void cameraStream.toggleTorch()}
             onShutter={onShutter}
             onUndo={onUndo}
             onDone={() => void onDone()}

@@ -1,4 +1,9 @@
 import { useSyncExternalStore } from 'react';
+import {
+  applyTorch,
+  torchCapability,
+  type TorchState,
+} from '#/features/camera/torch';
 
 /**
  * Where the camera stands: not asked yet, asked, filming, refused by the
@@ -66,6 +71,8 @@ class CameraStream {
   private listening = false;
   private readonly listeners = new Set<() => void>();
   state: CameraState = 'idle';
+  /** Offered by the track or not, lit or not (F07). */
+  torch: TorchState = 'none';
 
   get track(): MediaStreamTrack | undefined {
     return this.stream?.getVideoTracks()[0];
@@ -86,16 +93,42 @@ class CameraStream {
     await this.play();
   }
 
-  /** Forgets the element; the stream stays open for the next screen. */
+  /**
+   * Forgets the element; the stream stays open for the next screen, but
+   * the torch goes out with it: no other screen has a square to put it out.
+   */
   detach(video: HTMLVideoElement): void {
     if (this.video !== video) return;
     video.srcObject = null;
     this.video = undefined;
+    const { track } = this;
+    if (track && this.torch === 'on') {
+      this.setTorch('off');
+      void applyTorch(track, false).catch(() => {
+        this.setTorch(torchCapability(track));
+      });
+    }
   }
 
   /** After a refusal or a failure: asks again. */
   retry(): Promise<void> {
     return this.open();
+  }
+
+  /**
+   * Lights the torch, or puts it out. A refusal from the track (busy,
+   * ended) leaves it as the track says: the square never lies.
+   */
+  async toggleTorch(): Promise<void> {
+    const { track } = this;
+    if (!track || this.torch === 'none') return;
+    const on = this.torch !== 'on';
+    try {
+      await applyTorch(track, on);
+      this.setTorch(on ? 'on' : 'off');
+    } catch {
+      this.setTorch(torchCapability(track));
+    }
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -106,6 +139,16 @@ class CameraStream {
   private setState(state: CameraState) {
     if (this.state === state) return;
     this.state = state;
+    this.notify();
+  }
+
+  private setTorch(torch: TorchState) {
+    if (this.torch === torch) return;
+    this.torch = torch;
+    this.notify();
+  }
+
+  private notify() {
     for (const listener of this.listeners) listener();
   }
 
@@ -130,8 +173,10 @@ class CameraStream {
         if (document.visibilityState === 'visible') void this.open();
       });
       await this.play();
+      this.setTorch(torchCapability(this.track));
       this.setState('live');
     } catch (error) {
+      this.setTorch('none');
       this.setState(cameraFailure(error));
     }
   }
@@ -143,10 +188,15 @@ class CameraStream {
     if (video.paused) await video.play().catch(() => undefined);
   }
 
+  /** iOS puts the torch out behind the app: the square follows the track. */
   private resume = () => {
     if (document.visibilityState !== 'visible' || !this.stream) return;
-    if (this.live) void this.play();
-    else void this.open();
+    if (this.live) {
+      this.setTorch(torchCapability(this.track));
+      void this.play();
+    } else {
+      void this.open();
+    }
   };
 
   private listen() {
@@ -164,5 +214,13 @@ export function useCameraState(): CameraState {
     cameraStream.subscribe,
     () => cameraStream.state,
     () => cameraStream.state,
+  );
+}
+
+export function useTorchState(): TorchState {
+  return useSyncExternalStore(
+    cameraStream.subscribe,
+    () => cameraStream.torch,
+    () => cameraStream.torch,
   );
 }

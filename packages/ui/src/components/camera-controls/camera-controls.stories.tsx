@@ -49,6 +49,7 @@ export const BarreDuHaut: Story = {
   render: () => (
     <div className="flex flex-col gap-4">
       <CameraTopBar title="Lot : 12 colis" />
+      <CameraTopBar title="Lot : 12 colis" torchOn />
       <CameraTopBar title="QR code du retrait" torch={false} />
     </div>
   ),

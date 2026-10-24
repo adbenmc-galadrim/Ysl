@@ -1,7 +1,7 @@
 import { EOT, GS, RS } from '@repo/contract/codes';
 import { createTranslator } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
-import { toScanReading } from '#/features/scan/reading';
+import { toScanReading, unreadableReading } from '#/features/scan/reading';
 
 const t = createTranslator('fr');
 
@@ -245,5 +245,39 @@ describe('toScanReading with a structured 2D code', () => {
     expect(reading).toMatchObject({
       fields: [{ label: 'Data Matrix', value: 'A27610115123456789012' }],
     });
+  });
+});
+
+describe('unreadableReading', () => {
+  it('advises on the shot when nothing was read: blur, glare, or the torch', () => {
+    expect(toScanReading({ symbols: [] }, t)).toMatchObject({
+      kind: 'unreadable',
+      title: 'Aucun code lu',
+      hint: 'Rapprochez l’étiquette ou importez une photo plus nette.',
+    });
+    const hintOf = (quality: 'blurry' | 'glare', torchOn: boolean) =>
+      unreadableReading(t, { quality, torchOn }) as { hint: string };
+    expect(hintOf('blurry', false).hint).toBe(
+      'Photo floue. Tenez l’iPhone immobile et rapprochez-vous.',
+    );
+    expect(hintOf('glare', false).hint).toBe(
+      'Reflet sur l’étiquette. Inclinez légèrement le colis.',
+    );
+    expect(hintOf('glare', true).hint).toBe(
+      'Reflet sur l’étiquette. Inclinez légèrement le colis, ou éteignez la lampe.',
+    );
+    expect(unreadableReading(t, { quality: 'ok', torchOn: true })).toEqual(
+      toScanReading({ symbols: [] }, t),
+    );
+  });
+
+  it('keeps the advice under the name the OCR could not give', () => {
+    const shot = { quality: 'blurry' as const, torchOn: false };
+    expect(toScanReading({ symbols: [] }, t, { ocrName: null }, shot)).toEqual(
+      unreadableReading(t, shot),
+    );
+    expect(
+      toScanReading({ symbols: [] }, t, { ocrName: 'Camille Morel' }, shot),
+    ).toMatchObject({ kind: 'read' });
   });
 });
