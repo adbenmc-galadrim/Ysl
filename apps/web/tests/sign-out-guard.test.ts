@@ -37,10 +37,10 @@ describe('prepareSignOut', () => {
 
     await expect(
       prepareSignOut(db, vi.fn().mockResolvedValue(undefined)),
-    ).resolves.toEqual({ ok: false, pending: 2 });
+    ).resolves.toEqual({ ok: false, pending: 2, rejected: 0 });
   });
 
-  it('does not hold a sign-out for changes the server refused', async () => {
+  it('holds a sign-out for changes the server refused, until corrected', async () => {
     const db = await openTestDatabase();
     await commitLocal(db, {
       upserts: [{ entity: 'parcel', row: parcelRow() }],
@@ -51,6 +51,6 @@ describe('prepareSignOut', () => {
 
     await expect(
       prepareSignOut(db, vi.fn().mockResolvedValue(undefined)),
-    ).resolves.toEqual({ ok: true });
+    ).resolves.toEqual({ ok: false, pending: 0, rejected: 1 });
   });
 });

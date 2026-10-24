@@ -22,8 +22,21 @@ export type SyncEngineOptions = {
   onUnauthorized?: () => void;
 };
 
+export type SyncNowOptions = {
+  /** A tap or the network coming back: runs even during a back-off. */
+  force?: boolean;
+};
+
+/** Back-off after a failed run: 2 s, 4 s, … up to 5 min, for the automatic triggers. */
+export const BACKOFF_FIRST_MS = 2_000;
+export const BACKOFF_MAX_MS = 5 * 60_000;
+
+export function backoffAfter(failures: number): number {
+  return Math.min(BACKOFF_MAX_MS, BACKOFF_FIRST_MS * 2 ** (failures - 1));
+}
+
 export type SyncRun = {
-  status: Exclude<SyncRunStatus, 'syncing'>;
+  status: Exclude<SyncRunStatus, 'syncing'> | 'skipped';
   applied: number;
   rejected: number;
   pulled: number;
@@ -56,6 +69,23 @@ export function createSyncEngine({
   let snapshot = INITIAL_SYNC_SNAPSHOT;
   const listeners = new Set<() => void>();
   let inFlight: Promise<SyncRun> | null = null;
+  let failures = 0;
+  let retryAt = 0;
+
+  const nothing = (status: SyncRun['status']): SyncRun => ({
+    status,
+    applied: 0,
+    rejected: 0,
+    pulled: 0,
+  });
+
+  function failed(error: unknown) {
+    failures += 1;
+    retryAt = now().getTime() + backoffAfter(failures);
+    const status = online() ? 'error' : 'offline';
+    set({ status, lastError: describeError(error) });
+    return nothing(status);
+  }
 
   function set(patch: Partial<SyncSnapshot>) {
     snapshot = { ...snapshot, ...patch };
@@ -65,7 +95,7 @@ export function createSyncEngine({
   async function run(): Promise<SyncRun> {
     if (!online()) {
       set({ status: 'offline' });
-      return { status: 'offline', applied: 0, rejected: 0, pulled: 0 };
+      return nothing('offline');
     }
     set({ status: 'syncing' });
     try {
@@ -74,40 +104,48 @@ export function createSyncEngine({
       const pulled = await pullChanges(db, pull);
       const at = now();
       await db.syncState.put({ key: SYNC_STATE_KEYS.lastSyncAt, value: at });
+      if (pushed.stopped === 'retry') {
+        failures += 1;
+        retryAt = at.getTime() + backoffAfter(failures);
+      } else {
+        failures = 0;
+      }
+      const status = pushed.stopped === 'retry' ? 'error' : 'idle';
       set({
-        status: pushed.stopped === 'retry' ? 'error' : 'idle',
+        status,
         lastSyncAt: at,
         lastError: pushed.stopped === 'retry' ? 'retry' : null,
       });
       return {
-        status: pushed.stopped === 'retry' ? 'error' : 'idle',
+        status,
         applied: pushed.applied,
         rejected: pushed.rejected,
         pulled: pulled.rows,
       };
     } catch (error) {
       if (isUnauthorized(error)) onUnauthorized?.();
-      set({
-        status: online() ? 'error' : 'offline',
-        lastError: describeError(error),
-      });
-      return {
-        status: online() ? 'error' : 'offline',
-        applied: 0,
-        rejected: 0,
-        pulled: 0,
-      };
+      return failed(error);
     }
   }
 
   return {
-    syncNow(): Promise<SyncRun> {
-      if (!inFlight) {
-        inFlight = run().finally(() => {
-          inFlight = null;
-        });
+    syncNow({ force = false }: SyncNowOptions = {}): Promise<SyncRun> {
+      if (inFlight) return inFlight;
+      if (!force && now().getTime() < retryAt) {
+        return Promise.resolve(nothing('skipped'));
       }
+      inFlight = run().finally(() => {
+        inFlight = null;
+      });
       return inFlight;
+    },
+    /** Reads what the last session left: when it last synchronised. */
+    async restore(): Promise<void> {
+      const entry = await db.syncState.get(SYNC_STATE_KEYS.lastSyncAt);
+      const at = entry?.value;
+      if (at instanceof Date && snapshot.lastSyncAt === null) {
+        set({ lastSyncAt: at });
+      }
     },
     subscribe: (listener: () => void) => {
       listeners.add(listener);
@@ -120,6 +158,8 @@ export function createSyncEngine({
     },
     reset() {
       snapshot = INITIAL_SYNC_SNAPSHOT;
+      failures = 0;
+      retryAt = 0;
       for (const listener of listeners) listener();
     },
   };

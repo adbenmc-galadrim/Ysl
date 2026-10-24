@@ -19,19 +19,21 @@ export function useSignOut() {
 
   return useMutation({
     mutationFn: async () => {
-      const check = await prepareSignOut(db, syncNow);
-      if (!check.ok) throw new SignOutBlockedError(check.pending);
+      const check = await prepareSignOut(db, () => syncNow({ force: true }));
+      if (!check.ok) {
+        throw new SignOutBlockedError(check.pending, check.rejected);
+      }
       const { error } = await signOut();
       if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
       forgetSession(localStorage);
+      stopSync();
       try {
         await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);
       } catch (cause) {
         console.warn('Local data was not fully cleared', cause);
       }
-      stopSync();
       queryClient.clear();
       await router.navigate({ to: '/connexion', search: {} });
     },

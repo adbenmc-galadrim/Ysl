@@ -107,7 +107,7 @@ export function SyncScreen() {
       title={card.title}
       detail={card.detail}
       action={t('sync.action')}
-      onAction={() => void syncNow()}
+      onAction={() => void syncNow({ force: true })}
       groups={[onDevice, updates]}
       onBack={() => void navigate({ to: '/reglages' })}
     />

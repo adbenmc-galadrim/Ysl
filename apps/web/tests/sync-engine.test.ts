@@ -105,6 +105,43 @@ describe('createSyncEngine', () => {
     expect(engine.getSnapshot().status).toBe('offline');
   });
 
+  it('backs off after a failure, except when forced', async () => {
+    let clock = NOW.getTime();
+    const pull = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockResolvedValue(empty);
+    const engine = createSyncEngine({
+      db,
+      push: vi.fn().mockResolvedValue({ results: [] }),
+      pull,
+      online: () => true,
+      now: () => new Date(clock),
+    });
+
+    expect((await engine.syncNow()).status).toBe('error');
+    expect((await engine.syncNow()).status).toBe('skipped');
+    expect(pull).toHaveBeenCalledTimes(1);
+    expect((await engine.syncNow({ force: true })).status).toBe('idle');
+    clock += 10_000;
+    expect((await engine.syncNow()).status).toBe('idle');
+    expect(pull).toHaveBeenCalledTimes(3);
+  });
+
+  it('restores when the last session synchronised', async () => {
+    await db.syncState.put({ key: SYNC_STATE_KEYS.lastSyncAt, value: NOW });
+    const engine = createSyncEngine({
+      db,
+      push: vi.fn(),
+      pull: vi.fn(),
+      online: () => false,
+    });
+
+    await engine.restore();
+
+    expect(engine.getSnapshot().lastSyncAt).toEqual(NOW);
+  });
+
   it('reports a failed request and tells when the session is gone', async () => {
     const onUnauthorized = vi.fn();
     const error = Object.assign(new Error('UNAUTHORIZED'), {

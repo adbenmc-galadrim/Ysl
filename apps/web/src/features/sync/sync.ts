@@ -17,7 +17,9 @@ export const syncEngine = createSyncEngine({
   },
 });
 
-export const syncNow = () => syncEngine.syncNow();
+/** The automatic triggers respect the back-off; a tap or the network coming back do not. */
+export const syncNow = (options?: { force?: boolean }) =>
+  syncEngine.syncNow(options);
 
 let stop: (() => void) | null = null;
 
@@ -31,7 +33,7 @@ let stop: (() => void) | null = null;
 export function startSync(): void {
   if (stop) return;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const onOnline = () => void syncNow();
+  const onOnline = () => void syncNow({ force: true });
   const onOffline = () => syncEngine.markOffline();
   const onVisible = () => {
     if (document.visibilityState === 'visible') void syncNow();
@@ -52,7 +54,7 @@ export function startSync(): void {
     document.removeEventListener('visibilitychange', onVisible);
     unsubscribe();
   };
-  void syncNow();
+  void syncEngine.restore().then(() => syncNow({ force: true }));
 }
 
 export function stopSync(): void {

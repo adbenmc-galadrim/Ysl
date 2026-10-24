@@ -25,6 +25,7 @@ describe('syncPill', () => {
     );
     expect(syncPill(view({ status: 'syncing' }))).toBe('syncing');
     expect(syncPill(view({ status: 'error' }))).toBe('synced');
+    expect(syncPill(view({ status: 'error', pending: 2 }))).toBe('offline');
     expect(syncPill(view())).toBe('synced');
   });
 });
@@ -54,6 +55,10 @@ describe('syncValue', () => {
     expect(syncValue(view({ pending: 3, status: 'error' }), t)).toEqual({
       label: '3 en attente',
       color: 'orange',
+    });
+    expect(syncValue(view({ rejected: 2 }), t)).toEqual({
+      label: '2 à corriger',
+      color: 'red',
     });
     expect(syncValue(view({ status: 'error' }), t)).toEqual({
       label: 'Échec',

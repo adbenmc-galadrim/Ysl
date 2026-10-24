@@ -1,12 +1,17 @@
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { SyncView } from '#/features/sync/use-sync';
 
-/** The pill at the top of Colis: offline wins, then a run in progress, then all is well. */
+/**
+ * The pill at the top of Colis. "Hors ligne" also when the network is there
+ * but the server is not (captive Wi-Fi, outage) and changes wait: "À jour"
+ * would be a lie next to the banner.
+ */
 export function syncPill(
-  sync: Pick<SyncView, 'online' | 'status'>,
+  sync: Pick<SyncView, 'online' | 'status' | 'pending'>,
 ): 'synced' | 'syncing' | 'offline' {
   if (!sync.online) return 'offline';
   if (sync.status === 'syncing') return 'syncing';
+  if (sync.status === 'error' && sync.pending > 0) return 'offline';
   return 'synced';
 }
 
@@ -24,7 +29,7 @@ export type SyncValue = {
 
 /** The Réglages line: one word on where this iPhone stands with the server. */
 export function syncValue(
-  sync: Pick<SyncView, 'online' | 'status' | 'pending'>,
+  sync: Pick<SyncView, 'online' | 'status' | 'pending' | 'rejected'>,
   t: TranslateFn,
 ): SyncValue {
   if (!sync.online)
@@ -36,6 +41,12 @@ export function syncValue(
     return {
       label: t('settings.sync.pending', { count: sync.pending }),
       color: 'orange',
+    };
+  }
+  if (sync.rejected > 0) {
+    return {
+      label: t('settings.sync.rejected', { count: sync.rejected }),
+      color: 'red',
     };
   }
   if (sync.status === 'error') {

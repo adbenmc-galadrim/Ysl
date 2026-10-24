@@ -16,6 +16,11 @@ const t = createTranslator(DEFAULT_LOCALE);
 /** What stopped the sign-out: changes still on the phone, or the server. */
 export function signOutMessage(error: unknown): string {
   if (error instanceof SignOutBlockedError) {
+    if (error.pending === 0) {
+      return error.rejected === 1
+        ? t('auth.signOut.rejected.one')
+        : t('auth.signOut.rejected.many', { count: error.rejected });
+    }
     return error.pending === 1
       ? t('auth.signOut.blocked.one')
       : t('auth.signOut.blocked.many', { count: error.pending });
