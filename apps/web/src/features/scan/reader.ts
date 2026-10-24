@@ -33,6 +33,20 @@ export const merge = (first: Symbols, second: Symbols): Symbols => {
 /** Drafts whose reading is in flight, across screens. */
 const inFlight = new Set<string>();
 
+/** Every shot or recovery still running, so "Terminer" can wait for them. */
+const work = new Set<Promise<unknown>>();
+
+export function trackWork<T>(promise: Promise<T>): Promise<T> {
+  work.add(promise);
+  void promise.finally(() => work.delete(promise)).catch(() => undefined);
+  return promise;
+}
+
+/** Resolves once nothing is on its way any more, this screen or a former one. */
+export async function settled(): Promise<void> {
+  while (work.size) await Promise.allSettled([...work]);
+}
+
 /**
  * Reads one shot under a queue slot already acquired: the cascade, then a
  * second pass for the carrier's missing symbols. Owns both bitmaps and the

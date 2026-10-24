@@ -15,7 +15,12 @@ import { cameraStream, useCameraState } from '#/features/camera/stream';
 import { db } from '#/features/db/database';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
 import { lastOf } from '#/features/scan/last';
-import { readDraft, recoverPending } from '#/features/scan/reader';
+import {
+  readDraft,
+  recoverPending,
+  settled,
+  trackWork,
+} from '#/features/scan/reader';
 import { failedReading, toScanReading } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
 import { holdUpdates } from '#/features/update/updater';
@@ -44,7 +49,6 @@ function ScanPage() {
   const close = () => void navigate({ to: '/' });
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const shots = useRef(new Set<Promise<void>>());
   const finishing = useRef(false);
   const camera = useCameraState();
   const view = useBatch();
@@ -60,15 +64,9 @@ function ScanPage() {
     return () => cameraStream.detach(video);
   }, []);
 
-  /** Terminer waits for every reading still on its way. */
-  const track = (work: Promise<void>) => {
-    const shot = work.finally(() => shots.current.delete(shot));
-    shots.current.add(shot);
-  };
-
   const batchId = view?.batch?.id;
   useEffect(() => {
-    if (batchId) track(recoverPending(db, photoFiles, queue, batchId));
+    if (batchId) void trackWork(recoverPending(db, photoFiles, queue, batchId));
   }, [batchId, queue]);
 
   /** One tap, one parcel: the draft and its photo land before the reading. */
@@ -109,7 +107,7 @@ function ScanPage() {
   };
 
   const fire = (grab: () => Promise<ImageBitmap>) => {
-    if (!finishing.current) track(shoot(grab));
+    if (!finishing.current) void trackWork(shoot(grab));
   };
 
   const onShutter = () => {
@@ -136,7 +134,7 @@ function ScanPage() {
     if (finishing.current) return;
     finishing.current = true;
     try {
-      await Promise.allSettled([...shots.current]);
+      await settled();
       if (view?.batch) {
         await finishBatch(db, {
           batchId: view.batch.id,

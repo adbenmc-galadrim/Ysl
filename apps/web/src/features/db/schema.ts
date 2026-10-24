@@ -96,8 +96,8 @@ export type DraftReading = 'pending' | 'read' | 'unreadable' | 'failed';
 
 export type DraftSymbol = { format: string; text: string };
 
-/** A batch being scanned on this device; the server learns of it at the end. */
-export type DraftBatch = { id: string; startedAt: Date; endedAt: Date | null };
+/** A batch being scanned on this device; it becomes a `batch` row at the end. */
+export type DraftBatch = { id: string; startedAt: Date };
 
 /**
  * A parcel of the batch in progress: one tap, one photo, the reading when

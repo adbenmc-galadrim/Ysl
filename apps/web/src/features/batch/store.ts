@@ -19,12 +19,11 @@ export type DraftPatch = Partial<
   >
 >;
 
-/** The batch left open on this device, if any: the agent picks it up. */
-export async function currentBatch(
+/** The batch left on this device, if any: the agent picks it up. */
+export function currentBatch(
   db: CourrierDatabase,
 ): Promise<DraftBatch | undefined> {
-  const last = await db.draftBatch.orderBy('startedAt').last();
-  return last && !last.endedAt ? last : undefined;
+  return db.draftBatch.orderBy('startedAt').last();
 }
 
 /** The open batch, or a new one; never two open at once. */
@@ -35,7 +34,7 @@ export function openBatch(
   return db.transaction('rw', db.draftBatch, async () => {
     const open = await currentBatch(db);
     if (open) return open;
-    const batch: DraftBatch = { id: newId(), startedAt: now, endedAt: null };
+    const batch: DraftBatch = { id: newId(), startedAt: now };
     await db.draftBatch.add(batch);
     return batch;
   });
