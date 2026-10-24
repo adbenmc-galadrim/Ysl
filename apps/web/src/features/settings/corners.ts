@@ -33,7 +33,11 @@ export function writeCornerSetting(
   setting: CornerSetting,
   storage: CornerStorage = localStorage,
 ) {
-  storage.setItem(CORNERS_KEY, JSON.stringify(setting));
+  try {
+    storage.setItem(CORNERS_KEY, JSON.stringify(setting));
+  } catch {
+    return;
+  }
 }
 
 let current: CornerSetting | undefined;

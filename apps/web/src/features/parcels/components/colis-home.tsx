@@ -23,7 +23,7 @@ export function ColisHome() {
   return (
     <ColisScreen
       sync={online ? 'synced' : 'offline'}
-      summary={summarize(rows)}
+      summary={parcels.data ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
       loading={loading}
       bottomBar={!empty}

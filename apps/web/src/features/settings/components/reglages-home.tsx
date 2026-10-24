@@ -23,7 +23,9 @@ function useServerState(): keyof typeof SERVER_STATE {
   const health = useHealthQuery();
   if (health.isError) return 'unreachable';
   if (!health.data) return 'checking';
-  return health.data.database;
+  return health.data.api === 'up' && health.data.database === 'up'
+    ? 'up'
+    : 'down';
 }
 
 export function ReglagesHome() {
@@ -62,12 +64,6 @@ export function ReglagesHome() {
         icon: 'pin',
         color: 'red',
         label: t('settings.pickup'),
-        chevron: false,
-      },
-      {
-        icon: 'bell',
-        color: 'purple',
-        label: t('settings.reminders'),
         chevron: false,
       },
     ],
