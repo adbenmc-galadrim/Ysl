@@ -1,6 +1,7 @@
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { Pool } from 'pg';
 import * as schema from '#schema/index';
 
@@ -20,6 +21,9 @@ pool.on('error', (error) => {
 export const db = drizzle({ client: pool, schema });
 
 export type Db = typeof db;
+
+/** Any Postgres drizzle over the schema: the pool above, or PGlite in tests. */
+export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 export async function closeDb(): Promise<void> {
   await pool.end();

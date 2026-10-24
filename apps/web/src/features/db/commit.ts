@@ -40,9 +40,18 @@ function queued(
     type,
     patch,
     clientTs,
+    state: 'queued',
     attempts: 0,
     lastError: null,
   };
+}
+
+const commitListeners = new Set<() => void>();
+
+/** Called after every `commitLocal` that queued something: the sync engine listens. */
+export function onLocalCommit(listener: () => void): () => void {
+  commitListeners.add(listener);
+  return () => commitListeners.delete(listener);
 }
 
 /**
@@ -62,7 +71,7 @@ export async function commitLocal(
   ]);
   const tables = [...entities].map((entity) => db.synced(entity));
 
-  return db.transaction('rw', [...tables, db.outbox], async () => {
+  const opIds = await db.transaction('rw', [...tables, db.outbox], async () => {
     const ops: Omit<OutboxOp, 'seq'>[] = [];
     for (const { entity, row } of upserts) {
       const stamped = { ...row, updatedAt: now };
@@ -79,4 +88,6 @@ export async function commitLocal(
     await db.outbox.bulkAdd(ops);
     return ops.map((op) => op.opId);
   });
+  for (const listener of commitListeners) listener();
+  return opIds;
 }

@@ -23,9 +23,13 @@
     "@repo/contract": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@trpc/server": "catalog:"
+    "@trpc/server": "catalog:",
+    "drizzle-orm": "catalog:",
+    "superjson": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
+    "@trpc/client": "catalog:",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "catalog:",

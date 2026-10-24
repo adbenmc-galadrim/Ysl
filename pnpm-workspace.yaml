@@ -13,6 +13,7 @@ allowBuilds:
 # Single source of truth for versions shared by more than one workspace
 # package, as in Emis. Consumers declare `"catalog:"` instead of a range.
 catalog:
+  '@electric-sql/pglite': ^0.5.11
   '@fontsource/inter-tight': ^5.2.7
   '@tailwindcss/vite': ^4.3.3
   '@trpc/client': 11.18.0
@@ -36,6 +37,7 @@ catalog:
   react: ^19.2.0
   react-dom: ^19.2.0
   sharp: ^0.35.5
+  superjson: ^2.2.6
   tailwind-merge: ^3.6.0
   tailwind-variants: ^3.3.1
   tailwindcss: ^4.3.3

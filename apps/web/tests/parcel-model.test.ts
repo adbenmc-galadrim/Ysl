@@ -60,9 +60,7 @@ describe('homeState', () => {
       lastNotifiedAt: hoursAgo(20),
     });
     expect(homeState(reminded, NOW)).toBe('notified');
-    expect(toParcelRow(reminded, context, NOW, t)?.status).toBe(
-      'Notifié hier',
-    );
+    expect(toParcelRow(reminded, context, NOW, t)?.status).toBe('Notifié hier');
 
     const stillLate = parcel({
       status: 'notifie',

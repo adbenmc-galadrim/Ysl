@@ -18,7 +18,9 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "auth:generate": "better-auth generate --config src/auth.ts --output ../db/src/schema/auth.ts --yes",
-    "auth:create-user": "tsx src/scripts/create-user.ts"
+    "auth:create-user": "tsx src/scripts/create-user.ts",
+    "auth:attach-organization": "tsx src/scripts/attach-organization.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@repo/contract": "workspace:*",
@@ -28,12 +30,14 @@
     "drizzle-orm": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "catalog:",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "auth": "1.7.12",
     "eslint": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

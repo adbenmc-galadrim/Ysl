@@ -35,6 +35,7 @@
     "dexie-react-hooks": "^4.4.0",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "superjson": "catalog:",
     "tailwindcss": "catalog:"
   },
   "devDependencies": {

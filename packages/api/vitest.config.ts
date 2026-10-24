@@ -5,5 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     globals: false,
+    // PGlite boots and replays every migration in `beforeAll` (sync tests).
+    hookTimeout: 60_000,
   },
 });

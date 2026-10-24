@@ -61,6 +61,9 @@ export type SyncedRows = {
 
 export type OutboxOpType = 'upsert' | 'delete';
 
+/** `queued` waits for `sync.push`; `rejected` was refused for good (4xx) and waits for a correction. */
+export type OutboxOpState = 'queued' | 'rejected';
+
 /** One change waiting for `sync.push`, in the order it was made. */
 export type OutboxOp = {
   seq: number;
@@ -70,6 +73,7 @@ export type OutboxOp = {
   type: OutboxOpType;
   patch: Record<string, unknown>;
   clientTs: Date;
+  state: OutboxOpState;
   attempts: number;
   lastError: string | null;
 };
@@ -91,6 +95,14 @@ export type LocalPhoto = {
 };
 
 export type SyncStateEntry = { key: string; value: unknown };
+
+/** Where this device stands with the server (`sync_state` rows). */
+export const SYNC_STATE_KEYS = {
+  /** `SyncCursor`: the generation and the first transaction id not yet pulled. */
+  cursor: 'cursor',
+  /** `Date` of the last push and pull that both went through. */
+  lastSyncAt: 'lastSyncAt',
+} as const;
 
 /** What the reader made of a draft's photo so far; `typed` came by hand. */
 export type DraftReading =
@@ -162,6 +174,11 @@ const DRAFT_STORES = {
   draft_parcel: 'id, batchId, createdAt, trackingNorm',
 };
 
+/** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
+const OUTBOX_V3 = {
+  outbox: '++seq, &opId, [entity+entityId], clientTs, state',
+};
+
 export const SYNCED_TABLE_NAMES = Object.keys(SYNCED_STORES) as SyncedEntity[];
 
 export class CourrierDatabase extends Dexie {
@@ -187,6 +204,16 @@ export class CourrierDatabase extends Dexie {
     super(name);
     this.version(1).stores({ ...SYNCED_STORES, ...LOCAL_STORES });
     this.version(2).stores(DRAFT_STORES);
+    this.version(3)
+      .stores(OUTBOX_V3)
+      .upgrade((tx) =>
+        tx
+          .table('outbox')
+          .toCollection()
+          .modify((op: Partial<OutboxOp>) => {
+            op.state ??= 'queued';
+          }),
+      );
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');

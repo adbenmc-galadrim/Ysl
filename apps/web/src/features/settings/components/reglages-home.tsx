@@ -10,6 +10,8 @@ import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
 import { useStorageStatus } from '#/features/settings/api/use-storage-status';
 import { storageValue } from '#/features/settings/storage-value';
+import { syncValue } from '#/features/sync/sync-value';
+import { useSync } from '#/features/sync/use-sync';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -43,6 +45,7 @@ export function ReglagesHome() {
   const role = toUserRole(session.user.role);
   const server = useServerState();
   const storage = useStorageStatus();
+  const sync = useSync();
   const corners = useCornerSetting();
   const update = useUpdate();
   const cornersTitle = CORNER_RADII.find(
@@ -54,6 +57,13 @@ export function ReglagesHome() {
     items: [
       {
         icon: 'cloud',
+        color: syncValue(sync, t).color,
+        label: t('settings.sync'),
+        value: syncValue(sync, t).label,
+        onPress: () => void navigate({ to: '/reglages/synchronisation' }),
+      },
+      {
+        icon: 'upload',
         color: server === 'up' ? 'green' : 'grey',
         label: t('settings.server'),
         value: SERVER_STATE[server],
