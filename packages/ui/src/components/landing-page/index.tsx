@@ -45,8 +45,15 @@ function splitReveals(root: HTMLElement) {
       mask: 'lines',
       autoSplit: true,
       // eslint-disable-next-line @typescript-eslint/no-misused-promises -- SplitText wants the tween back to re-run it on resplit
-      onSplit: (self) =>
-        gsap.from(self.lines, {
+      onSplit: (self) => {
+        // A mask as tall as the line-height clips descenders (g, p) and accents.
+        gsap.set(self.masks, {
+          paddingTop: '0.12em',
+          marginTop: '-0.12em',
+          paddingBottom: '0.22em',
+          marginBottom: '-0.22em',
+        });
+        return gsap.from(self.lines, {
           yPercent: 115,
           duration: 0.9,
           stagger: 0.09,
@@ -56,7 +63,8 @@ function splitReveals(root: HTMLElement) {
             start: 'top 92%',
             toggleActions: 'play none none none',
           },
-        }),
+        });
+      },
     });
   });
 }
