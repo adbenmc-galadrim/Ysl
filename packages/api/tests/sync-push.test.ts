@@ -158,7 +158,9 @@ describe('sync.push', () => {
     const again = await push(sync, writer, { ops: [change] });
 
     expect(first.results[0]).toMatchObject({ status: 400 });
-    expect(first.results[0]?.message).toContain('colour');
+    expect(first.results[0]?.message).toBe(
+      'Données invalides, à corriger sur l’appareil.',
+    );
     expect(again.results[0]).toMatchObject({ status: 400 });
     expect(await parcel(change.entityId)).toBeUndefined();
   });
@@ -310,7 +312,12 @@ describe('sync.push', () => {
     const { results } = await push(failing, writer, { ops });
 
     expect(results).toEqual([
-      { opId: ops[0]?.opId, status: 503, message: 'deadlock' },
+      {
+        opId: ops[0]?.opId,
+        status: 503,
+        message:
+          'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
+      },
     ]);
   });
 });

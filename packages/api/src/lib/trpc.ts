@@ -4,7 +4,7 @@ import { toUserRole, type UserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
-import { organizationOf } from '#features/sync/membership';
+import { organizationOf } from '#lib/organization';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 

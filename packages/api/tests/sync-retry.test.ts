@@ -46,7 +46,9 @@ describe('statusOf', () => {
     expect(statusOf(pgError('23503'))).toBe(404);
     expect(statusOf(pgError('23502'))).toBe(400);
     expect(statusOf(pgError('22P02'))).toBe(400);
+    expect(statusOf(pgError('P0001'))).toBe(400);
     expect(statusOf(pgError('53300'))).toBe(503);
     expect(statusOf(new Error('socket hang up'))).toBe(503);
+    expect(statusOf(new TypeError('toISOString is not a function'))).toBe(400);
   });
 });

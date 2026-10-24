@@ -4,6 +4,12 @@ export const fr = {
   'error.forbidden': 'Vous n’avez pas accès à cette fonction.',
   'sync.error.noOrganization':
     'Ce compte n’est rattaché à aucun service courrier.',
+  'sync.op.badRequest': 'Données invalides, à corriger sur l’appareil.',
+  'sync.op.forbidden': 'Cet élément appartient à un autre service courrier.',
+  'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
+  'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
+  'sync.op.retry':
+    'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
   'agents.error.notFound': 'Ce compte n’existe pas.',
   'agents.error.invalid': 'Les informations saisies sont invalides.',

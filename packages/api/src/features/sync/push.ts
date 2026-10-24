@@ -7,8 +7,16 @@ import {
   type SyncOp,
 } from '@repo/contract/sync';
 import { syncOp as syncOpTable } from '@repo/db/schema';
+import { logger } from '@repo/shared/logger';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
-import { isRetryable, statusOf, SyncRejected } from '#features/sync/errors';
+import {
+  type FailureStatus,
+  isRetryable,
+  messageOf,
+  sqlState,
+  statusOf,
+  SyncRejected,
+} from '#features/sync/errors';
 import { withRetry } from '#features/sync/retry';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 
@@ -77,7 +85,7 @@ async function upsert(
   if (op.entity === 'event') {
     // Append-only: an id already there is this very event, already received.
     const inserted = await insert
-      .onConflictDoNothing()
+      .onConflictDoNothing({ target: table.id })
       .returning({ id: table.id });
     if (inserted.length === 0) await requireOwn(tx, table, op, organizationId);
     return;
@@ -142,6 +150,17 @@ async function softDelete(
   }
 }
 
+function syncOpRow(op: SyncOp, writer: Writer, status: number) {
+  return {
+    organizationId: writer.organizationId,
+    opId: op.opId,
+    userId: writer.userId,
+    entity: op.entity,
+    entityId: op.entityId,
+    status,
+  };
+}
+
 /**
  * Claims the operation id. Returns the status recorded by an earlier push
  * when the device already sent it, null when this push is the first.
@@ -154,14 +173,7 @@ async function claim(
 ): Promise<number | null> {
   const claimed = await tx
     .insert(syncOpTable)
-    .values({
-      organizationId: writer.organizationId,
-      opId: op.opId,
-      userId: writer.userId,
-      entity: op.entity,
-      entityId: op.entityId,
-      status,
-    })
+    .values(syncOpRow(op, writer, status))
     .onConflictDoNothing()
     .returning({ opId: syncOpTable.opId });
   if (claimed.length > 0) return null;
@@ -177,6 +189,7 @@ async function claim(
   return earlier?.status ?? SYNC_STATUS.applied;
 }
 
+/** Records a refusal so the same operation sent again gets the same answer. */
 async function record(
   db: AnyDb,
   op: SyncOp,
@@ -185,14 +198,7 @@ async function record(
 ): Promise<void> {
   await db
     .insert(syncOpTable)
-    .values({
-      organizationId: writer.organizationId,
-      opId: op.opId,
-      userId: writer.userId,
-      entity: op.entity,
-      entityId: op.entityId,
-      status,
-    })
+    .values(syncOpRow(op, writer, status))
     .onConflictDoNothing();
 }
 
@@ -223,14 +229,24 @@ async function applyOne(
     );
     return { opId: op.opId, status: toStatus(earlier ?? SYNC_STATUS.applied) };
   } catch (error) {
+    const fields = { opId: op.opId, entity: op.entity, entityId: op.entityId };
     if (error instanceof SyncRejected) {
+      logger.warn(
+        { ...fields, status: error.status, reason: error.reason },
+        'sync op rejected',
+      );
       await record(db, op, writer, error.status);
       return { opId: op.opId, status: error.status, message: error.message };
     }
-    const status = isRetryable(error) ? SYNC_STATUS.retry : statusOf(error);
-    const message = error instanceof Error ? error.message : String(error);
+    const status: FailureStatus = isRetryable(error)
+      ? SYNC_STATUS.retry
+      : statusOf(error);
+    logger.warn(
+      { ...fields, status, sqlState: sqlState(error), err: error },
+      status === SYNC_STATUS.retry ? 'sync op deferred' : 'sync op rejected',
+    );
     if (status !== SYNC_STATUS.retry) await record(db, op, writer, status);
-    return { opId: op.opId, status, message };
+    return { opId: op.opId, status, message: messageOf(status) };
   }
 }
 
