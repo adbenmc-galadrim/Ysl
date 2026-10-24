@@ -41,6 +41,46 @@ export const Lecture: Story = {
   },
 };
 
+/** A code or the account dictionary named the sender (F19): one more line, no mock-up. */
+export const LectureExpediteur: Story = {
+  name: 'Lecture, avec expéditeur',
+  args: {
+    onUndo: () => undefined,
+    reading: {
+      kind: 'read',
+      last: { name: 'Hugo Lefèvre', meta: 'DHL ···7112' },
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: SCANNED_LABEL.tracking, mono: true },
+        { label: 'Destinataire', value: 'Camille Morel' },
+        { label: 'Expéditeur', value: 'Metalworks SpA' },
+      ],
+    },
+  },
+};
+
+/** The `FROM` block alone names the sender: a guess, shown as one (§4.4). */
+export const LectureExpediteurDouteux: Story = {
+  name: 'Lecture, expéditeur à vérifier',
+  args: {
+    onUndo: () => undefined,
+    reading: {
+      kind: 'read',
+      last: { name: 'Hugo Lefèvre', meta: 'DHL ···7112' },
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: SCANNED_LABEL.tracking, mono: true },
+        { label: 'Destinataire', value: 'Camille Morel ?', status: 'warning' },
+        {
+          label: 'Expéditeur',
+          value: 'Atelier Tissage Nord ?',
+          status: 'warning',
+        },
+      ],
+    },
+  },
+};
+
 /** No one named on the label: the previous parcel's recipient is one tap away (F11). */
 export const LectureMemeDestinataire: Story = {
   name: 'Lecture, même destinataire',
