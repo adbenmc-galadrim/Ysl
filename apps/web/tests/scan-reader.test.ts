@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import type { DecodeResult } from '@repo/barcode/worker';
+import { GS, RS } from '@repo/contract/codes';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { addDraft, openBatch } from '#/features/batch/store';
 import type { CourrierDatabase } from '#/features/db/schema';
@@ -94,6 +95,52 @@ describe('readDraft', () => {
     expect(clone.closed).toBe(false);
   });
 
+  it('keeps the recipient a structured code names, none from a bare 1D', async () => {
+    const aztec = [
+      `[)>${RS}01`,
+      '02',
+      '0075007',
+      '250',
+      '801',
+      '118J0229907975',
+      'GEOP',
+      '123456',
+      '',
+      '',
+      '001/002',
+      '00.50KG',
+      'N',
+      '24 RUE DE L UNIVERSITE',
+      'PARIS',
+      '',
+      'CAMILLE MOREL',
+    ].join(GS);
+    const batch = await openBatch(db, NOW);
+    const named = await addDraft(db, files, batch.id, photo(), NOW);
+    const bare = await addDraft(db, files, batch.id, photo(), NOW);
+    const withAztec = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Aztec', aztec)])),
+      1,
+    );
+    const withCode128 = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Code128', '1ZE6344W0499230622')])),
+      1,
+    );
+    await withAztec.acquire();
+    await readDraft(db, withAztec, named.id, bitmap(), bitmap());
+    await withCode128.acquire();
+    await readDraft(db, withCode128, bare.id, bitmap(), bitmap());
+
+    expect(await db.draftParcel.get(named.id)).toMatchObject({
+      carrier: 'Colissimo',
+      readName: 'CAMILLE MOREL',
+    });
+    expect(await db.draftParcel.get(bare.id)).toMatchObject({
+      carrier: 'UPS',
+      readName: null,
+    });
+  });
+
   it('says so when the draft was undone during the reading', async () => {
     let finish: (value: DecodeResult) => void = () => undefined;
     let calls = 0;
@@ -126,7 +173,10 @@ describe('readDraft', () => {
     const reading = await readDraft(db, queue, draft.id, bitmap(), bitmap());
 
     expect(reading).toMatchObject({ kept: true, failed: true, symbols: [] });
-    expect((await db.draftParcel.get(draft.id))?.reading).toBe('failed');
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      reading: 'failed',
+      ocrState: 'pending',
+    });
     expect(queue.pending).toBe(0);
   });
 });
@@ -157,6 +207,37 @@ describe('recoverPending', () => {
       carrier: 'DHL',
     });
     expect(queue.pending).toBe(0);
+  });
+
+  it('reads the text of the drafts whose codes landed but not their text', async () => {
+    const queue = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Code128', '1ZE6344W0499230622')])),
+      1,
+    );
+    const batch = await openBatch(db, NOW);
+    const pending = await addDraft(db, files, batch.id, photo(), NOW);
+    const codesOnly = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(codesOnly.id, { reading: 'read' });
+    const complete = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(complete.id, {
+      reading: 'read',
+      ocrState: 'done',
+    });
+    const failed = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(failed.id, { reading: 'failed' });
+    const typed = await addDraft(db, files, batch.id, null, NOW);
+    await db.draftParcel.update(typed.id, {
+      reading: 'typed',
+      ocrState: 'skipped',
+    });
+    const texts: string[] = [];
+
+    await recoverPending(db, files, queue, batch.id, toBitmap, (id) => {
+      texts.push(id);
+      return Promise.resolve();
+    });
+
+    expect(texts.sort()).toEqual([pending.id, codesOnly.id, failed.id].sort());
   });
 
   it('frees the slot and fails the draft when the photo cannot be read', async () => {

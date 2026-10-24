@@ -440,6 +440,9 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@repo/ocr':
+        specifier: workspace:*
+        version: link:../../packages/ocr
       '@repo/shared':
         specifier: workspace:*
         version: link:../../packages/shared

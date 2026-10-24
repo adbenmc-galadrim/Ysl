@@ -22,6 +22,7 @@
     "@repo/barcode": "workspace:*",
     "@repo/contract": "workspace:*",
     "@repo/db": "workspace:*",
+    "@repo/ocr": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tailwindcss/vite": "catalog:",

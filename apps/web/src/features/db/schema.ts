@@ -1,3 +1,4 @@
+import type { OcrLine } from '@repo/ocr/worker';
 import type {
   batch,
   contact,
@@ -97,6 +98,15 @@ export type DraftReading =
 
 export type DraftSymbol = { format: string; text: string };
 
+/**
+ * The printed text: still to read, read, failed, or never read (no photo,
+ * or a photo the reader could not open). A failure never fails the draft.
+ */
+export type DraftOcrState = 'pending' | 'done' | 'failed' | 'skipped';
+
+/** A line as `@repo/ocr` read it, kept as is for the diagnostic and the bench. */
+export type DraftOcrLine = OcrLine;
+
 /** A batch being scanned on this device; it becomes a `batch` row at the end. */
 export type DraftBatch = { id: string; startedAt: Date };
 
@@ -113,8 +123,14 @@ export type DraftParcel = {
   carrier: string | null;
   tracking: string | null;
   trackingNorm: string | null;
+  /** The recipient a structured code named: sure enough to notify. */
   readName: string | null;
   symbols: DraftSymbol[];
+  ocrState: DraftOcrState;
+  /** The recipient the OCR guessed from the printed text: shown with a doubt. */
+  ocrName: string | null;
+  /** Every line read, in the frame of the 1 600 px working image. */
+  ocrLines: DraftOcrLine[];
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */

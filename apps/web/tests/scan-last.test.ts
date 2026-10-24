@@ -16,6 +16,9 @@ const draft = (overrides: Partial<DraftParcel> = {}): DraftParcel => ({
   trackingNorm: null,
   readName: null,
   symbols: [],
+  ocrState: 'pending',
+  ocrName: null,
+  ocrLines: [],
   ...overrides,
 });
 
@@ -44,6 +47,16 @@ describe('lastOf', () => {
         t,
       ).meta,
     ).toBe('UPS ···0622');
+  });
+
+  it('shows the name a code gave as is, the OCR guess with a doubt', () => {
+    expect(
+      lastOf(draft({ readName: 'Hugo Lefèvre', ocrName: 'Hugo Lefevre' }), t)
+        .name,
+    ).toBe('Hugo Lefèvre');
+    expect(lastOf(draft({ ocrName: 'Camille Morel' }), t).name).toBe(
+      'Camille Morel ?',
+    );
   });
 
   it('names what it could not read', () => {
