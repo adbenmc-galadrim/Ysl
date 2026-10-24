@@ -138,7 +138,7 @@ Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l
 passe les données et les actions. Tant que la base locale n'existe pas, la liste des colis
 est vide et la caméra ne démarre pas : les écrans Scan et Remise sont des coquilles.
 
-Les arrondis (presets `Carrés` à `Arrondis`, pastilles rondes ou non) sont un réglage de
+Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le
 premier rendu (`data-radius`, `data-tiles`). Storybook propose les mêmes presets dans sa
 barre d'outils.
