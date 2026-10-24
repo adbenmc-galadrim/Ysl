@@ -57,8 +57,10 @@ export function startSync(): void {
   void syncEngine.restore().then(() => syncNow({ force: true }));
 }
 
-export function stopSync(): void {
+/** Removes the triggers and waits for the run in flight, so nothing writes after a wipe. */
+export async function stopSync(): Promise<void> {
   stop?.();
   stop = null;
+  await syncEngine.settle();
   syncEngine.reset();
 }

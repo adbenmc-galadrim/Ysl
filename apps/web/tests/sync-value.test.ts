@@ -69,12 +69,17 @@ describe('syncValue', () => {
 });
 
 describe('syncCard', () => {
-  it('shows the last time everything went through', () => {
-    expect(syncCard(view(), t)).toEqual({
+  it('shows the last time everything went through, with the day once it is past', () => {
+    const now = new Date(2026, 9, 24, 15, 0);
+    expect(syncCard(view(), t, now)).toEqual({
       state: 'synced',
       title: 'Tout est à jour',
       detail: 'Dernière synchronisation à 11 h 21',
     });
+    expect(
+      syncCard(view({ lastSyncAt: new Date(2026, 9, 22, 9, 5) }), t, now)
+        .detail,
+    ).toBe('Dernière synchronisation le 22 octobre à 9 h 05');
   });
 
   it('counts what is left to send, in the singular and the plural', () => {

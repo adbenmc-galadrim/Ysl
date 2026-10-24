@@ -13,6 +13,15 @@ import { useSession } from '#/features/auth/api/use-session';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
+/** Only refused changes hold the sign-out: a second tap gives them up. */
+export function canDiscard(error: unknown): boolean {
+  return (
+    error instanceof SignOutBlockedError &&
+    error.pending === 0 &&
+    error.rejected > 0
+  );
+}
+
 /** What stopped the sign-out: changes still on the phone, or the server. */
 export function signOutMessage(error: unknown): string {
   if (error instanceof SignOutBlockedError) {
@@ -58,9 +67,13 @@ export function AccountScreen() {
         icon="logout"
         block
         disabled={signOut.isPending}
-        onClick={() => signOut.mutate()}
+        onClick={() =>
+          signOut.mutate({ discardRejected: canDiscard(signOut.error) })
+        }
       >
-        {t('auth.signOut')}
+        {canDiscard(signOut.error)
+          ? t('auth.signOut.discard')
+          : t('auth.signOut')}
       </Button>
       {signOut.isError ? (
         <div role="alert">

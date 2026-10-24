@@ -52,5 +52,23 @@ describe('prepareSignOut', () => {
     await expect(
       prepareSignOut(db, vi.fn().mockResolvedValue(undefined)),
     ).resolves.toEqual({ ok: false, pending: 0, rejected: 1 });
+    await expect(
+      prepareSignOut(db, vi.fn().mockResolvedValue(undefined), {
+        discardRejected: true,
+      }),
+    ).resolves.toEqual({ ok: true });
+  });
+
+  it('never discards changes still to send', async () => {
+    const db = await openTestDatabase();
+    await commitLocal(db, {
+      upserts: [{ entity: 'parcel', row: parcelRow() }],
+    });
+
+    await expect(
+      prepareSignOut(db, vi.fn().mockResolvedValue(undefined), {
+        discardRejected: true,
+      }),
+    ).resolves.toEqual({ ok: false, pending: 1, rejected: 0 });
   });
 });

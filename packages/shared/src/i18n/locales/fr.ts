@@ -33,9 +33,10 @@ export const fr = {
   'auth.signOut.blocked.many':
     '{{count}} changements ne sont pas encore envoyés au serveur. Retrouvez le réseau avant de vous déconnecter.',
   'auth.signOut.rejected.one':
-    '1 changement a été refusé par le serveur et attend une correction : se déconnecter le perdrait.',
+    '1 changement a été refusé par le serveur et attend une correction : se déconnecter le perdra. Appuyez à nouveau pour vous déconnecter quand même.',
   'auth.signOut.rejected.many':
-    '{{count}} changements ont été refusés par le serveur et attendent une correction : se déconnecter les perdrait.',
+    '{{count}} changements ont été refusés par le serveur et attendent une correction : se déconnecter les perdra. Appuyez à nouveau pour vous déconnecter quand même.',
+  'auth.signOut.discard': 'Se déconnecter quand même',
   'auth.signOut.failed': 'La déconnexion a échoué. Réessayez.',
   'auth.signOut.wipe':
     'Se déconnecter efface les données de cet iPhone une fois tout envoyé.',
@@ -115,7 +116,7 @@ export const fr = {
   'sync.state.pending.many': '{{count}} changements à envoyer',
   'sync.state.rejected.one': '1 changement à corriger',
   'sync.state.rejected.many': '{{count}} changements à corriger',
-  'sync.detail.last': 'Dernière synchronisation à {{time}}',
+  'sync.detail.last': 'Dernière synchronisation {{time}}',
   'sync.detail.never': 'Jamais synchronisé sur cet iPhone',
   'sync.detail.offline': 'Hors ligne, envoi au retour du réseau',
   'sync.detail.syncing': 'Synchronisation en cours…',

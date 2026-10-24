@@ -152,6 +152,10 @@ export function createSyncEngine({
       return () => listeners.delete(listener);
     },
     getSnapshot: () => snapshot,
+    /** Resolves once no run is in flight: nothing will write after it. */
+    async settle(): Promise<void> {
+      while (inFlight) await inFlight.catch(() => undefined);
+    },
     /** Marks the device offline without a request, e.g. on the `offline` event. */
     markOffline() {
       if (!inFlight) set({ status: 'offline' });

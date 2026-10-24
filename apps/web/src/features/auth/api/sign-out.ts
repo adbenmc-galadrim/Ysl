@@ -18,8 +18,12 @@ export function useSignOut() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async () => {
-      const check = await prepareSignOut(db, () => syncNow({ force: true }));
+    mutationFn: async ({
+      discardRejected = false,
+    }: { discardRejected?: boolean } = {}) => {
+      const check = await prepareSignOut(db, () => syncNow({ force: true }), {
+        discardRejected,
+      });
       if (!check.ok) {
         throw new SignOutBlockedError(check.pending, check.rejected);
       }
@@ -28,7 +32,7 @@ export function useSignOut() {
     },
     onSuccess: async () => {
       forgetSession(localStorage);
-      stopSync();
+      await stopSync();
       try {
         await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);
       } catch (cause) {

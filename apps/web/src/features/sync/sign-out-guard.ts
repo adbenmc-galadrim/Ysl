@@ -20,16 +20,22 @@ export class SignOutBlockedError extends Error {
  * synchronisation is run, or joined if one is going, so no page lands after
  * the wipe; whatever is still queued afterwards, offline or refused by the
  * server for the moment, blocks the sign-out and is counted. Changes the
- * server refused for good block too: wiping them would lose the only copy
- * before anyone corrected them.
+ * server refused for good block too, since wiping them loses the only copy;
+ * until the "Corriger" screen exists, the agent can give them up knowingly
+ * (`discardRejected`), so a shared iPhone can always change hands.
  */
+export type PrepareSignOutOptions = {
+  /** The agent read the warning and gives up the refused changes: they go with the device. */
+  discardRejected?: boolean;
+};
+
 export async function prepareSignOut(
   db: CourrierDatabase,
   syncNow: (options: { force: true }) => Promise<unknown>,
+  { discardRejected = false }: PrepareSignOutOptions = {},
 ): Promise<SignOutCheck> {
   await syncNow({ force: true });
   const { pending, rejected } = await countOutbox(db);
-  return pending + rejected === 0
-    ? { ok: true }
-    : { ok: false, pending, rejected };
+  const blocking = pending + (discardRejected ? 0 : rejected);
+  return blocking === 0 ? { ok: true } : { ok: false, pending, rejected };
 }
