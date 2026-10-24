@@ -4,13 +4,15 @@ import {
   password as passwordSchema,
   userRole,
 } from '@repo/contract/auth';
-import { closeDb } from '@repo/db';
+import { closeDb, db } from '@repo/db';
 import { auth } from '#auth';
+import { attachToOrganization, resolveOrganization } from '#organization';
 
 const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
 
-const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role agent|admin]
-The password is read from standard input, or from ${PASSWORD_VARIABLE}.`;
+const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role agent|admin] [--organization <name>]
+The password is read from standard input, or from ${PASSWORD_VARIABLE}.
+Without --organization, the only organization is used, or "Service courrier" is created.`;
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -31,6 +33,7 @@ async function main(): Promise<void> {
       email: { type: 'string' },
       name: { type: 'string' },
       role: { type: 'string', default: DEFAULT_USER_ROLE },
+      organization: { type: 'string' },
     },
   });
 
@@ -44,6 +47,7 @@ async function main(): Promise<void> {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
 
+  const organization = await resolveOrganization(db, values.organization);
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,
@@ -52,8 +56,11 @@ async function main(): Promise<void> {
       role: role.data,
     },
   });
+  await attachToOrganization(db, user.id, organization.id);
 
-  console.log(`Created ${role.data} ${user.email} (${user.id})`);
+  console.log(
+    `Created ${role.data} ${user.email} (${user.id}) in ${organization.name}${organization.created ? ' (new)' : ''}`,
+  );
 }
 
 try {

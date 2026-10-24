@@ -51,6 +51,16 @@ Le mot de passe se lit sur l'entrée standard ou dans `AUTH_USER_PASSWORD`, jama
 argument. Sans `--role`, le compte est un agent. Un mot de passe oublié se réinitialise
 par l'administrateur.
 
+Chaque compte appartient à un service courrier (une organisation), la clé de toutes les
+données synchronisées. `--organization "<nom>"` le désigne (créé s'il n'existe pas) ;
+sans l'option, le script prend l'unique organisation de la base, ou crée « Service
+courrier » si elle est vide. Un compte créé avant la synchronisation se rattache après
+coup :
+
+```bash
+pnpm auth:attach-organization --email admin@example.com [--organization "<nom>"]
+```
+
 En production, `BETTER_AUTH_SECRET` (32 caractères au moins) et `BETTER_AUTH_URL` (URL
 publique de l'API) sont obligatoires ; en local, des valeurs de développement s'appliquent.
 
@@ -210,7 +220,8 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte agent ou admin |
+| `pnpm auth:create-user` | Crée un compte agent ou admin, rattaché à son organisation |
+| `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
 | `pnpm visual` | Compare les stories à leurs références ; échoue au-dessus de `--max` % (0,6 par défaut) |
