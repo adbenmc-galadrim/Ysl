@@ -47,6 +47,11 @@ export const fr = {
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.group.app': 'App',
   'settings.version': 'Version {{version}}',
+  'settings.version.upToDate': 'À jour',
+  'settings.version.available': 'Nouvelle version',
+  'settings.forceUpdate': 'Forcer la mise à jour',
+  'settings.forceUpdate.running': 'Mise à jour…',
+  'settings.forceUpdate.failed': 'Échec, réessayez',
   'settings.corners': 'Arrondis',
   'settings.corners.title': 'Arrondis',
   'settings.corners.footer':
