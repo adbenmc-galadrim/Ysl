@@ -60,4 +60,15 @@ describe('recipientFromLines', () => {
     ).toBeNull();
     expect(recipientFromLines(lines('A LA REVUE DES DEUX MONDES'))).toBeNull();
   });
+
+  it('stops at the wider sender anchors too (SHIPPER, ABSENDER)', () => {
+    expect(
+      recipientFromLines(
+        lines('SHIP TO', 'SHIPPER: ACME SARL', 'Camille Morel'),
+      ),
+    ).toBeNull();
+    expect(
+      recipientFromLines(lines('DESTINATAIRE', 'Absender', 'Camille Morel')),
+    ).toBeNull();
+  });
 });
