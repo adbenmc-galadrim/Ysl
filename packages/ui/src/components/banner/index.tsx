@@ -56,7 +56,8 @@ export type BannerProps = VariantProps<typeof bannerVariants> & {
 /**
  * A tinted card with an icon, a bold line and an explanation: pending
  * changes while offline, a parcel waiting too long, a step to remember.
- * It informs; the action it calls for lives elsewhere on the screen.
+ * It informs; with `onClick` the whole card opens the screen where one
+ * acts, so it only holds inline elements (a button cannot hold blocks).
  */
 export function Banner({
   icon,
@@ -85,14 +86,20 @@ export function Banner({
       />
       {/* Stretched so that, in a banner of fixed height, the text keeps to
           the top while the icon stays centred. */}
-      <div className="flex min-w-0 flex-1 flex-col self-stretch">
-        <p className={s.title({ class: classNames?.title })}>{title}</p>
+      <span className="flex min-w-0 flex-1 flex-col self-stretch">
+        <span className={s.title({ class: ['block', classNames?.title] })}>
+          {title}
+        </span>
         {description && (
-          <p className={s.description({ class: classNames?.description })}>
+          <span
+            className={s.description({
+              class: ['block', classNames?.description],
+            })}
+          >
             {description}
-          </p>
+          </span>
         )}
-      </div>
+      </span>
     </Root>
   );
 }
