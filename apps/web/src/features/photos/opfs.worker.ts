@@ -15,11 +15,19 @@ type SyncFileHandle = FileSystemFileHandle & {
   createSyncAccessHandle(): Promise<SyncAccessHandle>;
 };
 
+async function photosDirectory(): Promise<FileSystemDirectoryHandle> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    return await root.getDirectoryHandle(PHOTOS_DIRECTORY, { create: true });
+  } catch {
+    const error = new Error('Photo storage is unavailable in this browser');
+    error.name = 'StorageUnavailableError';
+    throw error;
+  }
+}
+
 async function save({ name, blob }: SaveRequest): Promise<void> {
-  const root = await navigator.storage.getDirectory();
-  const directory = await root.getDirectoryHandle(PHOTOS_DIRECTORY, {
-    create: true,
-  });
+  const directory = await photosDirectory();
   const file = (await directory.getFileHandle(name, {
     create: true,
   })) as SyncFileHandle;

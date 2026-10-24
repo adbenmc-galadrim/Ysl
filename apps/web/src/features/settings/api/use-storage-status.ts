@@ -6,5 +6,6 @@ export function useStorageStatus() {
     queryKey: ['storage-status'],
     queryFn: readStorageStatus,
     staleTime: 0,
+    networkMode: 'always',
   });
 }

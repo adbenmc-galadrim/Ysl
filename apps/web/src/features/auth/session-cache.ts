@@ -19,6 +19,15 @@ function readCached(store: SessionStore): Session | null {
   }
 }
 
+/** The cookie carries the token; the device copy only needs who is signed in. */
+function withoutToken(session: Session): Omit<Session, 'session'> & {
+  session: Omit<Session['session'], 'token'>;
+} {
+  const { token: _token, ...rest } = session.session;
+  void _token;
+  return { ...session, session: rest };
+}
+
 /**
  * The installed app must open in airplane mode (F45): the last session the
  * server confirmed stays on the device and stands in while it is unreachable.
@@ -36,7 +45,10 @@ export function resolveSession(
       return null;
     case 'session':
       try {
-        store.setItem(SESSION_KEY, JSON.stringify(lookup.session));
+        store.setItem(
+          SESSION_KEY,
+          JSON.stringify(withoutToken(lookup.session)),
+        );
       } catch {
         /* a full or disabled storage only costs the offline relaunch */
       }

@@ -38,8 +38,12 @@ export function hasPhotoStorage(): boolean {
 
 async function photosDirectory(): Promise<FileSystemDirectoryHandle> {
   if (!hasPhotoStorage()) throw new StorageUnavailableError();
-  const root = await navigator.storage.getDirectory();
-  return root.getDirectoryHandle(PHOTOS_DIRECTORY, { create: true });
+  try {
+    const root = await navigator.storage.getDirectory();
+    return await root.getDirectoryHandle(PHOTOS_DIRECTORY, { create: true });
+  } catch {
+    throw new StorageUnavailableError();
+  }
 }
 
 function isNotFound(error: unknown): boolean {
@@ -102,7 +106,9 @@ class OpfsPhotoFiles implements PhotoFiles {
       this.pending.delete(reply.id);
       if (!request) return;
       if (reply.ok) request.resolve();
-      else {
+      else if (reply.error.name === 'StorageUnavailableError') {
+        request.reject(new StorageUnavailableError());
+      } else {
         const error = new Error(reply.error.message);
         error.name = reply.error.name;
         request.reject(error);

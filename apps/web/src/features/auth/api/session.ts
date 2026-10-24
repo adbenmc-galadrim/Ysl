@@ -24,4 +24,6 @@ export const sessionQueryOptions = queryOptions({
   queryKey: ['session'],
   queryFn: async () => resolveSession(await lookupSession(), localStorage),
   staleTime: 5 * 60 * 1000,
+  // Offline, the query must still run: the kept session is the answer.
+  networkMode: 'always',
 });

@@ -5,7 +5,8 @@ import { sweepOrphanPhotos } from '#/features/photos/store';
 
 /** Launch duties of the local store, none of which may stop the app. */
 export async function bootLocalStore(): Promise<void> {
-  await requestPersistentStorage();
+  const persisted = await requestPersistentStorage();
+  if (persisted === false) console.warn('Persistent storage was denied');
   if (!hasPhotoStorage()) return;
   try {
     await sweepOrphanPhotos(db, photoFiles);
