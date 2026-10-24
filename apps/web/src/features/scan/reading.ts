@@ -95,9 +95,11 @@ function trackingFields(
 /**
  * What the OCR said of the recipient, once it has: a name, or nothing. The
  * name alone is worth a field even when no code was read: that is where
- * the OCR helps most.
+ * the OCR helps most. `readName` is a name sure for another reason than a
+ * code of this label: the agent gave it (F11).
  */
-export type TextHint = { ocrName: string | null } | undefined;
+export type TextHint =
+  { ocrName: string | null; readName?: string | null } | undefined;
 
 /**
  * The recipient as the agent sees it: named by a code, no doubt; guessed by
@@ -110,7 +112,7 @@ function recipientField(
   t: TranslateFn,
 ): ScanField {
   const label = t('scan.field.recipient');
-  const sure = partyName(parsed?.recipient);
+  const sure = partyName(parsed?.recipient) ?? text?.readName;
   if (sure) return { label, value: sure };
   if (text?.ocrName) {
     return { label, value: `${text.ocrName} ?`, status: 'warning' };
@@ -153,7 +155,7 @@ export function toScanReading(
   shot?: ShotHint,
 ): ScanReading {
   if (result.symbols.length === 0) {
-    if (text?.ocrName) {
+    if (text?.ocrName || text?.readName) {
       return { kind: 'read', fields: [recipientField(null, text, t)] };
     }
     return unreadableReading(t, shot);
@@ -172,7 +174,9 @@ export function toScanReading(
     mono: true,
     ...(symbol.isValid === false ? { status: 'warning' as const } : {}),
   }));
-  if (text?.ocrName) fields.push(recipientField(null, text, t));
+  if (text?.ocrName || text?.readName) {
+    fields.push(recipientField(null, text, t));
+  }
   return { kind: 'read', fields };
 }
 

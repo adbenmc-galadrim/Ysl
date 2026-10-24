@@ -173,6 +173,30 @@ describe('toScanReading with a structured 2D code', () => {
     });
   });
 
+  it("shows a name the agent gave as sure, over the OCR's guess", () => {
+    const reading = toScanReading(
+      { symbols: [symbol('Code128', '1ZE6344W0499230622')] },
+      t,
+      { ocrName: 'C. Morel', readName: 'Camille Morel' },
+    );
+    expect(reading).toMatchObject({
+      fields: [
+        { label: 'Transporteur' },
+        { label: 'Suivi' },
+        { label: 'Destinataire', value: 'Camille Morel' },
+      ],
+    });
+    expect(
+      toScanReading({ symbols: [] }, t, {
+        ocrName: null,
+        readName: 'Camille Morel',
+      }),
+    ).toEqual({
+      kind: 'read',
+      fields: [{ label: 'Destinataire', value: 'Camille Morel' }],
+    });
+  });
+
   it('shows the recipient the OCR guessed with a doubt, never over a code', () => {
     const text = { ocrName: 'Camille Morel' };
     const guessed = toScanReading(

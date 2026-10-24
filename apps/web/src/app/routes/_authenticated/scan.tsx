@@ -23,6 +23,7 @@ import {
   findPieceGroup,
   type PieceRead,
 } from '#/features/batch/pieces';
+import { copyRecipient, previousNamed } from '#/features/batch/recipient';
 import {
   addDraft,
   addTypedDraft,
@@ -62,6 +63,7 @@ import {
   parcelFields,
   recipientOf,
 } from '#/features/scan/duplicate';
+import { recipientInCodes } from '#/features/scan/extract';
 import { lastOf } from '#/features/scan/last';
 import { pieceReading } from '#/features/scan/piece';
 import {
@@ -110,6 +112,9 @@ type Opening = 'pending' | 'explain' | 'scan';
 /** The draft kept out of the batch while the duplicate alert is up, what it doubles, and who that is for. */
 type Held = { draft: DraftParcel; found: Duplicate; recipient: string };
 
+/** The name "Même destinataire que le précédent" would give the draft on screen. */
+type SameRecipient = { draftId: string; name: string };
+
 function ScanPage() {
   const navigate = useNavigate();
   const session = useSession();
@@ -151,6 +156,7 @@ function ScanPage() {
   /** How that draft's shot looked, for the advice when nothing was read. */
   const shownShot = useRef<ShotHint | undefined>(undefined);
   const held = useRef<Held | null>(null);
+  const [sameAs, setSameAs] = useState<SameRecipient | null>(null);
 
   useEffect(() => holdUpdates(), []);
 
@@ -185,6 +191,7 @@ function ScanPage() {
     held.current = { draft: taken, found, recipient };
     unread.current = null;
     shownDraft.current = null;
+    setSameAs(null);
     setReading(duplicateReading(found, recipient, t));
     return true;
   };
@@ -281,6 +288,7 @@ function ScanPage() {
       handed = true;
       const wasHeld = held.current !== null;
       if (wasHeld) dropHeldDraft();
+      setSameAs(null);
       setReading((shown) =>
         wasHeld || shown.kind === 'piece' ? { kind: 'idle' } : shown,
       );
@@ -310,6 +318,9 @@ function ScanPage() {
             ? failedReading(t)
             : toScanReading({ symbols }, t, undefined, shot),
         );
+        if (!failed && symbols.length > 0) {
+          void offerSameRecipient(draft, symbols);
+        }
       }
       if (kept) void showText(draft.id, photo.blob, symbols);
     } catch (error) {
@@ -346,14 +357,51 @@ function ScanPage() {
     if (held.current) dropHeldDraft();
     unread.current = null;
     shownDraft.current = null;
+    setSameAs(null);
     setReading(pieceReading(joined, joined.pieces, piece.index, t));
     return true;
   };
 
   /**
+   * "Même destinataire que le précédent" (F11): offered under the fields
+   * when no code of this label names anyone and the parcel scanned just
+   * before does. Only for the draft still on screen when the batch answers.
+   */
+  const offerSameRecipient = async (
+    draft: DraftParcel,
+    symbols: readonly ShownSymbol[],
+  ) => {
+    if (recipientInCodes(symbols) !== null) return;
+    const previous = await previousNamed(db, draft);
+    if (previous && shownDraft.current === draft.id) {
+      setSameAs({ draftId: draft.id, name: previous.name });
+    }
+  };
+
+  /** The agent's word: the name lands on the draft and the field turns sure. */
+  const onSameRecipient = async () => {
+    const same = sameAs;
+    if (!same) return;
+    setSameAs(null);
+    if (!(await copyRecipient(db, same.draftId, same.name))) return;
+    const draft = await db.draftParcel.get(same.draftId);
+    if (draft && shownDraft.current === draft.id) {
+      setReading(
+        toScanReading(
+          { symbols: draft.symbols },
+          t,
+          { ocrName: draft.ocrName, readName: draft.readName },
+          shownShot.current,
+        ),
+      );
+    }
+  };
+
+  /**
    * The text lands after the codes, whatever they gave, and outside the
    * batch's work: "Terminer" never waits for it. Without a code, only a
-   * name is worth replacing what the screen says.
+   * name is worth replacing what the screen says; a name the agent gave
+   * meanwhile stays over the OCR's guess.
    */
   const showText = async (
     draftId: string,
@@ -363,7 +411,15 @@ function ScanPage() {
     const text = await readText(db, draftId, blob);
     const worth = symbols.length > 0 || text.ocrName !== null;
     if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
-      setReading(toScanReading({ symbols }, t, text, shownShot.current));
+      const draft = await db.draftParcel.get(draftId);
+      setReading(
+        toScanReading(
+          { symbols },
+          t,
+          { ocrName: text.ocrName, readName: draft?.readName ?? null },
+          shownShot.current,
+        ),
+      );
     }
   };
 
@@ -407,6 +463,7 @@ function ScanPage() {
     dropHeldDraft();
     unread.current = null;
     shownDraft.current = null;
+    setSameAs(null);
     setReading({ kind: 'idle' });
     void undoLast(db, photoFiles, view.batch.id);
   };
@@ -474,11 +531,13 @@ function ScanPage() {
     if (!taken) return;
     dropHeldDraft();
     shownDraft.current = null;
+    setSameAs(null);
     const { found } = taken;
     setReading(
       found.kind === 'batch'
         ? toScanReading({ symbols: found.draft.symbols }, t, {
             ocrName: found.draft.ocrName,
+            readName: found.draft.readName,
           })
         : {
             kind: 'read',
@@ -548,10 +607,17 @@ function ScanPage() {
   };
 
   const last = view?.last && lastOf(view.last, t);
+  const action =
+    sameAs && sameAs.draftId === shownDraft.current
+      ? {
+          label: t('scan.recipient.same'),
+          onClick: () => void onSameRecipient(),
+        }
+      : undefined;
   const shown: ScanReading = typing
     ? { kind: 'idle' }
     : reading.kind === 'read'
-      ? { ...reading, last }
+      ? { ...reading, last, action }
       : reading.kind !== 'idle'
         ? reading
         : (cameraReading(camera, fallback, t) ??
