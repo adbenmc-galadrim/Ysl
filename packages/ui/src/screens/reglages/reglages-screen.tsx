@@ -9,8 +9,12 @@ import {
 
 export type ReglagesScreenProps = {
   /** The signed-in agent, on top; left out on the admin-only variant. */
-  account?: Pick<Agent, 'name' | 'initials'> & { description: string };
+  account?: Pick<Agent, 'name' | 'initials'> & {
+    description: string;
+    onPress?: () => void;
+  };
   groups: SettingsGroup[];
+  onBack?: () => void;
 };
 
 /**
@@ -18,9 +22,13 @@ export type ReglagesScreenProps = {
  * iPhone, the mail service, the app — each showing its current value so the
  * screen answers "is it set up?" without opening anything.
  */
-export function ReglagesScreen({ account, groups }: ReglagesScreenProps) {
+export function ReglagesScreen({
+  account,
+  groups,
+  onBack,
+}: ReglagesScreenProps) {
   return (
-    <SettingsScreen title="Réglages">
+    <SettingsScreen title="Réglages" onBack={onBack}>
       {account && (
         <GroupedList>
           <GroupedRow
@@ -29,11 +37,15 @@ export function ReglagesScreen({ account, groups }: ReglagesScreenProps) {
             title={account.name}
             subtitle={account.description}
             accessory="chevron"
+            onClick={account.onPress}
           />
         </GroupedList>
       )}
       {groups.map((group) => (
-        <SettingsGroupView key={group.header ?? group.items[0]?.label} {...group} />
+        <SettingsGroupView
+          key={group.header ?? group.items[0]?.label}
+          {...group}
+        />
       ))}
     </SettingsScreen>
   );

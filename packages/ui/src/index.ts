@@ -1,7 +1,7 @@
 /**
- * Public entry point of @repo/ui. Screens are not exported: they are
- * Storybook compositions of these building blocks, and the app assembles its
- * own from the same parts.
+ * Public entry point of @repo/ui: the building blocks, and the screens the
+ * app mounts as drawn (`#screens`). A screen that is not in that barrel is a
+ * Storybook composition only; the app assembles its own from the same parts.
  */
 export * from '#components/action-card';
 export * from '#components/alphabet-index';
@@ -83,6 +83,8 @@ export * from '#components/switch';
 export * from '#components/switch-row';
 export * from '#components/toast';
 
+export type { Parcel, ParcelState } from '#fixtures/parcels';
 export * from '#foundations/corners';
 export * from '#icons';
+export * from '#screens';
 export { cn, cx, tv, type VariantProps } from '#lib/tv';

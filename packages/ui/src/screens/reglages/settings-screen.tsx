@@ -15,6 +15,7 @@ export type SettingsScreenProps = {
   title: string;
   /** Right side of the bar: "OK", "Importer". */
   trailing?: ReactNode;
+  onBack?: () => void;
   /** `fill` for grouped cards, `white` for a plain list (the directory). */
   tone?: 'fill' | 'white';
   children: ReactNode;
@@ -29,14 +30,21 @@ export type SettingsScreenProps = {
 export function SettingsScreen({
   title,
   trailing,
+  onBack,
   tone = 'fill',
   children,
   className,
 }: SettingsScreenProps) {
   return (
-    <Screen tone={tone} bottomInset={0} className="pb-[calc(var(--safe-bottom)+24px)]">
-      <NavBar title={title} trailing={trailing} />
-      <div className={cn('mt-3 flex flex-col gap-5', className)}>{children}</div>
+    <Screen
+      tone={tone}
+      bottomInset={0}
+      className="pb-[calc(var(--safe-bottom)+24px)]"
+    >
+      <NavBar title={title} trailing={trailing} onBack={onBack} />
+      <div className={cn('mt-3 flex flex-col gap-5', className)}>
+        {children}
+      </div>
     </Screen>
   );
 }
@@ -51,6 +59,9 @@ export type SettingsItem = {
   chevron?: boolean;
   /** A toggle instead of a value. */
   toggle?: boolean;
+  onToggle?: (checked: boolean) => void;
+  /** Opens the screen; without it the row is static. */
+  onPress?: () => void;
 };
 
 export type SettingsGroup = {
@@ -70,9 +81,14 @@ export function SettingsGroupView({ header, footer, items }: SettingsGroup) {
           }
           title={item.label}
           value={item.value}
+          onClick={item.onPress}
           accessory={
             item.toggle !== undefined ? (
-              <Switch checked={item.toggle} label={item.label} />
+              <Switch
+                checked={item.toggle}
+                onCheckedChange={item.onToggle}
+                label={item.label}
+              />
             ) : item.chevron === false ? undefined : (
               'chevron'
             )
