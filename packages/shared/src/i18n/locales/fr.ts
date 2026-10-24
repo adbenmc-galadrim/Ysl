@@ -256,6 +256,7 @@ export const fr = {
   'scan.field.carrier': 'Transporteur',
   'scan.field.tracking': 'Suivi',
   'scan.field.recipient': 'Destinataire',
+  'scan.field.sender': 'Expéditeur',
   'scan.field.pieces': 'Colis',
   'scan.field.weight': 'Poids',
   'scan.field.weightKg': '{{kg}} kg',
