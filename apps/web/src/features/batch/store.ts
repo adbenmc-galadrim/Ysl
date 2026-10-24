@@ -24,6 +24,7 @@ export type DraftPatch = Partial<
     | 'ocrState'
     | 'ocrName'
     | 'ocrLines'
+    | 'pieces'
   >
 >;
 
@@ -81,6 +82,7 @@ export async function addDraft(
     ocrState: 'pending',
     ocrName: null,
     ocrLines: [],
+    pieces: null,
   };
   await db.draftParcel.add(draft);
   return draft;
@@ -112,6 +114,7 @@ export function typedDraft(
     ocrState: 'skipped',
     ocrName: null,
     ocrLines: [],
+    pieces: null,
     ...typed,
   };
 }
@@ -154,6 +157,21 @@ export function countDrafts(
   return db.draftParcel.where('batchId').equals(batchId).count();
 }
 
+/** The photos a draft holds: its own, then those of the pieces that joined it. */
+export function photoIdsOf(draft: DraftParcel): string[] {
+  const ids = draft.pieces?.photoIds ?? [];
+  return draft.photoId ? [draft.photoId, ...ids] : ids;
+}
+
+/** A draft's photos go with it, the pieces' included. */
+export async function deleteDraftPhotos(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  draft: DraftParcel,
+): Promise<void> {
+  for (const id of photoIdsOf(draft)) await deletePhoto(db, files, id);
+}
+
 /**
  * "Annuler": the last parcel leaves the batch, photo included. Two quick taps
  * take two parcels, not the same one twice: the pick and the delete share a
@@ -169,7 +187,7 @@ export async function undoLast(
     if (last) await db.draftParcel.delete(last.id);
     return last;
   });
-  if (draft?.photoId) await deletePhoto(db, files, draft.photoId);
+  if (draft) await deleteDraftPhotos(db, files, draft);
   return draft;
 }
 
@@ -193,9 +211,7 @@ export async function discardBatch(
       return gone;
     },
   );
-  for (const draft of drafts) {
-    if (draft.photoId) await deletePhoto(db, files, draft.photoId);
-  }
+  for (const draft of drafts) await deleteDraftPhotos(db, files, draft);
 }
 
 export type FinishOptions = { batchId: string; agentId: string; now?: Date };
@@ -233,8 +249,8 @@ function toParcel(
     department: null,
     senderId: null,
     senderName: null,
-    pieceN: null,
-    pieceTotal: null,
+    pieceN: draft.pieces ? draft.pieces.read.length : null,
+    pieceTotal: draft.pieces?.total ?? null,
     weightKg: null,
     carrierService: null,
     reference: null,
@@ -292,8 +308,8 @@ export function finishBatch(
         { now },
       );
       for (const draft of drafts) {
-        if (draft.photoId) {
-          await db.photo.update(draft.photoId, { parcelId: draft.id });
+        for (const photoId of photoIdsOf(draft)) {
+          await db.photo.update(photoId, { parcelId: draft.id });
         }
       }
       await db.draftParcel.bulkDelete(drafts.map((draft) => draft.id));

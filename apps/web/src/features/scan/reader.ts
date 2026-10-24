@@ -1,4 +1,5 @@
 import type { DecodeResult } from '@repo/barcode/worker';
+import { firstPiece, pieceOf, type PieceRead } from '#/features/batch/pieces';
 import { listDrafts, updateDraft } from '#/features/batch/store';
 import type {
   CourrierDatabase,
@@ -9,7 +10,13 @@ import type { PhotoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
 import type { DecodeQueue } from '#/features/scan/decode-queue';
 import { missingFormats } from '#/features/scan/expected-formats';
-import { extractTracking, recipientInCodes } from '#/features/scan/extract';
+import {
+  extractTracking,
+  recipientInCodes,
+  selectTracking,
+  structuredCode,
+  trackingOf,
+} from '#/features/scan/extract';
 
 export type Symbols = DecodeResult['symbols'];
 
@@ -22,6 +29,8 @@ export type Reading = {
   failed: boolean;
   /** The normalized number written on the draft, for the duplicate check. */
   trackingNorm: string | null;
+  /** The piece the label announces, when the parcel comes in several boxes. */
+  piece: PieceRead | null;
 };
 
 const bare = (symbols: Symbols): DraftSymbol[] =>
@@ -78,8 +87,13 @@ export async function readDraft(
       spare = undefined;
       symbols = merge(symbols, again.symbols);
     }
-    const found = extractTracking(symbols);
+    const selected = selectTracking(symbols);
+    const found = selected && trackingOf(selected);
     const trackingNorm = found?.trackingNorm ?? null;
+    const piece = pieceOf(
+      selected && structuredCode(symbols, selected),
+      trackingNorm,
+    );
     const kept = await updateDraft(db, draftId, {
       reading: symbols.length ? 'read' : 'unreadable',
       carrier: found?.carrier ?? null,
@@ -87,13 +101,21 @@ export async function readDraft(
       trackingNorm,
       readName: recipientInCodes(symbols),
       symbols: bare(symbols),
+      pieces: piece && firstPiece(piece),
     });
-    return { draftId, symbols, kept, failed: false, trackingNorm };
+    return { draftId, symbols, kept, failed: false, trackingNorm, piece };
   } catch {
     const kept = await updateDraft(db, draftId, { reading: 'failed' }).catch(
       () => false,
     );
-    return { draftId, symbols: [], kept, failed: true, trackingNorm: null };
+    return {
+      draftId,
+      symbols: [],
+      kept,
+      failed: true,
+      trackingNorm: null,
+      piece: null,
+    };
   } finally {
     spare?.close();
     queue.release();
