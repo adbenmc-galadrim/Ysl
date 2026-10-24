@@ -71,7 +71,8 @@ Corpus : 96 synthèse, 143 web, 5 réelles. Base du critère : 110 étiquettes.
 et aucun n'est imputable au lecteur ni aux règles :
 
 - `web-paketaufkleber-dhl-europack-national-deutschland-2016` : annotation à 18 chiffres,
-  le Code 128 porte le SSCC à 20 chiffres (`00` devant) : même numéro, forme à trancher à la relecture ;
+  le Code 128 porte le SSCC à 20 chiffres (`00` devant) : même numéro sous deux formes ;
+  trancher à la relecture laquelle est la bonne, et si la comparaison doit les confondre ;
 - `guide-usps-priority-mail-smart-locker`, `guide-usps-bulk-parcel-return-service` : les
   guides USPS impriment un numéro d'exemple et en encodent un autre ; l'annotation a copié
   l'imprimé ;
@@ -128,8 +129,9 @@ encore (ses formats attendus vivent dans `apps/web`).
 
 ## Verdict
 
-- **O1 non atteint sur le papier (4), atteint sur le fond** : les quatre écarts sont des
-  annotations à relire, pas des lectures fausses. Relire les 148 annotations
+- **O1 non atteint (4)** : aucun des quatre écarts n'est une lecture fausse ; trois tiennent à
+  l'annotation, le quatrième (SSCC à 20 ou 18 chiffres) à l'annotation ou à la règle de
+  comparaison. Relire les 148 annotations
   `reviewed: false` avant la prochaine mesure (TODO YSL-5).
 - **O2 à 63,6 %** : le corpus web mesure surtout des images publiées à basse résolution
   et des transporteurs dont le tracking n'est pas encodé ; les photos réelles sont à
@@ -151,6 +153,7 @@ pnpm --filter @repo/bench measure --corpus ~/goinfre/ysl/tmp/corpus --private ~/
 ```
 
 À relancer à chaque changement de règle, de parseur ou de lecteur ; recopier ici le tableau
-des objectifs daté. En CI, `pnpm test` rejoue les contenus de la synthèse en texte (O1 à
-zéro, O2 ≥ 95 % sur 96 étiquettes) et un aller-retour bwip-js → zxing → extraction par
-code 2D : aucune image du corpus n'y passe.
+des objectifs daté. En CI, `pnpm test` rejoue en texte les contenus des codes des gabarits de synthèse,
+recopiés de `templates.ts` (O1 à zéro, O2 ≥ 95 % sur 96 étiquettes), et un aller-retour
+bwip-js → zxing → extraction sur le code 2D des cinq transporteurs de synthèse qui en
+portent un : aucune image du corpus n'y passe.

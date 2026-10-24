@@ -1,5 +1,4 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { initZxingNode } from '@repo/barcode/node';
@@ -13,7 +12,7 @@ const { values } = parseArgs({
   options: {
     corpus: { type: 'string' },
     private: { type: 'string' },
-    out: { type: 'string', default: join(homedir(), 'goinfre/ysl/tmp/bench') },
+    out: { type: 'string', default: resolve(import.meta.dirname, '../out') },
     limit: { type: 'string' },
     policy: { type: 'string', default: POLICIES.join(',') },
     raw: { type: 'boolean', default: false },

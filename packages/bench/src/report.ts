@@ -97,21 +97,35 @@ const trackingRead = (r: LabelResult) => {
   return status === 'sure-ok' || status === 'verify-ok';
 };
 
+/** « 2 (Tracking 1, Poids 1) », or « 0 ». */
+const falseSures = (results: readonly LabelResult[]) => {
+  const wrong = results.flatMap((r) =>
+    r.fields.filter((f) => f.status === 'sure-wrong').map((f) => f.field),
+  );
+  if (wrong.length === 0) return '0';
+  const detail = FIELDS.filter((f) => wrong.includes(f)).map(
+    (f) => `${FIELD_TITLES[f]} ${wrong.filter((w) => w === f).length}`,
+  );
+  return `${wrong.length} (${detail.join(', ')})`;
+};
+
 const byCarrierTable = (results: readonly LabelResult[]) => {
   const groups = Object.entries(groupBy(results, (r) => r.carrier)).sort(
     (a, b) => b[1].length - a[1].length,
   );
   return table(
-    ['Transporteur', 'Étiquettes', 'Tracking juste', 'Faux sûrs', 'Aucun code'],
+    [
+      'Transporteur',
+      'Étiquettes',
+      'Tracking juste',
+      'Faux sûrs (champ)',
+      'Aucun code',
+    ],
     groups.map(([carrier, rs]) => [
       carrier,
       rs.length,
       count(rs.filter(trackingRead).length, rs.length),
-      rs.filter((r) =>
-        r.fields.some(
-          (f) => f.field === 'tracking' && f.status === 'sure-wrong',
-        ),
-      ).length,
+      falseSures(rs),
       rs.filter((r) => r.formats.length === 0).length,
     ]),
   );

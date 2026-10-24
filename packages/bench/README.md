@@ -13,7 +13,7 @@ par champ et le vote transporteur de `@repo/contract/extract`.
 pnpm --filter @repo/bench measure \
   --corpus ~/goinfre/ysl/tmp/corpus \
   --private ~/goinfre/ysl/tmp/corpus/real \
-  [--out ~/goinfre/ysl/tmp/bench] [--limit 24] [--policy first,thorough] [--raw]
+  [--out <dossier>] [--limit 24] [--policy first,thorough] [--raw]
 ```
 
 - `--corpus` : le dossier de sortie du générateur (`synthetic/labels.json`,
@@ -26,7 +26,7 @@ pnpm --filter @repo/bench measure \
 - `--raw` : images à leur résolution d'origine ; par défaut elles sont ramenées
   au viseur de l'iPhone (3024×4032, JPEG 80), comme au spike S2.
 
-Sorties, hors dépôt : `results.md` (objectifs, tableaux par champ, transporteur,
+Sorties dans `out/` du package (ignoré par git) ou dans `--out` : `results.md` (objectifs, tableaux par champ, transporteur,
 format et temps, par politique et par base), `mismatches.md` (chaque écart avec
 l'annotation, les annotations `reviewed: false` signalées), `results.json`,
 `contents-2d.json` (contenus bruts des codes 2D : données personnelles, ne
@@ -58,7 +58,4 @@ vérifier » de 0,60 à 0,90, vide en dessous. Un faux « sûr » est une valeur
 
 ## En CI
 
-`pnpm test` ne lit aucune image du corpus : `tests/fixtures.test.ts` rejoue les
-contenus des codes de la synthèse en texte (O1 et O2 sur 96 étiquettes),
-`tests/roundtrip.test.ts` rend un code 2D par transporteur avec bwip-js, le lit
-avec `@repo/barcode` et l'extrait. Le banc image reste une commande locale.
+`pnpm test` ne lit aucune image du corpus : `tests/fixtures.test.ts` rejoue en texte les contenus des codes des gabarits de synthèse (recopiés de `templates.ts` ; O1 et O2 sur 96 étiquettes), `tests/roundtrip.test.ts` rend avec bwip-js le code 2D des cinq transporteurs de synthèse qui en portent un, le lit avec `@repo/barcode` et l'extrait. Le banc image reste une commande locale.
