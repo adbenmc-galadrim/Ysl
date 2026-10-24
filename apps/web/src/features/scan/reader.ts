@@ -20,6 +20,8 @@ export type Reading = {
   kept: boolean;
   /** True when the Worker failed; the draft is marked so. */
   failed: boolean;
+  /** The normalized number written on the draft, for the duplicate check. */
+  trackingNorm: string | null;
 };
 
 const bare = (symbols: Symbols): DraftSymbol[] =>
@@ -77,20 +79,21 @@ export async function readDraft(
       symbols = merge(symbols, again.symbols);
     }
     const found = extractTracking(symbols);
+    const trackingNorm = found?.trackingNorm ?? null;
     const kept = await updateDraft(db, draftId, {
       reading: symbols.length ? 'read' : 'unreadable',
       carrier: found?.carrier ?? null,
       tracking: found?.tracking ?? null,
-      trackingNorm: found?.trackingNorm ?? null,
+      trackingNorm,
       readName: recipientInCodes(symbols),
       symbols: bare(symbols),
     });
-    return { draftId, symbols, kept, failed: false };
+    return { draftId, symbols, kept, failed: false, trackingNorm };
   } catch {
     const kept = await updateDraft(db, draftId, { reading: 'failed' }).catch(
       () => false,
     );
-    return { draftId, symbols: [], kept, failed: true };
+    return { draftId, symbols: [], kept, failed: true, trackingNorm: null };
   } finally {
     spare?.close();
     queue.release();

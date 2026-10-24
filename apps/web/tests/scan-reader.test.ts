@@ -78,6 +78,7 @@ describe('readDraft', () => {
 
     expect(calls).toEqual([undefined, { expect: ['MaxiCode'] }]);
     expect(reading.kept).toBe(true);
+    expect(reading.trackingNorm).toBe('1ZE6344W0499230622');
     expect(reading.symbols.map((s) => s.format)).toEqual([
       'Code128',
       'MaxiCode',
