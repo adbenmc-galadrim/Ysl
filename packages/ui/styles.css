@@ -215,6 +215,19 @@
   --radius-tile-sm: 999px;
   --radius-tile: 999px;
   --radius-tile-lg: 999px;
+
+  /* The green veil that confirms a reading over the camera: full at once,
+   * gone in the time a glance takes. */
+  --animate-scan-flash: scan-flash 350ms ease-out forwards;
+
+  @keyframes scan-flash {
+    from {
+      opacity: 0.45;
+    }
+    to {
+      opacity: 0;
+    }
+  }
 }
 
 /*
