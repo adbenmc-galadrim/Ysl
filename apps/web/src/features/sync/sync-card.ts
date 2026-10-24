@@ -51,13 +51,18 @@ export function syncCard(
   const title =
     waiting === 0
       ? t('sync.state.synced')
-      : sync.pending > 0
-        ? sync.pending === 1
-          ? t('sync.state.pending.one')
-          : t('sync.state.pending.many', { count: sync.pending })
-        : sync.rejected === 1
-          ? t('sync.state.rejected.one')
-          : t('sync.state.rejected.many', { count: sync.rejected });
+      : sync.pending > 0 && sync.rejected > 0
+        ? t('sync.state.mixed', {
+            pending: sync.pending,
+            rejected: sync.rejected,
+          })
+        : sync.pending > 0
+          ? sync.pending === 1
+            ? t('sync.state.pending.one')
+            : t('sync.state.pending.many', { count: sync.pending })
+          : sync.rejected === 1
+            ? t('sync.state.rejected.one')
+            : t('sync.state.rejected.many', { count: sync.rejected });
   let detail: string;
   if (!sync.online) detail = t('sync.detail.offline');
   else if (sync.status === 'syncing') detail = t('sync.detail.syncing');

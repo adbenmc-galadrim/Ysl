@@ -56,7 +56,11 @@ export type PendingBanner = {
   description: string;
 };
 
-/** The Colis banner: orange while the network is away, red once a day has passed. */
+/**
+ * The Colis banner: orange while the network is away, red once a day has
+ * passed. "En attente" counts everything still on the phone, refused
+ * changes included, as the Synchronisation screen does.
+ */
 export function pendingBanner(
   sync: Pick<SyncView, 'pending' | 'rejected' | 'oldestAt'>,
   t: TranslateFn,
@@ -78,9 +82,9 @@ export function pendingBanner(
     tone: 'orange',
     icon: 'cloud',
     title:
-      sync.pending === 1
+      waiting === 1
         ? t('colis.pending.title.one')
-        : t('colis.pending.title.many', { count: sync.pending }),
+        : t('colis.pending.title.many', { count: waiting }),
     description: t('colis.pending.description'),
   };
 }

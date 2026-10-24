@@ -71,10 +71,12 @@ describe('showsPendingBanner', () => {
 
 describe('pendingBanner', () => {
   it('turns red and asks for the export after a day, orange before', () => {
-    expect(pendingBanner(view({ pending: 2, online: false }), t, NOW)).toEqual({
+    expect(
+      pendingBanner(view({ pending: 2, rejected: 1, online: false }), t, NOW),
+    ).toEqual({
       tone: 'orange',
       icon: 'cloud',
-      title: '2 changements en attente',
+      title: '3 changements en attente',
       description: 'Enregistrés sur l’iPhone, envoyés au retour du réseau.',
     });
     expect(pendingBanner(stale({ rejected: 1 }), t, NOW)).toEqual({
@@ -146,11 +148,14 @@ describe('syncCard', () => {
     );
   });
 
-  it('names refused changes when nothing else waits', () => {
+  it('names refused changes, alone or next to those still to send', () => {
     expect(syncCard(view({ rejected: 2 }), t)).toMatchObject({
       state: 'pending',
       title: '2 changements à corriger',
     });
+    expect(syncCard(view({ pending: 3, rejected: 1 }), t).title).toBe(
+      '3 à envoyer, 1 à corriger',
+    );
   });
 
   it('raises the alert after a day and tells how to act, online or not', () => {
