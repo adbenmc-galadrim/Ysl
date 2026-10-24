@@ -419,6 +419,9 @@ importers:
       '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@repo/barcode':
+        specifier: workspace:*
+        version: link:../../packages/barcode
       '@repo/contract':
         specifier: workspace:*
         version: link:../../packages/contract

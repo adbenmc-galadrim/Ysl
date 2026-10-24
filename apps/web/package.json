@@ -19,6 +19,7 @@
     "@fontsource/inter-tight": "catalog:",
     "@repo/api": "workspace:*",
     "@repo/auth": "workspace:*",
+    "@repo/barcode": "workspace:*",
     "@repo/contract": "workspace:*",
     "@repo/shared": "workspace:*",
     "@repo/ui": "workspace:*",

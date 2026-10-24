@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { withoutCdn } from '@repo/barcode/vite';
 import { SERVER_PORT, WEB_PORT } from '@repo/shared/env/ports';
 import { DEFAULT_LOCALE } from '@repo/shared/i18n';
 import tailwindcss from '@tailwindcss/vite';
@@ -76,8 +77,9 @@ export default defineConfig(({ mode }) => {
       __APP_VERSION__: JSON.stringify(VERSION),
     },
     optimizeDeps: {
-      exclude: ['@repo/shared'],
+      exclude: ['@repo/barcode', '@repo/shared'],
     },
+    worker: { format: 'es', plugins: () => [withoutCdn()] },
     resolve: { tsconfigPaths: true },
     plugins: [
       htmlWording(appName),
@@ -116,7 +118,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2}'],
+          globPatterns: ['**/*.{js,css,html,svg,png,webmanifest,woff2,wasm}'],
           globIgnores: ['version.json'],
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/spike-/, /^\/version\.json$/],
