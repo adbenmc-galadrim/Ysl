@@ -41,9 +41,13 @@ La tâche turbo `models` les fournit avant `build` et `dev` de `@repo/web`
 (`apps/web/turbo.json`) et le `Dockerfile` la joue avant le build ; la CI (`lint`,
 `check-types`, `test`) ne télécharge rien.
 
-Dans l'app, les fichiers sont importés en `?url` : assets fingerprintés, donc précachés par
-le service worker (`globPatterns` étendu à `onnx`, `txt`, `traineddata` ;
-`maximumFileSizeToCacheInBytes` relevé à 20 Mo, le binaire d'onnxruntime en fait 14).
+Dans l'app, les fichiers sont importés en `?url` : assets fingerprintés. Les gros (modèles
+ONNX, binaire d'onnxruntime, cœur et langues Tesseract) ne sont **pas** dans le précache du
+service worker : `readerAssetUrls()` (`@repo/ocr/assets`) les liste, l'app les télécharge au
+premier lancement dans son cache `courrier-models` avec une progression par fichier (écran
+Préparation hors ligne, `apps/web/src/features/offline`), et une route `CacheFirst` du
+service worker les sert depuis ce cache. Seuls les petits (`dict.txt`, glue `.mjs` des
+threads, worker tesseract.js) restent précachés.
 
 | Fichier                                  |  Poids |
 | ---------------------------------------- | -----: |
@@ -52,7 +56,7 @@ le service worker (`globPatterns` étendu à `onnx`, `txt`, `traineddata` ;
 | `tesseract-core-simd-lstm.wasm.js`       | 3,9 Mo |
 | `eng.traineddata` + `fra.traineddata`    | 5,2 Mo |
 
-Soit ≈ 30 Mo de plus dans le précache (budget §5.4 : 30 à 55 Mo code et modèles compris).
+Soit ≈ 30 Mo téléchargés à la préparation, en plus du précache (budget §5.4 : 30 à 55 Mo code et modèles compris).
 Seules les langues Tesseract sortent sous un chemin stable (`ocr/tesseract/<lang>.traineddata`,
 émises par le plugin) parce que tesseract.js compose lui-même ce chemin.
 
