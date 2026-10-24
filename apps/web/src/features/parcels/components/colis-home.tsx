@@ -6,9 +6,8 @@ import {
   RemettreActions,
   Toast,
 } from '@repo/ui';
-import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { listParcelsQueryOptions } from '#/features/parcels/api/list-parcels';
+import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { summarize, toSections } from '#/features/parcels/sections';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
@@ -20,10 +19,10 @@ export function ColisHome() {
   const navigate = useNavigate();
   const online = useOnline();
   const update = useUpdate();
-  const parcels = useQuery(listParcelsQueryOptions);
-  const loading = useDelayedPending(parcels.isPending);
-  const rows = parcels.data ?? [];
-  const empty = parcels.data !== undefined && rows.length === 0;
+  const parcels = useHomeParcels();
+  const loading = useDelayedPending(parcels === undefined);
+  const rows = parcels ?? [];
+  const empty = parcels !== undefined && rows.length === 0;
 
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
@@ -31,7 +30,7 @@ export function ColisHome() {
   return (
     <ColisScreen
       sync={online ? 'synced' : 'offline'}
-      summary={parcels.data ? summarize(rows) : t('colis.summary.loading')}
+      summary={parcels ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
       loading={loading}
       toast={

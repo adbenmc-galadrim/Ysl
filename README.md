@@ -135,8 +135,9 @@ n'apparaît qu'aux administrateurs. Une adresse inconnue affiche « Page introuv
 retour aux colis.
 
 Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l'app leur
-passe les données et les actions. Tant que la base locale n'existe pas, la liste des colis
-est vide et la caméra ne démarre pas : les écrans Scan et Remise sont des coquilles.
+passe les données et les actions. La liste des colis se lit dans la base locale de
+l'appareil (Dexie, voir `docs/architecture/stockage-local.md`) ; tant que la caméra ne
+démarre pas, les écrans Scan et Remise sont des coquilles.
 
 Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le

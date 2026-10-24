@@ -2,6 +2,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import ReactDOM from 'react-dom/client';
 import { AppProvider } from '#/app/provider';
 import { router } from '#/app/router';
+import { bootLocalStore } from '#/features/db/boot';
 import { bootCorners } from '#/features/settings/corners';
 import { startUpdater } from '#/features/update/updater';
 import '#/styles.css';
@@ -20,4 +21,5 @@ if (rootElement && !rootElement.innerHTML) {
       <RouterProvider router={router} />
     </AppProvider>,
   );
+  void bootLocalStore();
 }

@@ -8,6 +8,8 @@ import { useCornerSetting } from '#/features/settings/corners';
 import { initialsOf } from '#/features/settings/initials';
 import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
+import { useStorageStatus } from '#/features/settings/api/use-storage-status';
+import { storageValue } from '#/features/settings/storage-value';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -40,6 +42,7 @@ export function ReglagesHome() {
   const session = useSession();
   const role = toUserRole(session.user.role);
   const server = useServerState();
+  const storage = useStorageStatus();
   const corners = useCornerSetting();
   const update = useUpdate();
   const cornersTitle = CORNER_RADII.find(
@@ -54,6 +57,13 @@ export function ReglagesHome() {
         color: server === 'up' ? 'green' : 'grey',
         label: t('settings.server'),
         value: SERVER_STATE[server],
+        chevron: false,
+      },
+      {
+        icon: 'download',
+        color: 'indigo',
+        label: t('settings.offline'),
+        value: storageValue(storage.data, t),
         chevron: false,
       },
     ],
