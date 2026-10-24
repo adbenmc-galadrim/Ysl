@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import { readManifest, type Located } from '@repo/corpus/src/manifest.ts';
+import { readManifest, type Located } from '@repo/corpus/manifest';
 
 export type BenchLabel = Located;
 

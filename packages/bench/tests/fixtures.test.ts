@@ -8,20 +8,16 @@ import {
   fedexPdf417,
   laPosteDataMatrix,
   upsMaxiCode,
-} from '@repo/corpus/src/synthetic/codes.ts';
+} from '@repo/corpus/synthetic/codes';
 import { recipientAddress } from '@repo/corpus/identities';
-import {
-  annotate,
-  plan,
-  type Planned,
-} from '@repo/corpus/src/synthetic/plan.ts';
+import { annotate, plan, type Planned } from '@repo/corpus/synthetic/plan';
 import { measure } from '#measure';
 import { fieldStats, type LabelResult, objectives } from '#metrics';
 
 const SEED = 20261022;
 const PER_CARRIER = 12;
 
-/** The codes each synthetic template prints, as text: no image in CI. */
+/** The codes each synthetic template prints (`templates.ts`), as text: no image in CI. */
 const symbolsOf = (p: Planned): CodeSymbol[] => {
   const t = p.tracking.value;
   const code128 = (text: string) => ({ format: 'Code128', text });
@@ -63,7 +59,17 @@ const symbolsOf = (p: Planned): CodeSymbol[] => {
         code128(`%00${recipientAddress.postcode}${t}101250`),
       ];
     case 'gls':
-      return [code128(t)];
+      return [
+        {
+          format: 'DataMatrix',
+          text: `${t}|${recipientAddress.postcode}|${p.weightKg}`,
+        },
+        {
+          format: 'DataMatrix',
+          text: `${p.recipient}|${recipientAddress.street}|${recipientAddress.postcode} ${recipientAddress.city}`,
+        },
+        code128(t),
+      ];
   }
 };
 

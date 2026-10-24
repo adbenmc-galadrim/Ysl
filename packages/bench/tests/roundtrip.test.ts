@@ -8,13 +8,9 @@ import {
   fedexPdf417,
   laPosteDataMatrix,
   upsMaxiCode,
-} from '@repo/corpus/src/synthetic/codes.ts';
-import { barcode, type Symbology } from '@repo/corpus/src/synthetic/barcode.ts';
-import {
-  annotate,
-  plan,
-  type Planned,
-} from '@repo/corpus/src/synthetic/plan.ts';
+} from '@repo/corpus/synthetic/codes';
+import { barcode, type Symbology } from '@repo/corpus/synthetic/barcode';
+import { annotate, plan, type Planned } from '@repo/corpus/synthetic/plan';
 import sharp from 'sharp';
 import { rasterOf } from '#image';
 import { measure } from '#measure';
