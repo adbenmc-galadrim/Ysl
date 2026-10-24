@@ -7,11 +7,13 @@
     "./account": "./src/account.ts",
     "./agents": "./src/agents.ts",
     "./auth": "./src/auth.ts",
-    "./health": "./src/health.ts"
+    "./health": "./src/health.ts",
+    "./tracking": "./src/tracking/index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "zod": "catalog:"
@@ -20,6 +22,7 @@
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "eslint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
