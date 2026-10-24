@@ -1,14 +1,14 @@
 import { env } from '@repo/shared/env/web';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { LandingPage, type LandingCopy } from '@repo/ui';
-import { displayHost } from '#/features/install/app-host';
+import { displayHost, displayVersion } from '#/features/install/app-host';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const appName = env.PUBLIC_APP_NAME;
 const url = env.PUBLIC_APP_URL;
 const host = displayHost(url);
-const version = __APP_VERSION__.slice(0, 10).replaceAll('-', '.');
+const version = displayVersion(__APP_VERSION__);
 
 const COPY: LandingCopy = {
   nav: {
@@ -119,10 +119,18 @@ const COPY: LandingCopy = {
   },
   footer: {
     service: t('landing.footer.service'),
-    usage: t('landing.footer.usage', { version }),
+    usage: t('landing.footer.usage'),
   },
 };
 
 export function InstallLanding() {
-  return <LandingPage copy={COPY} appName={appName} url={url} host={host} />;
+  return (
+    <LandingPage
+      copy={COPY}
+      appName={appName}
+      url={url}
+      host={host}
+      version={version}
+    />
+  );
 }

@@ -530,7 +530,6 @@ function Offline({ copy }: { copy: LandingCopy['offline'] }) {
 /* Install                                                                    */
 /* -------------------------------------------------------------------------- */
 
-
 function GestureCard({ index, title, phone }: { index: number; title: string; phone: ReactNode }) {
   return (
     <li className="flex h-[360px] w-[274px] shrink-0 snap-start flex-col items-center rounded-[26px] bg-site-fill pt-6 ring-1 ring-black/8 ring-inset">
@@ -637,7 +636,15 @@ function Closing({ copy, url }: { copy: LandingCopy['closing']; url: string }) {
   );
 }
 
-function Footer({ copy, appName }: { copy: LandingCopy['footer']; appName: string }) {
+function Footer({
+  copy,
+  appName,
+  version,
+}: {
+  copy: LandingCopy['footer'];
+  appName: string;
+  version: string;
+}) {
   return (
     <footer className={cn(CONTAINER, 'pb-10 xl:pb-[60px]')}>
       <div className="mt-[62px] h-px bg-black/10 xl:mt-20" />
@@ -647,7 +654,7 @@ function Footer({ copy, appName }: { copy: LandingCopy['footer']; appName: strin
           {copy.service}
         </p>
         <p className="mt-1 text-13 leading-4 text-muted-2 xl:col-start-2 xl:row-start-1 xl:mt-0 xl:text-14 xl:leading-[17px]">
-          {copy.usage}
+          {copy.usage} {version}
         </p>
       </div>
     </footer>
@@ -729,9 +736,10 @@ export type LandingPageProps = {
   url: string;
   /** Where the app lives, printed under the QR code. */
   host: string;
+  version: string;
 };
 
-export function LandingPage({ copy, appName, url, host }: LandingPageProps) {
+export function LandingPage({ copy, appName, url, host, version }: LandingPageProps) {
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip bg-white text-site-ink">
       <div
@@ -749,7 +757,7 @@ export function LandingPage({ copy, appName, url, host }: LandingPageProps) {
         <Install copy={copy.install} appName={appName} url={url} host={host} />
         <Closing copy={copy.closing} url={url} />
       </main>
-      <Footer copy={copy.footer} appName={appName} />
+      <Footer copy={copy.footer} appName={appName} version={version} />
     </div>
   );
 }

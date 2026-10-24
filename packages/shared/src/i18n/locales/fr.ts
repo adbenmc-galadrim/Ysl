@@ -106,5 +106,5 @@ export const fr = {
   'landing.closing.scanTitle': 'Scannez pour ouvrir',
   'landing.closing.scanText': 'sur l’iPhone →',
   'landing.footer.service': 'Service courrier',
-  'landing.footer.usage': 'Usage interne · Version {{version}}',
+  'landing.footer.usage': 'Usage interne · Version',
 } as const;
