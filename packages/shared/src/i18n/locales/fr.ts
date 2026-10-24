@@ -109,6 +109,13 @@ export const fr = {
   'scan.off.hint':
     'Activez-la pour scanner, ou importez une photo de l’étiquette.',
   'scan.off.retry': 'Activer la caméra',
+  'scan.denied.title': 'Caméra refusée',
+  'scan.denied.hint':
+    'Réautorisez-la dans les réglages de l’iPhone, ou importez une photo.',
+  'camera.steps.settings': 'Ouvrez Réglages sur l’iPhone',
+  'camera.steps.safari': 'Touchez Safari, puis Caméra',
+  'camera.steps.allow': 'Choisissez « Autoriser »',
+  'camera.steps.back': 'Revenez dans {{appName}}',
   'scan.reading': 'Lecture…',
   'scan.storageFailed.title': 'Photo non enregistrée',
   'scan.storageFailed.hint':

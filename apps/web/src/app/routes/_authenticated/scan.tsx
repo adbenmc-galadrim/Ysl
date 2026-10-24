@@ -1,5 +1,7 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { env } from '@repo/shared/env/web';
 import {
+  CameraDeniedScreen,
   CameraPermissionScreen,
   SaisieManuelleSheet,
   ScanScreen,
@@ -23,6 +25,7 @@ import {
   markExplained,
   wasExplained,
 } from '#/features/camera/entry';
+import { cameraReading } from '#/features/camera/notice';
 import {
   cameraPermission,
   cameraStream,
@@ -50,18 +53,12 @@ export const Route = createFileRoute('/_authenticated/scan')({
   component: ScanPage,
 });
 
-const STARTING: ScanReading = { kind: 'starting', title: t('scan.starting') };
-const BLOCKED: ScanReading = {
-  kind: 'blocked',
-  title: t('scan.blocked.title'),
-  hint: t('scan.blocked.hint'),
-};
-const OFF: ScanReading = {
-  kind: 'blocked',
-  title: t('scan.off.title'),
-  hint: t('scan.off.hint'),
-  retry: t('scan.off.retry'),
-};
+const SETTINGS_STEPS = [
+  t('camera.steps.settings'),
+  t('camera.steps.safari'),
+  t('camera.steps.allow'),
+  t('camera.steps.back', { appName: env.PUBLIC_APP_NAME }),
+];
 const STORAGE_FAILED: ScanReading = {
   kind: 'unreadable',
   title: t('scan.storageFailed.title'),
@@ -108,20 +105,22 @@ function ScanPage() {
     if (opening !== 'pending') return;
     let cancelled = false;
     void cameraPermission().then((permission) => {
-      if (!cancelled) setOpening(cameraEntry(false, permission));
+      if (!cancelled) setOpening(cameraEntry(wasExplained(), permission));
     });
     return () => {
       cancelled = true;
     };
   }, [opening]);
 
-  const scanning = opening === 'scan';
+  /** The refusal takes the whole screen until the agent picks a way around it. */
+  const refused = camera === 'denied' && !fallback;
+  const viewfinder = opening === 'scan' && !refused;
   useEffect(() => {
     const video = videoRef.current;
-    if (!scanning || fallback || !video) return;
-    void cameraStream.attach(video);
+    if (!viewfinder || !video) return;
+    if (!fallback) void cameraStream.attach(video);
     return () => cameraStream.detach(video);
-  }, [scanning, fallback]);
+  }, [viewfinder, fallback]);
 
   const onAllow = () => {
     markExplained();
@@ -140,7 +139,9 @@ function ScanPage() {
     inputRef.current?.click();
   };
 
+  /** Asking again is a choice: a new refusal shows the Réglages steps again. */
   const onRetry = () => {
+    setFallback(false);
     const video = videoRef.current;
     void (video ? cameraStream.attach(video) : cameraStream.retry());
   };
@@ -243,6 +244,12 @@ function ScanPage() {
   /** While an unread label is on screen, any entry fills that draft. */
   const onType = () => setTyping({ fix: unread.current, value: '' });
 
+  /** From the refusal screen: typing is the way to work, the camera stays off. */
+  const onTypeInstead = () => {
+    withoutCamera();
+    onType();
+  };
+
   const onTyped = async ({ fix, value }: Typing) => {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
     const typed = { carrier, tracking, trackingNorm };
@@ -290,79 +297,76 @@ function ScanPage() {
       ? { ...reading, last }
       : reading.kind !== 'idle'
         ? reading
-        : camera === 'blocked' || camera === 'denied'
-          ? BLOCKED
-          : camera === 'idle' && fallback
-            ? OFF
-            : camera !== 'live'
-              ? STARTING
-              : last
-                ? { kind: 'read', fields: [], last }
-                : reading;
+        : (cameraReading(camera, fallback, t) ??
+          (last ? { kind: 'read', fields: [], last } : reading));
 
   const entry = typing && typedEntry(typing.value, t);
 
   if (opening === 'pending') return null;
 
-  if (opening === 'explain') {
-    return (
-      <>
-        <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={onFile}
-        />
-      </>
-    );
-  }
-
+  /* The file input lives outside the screens: the chooser opened from one
+     screen must deliver its file to the input still mounted on the next. */
   return (
     <>
-      <ScanScreen
-        count={view?.count ?? 0}
-        reading={shown}
-        controls={!typing}
-        dim={typing ? 0.4 : undefined}
-        video={
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="size-full object-cover"
-          />
-        }
-        onClose={close}
-        onShutter={onShutter}
-        onUndo={onUndo}
-        onDone={() => void onDone()}
-        onImport={() => inputRef.current?.click()}
-        onType={onType}
-        onFix={onType}
-        onKeep={onKeep}
-        onRetry={onRetry}
-      />
-      {typing && entry && (
-        <SaisieManuelleSheet
-          fixed
-          value={entry.grouped}
-          hint={entry.hint ?? undefined}
-          submitLabel={typing.fix ? t('scan.type.save') : undefined}
-          onDigit={(key) =>
-            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
-          }
-          onLetter={(key) =>
-            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
-          }
-          onDelete={() =>
-            setTyping((s) => s && { ...s, value: s.value.slice(0, -1) })
-          }
-          onSubmit={onSubmit}
-          onDismiss={() => setTyping(null)}
+      {refused ? (
+        <CameraDeniedScreen
+          steps={SETTINGS_STEPS}
+          onPhoto={onImportInstead}
+          onKeyboard={onTypeInstead}
+          onRetry={onRetry}
         />
+      ) : opening === 'explain' ? (
+        <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
+      ) : (
+        <>
+          <ScanScreen
+            count={view?.count ?? 0}
+            reading={shown}
+            controls={!typing}
+            dim={typing ? 0.4 : undefined}
+            video={
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="size-full object-cover"
+              />
+            }
+            onClose={close}
+            onShutter={onShutter}
+            onUndo={onUndo}
+            onDone={() => void onDone()}
+            onImport={() => inputRef.current?.click()}
+            onType={onType}
+            onFix={onType}
+            onKeep={onKeep}
+            onRetry={onRetry}
+          />
+          {typing && entry && (
+            <SaisieManuelleSheet
+              fixed
+              value={entry.grouped}
+              hint={entry.hint ?? undefined}
+              submitLabel={typing.fix ? t('scan.type.save') : undefined}
+              onDigit={(key) =>
+                setTyping(
+                  (s) => s && { ...s, value: appendTyped(s.value, key) },
+                )
+              }
+              onLetter={(key) =>
+                setTyping(
+                  (s) => s && { ...s, value: appendTyped(s.value, key) },
+                )
+              }
+              onDelete={() =>
+                setTyping((s) => s && { ...s, value: s.value.slice(0, -1) })
+              }
+              onSubmit={onSubmit}
+              onDismiss={() => setTyping(null)}
+            />
+          )}
+        </>
       )}
       <input
         ref={inputRef}
