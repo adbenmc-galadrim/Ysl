@@ -23,7 +23,8 @@
     "@repo/contract": "workspace:*",
     "@repo/db": "workspace:*",
     "@repo/shared": "workspace:*",
-    "@trpc/server": "catalog:"
+    "@trpc/server": "catalog:",
+    "superjson": "catalog:"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

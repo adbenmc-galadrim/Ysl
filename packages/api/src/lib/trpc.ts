@@ -2,6 +2,7 @@ import type { Session } from '@repo/auth';
 import { toUserRole, type UserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
+import superjson from 'superjson';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -18,6 +19,7 @@ export function createTRPCContext({
 export type Context = ReturnType<typeof createTRPCContext>;
 
 const t = initTRPC.context<Context>().create({
+  transformer: superjson,
   errorFormatter: ({ shape, error }) =>
     error.code === 'INTERNAL_SERVER_ERROR'
       ? { ...shape, message: translate('error.internal') }
