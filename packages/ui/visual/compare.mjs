@@ -29,6 +29,8 @@ import { markdown, parseMax, verdict } from './report.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const { values: args } = parseArgs({
+  // pnpm hands the `--` separator over as is: `pnpm visual -- --filter colis`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
   options: {
     port: { type: 'string', default: '6006' },
     filter: { type: 'string', default: '' },

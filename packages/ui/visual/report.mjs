@@ -6,8 +6,8 @@
 
 /**
  * The tolerated share of differing pixels, in percent, from the `--max`
- * argument. Anything that is not a finite, positive number is a typo, and a
- * typo must not turn into a run that never fails.
+ * argument. Anything that is not a finite, non-negative number is a typo, and
+ * a typo must not turn into a run that never fails.
  *
  * @param {string} value
  */

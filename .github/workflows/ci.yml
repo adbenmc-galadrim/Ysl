@@ -77,10 +77,11 @@ jobs:
           done
           echo "::error::Le Storybook statique ne répond pas sur le port 6006"
           exit 1
-      # 0,75 et non 0,6 : `04-reception/scan-lecture` est à 0,68 % de bruit d'anticrénelage
-      # (barres du code-barres, bords de l'étiquette), sans décalage de mise en page.
+      # 0,75 et non 0,6 : `04-reception/scan-lecture` est à 0,68 % (Chromium macOS, poste
+      # local du 24/10/2026) de bruit d'anticrénelage, barres du code-barres et bords de
+      # l'étiquette, sans décalage de mise en page.
       - name: Compare les écrans aux maquettes
-        run: pnpm visual -- --max 0.75
+        run: pnpm visual --max 0.75
 
       - name: Planches des écrans
         if: always()
