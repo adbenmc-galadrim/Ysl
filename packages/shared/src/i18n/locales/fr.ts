@@ -177,6 +177,8 @@ export const fr = {
   'camera.steps.allow': 'Choisissez « Autoriser »',
   'camera.steps.back': 'Revenez dans {{appName}}',
   'scan.reading': 'Lecture…',
+  'scan.last.unread': 'Non lu',
+  'scan.last.failed': 'Lecture impossible',
   'scan.storageFailed.title': 'Photo non enregistrée',
   'scan.storageFailed.hint':
     'Cet iPhone ne peut pas stocker la photo : quittez la navigation privée.',

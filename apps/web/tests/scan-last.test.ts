@@ -36,6 +36,33 @@ describe('lastOf', () => {
     ).toEqual({ name: 'Destinataire inconnu', meta: 'UPS ···0622' });
   });
 
+  it('flags a parcel read without its carrier or its number', () => {
+    expect(lastOf(draft({ tracking: '1ZE6344W0499230622' }), t)).toEqual({
+      name: 'Destinataire inconnu',
+      meta: 'Transporteur inconnu ···0622',
+      status: 'warning',
+    });
+    expect(lastOf(draft({ carrier: 'UPS' }), t)).toMatchObject({
+      meta: 'UPS',
+      status: 'warning',
+    });
+  });
+
+  it('says a kept photo gave nothing, with the alert', () => {
+    expect(lastOf(draft({ reading: 'unreadable' }), t)).toEqual({
+      name: 'Destinataire inconnu',
+      meta: 'Non lu',
+      status: 'error',
+    });
+  });
+
+  it('tells a reader crash from an unreadable label', () => {
+    expect(lastOf(draft({ reading: 'failed' }), t)).toMatchObject({
+      meta: 'Lecture impossible',
+      status: 'error',
+    });
+  });
+
   it('shows a typed number like a read one', () => {
     expect(
       lastOf(
@@ -56,12 +83,6 @@ describe('lastOf', () => {
     ).toBe('Hugo Lefèvre');
     expect(lastOf(draft({ ocrName: 'Camille Morel' }), t).name).toBe(
       'Camille Morel ?',
-    );
-  });
-
-  it('names what it could not read', () => {
-    expect(lastOf(draft({ reading: 'unreadable' }), t).meta).toBe(
-      'Transporteur inconnu',
     );
   });
 });
