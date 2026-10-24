@@ -41,12 +41,15 @@ describe('guards in sync errors', () => {
     expect(messageOf(400)).toMatch(/invalides/);
   });
 
-  it('name the SQLSTATE when no constraint is known', () => {
-    expect(reasonOf(wrapped({ code: '22P02', message: 'invalid input' }))).toBe(
-      '22P02: invalid input',
-    );
-    expect(reasonOf(new RangeError('Invalid time value'))).toBe(
-      'RangeError: Invalid time value',
-    );
+  it('keep only the SQLSTATE or the name when no constraint is known', () => {
+    expect(
+      reasonOf(
+        wrapped({
+          code: '22P02',
+          message: 'invalid input syntax for type uuid: "secret"',
+        }),
+      ),
+    ).toBe('22P02');
+    expect(reasonOf(new RangeError('Invalid time value'))).toBe('RangeError');
   });
 });

@@ -9,7 +9,7 @@ export const fr = {
   'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
   'sync.op.transition':
-    'Ce changement de statut n’est pas permis : le colis a évolué sur un autre appareil.',
+    'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
   'sync.op.delivered':
     'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
   'sync.op.cancelled': 'Cette remise a été annulée ; l’annulation reste.',

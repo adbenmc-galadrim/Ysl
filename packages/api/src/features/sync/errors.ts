@@ -64,44 +64,45 @@ export type Guard = keyof typeof GUARDS;
 
 export function guardOf(error: unknown): Guard | undefined {
   const constraint = constraintOf(error);
-  return constraint && constraint in GUARDS ? (constraint as Guard) : undefined;
+  return constraint && Object.hasOwn(GUARDS, constraint)
+    ? (constraint as Guard)
+    : undefined;
 }
 
 const REASON_MAX = 300;
 
 /**
- * What to keep of a refusal in `sync_op.reason`: the constraint or SQLSTATE
- * and the message of the statement, never its parameters.
+ * What to keep of a refusal in `sync_op.reason`: the constraint and the line
+ * its trigger or check raised, or just the SQLSTATE or error name. Postgres
+ * repeats the offending value in its other messages (`invalid input syntax
+ * for type uuid: "…"`), and drizzle's own message carries every parameter:
+ * neither is kept.
  */
 export function reasonOf(error: unknown): string {
   const constraint = constraintOf(error);
-  const state = sqlState(error);
-  const statement = innermost(error, (fields) =>
-    constraint
-      ? fields.constraint === constraint
-      : state !== undefined && fields.code === state,
-  );
-  const source =
-    constraint ?? state ?? (error instanceof Error ? error.name : 'error');
-  const message = statement?.message ?? pgField(error, 'message') ?? '';
-  return `${source}: ${message}`.slice(0, REASON_MAX);
+  if (constraint) {
+    const raised = messageOfConstraint(error, constraint) ?? '';
+    return `${constraint}: ${raised}`.slice(0, REASON_MAX);
+  }
+  return sqlState(error) ?? (error instanceof Error ? error.name : 'error');
 }
 
-/** The error of the chain the driver raised, not drizzle's "Failed query" and its parameters. */
-function innermost(
+function messageOfConstraint(
   error: unknown,
-  matches: (fields: PgFields) => boolean,
-): { message?: string } | undefined {
+  constraint: string,
+): string | undefined {
   let current: unknown = error;
-  let found: PgFields | undefined;
   for (let depth = 0; current && depth < 4; depth += 1) {
     const fields = current as PgFields;
-    if (matches(fields)) found = fields;
+    if (
+      fields.constraint === constraint &&
+      typeof fields.message === 'string'
+    ) {
+      return fields.message;
+    }
     current = fields.cause;
   }
-  return found && typeof found.message === 'string'
-    ? { message: found.message }
-    : undefined;
+  return undefined;
 }
 
 const RETRYABLE = new Set([

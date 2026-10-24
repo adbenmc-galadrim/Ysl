@@ -88,6 +88,16 @@ Ce que cela donne entre deux appareils :
 - **Modification ordinaire.** Changer l'emplacement ou les notes d'un colis remis passe,
   tant que le statut et la preuve de remise ne bougent pas.
 
+Deux limites, assumées : une copie en retard encore `remis` (un appareil qui a vu la
+remise mais pas son annulation) repasse par `notifie → remis`, qui est dans le graphe,
+et remet le colis avec son ancienne preuve ; et la remise elle-même s'envoie en deux
+opérations (colis `remis`, puis `handover`), entre lesquelles une annulation d'un autre
+appareil peut se glisser. Les deux demandent un écran de remise (YSL-75) qui envoie la
+`handover` avant le colis et relit le serveur avant d'annuler. Enfin,
+`parcel_recipient_check` fait échouer le `SET NULL` des clés `person_id` et
+`contact_id` sur un colis `notifie`/`remis` : une personne ou un contact qui a un tel
+colis se désactive, il ne se supprime pas.
+
 ## `sync.pull`
 
 L'appareil envoie son curseur `{ generation, xid }` (ou rien la première fois) et

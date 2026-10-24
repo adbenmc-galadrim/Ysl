@@ -2,7 +2,11 @@
 -- and what it saw. The conflict log of §8.4: `select * from sync_op where
 -- status = 409`.
 ALTER TABLE "sync_op" ADD COLUMN "reason" text;--> statement-breakpoint
--- Notifying or handing over needs someone to notify or hand over to.
+-- Notifying or handing over needs someone to notify or hand over to. This
+-- also means the SET NULL (person_id) and SET NULL (contact_id) of 0002 fail
+-- on a parcel that is notifie or remis: a person or a contact with such a
+-- parcel is deactivated, never deleted (the retention purge, YSL-55, will
+-- have to delete the parcels first).
 ALTER TABLE "parcel" ADD CONSTRAINT "parcel_recipient_check" CHECK ("parcel"."status" not in ('notifie', 'remis') or num_nonnulls("parcel"."person_id", "parcel"."contact_id") = 1);
 --> statement-breakpoint
 -- The status graph of §8.3 (PARCEL_TRANSITIONS in src/schema/parcel.ts), and

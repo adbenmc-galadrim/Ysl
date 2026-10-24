@@ -15,7 +15,9 @@ Project courrier {
   organisation, sync_op garde les op_id appliqués par sync.push et le motif des refus.
   parcel suit le graphe des statuts du §8.3 (trigger parcel_status_guard) : une remise
   garde sa preuve et ne s'annule qu'une fois sa handover annulée (cancelled_at collant,
-  trigger handover_cancel_sticky) ; notifie et remis exigent un destinataire.
+  trigger handover_cancel_sticky) ; notifie et remis exigent un destinataire
+  (parcel_recipient_check), donc le SET NULL d'une personne ou d'un contact échoue sur
+  un tel colis : on désactive, on ne supprime pas.
   '''
 }
 

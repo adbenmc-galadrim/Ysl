@@ -375,7 +375,7 @@ describe('sync.push', () => {
         opId: stale.opId,
         status: 409,
         message:
-          'Ce changement de statut n’est pas permis : le colis a évolué sur un autre appareil.',
+          'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
       });
       expect(again.results[0]?.status).toBe(409);
       expect(await parcel(row.id)).toMatchObject({
