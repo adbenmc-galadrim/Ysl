@@ -116,6 +116,13 @@ export function typedDraft(
   };
 }
 
+export async function addTypedDraft(
+  db: CourrierDatabase,
+  draft: DraftParcel,
+): Promise<void> {
+  await db.draftParcel.add(draft);
+}
+
 export async function typeDraft(
   db: CourrierDatabase,
   batchId: string,
@@ -123,7 +130,7 @@ export async function typeDraft(
   now = new Date(),
 ): Promise<DraftParcel> {
   const draft = typedDraft(batchId, typed, now);
-  await db.draftParcel.add(draft);
+  await addTypedDraft(db, draft);
   return draft;
 }
 

@@ -20,9 +20,9 @@ import {
 } from '#/features/batch/duplicates';
 import {
   addDraft,
+  addTypedDraft,
   finishBatch,
   openBatch,
-  typeDraft,
   typedDraft,
   undoLast,
   updateDraft,
@@ -51,6 +51,7 @@ import {
 import { db } from '#/features/db/database';
 import type { DraftParcel } from '#/features/db/schema';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
+import { readPhoto } from '#/features/photos/store';
 import { duplicateReading, recipientOf } from '#/features/scan/duplicate';
 import { lastOf } from '#/features/scan/last';
 import {
@@ -58,12 +59,12 @@ import {
   recoverPending,
   settled,
   trackWork,
-  type Symbols,
 } from '#/features/scan/reader';
 import { readImageFile } from '#/features/scan/read-file';
 import {
   failedReading,
   type ShotHint,
+  type ShownSymbol,
   toScanReading,
 } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
@@ -153,8 +154,10 @@ function ScanPage() {
 
   /**
    * A label already read (F10): the draft leaves the batch and the alert
-   * says what it doubles. False when there was nothing to hold, or no
-   * duplicate: the draft stays where it is.
+   * says what it doubles. `take` hands the draft over: out of the database
+   * for a photo, as it is for a typed number that was never written. False
+   * when there was nothing to hold, or no duplicate: the draft stays where
+   * it is.
    */
   const holdDuplicate = async (
     draft: Pick<DraftParcel, 'id' | 'batchId' | 'createdAt'>,
@@ -285,6 +288,7 @@ function ScanPage() {
         return;
       }
       if (kept) {
+        if (held.current) dropHeldDraft();
         unread.current = symbols.length === 0 ? draft.id : null;
         shownDraft.current = draft.id;
         shownShot.current = shot;
@@ -315,7 +319,11 @@ function ScanPage() {
    * batch's work: "Terminer" never waits for it. Without a code, only a
    * name is worth replacing what the screen says.
    */
-  const showText = async (draftId: string, blob: Blob, symbols: Symbols) => {
+  const showText = async (
+    draftId: string,
+    blob: Blob,
+    symbols: readonly ShownSymbol[],
+  ) => {
     const text = await readText(db, draftId, blob);
     const worth = symbols.length > 0 || text.ocrName !== null;
     if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
@@ -390,7 +398,6 @@ function ScanPage() {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
     const typed = { carrier, tracking, trackingNorm };
     dropHeldDraft();
-    const batch = await openBatch(db);
     const fixing = fix !== null ? await db.draftParcel.get(fix) : undefined;
     if (fixing) {
       const fixed = { ...fixing, reading: 'typed' as const, ...typed };
@@ -404,13 +411,14 @@ function ScanPage() {
         return;
       }
     }
+    const batch = await openBatch(db);
     const draft = typedDraft(batch.id, typed);
     if (
       await holdDuplicate(draft, trackingNorm, () => Promise.resolve(draft))
     ) {
       return;
     }
-    await typeDraft(db, batch.id, typed);
+    await addTypedDraft(db, draft);
   };
 
   /** "Voir le colis": the original's fields, or the list where it lives. */
@@ -429,13 +437,31 @@ function ScanPage() {
     );
   };
 
-  /** "Ajouter quand même": the draft rejoins the batch as it was. */
+  /**
+   * "Ajouter quand même": the draft rejoins the batch as it was, its codes
+   * on screen as after any reading, and the text pass it missed while held
+   * runs now.
+   */
   const onAddAnyway = () => {
     const taken = held.current;
     if (!taken) return;
     held.current = null;
-    setReading({ kind: 'idle' });
-    void trackWork(restoreDraft(db, taken.draft));
+    const { draft } = taken;
+    shownDraft.current = draft.id;
+    shownShot.current = undefined;
+    setReading(toScanReading({ symbols: draft.symbols }, t));
+    void trackWork(
+      restoreDraft(db, draft).then(async () => {
+        if (!draft.photoId || draft.ocrState !== 'pending') return;
+        const photo = await db.photo.get(draft.photoId);
+        if (!photo) return;
+        await showText(
+          draft.id,
+          await readPhoto(photoFiles, photo),
+          draft.symbols,
+        );
+      }),
+    );
   };
 
   const onSubmit = () => {

@@ -3,7 +3,7 @@ import type { ScanReading } from '@repo/ui';
 import type { Duplicate } from '#/features/batch/duplicates';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import { formatTime, startOfDay } from '#/features/parcels/model';
-import { nameOf } from '#/features/scan/last';
+import { carrierMeta, nameOf } from '#/features/scan/last';
 
 export type DuplicateReading = Extract<ScanReading, { kind: 'duplicate' }>;
 
@@ -11,17 +11,6 @@ const dateFormat = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',
   month: 'long',
 });
-
-/** "UPS ···0622", as the band says it. */
-function metaOf(
-  carrier: string | null,
-  tracking: string | null,
-  t: TranslateFn,
-): string {
-  const name = carrier ?? t('parcel.carrier.unknown');
-  const last4 = tracking ? tracking.slice(-4) : '';
-  return last4 ? `${name} ···${last4}` : name;
-}
 
 /** "aujourd’hui", "hier", "le 23 octobre": the day the title names. */
 function dayOf(date: Date, now: Date, t: TranslateFn): string {
@@ -34,8 +23,9 @@ function dayOf(date: Date, now: Date, t: TranslateFn): string {
 }
 
 /**
- * Who the parcel is for, as the list says it: the directory entry or the
- * contact it was given, else the name read on the label, else unknown.
+ * Who the parcel is for: the directory entry or the contact it was given;
+ * without either, the name read on the label stands in (the list keeps it
+ * as a note, the alert has one line), else unknown.
  */
 export async function recipientOf(
   db: CourrierDatabase,
@@ -72,7 +62,7 @@ export function duplicateReading(
       title: t('scan.duplicate.batch.title'),
       detail: t('scan.duplicate.batch.detail', {
         name: nameOf(draft, t),
-        meta: metaOf(draft.carrier, draft.tracking, t),
+        meta: carrierMeta(draft.carrier, draft.tracking, t),
         time: formatTime(draft.createdAt),
       }),
       message,
@@ -83,7 +73,7 @@ export function duplicateReading(
   const at = delivered || parcel.receivedAt;
   const params = {
     name: recipient,
-    meta: metaOf(parcel.carrier, parcel.tracking, t),
+    meta: carrierMeta(parcel.carrier, parcel.tracking, t),
     time: formatTime(at),
   };
   const day = { day: dayOf(at, now, t) };

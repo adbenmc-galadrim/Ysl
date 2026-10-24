@@ -45,8 +45,14 @@ beforeEach(async () => {
 });
 
 describe('findDuplicate', () => {
-  it('finds the older draft of the batch that bears the same number', async () => {
-    await db.draftParcel.add(draft({ id: 'first', createdAt: NOW }));
+  it('finds the older draft of the batch that bears the same number, however written', async () => {
+    await db.draftParcel.add(
+      draft({
+        id: 'first',
+        createdAt: NOW,
+        tracking: '1z e634-4w04 9923 0622',
+      }),
+    );
     const second = draft({ id: 'second', createdAt: later(10) });
 
     await expect(findDuplicate(db, second)).resolves.toMatchObject({
