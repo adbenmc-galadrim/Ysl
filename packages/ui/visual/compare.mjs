@@ -4,14 +4,20 @@
  *
  *   pnpm visual                      # all screens, Storybook on :6006
  *   pnpm visual -- --port 6101 --filter colis
+ *   pnpm visual -- --max 0.8         # tolerate up to 0.8 % of differing pixels
  *
  * A screen story opts in with `parameters.reference`, the path of its export
  * under `reference/` without extension. Each run writes, per screen, the
  * capture, a diff mask and a side-by-side sheet to `visual/out/`, and prints
  * the share of pixels that differ. Exports are 2x, so captures are too.
+ *
+ * The run fails (exit code 1) when a screen differs by more than `--max`
+ * percent, or when no screen was compared at all. In GitHub Actions the table
+ * also lands in the job summary.
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
@@ -19,14 +25,20 @@ import pixelmatch from 'pixelmatch';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 
+import { markdown, parseMax, verdict } from './report.mjs';
+
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const { values: args } = parseArgs({
+  // pnpm hands the `--` separator over as is: `pnpm visual -- --filter colis`.
+  args: process.argv.slice(2).filter((a) => a !== '--'),
   options: {
     port: { type: 'string', default: '6006' },
     filter: { type: 'string', default: '' },
     threshold: { type: 'string', default: '0.1' },
+    max: { type: 'string', default: '0.6' },
   },
 });
+const max = parseMax(args.max);
 
 const base = `http://localhost:${args.port}`;
 const out = path.join(root, 'visual', 'out');
@@ -73,7 +85,11 @@ for (const story of stories) {
     reducedMotion: 'reduce',
   });
   const page = await context.newPage();
-  await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story`);
+  // The stylesheet is fetched after the root renders: a capture taken before
+  // the network settles is unstyled, and differs by several percent.
+  await page.goto(`${base}/iframe.html?id=${story.id}&viewMode=story`, {
+    waitUntil: 'networkidle',
+  });
   await page.waitForSelector('#storybook-root > *', { timeout: 60_000 });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(150);
@@ -109,3 +125,15 @@ fs.writeFileSync(
   JSON.stringify(results, null, 2),
 );
 if (!results.length) console.log('No screen story matched.');
+
+const { ok, failed } = verdict(results, max);
+if (process.env.GITHUB_STEP_SUMMARY)
+  fs.appendFileSync(
+    process.env.GITHUB_STEP_SUMMARY,
+    `## Comparaison visuelle\n\n${markdown(results, max)}`,
+  );
+if (!ok) {
+  for (const r of failed)
+    console.error(`✗ ${r.ref}: ${r.pct.toFixed(2)} % > ${max} %`);
+  process.exitCode = 1;
+}

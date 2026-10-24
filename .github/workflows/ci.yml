@@ -1,0 +1,97 @@
+# Vérifie une pull request : lint, types et tests Vitest d'un côté ; de l'autre le
+# build du Storybook et la comparaison de chaque écran à sa maquette (`pnpm visual`,
+# qui échoue au-delà de `--max` % de pixels différents). Les planches
+# référence | capture | diff de chaque écran sont jointes au run en artefact.
+#
+# `deploy.yml` appelle ce workflow avant de déployer `main` et `prod`.
+name: Vérification
+
+on:
+  pull_request:
+  workflow_call:
+
+# Un nouveau push sur une PR annule le run précédent ; appelé par `deploy.yml`, chaque
+# run garde son propre groupe pour ne pas faire sauter un déploiement en attente.
+concurrency:
+  group: verification-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, types et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run lint check-types test
+
+  # Sur macOS, comme les références : sous Linux, la rastérisation des polices
+  # (FreeType) décale chaque glyphe et tous les écrans montent de 0,8 point
+  # (médiane 0,77 %, maximum 1,69 % le 24/10/2026), ce qui obligerait à un seuil
+  # trois fois plus lâche. Le dépôt est public : les minutes macOS sont gratuites.
+  # Image épinglée : le seuil tient à la rastérisation de cette version (0,68 % mesuré
+  # sur `macos-26-arm64` le 24/10/2026, pour 0,75 % toléré).
+  visual:
+    name: Storybook et écrans
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Version de Playwright
+        id: playwright
+        run: echo "version=$(pnpm --filter @repo/ui exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+      - name: Cache de Chromium
+        id: chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Installe Chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        run: pnpm --filter @repo/ui exec playwright install chromium
+
+      - name: Construit le Storybook
+        run: pnpm build-storybook
+      # `vite preview` plutôt qu'un serveur statique minimal : `python3 -m http.server`
+      # livrait la feuille de style trop tard (captures non stylées) puis cessait de
+      # répondre. Le build statique expose bien `__STORYBOOK_PREVIEW__`, que lit `pnpm visual`.
+      # `--host 127.0.0.1` : sans lui Vite peut n'écouter que sur `::1` quand `fetch` vise `127.0.0.1`.
+      - name: Sert le Storybook
+        run: |
+          pnpm --filter @repo/ui exec vite preview --outDir storybook-static --host 127.0.0.1 --port 6006 --strictPort &
+          for _ in $(seq 1 30); do
+            curl --silent --fail http://localhost:6006/index.json > /dev/null && exit 0
+            sleep 1
+          done
+          echo "::error::Le Storybook statique ne répond pas sur le port 6006"
+          exit 1
+      # 0,75 et non 0,6 : `04-reception/scan-lecture` est à 0,68 % (Chromium macOS, poste
+      # local du 24/10/2026) de bruit d'anticrénelage, barres du code-barres et bords de
+      # l'étiquette, sans décalage de mise en page.
+      - name: Compare les écrans aux maquettes
+        run: pnpm visual --max 0.75
+
+      - name: Planches des écrans
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: planches-visuelles
+          path: packages/ui/visual/out
+          retention-days: 7
+          if-no-files-found: ignore

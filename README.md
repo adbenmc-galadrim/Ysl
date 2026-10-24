@@ -106,6 +106,25 @@ AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-
 Ce terminal est interactif, le script n'y lit donc pas l'entrée standard : le mot de
 passe passe par `AUTH_USER_PASSWORD`.
 
+## Intégration continue
+
+Chaque pull request passe `.github/workflows/ci.yml` (deux jobs en parallèle, moins de
+10 minutes) ; `deploy.yml` rejoue les mêmes vérifications sur `main` et `prod` avant de
+déployer.
+
+| Job | Ce qu'il vérifie |
+| --- | --- |
+| Lint, types et tests | `pnpm turbo run lint check-types test` sur tout le monorepo |
+| Storybook et écrans | `pnpm build-storybook`, puis `pnpm visual -- --max 0.75` contre le build statique servi par `vite preview`, sur un runner macOS (les références ont été calibrées sur Chromium macOS ; sous Linux les polices décalent chaque écran de 0,8 point) |
+
+`pnpm visual` capture chaque story `Écrans/` qui déclare `parameters.reference` et la
+compare au PNG de `packages/ui/reference/` : le run échoue dès qu'un écran diffère de plus
+de `--max` % de ses pixels (0,6 par défaut, 0,75 en CI pour le bruit du code-barres de
+`scan-lecture`), ou si aucun écran n'a été comparé. Le tableau des écarts
+est dans le résumé du job, et les planches référence | capture | diff de tous les écrans
+dans l'artefact `planches-visuelles` du run (7 jours). En local : `pnpm storybook` puis
+`pnpm visual -- --filter 05-colis`.
+
 ## App installée sur l'iPhone
 
 L'app est une PWA : sur iPhone, elle s'utilise installée sur l'écran d'accueil. Ouverte
@@ -143,4 +162,4 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm auth:create-user` | Crée un compte agent ou admin |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
-| `pnpm visual` | Compare les stories à leurs références |
+| `pnpm visual` | Compare les stories à leurs références ; échoue au-dessus de `--max` % (0,6 par défaut) |
