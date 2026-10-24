@@ -80,6 +80,11 @@ import {
   toScanReading,
 } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
+import {
+  confirmsReading,
+  FLASH_MS,
+  scanFeedback,
+} from '#/features/scan/feedback';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
 import { ocrReader, readText } from '#/features/scan/text';
 import { holdUpdates } from '#/features/update/updater';
@@ -148,7 +153,10 @@ function ScanPage() {
   }, [undo]);
   const undoable = canUndo(undo, now);
   const queue = decodeQueue();
+  const feedback = scanFeedback();
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
+  /** When the last label was read, for the green corners and the flash; 0 once they are gone. */
+  const [flashedAt, setFlashedAt] = useState(0);
   const [typing, setTyping] = useState<Typing | null>(null);
   const unread = useRef<string | null>(null);
   /** The draft the fields on screen belong to: a later text must not overwrite another's. */
@@ -159,6 +167,31 @@ function ScanPage() {
   const [sameAs, setSameAs] = useState<SameRecipient | null>(null);
 
   useEffect(() => holdUpdates(), []);
+
+  /** iOS only lets a page make sound after a touch: the first one on this screen wakes the beep; leaving gives the audio session back. */
+  useEffect(() => {
+    const unlock = () => feedback.unlock();
+    window.addEventListener('pointerdown', unlock, { capture: true });
+    return () => {
+      window.removeEventListener('pointerdown', unlock, { capture: true });
+      feedback.release();
+    };
+  }, [feedback]);
+
+  useEffect(() => {
+    if (flashedAt === 0) return;
+    const timer = setTimeout(
+      () => setFlashedAt(0),
+      Math.max(0, flashedAt + FLASH_MS - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [flashedAt]);
+
+  /** A label read and kept: the beep, the vibration and the flash, all at once. */
+  const confirmReading = () => {
+    feedback.confirm();
+    setFlashedAt(Date.now());
+  };
 
   /** Any way out of the alert but "Ajouter quand même" gives the draft up, photo included. */
   const dropHeldDraft = () => {
@@ -321,6 +354,7 @@ function ScanPage() {
         if (!failed && symbols.length > 0) {
           void offerSameRecipient(draft, symbols);
         }
+        if (confirmsReading({ kept, failed, symbols })) confirmReading();
       }
       if (kept) void showText(draft.id, photo.blob, symbols);
     } catch (error) {
@@ -648,6 +682,7 @@ function ScanPage() {
             reading={shown}
             controls={!typing}
             dim={typing ? 0.4 : undefined}
+            flash={flashedAt !== 0}
             video={
               <video
                 ref={videoRef}
