@@ -2,6 +2,8 @@ export const fr = {
   'error.internal': 'Une erreur est survenue. Réessayez dans un instant.',
   'error.unauthorized': 'Connectez-vous pour continuer.',
   'error.forbidden': 'Vous n’avez pas accès à cette fonction.',
+  'sync.error.noOrganization':
+    'Ce compte n’est rattaché à aucun service courrier.',
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
   'agents.error.notFound': 'Ce compte n’existe pas.',
   'agents.error.invalid': 'Les informations saisies sont invalides.',
