@@ -31,6 +31,7 @@ import {
   cameraPermission,
   cameraStream,
   useCameraState,
+  useTorchState,
 } from '#/features/camera/stream';
 import { db } from '#/features/db/database';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
@@ -83,6 +84,7 @@ function ScanPage() {
   const captureRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
+  const torch = useTorchState();
   const [opening, setOpening] = useState<Opening>(() =>
     wasExplained() ? 'scan' : 'pending',
   );
@@ -349,7 +351,10 @@ function ScanPage() {
                 className="size-full object-cover"
               />
             }
+            torch={torch !== 'none'}
+            torchOn={torch === 'on'}
             onClose={close}
+            onTorch={() => void cameraStream.toggleTorch()}
             onShutter={onShutter}
             onUndo={onUndo}
             onDone={() => void onDone()}
