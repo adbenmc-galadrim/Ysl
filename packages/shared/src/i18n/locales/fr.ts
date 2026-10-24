@@ -34,6 +34,8 @@ export const fr = {
     'Les colis scannés apparaîtront ici, rangés par ce qu’il reste à faire.',
   'colis.empty.scan': 'Scanner des colis',
   'colis.empty.handover': 'Remettre un colis',
+  'update.available': 'Nouvelle version disponible',
+  'update.apply': 'Mettre à jour',
   'settings.group.data': 'Données',
   'settings.server': 'Serveur',
   'settings.server.up': 'Disponible',
