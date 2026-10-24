@@ -29,6 +29,8 @@ ARG PUBLIC_APP_URL
 ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME \
     PUBLIC_SERVER_URL=$PUBLIC_SERVER_URL \
     PUBLIC_APP_URL=$PUBLIC_APP_URL
+# Modèles OCR (URL et sha256 épinglés) : hors du dépôt, requis par le build de l'app.
+RUN pnpm --filter @repo/ocr models
 RUN pnpm --filter @repo/web build && pnpm --filter @repo/spike-camera build \
     && pnpm --filter @repo/spike-storage build \
     && pnpm --filter @repo/spike-email build \
