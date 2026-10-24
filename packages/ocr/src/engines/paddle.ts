@@ -26,6 +26,11 @@ export type PaddleAssets = {
   dictionary: string;
   /** The CPU-only `ort-wasm-simd-threaded.wasm` of onnxruntime-web. */
   wasm: string;
+  /**
+   * Its `.mjs` glue, served as a file: the threads are Workers that load
+   * this script by URL, so it cannot live inside the bundle of the OCR Worker.
+   */
+  mjs: string;
 };
 
 async function download(url: string): Promise<ArrayBuffer> {
@@ -42,7 +47,7 @@ export class PaddleEngine implements OcrEngine {
   constructor(private readonly assets: PaddleAssets) {}
 
   async load(): Promise<void> {
-    ort.env.wasm.wasmPaths = { wasm: this.assets.wasm };
+    ort.env.wasm.wasmPaths = { wasm: this.assets.wasm, mjs: this.assets.mjs };
     ort.env.wasm.numThreads = wasmThreadCount(
       globalThis.crossOriginIsolated === true,
       navigator.hardwareConcurrency,

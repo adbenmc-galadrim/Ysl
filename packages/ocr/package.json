@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./worker": "./src/worker/index.ts",
+    "./vite": "./src/vite.ts"
   },
   "imports": {
     "#*": [

@@ -5,8 +5,7 @@ import {
   type OcrEngine,
   type OcrLine,
 } from '#engines/types';
-
-export const TESSERACT_LANGUAGES = ['fra', 'eng'] as const;
+import { TESSERACT_LANGUAGES } from '#paths';
 
 export type TesseractAssets = {
   /** `tesseract.js/dist/worker.min.js`, a classic worker script. */

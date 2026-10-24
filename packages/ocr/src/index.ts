@@ -12,11 +12,7 @@ export {
   warmupCanvas,
   type Prepared,
 } from '#engines/prepare';
-export {
-  TESSERACT_LANGUAGES,
-  TesseractEngine,
-  type TesseractAssets,
-} from '#engines/tesseract';
+export { TesseractEngine, type TesseractAssets } from '#engines/tesseract';
 export {
   EngineLoadError,
   type OcrBox,
@@ -24,3 +20,4 @@ export {
   type OcrEngineId,
   type OcrLine,
 } from '#engines/types';
+export { TESSERACT_LANGUAGES, TESSERACT_LANGUAGES_DIR } from '#paths';
