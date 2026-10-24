@@ -21,7 +21,7 @@ export type CommitOptions = { now?: Date };
 
 export class MissingRowError extends Error {
   constructor(entity: SyncedEntity, id: string) {
-    super(`Aucune ligne ${entity} ${id} à supprimer`);
+    super(`No ${entity} row ${id} to delete`);
     this.name = 'MissingRowError';
   }
 }

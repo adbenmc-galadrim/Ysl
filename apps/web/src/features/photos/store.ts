@@ -23,8 +23,12 @@ export function photoFileName(id: string): string {
   return `${id}.jpg`;
 }
 
+function pathOf(fileName: string): string {
+  return `${PHOTOS_DIRECTORY}/${fileName}`;
+}
+
 export function photoPath(id: string): string {
-  return `${PHOTOS_DIRECTORY}/${photoFileName(id)}`;
+  return pathOf(photoFileName(id));
 }
 
 /**
@@ -84,7 +88,7 @@ export async function sweepOrphanPhotos(
   const known = new Set((await db.photo.toArray()).map((photo) => photo.path));
   const removed: string[] = [];
   for (const file of stored) {
-    if (known.has(`${PHOTOS_DIRECTORY}/${file.name}`)) continue;
+    if (known.has(pathOf(file.name))) continue;
     if (now.getTime() - file.lastModified < graceMs) continue;
     await files.remove(file.name);
     removed.push(file.name);

@@ -6,12 +6,12 @@ const apiIsTypeOnly = {
   message: 'Import type only: the browser must not bundle the routers.',
 };
 
-const dbIsTypeOnly = {
-  name: '@repo/db/schema',
+const dbIsTypeOnly = ['@repo/db', '@repo/db/schema'].map((name) => ({
+  name,
   allowTypeImports: true,
   message:
     'Import type only: the browser mirrors the server schema, it never runs it.',
-};
+}));
 
 const authIsClientOnly = {
   name: '@repo/auth',
@@ -36,7 +36,7 @@ export default [
         {
           paths: [
             apiIsTypeOnly,
-            dbIsTypeOnly,
+            ...dbIsTypeOnly,
             authIsClientOnly,
             serverEnvStaysOut,
           ],

@@ -38,7 +38,7 @@ function describe(error: unknown): { name: string; message: string } {
     const { name, message } = error as { name?: unknown; message?: unknown };
     return {
       name: typeof name === 'string' ? name : 'Error',
-      message: typeof message === 'string' ? message : 'Erreur OPFS',
+      message: typeof message === 'string' ? message : 'OPFS error',
     };
   }
   return { name: 'Error', message: String(error) };

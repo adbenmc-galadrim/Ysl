@@ -12,7 +12,6 @@ document.querySelector('title[data-boot-title]')?.remove();
 
 bootCorners();
 startUpdater();
-void bootLocalStore();
 
 const rootElement = document.getElementById('app');
 
@@ -22,4 +21,5 @@ if (rootElement && !rootElement.innerHTML) {
       <RouterProvider router={router} />
     </AppProvider>,
   );
+  void bootLocalStore();
 }

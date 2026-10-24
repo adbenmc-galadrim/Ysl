@@ -17,7 +17,7 @@ export type PhotoFiles = {
 /** Thrown where OPFS is missing: private browsing, an old browser. */
 export class StorageUnavailableError extends Error {
   constructor() {
-    super('Le stockage des photos est indisponible sur ce navigateur');
+    super('Photo storage is unavailable in this browser');
     this.name = 'StorageUnavailableError';
   }
 }
@@ -110,9 +110,11 @@ class OpfsPhotoFiles implements PhotoFiles {
     });
     worker.addEventListener('error', (event) => {
       for (const request of this.pending.values()) {
-        request.reject(new Error(`Worker OPFS : ${event.message}`));
+        request.reject(new Error(`OPFS worker: ${event.message}`));
       }
       this.pending.clear();
+      worker.terminate();
+      this.worker = undefined;
     });
     this.worker = worker;
     return worker;
