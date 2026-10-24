@@ -232,10 +232,45 @@ d'écran pour l'alerte. Le serveur n'impose rien : « Ajouter quand même » ren
 non unique par construction, l'index `parcel_tracking_norm_idx` n'est pas unique et
 `sync.push` ne répond jamais 409 pour un colis.
 
+## Colis en plusieurs pièces et même destinataire (`features/batch/pieces.ts`, `recipient.ts`, F11)
+
+Un envoi livré en plusieurs cartons porte sur chacun un code 2D qui annonce « 2/3 »
+(`ParsedCode.pieces`, UPS, FedEx, DPD, GS1). Pour le lot, c'est **un seul colis** :
+« Même numéro : pièces regroupées en un colis. »
+
+- À la lecture, `readDraft` écrit sur le brouillon `pieces = { total, read: [n], key,
+photoIds: [] }` (`pieceOf`). La **clé** est le numéro d'expédition du code
+  (`reference` : shipment ID UPS, GS1 401/402) préfixé du transporteur, sinon le numéro de
+  suivi normalisé (DHL Express, Chronopost impriment le même numéro sur chaque carton). Un
+  « 1/1 » (tout MaxiCode UPS) n'est pas un colis en plusieurs pièces ; les n/N lus par
+  l'OCR (« 1 OF 3 ») attendent YSL-41.
+- La pièce suivante : `findPieceGroup` cherche un brouillon **plus ancien** du lot de même
+  clé ; si son indice n'y est pas encore, `attachPiece` l'ajoute aux indices lus, range la
+  photo dans `pieces.photoIds` et supprime le brouillon de la pièce (le compteur ne bouge
+  pas). L'écran montre « Colis en 3 pièces » avec les pastilles numérotées et le panneau
+  « Pièce 2 sur 3 lue » ; tant qu'il manque une pièce, « La 3e pièce manque : enregistrer
+  2 sur 3 » ferme le panneau (le colis est déjà enregistré tel quel). Pas d'Annuler sur
+  une pièce : le colis entier s'annule par la fenêtre de 5 s de son premier carton.
+- Même clé et **indice déjà lu**, ou même numéro sans n/N d'un côté : doublon F10
+  (`findDuplicate` reçoit `piece`), l'original est le brouillon du colis. Une pièce d'un
+  colis d'un lot antérieur (le 3e carton arrive le lendemain) passe par « Déjà reçu hier »
+  et « Ajouter quand même » : rattacher une pièce à un colis déjà synchronisé est reporté.
+- À Terminer, `parcel.pieceN` = pièces **reçues** (`read.length`), `pieceTotal` = annoncé ;
+  toutes les photos (`photoIdsOf`) pointent le colis. Annuler, Abandonner et l'abandon d'un
+  brouillon retenu effacent aussi les photos des pièces (`deleteDraftPhotos`).
+
+**Même destinataire que le précédent** : sous les champs lus, quand aucun code de
+l'étiquette ne nomme le destinataire et que le brouillon **juste avant** dans le lot a un
+nom (lu par un code, sinon supposé par l'OCR : `previousNamed`), un bouton copie ce nom
+dans `readName` (`copyRecipient`). C'est une correction de l'agent (§4.3, rang 9) : le
+champ devient sûr, le colis sort en `recu`, et l'OCR qui atterrit ensuite ne touche que
+`ocrName`. Un numéro saisi au pavé n'a pas de panneau de champs, donc pas de bouton.
+
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
-(`id, batchId, createdAt, trackingNorm`). Un seul lot à la fois, et un lot brouillon n'est
+(`id, batchId, createdAt, trackingNorm` ; `pieces` non indexé, absent des brouillons
+d'avant YSL-38). Un seul lot à la fois, et un lot brouillon n'est
 jamais « fermé » : il disparaît à la promotion. Rouvrir `/scan` reprend donc le lot laissé
 là (compteur, dernier ajouté).
 
