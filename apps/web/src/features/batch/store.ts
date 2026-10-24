@@ -123,17 +123,6 @@ export async function addTypedDraft(
   await db.draftParcel.add(draft);
 }
 
-export async function typeDraft(
-  db: CourrierDatabase,
-  batchId: string,
-  typed: TypedTracking,
-  now = new Date(),
-): Promise<DraftParcel> {
-  const draft = typedDraft(batchId, typed, now);
-  await addTypedDraft(db, draft);
-  return draft;
-}
-
 /** Fills in what the reader found; false if the draft was undone meanwhile. */
 export async function updateDraft(
   db: CourrierDatabase,

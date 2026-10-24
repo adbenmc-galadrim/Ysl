@@ -8,7 +8,8 @@ import {
   finishBatch,
   openBatch,
   promotedStatus,
-  typeDraft,
+  typedDraft,
+  addTypedDraft,
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
@@ -59,7 +60,7 @@ describe('openBatch', () => {
   });
 });
 
-describe('typeDraft', () => {
+describe('typedDraft', () => {
   const typed = {
     carrier: 'UPS',
     tracking: '1ZE6344W0499230622',
@@ -68,7 +69,8 @@ describe('typeDraft', () => {
 
   it('writes a settled draft without a photo, counted in the batch', async () => {
     const batch = await openBatch(db, NOW);
-    const draft = await typeDraft(db, batch.id, typed, NOW);
+    const draft = typedDraft(batch.id, typed, NOW);
+    await addTypedDraft(db, draft);
     expect(draft).toMatchObject({
       batchId: batch.id,
       reading: 'typed',
@@ -81,7 +83,7 @@ describe('typeDraft', () => {
 
   it('promotes it without a photo, to complete, number kept', async () => {
     const batch = await openBatch(db, NOW);
-    await typeDraft(db, batch.id, typed, NOW);
+    await addTypedDraft(db, typedDraft(batch.id, typed, NOW));
     const [id] = await finishBatch(db, {
       batchId: batch.id,
       agentId: 'agent',
@@ -153,11 +155,14 @@ describe('discardBatch', () => {
   it('removes the batch, its drafts and their photos', async () => {
     const batch = await openBatch(db, NOW);
     const first = await addDraft(db, files, batch.id, photo(), NOW);
-    await typeDraft(db, batch.id, {
-      carrier: 'UPS',
-      tracking: '1Z999AA10123456784',
-      trackingNorm: '1Z999AA10123456784',
-    });
+    await addTypedDraft(
+      db,
+      typedDraft(batch.id, {
+        carrier: 'UPS',
+        tracking: '1Z999AA10123456784',
+        trackingNorm: '1Z999AA10123456784',
+      }),
+    );
     const third = await addDraft(db, files, batch.id, photo(), later(2));
 
     await discardBatch(db, files, batch.id);
