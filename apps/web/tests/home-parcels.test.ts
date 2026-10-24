@@ -1,61 +1,27 @@
 import 'fake-indexeddb/auto';
-import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CourrierDatabase, type LocalParcel } from '#/features/db/schema';
+import type { CourrierDatabase } from '#/features/db/schema';
 import { listHomeParcels } from '#/features/parcels/api/use-parcels';
+import {
+  NOW,
+  openTestDatabase,
+  parcelRow,
+  personRow,
+} from './helpers/local-rows';
 
-const NOW = new Date(2026, 9, 24, 12, 0);
 const at = (hour: number, dayOffset = 0) =>
   new Date(2026, 9, 24 + dayOffset, hour, 0);
-
-function parcel(overrides: Partial<LocalParcel> = {}): LocalParcel {
-  return {
-    id: newId(),
-    createdAt: NOW,
-    updatedAt: NOW,
-    deletedAt: null,
-    batchId: null,
-    type: 'colis',
-    status: 'recu',
-    carrier: 'UPS',
-    tracking: '1Z0001',
-    trackingNorm: '1Z0001',
-    personId: null,
-    contactId: null,
-    readName: null,
-    notificationEmail: null,
-    department: null,
-    senderId: null,
-    senderName: null,
-    pieceN: null,
-    pieceTotal: null,
-    weightKg: null,
-    carrierService: null,
-    reference: null,
-    location: null,
-    notes: null,
-    receivedAt: at(10),
-    receivedBy: 'agent-1',
-    validatedAt: null,
-    notifiedAt: null,
-    lastNotifiedAt: null,
-    deliveredAt: null,
-    deliveredBy: null,
-    ...overrides,
-  };
-}
 
 let db: CourrierDatabase;
 
 beforeEach(async () => {
-  db = new CourrierDatabase(`home-test-${newId()}`);
-  await db.open();
+  db = await openTestDatabase();
 });
 
 describe('listHomeParcels', () => {
   it('lists the open parcels and today’s handovers, nothing else', async () => {
-    const open = parcel({ tracking: 'OPEN' });
-    const today = parcel({
+    const open = parcelRow({ tracking: 'OPEN' });
+    const today = parcelRow({
       status: 'remis',
       tracking: 'TODAY',
       deliveredAt: at(9),
@@ -64,14 +30,14 @@ describe('listHomeParcels', () => {
     await db.parcel.bulkPut([
       open,
       today,
-      parcel({
+      parcelRow({
         status: 'remis',
         tracking: 'YESTERDAY',
         deliveredAt: at(18, -1),
         deliveredBy: 'agent-1',
       }),
-      parcel({ status: 'retourne', tracking: 'BACK' }),
-      parcel({ tracking: 'GONE', deletedAt: NOW }),
+      parcelRow({ status: 'retourne', tracking: 'BACK' }),
+      parcelRow({ tracking: 'GONE', deletedAt: NOW }),
     ]);
 
     const rows = await listHomeParcels(db, NOW);
@@ -81,29 +47,33 @@ describe('listHomeParcels', () => {
     );
   });
 
-  it('orders a status by reception and names the recipient', async () => {
-    const personId = newId();
-    await db.directoryPerson.put({
-      id: personId,
-      createdAt: NOW,
-      updatedAt: NOW,
-      deletedAt: null,
-      lastName: 'Morel',
-      firstName: 'Camille',
-      nameNorm: 'camille morel',
-      email: 'camille@example.com',
-      department: 'Studio',
-      site: null,
-      source: 'manuel',
-      active: true,
+  it('orders every status by reception and names the recipient', async () => {
+    const person = personRow();
+    await db.directoryPerson.put(person);
+    const later = parcelRow({ receivedAt: at(11), personId: person.id });
+    const earlier = parcelRow({ receivedAt: at(8) });
+    const deliveredLate = parcelRow({
+      status: 'remis',
+      receivedAt: at(9, -1),
+      deliveredAt: at(11),
+      deliveredBy: 'agent-1',
     });
-    const later = parcel({ receivedAt: at(11), personId });
-    const earlier = parcel({ receivedAt: at(8) });
-    await db.parcel.bulkPut([later, earlier]);
+    const deliveredEarly = parcelRow({
+      status: 'remis',
+      receivedAt: at(8, -1),
+      deliveredAt: at(11, 0),
+      deliveredBy: 'agent-1',
+    });
+    await db.parcel.bulkPut([later, earlier, deliveredLate, deliveredEarly]);
 
     const rows = await listHomeParcels(db, NOW);
 
-    expect(rows.map((row) => row.id)).toEqual([earlier.id, later.id]);
+    expect(rows.map((row) => row.id)).toEqual([
+      earlier.id,
+      later.id,
+      deliveredEarly.id,
+      deliveredLate.id,
+    ]);
     expect(rows[1]?.recipient).toBe('Camille Morel');
   });
 });

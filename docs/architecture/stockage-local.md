@@ -27,7 +27,10 @@ Code : `apps/web/src/features/db/`.
   `[entity+entityId]`.
 - **Lecture réactive** : `useLiveQuery` (`dexie-react-hooks`). La liste Colis
   (`features/parcels/api/use-parcels.ts`) se relit à chaque écriture et une fois par
-  minute, pour que « il y a 2 h » et « Remis aujourd'hui » restent vrais.
+  minute, pour que « il y a 2 h » et « Remis aujourd'hui » restent vrais. Un colis
+  notifié passe « en retard » 48 h après sa dernière notification (`lastNotifiedAt`,
+  sinon `notifiedAt`), comme l'index `parcel_overdue_idx` du serveur ; la ligne d'état
+  compte les jours depuis la première.
 
 ## Écrire : la ligne et son opération, ensemble
 

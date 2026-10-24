@@ -12,8 +12,8 @@ export const DAY_MS = 24 * HOUR_MS;
 
 /**
  * A notified parcel nobody came for in two days needs chasing (D12: first
- * reminder at J+2). Counted from the first notification: a reminder does not
- * make the wait shorter. A mailroom setting may replace this constant later.
+ * reminder at J+2). Counted from the last notification, as the server's
+ * overdue index does. A mailroom setting may replace this constant later.
  */
 export const LATE_AFTER_MS = 2 * DAY_MS;
 
@@ -35,6 +35,14 @@ export function startOfDay(now: Date): Date {
   return day;
 }
 
+function firstNotification(parcel: LocalParcel): Date {
+  return parcel.notifiedAt ?? parcel.receivedAt;
+}
+
+function lastNotification(parcel: LocalParcel): Date {
+  return parcel.lastNotifiedAt ?? firstNotification(parcel);
+}
+
 /** Where the parcel sits on the home list; nothing when it is not shown. */
 export function homeState(
   parcel: LocalParcel,
@@ -46,12 +54,10 @@ export function homeState(
       return 'incomplete';
     case 'recu':
       return 'toNotify';
-    case 'notifie': {
-      const since = parcel.notifiedAt ?? parcel.receivedAt;
-      return now.getTime() - since.getTime() >= LATE_AFTER_MS
+    case 'notifie':
+      return now.getTime() - lastNotification(parcel).getTime() >= LATE_AFTER_MS
         ? 'late'
         : 'notified';
-    }
     case 'remis':
       return parcel.deliveredAt && parcel.deliveredAt >= startOfDay(now)
         ? 'handedOver'
@@ -66,20 +72,23 @@ export function formatTime(date: Date): string {
   return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-/** "il y a 25 min", "il y a 2 h", "hier", "il y a 3 jours". */
+/** "il y a 25 min", "il y a 2 h", "hier" (the calendar day), "il y a 3 jours". */
 export function formatAgo(date: Date, now: Date, t: TranslateFn): string {
   const elapsed = Math.max(0, now.getTime() - date.getTime());
   if (elapsed < MINUTE_MS) return t('parcel.ago.now');
   if (elapsed < HOUR_MS) {
     return t('parcel.ago.minutes', { count: Math.floor(elapsed / MINUTE_MS) });
   }
-  if (elapsed < DAY_MS) {
+  const today = startOfDay(now);
+  if (date >= today) {
     return t('parcel.ago.hours', { count: Math.floor(elapsed / HOUR_MS) });
   }
-  const days = Math.floor(elapsed / DAY_MS);
-  return days === 1
-    ? t('parcel.ago.yesterday')
-    : t('parcel.ago.days', { count: days });
+  if (date.getTime() >= today.getTime() - DAY_MS) {
+    return t('parcel.ago.yesterday');
+  }
+  return t('parcel.ago.days', {
+    count: Math.round((today.getTime() - startOfDay(date).getTime()) / DAY_MS),
+  });
 }
 
 function statusLine(
@@ -97,19 +106,16 @@ function statusLine(
       });
     case 'notified':
       return t('parcel.status.notified', {
-        ago: formatAgo(parcel.notifiedAt ?? parcel.receivedAt, now, t),
+        ago: formatAgo(lastNotification(parcel), now, t),
       });
     case 'late': {
-      const since = parcel.notifiedAt ?? parcel.receivedAt;
-      const days = Math.floor((now.getTime() - since.getTime()) / DAY_MS);
-      const reminded =
-        parcel.lastNotifiedAt && parcel.lastNotifiedAt > since
-          ? parcel.lastNotifiedAt
-          : undefined;
-      return reminded
+      const first = firstNotification(parcel);
+      const last = lastNotification(parcel);
+      const days = Math.floor((now.getTime() - first.getTime()) / DAY_MS);
+      return last > first
         ? t('parcel.status.lateReminded', {
             days,
-            ago: formatAgo(reminded, now, t),
+            ago: formatAgo(last, now, t),
           })
         : t('parcel.status.late', { days });
     }

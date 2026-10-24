@@ -43,7 +43,12 @@ export async function listHomeParcels(
       .aboveOrEqual(startOfDay(now))
       .toArray(),
   ]);
-  const parcels: LocalParcel[] = [...open.flat(), ...delivered];
+  const byReception = (a: LocalParcel, b: LocalParcel) =>
+    a.receivedAt.getTime() - b.receivedAt.getTime();
+  const parcels: LocalParcel[] = [
+    ...open.flat(),
+    ...delivered.sort(byReception),
+  ];
   const personIds = [
     ...new Set(parcels.flatMap((parcel) => parcel.personId ?? [])),
   ];

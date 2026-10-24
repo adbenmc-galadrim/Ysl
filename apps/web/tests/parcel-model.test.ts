@@ -1,10 +1,5 @@
 import { createTranslator } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
-import type {
-  LocalContact,
-  LocalDirectoryPerson,
-  LocalParcel,
-} from '#/features/db/schema';
 import {
   DAY_MS,
   formatAgo,
@@ -13,75 +8,13 @@ import {
   toParcelRow,
   type RecipientContext,
 } from '#/features/parcels/model';
+import { contactRow, NOW, parcelRow, personRow } from './helpers/local-rows';
 
 const t = createTranslator('fr');
-const NOW = new Date(2026, 9, 24, 12, 0);
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3600_000);
-
-function parcel(overrides: Partial<LocalParcel> = {}): LocalParcel {
-  return {
-    id: 'p-1',
-    createdAt: NOW,
-    updatedAt: NOW,
-    deletedAt: null,
-    batchId: null,
-    type: 'colis',
-    status: 'recu',
-    carrier: 'UPS',
-    tracking: '1ZE6344W0499230622',
-    trackingNorm: '1ZE6344W0499230622',
-    personId: null,
-    contactId: null,
-    readName: null,
-    notificationEmail: null,
-    department: null,
-    senderId: null,
-    senderName: null,
-    pieceN: null,
-    pieceTotal: null,
-    weightKg: null,
-    carrierService: null,
-    reference: null,
-    location: null,
-    notes: null,
-    receivedAt: new Date(2026, 9, 24, 10, 42),
-    receivedBy: 'agent-1',
-    validatedAt: null,
-    notifiedAt: null,
-    lastNotifiedAt: null,
-    deliveredAt: null,
-    deliveredBy: null,
-    ...overrides,
-  };
-}
-
-const camille: LocalDirectoryPerson = {
-  id: 'person-1',
-  createdAt: NOW,
-  updatedAt: NOW,
-  deletedAt: null,
-  lastName: 'Morel',
-  firstName: 'Camille',
-  nameNorm: 'camille morel',
-  email: 'camille@example.com',
-  department: 'Studio',
-  site: null,
-  source: 'manuel',
-  active: true,
-};
-
-const livreur: LocalContact = {
-  id: 'contact-1',
-  createdAt: NOW,
-  updatedAt: NOW,
-  deletedAt: null,
-  name: 'Atelier Rive gauche',
-  nameNorm: 'atelier rive gauche',
-  email: null,
-  createdBy: null,
-  usageCount: 0,
-  lastUsedAt: null,
-};
+const parcel = parcelRow;
+const camille = personRow();
+const livreur = contactRow();
 
 const context: RecipientContext = {
   people: new Map([[camille.id, camille]]),
@@ -120,15 +53,25 @@ describe('homeState', () => {
     expect(homeState(parcel({ deletedAt: NOW }), NOW)).toBeUndefined();
   });
 
-  it('counts the wait from the first notification, not the last reminder', () => {
-    const row = parcel({
+  it('counts the wait from the last notification, the days from the first', () => {
+    const reminded = parcel({
       status: 'notifie',
       notifiedAt: new Date(NOW.getTime() - LATE_AFTER_MS - DAY_MS),
       lastNotifiedAt: hoursAgo(20),
     });
-    expect(homeState(row, NOW)).toBe('late');
-    expect(toParcelRow(row, context, NOW, t)?.status).toBe(
-      'En attente depuis 3 jours, relancé il y a 20 h',
+    expect(homeState(reminded, NOW)).toBe('notified');
+    expect(toParcelRow(reminded, context, NOW, t)?.status).toBe(
+      'Notifié hier',
+    );
+
+    const stillLate = parcel({
+      status: 'notifie',
+      notifiedAt: new Date(NOW.getTime() - 5 * DAY_MS),
+      lastNotifiedAt: new Date(NOW.getTime() - 3 * DAY_MS),
+    });
+    expect(homeState(stillLate, NOW)).toBe('late');
+    expect(toParcelRow(stillLate, context, NOW, t)?.status).toBe(
+      'En attente depuis 5 jours, relancé il y a 3 jours',
     );
   });
 });
@@ -155,9 +98,17 @@ describe('toParcelRow', () => {
   });
 
   it('falls back to the contact, then to the name read on the label', () => {
-    expect(
-      toParcelRow(parcel({ contactId: livreur.id }), context, NOW, t),
-    ).toMatchObject({ recipient: 'Atelier Rive gauche', department: '' });
+    const contact = toParcelRow(
+      parcel({ contactId: livreur.id, readName: 'ATELIER RG' }),
+      context,
+      NOW,
+      t,
+    );
+    expect(contact).toMatchObject({
+      recipient: 'Atelier Rive gauche',
+      department: '',
+    });
+    expect(contact?.note).toBeUndefined();
 
     const unknown = toParcelRow(
       parcel({
@@ -201,7 +152,10 @@ describe('toParcelRow', () => {
       'Notifié il y a 25 min',
     );
     expect(notified(hoursAgo(2))).toBe('Notifié il y a 2 h');
-    expect(formatAgo(hoursAgo(30), NOW, t)).toBe('hier');
+    expect(formatAgo(new Date(2026, 9, 23, 23, 0), NOW, t)).toBe('hier');
+    expect(formatAgo(new Date(2026, 9, 22, 23, 0), NOW, t)).toBe(
+      'il y a 2 jours',
+    );
     expect(formatAgo(hoursAgo(30), hoursAgo(30), t)).toBe('à l’instant');
   });
 
