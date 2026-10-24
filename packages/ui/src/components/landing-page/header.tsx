@@ -23,7 +23,7 @@ function Nav({
 }: {
   copy: LandingCopy['nav'];
   appName: string;
-  signInHref: string;
+  signInHref?: string;
 }) {
   const links = [
     { href: '#parcours', label: copy.journey },
@@ -54,12 +54,14 @@ function Nav({
           ))}
         </ul>
         <div className="flex items-center gap-4 xl:gap-6">
-          <a
-            href={signInHref}
-            className="text-14 leading-[17px] font-medium text-site-ink xl:text-15 xl:leading-[18px]"
-          >
-            {copy.signIn}
-          </a>
+          {signInHref && (
+            <a
+              href={signInHref}
+              className="text-14 leading-[17px] font-medium text-site-ink xl:text-15 xl:leading-[18px]"
+            >
+              {copy.signIn}
+            </a>
+          )}
           <a
             href="#installation"
             className="flex h-8 w-[88px] items-center justify-center rounded-full bg-black/8 text-14 leading-[17px] font-semibold text-site-ink xl:hidden"
@@ -117,7 +119,7 @@ export function Hero({
   copy: LandingCopy;
   appName: string;
   url: string;
-  signInHref: string;
+  signInHref?: string;
 }) {
   const hero = copy.hero;
   const spot = useSpotlight();

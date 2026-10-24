@@ -124,7 +124,7 @@ const COPY: LandingCopy = {
   },
 };
 
-export function InstallLanding() {
+export function InstallLanding({ signInHref }: { signInHref?: string }) {
   return (
     <LandingPage
       copy={COPY}
@@ -132,7 +132,7 @@ export function InstallLanding() {
       url={url}
       host={host}
       version={version}
-      signInHref="/connexion"
+      signInHref={signInHref}
     />
   );
 }

@@ -1,5 +1,6 @@
 /**
- * Pixel comparison of every screen story against its Penpot export.
+ * Pixel comparison of every screen story against its reference: the Penpot
+ * export, or a Storybook capture where the JSON says `"source": "storybook"`.
  *
  *   pnpm visual                      # all screens, Storybook on :6006
  *   pnpm visual -- --port 6101 --filter colis

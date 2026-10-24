@@ -4,5 +4,9 @@ import { redirectIfSignedIn } from '#/features/auth/guards';
 
 export const Route = createFileRoute('/bienvenue')({
   beforeLoad: ({ context }) => redirectIfSignedIn(context.queryClient),
-  component: InstallLanding,
+  component: BienvenuePage,
 });
+
+function BienvenuePage() {
+  return <InstallLanding signInHref="/connexion" />;
+}

@@ -2,7 +2,9 @@
 
 The design system of the Courrier YSL PWA and the Storybook that documents it.
 Every screen of the Penpot mockups has a story, and every story is checked
-pixel by pixel against its Penpot export.
+pixel by pixel against its reference: the Penpot export, except for the
+landing (`reference/10-landing`), whose animated relief has no Penpot board
+and is referenced by its own Storybook capture (`"source": "storybook"`).
 
 ```bash
 pnpm storybook                              # http://localhost:6006
@@ -76,3 +78,6 @@ opacity), strokes, radius `r`, and for text `text`, `ff`, `fw`, `fs`, `lh`,
 `ta`, plus `segs` when a text mixes styles. Icons are groups named
 `icon / <name>`, whose `<name>` is an `IconName`. Penpot keeps a 2 px stroke
 when it scales an icon, which `<Icon>` reproduces.
+
+The landing's JSON keeps the tree of its first Penpot board for its
+measures and copy; its PNG is the Storybook capture, not that board.

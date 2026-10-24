@@ -379,8 +379,11 @@ export type LandingPageProps = {
   host: string;
   /** Printed in the footer, after the usage line. */
   version: string;
-  /** Where the « Se connecter » link of the nav leads. */
-  signInHref: string;
+  /**
+   * Where the « Se connecter » link of the nav leads. Left out where signing
+   * in makes no sense, such as a Safari tab on an iPhone, which must install.
+   */
+  signInHref?: string;
 };
 
 export function LandingPage({
