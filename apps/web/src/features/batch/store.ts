@@ -93,16 +93,15 @@ export type TypedTracking = {
 };
 
 /**
- * A number typed by hand, with no photo to read: the draft lands already
+ * A number typed by hand, with no photo to read: the draft is already
  * settled, so nothing waits for it and a restart never reads it again.
  */
-export async function typeDraft(
-  db: CourrierDatabase,
+export function typedDraft(
   batchId: string,
   typed: TypedTracking,
   now = new Date(),
-): Promise<DraftParcel> {
-  const draft: DraftParcel = {
+): DraftParcel {
+  return {
     id: newId(),
     batchId,
     createdAt: now,
@@ -115,6 +114,15 @@ export async function typeDraft(
     ocrLines: [],
     ...typed,
   };
+}
+
+export async function typeDraft(
+  db: CourrierDatabase,
+  batchId: string,
+  typed: TypedTracking,
+  now = new Date(),
+): Promise<DraftParcel> {
+  const draft = typedDraft(batchId, typed, now);
   await db.draftParcel.add(draft);
   return draft;
 }

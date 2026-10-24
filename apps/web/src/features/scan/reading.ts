@@ -139,8 +139,15 @@ export function unreadableReading(
   return { kind: 'unreadable', title: t('scan.noCode.title'), hint };
 }
 
+/** A symbol as the Worker gave it, or as the draft kept it (bare). */
+export type ShownSymbol = Pick<
+  DecodeResult['symbols'][number],
+  'format' | 'text'
+> &
+  Partial<Pick<DecodeResult['symbols'][number], 'isValid'>>;
+
 export function toScanReading(
-  result: Pick<DecodeResult, 'symbols'>,
+  result: { symbols: readonly ShownSymbol[] },
   t: TranslateFn,
   text?: TextHint,
   shot?: ShotHint,
@@ -163,7 +170,7 @@ export function toScanReading(
     label: formatLabel(symbol.format, t),
     value: displayText(symbol.text),
     mono: true,
-    ...(symbol.isValid ? {} : { status: 'warning' as const }),
+    ...(symbol.isValid === false ? { status: 'warning' as const } : {}),
   }));
   if (text?.ocrName) fields.push(recipientField(null, text, t));
   return { kind: 'read', fields };
