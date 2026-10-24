@@ -67,7 +67,7 @@ Deux environnements, chacun avec son app, son API et sa base Postgres 17 gérée
 | Ressource | Build | Variables |
 | --- | --- | --- |
 | API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation) au build |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` (adresse de l'API de l'environnement) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr` en production, `https://ysl-staging.shinseo.fr` en staging) au build |
 
 `TRUST_PROXY=true` fait lire l'IP du client dans la dernière entrée de `X-Forwarded-For`,
 celle qu'ajoute le proxy de Coolify : sans elle, le rate limit de connexion verrait tous
@@ -78,7 +78,8 @@ Il n'y a pas de stockage objet : le serveur ne garde que les comptes et leurs an
 
 nginx pose `Cross-Origin-Opener-Policy: same-origin` et
 `Cross-Origin-Embedder-Policy: require-corp` sur toute l'app
-(`apps/web/nginx/isolation.conf`), pour le WASM multithread. Toute ressource chargée
+(`apps/web/nginx/isolation.conf`), pour le WASM multithread. Parmi les spikes, seul celui
+de l'OCR les reçoit ; les autres gardent leurs en-têtes d'origine. Toute ressource chargée
 depuis une autre origine doit donc être servie en CORS ou avec un en-tête
 `Cross-Origin-Resource-Policy`.
 
