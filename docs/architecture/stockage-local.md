@@ -14,7 +14,8 @@ Code : `apps/web/src/features/db/`.
   serveur (`SYNCED_ENTITIES` de `packages/db`), sous le même nom (`parcel`,
   `directory_person`, `event`, `setting`…), plus les tables propres à l'appareil :
   `outbox`, `photo`, `sync_state` (version 1), `draft_batch` et `draft_parcel` (version 2,
-  le lot en cours, voir [`capture-rafale.md`](capture-rafale.md)). Un test vérifie que
+  le lot en cours, voir [`capture-rafale.md`](capture-rafale.md) ; `reading` vaut
+  `pending`, `read`, `unreadable`, `failed`, ou `typed` pour un numéro saisi à la main). Un test vérifie que
   chaque entité du serveur a sa table : ajouter une entité dans `packages/db` oblige à
   l'ajouter ici, dans une nouvelle version Dexie.
 - **Types** : dérivés en type seulement de `@repo/db/schema` (`typeof parcel.$inferSelect`),

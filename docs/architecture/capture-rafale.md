@@ -76,8 +76,10 @@ lettres que portent UPS (`1Z…`), Colissimo (`8J…`), Chronopost ou La Poste.
   contrôle incorrecte » ; rien tant qu'aucun format ne reconnaît le numéro (l'état normal en
   cours de frappe).
 - **Rien n'est refusé** : le numéro saisi fait foi (§4.5, saisie de l'agent = 1,00). Le
-  transporteur n'est posé que si un format et sa clé le désignent (`sure` ou `to-verify`),
-  jamais sur la seule longueur ; sans lui, le colis sortira en « À compléter ».
+  transporteur est celui du verdict : désigné par un format et sa clé (`sure`), ou par le
+  format seul quand la clé n'est pas un critère (`to-verify` : Chronopost, La Poste, GLS,
+  DHL sans contexte, TNT) ; jamais sur la seule longueur, jamais quand une clé a rejeté le
+  numéro. Sans lui, le colis sortira en « À compléter ».
 - Depuis la barre d'outils, la saisie crée un **brouillon sans photo** (`typeDraft`,
   `reading: 'typed'`, `photoId: null`) ; depuis l'avis, elle **complète le brouillon
   illisible** en place (`updateDraft`, la photo reste). Un brouillon `typed` est réglé
