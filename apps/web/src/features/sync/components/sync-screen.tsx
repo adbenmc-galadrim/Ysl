@@ -47,6 +47,7 @@ export function SyncScreen() {
   const card = syncCard(sync, t);
 
   const exportBackup = async () => {
+    if (exporting === 'running') return;
     setExporting('running');
     try {
       const now = new Date();
@@ -63,13 +64,16 @@ export function SyncScreen() {
   const waiting: SettingsGroup | null = changes.length
     ? {
         header: t('sync.changes.header', { count: changes.length }),
-        footer:
-          (hidden === 0
-            ? ''
+        footer: [
+          hidden === 0
+            ? null
             : hidden === 1
               ? t('sync.changes.more.one')
-              : t('sync.changes.more.many', { count: hidden })) +
+              : t('sync.changes.more.many', { count: hidden }),
           t('sync.changes.footer'),
+        ]
+          .filter(Boolean)
+          .join(' '),
         items: [
           ...changes
             .slice(0, SHOWN_CHANGES)

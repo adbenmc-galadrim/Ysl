@@ -6,6 +6,9 @@ type ShareHost = {
   URL: Pick<typeof URL, 'createObjectURL' | 'revokeObjectURL'>;
 };
 
+/** Revoking the blob URL right after `click()` cancels the download in some browsers. */
+const REVOKE_AFTER_MS = 60_000;
+
 /**
  * Hands a file to the user: the share sheet when the browser offers one for
  * files (iOS, where Fichiers, AirDrop and Mail then take it), a download
@@ -34,6 +37,6 @@ export async function shareFile(
   host.document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  host.URL.revokeObjectURL(url);
+  setTimeout(() => host.URL.revokeObjectURL(url), REVOKE_AFTER_MS);
   return 'downloaded';
 }

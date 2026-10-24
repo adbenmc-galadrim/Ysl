@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { shareFile } from '#/lib/share-file';
 
 const file = new File(['{}'], 'secours.json', { type: 'application/json' });
@@ -24,6 +24,10 @@ function download() {
 }
 
 describe('shareFile', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('opens the share sheet when the browser takes files', async () => {
     const share = vi.fn(() => Promise.resolve());
     const { host, anchor } = download();
@@ -56,7 +60,8 @@ describe('shareFile', () => {
     ).rejects.toThrow('boom');
   });
 
-  it('downloads the file when sharing files is not offered', async () => {
+  it('downloads the file when sharing files is not offered, and frees the URL later', async () => {
+    vi.useFakeTimers();
     const { host, anchor } = download();
     const outcome = await shareFile(file, 'Export', {
       ...host,
@@ -66,6 +71,8 @@ describe('shareFile', () => {
     expect(anchor.download).toBe('secours.json');
     expect(anchor.href).toBe('blob:secours');
     expect(anchor.click).toHaveBeenCalledOnce();
+    expect(host.URL.revokeObjectURL).not.toHaveBeenCalled();
+    vi.runAllTimers();
     expect(host.URL.revokeObjectURL).toHaveBeenCalledWith('blob:secours');
 
     const refused = download();

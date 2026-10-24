@@ -146,10 +146,10 @@ export const fr = {
   'sync.changes.footer':
     'L’export contient les données en attente, pas les photos. Partagez-le (Fichiers, AirDrop, e-mail) pour les garder si l’iPhone lâche.',
   'sync.export': 'Exporter les changements',
-  'sync.export.running': 'Export…',
+  'sync.export.running': 'Export en cours…',
   'sync.export.failed': 'Échec',
-  'sync.changes.more.one': 'Et 1 autre changement. ',
-  'sync.changes.more.many': 'Et {{count}} autres changements. ',
+  'sync.changes.more.one': 'Et 1 autre changement.',
+  'sync.changes.more.many': 'Et {{count}} autres changements.',
   'sync.change.parcel': 'Colis ···{{tracking}}',
   'sync.change.handover': 'Remise à {{name}}',
   'sync.change.setting': 'Réglage {{key}}',
