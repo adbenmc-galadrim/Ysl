@@ -6,6 +6,8 @@ import {
 } from '#/features/offline/download';
 import { openModelsCache, readerUrls } from '#/features/offline/models-cache';
 import type { ModelsSnapshot, ShellSnapshot } from '#/features/offline/packs';
+import { appScope } from '#/features/update/updater';
+import { isAppCache } from '#/features/update/version';
 
 export type PrepSnapshot = { models: ModelsSnapshot; shell: ShellSnapshot };
 
@@ -39,9 +41,9 @@ const setModels = (models: ModelsSnapshot) => set({ models });
 async function precacheBytes(): Promise<number | null> {
   if (typeof caches === 'undefined') return null;
   try {
+    const scope = appScope();
     const key = (await caches.keys()).find(
-      (name) =>
-        name.startsWith('workbox-precache') && name.includes(location.origin),
+      (name) => name.startsWith('workbox-precache') && isAppCache(name, scope),
     );
     if (!key) return null;
     const cache = await caches.open(key);
@@ -61,7 +63,7 @@ async function precacheBytes(): Promise<number | null> {
 async function registration(): Promise<ServiceWorkerRegistration | null> {
   const until = Date.now() + REGISTRATION_WAIT_MS;
   while (Date.now() < until) {
-    const found = await navigator.serviceWorker.getRegistration('/');
+    const found = await navigator.serviceWorker.getRegistration(appScope());
     if (found) return found;
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
