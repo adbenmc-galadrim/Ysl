@@ -44,6 +44,7 @@ const STORAGE_FAILED: ScanReading = {
   kind: 'unreadable',
   title: t('scan.storageFailed.title'),
   hint: t('scan.storageFailed.hint'),
+  keep: t('scan.storageFailed.dismiss'),
 };
 
 /** The sheet, typing a new parcel or the number of an unread draft. */
@@ -146,8 +147,8 @@ function ScanPage() {
     setReading({ kind: 'idle' });
   };
 
-  const onType = () => setTyping({ fix: null, value: '' });
-  const onFix = () => setTyping({ fix: unread.current, value: '' });
+  /** While an unread label is on screen, any entry fills that draft. */
+  const onType = () => setTyping({ fix: unread.current, value: '' });
 
   const onTyped = async ({ fix, value }: Typing) => {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
@@ -228,7 +229,7 @@ function ScanPage() {
         onDone={() => void onDone()}
         onImport={() => inputRef.current?.click()}
         onType={onType}
-        onFix={onFix}
+        onFix={onType}
         onKeep={onKeep}
         onRetry={() => void cameraStream.retry()}
       />

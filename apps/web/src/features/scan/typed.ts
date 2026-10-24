@@ -35,6 +35,9 @@ export function groupTyped(value: string): string {
  * The verdict under the field, live. Silence while the number matches no
  * known format — that is what every half-typed number looks like — and a
  * word as soon as it does, so the agent knows before the last character.
+ * A carrier known by its format alone is only "probable"; when a sibling
+ * format rejected the number on its key (a mistyped FedEx reads as a GLS,
+ * a genuine Chronopost fails the S10 key, §4.6), the hint says both.
  */
 function hintOf(
   verdict: TrackingVerdict,
@@ -46,10 +49,18 @@ function hintOf(
       return carrier
         ? { tone: 'green', text: t('scan.type.recognized', { carrier }) }
         : null;
-    case 'to-verify':
-      return carrier
-        ? { tone: 'orange', text: t('scan.type.likely', { carrier }) }
-        : { tone: 'orange', text: t('scan.type.ambiguous') };
+    case 'to-verify': {
+      if (!carrier) return { tone: 'orange', text: t('scan.type.ambiguous') };
+      const keyFailed =
+        verdict.reason === 'invalid-key' ||
+        verdict.candidates.some((c) => c.reason === 'invalid-key');
+      return {
+        tone: 'orange',
+        text: t(keyFailed ? 'scan.type.likelyOrKey' : 'scan.type.likely', {
+          carrier,
+        }),
+      };
+    }
     case 'rejected':
       return verdict.candidates.length > 0
         ? { tone: 'red', text: t('scan.type.invalidKey') }

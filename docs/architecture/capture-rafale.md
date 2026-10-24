@@ -78,11 +78,15 @@ lettres que portent UPS (`1Z…`), Colissimo (`8J…`), Chronopost ou La Poste.
 - **Rien n'est refusé** : le numéro saisi fait foi (§4.5, saisie de l'agent = 1,00). Le
   transporteur est celui du verdict : désigné par un format et sa clé (`sure`), ou par le
   format seul quand la clé n'est pas un critère (`to-verify` : Chronopost, La Poste, GLS,
-  DHL sans contexte, TNT) ; jamais sur la seule longueur, jamais quand une clé a rejeté le
-  numéro. Sans lui, le colis sortira en « À compléter ».
-- Depuis la barre d'outils, la saisie crée un **brouillon sans photo** (`typeDraft`,
-  `reading: 'typed'`, `photoId: null`) ; depuis l'avis, elle **complète le brouillon
-  illisible** en place (`updateDraft`, la photo reste). Un brouillon `typed` est réglé
+  DHL sans contexte, TNT) ; un format inconnu n'en désigne aucun. Un numéro mal tapé peut
+  ainsi passer pour le format sans clé de même longueur (une FedEx à un chiffre près lit
+  « Format GLS probable, ou clé incorrecte », comme un vrai Chronopost face à la clé S10,
+  §4.6) : l'indication le dit, et l'agent ou la revue de lot tranche. Sans transporteur,
+  le colis sortira en « À compléter ».
+- Sans avis à l'écran, la saisie crée un **brouillon sans photo** (`typeDraft`,
+  `reading: 'typed'`, `photoId: null`) ; tant que l'avis « Aucun code lu » est affiché,
+  la touche clavier comme le bouton de l'avis **complètent le brouillon illisible** en
+  place (`updateDraft`, la photo reste), jamais un second colis. Un brouillon `typed` est réglé
   d'emblée : la reprise après relance ne le relit pas.
 
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)

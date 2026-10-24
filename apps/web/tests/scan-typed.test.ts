@@ -54,6 +54,14 @@ describe('typedEntry', () => {
     });
   });
 
+  it('names the key-less format a mistyped number falls into', () => {
+    expect(typedEntry('877974873339', t)).toMatchObject({
+      carrier: 'GLS',
+      hint: { tone: 'orange', text: 'Format GLS probable, ou clé incorrecte' },
+    });
+    expect(typedEntry('HA915306631JB', t).carrier).toBe('Chronopost');
+  });
+
   it('keeps the number but no carrier when the key fails', () => {
     expect(typedEntry('7185713569', t)).toMatchObject({
       carrier: null,
