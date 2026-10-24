@@ -56,23 +56,44 @@ publique de l'API) sont obligatoires ; en local, des valeurs de développement s
 
 ## Déploiement
 
-La production tourne sur Coolify : https://ysl.shinseo.fr pour l'app,
-https://ysl-api.shinseo.fr pour l'API, et une base Postgres 17 gérée par Coolify.
+L'app tourne sur Coolify, sur un serveur Hetzner situé dans l'UE : les données y restent.
+Deux environnements, chacun avec son app, son API et sa base Postgres 17 gérée par Coolify :
+
+| Environnement | App | API | Branche |
+| --- | --- | --- | --- |
+| Production | https://ysl.shinseo.fr | https://ysl-api.shinseo.fr | `prod` |
+| Staging | https://ysl-staging.shinseo.fr | https://ysl-api-staging.shinseo.fr | `main` |
 
 | Ressource | Build | Variables |
 | --- | --- | --- |
-| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr`) au build |
+| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation) au build |
+
+`TRUST_PROXY=true` fait lire l'IP du client dans la dernière entrée de `X-Forwarded-For`,
+celle qu'ajoute le proxy de Coolify : sans elle, le rate limit de connexion verrait tous
+les clients sous l'IP du proxy. En local, sans proxy, la laisser absente.
+
+Il n'y a pas de stockage objet : le serveur ne garde que les comptes et leurs annuaires
+(D7), et les photos ne quittent jamais l'iPhone (D8).
+
+nginx pose `Cross-Origin-Opener-Policy: same-origin` et
+`Cross-Origin-Embedder-Policy: require-corp` sur toute l'app
+(`apps/web/nginx/isolation.conf`), pour le WASM multithread. Toute ressource chargée
+depuis une autre origine doit donc être servie en CORS ou avec un en-tête
+`Cross-Origin-Resource-Policy`.
 
 Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi les
 prototypes des spikes : https://ysl.shinseo.fr/spike-camera/ (S1),
 https://ysl.shinseo.fr/spike-storage/ (S4) et https://ysl.shinseo.fr/spike-email/ (S5).
 L'API applique les migrations Drizzle à chaque démarrage, avant d'ouvrir son port.
 
-Chaque push sur la branche `prod` lance `.github/workflows/deploy.yml` : lint, types et
-tests, puis déploiement via l'API Coolify. Mettre en production revient à avancer `prod`
-sur `main` (`git push origin main:prod`). L'auto-deploy de Coolify reste coupé pour ne pas
-déployer deux fois. Le workflow se relance à la main depuis l'onglet Actions.
+Chaque push sur `main` ou sur `prod` lance `.github/workflows/deploy.yml` : lint, types
+et tests, puis déploiement via l'API Coolify, sur staging pour `main` et en production pour
+`prod`. Mettre en production revient à avancer `prod` sur `main`
+(`git push origin main:prod`). L'auto-deploy de Coolify reste coupé pour ne pas déployer
+deux fois. Le workflow se relance à la main depuis l'onglet Actions, en choisissant
+l'environnement. Les UUID des ressources Coolify sont une variable
+`COOLIFY_RESOURCE_UUIDS` de chaque environnement GitHub (`staging`, `production`).
 
 Pour créer un compte en production, depuis le terminal du conteneur de l'API dans Coolify :
 
