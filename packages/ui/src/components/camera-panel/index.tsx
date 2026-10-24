@@ -38,9 +38,9 @@ export type LastScanPanelProps = {
 };
 
 /**
- * The parcel the batch just took, with the way to take it back. A scan in a
- * burst gives no time to check, so the last one stays on screen until the
- * next one replaces it.
+ * The parcel the batch just took, with the way to take it back while the
+ * caller still offers it. A scan in a burst gives no time to check, so the
+ * last one stays on screen until the next one replaces it.
  */
 export function LastScanPanel({
   caption = 'Dernier ajouté',

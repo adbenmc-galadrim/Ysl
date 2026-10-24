@@ -28,6 +28,7 @@ export const Lecture: Story = {
     reference: '04-reception/reception-scan-en-rafale--scan-lecture',
   },
   args: {
+    onUndo: () => undefined,
     reading: {
       kind: 'read',
       last: { name: 'Hugo Lefèvre', meta: 'DHL ···7112' },
@@ -36,6 +37,33 @@ export const Lecture: Story = {
         { label: 'Suivi', value: SCANNED_LABEL.tracking, mono: true },
         { label: 'Destinataire', value: 'Camille Morel ?', status: 'warning' },
       ],
+    },
+  },
+};
+
+/** Right after the tap: the band says the reading is on its way. */
+export const LectureEnCours: Story = {
+  name: 'Lecture en cours',
+  args: {
+    count: 13,
+    onUndo: () => undefined,
+    reading: {
+      kind: 'read',
+      fields: [],
+      last: { name: 'Destinataire inconnu', meta: 'Lecture…' },
+    },
+  },
+};
+
+/** The photo was kept although nothing could be read: the band says so; here the app no longer offers "Annuler". */
+export const DernierNonLu: Story = {
+  name: 'Dernier non lu',
+  args: {
+    count: 13,
+    reading: {
+      kind: 'read',
+      fields: [],
+      last: { name: 'Destinataire inconnu', meta: 'Non lu', status: 'error' },
     },
   },
 };

@@ -22,10 +22,26 @@ import {
   ParcelLabel,
   type ParcelLabelProps,
 } from '#components/parcel-label';
-import { ScanFields, type ScanField } from '#components/scan-fields';
+import {
+  SCAN_FIELD_STATUS,
+  ScanFields,
+  type ScanField,
+  type ScanFieldStatus,
+} from '#components/scan-fields';
 import { Sheet } from '#components/sheet';
-import type { IconName } from '#icons';
+import { Icon, type IconName } from '#icons';
 import type { ReactNode } from 'react';
+
+/**
+ * The parcel the batch took last, as the band says it: who, then the carrier
+ * and the last digits — or, when the reading gave nothing, what went wrong,
+ * with the alert in front.
+ */
+export type LastParcel = {
+  name: string;
+  meta: string;
+  status?: Exclude<ScanFieldStatus, 'ok'>;
+};
 
 /** What the scanner made of the label in front of it. */
 export type ScanReading =
@@ -33,7 +49,7 @@ export type ScanReading =
   | {
       kind: 'read';
       fields: ScanField[];
-      last?: { name: string; meta: string };
+      last?: LastParcel;
     }
   /** Already in the batch: when, and what to do about it. */
   | { kind: 'duplicate'; title: string; detail: string; message: string }
@@ -69,7 +85,7 @@ export type ScanScreenProps = {
   onDone?: () => void;
   onImport?: () => void;
   onType?: () => void;
-  /** Takes the last parcel out of the batch. */
+  /** Takes the last parcel out of the batch; without it, the band offers no "Annuler". */
   onUndo?: () => void;
   /** Asks for the camera again after a refusal. */
   onRetry?: () => void;
@@ -83,7 +99,8 @@ export type ScanScreenProps = {
  * Reception, burst mode: the agent sweeps the camera over the parcels of a
  * delivery and each label is read and added without a tap. The screen only
  * talks when something needs a look — a duplicate, an unreadable label —
- * and keeps the last parcel on screen with a way to take it back.
+ * and keeps the last parcel on screen; the app offers "Annuler" on it only
+ * for a while after the reading, as a toast would.
  */
 export function ScanScreen({
   count,
@@ -131,7 +148,7 @@ export function ScanScreen({
       dim={dim ?? (unreadable ? 0.25 : starting ? 1 : undefined)}
     >
       <CameraTopBar
-        title={`Lot : ${count} colis`}
+        title={<span role="status">{`Lot : ${count} colis`}</span>}
         torch={torch}
         torchOn={torchOn}
         onClose={onClose}
@@ -142,8 +159,8 @@ export function ScanScreen({
         <LastScanPanel
           className="mx-4 mt-3.5"
           title={reading.last.name}
-          meta={reading.last.meta}
-          action={{ icon: 'undo', label: 'Annuler', onClick: onUndo }}
+          meta={<LastParcelMeta {...reading.last} />}
+          action={onUndo && { icon: 'undo', label: 'Annuler', onClick: onUndo }}
         />
       )}
       {reading.kind === 'duplicate' && (
@@ -252,6 +269,19 @@ export function ScanScreen({
         />
       )}
     </CameraViewport>
+  );
+}
+
+/** The grey carrier line, or the state of a reading that gave nothing. */
+function LastParcelMeta({ meta, status }: LastParcel) {
+  if (!status) return meta;
+  return (
+    <span
+      className={`flex items-center gap-1 ${SCAN_FIELD_STATUS.dark[status]}`}
+    >
+      <Icon name="alert" size={16} />
+      {meta}
+    </span>
   );
 }
 
