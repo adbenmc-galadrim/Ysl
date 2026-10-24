@@ -12,7 +12,9 @@ export type SyncCard = {
 /**
  * The state card of the Synchronisation screen: is everything sent, and
  * when did it last go through. Changes left to send make it orange, whether
- * the phone is offline or the server refused them.
+ * the phone is offline or the server refused them; red once one of them has
+ * waited for more than a day (`STALE_AFTER_MS`), with the backup export as
+ * the thing to do.
  */
 const dateFormat = new Intl.DateTimeFormat('fr-FR', {
   day: 'numeric',

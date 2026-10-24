@@ -46,6 +46,8 @@ export function ColisHome() {
             icon={banner.icon}
             title={banner.title}
             description={banner.description}
+            // Penpot fixes the orange card at 64 px; the red title runs on
+            // two lines and needs the card to grow.
             classNames={{
               root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
               description: 'mt-[3px] leading-4',

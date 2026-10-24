@@ -20,7 +20,10 @@ export function syncAlert(
 /**
  * The pill at the top of Colis. "Hors ligne" also when the network is there
  * but the server is not (captive Wi-Fi, outage) and changes wait: "À jour"
- * would be a lie next to the banner.
+ * would be a lie next to the orange banner. The pill keeps its three states
+ * of the mock-up: the day-old alert is the red banner's job, so the pill
+ * may well say "À jour" above it once the server took everything but the
+ * refused changes.
  */
 export function syncPill(
   sync: Pick<SyncView, 'online' | 'status' | 'pending'>,
