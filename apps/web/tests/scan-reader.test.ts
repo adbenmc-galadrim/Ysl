@@ -6,7 +6,12 @@ import { addDraft, openBatch } from '#/features/batch/store';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { DecodeQueue } from '#/features/scan/decode-queue';
 import { readDraft, recoverPending } from '#/features/scan/reader';
-import { NOW, openTestDatabase } from './helpers/local-rows';
+import {
+  NOW,
+  openTestDatabase,
+  senderAccountRow,
+  senderRow,
+} from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 const symbol = (format: string, text: string): DecodeResult['symbols'][0] => ({
@@ -57,6 +62,55 @@ beforeEach(async () => {
 });
 
 describe('readDraft', () => {
+  it('prefills the sender of a UPS account the dictionary knows', async () => {
+    const sender = senderRow({ displayName: 'Metalworks SpA' });
+    await db.sender.add(sender);
+    await db.senderAccount.add(
+      senderAccountRow({
+        carrier: 'ups',
+        accountNumber: 'E6344W',
+        senderId: sender.id,
+        confirmations: 3,
+      }),
+    );
+    const queue = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Code128', '1ZE6344W0499230622')])),
+      1,
+    );
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await queue.acquire();
+
+    const reading = await readDraft(db, queue, draft.id, bitmap(), bitmap());
+
+    const expected = {
+      name: 'Metalworks SpA',
+      id: sender.id,
+      level: 'sure',
+      source: 'learned',
+      account: { carrier: 'ups', accountNumber: 'E6344W' },
+    };
+    expect(reading.sender).toEqual(expected);
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      sender: expected,
+    });
+  });
+
+  it('keeps the account read on the draft when no sender owns it yet', async () => {
+    const queue = new DecodeQueue(
+      () => Promise.resolve(result([symbol('Code128', '1ZE6344W0499230622')])),
+      1,
+    );
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await queue.acquire();
+
+    const reading = await readDraft(db, queue, draft.id, bitmap(), bitmap());
+
+    expect(reading.sender).toBeNull();
+    expect((await db.draftParcel.get(draft.id))?.sender).toBeNull();
+  });
+
   it('goes back for the carrier symbol it missed, then frees the slot', async () => {
     const calls: unknown[] = [];
     const queue = new DecodeQueue((_bitmap, options) => {

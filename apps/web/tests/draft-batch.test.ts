@@ -265,6 +265,58 @@ describe('finishBatch', () => {
     expect(await currentBatch(db)).toBeUndefined();
   });
 
+  it('writes the sender on the parcel when it is sure or to verify, not a guess', async () => {
+    const batch = await openBatch(db, NOW);
+    const sure = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, sure.id, {
+      reading: 'read',
+      sender: {
+        name: 'Metalworks SpA',
+        id: 'sender-1',
+        level: 'sure',
+        source: 'learned',
+        account: { carrier: 'ups', accountNumber: 'E6344W' },
+      },
+    });
+    const doubtful = await addDraft(db, files, batch.id, photo(), later(1));
+    await updateDraft(db, doubtful.id, {
+      reading: 'read',
+      sender: {
+        name: 'Atelier Tissage Nord',
+        id: 'sender-2',
+        level: 'to-verify',
+        source: 'learned',
+        account: null,
+      },
+    });
+    const guessed = await addDraft(db, files, batch.id, photo(), later(2));
+    await updateDraft(db, guessed.id, {
+      reading: 'read',
+      sender: {
+        name: 'PEARL GmbH',
+        id: null,
+        level: 'none',
+        source: 'ocr',
+        account: null,
+      },
+    });
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+
+    expect(await db.parcel.get(sure.id)).toMatchObject({
+      senderId: 'sender-1',
+      senderName: 'Metalworks SpA',
+    });
+    expect(await db.parcel.get(doubtful.id)).toMatchObject({
+      senderId: 'sender-2',
+      senderName: 'Atelier Tissage Nord',
+    });
+    expect(await db.parcel.get(guessed.id)).toMatchObject({
+      senderId: null,
+      senderName: null,
+    });
+  });
+
   it('leaves nothing behind for an empty batch', async () => {
     const batch = await openBatch(db, NOW);
     const ids = await finishBatch(db, { batchId: batch.id, agentId: 'a' });

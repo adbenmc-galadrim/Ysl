@@ -14,6 +14,7 @@ import type {
   setting,
   SYNCED_ENTITIES,
 } from '@repo/db/schema';
+import type { ConfidenceLevel, SourceKind } from '@repo/contract/extract';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
 export const DATABASE_NAME = 'courrier';
@@ -136,6 +137,21 @@ export type DraftPieces = {
 };
 
 /**
+ * The sender as the reader proposes it (F19, §4.5): named by a code, found
+ * by its carrier account, matched to a sender already seen, or guessed from
+ * the printed `FROM` block. `level` says how it shows (§4.4); `account` is
+ * the carrier account the codes carried, which "Terminer" learns from.
+ */
+export type DraftSender = {
+  name: string;
+  /** The `sender` row it names, when the dictionary knows it. */
+  id: string | null;
+  level: ConfidenceLevel;
+  source: SourceKind;
+  account: { carrier: string; accountNumber: string } | null;
+};
+
+/**
  * A parcel of the batch in progress: one tap, one photo, the reading when
  * it lands. Local only, never queued; `finishBatch` turns it into a parcel.
  */
@@ -158,6 +174,8 @@ export type DraftParcel = {
   ocrLines: DraftOcrLine[];
   /** Set when the label is one piece of several; absent on drafts stored before YSL-38. */
   pieces?: DraftPieces | null;
+  /** The sender proposed so far; absent on drafts stored before YSL-40. */
+  sender?: DraftSender | null;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */

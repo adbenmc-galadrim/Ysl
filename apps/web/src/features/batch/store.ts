@@ -4,6 +4,7 @@ import type {
   CourrierDatabase,
   DraftBatch,
   DraftParcel,
+  DraftSender,
   LocalBatch,
   LocalParcel,
 } from '#/features/db/schema';
@@ -25,6 +26,7 @@ export type DraftPatch = Partial<
     | 'ocrName'
     | 'ocrLines'
     | 'pieces'
+    | 'sender'
   >
 >;
 
@@ -83,6 +85,7 @@ export async function addDraft(
     ocrName: null,
     ocrLines: [],
     pieces: null,
+    sender: null,
   };
   await db.draftParcel.add(draft);
   return draft;
@@ -115,6 +118,7 @@ export function typedDraft(
     ocrName: null,
     ocrLines: [],
     pieces: null,
+    sender: null,
     ...typed,
   };
 }
@@ -227,10 +231,20 @@ export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
     : 'a_completer';
 }
 
+/**
+ * The sender worth writing on the parcel (§4.4): sure, or prefilled to
+ * verify; a bare guess leaves the field empty.
+ */
+export function promotedSender(draft: DraftParcel): DraftSender | null {
+  const sender = draft.sender ?? null;
+  return sender && sender.level !== 'none' ? sender : null;
+}
+
 function toParcel(
   draft: DraftParcel,
   { batchId, agentId, now }: Required<FinishOptions>,
 ): LocalParcel {
+  const sender = promotedSender(draft);
   return {
     id: draft.id,
     createdAt: draft.createdAt,
@@ -247,8 +261,8 @@ function toParcel(
     readName: draft.readName,
     notificationEmail: null,
     department: null,
-    senderId: null,
-    senderName: null,
+    senderId: sender?.id ?? null,
+    senderName: sender?.name ?? null,
     pieceN: draft.pieces ? draft.pieces.read.length : null,
     pieceTotal: draft.pieces?.total ?? null,
     weightKg: null,
