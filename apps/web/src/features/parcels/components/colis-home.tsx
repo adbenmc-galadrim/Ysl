@@ -1,5 +1,6 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
+  Banner,
   Button,
   ColisScreen,
   EmptyState,
@@ -9,15 +10,16 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { summarize, toSections } from '#/features/parcels/sections';
+import { showsPendingBanner, syncPill } from '#/features/sync/sync-value';
+import { useSync } from '#/features/sync/use-sync';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
-import { useOnline } from '#/lib/use-online';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 export function ColisHome() {
   const navigate = useNavigate();
-  const online = useOnline();
+  const sync = useSync();
   const update = useUpdate();
   const parcels = useHomeParcels();
   const loading = useDelayedPending(parcels === undefined);
@@ -29,9 +31,27 @@ export function ColisHome() {
 
   return (
     <ColisScreen
-      sync={online ? 'synced' : 'offline'}
+      sync={syncPill(sync)}
       summary={parcels ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
+      notice={
+        showsPendingBanner(sync) ? (
+          <Banner
+            tone="orange"
+            icon="cloud"
+            title={
+              sync.pending === 1
+                ? t('colis.pending.title.one')
+                : t('colis.pending.title.many', { count: sync.pending })
+            }
+            description={t('colis.pending.description')}
+            classNames={{
+              root: 'h-16 py-[11px]',
+              description: 'mt-[3px] leading-4',
+            }}
+          />
+        ) : undefined
+      }
       loading={loading}
       toast={
         update.offered ? (

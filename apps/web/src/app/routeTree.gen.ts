@@ -18,6 +18,7 @@ import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
+import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -66,6 +67,12 @@ const AuthenticatedReglagesCompteRoute =
     path: '/reglages/compte',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesSynchronisationRoute =
+  AuthenticatedReglagesSynchronisationRouteImport.update({
+    id: '/reglages/synchronisation',
+    path: '/reglages/synchronisation',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof AuthenticatedScanRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
+  '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +93,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
+  '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRoutesById {
@@ -97,6 +106,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
+  '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
 export interface FileRouteTypes {
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/reglages/arrondis'
     | '/reglages/compte'
+    | '/reglages/synchronisation'
     | '/reglages/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,6 +130,7 @@ export interface FileRouteTypes {
     | '/'
     | '/reglages/arrondis'
     | '/reglages/compte'
+    | '/reglages/synchronisation'
     | '/reglages'
   id:
     | '__root__'
@@ -130,6 +142,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
+    | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
   fileRoutesById: FileRoutesById
 }
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesCompteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/synchronisation': {
+      id: '/_authenticated/reglages/synchronisation'
+      path: '/reglages/synchronisation'
+      fullPath: '/reglages/synchronisation'
+      preLoaderRoute: typeof AuthenticatedReglagesSynchronisationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -213,6 +233,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
+  AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
 }
 
@@ -222,6 +243,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
+  AuthenticatedReglagesSynchronisationRoute:
+    AuthenticatedReglagesSynchronisationRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
 }
 

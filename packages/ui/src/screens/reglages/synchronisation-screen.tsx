@@ -11,7 +11,11 @@ export type SynchronisationScreenProps = {
   title: string;
   /** "Dernière synchronisation à 11 h 21". */
   detail: string;
+  /** The blue line of the card; "Synchroniser maintenant" when not given. */
+  action?: string;
+  onAction?: () => void;
   groups: SettingsGroup[];
+  onBack?: () => void;
 };
 
 /**
@@ -23,17 +27,21 @@ export function SynchronisationScreen({
   state,
   title,
   detail,
+  action = 'Synchroniser maintenant',
+  onAction,
   groups,
+  onBack,
 }: SynchronisationScreenProps) {
   return (
-    <SettingsScreen title="Synchronisation">
+    <SettingsScreen title="Synchronisation" onBack={onBack}>
       <ActionCard
         size="lg"
         icon={state === 'synced' ? 'check' : 'clock'}
         tone={state === 'synced' ? 'green' : 'orange'}
         title={title}
         subtitle={detail}
-        action="Synchroniser maintenant"
+        action={action}
+        onAction={onAction}
         className="mb-1"
       />
       {groups.map((group) => (
