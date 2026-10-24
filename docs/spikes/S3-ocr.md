@@ -104,7 +104,8 @@ sur de vraies photos de la photothèque (pas de colis sous la main).
 
 ## Conséquences
 
-- **YSL-26 (OCR sur le téléphone)** : PP-OCRv6 tiny en WASM, sessions préchauffées,
+- **YSL-26 (OCR sur le téléphone)**, livré dans `packages/ocr`
+  (`docs/architecture/ocr.md`) : PP-OCRv6 tiny en WASM, sessions préchauffées,
   pas de WebGPU. Reprendre de `apps/spike-ocr` le worker, l'hébergement des modèles
   (URL et sha256 épinglés), COOP/COEP et la sonde de mémoire. Garder Tesseract v7 comme
   repli derrière la même interface.
