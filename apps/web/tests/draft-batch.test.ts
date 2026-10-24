@@ -14,7 +14,12 @@ import {
   updateDraft,
 } from '#/features/batch/store';
 import type { CourrierDatabase, DraftParcel } from '#/features/db/schema';
-import { NOW, openTestDatabase } from './helpers/local-rows';
+import {
+  NOW,
+  openTestDatabase,
+  senderAccountRow,
+  senderRow,
+} from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 const photo = () => ({
@@ -266,13 +271,15 @@ describe('finishBatch', () => {
   });
 
   it('writes the sender on the parcel when it is sure or to verify, not a guess', async () => {
+    const known = senderRow();
+    await db.sender.add(known);
     const batch = await openBatch(db, NOW);
     const sure = await addDraft(db, files, batch.id, photo(), NOW);
     await updateDraft(db, sure.id, {
       reading: 'read',
       sender: {
         name: 'Metalworks SpA',
-        id: 'sender-1',
+        id: known.id,
         level: 'sure',
         source: 'learned',
         account: { carrier: 'ups', accountNumber: 'E6344W' },
@@ -304,7 +311,7 @@ describe('finishBatch', () => {
     await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
 
     expect(await db.parcel.get(sure.id)).toMatchObject({
-      senderId: 'sender-1',
+      senderId: known.id,
       senderName: 'Metalworks SpA',
     });
     expect(await db.parcel.get(doubtful.id)).toMatchObject({
@@ -315,6 +322,162 @@ describe('finishBatch', () => {
       senderId: null,
       senderName: null,
     });
+  });
+
+  it('learns a sender a code named, with its carrier account, ahead of the parcels', async () => {
+    const batch = await openBatch(db, NOW);
+    const first = await addDraft(db, files, batch.id, photo(), NOW);
+    const second = await addDraft(db, files, batch.id, photo(), later(1));
+    for (const draft of [first, second]) {
+      await updateDraft(db, draft.id, {
+        reading: 'read',
+        sender: {
+          name: 'Metalworks S.p.A.',
+          id: null,
+          level: 'sure',
+          source: '2d',
+          account: { carrier: 'UPS', accountNumber: 'e63 44w' },
+        },
+      });
+    }
+    const end = later(90);
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1', now: end });
+
+    const senders = await db.sender.toArray();
+    expect(senders).toHaveLength(1);
+    expect(senders[0]).toMatchObject({
+      displayName: 'Metalworks S.p.A.',
+      nameNorm: 'metalworks spa',
+      seenCount: 2,
+      lastSeenAt: end,
+    });
+    const accounts = await db.senderAccount.toArray();
+    expect(accounts).toHaveLength(1);
+    expect(accounts[0]).toMatchObject({
+      carrier: 'ups',
+      accountNumber: 'E6344W',
+      senderId: senders[0]?.id,
+      confirmations: 2,
+    });
+    expect(await db.parcel.get(first.id)).toMatchObject({
+      senderId: senders[0]?.id,
+      senderName: 'Metalworks S.p.A.',
+    });
+    const queued = await db.outbox.orderBy('seq').toArray();
+    expect(queued.map((op) => op.entity)).toEqual([
+      'sender',
+      'sender_account',
+      'batch',
+      'parcel',
+      'parcel',
+    ]);
+  });
+
+  it('counts a sender the dictionary found once more, and confirms its account', async () => {
+    const known = senderRow({ seenCount: 4, lastSeenAt: NOW });
+    await db.sender.add(known);
+    const account = senderAccountRow({
+      senderId: known.id,
+      confirmations: 2,
+    });
+    await db.senderAccount.add(account);
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, draft.id, {
+      reading: 'read',
+      sender: {
+        name: known.displayName,
+        id: known.id,
+        level: 'sure',
+        source: 'learned',
+        account: { carrier: 'ups', accountNumber: 'E6344W' },
+      },
+    });
+    const end = later(90);
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1', now: end });
+
+    expect(await db.sender.count()).toBe(1);
+    expect(await db.sender.get(known.id)).toMatchObject({
+      seenCount: 5,
+      lastSeenAt: end,
+    });
+    expect(await db.senderAccount.count()).toBe(1);
+    expect(await db.senderAccount.get(account.id)).toMatchObject({
+      confirmations: 3,
+    });
+  });
+
+  it('learns nothing from a sender still to verify, nor an account another sender owns', async () => {
+    const other = senderRow({ displayName: 'Autre', nameNorm: 'autre' });
+    await db.sender.add(other);
+    const account = senderAccountRow({ senderId: other.id, confirmations: 1 });
+    await db.senderAccount.add(account);
+    const batch = await openBatch(db, NOW);
+    const doubtful = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, doubtful.id, {
+      reading: 'read',
+      sender: {
+        name: 'Atelier Tissage Nord',
+        id: null,
+        level: 'to-verify',
+        source: 'learned',
+        account: null,
+      },
+    });
+    const owned = await addDraft(db, files, batch.id, photo(), later(1));
+    await updateDraft(db, owned.id, {
+      reading: 'read',
+      sender: {
+        name: 'Metalworks SpA',
+        id: null,
+        level: 'sure',
+        source: '2d',
+        account: { carrier: 'ups', accountNumber: 'E6344W' },
+      },
+    });
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+
+    expect(
+      (await db.sender.toArray()).map((row) => row.displayName).sort(),
+    ).toEqual(['Autre', 'Metalworks SpA']);
+    expect(await db.senderAccount.get(account.id)).toMatchObject({
+      senderId: other.id,
+      confirmations: 1,
+    });
+    expect(await db.senderAccount.count()).toBe(1);
+    expect(await db.parcel.get(doubtful.id)).toMatchObject({
+      senderId: null,
+      senderName: 'Atelier Tissage Nord',
+    });
+  });
+
+  it('drops a sure sender whose row was deleted meanwhile', async () => {
+    const gone = senderRow({ deletedAt: NOW });
+    await db.sender.add(gone);
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, draft.id, {
+      reading: 'read',
+      sender: {
+        name: gone.displayName,
+        id: gone.id,
+        level: 'sure',
+        source: 'learned',
+        account: { carrier: 'ups', accountNumber: 'E6344W' },
+      },
+    });
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+
+    expect(await db.parcel.get(draft.id)).toMatchObject({
+      senderId: null,
+      senderName: gone.displayName,
+    });
+    expect(await db.sender.count()).toBe(1);
+    expect(await db.senderAccount.count()).toBe(0);
   });
 
   it('leaves nothing behind for an empty batch', async () => {
