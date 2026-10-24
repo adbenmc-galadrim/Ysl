@@ -2,10 +2,12 @@ import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addDraft,
+  countDrafts,
   currentBatch,
   finishBatch,
   openBatch,
   promotedStatus,
+  typeDraft,
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
@@ -50,6 +52,58 @@ describe('openBatch', () => {
     expect(again.id).toBe(first.id);
     expect(await db.draftBatch.count()).toBe(1);
     expect((await currentBatch(db))?.id).toBe(first.id);
+  });
+});
+
+describe('typeDraft', () => {
+  const typed = {
+    carrier: 'UPS',
+    tracking: '1ZE6344W0499230622',
+    trackingNorm: '1ZE6344W0499230622',
+  };
+
+  it('writes a settled draft without a photo, counted in the batch', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await typeDraft(db, batch.id, typed, NOW);
+    expect(draft).toMatchObject({
+      batchId: batch.id,
+      reading: 'typed',
+      photoId: null,
+      ...typed,
+    });
+    expect(await db.draftParcel.get(draft.id)).toEqual(draft);
+    expect(await countDrafts(db, batch.id)).toBe(1);
+  });
+
+  it('promotes it without a photo, to complete, number kept', async () => {
+    const batch = await openBatch(db, NOW);
+    await typeDraft(db, batch.id, typed, NOW);
+    const [id] = await finishBatch(db, {
+      batchId: batch.id,
+      agentId: 'agent',
+      now: later(10),
+    });
+    expect(await db.parcel.get(id!)).toMatchObject({
+      status: 'a_completer',
+      ...typed,
+    });
+    expect(await db.photo.count()).toBe(0);
+    expect(await db.draftParcel.count()).toBe(0);
+  });
+
+  it('fills an unread draft in place, photo kept', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, draft.id, { reading: 'unreadable' });
+    expect(
+      await updateDraft(db, draft.id, { reading: 'typed', ...typed }),
+    ).toBe(true);
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      reading: 'typed',
+      photoId: draft.photoId,
+      ...typed,
+    });
+    expect(await countDrafts(db, batch.id)).toBe(1);
   });
 });
 

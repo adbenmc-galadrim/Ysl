@@ -75,6 +75,36 @@ export async function addDraft(
   return draft;
 }
 
+export type TypedTracking = {
+  carrier: string | null;
+  tracking: string;
+  trackingNorm: string;
+};
+
+/**
+ * A number typed by hand, with no photo to read: the draft lands already
+ * settled, so nothing waits for it and a restart never reads it again.
+ */
+export async function typeDraft(
+  db: CourrierDatabase,
+  batchId: string,
+  typed: TypedTracking,
+  now = new Date(),
+): Promise<DraftParcel> {
+  const draft: DraftParcel = {
+    id: newId(),
+    batchId,
+    createdAt: now,
+    photoId: null,
+    reading: 'typed',
+    readName: null,
+    symbols: [],
+    ...typed,
+  };
+  await db.draftParcel.add(draft);
+  return draft;
+}
+
 /** Fills in what the reader found; false if the draft was undone meanwhile. */
 export async function updateDraft(
   db: CourrierDatabase,
