@@ -88,13 +88,14 @@ describe('listWaitingChanges', () => {
 });
 
 describe('describeChange', () => {
-  it('names a parcel by the end of its tracking and the name read, a person by name', () => {
+  it('names a parcel by the end of its tracking, the name read underneath, a person by name', () => {
     expect(
       describeChange({ op: op(), row: parcelRow() }, t, NOW),
     ).toMatchObject({
       key: 'op-1',
       icon: 'package',
       label: 'Colis ···0622',
+      subtitle: undefined,
       value: '10 h 42',
       chevron: false,
     });
@@ -103,15 +104,15 @@ describe('describeChange', () => {
         { op: op(), row: parcelRow({ readName: 'Camille Morel' }) },
         t,
         NOW,
-      ).label,
-    ).toBe('Colis ···0622, Camille Morel');
+      ),
+    ).toMatchObject({ label: 'Colis ···0622', subtitle: 'Camille Morel' });
     expect(
       describeChange(
         { op: op({ entity: 'directory_person' }), row: personRow() },
         t,
         NOW,
-      ).label,
-    ).toBe('Camille Morel');
+      ),
+    ).toMatchObject({ label: 'Salarié', subtitle: 'Camille Morel' });
   });
 
   it('falls back to the kind of thing when the row is gone or has no number', () => {

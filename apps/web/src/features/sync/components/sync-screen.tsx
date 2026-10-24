@@ -93,7 +93,7 @@ export function SyncScreen() {
             icon: 'share',
             color: 'blue',
             label: t('sync.export'),
-            value:
+            subtitle:
               exporting.state === 'running'
                 ? t('sync.export.running')
                 : exporting.state === 'failed'

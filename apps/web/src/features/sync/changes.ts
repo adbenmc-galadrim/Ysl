@@ -62,56 +62,60 @@ export function formatChangeTime(at: Date, now: Date): string {
   return `${dayFormat.format(at)} ${formatTime(at)}`;
 }
 
-function subject({ op, row }: WaitingChange, t: TranslateFn): string {
+type Subject = { label: string; subtitle?: string };
+
+function subject({ op, row }: WaitingChange, t: TranslateFn): Subject {
   switch (op.entity as string) {
     case 'parcel': {
       const parcel = row as SyncedRows['parcel'] | null;
-      const label = parcel?.tracking
-        ? t('sync.change.parcel', { tracking: parcel.tracking.slice(-4) })
-        : t('sync.change.entity.parcel');
-      return parcel?.readName ? `${label}, ${parcel.readName}` : label;
+      return {
+        label: parcel?.tracking
+          ? t('sync.change.parcel', { tracking: parcel.tracking.slice(-4) })
+          : t('sync.change.entity.parcel'),
+        subtitle: parcel?.readName ?? undefined,
+      };
     }
     case 'directory_person': {
       const person = row as SyncedRows['directory_person'] | null;
-      return person
-        ? `${person.firstName} ${person.lastName}`
-        : t('sync.change.entity.directory_person');
+      return {
+        label: t('sync.change.entity.directory_person'),
+        subtitle: person ? `${person.firstName} ${person.lastName}` : undefined,
+      };
     }
     case 'contact':
-      return (
-        (row as SyncedRows['contact'] | null)?.name ??
-        t('sync.change.entity.contact')
-      );
+      return {
+        label: t('sync.change.entity.contact'),
+        subtitle: (row as SyncedRows['contact'] | null)?.name,
+      };
     case 'sender':
-      return (
-        (row as SyncedRows['sender'] | null)?.displayName ??
-        t('sync.change.entity.sender')
-      );
-    case 'handover': {
-      const handover = row as SyncedRows['handover'] | null;
-      return handover
-        ? t('sync.change.handover', { name: handover.recipientName })
-        : t('sync.change.entity.handover');
-    }
+      return {
+        label: t('sync.change.entity.sender'),
+        subtitle: (row as SyncedRows['sender'] | null)?.displayName,
+      };
+    case 'handover':
+      return {
+        label: t('sync.change.entity.handover'),
+        subtitle: (row as SyncedRows['handover'] | null)?.recipientName,
+      };
     case 'email_template':
-      return (
-        (row as SyncedRows['email_template'] | null)?.name ??
-        t('sync.change.entity.email_template')
-      );
+      return {
+        label: t('sync.change.entity.email_template'),
+        subtitle: (row as SyncedRows['email_template'] | null)?.name,
+      };
     case 'setting':
-      return t('sync.change.entity.setting');
+      return { label: t('sync.change.entity.setting') };
     case 'batch':
-      return t('sync.change.entity.batch');
+      return { label: t('sync.change.entity.batch') };
     case 'sender_account':
-      return t('sync.change.entity.sender_account');
+      return { label: t('sync.change.entity.sender_account') };
     case 'notification':
-      return t('sync.change.entity.notification');
+      return { label: t('sync.change.entity.notification') };
     case 'pickup_code':
-      return t('sync.change.entity.pickup_code');
+      return { label: t('sync.change.entity.pickup_code') };
     case 'event':
-      return t('sync.change.entity.event');
+      return { label: t('sync.change.entity.event') };
     default:
-      return t('sync.change.entity.unknown');
+      return { label: t('sync.change.entity.unknown') };
   }
 }
 
@@ -122,14 +126,12 @@ export function describeChange(
   now = new Date(),
 ): SettingsItem {
   const { op } = change;
-  const label =
-    op.type === 'delete'
-      ? t('sync.change.deleted', { label: subject(change, t) })
-      : subject(change, t);
+  const { label, subtitle } = subject(change, t);
   return {
     key: op.opId,
     ...(ENTITY_ROW[op.entity] ?? { icon: 'list', color: 'grey' }),
-    label,
+    label: op.type === 'delete' ? t('sync.change.deleted', { label }) : label,
+    subtitle,
     value:
       op.state === 'rejected'
         ? t('sync.change.rejected')

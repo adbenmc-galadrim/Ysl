@@ -153,7 +153,6 @@ export const fr = {
   'sync.changes.more.one': 'Et 1 autre changement.',
   'sync.changes.more.many': 'Et {{count}} autres changements.',
   'sync.change.parcel': 'Colis ···{{tracking}}',
-  'sync.change.handover': 'Remise à {{name}}',
   'sync.change.deleted': '{{label}}, supprimé',
   'sync.change.rejected': 'Refusé',
   'sync.change.entity.parcel': 'Colis',
