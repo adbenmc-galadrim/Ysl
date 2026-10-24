@@ -37,19 +37,21 @@ faites. Le serveur les applique une par une, chacune dans sa transaction :
 
 Un statut par opération, dans l'ordre envoyé :
 
-| Statut | Sens                                                                                                                 | Côté appareil                                               |
-| ------ | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 200    | appliquée, maintenant ou par un envoi précédent                                                                      | retirée de l'outbox                                         |
-| 400    | colonne inconnue, valeur invalide, `not null` manquant (SQLSTATE `22xxx`, `23502`, `23514`)                          | `rejected`, à corriger                                      |
-| 403    | identifiant d'une autre organisation                                                                                 | `rejected`                                                  |
-| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                        | `rejected`                                                  |
-| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… | `rejected`, le second part en « Corriger »                  |
-| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                           | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
+| Statut | Sens                                                                                                                         | Côté appareil                                               |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 200    | appliquée, maintenant ou par un envoi précédent                                                                              | retirée de l'outbox                                         |
+| 400    | colonne inconnue, valeur invalide, `not null` manquant, garde-fou d'un trigger (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`) | `rejected`, à corriger                                      |
+| 403    | identifiant d'une autre organisation                                                                                         | `rejected`                                                  |
+| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                | `rejected`                                                  |
+| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage…         | `rejected`, le second part en « Corriger »                  |
+| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                   | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
 
 Un rejet 4xx est aussi consigné dans `sync_op` : la même opération renvoyée reçoit
-la même réponse. Le dernier écrit gagne, ligne par ligne, dans l'ordre d'arrivée au
-serveur ; les garde-fous des transitions de statut et de la remise (§8.4) viennent
-avec YSL-34.
+la même réponse. Le dernier écrit gagne **ligne par ligne**, et non champ par champ
+comme le §8.4 le prévoit (écart assumé tant qu'une ligne n'a qu'un auteur à la fois),
+dans l'ordre d'arrivée au serveur ; une suppression reste acquise, une copie en retard
+ne la défait pas. Les garde-fous des transitions de statut et de la remise (§8.4)
+viennent avec YSL-34.
 
 ## `sync.pull`
 
@@ -76,14 +78,17 @@ Les suppressions étant logiques, rien n'est vidé localement ; la purge physiqu
 - Le moteur (`features/sync/engine.ts`) fait un push puis un pull, une
   synchronisation à la fois. Déclencheurs : au lancement d'une session, au retour du
   réseau, au retour au premier plan, 500 ms après un commit, toutes les 60 s au
-  premier plan. Pas de Background Sync (absent d'iOS).
+  premier plan. Après un échec (réseau, 401, 503), les déclencheurs automatiques
+  attendent 2 s, 4 s… jusqu'à 5 min ; « Synchroniser maintenant » et le retour du
+  réseau n'attendent pas. Pas de Background Sync (absent d'iOS).
 - Écrans : pastille Colis (`À jour`, `Synchronisation`, `Hors ligne`), bannière
   « N changements en attente » quand le serveur est hors de portée, ligne Réglages ›
   Synchronisation et écran `/reglages/synchronisation` (état, « Synchroniser
   maintenant », ce qui est sur l'iPhone, mise à jour).
-- Déconnexion : une dernière synchronisation ; s'il reste des opérations `queued`,
-  la déconnexion est refusée avec leur nombre. Sinon le compte est déconnecté puis la
-  base locale et les photos OPFS sont effacées.
+- Déconnexion : une dernière synchronisation ; s'il reste des opérations `queued`
+  ou `rejected` (seule copie d'un changement à corriger), la déconnexion est refusée
+  avec leur nombre. Sinon le compte est déconnecté, la synchro arrêtée, puis la base
+  locale et les photos OPFS sont effacées.
 
 ## Exploitation
 
