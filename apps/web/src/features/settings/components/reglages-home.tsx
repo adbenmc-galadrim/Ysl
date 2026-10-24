@@ -1,9 +1,10 @@
 import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { ReglagesScreen, type SettingsGroup } from '@repo/ui';
+import { CORNER_RADII, ReglagesScreen, type SettingsGroup } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
+import { useCornerSetting } from '#/features/settings/corners';
 import { initialsOf } from '#/features/settings/initials';
 import { useSession } from '#/features/settings/session';
 
@@ -30,6 +31,10 @@ export function ReglagesHome() {
   const session = useSession();
   const role = toUserRole(session.user.role);
   const server = useServerState();
+  const corners = useCornerSetting();
+  const cornersTitle = CORNER_RADII.find(
+    (preset) => preset.value === corners.radius,
+  )?.title;
 
   const data: SettingsGroup = {
     header: t('settings.group.data'),
@@ -71,6 +76,13 @@ export function ReglagesHome() {
   const app: SettingsGroup = {
     header: t('settings.group.app'),
     items: [
+      {
+        icon: 'sun',
+        color: 'grey',
+        label: t('settings.corners'),
+        value: cornersTitle,
+        onPress: () => void navigate({ to: '/reglages/arrondis' }),
+      },
       {
         icon: 'info',
         color: 'grey',

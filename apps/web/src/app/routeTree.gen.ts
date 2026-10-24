@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
+import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -53,6 +54,12 @@ const AuthenticatedReglagesIndexRoute =
     path: '/reglages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesArrondisRoute =
+  AuthenticatedReglagesArrondisRouteImport.update({
+    id: '/reglages/arrondis',
+    path: '/reglages/arrondis',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesCompteRoute =
   AuthenticatedReglagesCompteRouteImport.update({
     id: '/reglages/compte',
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
 }
@@ -86,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
 }
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/remise'
     | '/scan'
+    | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/'
   fileRoutesByTo: FileRoutesByTo
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/remise'
     | '/scan'
     | '/'
+    | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages'
   id:
@@ -116,6 +128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/remise'
     | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/'
   fileRoutesById: FileRoutesById
@@ -177,6 +190,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/arrondis': {
+      id: '/_authenticated/reglages/arrondis'
+      path: '/reglages/arrondis'
+      fullPath: '/reglages/arrondis'
+      preLoaderRoute: typeof AuthenticatedReglagesArrondisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/compte': {
       id: '/_authenticated/reglages/compte'
       path: '/reglages/compte'
@@ -191,6 +211,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
 }
@@ -199,6 +220,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
 }

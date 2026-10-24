@@ -45,6 +45,13 @@ export const fr = {
   'settings.reminders': 'Relances automatiques',
   'settings.group.app': 'App',
   'settings.version': 'Version {{version}}',
+  'settings.corners': 'Arrondis',
+  'settings.corners.title': 'Arrondis',
+  'settings.corners.footer':
+    'Forme des boutons, des champs et des cartes. Réglage de cet iPhone.',
+  'settings.corners.tiles': 'Pastilles toujours rondes',
+  'settings.corners.tilesFooter':
+    'Icônes de réglages, avatars et boutons ronds, quel que soit l’arrondi.',
   'settings.account.agent': 'Agent courrier',
   'settings.account.admin': 'Agent courrier, administrateur',
   'settings.account.title': 'Compte',
