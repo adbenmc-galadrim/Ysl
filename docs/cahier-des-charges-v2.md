@@ -58,7 +58,7 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 | E-mail | `mailto:`, un à la fois, compte personnel | Envoi par le serveur (file d'attente, reprises, statut), adresse du service, QR et PIN de retrait |
 | Remise | Bouton « Marquer comme remis » | QR ou PIN scanné, signature en secours, journal |
 | Relance | Aucune | Relances automatiques, puis alerte à l'agent |
-| Données | `localStorage`, un seul téléphone | Base locale (IndexedDB) et photos dans OPFS, synchronisées avec le serveur, plusieurs appareils dont un ordinateur |
+| Données | `localStorage`, un seul téléphone | Base locale (IndexedDB) synchronisée avec le serveur, photos dans OPFS restées sur l'iPhone, plusieurs appareils dont un ordinateur |
 | Annuaire | Écrit dans le code public | Import CSV par un admin (MVP), puis synchronisation Entra ID (cible) |
 | Conservation | Aucune règle | Durées fixées avec le DPO, purge automatique |
 
@@ -811,7 +811,6 @@ stateDiagram-v2
 | --- | --- | --- |
 | `/api/auth/*` | Better Auth | Connexion, session, déconnexion ; Entra ID en cible |
 | `sync.pull`, `sync.push` | tRPC | Synchronisation (§8.4) |
-| `PUT /api/photos/:id`, `GET /api/photos/:id` (URL signée) | Hono | Photos |
 | `directory.importCsv`, `directory.list` | tRPC (admin) | Annuaire |
 | `notifications.preview` | tRPC | Aperçu des e-mails avant validation du lot |
 | `notifications.retry`, `notifications.sendNow` | tRPC | Actions sur la file |
@@ -867,7 +866,6 @@ Propositions à valider par le DPO (décision D7).
 
 | Donnée | Proposition | Fondement |
 | --- | --- | --- |
-| Photo d'étiquette (serveur) | 90 jours après la remise | Besoin de litige court ; proposition |
 | Photo locale | 7 jours après l'envoi confirmé | Réduire l'exposition en cas de perte de l'appareil |
 | Signature | 3 à 12 mois | Fourchette du rapport 05 |
 | Données d'extraction (texte OCR, codes bruts) | 30 jours, sauf échantillons versés au corpus avec accord | Diagnostic |
@@ -959,7 +957,7 @@ Chaque décision est accompagnée d'une recommandation.
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
 | D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou PIN par défaut, signature en secours et obligatoire pour les recommandés ; pas de photo du salarié |
 | D7 | Durées de conservation | DPO | Valider ou ajuster le tableau du §9.2 |
-| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Oui, recadrage seulement, sans EXIF, purge à 90 jours après remise (pour la consultation sur ordinateur et les litiges) |
+| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone, jamais envoyées au serveur (réponse du client du 22/10/2026) |
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |
