@@ -43,6 +43,14 @@ describe('requireSession', () => {
     });
   });
 
+  it('shows the landing whatever the query string on the home page', async () => {
+    await expect(
+      requireSession(queryClientWith(null), '/?utm_source=qr', {
+        installed: false,
+      }),
+    ).rejects.toMatchObject({ options: { to: '/bienvenue' } });
+  });
+
   it('sends the installed app without session to the sign-in page, not the landing', async () => {
     await expect(
       requireSession(queryClientWith(null), '/', { installed: true }),

@@ -1,5 +1,4 @@
 import {
-  animate,
   motion,
   useInView,
   useMotionValue,
@@ -8,7 +7,6 @@ import {
   type MotionValue,
 } from 'motion/react';
 import {
-  useEffect,
   useRef,
   type CSSProperties,
   type PointerEvent,
@@ -18,9 +16,9 @@ import {
 import { cn } from '#lib/tv';
 
 /*
- * Light effects in the manner of Magic UI and Aceternity UI, written for this
- * page. Everything that moves is a transform or an opacity; nothing blurs
- * or filters while scrolling, so Safari iOS keeps its frame rate.
+ * Light effects of the landing page. Everything that moves is a transform or
+ * an opacity; nothing blurs or filters while scrolling, so Safari iOS keeps
+ * its frame rate.
  */
 
 /** Layered shadow: a top highlight, a contact shadow, then two soft falloffs. */
@@ -229,102 +227,6 @@ export function Spotlight({
         }}
       />
     </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Number ticker                                                              */
-/* -------------------------------------------------------------------------- */
-
-/** Counts up to `value` once on screen. Renders the final value without motion. */
-export function NumberTicker({
-  value,
-  className,
-}: {
-  value: number;
-  className?: string;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-10% 0px' });
-  const reduce = useReducedMotion();
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || reduce || !inView) return;
-    const controls = animate(0, value, {
-      duration: 1.6,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (v) => {
-        el.textContent = String(Math.round(v));
-      },
-    });
-    return () => controls.stop();
-  }, [inView, reduce, value]);
-  return (
-    <span ref={ref} className={cn('tabular-nums', className)}>
-      {value}
-    </span>
-  );
-}
-
-/** Turns "3 sur 12" into the same sentence with its numbers ticking. */
-export function TickerText({ text }: { text: string }) {
-  return (
-    <>
-      {text
-        .split(/(\d+)/)
-        .map((part, i) =>
-          /^\d+$/.test(part) ? (
-            <NumberTicker key={i} value={Number(part)} />
-          ) : (
-            part
-          ),
-        )}
-    </>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/* Animated beam: a pulse of light running along a rail                       */
-/* -------------------------------------------------------------------------- */
-
-export function RailPulse({
-  axis,
-  delay,
-  className,
-}: {
-  axis: 'x' | 'y';
-  delay: number;
-  className?: string;
-}) {
-  const reduce = useReducedMotion();
-  if (reduce) return null;
-  const horizontal = axis === 'x';
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        'pointer-events-none absolute overflow-hidden rounded-full',
-        className,
-      )}
-    >
-      <motion.span
-        className={cn(
-          'absolute',
-          horizontal
-            ? 'inset-y-0 left-0 w-1/4 bg-linear-to-r from-white/0 via-white to-white/0'
-            : 'inset-x-0 top-0 h-1/4 bg-linear-to-b from-white/0 via-white to-white/0',
-        )}
-        initial={horizontal ? { x: '-100%' } : { y: '-100%' }}
-        animate={horizontal ? { x: '400%' } : { y: '400%' }}
-        transition={{
-          duration: 2.2,
-          ease: 'easeInOut',
-          repeat: Infinity,
-          repeatDelay: 2.8,
-          delay,
-        }}
-      />
-    </span>
   );
 }
 

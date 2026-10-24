@@ -542,7 +542,7 @@ export function Install({
               key={i}
               type="button"
               onClick={() => gallery.goTo(i)}
-              aria-label={`Position ${i + 1} sur ${gallery.stops}`}
+              aria-label={gestures[i]?.title}
               aria-current={i === gallery.active ? 'step' : undefined}
               className="flex h-6 items-center px-1"
             >

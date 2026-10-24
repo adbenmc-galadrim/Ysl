@@ -11,7 +11,9 @@ export async function requireSession(
 ) {
   const session = await queryClient.fetchQuery(sessionQueryOptions);
   if (!session) {
-    if (href === '/' && !installed) throw redirect({ to: '/bienvenue' });
+    if (!installed && new URL(href, 'http://app').pathname === '/') {
+      throw redirect({ to: '/bienvenue' });
+    }
     throw redirect({ to: '/connexion', search: { redirect: href } });
   }
   return session;

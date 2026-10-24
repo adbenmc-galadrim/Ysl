@@ -16,8 +16,6 @@ import {
 import { AppQr, CONTAINER, EYEBROW } from '#components/landing-page/shared';
 import { cn } from '#lib/tv';
 
-/* The header, as variant B drew it: Nav, Perks and Hero, untouched. */
-
 function Nav({
   copy,
   appName,
@@ -55,10 +53,10 @@ function Nav({
             </li>
           ))}
         </ul>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 xl:gap-6">
           <a
             href={signInHref}
-            className="hidden text-15 leading-[18px] font-medium text-site-ink xl:block"
+            className="text-14 leading-[17px] font-medium text-site-ink xl:text-15 xl:leading-[18px]"
           >
             {copy.signIn}
           </a>

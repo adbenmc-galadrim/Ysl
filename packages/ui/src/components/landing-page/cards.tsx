@@ -172,7 +172,7 @@ export function NotificationCard({
   );
 }
 
-export const PICKUP_CODE = '4821';
+const PICKUP_CODE = '4821';
 
 /**
  * Each digit is a strip of cells that starts on the digit itself (so the

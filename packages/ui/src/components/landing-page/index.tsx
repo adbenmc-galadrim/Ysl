@@ -235,14 +235,15 @@ function useStableScroll(root: RefObject<HTMLDivElement | null>) {
           'a[href^="#"]',
         );
         if (!link) return;
+        if (!link.hash) return;
         const target =
-          link.hash === '#top' || link.hash === '#'
+          link.hash === '#top'
             ? document.body
             : document.querySelector(link.hash);
         if (!target) return;
         e.preventDefault();
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        history.replaceState(null, '', link.hash);
+        history.replaceState(history.state, '', link.hash);
       };
       window.addEventListener('pagehide', save);
       el.addEventListener('click', onClick);
@@ -267,7 +268,7 @@ function useNarrative(root: RefObject<HTMLDivElement | null>) {
       const el = root.current;
       if (!el) return;
       ScrollTrigger.config({ ignoreMobileResize: true });
-      const mm = gsap.matchMedia();
+      const mm = gsap.matchMedia(el);
 
       mm.add(MEDIA, (ctx) => {
         const { phone, desk } = ctx.conditions as Record<
