@@ -68,6 +68,29 @@ export const EtiquetteIllisible: Story = {
   },
 };
 
+/** Black until the first frame, so nothing flashes under the overlays. */
+export const Activation: Story = {
+  args: {
+    count: 0,
+    label: undefined,
+    reading: { kind: 'starting', title: 'Activation…' },
+  },
+};
+
+/** iOS refused the camera: ask again, or fall back to the gallery. */
+export const CameraBloquee: Story = {
+  name: 'Caméra bloquée',
+  args: {
+    count: 0,
+    label: undefined,
+    reading: {
+      kind: 'blocked',
+      title: 'iOS a bloqué la caméra',
+      hint: 'Réessayez, ou importez une photo de l’étiquette.',
+    },
+  },
+};
+
 /** The keyboard square of the camera opens this sheet. */
 export const SaisieManuelle: StoryObj<typeof SaisieManuelleScreen> = {
   name: 'Saisie manuelle',
