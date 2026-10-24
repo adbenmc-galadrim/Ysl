@@ -6,7 +6,7 @@ import { PARCELS, type Parcel } from '#fixtures/parcels';
  * are copies with their own ids.
  */
 export const INTERRUPTED_BATCH: { startedAt: string; parcels: Parcel[] } = {
-  startedAt: '10 h 31',
+  startedAt: 'de 10 h 31',
   parcels: [
     PARCELS.camille,
     PARCELS.ines,
