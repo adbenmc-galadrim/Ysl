@@ -1,5 +1,12 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { SaisieManuelleSheet, ScanScreen, type ScanReading } from '@repo/ui';
+import { env } from '@repo/shared/env/web';
+import {
+  CameraDeniedScreen,
+  CameraPermissionScreen,
+  SaisieManuelleSheet,
+  ScanScreen,
+  type ScanReading,
+} from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
@@ -13,7 +20,17 @@ import {
 } from '#/features/batch/store';
 import { useBatch } from '#/features/batch/use-batch';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
-import { cameraStream, useCameraState } from '#/features/camera/stream';
+import {
+  cameraEntry,
+  markExplained,
+  wasExplained,
+} from '#/features/camera/entry';
+import { cameraReading } from '#/features/camera/notice';
+import {
+  cameraPermission,
+  cameraStream,
+  useCameraState,
+} from '#/features/camera/stream';
 import { db } from '#/features/db/database';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
 import { lastOf } from '#/features/scan/last';
@@ -36,12 +53,12 @@ export const Route = createFileRoute('/_authenticated/scan')({
   component: ScanPage,
 });
 
-const STARTING: ScanReading = { kind: 'starting', title: t('scan.starting') };
-const BLOCKED: ScanReading = {
-  kind: 'blocked',
-  title: t('scan.blocked.title'),
-  hint: t('scan.blocked.hint'),
-};
+const SETTINGS_STEPS = [
+  t('camera.steps.settings'),
+  t('camera.steps.safari'),
+  t('camera.steps.allow'),
+  t('camera.steps.back', { appName: env.PUBLIC_APP_NAME }),
+];
 const STORAGE_FAILED: ScanReading = {
   kind: 'unreadable',
   title: t('scan.storageFailed.title'),
@@ -52,6 +69,9 @@ const STORAGE_FAILED: ScanReading = {
 /** The sheet, typing a new parcel or the number of an unread draft. */
 type Typing = { fix: string | null; value: string };
 
+/** What is on screen: nothing yet, the explanation, or the viewfinder. */
+type Opening = 'pending' | 'explain' | 'scan';
+
 function ScanPage() {
   const navigate = useNavigate();
   const session = useSession();
@@ -60,6 +80,11 @@ function ScanPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const finishing = useRef(false);
   const camera = useCameraState();
+  const [opening, setOpening] = useState<Opening>(() =>
+    wasExplained() ? 'scan' : 'pending',
+  );
+  /** The agent chose to work without the camera: it only reopens on a tap. */
+  const [fallback, setFallback] = useState(false);
   const view = useBatch();
   const queue = decodeQueue();
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
@@ -77,11 +102,49 @@ function ScanPage() {
   }, []);
 
   useEffect(() => {
+    if (opening !== 'pending') return;
+    let cancelled = false;
+    void cameraPermission().then((permission) => {
+      if (!cancelled) setOpening(cameraEntry(wasExplained(), permission));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [opening]);
+
+  /** The refusal takes the whole screen until the agent picks a way around it. */
+  const refused = camera === 'denied' && !fallback;
+  const viewfinder = opening === 'scan' && !refused;
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
-    void cameraStream.attach(video);
+    if (!viewfinder || !video) return;
+    if (!fallback) void cameraStream.attach(video);
     return () => cameraStream.detach(video);
-  }, []);
+  }, [viewfinder, fallback]);
+
+  const onAllow = () => {
+    markExplained();
+    setOpening('scan');
+  };
+
+  /** Working without the camera: the viewfinder stays off until asked. */
+  const withoutCamera = () => {
+    markExplained();
+    setFallback(true);
+    setOpening('scan');
+  };
+
+  const onImportInstead = () => {
+    withoutCamera();
+    inputRef.current?.click();
+  };
+
+  /** Asking again is a choice: a new refusal shows the Réglages steps again. */
+  const onRetry = () => {
+    setFallback(false);
+    const video = videoRef.current;
+    void (video ? cameraStream.attach(video) : cameraStream.retry());
+  };
 
   const batchId = view?.batch?.id;
   useEffect(() => {
@@ -181,6 +244,12 @@ function ScanPage() {
   /** While an unread label is on screen, any entry fills that draft. */
   const onType = () => setTyping({ fix: unread.current, value: '' });
 
+  /** From the refusal screen: typing is the way to work, the camera stays off. */
+  const onTypeInstead = () => {
+    withoutCamera();
+    onType();
+  };
+
   const onTyped = async ({ fix, value }: Typing) => {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
     const typed = { carrier, tracking, trackingNorm };
@@ -228,60 +297,76 @@ function ScanPage() {
       ? { ...reading, last }
       : reading.kind !== 'idle'
         ? reading
-        : camera === 'blocked'
-          ? BLOCKED
-          : camera !== 'live'
-            ? STARTING
-            : last
-              ? { kind: 'read', fields: [], last }
-              : reading;
+        : (cameraReading(camera, fallback, t) ??
+          (last ? { kind: 'read', fields: [], last } : reading));
 
   const entry = typing && typedEntry(typing.value, t);
 
+  if (opening === 'pending') return null;
+
+  /* The file input lives outside the screens: the chooser opened from one
+     screen must deliver its file to the input still mounted on the next. */
   return (
     <>
-      <ScanScreen
-        count={view?.count ?? 0}
-        reading={shown}
-        controls={!typing}
-        dim={typing ? 0.4 : undefined}
-        video={
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="size-full object-cover"
-          />
-        }
-        onClose={close}
-        onShutter={onShutter}
-        onUndo={onUndo}
-        onDone={() => void onDone()}
-        onImport={() => inputRef.current?.click()}
-        onType={onType}
-        onFix={onType}
-        onKeep={onKeep}
-        onRetry={() => void cameraStream.retry()}
-      />
-      {typing && entry && (
-        <SaisieManuelleSheet
-          fixed
-          value={entry.grouped}
-          hint={entry.hint ?? undefined}
-          submitLabel={typing.fix ? t('scan.type.save') : undefined}
-          onDigit={(key) =>
-            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
-          }
-          onLetter={(key) =>
-            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
-          }
-          onDelete={() =>
-            setTyping((s) => s && { ...s, value: s.value.slice(0, -1) })
-          }
-          onSubmit={onSubmit}
-          onDismiss={() => setTyping(null)}
+      {refused ? (
+        <CameraDeniedScreen
+          steps={SETTINGS_STEPS}
+          onPhoto={onImportInstead}
+          onKeyboard={onTypeInstead}
+          onRetry={onRetry}
         />
+      ) : opening === 'explain' ? (
+        <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
+      ) : (
+        <>
+          <ScanScreen
+            count={view?.count ?? 0}
+            reading={shown}
+            controls={!typing}
+            dim={typing ? 0.4 : undefined}
+            video={
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="size-full object-cover"
+              />
+            }
+            onClose={close}
+            onShutter={onShutter}
+            onUndo={onUndo}
+            onDone={() => void onDone()}
+            onImport={() => inputRef.current?.click()}
+            onType={onType}
+            onFix={onType}
+            onKeep={onKeep}
+            onRetry={onRetry}
+          />
+          {typing && entry && (
+            <SaisieManuelleSheet
+              fixed
+              value={entry.grouped}
+              hint={entry.hint ?? undefined}
+              submitLabel={typing.fix ? t('scan.type.save') : undefined}
+              onDigit={(key) =>
+                setTyping(
+                  (s) => s && { ...s, value: appendTyped(s.value, key) },
+                )
+              }
+              onLetter={(key) =>
+                setTyping(
+                  (s) => s && { ...s, value: appendTyped(s.value, key) },
+                )
+              }
+              onDelete={() =>
+                setTyping((s) => s && { ...s, value: s.value.slice(0, -1) })
+              }
+              onSubmit={onSubmit}
+              onDismiss={() => setTyping(null)}
+            />
+          )}
+        </>
       )}
       <input
         ref={inputRef}

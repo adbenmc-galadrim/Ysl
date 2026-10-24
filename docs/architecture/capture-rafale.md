@@ -12,9 +12,37 @@ dans le viseur, sur un flux unique, est le mode principal ; la photo native rest
   `<video>` (`attach`), le lui rend en partant (`detach`) **sans fermer le flux** : iOS
   redemande l'autorisation à chaque nouveau `getUserMedia` (S1). Au retour au premier plan
   (`visibilitychange`, `pageshow`), la vidéo est relancée ; le flux n'est rouvert que si la
-  piste est `ended`. États : `idle`, `starting`, `live`, `blocked` (`useCameraState`).
+  piste est `ended`. États : `idle`, `starting`, `live`, `denied`, `blocked`
+  (`useCameraState`). `denied` est un refus (`NotAllowedError`, `SecurityError`) : la
+  sortie passe par Réglages ; `blocked` est tout autre échec (pas de caméra, occupée).
+  `cameraPermission()` lit `navigator.permissions` sans déclencher la boîte iOS.
 - `capture.ts` : `grabFrame` (`ImageCapture.grabFrame`, repli `createImageBitmap(video)`),
   `encodePhoto` (JPEG, grand côté 1 600 px, qualité 0,8 : §6.6), `fitWithin`.
+- `entry.ts` : le drapeau `courrier.camera.explained` (`localStorage`) et `cameraEntry` :
+  l'écran d'explication ne se montre qu'une fois par appareil, jamais si la permission est
+  déjà `granted`.
+
+## Autorisation et refus (YSL-29, `routes/_authenticated/scan.tsx`)
+
+Trois écrans se relaient avant le viseur, dessinés dans `@repo/ui`
+(`screens/demarrage/camera-permission-screen.tsx`) :
+
+1. **Autoriser la caméra** : au premier lancement, avant tout `getUserMedia`, parce que la
+   boîte d'iOS arrive sans contexte. « Autoriser » pose le drapeau et attache la vidéo (ce
+   qui ouvre la caméra) ; « Importer une photo à la place » pose le drapeau, passe en
+   **repli** et ouvre le sélecteur de fichier.
+2. **La caméra est bloquée** : dès que l'état est `denied`, plein écran, avec les étapes
+   Réglages (la dernière cite `PUBLIC_APP_NAME`). « J'ai réautorisé, réessayer » rappelle
+   `getUserMedia` ; « Une photo » et « Au clavier » passent en repli.
+3. **Le viseur** (`ScanScreen`) : en repli, la caméra ne se rouvre jamais seule (un nouvel
+   appel redemanderait l'autorisation), l'encart `blocked` porte « Caméra non activée /
+   Activer la caméra » (`idle`), « Caméra refusée » (`denied`) ou « iOS a bloqué la
+   caméra » (`blocked`), toujours avec « Importer une photo ».
+
+Le repli est l'état d'un écran, pas de l'appareil : rouvrir Scan refait le chemin normal,
+et « Réessayer » ou « Activer la caméra » le lève, de sorte qu'un nouveau refus remontre
+l'écran plein et ses étapes. Le choix de l'encart est une fonction pure (`notice.ts`,
+`cameraReading`).
 
 « Au-dessus du routeur » (§6.4) : le routeur n'a pas d'onglets persistants (chaque écran
 est une route), le flux survit donc dans le singleton, pas dans un composant.
