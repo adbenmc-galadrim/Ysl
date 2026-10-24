@@ -169,6 +169,31 @@ export async function undoLast(
   return draft;
 }
 
+/**
+ * "Abandonner ces N colis": the whole batch goes, drafts and photos alike,
+ * so the next scan starts clean instead of picking the old pile up again.
+ * Rows first, files after, as `undoLast` does.
+ */
+export async function discardBatch(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  batchId: string,
+): Promise<void> {
+  const drafts = await db.transaction(
+    'rw',
+    [db.draftBatch, db.draftParcel],
+    async () => {
+      const gone = await listDrafts(db, batchId);
+      await db.draftParcel.bulkDelete(gone.map((draft) => draft.id));
+      await db.draftBatch.delete(batchId);
+      return gone;
+    },
+  );
+  for (const draft of drafts) {
+    if (draft.photoId) await deletePhoto(db, files, draft.photoId);
+  }
+}
+
 export type FinishOptions = { batchId: string; agentId: string; now?: Date };
 
 /**

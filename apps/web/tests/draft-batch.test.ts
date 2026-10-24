@@ -4,6 +4,7 @@ import {
   addDraft,
   countDrafts,
   currentBatch,
+  discardBatch,
   finishBatch,
   openBatch,
   promotedStatus,
@@ -145,6 +146,28 @@ describe('undoLast', () => {
     expect(files.files.has(`${undone.photoId}.jpg`)).toBe(false);
     expect(files.files.has(`${kept.photoId}.jpg`)).toBe(true);
     expect(await db.photo.count()).toBe(1);
+  });
+});
+
+describe('discardBatch', () => {
+  it('removes the batch, its drafts and their photos', async () => {
+    const batch = await openBatch(db, NOW);
+    const first = await addDraft(db, files, batch.id, photo(), NOW);
+    await typeDraft(db, batch.id, {
+      carrier: 'UPS',
+      tracking: '1Z999AA10123456784',
+      trackingNorm: '1Z999AA10123456784',
+    });
+    const third = await addDraft(db, files, batch.id, photo(), later(2));
+
+    await discardBatch(db, files, batch.id);
+
+    expect(await currentBatch(db)).toBeUndefined();
+    expect(await db.draftParcel.count()).toBe(0);
+    expect(await db.photo.count()).toBe(0);
+    expect(files.files.has(`${first.photoId}.jpg`)).toBe(false);
+    expect(files.files.has(`${third.photoId}.jpg`)).toBe(false);
+    expect((await openBatch(db, later(60))).id).not.toBe(batch.id);
   });
 });
 

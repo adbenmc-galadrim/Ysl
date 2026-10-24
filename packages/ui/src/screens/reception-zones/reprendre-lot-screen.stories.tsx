@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { LabelThumb } from '#components/label-thumb';
 import { INTERRUPTED_BATCH } from '#fixtures/batches';
+import { ColisScreen } from '#screens/colis/colis-screen';
 import { Accueil } from '#screens/colis/colis-screen.stories';
 import { ReprendreLotScreen } from '#screens/reception-zones/reprendre-lot-screen';
 
@@ -25,7 +26,7 @@ export const ReprendreLeLot: Story = {
   parameters: { reference: '09-zones-d-ombre/reception--reprendre-le-lot' },
   args: {
     // The home as the Colis story draws it, so both stay in step.
-    home: Accueil.args,
+    behind: <ColisScreen {...Accueil.args} />,
     ...INTERRUPTED_BATCH,
     // Boards alternate, as photos of different boxes would.
     thumbnail: (_, i) => (
