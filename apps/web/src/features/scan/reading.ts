@@ -1,5 +1,6 @@
 import type { ReadableFormat } from '@repo/barcode';
 import type { DecodeResult } from '@repo/barcode/worker';
+import { parseSymbols, type ParsedCode } from '@repo/contract/codes';
 import {
   DEFAULT_LOCALE,
   type TranslateFn,
@@ -47,9 +48,34 @@ function formatWeight(kg: number, t: TranslateFn): string {
   });
 }
 
+const describes = (code: ParsedCode) =>
+  code.recipient !== undefined ||
+  code.pieces !== undefined ||
+  code.weightKg !== undefined;
+
+/**
+ * The structured code shown with the tracking: the one it came from, else
+ * the one of the same number, else any code that describes the parcel.
+ */
+function structuredCode(
+  symbols: readonly { format: string; text: string }[],
+  { verdict, parsed }: SelectedTracking,
+): ParsedCode | null {
+  if (parsed) return parsed;
+  const codes = parseSymbols(symbols);
+  return (
+    codes.find((code) =>
+      code.trackings.some((c) => c.value === verdict.value),
+    ) ??
+    codes.find(describes) ??
+    null
+  );
+}
+
 /** The fields of the tracking kept for the label, the same one the batch stores. */
 function trackingFields(
-  { verdict, parsed }: SelectedTracking,
+  { verdict }: SelectedTracking,
+  parsed: ParsedCode | null,
   t: TranslateFn,
 ): ScanField[] {
   const carrier = verdict.carrier ?? parsed?.carrier ?? null;
@@ -99,7 +125,10 @@ export function toScanReading(
     };
   }
   const selected = selectTracking(result.symbols);
-  if (selected) return { kind: 'read', fields: trackingFields(selected, t) };
+  if (selected) {
+    const parsed = structuredCode(result.symbols, selected);
+    return { kind: 'read', fields: trackingFields(selected, parsed, t) };
+  }
   const fields: ScanField[] = result.symbols.map((symbol) => ({
     label: formatLabel(symbol.format, t),
     value: displayText(symbol.text),

@@ -104,6 +104,54 @@ describe('toScanReading with a structured 2D code', () => {
     });
   });
 
+  it.each([
+    ['1D first', ['Code128', 'Aztec']],
+    ['2D first', ['Aztec', 'Code128']],
+  ])(
+    'keeps the 2D fields when the 1D code of the same number is read %s',
+    (_, order) => {
+      const by: Record<string, string> = {
+        Code128: '8J02299079750',
+        Aztec: aztec,
+      };
+      const reading = toScanReading(
+        { symbols: order.map((format) => symbol(format, by[format]!)) },
+        t,
+      );
+      expect(reading).toMatchObject({
+        fields: [
+          { label: 'Transporteur', value: 'Colissimo' },
+          { label: 'Suivi', value: '8J02299079750' },
+          { label: 'Destinataire', value: 'CAMILLE MOREL' },
+          { label: 'Colis', value: '1/2' },
+          { label: 'Poids', value: '0,5 kg' },
+        ],
+      });
+    },
+  );
+
+  it('takes the recipient of a structured code that lost its tracking', () => {
+    const maxicode = `[)>${RS}01${GS}9675007${GS}250${GS}004${GS}1Z99230623${GS}UPSN${GS}E6344W${GS}296${GS}${GS}1/1${GS}3${GS}N${GS}${GS}PARIS${RS}${EOT}`;
+    const reading = toScanReading(
+      {
+        symbols: [
+          symbol('MaxiCode', maxicode),
+          symbol('Code128', '1ZE6344W0499230622'),
+        ],
+      },
+      t,
+    );
+    expect(reading).toMatchObject({
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: '1ZE6344W0499230622' },
+        { label: 'Destinataire', status: 'warning' },
+        { label: 'Colis', value: '1/1' },
+        { label: 'Poids', value: '1,36 kg' },
+      ],
+    });
+  });
+
   it('flags a tracking the carrier rules do not vouch for', () => {
     const chrono = aztec
       .replace('118J0229907975', 'HA915306631JB')
