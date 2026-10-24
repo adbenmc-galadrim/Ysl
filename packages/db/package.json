@@ -28,7 +28,7 @@
     "pg": "catalog:"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.11",
+    "@electric-sql/pglite": "catalog:",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/node": "catalog:",
