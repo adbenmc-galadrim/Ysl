@@ -125,6 +125,24 @@ est dans le résumé du job, et les planches référence | capture | diff de tou
 dans l'artefact `planches-visuelles` du run (7 jours). En local : `pnpm storybook` puis
 `pnpm visual -- --filter 05-colis`.
 
+## Écrans de l'app
+
+Connecté, l'agent arrive sur **Colis** (`/`), la liste de ce qu'il reste à faire. De là :
+« Scanner » ouvre la réception (`/scan`), « Remettre » la remise (`/remise`), et le bouton
+« Menu » les **Réglages** (`/reglages`), avec le compte (`/reglages/compte`, déconnexion) et
+le choix des arrondis (`/reglages/arrondis`). Le groupe « Service courrier » des réglages
+n'apparaît qu'aux administrateurs. Une adresse inconnue affiche « Page introuvable » et un
+retour aux colis.
+
+Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l'app leur
+passe les données et les actions. Tant que la base locale n'existe pas, la liste des colis
+est vide et la caméra ne démarre pas : les écrans Scan et Remise sont des coquilles.
+
+Les arrondis (presets `Carrés` à `Arrondis`, pastilles rondes ou non) sont un réglage de
+l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le
+premier rendu (`data-radius`, `data-tiles`). Storybook propose les mêmes presets dans sa
+barre d'outils.
+
 ## App installée sur l'iPhone
 
 L'app est une PWA : sur iPhone, elle s'utilise installée sur l'écran d'accueil. Ouverte
