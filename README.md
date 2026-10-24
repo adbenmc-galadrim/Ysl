@@ -4,20 +4,20 @@ Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
 
 ## Structure
 
-| Dossier | Rôle |
-| --- | --- |
-| `apps/web` | Application Vite, React 19, TanStack Router, Query et Form |
-| `apps/server` | API Hono qui sert le routeur tRPC |
-| `apps/spike-camera` | Prototype jetable du spike S1 (caméra et rafale), servi sous `/spike-camera/` |
-| `apps/spike-storage` | Prototype jetable du spike S4 (stockage et mises à jour), servi sous `/spike-storage/` |
-| `apps/spike-email` | Prototype jetable du spike S5 (e-mail par la messagerie du téléphone), servi sous `/spike-email/` |
-| `packages/api` | Routeur tRPC ; l'app web n'en importe que le type |
-| `packages/auth` | Better Auth : comptes, rôles agent et admin, client web |
-| `packages/contract` | Schémas zod partagés entre l'app et l'API |
-| `packages/db` | Client Drizzle et schéma Postgres 17 |
-| `packages/shared` | Variables d'environnement, logs, traductions |
-| `packages/ui` | Design system et Storybook |
-| `docs/` | Cahier des charges, recherches, maquettes |
+| Dossier              | Rôle                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| `apps/web`           | Application Vite, React 19, TanStack Router, Query et Form                                        |
+| `apps/server`        | API Hono qui sert le routeur tRPC                                                                 |
+| `apps/spike-camera`  | Prototype jetable du spike S1 (caméra et rafale), servi sous `/spike-camera/`                     |
+| `apps/spike-storage` | Prototype jetable du spike S4 (stockage et mises à jour), servi sous `/spike-storage/`            |
+| `apps/spike-email`   | Prototype jetable du spike S5 (e-mail par la messagerie du téléphone), servi sous `/spike-email/` |
+| `packages/api`       | Routeur tRPC ; l'app web n'en importe que le type                                                 |
+| `packages/auth`      | Better Auth : comptes, rôles agent et admin, client web                                           |
+| `packages/contract`  | Schémas zod partagés entre l'app et l'API                                                         |
+| `packages/db`        | Client Drizzle et schéma Postgres 17                                                              |
+| `packages/shared`    | Variables d'environnement, logs, traductions                                                      |
+| `packages/ui`        | Design system et Storybook                                                                        |
+| `docs/`              | Cahier des charges, recherches, maquettes                                                         |
 
 ## Démarrage local
 
@@ -59,15 +59,15 @@ publique de l'API) sont obligatoires ; en local, des valeurs de développement s
 L'app tourne sur Coolify, sur un serveur Hetzner situé dans l'UE : les données y restent.
 Deux environnements, chacun avec son app, son API et sa base Postgres 17 gérée par Coolify :
 
-| Environnement | App | API | Branche |
-| --- | --- | --- | --- |
-| Production | https://ysl.shinseo.fr | https://ysl-api.shinseo.fr | `prod` |
-| Staging | https://ysl-staging.shinseo.fr | https://ysl-api-staging.shinseo.fr | `main` |
+| Environnement | App                            | API                                | Branche |
+| ------------- | ------------------------------ | ---------------------------------- | ------- |
+| Production    | https://ysl.shinseo.fr         | https://ysl-api.shinseo.fr         | `prod`  |
+| Staging       | https://ysl-staging.shinseo.fr | https://ysl-api-staging.shinseo.fr | `main`  |
 
-| Ressource | Build | Variables |
-| --- | --- | --- |
-| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` (adresse de l'API de l'environnement) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr` en production, `https://ysl-staging.shinseo.fr` en staging) au build |
+| Ressource | Build                               | Variables                                                                                                                                                                                                                            |
+| --------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| API       | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true`                                                                                                                                           |
+| App       | `apps/web/Dockerfile`, port 80      | `PUBLIC_SERVER_URL` (adresse de l'API de l'environnement) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr` en production, `https://ysl-staging.shinseo.fr` en staging) au build |
 
 `TRUST_PROXY=true` fait lire l'IP du client dans la dernière entrée de `X-Forwarded-For`,
 celle qu'ajoute le proxy de Coolify : sans elle, le rate limit de connexion verrait tous
@@ -112,10 +112,10 @@ Chaque pull request passe `.github/workflows/ci.yml` (deux jobs en parallèle, m
 10 minutes) ; `deploy.yml` rejoue les mêmes vérifications sur `main` et `prod` avant de
 déployer.
 
-| Job | Ce qu'il vérifie |
-| --- | --- |
-| Lint, types et tests | `pnpm turbo run lint check-types test` sur tout le monorepo |
-| Storybook et écrans | `pnpm build-storybook`, puis `pnpm visual -- --max 0.75` contre le build statique servi par `vite preview`, sur un runner macOS (les références ont été calibrées sur Chromium macOS ; sous Linux les polices décalent chaque écran de 0,8 point) |
+| Job                  | Ce qu'il vérifie                                                                                                                                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lint, types et tests | `pnpm turbo run lint check-types test` sur tout le monorepo                                                                                                                                                                                       |
+| Storybook et écrans  | `pnpm build-storybook`, puis `pnpm visual -- --max 0.75` contre le build statique servi par `vite preview`, sur un runner macOS (les références ont été calibrées sur Chromium macOS ; sous Linux les polices décalent chaque écran de 0,8 point) |
 
 `pnpm visual` capture chaque story `Écrans/` qui déclare `parameters.reference` et la
 compare au PNG de `packages/ui/reference/` : le run échoue dès qu'un écran diffère de plus
@@ -135,8 +135,9 @@ n'apparaît qu'aux administrateurs. Une adresse inconnue affiche « Page introuv
 retour aux colis.
 
 Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l'app leur
-passe les données et les actions. Tant que la base locale n'existe pas, la liste des colis
-est vide et la caméra ne démarre pas : les écrans Scan et Remise sont des coquilles.
+passe les données et les actions. La liste des colis se lit dans la base locale de
+l'appareil (Dexie, voir `docs/architecture/stockage-local.md`) ; tant que la caméra ne
+démarre pas, les écrans Scan et Remise sont des coquilles.
 
 Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le
@@ -190,16 +191,16 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 
 ## Commandes
 
-| Commande | Effet |
-| --- | --- |
-| `pnpm dev` | Lance l'app et l'API |
-| `pnpm lint` | ESLint, sans avertissement toléré |
-| `pnpm check-types` | Vérification TypeScript de tous les paquets |
-| `pnpm test` | Tests Vitest |
-| `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
-| `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
-| `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte agent ou admin |
-| `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
-| `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
-| `pnpm visual` | Compare les stories à leurs références ; échoue au-dessus de `--max` % (0,6 par défaut) |
+| Commande                | Effet                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`              | Lance l'app et l'API                                                                                                                                                |
+| `pnpm lint`             | ESLint, sans avertissement toléré                                                                                                                                   |
+| `pnpm check-types`      | Vérification TypeScript de tous les paquets                                                                                                                         |
+| `pnpm test`             | Tests Vitest                                                                                                                                                        |
+| `pnpm build`            | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
+| `pnpm db:generate`      | Génère une migration Drizzle depuis le schéma                                                                                                                       |
+| `pnpm db:migrate`       | Applique les migrations                                                                                                                                             |
+| `pnpm auth:create-user` | Crée un compte agent ou admin                                                                                                                                       |
+| `pnpm auth:generate`    | Régénère le schéma Drizzle des tables Better Auth                                                                                                                   |
+| `pnpm storybook`        | Storybook du design system sur http://localhost:6006                                                                                                                |
+| `pnpm visual`           | Compare les stories à leurs références ; échoue au-dessus de `--max` % (0,6 par défaut)                                                                             |
