@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { HomeScreen } from '#/features/health/components/home-screen';
+import { ColisHome } from '#/features/parcels/components/colis-home';
 
 export const Route = createFileRoute('/_authenticated/')({
-  component: HomeScreen,
+  component: ColisHome,
 });

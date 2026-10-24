@@ -11,6 +11,8 @@ import {
   isIosBrowserTab,
 } from '#/features/install/browser-tab';
 import { InstallLanding } from '#/features/install/components/install-landing';
+import { ErrorScreen } from '#/features/shell/components/error-screen';
+import { NotFoundScreen } from '#/features/shell/components/not-found-screen';
 
 export type RouterContext = {
   queryClient: QueryClient;
@@ -19,6 +21,8 @@ export type RouterContext = {
 export const Route = createRootRouteWithContext<RouterContext>()({
   head: () => ({ meta: [{ title: env.PUBLIC_APP_NAME }] }),
   component: RootComponent,
+  notFoundComponent: NotFoundScreen,
+  errorComponent: ErrorScreen,
 });
 
 function RootComponent() {
