@@ -6,11 +6,21 @@ import {
   type PullOutput,
   type PullPage,
 } from '@repo/contract/sync';
-import { syncGeneration } from '@repo/db/schema';
+import { event, syncGeneration } from '@repo/db/schema';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 
 type Row = Record<string, unknown> & { id: string; serverXid: number };
+
+/**
+ * A pull from zero (first launch, reset) skips the events older than this:
+ * the journal is the bulk of a mailroom's rows and a phone only needs the
+ * recent ones. A pull from a cursor still carries every new event.
+ */
+export const EVENT_HORIZON_DAYS = 90;
+
+const horizon = (now: Date) =>
+  new Date(now.getTime() - EVENT_HORIZON_DAYS * 24 * 60 * 60 * 1000);
 
 /**
  * The generation, and the oldest transaction still running as the pull
@@ -36,6 +46,7 @@ async function pageOf(
   organizationId: string,
   page: Pick<PullPage, 'from' | 'bound' | 'after'>,
   limit: number,
+  now: Date,
 ): Promise<Row[]> {
   const rows = await db
     .select()
@@ -45,6 +56,9 @@ async function pageOf(
         eq(table.organizationId, organizationId),
         gte(table.serverXid, page.from),
         lt(table.serverXid, page.bound),
+        table === event && page.from === 0
+          ? gte(event.at, horizon(now))
+          : undefined,
         page.after
           ? sql`(${table.serverXid}, ${table.id}) > (${page.after.xid}, ${page.after.id})`
           : undefined,
@@ -72,6 +86,7 @@ export async function pull(
   db: AnyDb,
   organizationId: string,
   input: PullInput,
+  now = new Date(),
 ): Promise<PullOutput> {
   const { generation, bound } = await snapshot(db);
   let reset = false;
@@ -105,6 +120,7 @@ export async function pull(
       organizationId,
       { ...range, after },
       room + 1,
+      now,
     );
     const kept = page.slice(0, room);
     rows.push(

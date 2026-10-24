@@ -26,7 +26,8 @@ function dispatch(event: UpdateEvent) {
   for (const listener of listeners) listener();
 }
 
-function appScope() {
+/** The scope of the app's service worker: the origin's root. */
+export function appScope() {
   return new URL('/', location.href).href;
 }
 

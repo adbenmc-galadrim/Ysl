@@ -61,6 +61,7 @@ describe('createSyncEngine', () => {
       status: 'idle',
       lastSyncAt: NOW,
       lastError: null,
+      pulled: 0,
     });
     expect((await db.syncState.get(SYNC_STATE_KEYS.lastSyncAt))?.value).toEqual(
       NOW,

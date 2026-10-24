@@ -9,6 +9,8 @@ import type { OfflinePack } from '#fixtures/offline';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
+export type { OfflinePack };
+
 export type OfflineDownload = {
   pack: OfflinePack;
   state: 'done' | 'running' | 'paused';
@@ -37,7 +39,12 @@ function trailing({ state, progress }: OfflineDownload) {
     return <Icon name="check" size={22} className="mr-px text-green" />;
   if (state === 'paused')
     return (
-      <Icon name="wifiOff" size={20} aria-label="En pause" className="mr-0.5 text-orange" />
+      <Icon
+        name="wifiOff"
+        size={20}
+        aria-label="En pause"
+        className="mr-0.5 text-orange"
+      />
     );
   return (
     <span className="text-15 font-semibold">{`${Math.round(progress * 100)} %`}</span>
@@ -86,7 +93,12 @@ export function OfflinePrepScreen({
         description={description}
         className="mt-[54px]"
       />
-      <div className={cn('flex flex-col gap-[34px]', stacked ? 'mt-[50px]' : 'mt-[70px]')}>
+      <div
+        className={cn(
+          'flex flex-col gap-[34px]',
+          stacked ? 'mt-[50px]' : 'mt-[70px]',
+        )}
+      >
         {downloads.map((download) => {
           const look = LOOK[download.state];
           return (

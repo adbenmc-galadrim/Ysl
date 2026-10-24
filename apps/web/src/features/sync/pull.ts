@@ -14,7 +14,11 @@ import {
 
 export type PullClient = (input: PullInput) => Promise<PullOutput>;
 
-export type PullOptions = { limit?: number };
+export type PullOptions = {
+  limit?: number;
+  /** Called after each page with the rows written so far: the first pull shows it. */
+  onProgress?: (rows: number) => void;
+};
 
 export type PullOutcome = { rows: number; reset: boolean; cursor: SyncCursor };
 
@@ -78,15 +82,17 @@ export async function applyChanges(
 export async function pullChanges(
   db: CourrierDatabase,
   client: PullClient,
-  { limit = PULL_PAGE_DEFAULT }: PullOptions = {},
+  { limit = PULL_PAGE_DEFAULT, onProgress }: PullOptions = {},
 ): Promise<PullOutcome> {
   const cursor = await readCursor(db);
   let output = await client({ cursor, page: null, limit });
   const { generation, reset } = output;
   let rows = await applyChanges(db, output.rows);
+  onProgress?.(rows);
   while (output.next) {
     output = await client({ cursor: null, page: output.next, limit });
     rows += await applyChanges(db, output.rows);
+    onProgress?.(rows);
   }
   const next: SyncCursor = { generation, xid: output.cursor };
   await db.syncState.put({ key: SYNC_STATE_KEYS.cursor, value: next });

@@ -10,6 +10,8 @@ export type SyncSnapshot = {
   /** When a push and a pull last both went through, on this device. */
   lastSyncAt: Date | null;
   lastError: string | null;
+  /** Rows written by the pull of the run in flight, or of the last one. */
+  pulled: number;
 };
 
 export type SyncEngineOptions = {
@@ -46,6 +48,7 @@ export const INITIAL_SYNC_SNAPSHOT: SyncSnapshot = {
   status: 'idle',
   lastSyncAt: null,
   lastError: null,
+  pulled: 0,
 };
 
 function isUnauthorized(error: unknown): boolean {
@@ -97,11 +100,13 @@ export function createSyncEngine({
       set({ status: 'offline' });
       return nothing('offline');
     }
-    set({ status: 'syncing' });
+    set({ status: 'syncing', pulled: 0 });
     try {
       const pushed = await pushOutbox(db, push);
       if (pushed.stopped === 'failed') throw pushed.error;
-      const pulled = await pullChanges(db, pull);
+      const pulled = await pullChanges(db, pull, {
+        onProgress: (rows) => set({ pulled: rows }),
+      });
       const at = now();
       await db.syncState.put({ key: SYNC_STATE_KEYS.lastSyncAt, value: at });
       if (pushed.stopped === 'retry') {

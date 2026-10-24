@@ -168,4 +168,25 @@ describe('pullChanges', () => {
     await expect(pullChanges(db, client)).rejects.toThrow('Failed to fetch');
     expect(await readCursor(db)).toEqual({ generation: GENERATION, xid: 300 });
   });
+  it('reports the rows written after each page', async () => {
+    const first = page(
+      [{ entity: 'parcel', row: serverRow(parcelRow(), 410) }],
+      {
+        next: { from: 0, bound: 500, entity: 5, after: null },
+      },
+    );
+    const second = page([
+      { entity: 'parcel', row: serverRow(parcelRow(), 411) },
+      { entity: 'parcel', row: serverRow(parcelRow(), 412) },
+    ]);
+    const client = vi
+      .fn()
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second);
+    const seen: number[] = [];
+
+    await pullChanges(db, client, { onProgress: (rows) => seen.push(rows) });
+
+    expect(seen).toEqual([1, 3]);
+  });
 });

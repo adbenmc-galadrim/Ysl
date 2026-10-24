@@ -52,7 +52,7 @@ describe('readText', () => {
         ),
     };
 
-    const text = await readText(db, draft.id, photo().blob, ocr);
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
 
     expect(text).toMatchObject({
       ocrName: 'Camille MOREL',
@@ -81,7 +81,7 @@ describe('readText', () => {
     });
     const ocr = { recognize: () => Promise.reject(new Error('worker')) };
 
-    const text = await readText(db, draft.id, photo().blob, ocr);
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
 
     expect(text).toMatchObject({ ocrName: null, kept: true, failed: true });
     expect(await db.draftParcel.get(draft.id)).toMatchObject({
@@ -107,8 +107,8 @@ describe('readText', () => {
       },
     };
 
-    const first = readText(db, draft.id, photo().blob, ocr);
-    const second = readText(db, draft.id, photo().blob, ocr);
+    const first = readText(db, draft.id, photo().blob, ocr, true);
+    const second = readText(db, draft.id, photo().blob, ocr, true);
     finish(result([line('SHIP TO: Hugo Lefèvre', 10)]));
 
     expect(await first).toMatchObject({ ocrName: 'Hugo Lefèvre' });
@@ -122,9 +122,33 @@ describe('readText', () => {
     await db.draftParcel.delete(draft.id);
     const ocr = { recognize: () => Promise.resolve(result([])) };
 
-    expect(await readText(db, draft.id, photo().blob, ocr)).toMatchObject({
-      kept: false,
+    expect(await readText(db, draft.id, photo().blob, ocr, true)).toMatchObject(
+      {
+        kept: false,
+        failed: false,
+      },
+    );
+  });
+  it('skips the text while the reader files are not on the device', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    let called = 0;
+    const ocr = {
+      recognize: () => {
+        called += 1;
+        return Promise.resolve(result([]));
+      },
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, false);
+
+    expect(text).toEqual({
+      draftId: draft.id,
+      ocrName: null,
+      kept: true,
       failed: false,
     });
+    expect(called).toBe(0);
+    expect((await db.draftParcel.get(draft.id))?.ocrState).toBe('skipped');
   });
 });
