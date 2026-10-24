@@ -23,7 +23,7 @@ export type ColisScreenProps = {
   notice?: ReactNode;
   /** The sections still on their way are drawn as a placeholder section. */
   loading?: boolean;
-  /** A toast floating over the bottom bar. */
+  /** A toast floating over the bottom bar, or in its place when the bar is hidden. */
   toast?: ReactNode;
   /**
    * The search and scan bar. The empty state hides it: its own "Scanner des
@@ -83,6 +83,10 @@ export function ColisScreen({
             <div className="px-5">{toast}</div>
             {bar}
           </div>
+        ) : toast ? (
+          // Without the bar (empty state), the toast keeps the bar's place so
+          // news of a new version still reaches a desk with nothing to do.
+          <div className="px-5 pb-[calc(var(--safe-bottom)+6px)]">{toast}</div>
         ) : (
           bar || undefined
         )
