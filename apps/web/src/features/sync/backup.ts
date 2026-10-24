@@ -29,11 +29,18 @@ export async function buildBackup(
   { now = new Date(), app }: { now?: Date; app: string },
 ): Promise<Backup> {
   const waiting = await listWaitingChanges(db);
-  const changes = waiting.map(({ op, row }): BackupChange => {
-    const { seq, ...rest } = op;
-    void seq;
-    return { ...rest, row };
-  });
+  const changes = waiting.map(({ op, row }): BackupChange => ({
+    opId: op.opId,
+    entity: op.entity,
+    entityId: op.entityId,
+    type: op.type,
+    state: op.state,
+    clientTs: op.clientTs,
+    attempts: op.attempts,
+    lastError: op.lastError,
+    patch: op.patch,
+    row,
+  }));
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,

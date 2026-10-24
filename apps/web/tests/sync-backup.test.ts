@@ -13,7 +13,7 @@ describe('buildBackup', () => {
     const db = await openTestDatabase();
     const kept = parcelRow();
     const removed = parcelRow();
-    const [, , deletion] = await commitLocal(
+    const [, refused, deletion] = await commitLocal(
       db,
       {
         upserts: [
@@ -26,7 +26,7 @@ describe('buildBackup', () => {
     );
     await db.outbox
       .where('opId')
-      .equals(deletion!)
+      .anyOf([refused!, deletion!])
       .modify((op) => {
         op.state = 'rejected';
         op.lastError = 'doublon';
@@ -49,8 +49,8 @@ describe('buildBackup', () => {
       version: 1,
       exportedAt: NOW,
       app: '2.0.3',
-      pending: 2,
-      rejected: 1,
+      pending: 1,
+      rejected: 2,
     });
     expect(backup.changes).toHaveLength(3);
     expect(backup.changes[0]).toMatchObject({
@@ -60,6 +60,11 @@ describe('buildBackup', () => {
       state: 'queued',
       patch: { id: kept.id, tracking: kept.tracking },
       row: { id: kept.id, deletedAt: null },
+    });
+    expect(backup.changes[1]).toMatchObject({
+      type: 'upsert',
+      state: 'rejected',
+      patch: { id: removed.id, tracking: removed.tracking },
     });
     expect(backup.changes[2]).toMatchObject({
       type: 'delete',
