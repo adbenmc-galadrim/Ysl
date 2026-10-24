@@ -10,6 +10,10 @@ const GEOPOST_COLISSIMO = /^%\d{7}11(\d[A-Z]\d{10})\d{6}$/;
 const GEOPOST_DPD = /^%\d{7}(\d{14})\d{6}$/;
 const GS1_SSCC = /\(00\)(\d{18})/;
 
+/** The Geopost codes carry the Colissimo ID13 without its check digit. */
+export const colissimoWithKey = (id12: string): string =>
+  `${id12}${gs1Check(id12.slice(2))}`;
+
 const extract = (text: string): BarcodeTracking[] => {
   if (FEDEX_34.test(text)) {
     return [{ value: text.slice(-12), context: 'fedex' }];
@@ -22,8 +26,7 @@ const extract = (text: string): BarcodeTracking[] => {
   }
   const colissimo = GEOPOST_COLISSIMO.exec(text)?.[1];
   if (colissimo !== undefined) {
-    const value = `${colissimo}${gs1Check(colissimo.slice(2))}`;
-    return [{ value, context: 'colissimo' }];
+    return [{ value: colissimoWithKey(colissimo), context: 'colissimo' }];
   }
   const dpd = GEOPOST_DPD.exec(text)?.[1];
   if (dpd !== undefined) return [{ value: dpd, context: 'dpd' }];
