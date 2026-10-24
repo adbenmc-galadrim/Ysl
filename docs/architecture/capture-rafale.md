@@ -202,8 +202,8 @@ majuscules, sans espaces, tirets ni points), `findDuplicate` cherche le même nu
   doublon : deux lectures du même code qui aboutissent ensemble ne se retirent pas l'une
   l'autre) ;
 - sinon le colis **le plus récent** de la table `parcel` qui le porte et n'est pas
-  supprimé, de ce lot comme d'un lot antérieur, scanné ici ou arrivé par `sync.pull`
-  d'un autre appareil.
+  supprimé : un lot antérieur de cet appareil (un colis n'y entre qu'à Terminer), ou
+  un colis arrivé par `sync.pull` d'un autre appareil.
 
 L'alerte est **non bloquante** (cahier P1.4) : le cadre passe en jaune, le bandeau dit
 « Déjà dans ce lot » (nom, transporteur, 4 derniers chiffres, heure du premier scan) ou
@@ -211,17 +211,22 @@ L'alerte est **non bloquante** (cahier P1.4) : le cadre passe en jaune, le bande
 le contact, sinon le nom lu), et l'avis du bas « Ce colis n'a pas été ajouté une
 deuxième fois » offre deux sorties :
 
-- **Voir le colis** : dans ce lot, l'écran affiche les champs du colis d'origine (ses
-  codes rejoués par `toScanReading`) ; d'un lot antérieur, l'app ouvre la liste Colis
-  (la fiche colis attend YSL-48).
-- **Ajouter quand même** : le brouillon rejoint le lot tel quel.
+- **Voir le colis** : les champs du colis d'origine prennent la place de l'alerte, sans
+  quitter la rafale : ses codes rejoués par `toScanReading` pour un brouillon du lot,
+  transporteur, suivi et destinataire (`parcelFields`) pour un colis déjà reçu (la fiche
+  colis attend YSL-48). Regarder, c'est renoncer à l'ajout : le doublon et sa photo sont
+  abandonnés ; le rescanner rouvre l'alerte.
+- **Ajouter quand même** : le brouillon rejoint le lot tel quel, ses codes à l'écran, et
+  la passe texte (OCR) qu'il a manquée pendant la retenue repart, hors du travail du lot.
 
-Entre les deux, le brouillon est **retenu** (`holdDraft`) : retiré de `draft_parcel`
-(compteur et « Dernier ajouté » ne le comptent plus) mais sa photo reste, pour qu'il
-revienne intact (`restoreDraft`, même identifiant). Toute autre sortie de l'alerte
-(capture suivante, nouvelle saisie, Annuler, la croix, Terminer, fermeture de l'écran)
-l'abandonne avec sa photo (`dropHeld` : le balayage des orphelins ne retire que les
-fichiers sans ligne `photo`). Un brouillon sans numéro n'est jamais un doublon ; la
+Tant que l'alerte est là, le brouillon est **retenu** (`holdDraft`) : retiré de
+`draft_parcel` (compteur et « Dernier ajouté » ne le comptent plus) mais sa photo reste,
+pour qu'il revienne intact (`restoreDraft`, même identifiant). Toute autre sortie de
+l'alerte (capture suivante, nouvelle saisie, Annuler, la croix, Terminer, fermeture de
+l'écran) l'abandonne avec sa photo (`dropHeld` : le balayage des orphelins ne retire que les
+fichiers sans ligne `photo`). Un numéro saisi sur un brouillon illisible compte à partir
+de l'instant de la saisie : une lecture arrivée entre-temps est son original. Un
+brouillon sans numéro n'est jamais un doublon ; la
 reprise d'une lecture après relance (`recoverPending`) ne fait pas le contrôle, faute
 d'écran pour l'alerte. Le serveur n'impose rien : « Ajouter quand même » rend la clé
 non unique par construction, l'index `parcel_tracking_norm_idx` n'est pas unique et

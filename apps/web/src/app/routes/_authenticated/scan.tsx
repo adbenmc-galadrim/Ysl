@@ -52,7 +52,11 @@ import { db } from '#/features/db/database';
 import type { DraftParcel } from '#/features/db/schema';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
-import { duplicateReading, recipientOf } from '#/features/scan/duplicate';
+import {
+  duplicateReading,
+  parcelFields,
+  recipientOf,
+} from '#/features/scan/duplicate';
 import { lastOf } from '#/features/scan/last';
 import {
   readDraft,
@@ -97,8 +101,8 @@ type Typing = { fix: string | null; value: string };
 /** What is on screen: nothing yet, the explanation, or the viewfinder. */
 type Opening = 'pending' | 'explain' | 'scan';
 
-/** The draft kept out of the batch while the duplicate alert is up, and what it doubles. */
-type Held = { draft: DraftParcel; found: Duplicate };
+/** The draft kept out of the batch while the duplicate alert is up, what it doubles, and who that is for. */
+type Held = { draft: DraftParcel; found: Duplicate; recipient: string };
 
 function ScanPage() {
   const navigate = useNavigate();
@@ -171,7 +175,7 @@ function ScanPage() {
     const taken = await take();
     if (!taken) return false;
     dropHeldDraft();
-    held.current = { draft: taken, found };
+    held.current = { draft: taken, found, recipient };
     unread.current = null;
     shownDraft.current = null;
     setReading(duplicateReading(found, recipient, t));
@@ -392,7 +396,8 @@ function ScanPage() {
   /**
    * The number typed fills the unread draft it was asked for, else makes
    * one; either way it is checked against the batch and the parcels first,
-   * and a duplicate is held before it lands.
+   * and a duplicate is held before it lands. A number landing on an older
+   * draft counts from now: a reading that came in between is its original.
    */
   const onTyped = async ({ fix, value }: Typing) => {
     const { carrier, tracking, trackingNorm } = typedEntry(value, t);
@@ -402,7 +407,7 @@ function ScanPage() {
     if (fixing) {
       const fixed = { ...fixing, reading: 'typed' as const, ...typed };
       const taken = await holdDuplicate(
-        fixing,
+        { ...fixing, createdAt: new Date() },
         trackingNorm,
         async () => (await holdDraft(db, fixing.id)) && fixed,
       );
@@ -421,19 +426,26 @@ function ScanPage() {
     await addTypedDraft(db, draft);
   };
 
-  /** "Voir le colis": the original's fields, or the list where it lives. */
+  /**
+   * "Voir le colis": the original's fields take the alert's place, in the
+   * batch as it was read, received before as the list knows it. Looking is
+   * deciding not to add: the double goes; scanning again offers it anew.
+   */
   const onView = () => {
     const taken = held.current;
     if (!taken) return;
     dropHeldDraft();
-    if (taken.found.kind === 'parcel') {
-      close();
-      return;
-    }
-    const { draft } = taken.found;
     shownDraft.current = null;
+    const { found } = taken;
     setReading(
-      toScanReading({ symbols: draft.symbols }, t, { ocrName: draft.ocrName }),
+      found.kind === 'batch'
+        ? toScanReading({ symbols: found.draft.symbols }, t, {
+            ocrName: found.draft.ocrName,
+          })
+        : {
+            kind: 'read',
+            fields: parcelFields(found.parcel, taken.recipient, t),
+          },
     );
   };
 

@@ -2,7 +2,11 @@ import 'fake-indexeddb/auto';
 import { createTranslator } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import type { DraftParcel } from '#/features/db/schema';
-import { duplicateReading, recipientOf } from '#/features/scan/duplicate';
+import {
+  duplicateReading,
+  parcelFields,
+  recipientOf,
+} from '#/features/scan/duplicate';
 import {
   contactRow,
   NOW,
@@ -84,6 +88,23 @@ describe('duplicateReading', () => {
       title: 'Déjà remis hier',
       detail: 'Hugo Lefèvre, UPS ···0622, remis à 17 h 30',
     });
+  });
+});
+
+describe('parcelFields', () => {
+  it('shows a received parcel as the screen shows a reading', () => {
+    expect(parcelFields(parcelRow(), 'Camille Morel', t)).toEqual([
+      { label: 'Transporteur', value: 'UPS' },
+      { label: 'Suivi', value: '1ZE6344W0499230622', mono: true },
+      { label: 'Destinataire', value: 'Camille Morel' },
+    ]);
+    expect(
+      parcelFields(parcelRow({ carrier: null, tracking: null }), 'X', t),
+    ).toMatchObject([
+      { value: 'Inconnu' },
+      { value: 'Non lu' },
+      { value: 'X' },
+    ]);
   });
 });
 

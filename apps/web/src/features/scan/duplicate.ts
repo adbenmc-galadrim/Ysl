@@ -1,5 +1,5 @@
 import type { TranslateFn } from '@repo/shared/i18n';
-import type { ScanReading } from '@repo/ui';
+import type { ScanField, ScanReading } from '@repo/ui';
 import type { Duplicate } from '#/features/batch/duplicates';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import { formatTime, startOfDay } from '#/features/parcels/model';
@@ -41,6 +41,30 @@ export async function recipientOf(
     if (contact) return contact.name;
   }
   return parcel.readName ?? t('parcel.recipient.unknown');
+}
+
+/**
+ * "Voir le colis" for a parcel received before: its fields as the screen
+ * shows a reading, the agent stays in the burst (the parcel's own screen
+ * comes with the fiche colis).
+ */
+export function parcelFields(
+  parcel: LocalParcel,
+  recipient: string,
+  t: TranslateFn,
+): ScanField[] {
+  return [
+    {
+      label: t('scan.field.carrier'),
+      value: parcel.carrier ?? t('scan.field.unknown'),
+    },
+    {
+      label: t('scan.field.tracking'),
+      value: parcel.tracking ?? t('scan.field.missing'),
+      mono: true,
+    },
+    { label: t('scan.field.recipient'), value: recipient },
+  ];
 }
 
 /**
