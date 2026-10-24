@@ -29,6 +29,13 @@
       "when": 1792836250282,
       "tag": "0003_sync_generation",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792842728876,
+      "tag": "0004_transitions_statut",
+      "breakpoints": true
     }
   ]
 }
