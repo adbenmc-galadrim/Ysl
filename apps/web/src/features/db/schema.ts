@@ -91,6 +91,31 @@ export type LocalPhoto = {
 
 export type SyncStateEntry = { key: string; value: unknown };
 
+/** What the reader made of a draft's photo so far. */
+export type DraftReading = 'pending' | 'read' | 'unreadable' | 'failed';
+
+export type DraftSymbol = { format: string; text: string };
+
+/** A batch being scanned on this device; the server learns of it at the end. */
+export type DraftBatch = { id: string; startedAt: Date; endedAt: Date | null };
+
+/**
+ * A parcel of the batch in progress: one tap, one photo, the reading when
+ * it lands. Local only, never queued; `finishBatch` turns it into a parcel.
+ */
+export type DraftParcel = {
+  id: string;
+  batchId: string;
+  createdAt: Date;
+  photoId: string | null;
+  reading: DraftReading;
+  carrier: string | null;
+  tracking: string | null;
+  trackingNorm: string | null;
+  readName: string | null;
+  symbols: DraftSymbol[];
+};
+
 /** Indexes of the synced tables: the primary key, then what the app queries. */
 const SYNCED_STORES: Record<SyncedEntity, string> = {
   directory_person: 'id, nameNorm, email',
@@ -114,6 +139,12 @@ const LOCAL_STORES = {
   sync_state: 'key',
 };
 
+/** Version 2 (YSL-23): the batch in progress and its draft parcels. */
+const DRAFT_STORES = {
+  draft_batch: 'id, startedAt',
+  draft_parcel: 'id, batchId, createdAt, trackingNorm',
+};
+
 export const SYNCED_TABLE_NAMES = Object.keys(SYNCED_STORES) as SyncedEntity[];
 
 export class CourrierDatabase extends Dexie {
@@ -132,10 +163,13 @@ export class CourrierDatabase extends Dexie {
   outbox!: EntityTable<OutboxOp, 'seq'>;
   photo!: Table<LocalPhoto, string>;
   syncState!: Table<SyncStateEntry, string>;
+  draftBatch!: Table<DraftBatch, string>;
+  draftParcel!: Table<DraftParcel, string>;
 
   constructor(name = DATABASE_NAME) {
     super(name);
     this.version(1).stores({ ...SYNCED_STORES, ...LOCAL_STORES });
+    this.version(2).stores(DRAFT_STORES);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -151,6 +185,8 @@ export class CourrierDatabase extends Dexie {
     this.outbox = this.table('outbox');
     this.photo = this.table('photo');
     this.syncState = this.table('sync_state');
+    this.draftBatch = this.table('draft_batch');
+    this.draftParcel = this.table('draft_parcel');
   }
 
   /** The Dexie table of a synced entity, by its server name. */
