@@ -8,4 +8,5 @@ export * from '#schema/parcel';
 export * from '#schema/sender';
 export * from '#schema/setting';
 export * from '#schema/sync';
+export * from '#schema/sync-generation';
 export * from '#schema/sync-op';

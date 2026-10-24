@@ -99,6 +99,7 @@ describe('migrations', () => {
         'event',
         'setting',
         'sync_op',
+        'sync_generation',
       ]),
     );
   });
@@ -120,6 +121,30 @@ describe('migrations', () => {
       expect(names).toContain(`${table_name}_stamp_server_xid_insert`);
       expect(names).toContain(`${table_name}_stamp_server_xid_update`);
     }
+  });
+});
+
+describe('sync generation', () => {
+  it('start with one generation, and refuse a second row', async () => {
+    const [row] = await db.select().from(schema.syncGeneration);
+
+    expect(row?.id).toBe(1);
+    expect(row?.generation).toMatch(/^[0-9a-f-]{36}$/);
+    await expectViolation(
+      db.insert(schema.syncGeneration).values({ id: 2 }),
+      'sync_generation_single_row',
+    );
+  });
+
+  it('change the generation when a restore bumps it', async () => {
+    const [before] = await db.select().from(schema.syncGeneration);
+
+    await db
+      .update(schema.syncGeneration)
+      .set({ generation: sql`gen_random_uuid()`, restoredAt: new Date() });
+    const [after] = await db.select().from(schema.syncGeneration);
+
+    expect(after?.generation).not.toBe(before?.generation);
   });
 });
 

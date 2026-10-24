@@ -490,6 +490,16 @@ Table "sync_op" {
   }
 }
 
+Table "sync_generation" {
+  "id" smallint [pk, not null, default: 1]
+  "generation" uuid [not null, default: `gen_random_uuid()`]
+  "restored_at" timestamptz [not null, default: `now()`]
+
+  Checks {
+    `"sync_generation"."id" = 1` [name: 'sync_generation_single_row']
+  }
+}
+
 Ref "account_user_id_user_id_fk":"user"."id" <? "account"."user_id" [update: no action, delete: cascade]
 
 Ref "session_user_id_user_id_fk":"user"."id" <? "session"."user_id" [update: no action, delete: cascade]
