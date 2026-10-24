@@ -38,8 +38,13 @@ export function resolveSession(
       try {
         store.setItem(SESSION_KEY, JSON.stringify(lookup.session));
       } catch {
-        return lookup.session;
+        /* a full or disabled storage only costs the offline relaunch */
       }
       return lookup.session;
   }
+}
+
+/** Signing out forgets the kept session at once, before the server confirms. */
+export function forgetSession(store: SessionStore): void {
+  store.removeItem(SESSION_KEY);
 }

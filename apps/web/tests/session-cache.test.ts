@@ -1,6 +1,10 @@
 import type { Session } from '@repo/auth/client';
 import { describe, expect, it } from 'vitest';
-import { resolveSession, SESSION_KEY } from '#/features/auth/session-cache';
+import {
+  forgetSession,
+  resolveSession,
+  SESSION_KEY,
+} from '#/features/auth/session-cache';
 
 const session = {
   user: { id: 'u1', name: 'Agent', email: 'agent@example.com', role: 'agent' },
@@ -33,6 +37,12 @@ describe('resolveSession', () => {
     const store = memoryStore({ [SESSION_KEY]: JSON.stringify(session) });
     expect(resolveSession({ kind: 'none' }, store)).toBeNull();
     expect(store.data.has(SESSION_KEY)).toBe(false);
+  });
+
+  it('forgets the kept session at sign-out', () => {
+    const store = memoryStore({ [SESSION_KEY]: JSON.stringify(session) });
+    forgetSession(store);
+    expect(resolveSession({ kind: 'unreachable' }, store)).toBeNull();
   });
 
   it('has nothing to offer unreachable on a device that never signed in', () => {

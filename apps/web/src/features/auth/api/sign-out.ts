@@ -1,6 +1,7 @@
 import { signOut } from '@repo/auth/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { forgetSession } from '#/features/auth/session-cache';
 
 export function useSignOut() {
   const queryClient = useQueryClient();
@@ -12,6 +13,7 @@ export function useSignOut() {
       if (error) throw new Error(error.message);
     },
     onSuccess: async () => {
+      forgetSession(localStorage);
       queryClient.clear();
       await router.navigate({ to: '/connexion', search: {} });
     },

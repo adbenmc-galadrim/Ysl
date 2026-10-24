@@ -5,13 +5,16 @@ import {
   type SessionLookup,
 } from '#/features/auth/session-cache';
 
+/** Only a clear "no session" signs the device out; anything else is noise. */
+const SIGNED_OUT_STATUSES = new Set([401, 403]);
+
 async function lookupSession(): Promise<SessionLookup> {
   try {
     const { data, error } = await authClient.getSession();
     if (data) return { kind: 'session', session: data };
-    const status = error?.status ?? 0;
-    const unreachable = status === 0 || status >= 500 || !navigator.onLine;
-    return error && unreachable ? { kind: 'unreachable' } : { kind: 'none' };
+    if (!error || SIGNED_OUT_STATUSES.has(error.status))
+      return { kind: 'none' };
+    return { kind: 'unreachable' };
   } catch {
     return { kind: 'unreachable' };
   }
