@@ -232,6 +232,8 @@ describe('extractFields — inputs', () => {
       carrier: null,
       recipient: null,
       sender: null,
+      senderId: null,
+      accounts: [],
       pieces: null,
       weightKg: null,
       codes: [],
@@ -247,5 +249,181 @@ describe('extractFields — inputs', () => {
       value: UPS,
       candidates: [{ value: UPS }],
     });
+  });
+});
+
+describe('extractFields — sender', () => {
+  const ups = [{ format: 'Code128' as const, text: UPS }];
+  const metalworks = {
+    id: 'sender-1',
+    name: 'Metalworks SpA',
+    nameNorm: 'metalworks spa',
+  };
+  const account = (confirmations: number) => ({
+    carrier: 'ups',
+    accountNumber: '12345e',
+    senderId: metalworks.id,
+    name: metalworks.name,
+    confirmations,
+  });
+
+  it('prefills the sender of a known UPS account at 0.90', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      senders: { accounts: [account(1)] },
+    });
+    expect(sender).toMatchObject({
+      value: 'Metalworks SpA',
+      confidence: CONFIDENCE.learnedAccount,
+      level: 'sure',
+      flags: [],
+    });
+    expect(sender?.sources).toEqual([
+      {
+        kind: 'learned',
+        format: 'account:ups',
+        confidence: 0.9,
+        value: 'Metalworks SpA',
+      },
+    ]);
+    expect(senderId).toBe('sender-1');
+  });
+
+  it('rises to 0.95 once the account was confirmed three times', () => {
+    const { sender } = extractFields({
+      symbols: ups,
+      senders: { accounts: [account(3)] },
+    });
+    expect(sender?.confidence).toBe(CONFIDENCE.learnedAccountConfirmed);
+  });
+
+  it('leaves the sender empty when the account is unknown, account kept', () => {
+    const { sender, senderId, accounts } = extractFields({
+      symbols: ups,
+      senders: { accounts: [{ ...account(5), accountNumber: '99999X' }] },
+    });
+    expect(sender).toBeNull();
+    expect(senderId).toBeNull();
+    expect(accounts).toEqual([{ carrier: 'ups', accountNumber: '12345E' }]);
+  });
+
+  it('reads the account of a structured code too', () => {
+    const { sender } = extractFields({
+      symbols: [{ format: 'PDF417', text: fedexPdf417(FEDEX) }],
+      senders: {
+        accounts: [
+          {
+            carrier: 'fedex',
+            accountNumber: '123456789',
+            senderId: 'sender-2',
+            name: 'ACME SRL',
+            confirmations: 0,
+          },
+        ],
+      },
+    });
+    expect(sender).toMatchObject({ value: 'ACME SRL', confidence: 0.99 });
+    expect(sender?.sources.map((s) => s.kind)).toEqual(['2d', 'learned']);
+  });
+
+  it('flags a code and the dictionary that disagree, the code first', () => {
+    const { sender, senderId } = extractFields({
+      symbols: [{ format: 'PDF417', text: fedexPdf417(FEDEX) }],
+      senders: {
+        accounts: [
+          {
+            carrier: 'fedex',
+            accountNumber: '123456789',
+            senderId: 'sender-1',
+            name: 'Metalworks SpA',
+            confirmations: 3,
+          },
+        ],
+      },
+    });
+    expect(sender).toMatchObject({
+      value: 'ACME SRL',
+      confidence: 0.82,
+      level: 'to-verify',
+      flags: ['conflict'],
+    });
+    expect(senderId).toBeNull();
+  });
+
+  it('shows an OCR sender alone as a bare guess at 0.40', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      ocr: { text: '', senderName: 'Atelier Tissage Nord' },
+    });
+    expect(sender).toMatchObject({
+      value: 'Atelier Tissage Nord',
+      confidence: CONFIDENCE.unvalidated,
+      level: 'none',
+    });
+    expect(sender?.sources).toEqual([
+      {
+        kind: 'ocr',
+        format: 'block',
+        confidence: 0.4,
+        value: 'Atelier Tissage Nord',
+      },
+    ]);
+    expect(senderId).toBeNull();
+  });
+
+  it('takes a known sender the OCR spells the same, to verify', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      ocr: { text: '', senderName: 'METALWORKS S.P.A.' },
+      senders: { known: [metalworks] },
+    });
+    expect(sender).toMatchObject({
+      value: 'Metalworks SpA',
+      confidence: CONFIDENCE.knownSender,
+      level: 'to-verify',
+    });
+    expect(senderId).toBe('sender-1');
+  });
+
+  it('takes a known sender the OCR nearly spells, lower', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      ocr: { text: '', senderName: 'METALW0RKS SPA' },
+      senders: { known: [metalworks] },
+    });
+    expect(sender).toMatchObject({
+      value: 'Metalworks SpA',
+      confidence: CONFIDENCE.knownSenderFuzzy,
+      level: 'to-verify',
+    });
+    expect(senderId).toBe('sender-1');
+    expect(sender?.candidates).toHaveLength(1);
+  });
+
+  it('keeps a stranger as a guess instead of the nearest known sender', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      ocr: { text: '', senderName: 'Atelier Tissage Nord' },
+      senders: { known: [metalworks] },
+    });
+    expect(sender).toMatchObject({
+      value: 'Atelier Tissage Nord',
+      level: 'none',
+    });
+    expect(senderId).toBeNull();
+  });
+
+  it('lets the account confirm an OCR match of the same sender', () => {
+    const { sender, senderId } = extractFields({
+      symbols: ups,
+      ocr: { text: '', senderName: 'Metalworks SpA' },
+      senders: { accounts: [account(0)], known: [metalworks] },
+    });
+    expect(sender).toMatchObject({ value: 'Metalworks SpA', level: 'sure' });
+    expect(sender?.sources.map((s) => s.format)).toEqual([
+      'account:ups',
+      'sender',
+    ]);
+    expect(senderId).toBe('sender-1');
   });
 });

@@ -1,7 +1,8 @@
 import type { CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
+import type { AccountRead, SenderKnowledge } from './sender';
 
-export type SourceKind = '2d' | '1d' | 'ocr';
+export type SourceKind = '2d' | '1d' | 'ocr' | 'learned';
 
 export type ConfidenceLevel = 'sure' | 'to-verify' | 'none';
 
@@ -29,12 +30,17 @@ export type Field<T> = {
   candidates: Candidate<T>[];
 };
 
-/** Raw OCR of the label, reserved for the OCR rules (§4.3 ranks 5 to 7). */
-export type OcrInput = { text: string };
+/**
+ * What the OCR read: the raw text, reserved for the OCR rules (§4.3 ranks 5
+ * to 7), and the sender its `FROM` block names, when one does.
+ */
+export type OcrInput = { text: string; senderName?: string | null };
 
 export type ExtractInput = {
   symbols: readonly CodeSymbol[];
   ocr?: OcrInput | null;
+  /** The account dictionary and the senders already seen (§4.8). */
+  senders?: SenderKnowledge | null;
 };
 
 export type Extraction = {
@@ -42,6 +48,10 @@ export type Extraction = {
   carrier: Field<TrackingContext> | null;
   recipient: Field<string> | null;
   sender: Field<string> | null;
+  /** The known sender the sender field names, when it comes from the dictionary. */
+  senderId: string | null;
+  /** The carrier accounts the codes carry, to look up and to learn (§4.8). */
+  accounts: AccountRead[];
   pieces: Field<Pieces> | null;
   weightKg: Field<number> | null;
   codes: ParsedCode[];

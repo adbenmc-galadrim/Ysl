@@ -715,6 +715,9 @@ importers:
 
   packages/contract:
     dependencies:
+      '@repo/shared':
+        specifier: workspace:*
+        version: link:../shared
       zod:
         specifier: 'catalog:'
         version: 4.4.3

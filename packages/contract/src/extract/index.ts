@@ -5,11 +5,27 @@ import { type TrackingVerdict, validateTracking } from '../tracking/validate';
 import { VOTE, type Vote, voteCarrier } from './carrier';
 import { CONFIDENCE } from './confidence';
 import { canonical, mergeField, type Observation } from './fields';
+import { type AccountRead, accountsOf, extractSender } from './sender';
 import type { Extraction, ExtractInput, FieldSource } from './types';
 
 export { CONFIDENCE, combine, levelOf } from './confidence';
 export { VOTE } from './carrier';
 export { canonical } from './fields';
+export {
+  ACCOUNT_CONFIRMED,
+  accountKey,
+  carrierKey,
+  extractSender,
+  KNOWN_SENDER_SIMILARITY,
+} from './sender';
+export type {
+  AccountRead,
+  KnownAccount,
+  KnownSender,
+  SenderField,
+  SenderInput,
+  SenderKnowledge,
+} from './sender';
 export type {
   Candidate,
   ConfidenceLevel,
@@ -100,7 +116,11 @@ const hintOf = (reads: readonly Read[]): TrackingContext | undefined => {
   return carriers.size === 1 ? [...carriers][0] : undefined;
 };
 
-export const extractFields = ({ symbols }: ExtractInput): Extraction => {
+export const extractFields = ({
+  symbols,
+  ocr,
+  senders,
+}: ExtractInput): Extraction => {
   const reads: Read[] = symbols.map((symbol) => ({
     symbol,
     parsed: parseCode(symbol.text, symbol.format),
@@ -110,7 +130,8 @@ export const extractFields = ({ symbols }: ExtractInput): Extraction => {
   const trackings: Observation<string>[] = [];
   const votes: Vote[] = [];
   const recipients: Observation<string>[] = [];
-  const senders: Observation<string>[] = [];
+  const named: { name: string; source: FieldSource }[] = [];
+  const accounts: AccountRead[] = [];
   const pieces: Observation<{ index: number; total: number }>[] = [];
   const weights: Observation<number>[] = [];
 
@@ -126,6 +147,7 @@ export const extractFields = ({ symbols }: ExtractInput): Extraction => {
         });
       }
       const best = bestOf(parsed.trackings, parsed.carrier ?? hint);
+      accounts.push(...accountsOf(parsed, best?.verdict ?? null));
       if (best !== null) {
         const { value, carrier } = best.verdict;
         trackings.push({
@@ -156,9 +178,8 @@ export const extractFields = ({ symbols }: ExtractInput): Extraction => {
       }
       const sender = partyName(parsed.sender);
       if (sender) {
-        senders.push({
-          key: canonical(sender),
-          value: sender,
+        named.push({
+          name: sender,
           source: source(kind, format, CONFIDENCE.structured2d, sender),
         });
       }
@@ -182,6 +203,7 @@ export const extractFields = ({ symbols }: ExtractInput): Extraction => {
     }
     const best = bestOf(trackingsInBarcode(symbol.text), hint);
     if (best === null) continue;
+    accounts.push(...accountsOf(null, best.verdict));
     const { value, carrier } = best.verdict;
     trackings.push({
       key: value,
@@ -203,11 +225,20 @@ export const extractFields = ({ symbols }: ExtractInput): Extraction => {
     }
   }
 
+  const sender = extractSender({
+    named,
+    accounts,
+    ocrName: ocr?.senderName ?? null,
+    knowledge: senders,
+  });
+
   return {
     tracking: mergeField(trackings),
     carrier: voteCarrier(votes),
     recipient: mergeField(recipients),
-    sender: mergeField(senders),
+    sender: sender.field,
+    senderId: sender.senderId,
+    accounts,
     pieces: mergeField(pieces),
     weightKg: mergeField(weights),
     codes: reads.flatMap((r) => (r.parsed ? [r.parsed] : [])),
