@@ -38,3 +38,21 @@ export const AvecCode: Story = {
     );
   },
 };
+
+/** With `onLetter`: the "ABC" key opens the letter grid, same height. */
+export const Lettres: Story = {
+  render: () => {
+    const [value, setValue] = useState('1ZE6');
+    return (
+      <div className="flex flex-col gap-10">
+        <p className="font-mono text-20 font-medium">{value || ' '}</p>
+        <Keypad
+          letters
+          onDigit={(d) => setValue((v) => v + d)}
+          onLetter={(l) => setValue((v) => v + l)}
+          onDelete={() => setValue((v) => v.slice(0, -1))}
+        />
+      </div>
+    );
+  },
+};

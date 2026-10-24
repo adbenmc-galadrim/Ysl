@@ -91,8 +91,9 @@ export type LocalPhoto = {
 
 export type SyncStateEntry = { key: string; value: unknown };
 
-/** What the reader made of a draft's photo so far. */
-export type DraftReading = 'pending' | 'read' | 'unreadable' | 'failed';
+/** What the reader made of a draft's photo so far; `typed` came by hand. */
+export type DraftReading =
+  'pending' | 'read' | 'unreadable' | 'failed' | 'typed';
 
 export type DraftSymbol = { format: string; text: string };
 

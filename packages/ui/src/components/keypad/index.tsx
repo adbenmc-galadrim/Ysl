@@ -1,7 +1,11 @@
+import { useState } from 'react';
+
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+const LETTERS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
 
 const keyClass = [
   // Keys are drawn 2 px tighter than the fields above them.
@@ -13,6 +17,10 @@ const keyClass = [
 
 export type KeypadProps = {
   onDigit?: (digit: string) => void;
+  /** Adds the "ABC" key, and the letter grid behind it. */
+  onLetter?: (letter: string) => void;
+  /** Opens on the letters rather than the digits. */
+  letters?: boolean;
   onDelete?: () => void;
   className?: string;
 };
@@ -21,8 +29,54 @@ export type KeypadProps = {
  * The on-screen digit pad. The code is typed by the agent while the
  * recipient reads it aloud, so the keys are as big as the column allows
  * and the system keyboard — which would cover the code boxes — never opens.
+ *
+ * A tracking number also carries letters (`1Z…`, `8J…`, `HA…JB`): with
+ * `onLetter`, the empty bottom-left key switches to the letters, laid out
+ * over the same four rows so the sheet never jumps.
  */
-export function Keypad({ onDigit, onDelete, className }: KeypadProps) {
+export function Keypad({
+  onDigit,
+  onLetter,
+  onDelete,
+  letters: initialLetters = false,
+  className,
+}: KeypadProps) {
+  const [letters, setLetters] = useState(initialLetters);
+  const erase = (
+    <button
+      type="button"
+      aria-label="Effacer"
+      className={cn(keyClass)}
+      onClick={onDelete}
+    >
+      <Icon name="back" size={24} />
+    </button>
+  );
+  if (letters && onLetter) {
+    return (
+      <div className={cn('grid grid-cols-7 gap-x-1.5 gap-y-2', className)}>
+        {LETTERS.map((letter) => (
+          <button
+            key={letter}
+            type="button"
+            className={cn(keyClass, 'text-20')}
+            onClick={() => onLetter(letter)}
+          >
+            {letter}
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-label="Chiffres"
+          className={cn(keyClass, 'text-15 font-semibold')}
+          onClick={() => setLetters(false)}
+        >
+          123
+        </button>
+        {erase}
+      </div>
+    );
+  }
   return (
     <div className={cn('grid grid-cols-3 gap-x-2.5 gap-y-2', className)}>
       {DIGITS.map((digit) => (
@@ -35,8 +89,19 @@ export function Keypad({ onDigit, onDelete, className }: KeypadProps) {
           {digit}
         </button>
       ))}
-      {/* The bottom-left key stays empty, as on the iOS passcode pad. */}
-      <span aria-hidden="true" />
+      {onLetter ? (
+        <button
+          type="button"
+          aria-label="Lettres"
+          className={cn(keyClass, 'text-17 font-semibold')}
+          onClick={() => setLetters(true)}
+        >
+          ABC
+        </button>
+      ) : (
+        // The bottom-left key stays empty, as on the iOS passcode pad.
+        <span aria-hidden="true" />
+      )}
       <button
         type="button"
         className={cn(keyClass)}
@@ -44,14 +109,7 @@ export function Keypad({ onDigit, onDelete, className }: KeypadProps) {
       >
         0
       </button>
-      <button
-        type="button"
-        aria-label="Effacer"
-        className={cn(keyClass)}
-        onClick={onDelete}
-      >
-        <Icon name="back" size={24} />
-      </button>
+      {erase}
     </div>
   );
 }

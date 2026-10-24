@@ -1,5 +1,5 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { ScanScreen, type ScanReading } from '@repo/ui';
+import { SaisieManuelleSheet, ScanScreen, type ScanReading } from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
@@ -7,7 +7,9 @@ import {
   addDraft,
   finishBatch,
   openBatch,
+  typeDraft,
   undoLast,
+  updateDraft,
 } from '#/features/batch/store';
 import { useBatch } from '#/features/batch/use-batch';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
@@ -23,6 +25,7 @@ import {
 } from '#/features/scan/reader';
 import { failedReading, toScanReading } from '#/features/scan/reading';
 import { decodeQueue } from '#/features/scan/decoder';
+import { appendTyped, typedEntry } from '#/features/scan/typed';
 import { holdUpdates } from '#/features/update/updater';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -41,7 +44,11 @@ const STORAGE_FAILED: ScanReading = {
   kind: 'unreadable',
   title: t('scan.storageFailed.title'),
   hint: t('scan.storageFailed.hint'),
+  keep: t('scan.storageFailed.dismiss'),
 };
+
+/** The sheet, typing a new parcel or the number of an unread draft. */
+type Typing = { fix: string | null; value: string };
 
 function ScanPage() {
   const navigate = useNavigate();
@@ -54,6 +61,8 @@ function ScanPage() {
   const view = useBatch();
   const queue = decodeQueue();
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
+  const [typing, setTyping] = useState<Typing | null>(null);
+  const unread = useRef<string | null>(null);
 
   useEffect(() => holdUpdates(), []);
 
@@ -90,6 +99,7 @@ function ScanPage() {
         clone,
       );
       if (kept) {
+        unread.current = symbols.length === 0 ? draft.id : null;
         setReading(failed ? failedReading(t) : toScanReading({ symbols }, t));
       }
     } catch (error) {
@@ -98,6 +108,7 @@ function ScanPage() {
         bitmap?.close();
         clone?.close();
       }
+      if (!handed) unread.current = null;
       setReading(
         error instanceof StorageUnavailableError
           ? STORAGE_FAILED
@@ -126,8 +137,40 @@ function ScanPage() {
 
   const onUndo = () => {
     if (!view?.batch) return;
+    unread.current = null;
     setReading({ kind: 'idle' });
     void undoLast(db, photoFiles, view.batch.id);
+  };
+
+  const onKeep = () => {
+    unread.current = null;
+    setReading({ kind: 'idle' });
+  };
+
+  /** While an unread label is on screen, any entry fills that draft. */
+  const onType = () => setTyping({ fix: unread.current, value: '' });
+
+  const onTyped = async ({ fix, value }: Typing) => {
+    const { carrier, tracking, trackingNorm } = typedEntry(value, t);
+    const typed = { carrier, tracking, trackingNorm };
+    const filled =
+      fix !== null &&
+      (await updateDraft(db, fix, { reading: 'typed', ...typed }));
+    if (!filled) {
+      const batch = await openBatch(db);
+      await typeDraft(db, batch.id, typed);
+    }
+  };
+
+  const onSubmit = () => {
+    if (!typing || typing.value === '' || finishing.current) return;
+    const entry = typing;
+    setTyping(null);
+    if (unread.current === entry.fix || unread.current === null) {
+      unread.current = null;
+      setReading({ kind: 'idle' });
+    }
+    void trackWork(onTyped(entry));
   };
 
   const onDone = async () => {
@@ -148,8 +191,9 @@ function ScanPage() {
   };
 
   const last = view?.last && lastOf(view.last, t);
-  const shown: ScanReading =
-    reading.kind === 'read'
+  const shown: ScanReading = typing
+    ? { kind: 'idle' }
+    : reading.kind === 'read'
       ? { ...reading, last }
       : reading.kind !== 'idle'
         ? reading
@@ -161,11 +205,15 @@ function ScanPage() {
               ? { kind: 'read', fields: [], last }
               : reading;
 
+  const entry = typing && typedEntry(typing.value, t);
+
   return (
     <>
       <ScanScreen
         count={view?.count ?? 0}
         reading={shown}
+        controls={!typing}
+        dim={typing ? 0.4 : undefined}
         video={
           <video
             ref={videoRef}
@@ -180,8 +228,30 @@ function ScanPage() {
         onUndo={onUndo}
         onDone={() => void onDone()}
         onImport={() => inputRef.current?.click()}
+        onType={onType}
+        onFix={onType}
+        onKeep={onKeep}
         onRetry={() => void cameraStream.retry()}
       />
+      {typing && entry && (
+        <SaisieManuelleSheet
+          fixed
+          value={entry.grouped}
+          hint={entry.hint ?? undefined}
+          submitLabel={typing.fix ? t('scan.type.save') : undefined}
+          onDigit={(key) =>
+            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
+          }
+          onLetter={(key) =>
+            setTyping((s) => s && { ...s, value: appendTyped(s.value, key) })
+          }
+          onDelete={() =>
+            setTyping((s) => s && { ...s, value: s.value.slice(0, -1) })
+          }
+          onSubmit={onSubmit}
+          onDismiss={() => setTyping(null)}
+        />
+      )}
       <input
         ref={inputRef}
         type="file"

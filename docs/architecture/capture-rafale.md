@@ -62,6 +62,33 @@ décodage tourne en arrière-plan, la cadence des appuis ne dépend que de la ca
 que pour les transporteurs à code 2D utile. `thorough` reste pour la revue de lot
 (YSL-33) ou le banc (YSL-27), quand le temps ne compte plus.
 
+## La saisie manuelle (`features/scan/typed.ts`, F04)
+
+Une étiquette illisible ne bloque pas le lot : la touche clavier de la barre d'outils, ou
+« Saisir le numéro » sur l'avis « Aucun code lu », ouvre la feuille « Saisir le numéro »
+(`SaisieManuelleSheet` de `@repo/ui`, posée en `fixed` à côté de l'écran : la vidéo reste
+montée). Le pavé est dédié, jamais le clavier système ; sa touche « ABC » bascule sur les
+lettres que portent UPS (`1Z…`), Colissimo (`8J…`), Chronopost ou La Poste.
+
+- Le verdict s'affiche **en direct** sous le champ, par `validateTracking` sans contexte :
+  `sure` → « Format FedEx reconnu » ; `to-verify` → « Format DHL Express probable » (clé
+  juste, contexte absent) ou « Plusieurs formats possibles » ; clé fausse → « Clé de
+  contrôle incorrecte » ; rien tant qu'aucun format ne reconnaît le numéro (l'état normal en
+  cours de frappe).
+- **Rien n'est refusé** : le numéro saisi fait foi (§4.5, saisie de l'agent = 1,00). Le
+  transporteur est celui du verdict : désigné par un format et sa clé (`sure`), ou par le
+  format seul quand la clé n'est pas un critère (`to-verify` : Chronopost, La Poste, GLS,
+  DHL sans contexte, TNT) ; un format inconnu n'en désigne aucun. Un numéro mal tapé peut
+  ainsi passer pour le format sans clé de même longueur (une FedEx à un chiffre près lit
+  « Format GLS probable, ou clé incorrecte », comme un vrai Chronopost face à la clé S10,
+  §4.6) : l'indication le dit, et l'agent ou la revue de lot tranche. Sans transporteur,
+  le colis sortira en « À compléter ».
+- Sans avis à l'écran, la saisie crée un **brouillon sans photo** (`typeDraft`,
+  `reading: 'typed'`, `photoId: null`) ; tant que l'avis « Aucun code lu » est affiché,
+  la touche clavier comme le bouton de l'avis **complètent le brouillon illisible** en
+  place (`updateDraft`, la photo reste), jamais un second colis. Un brouillon `typed` est réglé
+  d'emblée : la reprise après relance ne le relit pas.
+
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
@@ -83,7 +110,8 @@ un lot »).
 
 ## Ce qui attend d'autres tickets
 
-Doublon dans le lot et saisie manuelle (YSL-24, l'index `trackingNorm` des brouillons est
-posé), OCR du nom (YSL-26), champs des codes 2D (YSL-25), torche (YSL-29), photo native
+Doublon dans le lot et en base (YSL-37, l'index `trackingNorm` des brouillons est posé),
+choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-33), OCR du
+nom (YSL-26), champs des codes 2D (YSL-25), torche (YSL-29), photo native
 `capture` et import multiple (YSL-30), liste du lot et revue (YSL-33), synchronisation des
 lignes promues (YSL-28), bip et flash à la capture (§6.6).

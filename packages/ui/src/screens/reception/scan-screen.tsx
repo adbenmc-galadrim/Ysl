@@ -12,7 +12,11 @@ import {
 } from '#components/camera-panel';
 import { CameraViewport } from '#components/camera-viewport';
 import { Keypad } from '#components/keypad';
-import { KeypadField, KeypadFieldHint } from '#components/keypad-field';
+import {
+  KeypadField,
+  KeypadFieldHint,
+  type KeypadFieldHintProps,
+} from '#components/keypad-field';
 import {
   ParcelBox,
   ParcelLabel,
@@ -20,6 +24,7 @@ import {
 } from '#components/parcel-label';
 import { ScanFields, type ScanField } from '#components/scan-fields';
 import { Sheet } from '#components/sheet';
+import type { IconName } from '#icons';
 import type { ReactNode } from 'react';
 
 /** What the scanner made of the label in front of it. */
@@ -32,8 +37,8 @@ export type ScanReading =
     }
   /** Already in the batch: when, and what to do about it. */
   | { kind: 'duplicate'; title: string; detail: string; message: string }
-  /** Nothing usable: why, and the two ways out. */
-  | { kind: 'unreadable'; title: string; hint: string }
+  /** Nothing usable: why, and the two ways out; `keep` renames the second. */
+  | { kind: 'unreadable'; title: string; hint: string; keep?: string }
   /** The camera is starting: black until the first frame. */
   | { kind: 'starting'; title: string }
   /** The camera was refused or is missing: retry, or import a photo. */
@@ -64,6 +69,10 @@ export type ScanScreenProps = {
   onUndo?: () => void;
   /** Asks for the camera again after a refusal. */
   onRetry?: () => void;
+  /** Types the number of the label that would not read. */
+  onFix?: () => void;
+  /** Keeps the unread photo as it is and closes the notice. */
+  onKeep?: () => void;
 };
 
 /**
@@ -88,6 +97,8 @@ export function ScanScreen({
   onType,
   onUndo,
   onRetry,
+  onFix,
+  onKeep,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
   const blocked = reading.kind === 'blocked';
@@ -175,8 +186,12 @@ export function ScanScreen({
           className="mx-4"
           actions={
             <>
-              <CameraNoticeButton>Saisir le numéro</CameraNoticeButton>
-              <CameraNoticeButton>Garder la photo</CameraNoticeButton>
+              <CameraNoticeButton onClick={onFix}>
+                Saisir le numéro
+              </CameraNoticeButton>
+              <CameraNoticeButton onClick={onKeep}>
+                {reading.keep ?? 'Garder la photo'}
+              </CameraNoticeButton>
             </>
           }
         >
@@ -232,53 +247,137 @@ export function ScanScreen({
   );
 }
 
-export type SaisieManuelleScreenProps = {
-  count: number;
-  label: ParcelLabelProps;
-  /** Digits typed so far, grouped as printed. */
+/** The verdict under the field, as the characters come. */
+export type SaisieManuelleHint = {
+  tone: Extract<KeypadFieldHintProps['tone'], 'green' | 'orange' | 'red'>;
+  text: string;
+};
+
+const HINT_ICON: Record<SaisieManuelleHint['tone'], IconName> = {
+  green: 'check',
+  orange: 'alert',
+  red: 'alert',
+};
+
+export type SaisieManuelleSheetProps = {
+  /** Characters typed so far, grouped as printed. */
   value: string;
-  /** The carrier the number matches, once it matches one. */
-  carrier?: string;
+  hint?: SaisieManuelleHint;
+  /** "Ajouter au lot", or what filling an unread label says. */
+  submitLabel?: string;
+  /** Over the app's own screen rather than around `behind`, see `Sheet`. */
+  fixed?: boolean;
+  /** Opens the pad on the letters, see `Keypad`. */
+  letters?: boolean;
+  onDigit?: (digit: string) => void;
+  onLetter?: (letter: string) => void;
+  onDelete?: () => void;
+  onSubmit?: () => void;
+  onDismiss?: () => void;
 };
 
 /**
- * The number typed by hand when the label will not read. The camera stays
- * behind the sheet, dimmed, so closing it puts the agent back where they
- * were; the carrier is recognised as the digits come.
+ * One field, the carrier recognised as the characters come, the pad, and
+ * the one button. Nothing is ever refused — an unknown number still joins
+ * the batch — so the button only waits for a first character.
+ */
+function SaisieManuelleBody({
+  value,
+  hint,
+  submitLabel = 'Ajouter au lot',
+  letters,
+  onDigit,
+  onLetter,
+  onDelete,
+  onSubmit,
+}: Omit<SaisieManuelleSheetProps, 'fixed' | 'onDismiss'>) {
+  return (
+    <>
+      <KeypadField value={value} className="mt-[22px]" />
+      {/* The hint keeps its line while empty, so the keypad never jumps. */}
+      {hint ? (
+        <KeypadFieldHint
+          tone={hint.tone}
+          icon={HINT_ICON[hint.tone]}
+          className="mt-[15px]"
+        >
+          {hint.text}
+        </KeypadFieldHint>
+      ) : (
+        <span className="mt-[15px] h-[18px]" />
+      )}
+      <Keypad
+        className="mt-[27px]"
+        letters={letters}
+        onDigit={onDigit}
+        onLetter={onLetter}
+        onDelete={onDelete}
+      />
+      <Button block className="mt-3" disabled={value === ''} onClick={onSubmit}>
+        {submitLabel}
+      </Button>
+    </>
+  );
+}
+
+/**
+ * The number typed by hand when the label will not read, as the app mounts
+ * it: next to its own `ScanScreen`, which keeps the live camera.
+ */
+export function SaisieManuelleSheet({
+  fixed,
+  onDismiss,
+  ...body
+}: SaisieManuelleSheetProps) {
+  return (
+    <Sheet
+      title="Saisir le numéro"
+      scrimClassName="bg-black/35"
+      fixed={fixed}
+      onDismiss={onDismiss}
+    >
+      <SaisieManuelleBody {...body} />
+    </Sheet>
+  );
+}
+
+export type SaisieManuelleScreenProps = Omit<
+  SaisieManuelleSheetProps,
+  'fixed'
+> & {
+  count: number;
+  label?: ParcelLabelProps;
+  video?: ReactNode;
+};
+
+/**
+ * The sheet as the mockup draws it: the camera stays behind, dimmed, so
+ * closing it puts the agent back where they were.
  */
 export function SaisieManuelleScreen({
   count,
   label,
-  value,
-  carrier,
+  video,
+  onDismiss,
+  ...body
 }: SaisieManuelleScreenProps) {
   return (
     <Sheet
       title="Saisir le numéro"
       scrimClassName="bg-black/35"
+      onDismiss={onDismiss}
       behind={
         <ScanScreen
           count={count}
           label={label}
+          video={video}
           reading={{ kind: 'idle' }}
           controls={false}
           dim={0.4}
         />
       }
     >
-      <KeypadField value={value} className="mt-[22px]" />
-      {/* The hint keeps its line while empty, so the keypad never jumps. */}
-      {carrier ? (
-        <KeypadFieldHint className="mt-[15px]">
-          Format {carrier} reconnu
-        </KeypadFieldHint>
-      ) : (
-        <span className="mt-[15px] h-[18px]" />
-      )}
-      <Keypad className="mt-[27px]" />
-      <Button block className="mt-3">
-        Ajouter au lot
-      </Button>
+      <SaisieManuelleBody {...body} />
     </Sheet>
   );
 }

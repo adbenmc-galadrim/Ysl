@@ -33,6 +33,19 @@ describe('lastOf', () => {
     ).toEqual({ name: 'Destinataire inconnu', meta: 'UPS ···0622' });
   });
 
+  it('shows a typed number like a read one', () => {
+    expect(
+      lastOf(
+        draft({
+          reading: 'typed',
+          carrier: 'UPS',
+          tracking: '1ZE6344W0499230622',
+        }),
+        t,
+      ).meta,
+    ).toBe('UPS ···0622');
+  });
+
   it('names what it could not read', () => {
     expect(lastOf(draft({ reading: 'unreadable' }), t).meta).toBe(
       'Transporteur inconnu',

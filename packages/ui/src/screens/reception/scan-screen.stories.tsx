@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 
 import { SCANNED_LABEL } from '#fixtures/reception';
 import {
@@ -102,7 +103,27 @@ export const SaisieManuelle: StoryObj<typeof SaisieManuelleScreen> = {
       count={12}
       label={SCANNED_LABEL}
       value="8779 7487 33"
-      carrier="FedEx"
+      hint={{ tone: 'green', text: 'Format FedEx reconnu' }}
+      onLetter={() => undefined}
     />
   ),
+};
+
+/** The "ABC" key swaps the digits for the letters a tracking number needs. */
+export const SaisieManuelleLettres: StoryObj<typeof SaisieManuelleScreen> = {
+  name: 'Saisie manuelle, lettres',
+  render: () => {
+    const [value, setValue] = useState('1ZE6');
+    return (
+      <SaisieManuelleScreen
+        count={12}
+        label={SCANNED_LABEL}
+        value={value.replace(/(.{4})(?=.)/g, '$1 ')}
+        letters
+        onDigit={(d) => setValue((v) => v + d)}
+        onLetter={(l) => setValue((v) => v + l)}
+        onDelete={() => setValue((v) => v.slice(0, -1))}
+      />
+    );
+  },
 };
