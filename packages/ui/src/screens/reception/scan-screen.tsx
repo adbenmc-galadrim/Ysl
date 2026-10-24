@@ -58,6 +58,10 @@ export type ScanScreenProps = {
   controls?: boolean;
   /** Veil over the picture, see `CameraViewport`. */
   dim?: number;
+  /** Shows the torch square, when the phone has one. */
+  torch?: boolean;
+  /** The torch is lit: the square turns white. */
+  torchOn?: boolean;
   onClose?: () => void;
   onTorch?: () => void;
   onOpenList?: () => void;
@@ -88,6 +92,8 @@ export function ScanScreen({
   video,
   controls = true,
   dim,
+  torch,
+  torchOn,
   onClose,
   onTorch,
   onOpenList,
@@ -126,6 +132,8 @@ export function ScanScreen({
     >
       <CameraTopBar
         title={`Lot : ${count} colis`}
+        torch={torch}
+        torchOn={torchOn}
         onClose={onClose}
         onTorch={onTorch}
       />

@@ -12,6 +12,8 @@ export type CameraTopBarProps = {
   closeLabel?: string;
   /** Shows the torch square; `onTorch` toggles it. */
   torch?: boolean;
+  /** The torch is lit: the square turns white, so the state reads at a glance. */
+  torchOn?: boolean;
   /**
    * `pill` sets the title in a dark chip, legible over any picture; `text`
    * is plain white, over a dark scene with nothing behind the bar.
@@ -30,6 +32,7 @@ export function CameraTopBar({
   onClose,
   closeLabel = 'Fermer',
   torch = true,
+  torchOn = false,
   titleStyle = 'pill',
   onTorch,
   className,
@@ -66,6 +69,8 @@ export function CameraTopBar({
             label="Lampe"
             variant="night"
             size="lg"
+            aria-pressed={torchOn}
+            className={cn(torchOn && 'bg-white text-black')}
             onClick={onTorch}
           />
         )}
