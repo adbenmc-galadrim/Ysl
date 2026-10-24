@@ -1,0 +1,33 @@
+{
+  "name": "@repo/bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#*": [
+      "./src/*.ts",
+      "./src/*"
+    ]
+  },
+  "scripts": {
+    "measure": "tsx src/cli.ts",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@repo/barcode": "workspace:*",
+    "@repo/contract": "workspace:*",
+    "@repo/corpus": "workspace:*",
+    "sharp": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

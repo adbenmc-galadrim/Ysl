@@ -7,6 +7,10 @@
     "./schema": "./src/schema.ts",
     "./random": "./src/random.ts",
     "./identities": "./src/synthetic/identities.ts",
+    "./manifest": "./src/manifest.ts",
+    "./synthetic/barcode": "./src/synthetic/barcode.ts",
+    "./synthetic/codes": "./src/synthetic/codes.ts",
+    "./synthetic/plan": "./src/synthetic/plan.ts",
     "./src/*": "./src/*"
   },
   "imports": {
