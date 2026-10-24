@@ -242,6 +242,24 @@ describe('sync.push', () => {
     expect((await parcel(row.id))?.deletedAt).toEqual(deletedAt);
   });
 
+  it('keeps a row deleted when a stale copy comes back alive', async () => {
+    const row = localParcel({ notes: 'ancienne' });
+    await push(sync, writer, { ops: [op('parcel', row)] });
+    const deletedAt = new Date('2026-10-24T11:30:00Z');
+    await push(sync, writer, {
+      ops: [op('parcel', { id: row.id, deletedAt }, 'delete')],
+    });
+
+    const { results } = await push(sync, writer, {
+      ops: [op('parcel', { ...row, notes: 'en retard', deletedAt: null })],
+    });
+    const stored = await parcel(row.id);
+
+    expect(results[0]?.status).toBe(200);
+    expect(stored?.deletedAt).toEqual(deletedAt);
+    expect(stored?.notes).toBe('en retard');
+  });
+
   it('takes an event again without touching the log', async () => {
     const event = {
       id: newId(),

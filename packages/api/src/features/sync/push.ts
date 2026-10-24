@@ -64,11 +64,19 @@ function valuesOf(table: SyncTable, op: SyncOp): Values {
   return values;
 }
 
-function updatesOf(values: Values): Values {
+/**
+ * What an update may change: not the server columns, and a deletion stays.
+ * A device that still holds the row as alive sends it whole; without this,
+ * the stale copy would bring a deleted row back (§8.4: deletes are logical).
+ */
+function updatesOf(table: SyncTable, values: Values): Values {
   const set: Values = {};
   for (const [key, value] of Object.entries(values)) {
     if (IMMUTABLE_COLUMNS.has(key)) continue;
     set[key] = value;
+  }
+  if ('deletedAt' in set) {
+    set.deletedAt = sql`coalesce(${table.deletedAt}, excluded.deleted_at)`;
   }
   return set;
 }
@@ -94,7 +102,7 @@ async function upsert(
   const updated = await insert
     .onConflictDoUpdate({
       target: table.id,
-      set: updatesOf(values),
+      set: updatesOf(table, values),
       setWhere: sql`${table.organizationId} = excluded.organization_id`,
     })
     .returning({ id: table.id });
