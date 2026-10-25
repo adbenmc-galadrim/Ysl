@@ -10,6 +10,8 @@ export const fr = {
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
   'sync.op.transition':
     'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
+  'sync.op.statusStale':
+    'Le statut de ce colis a changé sur un autre appareil : rouvrez-le avant de le modifier.',
   'sync.op.delivered':
     'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
   'sync.op.cancelled': 'Cette remise a été annulée ; l’annulation reste.',

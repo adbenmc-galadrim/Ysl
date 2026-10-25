@@ -391,6 +391,33 @@ describe('sync.push', () => {
       });
     });
 
+    it('takes a step back only from a copy that saw the status it leaves', async () => {
+      const row = localParcel({ personId, status: 'notifie', notifiedAt: NOW });
+      await push(sync, writer, { ops: [op('parcel', row)] });
+      const back = { ...row, status: 'recu', notifiedAt: null };
+      const stale = op('parcel', back);
+      const undo = op('parcel', { ...back, statusSeq: 1 });
+
+      const { results } = await push(sync, writer, { ops: [stale, undo] });
+
+      expect(results).toEqual([
+        {
+          opId: stale.opId,
+          status: 409,
+          message:
+            'Le statut de ce colis a changé sur un autre appareil : rouvrez-le avant de le modifier.',
+        },
+        { opId: undo.opId, status: 200 },
+      ]);
+      expect(await parcel(row.id)).toMatchObject({
+        status: 'recu',
+        statusSeq: 1,
+      });
+      expect(await recorded(stale.opId)).toMatchObject({
+        reason: expect.stringMatching(/^parcel_status_stale: /) as string,
+      });
+    });
+
     it('undoes a delivery only after its handover is cancelled', async () => {
       const row = delivered();
       const handover = handoverRow(row.id);
