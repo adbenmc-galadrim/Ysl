@@ -1,4 +1,4 @@
-import type { CodeSymbol, ParsedCode, Pieces } from '../codes';
+import type { CarrierService, CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
 import type { AccountRead, SenderKnowledge } from './sender';
 
@@ -31,8 +31,8 @@ export type Field<T> = {
 };
 
 /**
- * What the OCR read: the raw text, reserved for the OCR rules (§4.3 ranks 5
- * to 7), and the sender its `FROM` block names, when one does.
+ * What the OCR read: the printed text, its lines joined by newlines (§4.3
+ * ranks 6 and 7), and the sender its `FROM` block names, when one does.
  */
 export type OcrInput = { text: string; senderName?: string | null };
 
@@ -54,5 +54,7 @@ export type Extraction = {
   accounts: AccountRead[];
   pieces: Field<Pieces> | null;
   weightKg: Field<number> | null;
+  service: Field<CarrierService> | null;
+  reference: Field<string> | null;
   codes: ParsedCode[];
 };

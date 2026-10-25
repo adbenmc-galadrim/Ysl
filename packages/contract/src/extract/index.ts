@@ -1,4 +1,11 @@
-import { type CodeSymbol, type ParsedCode, parseCode } from '../codes';
+import {
+  type CarrierService,
+  type CodeSymbol,
+  carrierService,
+  type ParsedCode,
+  parseCode,
+  serviceOfTracking,
+} from '../codes';
 import { type BarcodeTracking, trackingsInBarcode } from '../tracking/barcode';
 import type { TrackingContext } from '../tracking/rules';
 import { type TrackingVerdict, validateTracking } from '../tracking/validate';
@@ -6,6 +13,7 @@ import { VOTE, type Vote, voteCarrier } from './carrier';
 import { CONFIDENCE } from './confidence';
 import { canonical, mergeField, type Observation } from './fields';
 import { type AccountRead, accountsOf, extractSender } from './sender';
+import { observeOcr, plausibleWeight, weightKey } from './ocr';
 import type { Extraction, ExtractInput, FieldSource } from './types';
 
 export { CONFIDENCE, combine, levelOf } from './confidence';
@@ -26,6 +34,7 @@ export type {
   SenderInput,
   SenderKnowledge,
 } from './sender';
+export { observeOcr } from './ocr';
 export type {
   Candidate,
   ConfidenceLevel,
@@ -134,6 +143,31 @@ export const extractFields = ({
   const accounts: AccountRead[] = [];
   const pieces: Observation<{ index: number; total: number }>[] = [];
   const weights: Observation<number>[] = [];
+  const services: Observation<CarrierService>[] = [];
+  const references: Observation<string>[] = [];
+
+  const serviceOf = (
+    kind: FieldSource['kind'],
+    format: string,
+    confidence: number,
+    service: CarrierService,
+  ) => {
+    const text = service.label ?? service.code ?? '';
+    services.push({
+      key: text,
+      value: service,
+      source: source(kind, format, confidence, text),
+    });
+  };
+  const derivedService = (
+    format: string,
+    verdict: TrackingVerdict,
+    carrier: TrackingContext | null,
+  ) => {
+    if (verdict.status !== 'sure') return;
+    const service = serviceOfTracking(verdict.value, carrier);
+    if (service !== null) serviceOf('1d', format, CONFIDENCE.derived, service);
+  };
 
   for (const { symbol, parsed } of reads) {
     const { format } = symbol;
@@ -167,6 +201,9 @@ export const extractFields = ({
             source: source(kind, format, CONFIDENCE.derived, carrier),
           });
         }
+        if (parsed.service === undefined) {
+          derivedService(format, best.verdict, parsed.carrier ?? carrier);
+        }
       }
       const recipient = partyName(parsed.recipient);
       if (recipient) {
@@ -191,12 +228,32 @@ export const extractFields = ({
           source: source(kind, format, CONFIDENCE.structured2d, text),
         });
       }
-      if (parsed.weightKg !== undefined) {
+      if (parsed.weightKg !== undefined && plausibleWeight(parsed.weightKg)) {
         const text = parsed.weightKg.toFixed(2);
         weights.push({
-          key: text,
+          key: weightKey(parsed.weightKg),
           value: parsed.weightKg,
           source: source(kind, format, CONFIDENCE.structured2d, text),
+        });
+      }
+      if (parsed.service !== undefined) {
+        serviceOf(
+          kind,
+          format,
+          CONFIDENCE.structured2d,
+          carrierService(parsed.carrier, parsed.service),
+        );
+      }
+      if (parsed.reference !== undefined) {
+        references.push({
+          key: parsed.reference,
+          value: parsed.reference,
+          source: source(
+            kind,
+            format,
+            CONFIDENCE.structured2d,
+            parsed.reference,
+          ),
         });
       }
       continue;
@@ -210,6 +267,7 @@ export const extractFields = ({
       value,
       source: source('1d', format, trackingConfidence(best.verdict), value),
     });
+    derivedService(format, best.verdict, carrier);
     if (carrier !== null) {
       const shared = sharedFormat(best.verdict);
       votes.push({
@@ -231,16 +289,26 @@ export const extractFields = ({
     ocrName: ocr?.senderName ?? null,
     knowledge: senders,
   });
+  const carrier = voteCarrier(votes);
+  if (ocr?.text) {
+    const read = observeOcr(ocr.text, carrier?.value ?? null);
+    pieces.push(...read.pieces);
+    weights.push(...read.weights);
+    services.push(...read.services);
+    references.push(...read.references);
+  }
 
   return {
     tracking: mergeField(trackings),
-    carrier: voteCarrier(votes),
+    carrier,
     recipient: mergeField(recipients),
     sender: sender.field,
     senderId: sender.senderId,
     accounts,
     pieces: mergeField(pieces),
     weightKg: mergeField(weights),
+    service: mergeField(services),
+    reference: mergeField(references),
     codes: reads.flatMap((r) => (r.parsed ? [r.parsed] : [])),
   };
 };

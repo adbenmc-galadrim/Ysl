@@ -6,6 +6,7 @@ export const CONFIDENCE = {
   keyed1d: 0.95,
   derived: 0.93,
   format1d: 0.85,
+  ocrFormat: 0.65,
   unvalidated: 0.4,
   learnedAccount: 0.9,
   learnedAccountConfirmed: 0.95,

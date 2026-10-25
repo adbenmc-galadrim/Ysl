@@ -7,6 +7,13 @@ export { EOT, GS, RS, US } from './fields';
 export { type Gs1Elements, looksLikeGs1, parseGs1, splitGs1 } from './gs1';
 export { parseIso15434 } from './iso15434';
 export { parseLaPosteDataMatrix } from './la-poste';
+export {
+  type CarrierService,
+  carrierService,
+  REGISTERED,
+  serviceLabel,
+  serviceOfTracking,
+} from './services';
 export type { CodeScheme, ParsedCode, Party, Pieces } from './types';
 
 export type CodeSymbol = { format: string; text: string };
