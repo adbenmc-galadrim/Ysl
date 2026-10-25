@@ -58,16 +58,21 @@ export async function cameraPermission(): Promise<CameraPermission> {
 }
 
 /**
- * The one camera stream of the app (S1, §6.4): opened once, kept for the
- * whole session — a new `getUserMedia` makes iOS ask again — and handed to
- * whichever `<video>` is on screen. Leaving the screen does not close it;
- * coming back to the foreground only replays the video, unless the track
- * really ended.
+ * The one camera stream of the app, handed to whichever
+ * `<video>` is on screen. It films only while a viewfinder shows it: leaving
+ * the screen or unloading the page stops the tracks, so the camera light
+ * goes out, and coming back opens it again. The close waits for the end of
+ * the current task, so a viewfinder that remounts at once keeps its stream.
+ * Going to the background keeps it: iOS pauses it there, and a stream opened
+ * again on return makes it ask for the camera once more.
  */
-class CameraStream {
+export class CameraStream {
   private stream: MediaStream | undefined;
   private opening: Promise<void> | undefined;
   private video: HTMLVideoElement | undefined;
+  private closing: ReturnType<typeof setTimeout> | undefined;
+  /** Bumped by every close: an opening that started before it is dropped. */
+  private generation = 0;
   private listening = false;
   private readonly listeners = new Set<() => void>();
   state: CameraState = 'idle';
@@ -84,6 +89,7 @@ class CameraStream {
 
   /** Shows the stream in this element, opening the camera if needed. */
   async attach(video: HTMLVideoElement): Promise<void> {
+    this.cancelClose();
     this.video = video;
     this.listen();
     if (!this.live) {
@@ -93,21 +99,16 @@ class CameraStream {
     await this.play();
   }
 
-  /**
-   * Forgets the element; the stream stays open for the next screen, but
-   * the torch goes out with it: no other screen has a square to put it out.
-   */
+  /** Forgets the element and closes the camera, unless another takes it. */
   detach(video: HTMLVideoElement): void {
     if (this.video !== video) return;
     video.srcObject = null;
     this.video = undefined;
-    const { track } = this;
-    if (track && this.torch === 'on') {
-      this.setTorch('off');
-      void applyTorch(track, false).catch(() => {
-        this.setTorch(torchCapability(track));
-      });
-    }
+    this.cancelClose();
+    this.closing = setTimeout(() => {
+      this.closing = undefined;
+      if (!this.video) this.close();
+    }, 0);
   }
 
   /** After a refusal or a failure: asks again. */
@@ -152,11 +153,31 @@ class CameraStream {
     for (const listener of this.listeners) listener();
   }
 
+  private cancelClose() {
+    clearTimeout(this.closing);
+    this.closing = undefined;
+  }
+
+  /** Stops the tracks; a refusal or a failure stays as it was. */
+  private close() {
+    this.generation += 1;
+    this.opening = undefined;
+    const { stream } = this;
+    this.stream = undefined;
+    stream?.getTracks().forEach((track) => track.stop());
+    this.setTorch('none');
+    if (this.state === 'live' || this.state === 'starting') {
+      this.setState('idle');
+    }
+  }
+
   private open(): Promise<void> {
-    this.opening ??= this.doOpen().finally(() => {
-      this.opening = undefined;
+    if (this.opening) return this.opening;
+    const opening = this.doOpen().finally(() => {
+      if (this.opening === opening) this.opening = undefined;
     });
-    return this.opening;
+    this.opening = opening;
+    return opening;
   }
 
   private async doOpen(): Promise<void> {
@@ -164,18 +185,27 @@ class CameraStream {
       this.setState('blocked');
       return;
     }
+    const generation = this.generation;
     this.setState('starting');
     try {
       const stream = await navigator.mediaDevices.getUserMedia(CONSTRAINTS);
+      if (generation !== this.generation) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       this.stream?.getTracks().forEach((track) => track.stop());
       this.stream = stream;
       stream.getVideoTracks()[0]?.addEventListener('ended', () => {
-        if (document.visibilityState === 'visible') void this.open();
+        if (document.visibilityState === 'visible' && this.video) {
+          void this.open();
+        }
       });
       await this.play();
+      if (generation !== this.generation) return;
       this.setTorch(torchCapability(this.track));
       this.setState('live');
     } catch (error) {
+      if (generation !== this.generation) return;
       this.setTorch('none');
       this.setState(cameraFailure(error));
     }
@@ -188,9 +218,9 @@ class CameraStream {
     if (video.paused) await video.play().catch(() => undefined);
   }
 
-  /** iOS puts the torch out behind the app: the square follows the track. */
+  /** Back in the foreground with a viewfinder on screen: films again. */
   private resume = () => {
-    if (document.visibilityState !== 'visible' || !this.stream) return;
+    if (document.visibilityState !== 'visible' || !this.video) return;
     if (this.live) {
       this.setTorch(torchCapability(this.track));
       void this.play();
@@ -199,10 +229,15 @@ class CameraStream {
     }
   };
 
+  private onPageHide = () => {
+    this.close();
+  };
+
   private listen() {
     if (this.listening || typeof document === 'undefined') return;
     this.listening = true;
     document.addEventListener('visibilitychange', this.resume);
+    window.addEventListener('pagehide', this.onPageHide);
     window.addEventListener('pageshow', this.resume);
   }
 }

@@ -34,6 +34,7 @@ export function Screen({
 }: ScreenProps) {
   return (
     <div
+      data-tone={tone}
       className={cn(
         'relative h-full min-h-dvh w-full overflow-hidden',
         tone === 'white' && 'bg-white text-ink',

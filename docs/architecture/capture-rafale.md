@@ -7,11 +7,15 @@ dans le viseur, sur un flux unique, est le mode principal ; la photo native rest
 
 ## Un seul flux caméra (`apps/web/src/features/camera/`)
 
-- `stream.ts` : `cameraStream`, singleton de module. Un seul `getUserMedia` par session
-  d'app (`facingMode: environment`, 4032 × 3024 idéal) ; l'écran Scan lui confie son
-  `<video>` (`attach`), le lui rend en partant (`detach`) **sans fermer le flux** : iOS
-  redemande l'autorisation à chaque nouveau `getUserMedia` (S1). Au retour au premier plan
-  (`visibilitychange`, `pageshow`), la vidéo est relancée ; le flux n'est rouvert que si la
+- `stream.ts` : `cameraStream`, singleton de module (`facingMode: environment`, 4032 × 3024
+  idéal). L'écran Scan lui confie son `<video>` (`attach`) ; en partant (`detach`), il
+  **ferme le flux** (pistes arrêtées, le point vert d'iOS s'éteint) à la fin de la tâche en
+  cours, si bien qu'un viseur remonté aussitôt garde le sien. `pagehide` le ferme aussi.
+  Revenir sur Scan rouvre un flux : mesuré sur simulateur iOS 26 (YSL-106), iOS ne
+  redemande pas l'autorisation au premier plan dans le même lancement. L'arrière-plan, lui,
+  **garde** le flux : iOS le met en pause, et un flux arrêté pendant l'arrière-plan fait
+  redemander l'autorisation au retour. Au retour au premier plan (`visibilitychange`,
+  `pageshow`), la vidéo est relancée si un viseur est là ; le flux n'est rouvert que si la
   piste est `ended`. États : `idle`, `starting`, `live`, `denied`, `blocked`
   (`useCameraState`). `denied` est un refus (`NotAllowedError`, `SecurityError`) : la
   sortie passe par Réglages ; `blocked` est tout autre échec (pas de caméra, occupée).
@@ -79,8 +83,7 @@ WebKit 280970) ; le carré passe en blanc (`torchOn`, `aria-pressed`). L'état e
 `getSettings().torch` à chaque ouverture du flux et au retour au premier plan : iOS éteint
 la lampe quand l'app passe derrière, et le carré suit la piste plutôt que la mémoire de
 l'app. Un refus d'`applyConstraints` laisse l'état tel que la piste le dit. Quitter l'écran
-Scan (`detach`) éteint la lampe : le flux reste ouvert pour la session, mais aucun autre
-écran n'a de carré pour l'éteindre.
+Scan (`detach`) ferme le flux, et la lampe avec lui.
 
 **Le cadre** est le `Viewfinder` de `CameraViewport` (quatre coins : blancs en recherche,
 jaunes pour un doublon, rouges quand rien n'a été lu), posé depuis YSL-23.
