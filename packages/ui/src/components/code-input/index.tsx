@@ -39,8 +39,8 @@ export function CodeInput({
             className={cn(
               'flex h-[68px] w-14 items-center justify-center rounded-control font-mono text-30 font-semibold',
               current
-                ? 'border-2 border-black bg-fill'
-                : 'border border-border bg-white',
+                ? 'border-2 border-ink bg-fill'
+                : 'border border-border bg-surface',
               invalid && 'border-red text-red',
             )}
           >

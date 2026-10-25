@@ -19,7 +19,7 @@ export type CheckboxProps = Omit<
 };
 
 /**
- * The round iOS selection mark: a grey ring, or a black disc with a white
+ * The round iOS selection mark: a grey ring, or an ink disc with an on-ink
  * tick. Round rather than square because it lives in lists and option
  * cards, where iOS never shows a square box.
  */
@@ -67,7 +67,7 @@ export function CheckCircle({
       aria-hidden="true"
       className={cn(
         'flex size-6 shrink-0 items-center justify-center rounded-full',
-        checked ? 'bg-black text-white' : 'bg-white ring-2 ring-faint ring-inset',
+        checked ? 'bg-ink text-on-ink' : 'bg-surface ring-2 ring-faint ring-inset',
         className,
       )}
     >

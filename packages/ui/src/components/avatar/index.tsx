@@ -5,11 +5,11 @@ export const avatarVariants = tv({
   variants: {
     tone: {
       /** An agent's account, a person picked in a choice. */
-      ink: 'bg-black text-white',
+      ink: 'bg-ink text-on-ink',
       /** A person in a directory list. */
       fill: 'bg-fill text-ink',
       /** A recipient inside a grey option card, where `fill` would vanish. */
-      white: 'bg-white text-ink',
+      white: 'bg-surface text-ink',
     },
     size: {
       /** 28: the agent column of the desktop table. */
@@ -65,9 +65,9 @@ export function Avatar({
           role="img"
           aria-label={status === 'online' ? 'En ligne' : 'Hors ligne'}
           className={cn(
-            // The white ring cuts the dot out of the square, so it overhangs
+            // The surface ring cuts the dot out of the square, so it overhangs
             // the corner by 2 px like an iOS badge.
-            'absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-white',
+            'absolute -right-0.5 -bottom-0.5 size-3 rounded-full border-2 border-surface',
             status === 'online' ? 'bg-ios-green' : 'bg-faint',
           )}
         />

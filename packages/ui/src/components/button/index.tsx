@@ -13,15 +13,15 @@ export const buttonVariants = tv({
   ],
   variants: {
     variant: {
-      /** The one black action of a screen. */
-      primary: 'bg-black text-white',
+      /** The one ink-filled action of a screen: black, white in the dark. */
+      primary: 'bg-ink text-on-ink',
       /** Grey fill, for the action next to the primary one. */
       secondary: 'bg-fill text-ink',
-      /** White with a hairline, on grey or dark surfaces. */
-      outline: 'border border-border bg-white text-ink',
+      /** Surface with a hairline, on grey or dark surfaces. */
+      outline: 'border border-border bg-surface text-ink',
       danger: 'bg-red-soft text-red',
       /** Solid red: the one action of a screen that undoes something. */
-      destructive: 'bg-red text-white',
+      destructive: 'bg-red-solid text-white',
       warning: 'bg-orange-soft text-orange',
       success: 'bg-green-soft text-green',
       info: 'bg-blue-soft text-blue',

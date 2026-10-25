@@ -5,11 +5,11 @@ import { cn } from '#lib/tv';
 export type BottomBarProps = {
   children: ReactNode;
   /**
-   * `fade` lets the list scroll behind a white gradient (home screen);
-   * `line` draws a hairline over a white bar (forms, detail screens);
-   * `plain` is a white bar without the hairline, when nothing scrolls under it;
+   * `fade` lets the list scroll behind a surface gradient (home screen);
+   * `line` draws a hairline over a surface bar (forms, detail screens);
+   * `plain` is a surface bar without the hairline, when nothing scrolls under it;
    * `none` leaves the bar transparent (camera screens);
-   * `fade-fill` is `fade` on a grey page (a preview made of white cards).
+   * `fade-fill` is `fade` on a grey page (a preview made of surface cards).
    */
   surface?: 'fade' | 'fade-fill' | 'line' | 'plain' | 'none';
   className?: string;
@@ -31,8 +31,8 @@ export function BottomBar({
         'flex gap-3 px-5 pb-[calc(var(--safe-bottom)+6px)]',
         surface === 'fade' && 'bottom-fade pt-9',
         surface === 'fade-fill' && 'bottom-fade-fill pt-9',
-        surface === 'line' && 'border-t border-separator bg-white pt-4',
-        surface === 'plain' && 'bg-white pt-4',
+        surface === 'line' && 'border-t border-separator bg-surface pt-4',
+        surface === 'plain' && 'bg-surface pt-4',
         className,
       )}
     >

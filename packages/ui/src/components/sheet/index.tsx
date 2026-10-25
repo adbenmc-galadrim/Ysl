@@ -33,7 +33,7 @@ export type SheetProps = {
   fixed?: boolean;
   /** Closes the sheet: a tap on the scrim, a drag down, or Escape. */
   onDismiss?: () => void;
-  /** Classes of the white panel, e.g. its bottom padding. */
+  /** Classes of the surface panel, e.g. its bottom padding. */
   className?: string;
   descriptionClassName?: string;
   /** Classes of the scrim, e.g. a lighter `bg-black/35` where drawn so. */
@@ -168,7 +168,7 @@ export function Sheet({
         className={cn(
           // Scrolls rather than losing its title off the top when a long
           // sheet meets a short phone (375 × 667).
-          'mx-auto flex max-h-full w-full max-w-[480px] flex-col overflow-y-auto overscroll-contain rounded-t-sheet bg-white px-5 pt-2 pb-[calc(var(--safe-bottom)+18px)] text-ink',
+          'mx-auto flex max-h-full w-full max-w-[480px] flex-col overflow-y-auto overscroll-contain rounded-t-sheet bg-surface px-5 pt-2 pb-[calc(var(--safe-bottom)+18px)] text-ink',
           scrolls ? 'touch-pan-y' : 'touch-none',
           !dragging && 'transition-transform duration-200 ease-out',
           className,

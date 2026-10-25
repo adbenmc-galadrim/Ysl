@@ -10,8 +10,8 @@ export const heroTileVariants = tv({
   base: 'relative inline-flex shrink-0 items-center justify-center',
   variants: {
     tone: {
-      fill: 'bg-fill text-black',
-      ink: 'bg-black text-white',
+      fill: 'bg-fill text-ink',
+      ink: 'bg-ink text-on-ink',
       red: 'bg-red-soft text-red',
     },
     size: {

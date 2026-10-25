@@ -7,8 +7,9 @@ export type ScreenProps = {
   /** Pinned under the content: a `BottomBar`, a keypad, a sheet. */
   bottom?: ReactNode;
   /**
-   * `white` for lists and forms, `night` for the camera, `fill` for the
-   * settings screens, whose white grouped cards need a grey page to read.
+   * `white` for lists and forms (the surface: white in the mockups, dark
+   * grey in the dark theme), `night` for the camera, `fill` for the settings
+   * screens, whose surface-coloured grouped cards need a grey page to read.
    */
   tone?: 'white' | 'night' | 'fill';
   /**
@@ -40,7 +41,7 @@ export function Screen({
       data-tone={tone}
       className={cn(
         'relative h-full min-h-dvh w-full overflow-hidden',
-        tone === 'white' && 'bg-white text-ink',
+        tone === 'white' && 'bg-surface text-ink',
         tone === 'fill' && 'bg-fill text-ink',
         tone === 'night' && 'bg-night text-white',
       )}

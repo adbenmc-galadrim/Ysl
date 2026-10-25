@@ -95,7 +95,7 @@ export function ColisScreen({
       scrollRef={setScroller}
       bottom={
         bar && toast ? (
-          // The bar comes second so its white fade runs over the toast's
+          // The bar comes second so its surface fade runs over the toast's
           // bottom edge, as in the mockups.
           <div className="flex flex-col">
             <div className="px-5">{toast}</div>

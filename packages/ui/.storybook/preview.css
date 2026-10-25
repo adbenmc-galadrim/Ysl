@@ -15,6 +15,13 @@
 @import 'tailwindcss';
 @import '../styles.css';
 
+/* The canvas follows the theme, so a component story in the dark sits on
+ * the dark surface it will meet in the app. */
+html {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
 /* The iPhone 15 the mockups are drawn in: 50 px of status bar above the
  * content, 34 px of home indicator below it. */
 .device {

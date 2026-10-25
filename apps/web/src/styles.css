@@ -11,6 +11,12 @@ body,
   min-height: 100%;
 }
 
+/* The landing page, outside the app frame, is light whatever the theme: its
+ * canvas must not turn dark behind it when Safari bounces the page. */
+html:root:has([data-shell='site']) {
+  color-scheme: light;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   html {
     scroll-behavior: smooth;
@@ -37,7 +43,7 @@ body {
 html:has([data-shell='app']) {
   overflow: hidden;
   overscroll-behavior: none;
-  background: var(--color-white);
+  background: var(--color-surface);
 }
 
 html:has([data-shell='app']) body {

@@ -11,15 +11,15 @@ export const iconTileVariants = tv({
   base: 'relative inline-flex size-10 shrink-0 items-center justify-center rounded-tile',
   variants: {
     tone: {
-      neutral: 'bg-black/12 text-black',
+      neutral: 'bg-ink/12 text-ink',
       red: 'bg-red/12 text-red',
       orange: 'bg-orange/12 text-orange',
       blue: 'bg-blue/12 text-blue',
       green: 'bg-green/12 text-green',
       grey: 'bg-muted/12 text-muted',
-      fill: 'bg-fill text-black',
-      /** Solid black: the mailroom's own mark, e.g. as an e-mail sender. */
-      ink: 'bg-black text-white',
+      fill: 'bg-fill text-ink',
+      /** Solid ink: the mailroom's own mark, e.g. as an e-mail sender. */
+      ink: 'bg-ink text-on-ink',
     },
   },
   defaultVariants: { tone: 'neutral' },

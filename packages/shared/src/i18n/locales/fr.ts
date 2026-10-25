@@ -136,6 +136,10 @@ export const fr = {
   'settings.forceUpdate': 'Forcer la mise à jour',
   'settings.forceUpdate.running': 'Mise à jour…',
   'settings.forceUpdate.failed': 'Échec, réessayez',
+  'settings.appearance': 'Apparence',
+  'settings.appearance.title': 'Apparence',
+  'settings.appearance.footer':
+    'Automatique suit le mode sombre de l’iPhone. Réglage de cet iPhone.',
   'settings.corners': 'Arrondis',
   'settings.corners.title': 'Arrondis',
   'settings.corners.footer':

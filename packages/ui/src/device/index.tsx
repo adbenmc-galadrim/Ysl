@@ -11,13 +11,13 @@ import { cn } from '#lib/tv';
 export type DeviceTone = 'light' | 'dark';
 
 export function StatusBar({ tone = 'light' }: { tone?: DeviceTone }) {
-  const ink = tone === 'dark' ? 'bg-white' : 'bg-black';
+  const ink = tone === 'dark' ? 'bg-white' : 'bg-ink';
   return (
     <div
       aria-hidden="true"
       className={cn(
         'pointer-events-none absolute inset-x-0 top-0 z-50 h-[50px]',
-        tone === 'dark' ? 'text-white' : 'text-black',
+        tone === 'dark' ? 'text-white' : 'text-ink',
       )}
     >
       <span className="absolute top-[15px] left-[34px] text-16 font-semibold">
@@ -33,7 +33,7 @@ export function StatusBar({ tone = 'light' }: { tone?: DeviceTone }) {
       <span
         className={cn(
           'absolute top-[20px] right-[34px] h-[11px] w-[24px] rounded-[3px] border',
-          tone === 'dark' ? 'border-white' : 'border-black',
+          tone === 'dark' ? 'border-white' : 'border-ink',
         )}
       />
       <span
@@ -52,7 +52,7 @@ export function HomeIndicator({ tone = 'light' }: { tone?: DeviceTone }) {
       aria-hidden="true"
       className={cn(
         'pointer-events-none absolute bottom-[4px] left-1/2 z-50 h-[5px] w-[134px] -translate-x-1/2 rounded-[3px]',
-        tone === 'dark' ? 'bg-white' : 'bg-black',
+        tone === 'dark' ? 'bg-white' : 'bg-ink',
       )}
     />
   );

@@ -4,6 +4,7 @@ import { AppProvider } from '#/app/provider';
 import { router } from '#/app/router';
 import { bootLocalStore } from '#/features/db/boot';
 import { bootCorners } from '#/features/settings/corners';
+import { bootTheme } from '#/features/settings/theme';
 import { startUpdater } from '#/features/update/updater';
 import '#/styles.css';
 
@@ -11,6 +12,7 @@ import '#/styles.css';
 document.querySelector('title[data-boot-title]')?.remove();
 
 bootCorners();
+bootTheme();
 startUpdater();
 
 const rootElement = document.getElementById('app');

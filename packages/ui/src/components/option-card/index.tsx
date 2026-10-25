@@ -13,7 +13,7 @@ export type OptionCardProps = Omit<ComponentProps<'button'>, 'title'> &
 
 /**
  * One answer of a "how?" question, with a line saying what it leads to.
- * Like `ChoiceTile`, the chosen card turns white with a black edge; it is
+ * Like `ChoiceTile`, the chosen card takes the surface colour and an ink edge; it is
  * taller because each option needs its consequence spelt out.
  */
 export function OptionCard({
@@ -34,7 +34,7 @@ export function OptionCard({
       className={cn(
         'flex h-[72px] w-full cursor-pointer items-center gap-3 rounded-card px-3 text-left',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
-        selected ? 'bg-white ring-2 ring-black ring-inset' : 'bg-fill',
+        selected ? 'bg-surface ring-2 ring-ink ring-inset' : 'bg-fill',
         className,
       )}
       {...props}

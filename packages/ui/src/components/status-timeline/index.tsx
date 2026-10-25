@@ -33,16 +33,16 @@ export function StatusTimeline({ steps, className }: StatusTimelineProps) {
         >
           <span className="flex h-6 items-center justify-center">
             {step.state === 'current' ? (
-              <span className="flex size-6 items-center justify-center rounded-full bg-white ring-2 ring-black ring-inset">
-                <span className="size-3 rounded-full bg-black" />
+              <span className="flex size-6 items-center justify-center rounded-full bg-surface ring-2 ring-ink ring-inset">
+                <span className="size-3 rounded-full bg-ink" />
               </span>
             ) : (
               <span
                 className={cn(
                   'size-3 rounded-full',
                   step.state === 'done'
-                    ? 'bg-black'
-                    : 'bg-white ring-2 ring-faint ring-inset',
+                    ? 'bg-ink'
+                    : 'bg-surface ring-2 ring-faint ring-inset',
                 )}
               />
             )}

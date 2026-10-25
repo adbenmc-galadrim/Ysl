@@ -10,8 +10,8 @@ export type FilterChipProps = Omit<ComponentProps<'button'>, 'children'> & {
 };
 
 /**
- * A 36 px filter over a list. The selected one turns black so the active
- * view reads from across the desk; the others stay white with a hairline.
+ * A 36 px filter over a list. The selected one is filled with ink so the active
+ * view reads from across the desk; the others stay on the surface with a hairline.
  * Width follows the label, so "Aujourd’hui" and "En file 2" sit side by side
  * on the smallest iPhone.
  */
@@ -31,8 +31,8 @@ export function FilterChip({
         'inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-chip px-5 text-15 whitespace-pre',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
         selected
-          ? 'bg-black font-semibold text-white'
-          : 'border border-border bg-white font-medium text-ink',
+          ? 'bg-ink font-semibold text-on-ink'
+          : 'border border-border bg-surface font-medium text-ink',
         className,
       )}
       {...props}

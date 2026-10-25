@@ -7,8 +7,8 @@ export type ChipProps = ComponentProps<'button'> & {
 };
 
 /**
- * A filter or a single choice among short labels: black when on, white with
- * a hairline when off. Black rather than blue so it matches the one primary
+ * A filter or a single choice among short labels: ink-filled when on, surface with
+ * a hairline when off. Ink rather than blue so it matches the one primary
  * button of the screen.
  */
 export function Chip({
@@ -25,8 +25,8 @@ export function Chip({
         'inline-flex h-9 shrink-0 cursor-pointer items-center justify-center rounded-chip px-4 text-15 whitespace-nowrap',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
         selected
-          ? 'bg-black font-semibold text-white'
-          : 'bg-white font-medium text-ink ring-1 ring-border ring-inset',
+          ? 'bg-ink font-semibold text-on-ink'
+          : 'bg-surface font-medium text-ink ring-1 ring-border ring-inset',
         className,
       )}
       {...props}

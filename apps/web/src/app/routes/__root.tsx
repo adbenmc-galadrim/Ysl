@@ -15,7 +15,10 @@ import { InstallLanding } from '#/features/install/components/install-landing';
 import { AppShell } from '#/features/shell/components/app-shell';
 import { ErrorScreen } from '#/features/shell/components/error-screen';
 import { NotFoundScreen } from '#/features/shell/components/not-found-screen';
-import { followThemeColor } from '#/features/shell/theme-color';
+import {
+  followThemeColor,
+  paintSiteThemeColor,
+} from '#/features/shell/theme-color';
 
 export type RouterContext = {
   queryClient: QueryClient;
@@ -37,12 +40,13 @@ function RootComponent() {
   const shell = useRef<HTMLDivElement>(null);
   const locked = !browserTab && !landing;
   useEffect(() => {
-    if (!locked || !shell.current) return;
+    if (!locked) return paintSiteThemeColor();
+    if (!shell.current) return;
     return followThemeColor(shell.current);
   }, [locked]);
   if (!locked) {
     return (
-      <div className="flex min-h-screen flex-col">
+      <div data-shell="site" className="flex min-h-screen flex-col">
         <HeadContent />
         {browserTab ? <InstallLanding /> : <Outlet />}
       </div>

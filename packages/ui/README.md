@@ -4,7 +4,11 @@ The design system of the Courrier YSL PWA and the Storybook that documents it.
 Every screen of the Penpot mockups has a story, and every story is checked
 pixel by pixel against its reference: the Penpot export, except for the
 landing (`reference/10-landing`), whose animated relief has no Penpot board
-and is referenced by its own Storybook capture (`"source": "storybook"`).
+and is referenced by its own Storybook capture (`"source": "storybook"`), and
+the dark theme (`reference/11-sombre`), which Penpot does not draw either:
+the screens the app ships, captured from the stories of `Écrans/11 Mode
+sombre`. Every other story can be checked in the dark from the « Thème »
+menu of the toolbar.
 
 ```bash
 pnpm storybook                              # http://localhost:6006

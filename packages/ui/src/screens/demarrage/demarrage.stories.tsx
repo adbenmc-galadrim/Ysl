@@ -27,6 +27,8 @@ export default meta;
 export const InstallerLApp: StoryObj<typeof InstallScreen> = {
   name: 'Installer l’app',
   parameters: { reference: '03-demarrage/demarrage--installer-l-app' },
+  // Safari, before the app is installed: light whatever the theme.
+  globals: { theme: 'clair' },
   render: (args) => <InstallScreen {...args} />,
 };
 

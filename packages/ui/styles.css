@@ -21,22 +21,30 @@
   --color-black: #000000;
   --color-transparent: transparent;
 
-  /* Text */
-  --color-ink: #000000;
-  --color-ink-2: #3c3c43;
-  --color-muted: #8e8e93;
-  --color-faint: #c7c7cc;
+  /* Text. Each colour that follows the theme is a `light-dark()` pair:
+   * the mockups' value, then its dark counterpart (no dark mockup exists;
+   * the pairs borrow iOS's dark system colours, every text one AA on the
+   * dark surfaces). `color-scheme` picks the side, see below. */
+  --color-ink: light-dark(#000000, #ffffff);
+  /* Text and glyphs drawn on an `ink` fill: a selected chip, a black button */
+  --color-on-ink: light-dark(#ffffff, #000000);
+  --color-ink-2: light-dark(#3c3c43, #d1d1d6);
+  --color-muted: light-dark(#8e8e93, #98989f);
+  --color-faint: light-dark(#c7c7cc, #636366);
   /* The cross that marks where to sign: lighter than muted, darker than faint */
-  --color-muted-2: #a1a1a6;
+  --color-muted-2: light-dark(#a1a1a6, #7c7c80);
 
-  /* Surfaces */
-  --color-fill: #f2f2f7;
-  --color-fill-2: #eeeef0;
-  --color-separator: #e5e5ea;
-  --color-border: #d1d1d6;
+  /* Surfaces. `surface` is the white of the screens, cards and sheets;
+   * `white` itself stays white whatever the theme, for what is white in the
+   * real world: a label, a QR code, a switch knob, text over the camera. */
+  --color-surface: light-dark(#ffffff, #1c1c1e);
+  --color-fill: light-dark(#f2f2f7, #000000);
+  --color-fill-2: light-dark(#eeeef0, #2c2c2e);
+  --color-separator: light-dark(#e5e5ea, #38383a);
+  --color-border: light-dark(#d1d1d6, #48484a);
   /* Desktop: the sidebar, its selected item, the table header */
-  --color-sidebar: #f7f7f8;
-  --color-sidebar-active: #e9e9ec;
+  --color-sidebar: light-dark(#f7f7f8, #111113);
+  --color-sidebar-active: light-dark(#e9e9ec, #2c2c2e);
 
   /* Dark surfaces, used by the camera screens */
   --color-night: #1c1c1e;
@@ -47,17 +55,24 @@
   --color-night-blue: #8ab4ff;
 
   /* Status. Each hue has a 12 % tint for the square behind an icon and a
-   * lighter flat tint for banners and small buttons. */
-  --color-blue: #2563eb;
-  --color-blue-strong: #1e40af;
-  --color-blue-soft: #eef4ff;
-  --color-red: #d92d20;
-  --color-red-soft: #fdecec;
-  --color-orange: #e8590c;
-  --color-orange-strong: #b54708;
-  --color-orange-soft: #fff4ec;
-  --color-green: #1e9e55;
-  --color-green-soft: #e8f5ec;
+   * lighter flat tint for banners and small buttons. In the dark the hues
+   * lighten to stay readable as text, and the tints darken. */
+  --color-blue: light-dark(#2563eb, #5e9bff);
+  --color-blue-strong: light-dark(#1e40af, #a9c5ff);
+  --color-blue-soft: light-dark(#eef4ff, #13264a);
+  --color-red: light-dark(#d92d20, #ff6961);
+  --color-red-soft: light-dark(#fdecec, #3d1816);
+  --color-orange: light-dark(#e8590c, #ff9f5a);
+  --color-orange-strong: light-dark(#b54708, #ffb784);
+  --color-orange-soft: light-dark(#fff4ec, #3d2512);
+  --color-green: light-dark(#1e9e55, #3ccf73);
+  --color-green-soft: light-dark(#e8f5ec, #11301d);
+  /* The same hues as a fill under white text or a white glyph (a red
+   * button, a result disc): the lightened dark hues would lose the white. */
+  --color-blue-solid: #2563eb;
+  --color-red-solid: #d92d20;
+  --color-orange-solid: #e8590c;
+  --color-green-solid: #1e9e55;
 
   /* iOS system colours, only on dark backgrounds (camera overlays) */
   --color-ios-green: #34c759;
@@ -302,11 +317,31 @@
   --radius-tile-lg: 999px;
 }
 
+/*
+ * Theme. Every `light-dark()` colour above follows `color-scheme`: the
+ * system's appearance by default, or the one set on <html> (`data-theme`),
+ * which the app exposes as a setting and Storybook drives from its toolbar.
+ * Only the root decides: Lightning CSS compiles `light-dark()` into custom
+ * properties resolved where the tokens are declared, on `:root`, so a
+ * `color-scheme` set lower down does not reach them. A screen that must
+ * stay light (the landing page) pins the root.
+ */
+:root[data-theme='clair'] {
+  color-scheme: light;
+}
+
+:root[data-theme='sombre'] {
+  color-scheme: dark;
+}
+
 :root {
   /* Safe areas. The app reads the real insets; Storybook overrides both to
    * reproduce the iPhone 15 frame the mockups are drawn in. */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Light or dark as the system says, unless `data-theme` forces one. */
+  color-scheme: light dark;
 
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -316,12 +351,14 @@
 }
 
 /* Lists scroll behind the bottom bar; the bar fades them out instead of
- * cutting them, exactly as the mockups' white-to-transparent gradient. */
+ * cutting them, as the mockups' white-to-transparent gradient. The
+ * transparent end is the surface at 0 %, not `transparent`, so the fade does
+ * not pass through grey (or through black in the dark). */
 @utility bottom-fade {
   background: linear-gradient(
     to bottom,
-    rgb(255 255 255 / 0) 0,
-    #ffffff 30%
+    color-mix(in srgb, var(--color-surface) 0%, transparent) 0,
+    var(--color-surface) 30%
   );
 }
 
@@ -330,7 +367,7 @@
 @utility bottom-fade-fill {
   background: linear-gradient(
     to bottom,
-    rgb(242 242 247 / 0) 0,
+    color-mix(in srgb, var(--color-fill) 0%, transparent) 0,
     var(--color-fill) 30%
   );
 }

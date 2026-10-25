@@ -9,6 +9,12 @@ import {
   isCornerRadius,
   isCornerTiles,
 } from '../src/foundations/corners';
+import {
+  applyTheme,
+  DEFAULT_THEME,
+  isTheme,
+  THEMES,
+} from '../src/foundations/theme';
 
 import './preview.css';
 
@@ -42,8 +48,33 @@ const withCorners: Decorator = (Story, { globals }) => {
   return <Story />;
 };
 
+/**
+ * The appearance, switched from the toolbar like the corners. "Automatique"
+ * follows the OS of the machine running Storybook; a story checked in the
+ * dark pins `globals: { theme: 'sombre' }`.
+ */
+const withTheme: Decorator = (Story, { globals }) => {
+  applyTheme(
+    document.documentElement,
+    isTheme(globals.theme) ? globals.theme : DEFAULT_THEME,
+  );
+  return <Story />;
+};
+
 const preview: Preview = {
   globalTypes: {
+    theme: {
+      description: 'Apparence : celle du système, claire ou sombre',
+      toolbar: {
+        title: 'Thème',
+        icon: 'mirror',
+        items: THEMES.map((theme) => ({
+          value: theme.value,
+          title: theme.title,
+        })),
+        dynamicTitle: true,
+      },
+    },
     radius: {
       description: 'Arrondi des boutons, champs, cartes et pastilles',
       toolbar: {
@@ -69,7 +100,7 @@ const preview: Preview = {
       },
     },
   },
-  initialGlobals: { ...DEFAULT_CORNERS },
+  initialGlobals: { ...DEFAULT_CORNERS, theme: DEFAULT_THEME },
   parameters: {
     controls: {
       matchers: {
@@ -123,7 +154,7 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [withDevice, withCorners],
+  decorators: [withDevice, withCorners, withTheme],
 };
 
 export default preview;
