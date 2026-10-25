@@ -132,6 +132,28 @@ describe('app frame', () => {
     await page.close();
   });
 
+  it('draws only the rows in view of a very long list, down to the last', async () => {
+    const page = await open('screen=colis&count=500');
+    const rows = page.locator('[data-index]');
+    expect(await rows.count()).toBeLessThan(40);
+
+    const scroller = page.locator('main').locator('..');
+    await scroller.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    const last = page.getByText('Colis 500', { exact: true });
+    await expect
+      .poll(async () => (await last.boundingBox())?.y ?? Infinity)
+      .toBeLessThan(VIEWPORT.height);
+    const row = await last.boundingBox();
+    const bar = await page
+      .getByRole('button', { name: 'Scanner' })
+      .boundingBox();
+    expect(row!.y + row!.height).toBeLessThanOrEqual(bar!.y);
+    expect(await rows.count()).toBeLessThan(40);
+    await page.close();
+  });
+
   it('keeps the Remise actions above the home indicator', async () => {
     const page = await open('screen=remise');
     for (const name of ['Taper le code', 'Chercher un nom']) {
