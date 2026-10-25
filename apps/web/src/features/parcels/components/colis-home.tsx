@@ -4,10 +4,12 @@ import {
   Button,
   ColisScreen,
   EmptyState,
+  ListRowValue,
   RemettreActions,
   Toast,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
+import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
@@ -42,6 +44,22 @@ export function ColisHome() {
   const empty = parcels !== undefined && rows.length === 0 && !waiting;
   const counted = parcels !== undefined && (rows.length > 0 || !waiting);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
+  const pending = usePendingParcels();
+  // Next to the banner, the rows say which parcels its changes are; online,
+  // a change leaves within seconds and a label would only flicker.
+  const sections = toSections(rows).map((section) =>
+    banner
+      ? {
+          ...section,
+          rowAction: (parcel: { id: string }) => {
+            const state = pending.get(parcel.id);
+            return (
+              state && <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
+            );
+          },
+        }
+      : section,
+  );
 
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
@@ -50,7 +68,7 @@ export function ColisHome() {
     <ColisScreen
       sync={syncPill(sync)}
       summary={counted ? summarize(rows) : t('colis.summary.loading')}
-      sections={toSections(rows)}
+      sections={sections}
       folded={sectionTitles(folded)}
       onToggleSection={(title) => {
         const id = sectionId(title);
