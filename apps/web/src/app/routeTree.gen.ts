@@ -17,6 +17,7 @@ import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
+import { Route as AuthenticatedReglagesAnnuaireRouteImport } from './routes/_authenticated/reglages/annuaire'
 import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_authenticated/reglages/apparence'
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
@@ -63,6 +64,12 @@ const AuthenticatedReglagesIndexRoute =
     path: '/reglages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesAnnuaireRoute =
+  AuthenticatedReglagesAnnuaireRouteImport.update({
+    id: '/reglages/annuaire',
+    path: '/reglages/annuaire',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesApparenceRoute =
   AuthenticatedReglagesApparenceRouteImport.update({
     id: '/reglages/apparence',
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/preparation': typeof AuthenticatedPreparationRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -108,6 +116,7 @@ export interface FileRoutesByTo {
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -123,6 +132,7 @@ export interface FileRoutesById {
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/_authenticated/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/preparation'
     | '/remise'
     | '/scan'
+    | '/reglages/annuaire'
     | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/remise'
     | '/scan'
     | '/'
+    | '/reglages/annuaire'
     | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
@@ -165,6 +177,7 @@ export interface FileRouteTypes {
     | '/_authenticated/remise'
     | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/reglages/annuaire'
     | '/_authenticated/reglages/apparence'
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
@@ -236,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/annuaire': {
+      id: '/_authenticated/reglages/annuaire'
+      path: '/reglages/annuaire'
+      fullPath: '/reglages/annuaire'
+      preLoaderRoute: typeof AuthenticatedReglagesAnnuaireRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/apparence': {
       id: '/_authenticated/reglages/apparence'
       path: '/reglages/apparence'
@@ -272,6 +292,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReglagesAnnuaireRoute: typeof AuthenticatedReglagesAnnuaireRoute
   AuthenticatedReglagesApparenceRoute: typeof AuthenticatedReglagesApparenceRoute
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
@@ -284,6 +305,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReglagesAnnuaireRoute: AuthenticatedReglagesAnnuaireRoute,
   AuthenticatedReglagesApparenceRoute: AuthenticatedReglagesApparenceRoute,
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,

@@ -96,7 +96,7 @@ export function ReglagesHome() {
         icon: 'users',
         color: 'orange',
         label: t('settings.directory'),
-        chevron: false,
+        onPress: () => void navigate({ to: '/reglages/annuaire' }),
       },
       {
         icon: 'pin',

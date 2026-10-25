@@ -1,7 +1,7 @@
 import type { Person } from '#fixtures/people';
 
 /**
- * A slice of the 312-person directory imported from the HR CSV: A to H,
+ * A slice of a 312-person directory built at the desk (D15): A to H,
  * enough to show the letter sections of the Annuaire screen.
  */
 export const DIRECTORY: Person[] = [

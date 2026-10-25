@@ -8,6 +8,8 @@ export * from '#screens/demarrage/camera-permission-screen';
 export * from '#screens/demarrage/offline-prep-screen';
 export * from '#screens/reception/scan-screen';
 export * from '#screens/reception-zones/reprendre-lot-screen';
+export * from '#screens/reglages/annuaire-screen';
+export * from '#screens/reglages/new-contact-sheet';
 export * from '#screens/reglages/reglages-screen';
 export * from '#screens/reglages/settings-screen';
 export * from '#screens/reglages/synchronisation-screen';
