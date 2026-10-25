@@ -27,6 +27,8 @@ export const EMailRecuParLeSalarie: StoryObj<typeof PickupEmailScreen> = {
   parameters: {
     reference: '06-notification/notification--e-mail-recu-par-le-salarie',
   },
+  // The employee's Mail, not the app: light whatever the theme.
+  globals: { theme: 'clair' },
   args: { email: PICKUP_EMAIL },
   render: (args) => <PickupEmailScreen {...args} />,
 };

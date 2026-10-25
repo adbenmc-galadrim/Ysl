@@ -18,10 +18,16 @@ type Story = StoryObj<typeof meta>;
 
 export const Mobile: Story = {
   parameters: { reference: '10-landing/landing--mobile' },
-  globals: { viewport: { value: 'landingPhone', isRotated: false } },
+  globals: {
+    viewport: { value: 'landingPhone', isRotated: false },
+    theme: 'clair',
+  },
 };
 
 export const Ordinateur: Story = {
   parameters: { reference: '10-landing/landing--ordinateur' },
-  globals: { viewport: { value: 'landingDesktop', isRotated: false } },
+  globals: {
+    viewport: { value: 'landingDesktop', isRotated: false },
+    theme: 'clair',
+  },
 };
