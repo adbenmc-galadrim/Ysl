@@ -1,6 +1,13 @@
 {
   "extends": "@repo/typescript-config/react-library.json",
-  "include": ["src", "tests", "scripts", "vite.config.ts", "vitest.config.ts"],
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "vitest.layout.config.ts"
+  ],
   "compilerOptions": {
     "paths": {
       "#/*": ["./src/*"]

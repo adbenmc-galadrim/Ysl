@@ -12,6 +12,7 @@ import {
   isIosBrowserTab,
 } from '#/features/install/browser-tab';
 import { InstallLanding } from '#/features/install/components/install-landing';
+import { AppShell } from '#/features/shell/components/app-shell';
 import { ErrorScreen } from '#/features/shell/components/error-screen';
 import { NotFoundScreen } from '#/features/shell/components/not-found-screen';
 import { followThemeColor } from '#/features/shell/theme-color';
@@ -47,16 +48,10 @@ function RootComponent() {
       </div>
     );
   }
-  // Installed on iOS 26, `dvh` loses the status bar whenever the page is
-  // shorter than the screen: only `lvh` holds the whole screen.
   return (
-    <div
-      ref={shell}
-      data-shell="app"
-      className="flex h-dvh flex-col overflow-hidden [@media(display-mode:standalone)]:h-lvh"
-    >
+    <AppShell ref={shell}>
       <HeadContent />
       <Outlet />
-    </div>
+    </AppShell>
   );
 }
