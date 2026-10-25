@@ -9,6 +9,11 @@ import {
 import type { ScanField, ScanReading } from '@repo/ui';
 import type { FrameVerdict } from '#/features/camera/quality';
 import type { DraftSender } from '#/features/db/schema';
+import {
+  type AnnexLevel,
+  annexOf,
+  type DraftAnnex,
+} from '#/features/scan/annex';
 import { carrierName } from '#/features/scan/carriers';
 import {
   partyName,
@@ -60,6 +65,7 @@ function trackingFields(
   { verdict }: SelectedTracking,
   parsed: ParsedCode | null,
   text: TextHint,
+  annex: DraftAnnex,
   t: TranslateFn,
 ): ScanField[] {
   const carrier = verdict.carrier ?? parsed?.carrier ?? null;
@@ -80,17 +86,58 @@ function trackingFields(
   ];
   const sender = senderField(text, t);
   if (sender) fields.push(sender);
-  if (parsed?.pieces) {
-    fields.push({
-      label: t('scan.field.pieces'),
-      value: `${parsed.pieces.index}/${parsed.pieces.total}`,
-    });
+  return [...fields, ...annexFields(annex, t)];
+}
+
+/**
+ * A value « à vérifier » (§4.4: the printed text alone gave it, or a code
+ * and the text disagree) is shown as the recipient the OCR guessed: with a
+ * question mark and a warning.
+ */
+function annexField(
+  label: string,
+  value: string,
+  level: AnnexLevel,
+): ScanField {
+  return level === 'sure'
+    ? { label, value }
+    : { label, value: `${value} ?`, status: 'warning' };
+}
+
+/**
+ * The annex fields worth a line (F20): the box among several, never the
+ * « 1/1 » of a single parcel; the weight; the service when the carrier
+ * names it, a bare code says nothing to the agent. The reference waits for
+ * the parcel's page.
+ */
+export function annexFields(annex: DraftAnnex, t: TranslateFn): ScanField[] {
+  const fields: ScanField[] = [];
+  if (annex.pieces && annex.pieces.total > 1) {
+    fields.push(
+      annexField(
+        t('scan.field.pieces'),
+        `${annex.pieces.index}/${annex.pieces.total}`,
+        annex.pieces.level,
+      ),
+    );
   }
-  if (parsed?.weightKg !== undefined) {
-    fields.push({
-      label: t('scan.field.weight'),
-      value: formatWeight(parsed.weightKg, t),
-    });
+  if (annex.weightKg) {
+    fields.push(
+      annexField(
+        t('scan.field.weight'),
+        formatWeight(annex.weightKg.value, t),
+        annex.weightKg.level,
+      ),
+    );
+  }
+  if (annex.service?.label) {
+    fields.push(
+      annexField(
+        t('scan.field.service'),
+        annex.service.label,
+        annex.service.level,
+      ),
+    );
   }
   return fields;
 }
@@ -107,6 +154,8 @@ export type TextHint =
       readName?: string | null;
       /** The sender proposed for the draft, by its codes, the dictionary or the OCR. */
       sender?: DraftSender | null;
+      /** The annex fields as the draft holds them; else read from the codes alone. */
+      annex?: DraftAnnex | null;
     }
   | undefined;
 
@@ -189,9 +238,10 @@ export function toScanReading(
   const selected = selectTracking(result.symbols);
   if (selected) {
     const parsed = structuredCode(result.symbols, selected);
+    const annex = text?.annex ?? annexOf(result.symbols, null);
     return {
       kind: 'read',
-      fields: trackingFields(selected, parsed, text, t),
+      fields: trackingFields(selected, parsed, text, annex, t),
     };
   }
   const fields: ScanField[] = result.symbols.map((symbol) => ({

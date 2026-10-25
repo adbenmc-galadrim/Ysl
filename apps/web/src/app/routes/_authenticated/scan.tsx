@@ -213,8 +213,9 @@ function ScanPage() {
     trackingNorm: string | null,
     piece: PieceRead | null,
     take: () => Promise<DraftParcel | undefined>,
+    found?: Duplicate | null,
   ): Promise<boolean> => {
-    const found = await findDuplicate(db, { ...draft, trackingNorm, piece });
+    found ??= await findDuplicate(db, { ...draft, trackingNorm, piece });
     if (!found) return false;
     const recipient =
       found.kind === 'parcel' ? await recipientOf(db, found.parcel, t) : '';
@@ -334,6 +335,10 @@ function ScanPage() {
           holdDraft(db, draft.id),
         ))
       ) {
+        const taken = held.current;
+        if (taken?.found.kind === 'batch' && !piece) {
+          void trackWork(readHeldPiece(taken.draft, photo.blob));
+        }
         return;
       }
       if (kept) {
@@ -428,6 +433,7 @@ function ScanPage() {
             ocrName: draft.ocrName,
             readName: draft.readName,
             sender: draft.sender ?? null,
+            annex: draft.annex ?? null,
           },
           shownShot.current,
         ),
@@ -458,11 +464,49 @@ function ScanPage() {
             ocrName: text.ocrName,
             readName: draft?.readName ?? null,
             sender: text.sender,
+            annex: text.annex,
           },
           shownShot.current,
         ),
       );
     }
+  };
+
+  /**
+   * The text of a draft held as « Déjà dans ce lot » (F20): the alert came
+   * at once; if the printed text then says « 2 OF 3 » of a parcel of the
+   * batch, the box was not a double but its next piece, and the alert gives
+   * way to the pieces panel. Otherwise nothing is kept: « Ajouter quand
+   * même » reads the text again as before. Nothing happens once the agent
+   * has decided, and the hold is released before the piece moves, so a shot
+   * landing meanwhile cannot drop the photo the parcel now owns.
+   */
+  const readHeldPiece = async (draft: DraftParcel, blob: Blob) => {
+    const text = await readText(
+      db,
+      draft.id,
+      blob,
+      undefined,
+      undefined,
+      draft,
+    );
+    const taken = held.current;
+    if (taken?.draft.id !== draft.id || text.failed || !text.piece) return;
+    const group = await findPieceGroup(db, draft, text.piece.key);
+    if (!group?.pieces || group.pieces.read.includes(text.piece.index)) return;
+    if (held.current !== taken) return;
+    held.current = null;
+    const joined = await attachPiece(
+      db,
+      group.id,
+      taken.draft,
+      text.piece.index,
+    );
+    if (!joined?.pieces) {
+      held.current ??= taken;
+      return;
+    }
+    setReading(pieceReading(joined, joined.pieces, text.piece.index, t));
   };
 
   /** Measured on the frame before the reader takes it; a canvas failure says nothing. */
@@ -581,6 +625,7 @@ function ScanPage() {
             ocrName: found.draft.ocrName,
             readName: found.draft.readName,
             sender: found.draft.sender ?? null,
+            annex: found.draft.annex ?? null,
           })
         : {
             kind: 'read',

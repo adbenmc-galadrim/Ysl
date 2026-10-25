@@ -167,7 +167,6 @@ describe('toScanReading with a structured 2D code', () => {
         { label: 'Transporteur', value: 'UPS' },
         { label: 'Suivi', value: '1ZE6344W0499230622' },
         { label: 'Destinataire', status: 'warning' },
-        { label: 'Colis', value: '1/1' },
         { label: 'Poids', value: '1,36 kg' },
       ],
     });
@@ -232,6 +231,56 @@ describe('toScanReading with a structured 2D code', () => {
       ],
     });
     expect(named.kind === 'read' && named.fields[2]?.status).toBeUndefined();
+  });
+
+  it('shows the annex fields the draft holds, doubted when the text alone gave them', () => {
+    const reading = toScanReading(
+      { symbols: [symbol('Code128', '1ZE6344W0499230622')] },
+      t,
+      {
+        ocrName: null,
+        annex: {
+          pieces: { index: 2, total: 3, level: 'to-verify' },
+          weightKg: { value: 1.2, level: 'to-verify' },
+          service: { code: null, label: 'Express Saver', level: 'sure' },
+          reference: { value: 'PO-1', level: 'sure' },
+        },
+      },
+    );
+    expect(reading).toMatchObject({
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi' },
+        { label: 'Destinataire', value: 'Non lu', status: 'warning' },
+        { label: 'Colis', value: '2/3 ?', status: 'warning' },
+        { label: 'Poids', value: '1,2 kg ?', status: 'warning' },
+        { label: 'Service', value: 'Express Saver' },
+      ],
+    });
+  });
+
+  it('hides a single box, a service without a name and the reference', () => {
+    const reading = toScanReading(
+      { symbols: [symbol('Code128', '1ZE6344W0499230622')] },
+      t,
+      {
+        ocrName: null,
+        annex: {
+          pieces: { index: 1, total: 1, level: 'sure' },
+          weightKg: null,
+          service: { code: '04', label: null, level: 'sure' },
+          reference: { value: 'PO-1', level: 'sure' },
+        },
+      },
+    );
+    expect(reading).toMatchObject({
+      fields: [
+        { label: 'Transporteur' },
+        { label: 'Suivi' },
+        { label: 'Destinataire' },
+      ],
+    });
+    expect((reading as { fields: unknown[] }).fields).toHaveLength(3);
   });
 
   it('flags a tracking the carrier rules do not vouch for', () => {
