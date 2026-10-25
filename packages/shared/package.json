@@ -10,7 +10,8 @@
     "./load-env": "./src/load-env.ts",
     "./logger": "./src/logger/index.ts",
     "./i18n": "./src/i18n/index.ts",
-    "./id": "./src/id.ts"
+    "./id": "./src/id.ts",
+    "./text": "./src/text.ts"
   },
   "imports": {
     "#*": [

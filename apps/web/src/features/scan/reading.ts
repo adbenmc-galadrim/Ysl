@@ -8,6 +8,7 @@ import {
 } from '@repo/shared/i18n';
 import type { ScanField, ScanReading } from '@repo/ui';
 import type { FrameVerdict } from '#/features/camera/quality';
+import type { DraftSender } from '#/features/db/schema';
 import { carrierName } from '#/features/scan/carriers';
 import {
   partyName,
@@ -77,6 +78,8 @@ function trackingFields(
     },
     recipient,
   ];
+  const sender = senderField(text, t);
+  if (sender) fields.push(sender);
   if (parsed?.pieces) {
     fields.push({
       label: t('scan.field.pieces'),
@@ -99,7 +102,26 @@ function trackingFields(
  * code of this label: the agent gave it (F11).
  */
 export type TextHint =
-  { ocrName: string | null; readName?: string | null } | undefined;
+  | {
+      ocrName: string | null;
+      readName?: string | null;
+      /** The sender proposed for the draft, by its codes, the dictionary or the OCR. */
+      sender?: DraftSender | null;
+    }
+  | undefined;
+
+/**
+ * The sender as the agent sees it (F19, §4.4): sure, plain; to verify or
+ * a bare guess, with a question mark and a warning; no sender, no line.
+ */
+function senderField(text: TextHint, t: TranslateFn): ScanField | null {
+  const sender = text?.sender;
+  if (!sender) return null;
+  const label = t('scan.field.sender');
+  return sender.level === 'sure'
+    ? { label, value: sender.name }
+    : { label, value: `${sender.name} ?`, status: 'warning' };
+}
 
 /**
  * The recipient as the agent sees it: named by a code, no doubt; guessed by
@@ -155,8 +177,12 @@ export function toScanReading(
   shot?: ShotHint,
 ): ScanReading {
   if (result.symbols.length === 0) {
-    if (text?.ocrName || text?.readName) {
-      return { kind: 'read', fields: [recipientField(null, text, t)] };
+    const sender = senderField(text, t);
+    if (text?.ocrName || text?.readName || sender) {
+      return {
+        kind: 'read',
+        fields: [recipientField(null, text, t), ...(sender ? [sender] : [])],
+      };
     }
     return unreadableReading(t, shot);
   }
@@ -177,6 +203,8 @@ export function toScanReading(
   if (text?.ocrName || text?.readName) {
     fields.push(recipientField(null, text, t));
   }
+  const sender = senderField(text, t);
+  if (sender) fields.push(sender);
   return { kind: 'read', fields };
 }
 

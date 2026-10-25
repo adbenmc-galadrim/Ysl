@@ -325,13 +325,8 @@ function ScanPage() {
       setReading((shown) =>
         wasHeld || shown.kind === 'piece' ? { kind: 'idle' } : shown,
       );
-      const { symbols, kept, failed, trackingNorm, piece } = await readDraft(
-        db,
-        queue,
-        draft.id,
-        bitmap,
-        clone,
-      );
+      const { symbols, kept, failed, trackingNorm, piece, sender } =
+        await readDraft(db, queue, draft.id, bitmap, clone);
       if (kept && piece && (await joinPieces(draft, piece))) return;
       if (
         kept &&
@@ -349,7 +344,12 @@ function ScanPage() {
         setReading(
           failed
             ? failedReading(t)
-            : toScanReading({ symbols }, t, undefined, shot),
+            : toScanReading(
+                { symbols },
+                t,
+                sender ? { ocrName: null, sender } : undefined,
+                shot,
+              ),
         );
         if (!failed && symbols.length > 0) {
           void offerSameRecipient(draft, symbols);
@@ -424,7 +424,11 @@ function ScanPage() {
         toScanReading(
           { symbols: draft.symbols },
           t,
-          { ocrName: draft.ocrName, readName: draft.readName },
+          {
+            ocrName: draft.ocrName,
+            readName: draft.readName,
+            sender: draft.sender ?? null,
+          },
           shownShot.current,
         ),
       );
@@ -450,7 +454,11 @@ function ScanPage() {
         toScanReading(
           { symbols },
           t,
-          { ocrName: text.ocrName, readName: draft?.readName ?? null },
+          {
+            ocrName: text.ocrName,
+            readName: draft?.readName ?? null,
+            sender: text.sender,
+          },
           shownShot.current,
         ),
       );
@@ -572,6 +580,7 @@ function ScanPage() {
         ? toScanReading({ symbols: found.draft.symbols }, t, {
             ocrName: found.draft.ocrName,
             readName: found.draft.readName,
+            sender: found.draft.sender ?? null,
           })
         : {
             kind: 'read',
@@ -592,7 +601,13 @@ function ScanPage() {
     const { draft } = taken;
     shownDraft.current = draft.id;
     shownShot.current = undefined;
-    setReading(toScanReading({ symbols: draft.symbols }, t));
+    setReading(
+      toScanReading(
+        { symbols: draft.symbols },
+        t,
+        draft.sender ? { ocrName: null, sender: draft.sender } : undefined,
+      ),
+    );
     void trackWork(restoreDraft(db, draft)).then(() => {
       if (draft.photoId && draft.ocrState === 'pending') {
         void readHeldText(draft.id, draft.photoId, draft.symbols);

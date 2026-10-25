@@ -1,4 +1,5 @@
 import { newId } from '@repo/shared/id';
+import { learnSenders, promotedSender } from '#/features/batch/senders';
 import { commitLocal } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -25,6 +26,7 @@ export type DraftPatch = Partial<
     | 'ocrName'
     | 'ocrLines'
     | 'pieces'
+    | 'sender'
   >
 >;
 
@@ -83,6 +85,7 @@ export async function addDraft(
     ocrName: null,
     ocrLines: [],
     pieces: null,
+    sender: null,
   };
   await db.draftParcel.add(draft);
   return draft;
@@ -115,6 +118,7 @@ export function typedDraft(
     ocrName: null,
     ocrLines: [],
     pieces: null,
+    sender: null,
     ...typed,
   };
 }
@@ -230,7 +234,11 @@ export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
 function toParcel(
   draft: DraftParcel,
   { batchId, agentId, now }: Required<FinishOptions>,
+  learnedSenderId?: string | null,
 ): LocalParcel {
+  const sender = promotedSender(draft);
+  const senderId =
+    learnedSenderId === undefined ? (sender?.id ?? null) : learnedSenderId;
   return {
     id: draft.id,
     createdAt: draft.createdAt,
@@ -247,8 +255,8 @@ function toParcel(
     readName: draft.readName,
     notificationEmail: null,
     department: null,
-    senderId: null,
-    senderName: null,
+    senderId,
+    senderName: sender?.name ?? null,
     pieceN: draft.pieces ? draft.pieces.read.length : null,
     pieceTotal: draft.pieces?.total ?? null,
     weightKg: null,
@@ -268,7 +276,8 @@ function toParcel(
 
 /**
  * "Terminer": the batch and its parcels become server rows in one write
- * (queued for `sync.push`), the photos point at their parcel, the drafts go.
+ * (queued for `sync.push`), with what the sure senders teach the dictionary
+ * ahead of them (§4.8), the photos point at their parcel, the drafts go.
  * An empty batch leaves nothing behind. Returns the parcel ids, in order.
  */
 export function finishBatch(
@@ -277,7 +286,16 @@ export function finishBatch(
 ): Promise<string[]> {
   return db.transaction(
     'rw',
-    [db.draftBatch, db.draftParcel, db.photo, db.batch, db.parcel, db.outbox],
+    [
+      db.draftBatch,
+      db.draftParcel,
+      db.photo,
+      db.batch,
+      db.parcel,
+      db.sender,
+      db.senderAccount,
+      db.outbox,
+    ],
     async () => {
       const open = await db.draftBatch.get(batchId);
       const drafts = await listDrafts(db, batchId);
@@ -296,11 +314,15 @@ export function finishBatch(
         endedAt: now,
         parcelCount: drafts.length,
       };
-      const parcels = drafts.map((draft) => toParcel(draft, options));
+      const learned = await learnSenders(db, drafts, now);
+      const parcels = drafts.map((draft) =>
+        toParcel(draft, options, learned.senderIds.get(draft.id)),
+      );
       await commitLocal(
         db,
         {
           upserts: [
+            ...learned.upserts,
             { entity: 'batch', row: batch },
             ...parcels.map((row) => ({ entity: 'parcel' as const, row })),
           ],

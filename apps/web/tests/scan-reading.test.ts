@@ -305,3 +305,68 @@ describe('unreadableReading', () => {
     ).toMatchObject({ kind: 'read' });
   });
 });
+
+describe('toScanReading — sender', () => {
+  const ups = [symbol('Code128', '1ZE6344W0499230622')];
+  const sender = (level: 'sure' | 'to-verify' | 'none') => ({
+    name: 'Metalworks SpA',
+    id: null,
+    level,
+    source: 'learned' as const,
+    account: null,
+  });
+
+  it('shows no sender line when nothing names one', () => {
+    const reading = toScanReading({ symbols: ups }, t, { ocrName: null });
+    expect(
+      reading.kind === 'read' && reading.fields.map((f) => f.label),
+    ).toEqual(['Transporteur', 'Suivi', 'Destinataire']);
+  });
+
+  it('adds a plain sender line when it is sure', () => {
+    const reading = toScanReading({ symbols: ups }, t, {
+      ocrName: null,
+      sender: sender('sure'),
+    });
+    expect(reading.kind === 'read' && reading.fields[3]).toEqual({
+      label: 'Expéditeur',
+      value: 'Metalworks SpA',
+    });
+  });
+
+  it('asks about a sender to verify or guessed, in orange', () => {
+    for (const level of ['to-verify', 'none'] as const) {
+      const reading = toScanReading({ symbols: ups }, t, {
+        ocrName: null,
+        sender: sender(level),
+      });
+      expect(reading.kind === 'read' && reading.fields[3]).toEqual({
+        label: 'Expéditeur',
+        value: 'Metalworks SpA ?',
+        status: 'warning',
+      });
+    }
+  });
+
+  it('keeps the sender after the raw symbols and when nothing was read', () => {
+    const raw = toScanReading({ symbols: [symbol('QRCode', 'x')] }, t, {
+      ocrName: null,
+      sender: sender('sure'),
+    });
+    expect(raw.kind === 'read' && raw.fields.map((f) => f.label)).toEqual([
+      'QR',
+      'Expéditeur',
+    ]);
+    const none = toScanReading({ symbols: [] }, t, {
+      ocrName: null,
+      sender: sender('none'),
+    });
+    expect(none).toEqual({
+      kind: 'read',
+      fields: [
+        { label: 'Destinataire', value: 'Non lu', status: 'warning' },
+        { label: 'Expéditeur', value: 'Metalworks SpA ?', status: 'warning' },
+      ],
+    });
+  });
+});

@@ -4,6 +4,7 @@ import { listDrafts, updateDraft } from '#/features/batch/store';
 import type {
   CourrierDatabase,
   DraftParcel,
+  DraftSender,
   DraftSymbol,
 } from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
@@ -17,6 +18,7 @@ import {
   structuredCode,
   trackingOf,
 } from '#/features/scan/extract';
+import { resolveSender } from '#/features/scan/sender';
 
 export type Symbols = DecodeResult['symbols'];
 
@@ -31,6 +33,8 @@ export type Reading = {
   trackingNorm: string | null;
   /** The piece the label announces, when the parcel comes in several boxes. */
   piece: PieceRead | null;
+  /** The sender the codes or the dictionary propose, written on the draft. */
+  sender: DraftSender | null;
 };
 
 const bare = (symbols: Symbols): DraftSymbol[] =>
@@ -94,6 +98,9 @@ export async function readDraft(
       selected && structuredCode(symbols, selected),
       trackingNorm,
     );
+    const sender = await resolveSender(db, bare(symbols), null).catch(
+      () => null,
+    );
     const kept = await updateDraft(db, draftId, {
       reading: symbols.length ? 'read' : 'unreadable',
       carrier: found?.carrier ?? null,
@@ -102,8 +109,17 @@ export async function readDraft(
       readName: recipientInCodes(symbols),
       symbols: bare(symbols),
       pieces: piece && firstPiece(piece),
+      sender,
     });
-    return { draftId, symbols, kept, failed: false, trackingNorm, piece };
+    return {
+      draftId,
+      symbols,
+      kept,
+      failed: false,
+      trackingNorm,
+      piece,
+      sender,
+    };
   } catch {
     const kept = await updateDraft(db, draftId, { reading: 'failed' }).catch(
       () => false,
@@ -115,6 +131,7 @@ export async function readDraft(
       failed: true,
       trackingNorm: null,
       piece: null,
+      sender: null,
     };
   } finally {
     spare?.close();

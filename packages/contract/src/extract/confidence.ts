@@ -1,12 +1,16 @@
 import type { ConfidenceLevel } from './types';
 
-/** Base confidences of §4.3 and the display thresholds of §4.4. */
+/** Base confidences of §4.3 and §4.8, and the display thresholds of §4.4. */
 export const CONFIDENCE = {
   structured2d: 0.97,
   keyed1d: 0.95,
   derived: 0.93,
   format1d: 0.85,
   unvalidated: 0.4,
+  learnedAccount: 0.9,
+  learnedAccountConfirmed: 0.95,
+  knownSender: 0.85,
+  knownSenderFuzzy: 0.7,
   cap: 0.99,
   conflictMalus: 0.15,
   sure: 0.9,

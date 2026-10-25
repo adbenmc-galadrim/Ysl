@@ -4,6 +4,8 @@ import {
   type LocalContact,
   type LocalDirectoryPerson,
   type LocalParcel,
+  type LocalSender,
+  type LocalSenderAccount,
 } from '#/features/db/schema';
 
 export const NOW = new Date(2026, 9, 24, 12, 0);
@@ -86,6 +88,37 @@ export function contactRow(
     createdBy: null,
     usageCount: 0,
     lastUsedAt: null,
+    ...overrides,
+  };
+}
+
+export function senderRow(overrides: Partial<LocalSender> = {}): LocalSender {
+  return {
+    id: newId(),
+    createdAt: NOW,
+    updatedAt: NOW,
+    deletedAt: null,
+    displayName: 'Metalworks SpA',
+    nameNorm: 'metalworks spa',
+    address: null,
+    seenCount: 1,
+    lastSeenAt: NOW,
+    ...overrides,
+  };
+}
+
+export function senderAccountRow(
+  overrides: Partial<LocalSenderAccount> = {},
+): LocalSenderAccount {
+  return {
+    id: newId(),
+    createdAt: NOW,
+    updatedAt: NOW,
+    deletedAt: null,
+    carrier: 'ups',
+    accountNumber: 'E6344W',
+    senderId: newId(),
+    confirmations: 1,
     ...overrides,
   };
 }

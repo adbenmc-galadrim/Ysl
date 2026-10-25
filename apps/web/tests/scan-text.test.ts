@@ -1,10 +1,10 @@
 import 'fake-indexeddb/auto';
 import type { OcrResult } from '@repo/ocr/worker';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { addDraft, openBatch } from '#/features/batch/store';
+import { addDraft, openBatch, updateDraft } from '#/features/batch/store';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { readText } from '#/features/scan/text';
-import { NOW, openTestDatabase } from './helpers/local-rows';
+import { NOW, openTestDatabase, senderRow } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 const photo = () => ({
@@ -145,10 +145,123 @@ describe('readText', () => {
     expect(text).toEqual({
       draftId: draft.id,
       ocrName: null,
+      sender: null,
       kept: true,
       failed: false,
     });
     expect(called).toBe(0);
     expect((await db.draftParcel.get(draft.id))?.ocrState).toBe('skipped');
+  });
+});
+
+describe('readText — sender', () => {
+  const fromBlock = (name: string) =>
+    result([
+      line('EXPÉDITEUR', 10),
+      line(name, 40),
+      line('4 RUE DES FILATURES', 70),
+      line('DESTINATAIRE', 200),
+      line('Camille MOREL', 230),
+    ]);
+
+  it('proposes the FROM block as a bare guess when nothing else names a sender', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const ocr = {
+      recognize: () => Promise.resolve(fromBlock('ATELIER TISSAGE NORD')),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
+
+    expect(text.sender).toEqual({
+      name: 'ATELIER TISSAGE NORD',
+      id: null,
+      level: 'none',
+      source: 'ocr',
+      account: null,
+    });
+    expect(text.ocrName).toBe('Camille MOREL');
+    expect((await db.draftParcel.get(draft.id))?.sender).toEqual(text.sender);
+  });
+
+  it('matches the FROM block to a sender already seen, to verify', async () => {
+    const known = senderRow({
+      displayName: 'Atelier Tissage Nord',
+      nameNorm: 'atelier tissage nord',
+    });
+    await db.sender.add(known);
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const ocr = {
+      recognize: () => Promise.resolve(fromBlock('ATELIER TISSAGE N0RD')),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
+
+    expect(text.sender).toMatchObject({
+      name: 'Atelier Tissage Nord',
+      id: known.id,
+      level: 'to-verify',
+      source: 'learned',
+    });
+  });
+
+  it('never replaces a sender a code or the dictionary settled', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const settled = {
+      name: 'Metalworks SpA',
+      id: null,
+      level: 'sure' as const,
+      source: '2d' as const,
+      account: null,
+    };
+    await updateDraft(db, draft.id, { sender: settled });
+    const ocr = {
+      recognize: () => Promise.resolve(fromBlock('ATELIER TISSAGE NORD')),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
+
+    expect(text.sender).toEqual(settled);
+    expect((await db.draftParcel.get(draft.id))?.sender).toEqual(settled);
+  });
+
+  it('leaves the sender alone when the text has no FROM block', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const ocr = {
+      recognize: () =>
+        Promise.resolve(
+          result([line('DESTINATAIRE', 10), line('Camille MOREL', 40)]),
+        ),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
+
+    expect(text.sender).toBeNull();
+    expect((await db.draftParcel.get(draft.id))?.sender).toBeNull();
+  });
+
+  it('keeps the codes’ sender when the text is skipped or fails', async () => {
+    const batch = await openBatch(db, NOW);
+    const settled = {
+      name: 'Metalworks SpA',
+      id: null,
+      level: 'sure' as const,
+      source: '2d' as const,
+      account: null,
+    };
+    const skipped = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, skipped.id, { sender: settled });
+    const failed = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, failed.id, { sender: settled });
+    const broken = { recognize: () => Promise.reject(new Error('boom')) };
+
+    const a = await readText(db, skipped.id, photo().blob, broken, false);
+    const b = await readText(db, failed.id, photo().blob, broken, true);
+
+    expect(a).toMatchObject({ sender: settled, failed: false });
+    expect(b).toMatchObject({ sender: settled, failed: true });
   });
 });
