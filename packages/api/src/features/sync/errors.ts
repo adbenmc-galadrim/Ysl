@@ -40,7 +40,8 @@ export function constraintOf(error: unknown): string | undefined {
  * (drizzle/0004_transitions_statut.sql, 0005_statuts_reversibles.sql): a
  * status outside the graph of §8.3, a copy that missed a change of status,
  * a delivery a stale copy would undo, a cancellation it would revive, a
- * notification or a delivery without anyone to give it to.
+ * notification or a delivery without anyone to give it to; and, by its
+ * unique index, a person whose e-mail the directory already has (F50).
  */
 export const GUARDS = {
   parcel_status_transition: {
@@ -66,6 +67,10 @@ export const GUARDS = {
   parcel_recipient_check: {
     status: SYNC_STATUS.badRequest,
     key: 'sync.op.recipient',
+  },
+  directory_person_email_idx: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.directoryEmail',
   },
 } as const;
 

@@ -190,11 +190,17 @@ describe('sync.push', () => {
       active: true,
     });
     const first = op('directory_person', person(newId()));
-    const second = op('directory_person', person(newId()));
+    const second = op('directory_person', {
+      ...person(newId()),
+      email: 'Camille.Martin@Example.test',
+    });
 
     const { results } = await push(sync, writer, { ops: [first, second] });
 
     expect(results.map((result) => result.status)).toEqual([200, 409]);
+    expect(results[1]?.message).toBe(
+      'Cette adresse e-mail est déjà dans l’annuaire.',
+    );
     expect((await recorded(second.opId))?.status).toBe(409);
   });
 

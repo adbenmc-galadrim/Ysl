@@ -19,6 +19,7 @@ export const fr = {
     'Les colis d’une remise ne se retirent pas ; annulez la remise.',
   'sync.op.recipient':
     'Un destinataire est requis pour notifier ou remettre un colis.',
+  'sync.op.directoryEmail': 'Cette adresse e-mail est déjà dans l’annuaire.',
   'sync.op.retry':
     'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
