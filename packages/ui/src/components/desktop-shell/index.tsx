@@ -35,10 +35,10 @@ export function DesktopShell({
   className,
 }: DesktopShellProps) {
   return (
-    <div className={cn('flex h-full min-h-0 w-full bg-white text-ink', className)}>
+    <div className={cn('flex h-full min-h-0 w-full bg-surface text-ink', className)}>
       <aside className="flex w-[220px] shrink-0 flex-col border-r border-separator bg-sidebar px-3 pt-5">
         <div className="flex items-center gap-2.5 px-2">
-          <span className="inline-flex size-8 items-center justify-center rounded-icon bg-ink text-white">
+          <span className="inline-flex size-8 items-center justify-center rounded-icon bg-ink text-on-ink">
             <Icon name="package" size={18} />
           </span>
           <span className="truncate text-15 font-semibold">{brand}</span>

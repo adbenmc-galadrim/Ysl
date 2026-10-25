@@ -7,11 +7,11 @@ const tileVariants = tv({
   base: 'flex size-[100px] items-center justify-center rounded-tile-lg text-white',
   variants: {
     tone: {
-      green: 'bg-green',
-      red: 'bg-red',
-      orange: 'bg-orange',
-      blue: 'bg-blue',
-      black: 'bg-black',
+      green: 'bg-green-solid',
+      red: 'bg-red-solid',
+      orange: 'bg-orange-solid',
+      blue: 'bg-blue-solid',
+      black: 'bg-ink text-on-ink',
     },
   },
   defaultVariants: { tone: 'green' },

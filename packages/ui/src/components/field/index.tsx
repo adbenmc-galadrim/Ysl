@@ -58,8 +58,8 @@ export const fieldBoxVariants = tv({
     variant: {
       /** Grey, the resting state of every field. */
       fill: 'bg-fill',
-      /** White with a 2 px black edge: the field being typed into. */
-      outline: 'bg-white ring-2 ring-black ring-inset',
+      /** Surface with a 2 px ink edge: the field being typed into. */
+      outline: 'bg-surface ring-2 ring-ink ring-inset',
     },
     /** Tracking numbers: monospaced so 0/O and 1/I can be told apart. */
     mono: { true: 'font-mono' },

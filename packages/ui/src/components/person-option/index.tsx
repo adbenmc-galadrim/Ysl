@@ -15,7 +15,7 @@ export type PersonOptionProps = Omit<ComponentProps<'button'>, 'children'> & {
 /**
  * One candidate for an uncertain recipient. The scanner proposes the closest
  * names; the agent confirms one against the label above. Selected, the card
- * turns white with a black edge and its initials go black, like every choice
+ * takes the surface colour and an ink edge, and its initials go ink, like every choice
  * in the app.
  */
 export function PersonOption({
@@ -35,7 +35,7 @@ export function PersonOption({
       className={cn(
         'flex h-16 w-full cursor-pointer items-center gap-3 rounded-card pr-3 pl-3.5 text-left',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue focus-visible:ring-offset-2',
-        selected ? 'bg-white ring-2 ring-black ring-inset' : 'bg-fill',
+        selected ? 'bg-surface ring-2 ring-ink ring-inset' : 'bg-fill',
         className,
       )}
       {...props}

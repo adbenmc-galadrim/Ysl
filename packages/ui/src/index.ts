@@ -85,6 +85,7 @@ export * from '#components/toast';
 
 export type { Parcel, ParcelState } from '#fixtures/parcels';
 export * from '#foundations/corners';
+export * from '#foundations/theme';
 export * from '#icons';
 export * from '#screens';
 export { cn, cx, tv, type VariantProps } from '#lib/tv';

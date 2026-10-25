@@ -2,7 +2,7 @@ import { tv, type VariantProps } from '#lib/tv';
 
 /**
  * A 6 px bar on a grey track. Its colour is the state, not decoration:
- * black while running, green once done, orange when paused.
+ * ink while running, green once done, orange when paused.
  */
 export const progressBarVariants = tv({
   slots: {
@@ -11,7 +11,7 @@ export const progressBarVariants = tv({
   },
   variants: {
     tone: {
-      ink: { bar: 'bg-black' },
+      ink: { bar: 'bg-ink' },
       green: { bar: 'bg-green' },
       orange: { bar: 'bg-orange' },
       blue: { bar: 'bg-blue' },

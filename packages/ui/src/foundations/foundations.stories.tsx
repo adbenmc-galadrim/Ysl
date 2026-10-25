@@ -17,8 +17,11 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const COLOR_GROUPS: { title: string; tokens: string[] }[] = [
-  { title: 'Texte', tokens: ['ink', 'ink-2', 'muted', 'faint'] },
-  { title: 'Surfaces', tokens: ['white', 'fill', 'fill-2', 'separator', 'border'] },
+  { title: 'Texte', tokens: ['ink', 'on-ink', 'ink-2', 'muted', 'faint'] },
+  {
+    title: 'Surfaces',
+    tokens: ['surface', 'fill', 'fill-2', 'separator', 'border', 'white'],
+  },
   {
     title: 'États',
     tokens: [
@@ -33,6 +36,10 @@ const COLOR_GROUPS: { title: string; tokens: string[] }[] = [
       'green',
       'green-soft',
     ],
+  },
+  {
+    title: 'Pleins sous du blanc',
+    tokens: ['blue-solid', 'red-solid', 'orange-solid', 'green-solid'],
   },
   {
     title: 'Caméra',

@@ -26,7 +26,7 @@ export function StepCard({ icon, title, hint, className }: StepCardProps) {
         className,
       )}
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-tile bg-white text-black">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-tile bg-surface text-ink">
         <Icon name={icon} size={22} />
       </span>
       {/* The text block is drawn 1 px above the tile's centre line. */}

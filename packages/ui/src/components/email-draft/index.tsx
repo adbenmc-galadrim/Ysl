@@ -28,7 +28,7 @@ export function EmailRecipient({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-[52px] w-full cursor-pointer items-center gap-2.5 rounded-control bg-white pr-2.5 pl-3.5 text-left',
+        'flex h-[52px] w-full cursor-pointer items-center gap-2.5 rounded-control bg-surface pr-2.5 pl-3.5 text-left',
         'outline-none focus-visible:ring-2 focus-visible:ring-blue active:bg-fill-2',
         className,
       )}
@@ -109,7 +109,7 @@ export function EmailDraft({
   return (
     <article
       className={cn(
-        'flex flex-col rounded-card bg-white px-[18px] pt-4 pb-[18px] text-ink',
+        'flex flex-col rounded-card bg-surface px-[18px] pt-4 pb-[18px] text-ink',
         className,
       )}
     >

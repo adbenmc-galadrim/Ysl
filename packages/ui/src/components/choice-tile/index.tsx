@@ -11,7 +11,7 @@ export type ChoiceTileProps = Omit<ComponentProps<'button'>, 'children'> & {
 /**
  * A large single-choice tile: a storage location, a reason. Bigger than a
  * chip because it is picked with a thumb while holding a parcel; the chosen
- * one turns white with a black outline and a check, so the choice still reads
+ * one takes the surface colour, an ink outline and a check, so the choice still reads
  * on a phone held at arm's length.
  */
 export function ChoiceTile({
@@ -33,7 +33,7 @@ export function ChoiceTile({
         'outline-none focus-visible:ring-2 focus-visible:ring-blue',
         'transition-[filter] active:brightness-95',
         selected
-          ? 'bg-white font-semibold ring-2 ring-black ring-inset'
+          ? 'bg-surface font-semibold ring-2 ring-ink ring-inset'
           : 'bg-fill font-medium',
         className,
       )}
@@ -41,7 +41,7 @@ export function ChoiceTile({
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {selected && (
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-black text-white">
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink text-on-ink">
           <Icon name="tick" size={14} strokeWidth={2.5} />
         </span>
       )}

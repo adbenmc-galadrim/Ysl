@@ -34,7 +34,7 @@ export function KeypadField({
       aria-label={label}
       aria-readonly="true"
       className={cn(
-        'flex h-[60px] min-w-0 items-center rounded-control bg-fill px-4 font-mono text-20 font-medium text-ink ring-2 ring-black ring-inset',
+        'flex h-[60px] min-w-0 items-center rounded-control bg-fill px-4 font-mono text-20 font-medium text-ink ring-2 ring-ink ring-inset',
         className,
       )}
     >
@@ -46,7 +46,7 @@ export function KeypadField({
       {focused && (
         <span
           aria-hidden="true"
-          className={cn('h-[26px] w-0.5 shrink-0 bg-black', value && 'ml-4')}
+          className={cn('h-[26px] w-0.5 shrink-0 bg-ink', value && 'ml-4')}
         />
       )}
     </div>

@@ -13,7 +13,7 @@ export const segmentedControlVariants = tv({
       /** Over the camera: dark track, the chosen segment white. */
       night: { root: 'bg-night', segment: 'text-white aria-checked:bg-white aria-checked:text-black' },
       /** On a white screen: grey track, the chosen segment black. */
-      light: { root: 'bg-fill', segment: 'text-ink aria-checked:bg-black aria-checked:text-white' },
+      light: { root: 'bg-fill', segment: 'text-ink aria-checked:bg-ink aria-checked:text-on-ink' },
     },
   },
   defaultVariants: { tone: 'light' },

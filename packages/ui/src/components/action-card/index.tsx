@@ -19,7 +19,7 @@ export type ActionCardProps = Pick<IconTileProps, 'icon' | 'tone'> & {
 };
 
 /**
- * A white card that states something and offers one way to act on it — the
+ * A surface card that states something and offers one way to act on it — the
  * sync state, the next data purge. The action spans the card so it is as
  * easy to hit as a full row.
  */
@@ -35,7 +35,7 @@ export function ActionCard({
 }: ActionCardProps) {
   const lg = size === 'lg';
   return (
-    <div className={cn('rounded-control bg-white text-ink', className)}>
+    <div className={cn('rounded-control bg-surface text-ink', className)}>
       <div
         className={cn(
           'flex items-start',

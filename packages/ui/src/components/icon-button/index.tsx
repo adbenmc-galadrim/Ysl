@@ -12,11 +12,11 @@ export const iconButtonVariants = tv({
   variants: {
     variant: {
       /** Grey square on white screens: back, edit, menu. */
-      fill: 'bg-fill text-black',
+      fill: 'bg-fill text-ink',
       /** Dark square over the camera: close, torch. */
       night: 'bg-night text-white',
       /** No background, for a trailing icon in a navigation bar. */
-      ghost: 'bg-transparent text-black',
+      ghost: 'bg-transparent text-ink',
     },
     size: {
       md: 'size-10',

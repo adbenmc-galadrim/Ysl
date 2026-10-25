@@ -38,7 +38,7 @@ export function RapportsScreen({
     <Screen
       bottomInset={104}
       bottom={
-        <BottomBar surface="none" className="bg-white pt-3">
+        <BottomBar surface="none" className="bg-surface pt-3">
           <Button
             variant="secondary"
             icon="download"

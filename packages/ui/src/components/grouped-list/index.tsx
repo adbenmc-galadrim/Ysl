@@ -4,7 +4,7 @@ import { Icon, type IconName } from '#icons';
 import { cn, tv, type VariantProps } from '#lib/tv';
 
 /**
- * The inset grouped list of the iOS Settings app: white cards on the grey
+ * The inset grouped list of the iOS Settings app: surface cards on the grey
  * page, a small grey header over each card and an optional footnote under
  * it. The settings, sync, data and team screens are all made of it.
  */
@@ -38,7 +38,7 @@ export function GroupedFootnote({
   );
 }
 
-/** The white card itself. Rows draw their own separators. */
+/** The surface card itself. Rows draw their own separators. */
 export function GroupedList({
   children,
   className,
@@ -48,7 +48,7 @@ export function GroupedList({
 }) {
   return (
     <div
-      className={cn('overflow-hidden rounded-control bg-white text-ink', className)}
+      className={cn('overflow-hidden rounded-control bg-surface text-ink', className)}
     >
       {children}
     </div>
@@ -88,17 +88,18 @@ export function GroupedSection({
 }
 
 /**
- * The 28 px coloured square of a settings row, white glyph inside. The hues
- * are the iOS Settings ones on purpose: an agent who knows the iPhone finds
+ * The 28 px coloured square of a settings row, white glyph inside (`ink`
+ * takes the glyph that reads on it). The hues are the iOS Settings ones on
+ * purpose: an agent who knows the iPhone finds
  * "Synchronisation" by its green cloud before reading it.
  */
 export const settingsIconVariants = tv({
   base: 'inline-flex size-7 shrink-0 items-center justify-center rounded-icon text-white',
   variants: {
     color: {
-      ink: 'bg-ink',
+      ink: 'bg-ink text-on-ink',
       grey: 'bg-muted',
-      blue: 'bg-blue',
+      blue: 'bg-blue-solid',
       sky: 'bg-ios-blue',
       green: 'bg-ios-green',
       indigo: 'bg-ios-indigo',
