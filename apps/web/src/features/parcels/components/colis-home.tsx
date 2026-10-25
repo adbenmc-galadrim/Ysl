@@ -9,7 +9,13 @@ import {
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
-import { summarize, toSections } from '#/features/parcels/sections';
+import { useFoldedSections } from '#/features/parcels/folded-sections';
+import {
+  sectionId,
+  sectionTitles,
+  summarize,
+  toSections,
+} from '#/features/parcels/sections';
 import {
   pendingBanner,
   showsPendingBanner,
@@ -26,6 +32,7 @@ export function ColisHome() {
   const sync = useSync();
   const update = useUpdate();
   const parcels = useHomeParcels();
+  const [folded, toggleFolded] = useFoldedSections();
   const loading = useDelayedPending(parcels === undefined);
   const rows = parcels ?? [];
   const empty = parcels !== undefined && rows.length === 0;
@@ -39,6 +46,11 @@ export function ColisHome() {
       sync={syncPill(sync)}
       summary={parcels ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
+      folded={sectionTitles(folded)}
+      onToggleSection={(title) => {
+        const id = sectionId(title);
+        if (id) toggleFolded(id);
+      }}
       notice={
         banner ? (
           <Banner

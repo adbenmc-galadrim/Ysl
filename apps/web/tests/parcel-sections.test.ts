@@ -1,6 +1,11 @@
 import type { Parcel, ParcelState } from '@repo/ui';
 import { describe, expect, it } from 'vitest';
-import { summarize, toSections } from '#/features/parcels/sections';
+import {
+  sectionId,
+  sectionTitles,
+  summarize,
+  toSections,
+} from '#/features/parcels/sections';
 
 const parcel = (id: string, state: ParcelState): Parcel => ({
   id,
@@ -50,5 +55,16 @@ describe('summarize', () => {
 
   it('says so when nothing waits', () => {
     expect(summarize([])).toBe('Aucun colis en attente');
+  });
+});
+
+describe('section titles', () => {
+  it('maps the ids kept on the iPhone to the titles drawn, and back', () => {
+    expect(sectionTitles(['handedOver', 'incomplete'])).toEqual([
+      'À compléter',
+      'Remis aujourd’hui',
+    ]);
+    expect(sectionId('En attente de retrait')).toBe('waiting');
+    expect(sectionId('Inconnue')).toBeUndefined();
   });
 });
