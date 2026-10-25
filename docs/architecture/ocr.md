@@ -30,6 +30,12 @@ gardé en plan B derrière la même interface.
   reste de cette ligne, si elle ressemble à un nom de personne (2 à 4 mots en lettres, sans
   chiffre, sans forme juridique ni mot de voie, civilités retirées) ; jamais au-delà d'une
   ancre d'expéditeur ; `null` plutôt qu'une supposition sans ancre.
+- `sender.ts` : `senderFromLines`, le nom de l'expéditeur (société ou personne, 1 à 6 mots,
+  au moins trois lettres, sans ligne d'adresse, de téléphone ni de référence) sous une
+  ancre d'expéditeur (`EXPÉDITEUR`, `EXP`, `FROM`, `SHIPPER`, `SENDER`, `SHIP FROM`,
+  `ABSENDER`, `RETURN ADDRESS`, `RETOUR`), jamais au-delà d'une ancre de destinataire.
+- `blocks.ts` : ce que les deux lecteurs partagent (repli des accents, ancres, listes de
+  mots de voie et de formes juridiques, découpe des lignes).
 - `vite.ts` : `ocrVite()`, tout ce que la config Vite de l'app doit savoir (voir plus bas).
 
 ## Les modèles
@@ -121,4 +127,5 @@ photothèque, et le comportement en PWA installée.
 Orientation globale et redressement de perspective (§4.2, étapes 4 et 5), gabarits de
 transporteur et ancres positionnées, rapprochement avec l'annuaire et trois suggestions
 (YSL-46), banc de mesure de la chaîne complète (YSL-27), écran « Voir ce qui a été lu »
-(F22), expéditeur (YSL-40). Le prototype `apps/spike-ocr` se retire dans une prochaine PR.
+(F22), gabarit du bloc expéditeur par transporteur et adresse de l'expéditeur (seul le nom
+est lu, YSL-40). Le prototype `apps/spike-ocr` se retire dans une prochaine PR.

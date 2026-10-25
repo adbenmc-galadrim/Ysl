@@ -310,7 +310,11 @@ malus de conflit (0,82, à vérifier).
   avec lui. Un expéditeur **sûr** enseigne le dictionnaire (`learnSenders`, §4.8) : la ligne
   `sender` est créée ou retrouvée par `name_norm` (`seenCount`, `lastSeenAt`), le compte lu
   sur les codes est créé ou confirmé (`confirmations`) ; un compte déjà possédé par un autre
-  expéditeur n'est pas touché. Ces lignes partent dans le même `commitLocal`, **avant** le
+  expéditeur n'est pas touché. Un expéditeur sûr parce que le dictionnaire l'a prérempli
+  compte aussi : § 4.4 tient un champ à 0,90 pour « validé avec le lot sans action », donc
+  trois lots terminés portent le compte à 0,95 sans geste de l'agent ; si le terrain
+  préfère n'y compter que les codes 2D ou une correction explicite, c'est `learnSenders`
+  (source `learned`) qu'il faut restreindre. Ces lignes partent dans le même `commitLocal`, **avant** le
   lot et les colis : le serveur applique les opérations dans l'ordre et `parcel.sender_id`
   les référence. Les corrections de l'agent et leur partage sont YSL-60.
 - `normalizeName` (`@repo/shared/text`) est la règle figée de `name_norm` : forme de
