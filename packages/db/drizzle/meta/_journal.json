@@ -36,6 +36,13 @@
       "when": 1792842728876,
       "tag": "0004_transitions_statut",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792924781450,
+      "tag": "0005_statuts_reversibles",
+      "breakpoints": true
     }
   ]
 }

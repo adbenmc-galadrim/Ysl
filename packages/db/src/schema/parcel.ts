@@ -1,3 +1,4 @@
+import { PARCEL_STATUSES } from '@repo/contract/parcel-status';
 import { relations, sql } from 'drizzle-orm';
 import {
   check,
@@ -13,36 +14,13 @@ import { contact, directoryPerson } from '#schema/directory';
 import { sender } from '#schema/sender';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
+export {
+  canTransition,
+  PARCEL_STATUSES,
+  type ParcelStatus,
+} from '@repo/contract/parcel-status';
+
 export const PARCEL_TYPES = ['colis', 'recommande', 'sans_suivi'] as const;
-
-export const PARCEL_STATUSES = [
-  'a_completer',
-  'recu',
-  'notifie',
-  'remis',
-  'retourne',
-] as const;
-
-export type ParcelStatus = (typeof PARCEL_STATUSES)[number];
-
-/**
- * The status graph of the specification (§8.3), as the parcel_status_guard
- * trigger of drizzle/0004_transitions_statut.sql enforces it: a status may
- * only move to one of the listed statuses (staying put is always allowed).
- * `remis` goes back to `notifie` only once its handover is cancelled.
- */
-export const PARCEL_TRANSITIONS: Record<ParcelStatus, readonly ParcelStatus[]> =
-  {
-    a_completer: ['recu'],
-    recu: ['notifie', 'remis', 'retourne'],
-    notifie: ['remis', 'retourne'],
-    remis: ['notifie'],
-    retourne: [],
-  };
-
-export function canTransition(from: ParcelStatus, to: ParcelStatus): boolean {
-  return from === to || PARCEL_TRANSITIONS[from].includes(to);
-}
 
 export const batch = pgTable(
   'batch',
@@ -70,6 +48,8 @@ export const parcel = pgTable(
     batchId: uuid('batch_id'),
     type: text('type', { enum: PARCEL_TYPES }).default('colis').notNull(),
     status: text('status', { enum: PARCEL_STATUSES }).notNull(),
+    /** Moves one up with every change of status: a step back must carry it (drizzle/0005_statuts_reversibles.sql). */
+    statusSeq: integer('status_seq').default(0).notNull(),
     carrier: text('carrier'),
     tracking: text('tracking'),
     trackingNorm: text('tracking_norm'),
@@ -116,6 +96,7 @@ export const parcel = pgTable(
       'parcel_pieces_check',
       sql`(${table.pieceN} is null or ${table.pieceN} >= 1) and (${table.pieceTotal} is null or (${table.pieceTotal} >= 1 and (${table.pieceN} is null or ${table.pieceN} <= ${table.pieceTotal})))`,
     ),
+    check('parcel_status_seq_check', sql`${table.statusSeq} >= 0`),
     check(
       'parcel_weight_check',
       sql`${table.weightKg} is null or ${table.weightKg} >= 0`,

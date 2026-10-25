@@ -375,7 +375,7 @@ describe('sync.push', () => {
         opId: stale.opId,
         status: 409,
         message:
-          'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
+          'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
       });
       expect(again.results[0]?.status).toBe(409);
       expect(await parcel(row.id)).toMatchObject({
@@ -386,7 +386,7 @@ describe('sync.push', () => {
       expect(await recorded(stale.opId)).toMatchObject({
         status: 409,
         reason: expect.stringMatching(
-          /^parcel_status_transition: .*remis to recu/,
+          /^parcel_delivery_protected: .*handed over/,
         ) as string,
       });
     });
@@ -397,6 +397,7 @@ describe('sync.push', () => {
       const notified = {
         ...row,
         status: 'notifie',
+        statusSeq: 1,
         deliveredAt: null,
         deliveredBy: null,
       };

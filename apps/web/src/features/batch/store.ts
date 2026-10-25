@@ -251,6 +251,7 @@ function toParcel(
     batchId,
     type: 'colis',
     status: promotedStatus(draft),
+    statusSeq: 0,
     carrier: draft.carrier,
     tracking: draft.tracking,
     trackingNorm: draft.trackingNorm,
