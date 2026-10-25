@@ -107,6 +107,7 @@ export function CameraViewport({
 }: CameraViewportProps) {
   return (
     <div
+      data-tone="camera"
       className={cn(
         'relative h-full min-h-dvh w-full overflow-hidden bg-scene text-white',
         className,

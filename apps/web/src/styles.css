@@ -17,9 +17,42 @@ body,
   }
 }
 
+html {
+  background: var(--color-fill);
+}
+
 body {
   margin: 0;
-  background: var(--color-fill);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/*
+ * The installed app never scrolls the document: every screen scrolls inside
+ * itself. iOS 26 shrinks the viewport by the status bar as soon as the page
+ * is shorter than the screen, and blurs whatever the document scrolls under
+ * it; the canvas takes the colour of the screen on show so no band of another
+ * colour can open at either edge.
+ */
+html:has([data-shell='app']) {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--color-white);
+}
+
+html:has([data-shell='app']) body {
+  overflow: hidden;
+}
+
+html:has([data-shell='app'] [data-tone='fill']) {
+  background: var(--color-fill);
+}
+
+html:has([data-shell='app'] [data-tone='night']) {
+  background: var(--color-night);
+}
+
+/* The video's own backdrop, under the status bar and the home indicator. */
+html:has([data-shell='app'] [data-tone='camera']) {
+  background: var(--color-black);
 }
