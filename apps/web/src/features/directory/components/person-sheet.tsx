@@ -4,7 +4,7 @@ import {
   type ContactDraftErrors,
   NewContactSheet,
 } from '@repo/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
 import type { LocalDirectoryPerson } from '#/features/db/schema';
 import {
@@ -53,6 +53,7 @@ export function PersonSheet({
   const [errors, setErrors] = useState<ContactDraftErrors>({});
   const [duplicate, setDuplicate] = useState<LocalDirectoryPerson | null>(null);
   const [saving, setSaving] = useState(false);
+  const submitting = useRef(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -72,6 +73,8 @@ export function PersonSheet({
   };
 
   const onSubmit = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
     setSaving(true);
     try {
       const result = await savePerson(db, draft, { id: person?.id });
@@ -81,6 +84,7 @@ export function PersonSheet({
     } catch {
       setFailed(true);
     } finally {
+      submitting.current = false;
       setSaving(false);
     }
   };

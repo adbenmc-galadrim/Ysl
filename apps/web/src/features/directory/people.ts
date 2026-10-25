@@ -106,6 +106,7 @@ export async function savePerson(
       active: true,
     }),
     updatedAt: now,
+    active: true,
     firstName,
     lastName,
     nameNorm: normalizeName(`${firstName} ${lastName}`),
@@ -149,7 +150,7 @@ export function directoryEntries(
   query = '',
 ): DirectoryEntry[] {
   const needle = normalizeName(query);
-  const mail = query.trim().toLowerCase();
+  const mail = normalizeEmail(query);
   return people
     .filter(listed)
     .filter(
@@ -159,9 +160,8 @@ export function directoryEntries(
         normalizeName(person.department ?? '').includes(needle) ||
         (mail !== '' && person.email.toLowerCase().includes(mail)),
     )
-    .map((person) => ({ person, key: normalizeName(fullName(person)) }))
-    .sort((a, b) => a.key.localeCompare(b.key))
-    .map(({ person }) => toEntry(person));
+    .sort((a, b) => a.nameNorm.localeCompare(b.nameNorm))
+    .map(toEntry);
 }
 
 /** How many people the directory lists. */
