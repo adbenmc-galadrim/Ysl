@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 
 import { Banner } from '#components/banner';
 import { Button } from '#components/button';
@@ -210,5 +211,30 @@ export const ListeLongue: Story = {
         })),
       },
     ],
+  },
+};
+
+/**
+ * A tap on a section title folds it to its count, and back: the desk hides
+ * what it is not working on. "Remis aujourd’hui" starts folded.
+ */
+export const SectionsRepliables: Story = {
+  name: 'Sections repliables',
+  args: { ...Accueil.args, folded: ['Remis aujourd’hui'] },
+  render: function Render(args) {
+    const [folded, setFolded] = useState(args.folded ?? []);
+    return (
+      <ColisScreen
+        {...args}
+        folded={folded}
+        onToggleSection={(title) =>
+          setFolded((current) =>
+            current.includes(title)
+              ? current.filter((t) => t !== title)
+              : [...current, title],
+          )
+        }
+      />
+    );
   },
 };

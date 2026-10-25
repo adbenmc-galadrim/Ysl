@@ -41,6 +41,12 @@ export type ColisScreenProps = {
    * the "Remettre" shortcut, for a desk that hands over more than it scans.
    */
   actions?: ReactNode;
+  /**
+   * Titles of the folded sections: only their title and count are drawn.
+   * With `onToggleSection`, a tap on a title folds or unfolds it.
+   */
+  folded?: readonly string[];
+  onToggleSection?: (title: string) => void;
   /** Replaces the sections, e.g. with an empty state. */
   children?: ReactNode;
   onMenu?: () => void;
@@ -62,6 +68,8 @@ export function ColisScreen({
   toast,
   bottomBar = true,
   actions,
+  folded,
+  onToggleSection,
   children,
   onMenu,
   onSearch,
@@ -111,6 +119,8 @@ export function ColisScreen({
           sections={sections}
           loading={loading}
           notice={Boolean(notice)}
+          folded={folded}
+          onToggleSection={onToggleSection}
           scroller={scroller}
         />
       )}
@@ -119,7 +129,13 @@ export function ColisScreen({
 }
 
 type ListItem =
-  | { kind: 'header'; key: string; section: ColisSection; top: number }
+  | {
+      kind: 'header';
+      key: string;
+      section: ColisSection;
+      top: number;
+      open: boolean;
+    }
   | {
       kind: 'row';
       key: string;
@@ -140,22 +156,29 @@ function toItems(
   sections: ColisSection[],
   loading: boolean,
   notice: boolean,
+  folded: readonly string[] = [],
 ): ListItem[] {
-  const items: ListItem[] = sections.flatMap((section, s): ListItem[] => [
-    {
+  const items: ListItem[] = sections.flatMap((section, s): ListItem[] => {
+    const open = !folded.includes(section.title);
+    const header: ListItem = {
       kind: 'header',
       key: `h:${section.title}`,
       section,
       top: sectionTop(s, notice),
-    },
-    ...section.parcels.map((parcel, i): ListItem => ({
-      kind: 'row',
-      key: `r:${parcel.id}`,
-      section,
-      parcel,
-      separator: i < section.parcels.length - 1,
-    })),
-  ]);
+      open,
+    };
+    if (!open) return [header];
+    return [
+      header,
+      ...section.parcels.map((parcel, i): ListItem => ({
+        kind: 'row',
+        key: `r:${parcel.id}`,
+        section,
+        parcel,
+        separator: i < section.parcels.length - 1,
+      })),
+    ];
+  });
   if (loading) {
     items.push({
       kind: 'skeleton',
@@ -178,16 +201,20 @@ function ColisList({
   sections,
   loading,
   notice,
+  folded,
+  onToggleSection,
   scroller,
 }: {
   sections: ColisSection[];
   loading: boolean;
   notice: boolean;
+  folded?: readonly string[];
+  onToggleSection?: (title: string) => void;
   scroller: HTMLDivElement | null;
 }) {
   const items = useMemo(
-    () => toItems(sections, loading, notice),
-    [sections, loading, notice],
+    () => toItems(sections, loading, notice, folded),
+    [sections, loading, notice, folded],
   );
   const listRef = useRef<HTMLDivElement>(null);
   const [offset, setOffset] = useState(0);
@@ -212,7 +239,9 @@ function ColisList({
     estimateSize: (i) => {
       const item = items[i]!;
       if (item.kind === 'header') {
-        return item.top + 24 + (item.section.parcels.length ? 24 : 0);
+        return (
+          item.top + 24 + (item.open && item.section.parcels.length ? 24 : 0)
+        );
       }
       if (item.kind === 'skeleton') return item.top + 24 + 24 + 3 * ROW_PX;
       return ROW_PX;
@@ -240,7 +269,7 @@ function ColisList({
             className="absolute inset-x-0 top-0"
             style={{ transform: `translateY(${virtual.start - offset}px)` }}
           >
-            <ListItemView item={item} />
+            <ListItemView item={item} onToggleSection={onToggleSection} />
           </div>
         );
       })}
@@ -248,7 +277,13 @@ function ColisList({
   );
 }
 
-function ListItemView({ item }: { item: ListItem }) {
+function ListItemView({
+  item,
+  onToggleSection,
+}: {
+  item: ListItem;
+  onToggleSection?: (title: string) => void;
+}) {
   switch (item.kind) {
     case 'header': {
       const { section } = item;
@@ -256,13 +291,15 @@ function ListItemView({ item }: { item: ListItem }) {
         <div
           style={{
             paddingTop: item.top,
-            paddingBottom: section.parcels.length ? 24 : 0,
+            paddingBottom: item.open && section.parcels.length ? 24 : 0,
           }}
         >
           <SectionHeader
             title={section.title}
             count={section.count ?? section.parcels.length}
             action={section.action}
+            expanded={item.open}
+            onToggle={onToggleSection && (() => onToggleSection(section.title))}
           />
         </div>
       );
