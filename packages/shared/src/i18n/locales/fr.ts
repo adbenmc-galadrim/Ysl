@@ -74,6 +74,8 @@ export const fr = {
     '{{count}} changements en attente depuis plus de 24 h',
   'colis.stale.description':
     'Exportez-les par sécurité dans Réglages › Synchronisation.',
+  'colis.row.unsent': 'Non envoyé',
+  'colis.row.rejected': 'Refusé',
   'update.available': 'Nouvelle version disponible',
   'update.apply': 'Mettre à jour',
   'parcel.recipient.unknown': 'Destinataire inconnu',

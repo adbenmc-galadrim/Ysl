@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 
 import { Banner } from '#components/banner';
 import { Button } from '#components/button';
@@ -183,5 +184,57 @@ export const EnAttenteDepuis24h: Story = {
         classNames={{ description: 'mt-[3px] leading-4' }}
       />
     ),
+  },
+};
+
+const CAST = [PARCELS.ines, PARCELS.hugo, PARCELS.nora, PARCELS.camille];
+
+/** A busy desk: hundreds of rows, only those in view are in the page. */
+export const ListeLongue: Story = {
+  name: 'Liste longue',
+  args: {
+    sync: 'synced',
+    summary: '400 colis, dont 150 à traiter',
+    sections: [
+      {
+        title: 'À notifier',
+        parcels: Array.from({ length: 150 }, (_, i) => ({
+          ...PARCELS.camille,
+          id: `notify-${i}`,
+        })),
+      },
+      {
+        title: 'En attente de retrait',
+        parcels: Array.from({ length: 250 }, (_, i) => ({
+          ...CAST[i % CAST.length]!,
+          id: `waiting-${i}`,
+        })),
+      },
+    ],
+  },
+};
+
+/**
+ * A tap on a section title folds it to its count, and back: the desk hides
+ * what it is not working on. "Remis aujourd’hui" starts folded.
+ */
+export const SectionsRepliables: Story = {
+  name: 'Sections repliables',
+  args: { ...Accueil.args, folded: ['Remis aujourd’hui'] },
+  render: function Render(args) {
+    const [folded, setFolded] = useState(args.folded ?? []);
+    return (
+      <ColisScreen
+        {...args}
+        folded={folded}
+        onToggleSection={(title) =>
+          setFolded((current) =>
+            current.includes(title)
+              ? current.filter((t) => t !== title)
+              : [...current, title],
+          )
+        }
+      />
+    );
   },
 };

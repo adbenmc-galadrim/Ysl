@@ -2,6 +2,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import { syncCard } from '#/features/sync/sync-card';
 import {
+  awaitsServer,
   pendingBanner,
   showsPendingBanner,
   syncAlert,
@@ -18,6 +19,7 @@ const view = (overrides = {}) => ({
   rejected: 0,
   oldestAt: null as Date | null,
   lastSyncAt: new Date(2026, 9, 24, 11, 21),
+  settled: true,
   ...overrides,
 });
 
@@ -25,6 +27,19 @@ const NOW = new Date(2026, 9, 24, 12, 0);
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3_600_000);
 const stale = (overrides = {}) =>
   view({ pending: 3, oldestAt: hoursAgo(25), ...overrides });
+
+describe('awaitsServer', () => {
+  it('waits for the run that opens the app, not for the next ones', () => {
+    expect(awaitsServer(view({ settled: false }))).toBe(true);
+    expect(awaitsServer(view({ settled: true, status: 'syncing' }))).toBe(
+      false,
+    );
+  });
+
+  it('never waits offline: nothing will come', () => {
+    expect(awaitsServer(view({ online: false, settled: false }))).toBe(false);
+  });
+});
 
 describe('syncAlert', () => {
   it('fires once a waiting change is a day old, refused or not', () => {

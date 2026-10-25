@@ -4,13 +4,23 @@ import {
   Button,
   ColisScreen,
   EmptyState,
+  ListRowValue,
   RemettreActions,
   Toast,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
+import { useMemo } from 'react';
+import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
-import { summarize, toSections } from '#/features/parcels/sections';
+import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
+  sectionId,
+  sectionTitles,
+  summarize,
+  toSections,
+} from '#/features/parcels/sections';
+import {
+  awaitsServer,
   pendingBanner,
   showsPendingBanner,
   syncPill,
@@ -26,10 +36,39 @@ export function ColisHome() {
   const sync = useSync();
   const update = useUpdate();
   const parcels = useHomeParcels();
-  const loading = useDelayedPending(parcels === undefined);
+  const [folded, toggleFolded] = useFoldedSections();
+  // The rows already on the iPhone show at once; only what the server may
+  // still send is drawn as a skeleton, and "nothing waits" only once it spoke.
+  const waiting = awaitsServer(sync);
+  const loading = useDelayedPending(parcels === undefined || waiting);
   const rows = parcels ?? [];
-  const empty = parcels !== undefined && rows.length === 0;
+  const empty = parcels !== undefined && rows.length === 0 && !waiting;
+  const counted = parcels !== undefined && (rows.length > 0 || !waiting);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
+  const pending = usePendingParcels();
+  // Next to the banner, the rows say which parcels its changes are; online,
+  // a change leaves within seconds and a label would only flicker.
+  const labelled = banner !== null;
+  const sections = useMemo(
+    () =>
+      toSections(parcels ?? []).map((section) =>
+        labelled
+          ? {
+              ...section,
+              rowAction: (parcel: { id: string }) => {
+                const state = pending.get(parcel.id);
+                return (
+                  state && (
+                    <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
+                  )
+                );
+              },
+            }
+          : section,
+      ),
+    [parcels, labelled, pending],
+  );
+  const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
@@ -37,8 +76,13 @@ export function ColisHome() {
   return (
     <ColisScreen
       sync={syncPill(sync)}
-      summary={parcels ? summarize(rows) : t('colis.summary.loading')}
-      sections={toSections(rows)}
+      summary={counted ? summarize(rows) : t('colis.summary.loading')}
+      sections={sections}
+      folded={foldedTitles}
+      onToggleSection={(title) => {
+        const id = sectionId(title);
+        if (id) toggleFolded(id);
+      }}
       notice={
         banner ? (
           <Banner
