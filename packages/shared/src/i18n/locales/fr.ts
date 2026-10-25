@@ -129,7 +129,7 @@ export const fr = {
   'settings.group.service': 'Service courrier',
   'settings.directory': 'Annuaire',
   'directory.banner.one': '1 personne, ajoutée à l’usage',
-  'directory.banner.other': '{{count}} personnes, ajoutées à l’usage',
+  'directory.banner.many': '{{count}} personnes, ajoutées à l’usage',
   'directory.banner.detail':
     'Ici ou à la remise d’un colis, sur tous les iPhone.',
   'directory.error.firstName': 'Indiquez le prénom.',

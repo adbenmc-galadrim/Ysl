@@ -35,7 +35,7 @@ export function DirectoryScreen() {
         bannerTitle={
           size === 1
             ? t('directory.banner.one')
-            : t('directory.banner.other', { count: size })
+            : t('directory.banner.many', { count: size })
         }
         bannerDetail={t('directory.banner.detail')}
         query={query}
