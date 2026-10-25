@@ -17,13 +17,6 @@ export const DAY_MS = 24 * HOUR_MS;
  */
 export const LATE_AFTER_MS = 2 * DAY_MS;
 
-/** The statuses the home list follows until the parcel leaves the desk. */
-export const HOME_OPEN_STATUSES = [
-  'a_completer',
-  'recu',
-  'notifie',
-] as const satisfies readonly LocalParcel['status'][];
-
 export type RecipientContext = {
   people: ReadonlyMap<string, LocalDirectoryPerson>;
   contacts: ReadonlyMap<string, LocalContact>;

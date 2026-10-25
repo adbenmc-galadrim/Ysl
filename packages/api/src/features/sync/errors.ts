@@ -37,7 +37,8 @@ export function constraintOf(error: unknown): string | undefined {
 
 /**
  * The guards of §8.4, by the constraint name their trigger or check raises
- * (drizzle/0004_transitions_statut.sql): a status outside the graph of §8.3,
+ * (drizzle/0004_transitions_statut.sql, 0005_statuts_reversibles.sql): a
+ * status outside the graph of §8.3, a copy that missed a change of status,
  * a delivery a stale copy would undo, a cancellation it would revive, a
  * notification or a delivery without anyone to give it to.
  */
@@ -45,6 +46,10 @@ export const GUARDS = {
   parcel_status_transition: {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.transition',
+  },
+  parcel_status_stale: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.statusStale',
   },
   parcel_delivery_protected: {
     status: SYNC_STATUS.conflict,

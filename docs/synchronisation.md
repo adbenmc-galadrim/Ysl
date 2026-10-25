@@ -64,46 +64,69 @@ reste acquise, une copie en retard ne la défait pas.
 
 ## Garde-fous des statuts et de la remise
 
-Ticket YSL-34 (§8.3, §8.4). Des triggers de `packages/db` (migration
-`0004_transitions_statut`) tiennent le graphe des statuts, quel que soit l'auteur de
-l'écriture ; `sync.push` reconnaît chaque garde-fou au nom de contrainte que le
+Tickets YSL-34 et YSL-43 (§8.3, §8.4, F30). Des triggers de `packages/db` (migrations
+`0004_transitions_statut` et `0005_statuts_reversibles`) tiennent le graphe des statuts,
+quel que soit l'auteur de l'écriture ; `sync.push` reconnaît chaque garde-fou au nom de contrainte que le
 trigger lève (`packages/api/src/features/sync/errors.ts`, `GUARDS`) et répond avec un
 message propre.
 
 | Garde-fou                   | Règle                                                                                                                                                                                                                                                              | Réponse |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `parcel_status_transition`  | `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne` ; `remis → notifie` ; rester sur place est toujours permis                                                                                                                  | 409     |
+| `parcel_status_transition`  | en avant : `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne`. En arrière : `recu → a_completer` ; `notifie → recu` ; `remis → notifie, recu` ; `retourne → notifie, recu`. Rester sur place est toujours permis               | 409     |
+| `parcel_status_stale`       | un changement de statut porte `status_seq` + 1 ; sans compteur (version de l'app d'avant YSL-43), seul un pas en avant passe et le serveur incrémente ; tout autre compteur vient d'une copie qui a manqué un changement                                           | 409     |
 | `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne repasse `notifie` que par une remise (`handover`) annulée qui le liste, et sans remise vivante qui le liste (une remise supprimée logiquement compte comme vivante tant qu'elle n'est pas annulée) | 409     |
 | `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                                                                                                                                         | 409     |
 | `handover_parcels_sticky`   | une `handover` garde ses `parcel_ids` : on annule une remise, on n'en retire pas un colis                                                                                                                                                                          | 409     |
 | `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                                                                                                                                           | 400     |
 
-Le graphe est aussi la constante `PARCEL_TRANSITIONS` de `@repo/db/schema`
-(`canTransition(from, to)`), que l'app peut consulter avant d'écrire ; un test de
-`packages/db` vérifie que le trigger accepte exactement ce qu'elle décrit. « Brouillon »
-n'existe que sur l'appareil (lot en cours) et n'atteint jamais le serveur.
+Le graphe vit dans `@repo/contract/parcel-status` (`FORWARD_TRANSITIONS`,
+`BACKWARD_TRANSITIONS`, `canTransition(from, to)` ; `canTransition` et `PARCEL_STATUSES`
+sont réexportés par `@repo/db/schema`) ; un
+test de `packages/db` vérifie que le trigger accepte exactement ce qu'il décrit. Le même
+module dit, pour chaque statut, ce qu'il reste à faire (`STATUS_TODO`), l'action qui le
+défait (`STEP_BACK_LABEL`), le statut où mène ce retour (`stepBackOf` : un colis remis ou
+retourné sans avoir été notifié revient à `recu`) et les colonnes à écrire
+(`statusPatch` : compteur, date de notification, preuve de remise). Côté app,
+`changeParcelStatus` et `stepBackParcel` (`apps/web/src/features/parcels/status.ts`)
+écrivent la ligne et son opération dans la même transaction. Les noms de statut n'ont pas
+changé : « En attente », le statut mort de la v1, n'a jamais existé en v2 ; ce qu'il
+couvrait se lit « À notifier » (`recu`) ou « En attente de retrait » (`notifie`).
+« Brouillon » n'existe que sur l'appareil (lot en cours) et n'atteint jamais le serveur.
 
 Ce que cela donne entre deux appareils :
 
 - **Remise écrasée.** L'appareil A remet le colis (`handover` + colis `remis`). L'appareil
-  B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : transition
-  `remis → recu` refusée en 409, la ligne du serveur ne bouge pas, l'opération de B part
-  en « Corriger ». Si la copie de B date d'un colis déjà `notifie`, c'est
-  `remis → notifie` : refusée tant qu'aucune remise annulée ne liste le colis, que la
-  `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement.
+  B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : `remis → recu`
+  (ou `remis → notifie` si la copie date d'un colis déjà notifié) est refusée en 409
+  (`parcel_delivery_protected`) tant qu'aucune remise annulée ne liste le colis, que la
+  `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement ; la ligne du
+  serveur ne bouge pas, l'opération de B part en « Corriger ».
 - **Annulation tracée.** Annuler une remise, c'est poser `cancelled_at` sur la
   `handover` **puis** repasser le colis `notifie` (`delivered_at` et `delivered_by` à
-  nul), dans cet ordre dans l'outbox. La `handover` reste, annulée : c'est la trace.
+  nul, `status_seq` + 1, sinon 409 `parcel_status_stale`), dans cet ordre dans
+  l'outbox. La `handover` reste, annulée : c'est la trace.
   Une copie en retard qui la renverrait sans `cancelled_at` est refusée.
 - **Modification ordinaire.** Changer l'emplacement ou les notes d'un colis remis passe,
   tant que le statut et la preuve de remise ne bougent pas.
+- **Retour arrière voulu ou copie en retard.** L'appareil A notifie le colis
+  (`recu → notifie`, `status_seq` 2 → 3). L'appareil B, hors ligne, change les notes de
+  sa copie d'avant, encore `recu` avec `status_seq` 2, et la renvoie entière : refusée en
+  409 (`parcel_status_stale`), alors qu'elle aurait passé pour une notification
+  annulée. Si A annule ensuite la notification, il envoie `recu` avec `status_seq` 4, qui
+  passe. Une ligne
+  tirée avant `0005` n'a pas de compteur sur l'appareil : elle se lit 0, comme sur le
+  serveur, où la migration pose 0 partout sans toucher `server_xid`.
 
-Deux limites, assumées : une copie en retard encore `remis` (un appareil qui a vu la
-remise mais pas son annulation) repasse par `notifie → remis`, qui est dans le graphe,
-et remet le colis avec son ancienne preuve ; et un colis `remis` dont la `handover` a
-été refusée au push ne peut revenir à `notifie` qu'après l'envoi d'une `handover`
-annulée. Les deux demandent un écran de remise (YSL-75) qui envoie la `handover` avant
-le colis et relit le serveur avant d'annuler. Enfin,
+Le compteur ferme une limite de YSL-34 : une copie en retard encore `remis` (un
+appareil qui a vu la remise mais pas son annulation) ne repasse plus `notifie → remis`,
+son compteur est périmé — à condition que la copie en ait un : une ligne tirée avant
+`0005` et jamais retirée depuis n'en a pas, et passe encore pour un pas en avant. De même,
+une copie qui renvoie le compteur inchangé se lit comme une app sans compteur
+(`sync.push` ne réécrit que les colonnes reçues, le trigger ne voit pas la différence) :
+un pas en avant passe, un retour arrière est refusé. Reste une limite, assumée : un colis
+`remis` dont la `handover` a été refusée au push ne peut revenir en arrière qu'après l'envoi d'une `handover`
+annulée ; l'écran de remise (YSL-75) enverra la `handover` avant le colis et relira le
+serveur avant d'annuler. Enfin,
 `parcel_recipient_check` fait échouer le `SET NULL` des clés `person_id` et
 `contact_id` sur un colis `notifie`/`remis` : une personne ou un contact qui a un tel
 colis se désactive, il ne se supprime pas.

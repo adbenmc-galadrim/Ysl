@@ -38,7 +38,13 @@ export type LocalContact = LocalRow<typeof contact.$inferSelect>;
 export type LocalSender = LocalRow<typeof sender.$inferSelect>;
 export type LocalSenderAccount = LocalRow<typeof senderAccount.$inferSelect>;
 export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
-export type LocalParcel = LocalRow<typeof parcel.$inferSelect>;
+/** `statusSeq` is missing on a row pulled before the column existed: read it as 0. */
+export type LocalParcel = Omit<
+  LocalRow<typeof parcel.$inferSelect>,
+  'statusSeq'
+> & {
+  statusSeq?: number;
+};
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
 export type LocalNotification = LocalRow<typeof notification.$inferSelect>;
 export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;

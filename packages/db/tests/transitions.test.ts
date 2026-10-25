@@ -64,11 +64,28 @@ async function insertParcel(status: ParcelStatus, personId: string) {
   return id;
 }
 
-async function setStatus(id: string, status: ParcelStatus) {
+async function seqOf(id: string) {
+  const [row] = await db
+    .select({ statusSeq: schema.parcel.statusSeq })
+    .from(schema.parcel)
+    .where(eq(schema.parcel.id, id));
+  return row?.statusSeq;
+}
+
+/** As a device changes a status: the counter it saw, plus one, unless told otherwise. */
+async function setStatus(
+  id: string,
+  status: ParcelStatus,
+  statusSeq?: number | 'unsent',
+) {
+  const seq =
+    statusSeq === 'unsent'
+      ? {}
+      : { statusSeq: statusSeq ?? ((await seqOf(id)) ?? 0) + 1 };
   return failureOf(
     db
       .update(schema.parcel)
-      .set(columnsFor(status))
+      .set({ ...columnsFor(status), ...seq })
       .where(eq(schema.parcel.id, id)),
   );
 }
@@ -134,7 +151,7 @@ afterAll(async () => {
 });
 
 describe('parcel status transitions', () => {
-  it('accept exactly the moves of PARCEL_TRANSITIONS', async () => {
+  it('accept exactly the moves of canTransition', async () => {
     const pairs = PARCEL_STATUSES.flatMap((from) =>
       PARCEL_STATUSES.map((to) => [from, to] as const),
     );
@@ -154,7 +171,62 @@ describe('parcel status transitions', () => {
     }
 
     expect(outcome).toEqual(expected);
-    expect(Object.values(expected).filter(Boolean)).toHaveLength(12);
+    expect(Object.values(expected).filter(Boolean)).toHaveLength(17);
+  });
+
+  it('take a step back only from a copy that saw the status it leaves', async () => {
+    const received = await insertParcel('recu', personId);
+    const notified = await insertParcel('notifie', personId);
+
+    expect(await setStatus(received, 'a_completer', 'unsent')).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await setStatus(notified, 'recu', 'unsent')).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await setStatus(notified, 'recu')).toBeNull();
+    expect(await seqOf(notified)).toBe(1);
+  });
+
+  it('move the counter for an app that does not send it, forward only', async () => {
+    const id = await insertParcel('recu', personId);
+
+    expect(await setStatus(id, 'notifie', 'unsent')).toBeNull();
+    expect(await seqOf(id)).toBe(1);
+  });
+
+  it('refuse a copy that missed a change of status', async () => {
+    const id = await insertParcel('recu', personId);
+    await setStatus(id, 'notifie');
+    await setStatus(id, 'recu');
+
+    expect(await setStatus(id, 'notifie', 1)).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await setStatus(id, 'notifie', 4)).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await statusOf(id)).toBe('recu');
+    expect(await seqOf(id)).toBe(2);
+  });
+
+  it('keep the counter when the status stays', async () => {
+    const id = await insertParcel('recu', personId);
+    await setStatus(id, 'notifie');
+
+    expect(await setStatus(id, 'notifie', 0)).toBeNull();
+    expect(await seqOf(id)).toBe(1);
+  });
+
+  it('stop a stale handed-over copy from undoing a cancellation', async () => {
+    const id = await insertParcel('remis', personId);
+    await insertCancelledHandover(id, personId);
+    await setStatus(id, 'notifie');
+
+    expect(await setStatus(id, 'remis', 0)).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await statusOf(id)).toBe('notifie');
   });
 
   it('require a recipient to notify or hand over', async () => {
@@ -222,6 +294,22 @@ describe('parcel status transitions', () => {
     });
     expect(onceCancelled).toBeNull();
     expect(await statusOf(id)).toBe('notifie');
+  });
+
+  it('undo a delivery never notified back to received', async () => {
+    const id = await insertParcel('remis', personId);
+    const handoverId = await insertHandover(id, personId);
+
+    const whileHandedOver = await setStatus(id, 'recu');
+    await db
+      .update(schema.handover)
+      .set({ cancelledAt: new Date('2026-10-24T11:00:00Z') })
+      .where(eq(schema.handover.id, handoverId));
+
+    expect(whileHandedOver).toMatchObject({
+      constraint: 'parcel_delivery_protected',
+    });
+    expect(await setStatus(id, 'recu')).toBeNull();
   });
 
   it('refuse to undo a delivery that has no cancelled handover', async () => {

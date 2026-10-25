@@ -10,6 +10,8 @@ export const fr = {
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
   'sync.op.transition':
     'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
+  'sync.op.statusStale':
+    'Le statut de ce colis a changé sur un autre appareil : rouvrez-le avant de le modifier.',
   'sync.op.delivered':
     'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
   'sync.op.cancelled': 'Cette remise a été annulée ; l’annulation reste.',
@@ -86,6 +88,21 @@ export const fr = {
   'parcel.status.lateReminded':
     'En attente depuis {{days}} jours, relancé {{ago}}',
   'parcel.status.delivered': 'Remis à {{time}}',
+  'parcel.state.a_completer': 'À compléter',
+  'parcel.state.recu': 'Reçu',
+  'parcel.state.notifie': 'Notifié',
+  'parcel.state.remis': 'Remis',
+  'parcel.state.retourne': 'Retourné',
+  'parcel.todo.a_completer':
+    'Compléter le destinataire ou le numéro avant de notifier',
+  'parcel.todo.recu': 'Pas encore notifié : prévenir le destinataire',
+  'parcel.todo.notifie': 'En attente de retrait par le destinataire',
+  'parcel.todo.remis': 'Rien à faire : remis au destinataire',
+  'parcel.todo.retourne': 'Rien à faire : retourné à l’expéditeur',
+  'parcel.undo.recu': 'Remettre à compléter',
+  'parcel.undo.notifie': 'Annuler la notification',
+  'parcel.undo.remis': 'Annuler la remise',
+  'parcel.undo.retourne': 'Annuler le retour',
   'parcel.ago.now': 'à l’instant',
   'parcel.ago.minutes': 'il y a {{count}} min',
   'parcel.ago.hours': 'il y a {{count}} h',

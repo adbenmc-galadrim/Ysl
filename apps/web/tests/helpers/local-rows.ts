@@ -26,6 +26,7 @@ export function parcelRow(overrides: Partial<LocalParcel> = {}): LocalParcel {
     batchId: null,
     type: 'colis',
     status: 'recu',
+    statusSeq: 0,
     carrier: 'UPS',
     tracking: '1ZE6344W0499230622',
     trackingNorm: '1ZE6344W0499230622',

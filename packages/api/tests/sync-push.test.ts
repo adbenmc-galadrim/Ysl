@@ -375,7 +375,7 @@ describe('sync.push', () => {
         opId: stale.opId,
         status: 409,
         message:
-          'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
+          'Ce colis a déjà été remis ; la remise est protégée tant qu’elle n’est pas annulée.',
       });
       expect(again.results[0]?.status).toBe(409);
       expect(await parcel(row.id)).toMatchObject({
@@ -386,8 +386,35 @@ describe('sync.push', () => {
       expect(await recorded(stale.opId)).toMatchObject({
         status: 409,
         reason: expect.stringMatching(
-          /^parcel_status_transition: .*remis to recu/,
+          /^parcel_delivery_protected: .*handed over/,
         ) as string,
+      });
+    });
+
+    it('takes a step back only from a copy that saw the status it leaves', async () => {
+      const row = localParcel({ personId, status: 'notifie', notifiedAt: NOW });
+      await push(sync, writer, { ops: [op('parcel', row)] });
+      const back = { ...row, status: 'recu', notifiedAt: null };
+      const stale = op('parcel', back);
+      const undo = op('parcel', { ...back, statusSeq: 1 });
+
+      const { results } = await push(sync, writer, { ops: [stale, undo] });
+
+      expect(results).toEqual([
+        {
+          opId: stale.opId,
+          status: 409,
+          message:
+            'Le statut de ce colis a changé sur un autre appareil : rouvrez-le avant de le modifier.',
+        },
+        { opId: undo.opId, status: 200 },
+      ]);
+      expect(await parcel(row.id)).toMatchObject({
+        status: 'recu',
+        statusSeq: 1,
+      });
+      expect(await recorded(stale.opId)).toMatchObject({
+        reason: expect.stringMatching(/^parcel_status_stale: /) as string,
       });
     });
 
@@ -397,6 +424,7 @@ describe('sync.push', () => {
       const notified = {
         ...row,
         status: 'notifie',
+        statusSeq: 1,
         deliveredAt: null,
         deliveredBy: null,
       };

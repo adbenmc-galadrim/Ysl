@@ -10,6 +10,7 @@
     "./codes": "./src/codes/index.ts",
     "./extract": "./src/extract/index.ts",
     "./health": "./src/health.ts",
+    "./parcel-status": "./src/parcel-status.ts",
     "./sync": "./src/sync.ts",
     "./tracking": "./src/tracking/index.ts"
   },
