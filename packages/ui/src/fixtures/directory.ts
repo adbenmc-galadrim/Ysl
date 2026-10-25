@@ -5,24 +5,9 @@ import type { Person } from '#fixtures/people';
  * enough to show the letter sections of the Annuaire screen.
  */
 export const DIRECTORY: Person[] = [
-  {
-    id: 'u-abernard',
-    name: 'Axelle Bernard',
-    initials: 'AB',
-    department: 'Presse',
-  },
-  {
-    id: 'u-amartin',
-    name: 'Antoine Martin',
-    initials: 'AM',
-    department: 'Studio',
-  },
-  {
-    id: 'u-cmorel',
-    name: 'Camille Morel',
-    initials: 'CM',
-    department: 'Studio',
-  },
+  { id: 'u-abernard', name: 'Axelle Bernard', initials: 'AB', department: 'Presse' },
+  { id: 'u-amartin', name: 'Antoine Martin', initials: 'AM', department: 'Studio' },
+  { id: 'u-cmorel', name: 'Camille Morel', initials: 'CM', department: 'Studio' },
   {
     id: 'u-crobin',
     name: 'Claire Robin',
@@ -35,12 +20,7 @@ export const DIRECTORY: Person[] = [
     initials: 'HL',
     department: 'Accessoires',
   },
-  {
-    id: 'u-hdubois',
-    name: 'Hélène Dubois',
-    initials: 'HD',
-    department: 'Finance',
-  },
+  { id: 'u-hdubois', name: 'Hélène Dubois', initials: 'HD', department: 'Finance' },
 ];
 
 /** The letters of the full directory: nobody under Q, U, W to Z. */
