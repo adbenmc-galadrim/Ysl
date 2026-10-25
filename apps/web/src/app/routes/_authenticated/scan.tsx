@@ -55,6 +55,13 @@ import {
   useCameraState,
   useTorchState,
 } from '#/features/camera/stream';
+import {
+  cameraZoom,
+  cropToZoom,
+  listenPinch,
+  useCameraZoom,
+  zoomLabel,
+} from '#/features/camera/zoom';
 import { db } from '#/features/db/database';
 import type { DraftParcel } from '#/features/db/schema';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
@@ -131,6 +138,8 @@ function ScanPage() {
   const finishing = useRef(false);
   const camera = useCameraState();
   const torch = useTorchState();
+  const zoom = useCameraZoom();
+  const sceneRef = useRef<HTMLDivElement>(null);
   const [opening, setOpening] = useState<Opening>(() =>
     wasExplained() ? 'scan' : 'pending',
   );
@@ -257,6 +266,20 @@ function ScanPage() {
   const refused = camera === 'denied' && !fallback;
   const viewfinder = opening === 'scan' && !refused;
   usePageLock(viewfinder);
+
+  /** Each opening of the camera on this screen starts at ×1. */
+  useEffect(() => {
+    if (camera === 'live') cameraZoom.reset(cameraStream.track);
+  }, [camera]);
+
+  const pinchable = viewfinder && camera === 'live';
+  /** A level left by an earlier visit means nothing until the camera is live again. */
+  const shownZoom = pinchable ? zoom : 1;
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!pinchable || !scene) return;
+    return listenPinch(scene);
+  }, [pinchable]);
   useEffect(() => {
     const video = videoRef.current;
     if (!viewfinder || !video) return;
@@ -535,7 +558,11 @@ function ScanPage() {
     }
     const video = videoRef.current;
     if (mode !== 'grab' || !video || !cameraStream.live) return;
-    fire(() => grabFrame(video, cameraStream.track), true);
+    const crop = cameraZoom.digital;
+    fire(
+      async () => cropToZoom(await grabFrame(video, cameraStream.track), crop),
+      true,
+    );
   };
 
   /** Each picture chosen is one parcel, in the order chosen: the queue paces them. */
@@ -739,7 +766,10 @@ function ScanPage() {
         <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
       ) : (
         <>
-          <div className="fixed inset-0 touch-none overflow-hidden overscroll-none">
+          <div
+            ref={sceneRef}
+            className="fixed inset-0 touch-none overflow-hidden overscroll-none"
+          >
             <ScanScreen
               count={view?.count ?? 0}
               reading={shown}
@@ -753,7 +783,21 @@ function ScanPage() {
                   playsInline
                   muted
                   className="size-full object-cover"
+                  style={
+                    cameraZoom.range.kind === 'digital' && shownZoom > 1
+                      ? { transform: `scale(${shownZoom})` }
+                      : undefined
+                  }
                 />
+              }
+              /* Under 1.05 the label already reads ×1,0: no pill. */
+              zoom={
+                Math.abs(shownZoom - 1) >= 0.05
+                  ? {
+                      label: zoomLabel(shownZoom),
+                      onReset: () => cameraZoom.set(1),
+                    }
+                  : undefined
               }
               torch={torch !== 'none'}
               torchOn={torch === 'on'}
