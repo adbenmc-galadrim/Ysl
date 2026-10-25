@@ -6,6 +6,7 @@ import {
   SaisieManuelleSheet,
   ScanScreen,
   type ScanReading,
+  usePageLock,
 } from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
@@ -255,6 +256,7 @@ function ScanPage() {
   /** The refusal takes the whole screen until the agent picks a way around it. */
   const refused = camera === 'denied' && !fallback;
   const viewfinder = opening === 'scan' && !refused;
+  usePageLock(viewfinder);
   useEffect(() => {
     const video = videoRef.current;
     if (!viewfinder || !video) return;
@@ -737,37 +739,39 @@ function ScanPage() {
         <CameraPermissionScreen onAllow={onAllow} onImport={onImportInstead} />
       ) : (
         <>
-          <ScanScreen
-            count={view?.count ?? 0}
-            reading={shown}
-            controls={!typing}
-            dim={typing ? 0.4 : undefined}
-            flash={flashedAt !== 0}
-            video={
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="size-full object-cover"
-              />
-            }
-            torch={torch !== 'none'}
-            torchOn={torch === 'on'}
-            onClose={close}
-            onTorch={() => void cameraStream.toggleTorch()}
-            onShutter={onShutter}
-            onUndo={undoable ? onUndo : undefined}
-            onDone={() => void onDone()}
-            onImport={() => inputRef.current?.click()}
-            onType={onType}
-            onFix={onType}
-            onKeep={onKeep}
-            onRetry={onRetry}
-            onView={onView}
-            onAddAnyway={onAddAnyway}
-            onSavePartial={onSavePartial}
-          />
+          <div className="fixed inset-0 touch-none overflow-hidden overscroll-none">
+            <ScanScreen
+              count={view?.count ?? 0}
+              reading={shown}
+              controls={!typing}
+              dim={typing ? 0.4 : undefined}
+              flash={flashedAt !== 0}
+              video={
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="size-full object-cover"
+                />
+              }
+              torch={torch !== 'none'}
+              torchOn={torch === 'on'}
+              onClose={close}
+              onTorch={() => void cameraStream.toggleTorch()}
+              onShutter={onShutter}
+              onUndo={undoable ? onUndo : undefined}
+              onDone={() => void onDone()}
+              onImport={() => inputRef.current?.click()}
+              onType={onType}
+              onFix={onType}
+              onKeep={onKeep}
+              onRetry={onRetry}
+              onView={onView}
+              onAddAnyway={onAddAnyway}
+              onSavePartial={onSavePartial}
+            />
+          </div>
           {typing && entry && (
             <SaisieManuelleSheet
               fixed
