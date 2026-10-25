@@ -1,3 +1,4 @@
+import type { DraftAnnex } from '#/features/scan/annex';
 import type { OcrLine } from '@repo/ocr/worker';
 import type {
   batch,
@@ -176,6 +177,8 @@ export type DraftParcel = {
   pieces?: DraftPieces | null;
   /** The sender proposed so far; absent on drafts stored before YSL-40. */
   sender?: DraftSender | null;
+  /** The annex fields (F20); absent on drafts stored before YSL-41. */
+  annex?: DraftAnnex | null;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */

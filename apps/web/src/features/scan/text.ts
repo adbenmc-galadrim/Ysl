@@ -1,8 +1,19 @@
 import { recipientFromLines } from '@repo/ocr/recipient';
 import { senderFromLines } from '@repo/ocr/sender';
 import { OcrReader, type OcrResult } from '@repo/ocr/worker';
+import {
+  firstPiece,
+  pieceOfAnnex,
+  type PieceRead,
+} from '#/features/batch/pieces';
 import { updateDraft } from '#/features/batch/store';
-import type { CourrierDatabase, DraftSender } from '#/features/db/schema';
+import { annexOf, type DraftAnnex } from '#/features/scan/annex';
+import type {
+  CourrierDatabase,
+  DraftOcrLine,
+  DraftParcel,
+  DraftSender,
+} from '#/features/db/schema';
 import { modelsReady } from '#/features/offline/models-state';
 import { resolveSender } from '#/features/scan/sender';
 
@@ -25,6 +36,12 @@ export type ReadText = {
   ocrName: string | null;
   /** The draft's sender after the text: from its `FROM` block, else what the codes gave, skipped or failed included. */
   sender: DraftSender | null;
+  /** The annex fields once the text is read with the codes; null when it is not. */
+  annex: DraftAnnex | null;
+  /** The piece the text announced on a draft no code had tied to others. */
+  piece: PieceRead | null;
+  /** Every line read, for a held draft that is not in the database to keep them. */
+  ocrLines: DraftOcrLine[];
   /** False when the draft was undone meanwhile: nothing to show. */
   kept: boolean;
   /** True when the OCR failed; the draft keeps what the codes gave. */
@@ -47,13 +64,15 @@ export function readText(
   blob: Blob,
   ocr: TextReader = ocrReader(),
   ready: boolean = modelsReady(),
+  held?: DraftParcel,
 ): Promise<ReadText> {
-  const running = inFlight.get(draftId);
+  const key = held ? `${draftId}\u0000held` : draftId;
+  const running = inFlight.get(key);
   if (running) return running;
   const reading = (
-    ready ? read(db, draftId, blob, ocr) : skip(db, draftId)
-  ).finally(() => inFlight.delete(draftId));
-  inFlight.set(draftId, reading);
+    ready ? read(db, draftId, blob, ocr, held) : skip(db, draftId)
+  ).finally(() => inFlight.delete(key));
+  inFlight.set(key, reading);
   return reading;
 }
 
@@ -71,7 +90,16 @@ async function skip(db: CourrierDatabase, draftId: string): Promise<ReadText> {
   const kept = await updateDraft(db, draftId, { ocrState: 'skipped' }).catch(
     () => false,
   );
-  return { draftId, ocrName: null, sender, kept, failed: false };
+  return {
+    draftId,
+    ocrName: null,
+    sender,
+    annex: null,
+    piece: null,
+    ocrLines: [],
+    kept,
+    failed: false,
+  };
 }
 
 /**
@@ -92,23 +120,47 @@ async function senderWithText(
   return resolveSender(db, draft.symbols, ocrName).catch(() => current);
 }
 
+/**
+ * A draft held as a duplicate (F10) is out of the database: its text is read
+ * from the copy the screen keeps, and nothing is written, not even on the
+ * copy. « Ajouter quand même » reads the text again, as a draft of the
+ * batch, so the reading of a held draft never stands in for that one.
+ */
 async function read(
   db: CourrierDatabase,
   draftId: string,
   blob: Blob,
   ocr: TextReader,
+  held?: DraftParcel,
 ): Promise<ReadText> {
   try {
     const result: OcrResult = await ocr.recognize(blob);
     const ocrName = recipientFromLines(result.lines);
     const sender = await senderWithText(db, draftId, result.lines);
-    const kept = await updateDraft(db, draftId, {
-      ocrState: 'done',
+    const draft = held ?? (await db.draftParcel.get(draftId));
+    const annex = draft ? annexOf(draft.symbols, result.lines) : null;
+    const piece =
+      draft && !draft.pieces ? pieceOfAnnex(annex, draft.trackingNorm) : null;
+    const kept = held
+      ? true
+      : await updateDraft(db, draftId, {
+          ocrState: 'done',
+          ocrName,
+          ocrLines: result.lines,
+          ...(sender === undefined ? {} : { sender }),
+          ...(annex === null ? {} : { annex }),
+          ...(piece === null ? {} : { pieces: firstPiece(piece) }),
+        });
+    return {
+      draftId,
       ocrName,
+      sender: sender ?? null,
+      annex,
+      piece,
       ocrLines: result.lines,
-      ...(sender === undefined ? {} : { sender }),
-    });
-    return { draftId, ocrName, sender: sender ?? null, kept, failed: false };
+      kept,
+      failed: false,
+    };
   } catch {
     const kept = await updateDraft(db, draftId, { ocrState: 'failed' }).catch(
       () => false,
@@ -117,6 +169,9 @@ async function read(
       draftId,
       ocrName: null,
       sender: await currentSender(db, draftId),
+      annex: null,
+      piece: null,
+      ocrLines: [],
       kept,
       failed: true,
     };

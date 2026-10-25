@@ -9,6 +9,7 @@ import type {
 } from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
+import { annexOf } from '#/features/scan/annex';
 import type { DecodeQueue } from '#/features/scan/decode-queue';
 import { missingFormats } from '#/features/scan/expected-formats';
 import {
@@ -110,6 +111,7 @@ export async function readDraft(
       symbols: bare(symbols),
       pieces: piece && firstPiece(piece),
       sender,
+      annex: annexOf(symbols, null),
     });
     return {
       draftId,

@@ -6,6 +6,7 @@ import {
   findPieceGroup,
   firstPiece,
   pieceOf,
+  pieceOfAnnex,
 } from '#/features/batch/pieces';
 import {
   addDraft,
@@ -38,6 +39,29 @@ let files: MemoryFiles;
 beforeEach(async () => {
   db = await openTestDatabase();
   files = new MemoryFiles();
+});
+
+describe('pieceOfAnnex', () => {
+  const annex = (index: number, total: number) => ({
+    pieces: { index, total, level: 'to-verify' as const },
+    weightKg: null,
+    service: null,
+    reference: null,
+  });
+
+  it('ties the boxes the text announces by the tracking number', () => {
+    expect(pieceOfAnnex(annex(2, 3), '1Z99230623')).toEqual({
+      index: 2,
+      total: 3,
+      key: '1Z99230623',
+    });
+  });
+
+  it('is no piece without a number, a single box, or no text', () => {
+    expect(pieceOfAnnex(annex(2, 3), null)).toBeNull();
+    expect(pieceOfAnnex(annex(1, 1), '1Z99230623')).toBeNull();
+    expect(pieceOfAnnex(null, '1Z99230623')).toBeNull();
+  });
 });
 
 describe('pieceOf', () => {

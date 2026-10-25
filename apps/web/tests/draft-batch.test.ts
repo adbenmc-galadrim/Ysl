@@ -206,6 +206,50 @@ describe('promotedStatus', () => {
 });
 
 describe('finishBatch', () => {
+  it('writes the weight, the service and the reference the label gave', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, draft.id, {
+      reading: 'read',
+      annex: {
+        pieces: null,
+        weightKg: { value: 1.2, level: 'to-verify' },
+        service: { code: '328', label: null, level: 'sure' },
+        reference: { value: 'PO-4471', level: 'sure' },
+      },
+    });
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'a', now: later(9) });
+
+    expect(await db.parcel.get(draft.id)).toMatchObject({
+      weightKg: 1.2,
+      carrierService: '328',
+      reference: 'PO-4471',
+    });
+  });
+
+  it('names the service when the carrier does', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, draft.id, {
+      reading: 'read',
+      annex: {
+        pieces: null,
+        weightKg: null,
+        service: { code: '02', label: '2nd Day Air', level: 'sure' },
+        reference: null,
+      },
+    });
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'a', now: later(9) });
+
+    expect(await db.parcel.get(draft.id)).toMatchObject({
+      weightKg: null,
+      carrierService: '2nd Day Air',
+      reference: null,
+    });
+  });
+
   it('turns the drafts into a batch and its parcels, queued, photos attached', async () => {
     const batch = await openBatch(db, NOW);
     const read = await addDraft(db, files, batch.id, photo(), NOW);

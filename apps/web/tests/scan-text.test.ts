@@ -71,6 +71,107 @@ describe('readText', () => {
     });
   });
 
+  it('writes the annex fields the text and the codes give', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(draft.id, {
+      reading: 'read',
+      tracking: '01234567890128',
+      trackingNorm: '01234567890128',
+      symbols: [{ format: 'Code128', text: '01234567890128' }],
+    });
+    const ocr = {
+      recognize: () =>
+        Promise.resolve(
+          result([line('PKG 2 OF 3', 10), line('WT 1.2 KG', 40)]),
+        ),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true);
+
+    expect(text.annex).toMatchObject({
+      pieces: { index: 2, total: 3, level: 'to-verify' },
+      weightKg: { value: 1.2 },
+    });
+    expect(text.piece).toEqual({ index: 2, total: 3, key: '01234567890128' });
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      annex: { weightKg: { value: 1.2, level: 'to-verify' } },
+      pieces: { total: 3, read: [2], key: '01234567890128', photoIds: [] },
+    });
+  });
+
+  it('leaves the pieces a code announced, and a draft without a number', async () => {
+    const batch = await openBatch(db, NOW);
+    const coded = await addDraft(db, files, batch.id, photo(), NOW);
+    await db.draftParcel.update(coded.id, {
+      trackingNorm: '01234567890128',
+      pieces: { total: 3, read: [1], key: 'ups:SHP', photoIds: [] },
+    });
+    const bare = await addDraft(db, files, batch.id, photo(), NOW);
+    const ocr = {
+      recognize: () => Promise.resolve(result([line('PKG 2 OF 3', 10)])),
+    };
+
+    const first = await readText(db, coded.id, photo().blob, ocr, true);
+    const second = await readText(db, bare.id, photo().blob, ocr, true);
+
+    expect(first.piece).toBeNull();
+    expect(await db.draftParcel.get(coded.id)).toMatchObject({
+      pieces: { read: [1], key: 'ups:SHP' },
+    });
+    expect(second.piece).toBeNull();
+    expect((await db.draftParcel.get(bare.id))?.pieces).toBeNull();
+  });
+
+  it('reads a held draft from its copy without writing anything', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const held = {
+      ...draft,
+      trackingNorm: '01234567890128',
+      symbols: [{ format: 'Code128', text: '01234567890128' }],
+    };
+    await db.draftParcel.delete(draft.id);
+    const ocr = {
+      recognize: () => Promise.resolve(result([line('PKG 2 OF 3', 10)])),
+    };
+
+    const text = await readText(db, draft.id, photo().blob, ocr, true, held);
+
+    expect(text).toMatchObject({
+      kept: true,
+      piece: { index: 2, total: 3, key: '01234567890128' },
+      ocrLines: [{ text: 'PKG 2 OF 3' }],
+    });
+    expect(await db.draftParcel.get(draft.id)).toBeUndefined();
+  });
+
+  it('does not stand in for the reading of the same draft once restored', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, photo(), NOW);
+    const finishes: ((value: OcrResult) => void)[] = [];
+    const ocr = {
+      recognize: () =>
+        new Promise<OcrResult>((resolve) => {
+          finishes.push(resolve);
+        }),
+    };
+
+    const heldReading = readText(db, draft.id, photo().blob, ocr, true, draft);
+    const normal = readText(db, draft.id, photo().blob, ocr, true);
+    expect(finishes).toHaveLength(2);
+    for (const finish of finishes) {
+      finish(result([line('SHIP TO: Hugo Lefèvre', 10)]));
+    }
+    await heldReading;
+
+    expect(await normal).toMatchObject({ ocrName: 'Hugo Lefèvre', kept: true });
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      ocrState: 'done',
+      ocrName: 'Hugo Lefèvre',
+    });
+  });
+
   it('marks the text failed without touching what the codes gave', async () => {
     const batch = await openBatch(db, NOW);
     const draft = await addDraft(db, files, batch.id, photo(), NOW);
@@ -146,6 +247,9 @@ describe('readText', () => {
       draftId: draft.id,
       ocrName: null,
       sender: null,
+      annex: null,
+      piece: null,
+      ocrLines: [],
       kept: true,
       failed: false,
     });

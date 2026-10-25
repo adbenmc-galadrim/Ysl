@@ -1,5 +1,6 @@
 import type { ParsedCode } from '@repo/contract/codes';
 import { listDrafts } from '#/features/batch/store';
+import type { DraftAnnex } from '#/features/scan/annex';
 import type {
   CourrierDatabase,
   DraftParcel,
@@ -36,6 +37,19 @@ export function pieceOf(
   const key = pieceKey(parsed, trackingNorm);
   if (key === null) return null;
   return { index: parsed.pieces.index, total: parsed.pieces.total, key };
+}
+
+/**
+ * The piece the printed text announces (« 1 OF 3 ») when no code did: the
+ * boxes then share nothing but the tracking number, which has to be read.
+ */
+export function pieceOfAnnex(
+  annex: DraftAnnex | null | undefined,
+  trackingNorm: string | null,
+): PieceRead | null {
+  const pieces = annex?.pieces;
+  if (!pieces || pieces.total <= 1 || trackingNorm === null) return null;
+  return { index: pieces.index, total: pieces.total, key: trackingNorm };
 }
 
 /** What a draft records of the first piece read: the parcel starts with it. */
