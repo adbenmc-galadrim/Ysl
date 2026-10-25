@@ -1,3 +1,4 @@
+import { OPEN_STATUSES } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow } from '@repo/ui';
 import { Dexie } from 'dexie';
@@ -10,11 +11,7 @@ import type {
   LocalDirectoryPerson,
   LocalParcel,
 } from '#/features/db/schema';
-import {
-  HOME_OPEN_STATUSES,
-  startOfDay,
-  toParcelRow,
-} from '#/features/parcels/model';
+import { startOfDay, toParcelRow } from '#/features/parcels/model';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -31,7 +28,7 @@ export async function listHomeParcels(
 ): Promise<ParcelRow[]> {
   const [open, delivered] = await Promise.all([
     Promise.all(
-      HOME_OPEN_STATUSES.map((status) =>
+      OPEN_STATUSES.map((status) =>
         database.parcel
           .where('[status+receivedAt]')
           .between([status, Dexie.minKey], [status, Dexie.maxKey])
