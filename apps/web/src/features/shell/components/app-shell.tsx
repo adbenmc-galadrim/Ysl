@@ -11,9 +11,9 @@ type AppShellProps = {
  *
  * `dvh` is the one height that matches what iOS shows. Under an opaque status
  * bar (an icon added before the bar turned translucent) the viewport starts
- * below the bar and is 68 px shorter than the screen, while `lvh` and `svh`
- * keep the full screen height and push the bottom bar off screen. The
- * document keeps the full screen height on its own (`styles.css`).
+ * below the bar and loses its height (68 px on an iPhone Air), while `lvh`
+ * and `svh` keep the full screen height and push the bottom bar off screen.
+ * The document keeps the full screen height on its own (`styles.css`).
  */
 export function AppShell({ children, ref }: AppShellProps) {
   return (

@@ -5,8 +5,8 @@ import {
   ScannerQrScreen,
 } from '@repo/ui';
 import { createRoot } from 'react-dom/client';
-import { AppShell } from '../../../src/features/shell/components/app-shell';
-import '../../../src/styles.css';
+import { AppShell } from '#/features/shell/components/app-shell';
+import '#/styles.css';
 
 /**
  * The app frame around one drawn screen, for the layout test:

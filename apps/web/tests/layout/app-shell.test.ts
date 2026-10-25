@@ -29,6 +29,7 @@ beforeAll(async () => {
     root: fileURLToPath(new URL('../..', import.meta.url)),
     logLevel: 'error',
     plugins: [tailwindcss(), viteReact()],
+    resolve: { tsconfigPaths: true },
     server: { port: 0, host: '127.0.0.1' },
   });
   await server.listen();
@@ -61,23 +62,33 @@ async function bottomOf(page: Page, name: string): Promise<number> {
   return box.y + box.height;
 }
 
-/** Height declarations of the CSS rules that size the frame. */
+/**
+ * Height declarations of the CSS rules that size the frame, conditional ones
+ * included: a `@media (display-mode: standalone)` variant never applies in
+ * Playwright, and may come out nested in its rule.
+ */
 function frameHeights(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const frame = document.querySelector('[data-shell=app]')!;
     const heights: string[] = [];
-    const walk = (rules: CSSRuleList) => {
+    const walk = (rules: CSSRuleList, inFrame: boolean) => {
       for (const rule of rules) {
+        let matches = inFrame;
         if (rule instanceof CSSStyleRule) {
-          if (frame.matches(rule.selectorText) && rule.style.height) {
-            heights.push(rule.style.height);
+          try {
+            matches = frame.matches(rule.selectorText);
+          } catch {
+            // A nested selector (`&…`) that `matches` cannot parse.
           }
-        } else if ('cssRules' in rule) {
-          walk((rule as CSSGroupingRule).cssRules);
+        }
+        const { style } = rule as Partial<CSSStyleRule>;
+        if (matches && style?.height) heights.push(style.height);
+        if ('cssRules' in rule) {
+          walk((rule as CSSGroupingRule).cssRules, matches);
         }
       }
     };
-    for (const sheet of document.styleSheets) walk(sheet.cssRules);
+    for (const sheet of document.styleSheets) walk(sheet.cssRules, false);
     return heights;
   });
 }
