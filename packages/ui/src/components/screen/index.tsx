@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 import { cn } from '#lib/tv';
 
@@ -16,6 +16,8 @@ export type ScreenProps = {
    * bar. 128 is the height of the standard bar with its fade.
    */
   bottomInset?: number;
+  /** The scrolling column, for a list that renders only what is in view. */
+  scrollRef?: Ref<HTMLDivElement>;
   className?: string;
 };
 
@@ -30,6 +32,7 @@ export function Screen({
   bottom,
   tone = 'white',
   bottomInset = 128,
+  scrollRef,
   className,
 }: ScreenProps) {
   return (
@@ -42,7 +45,10 @@ export function Screen({
         tone === 'night' && 'bg-night text-white',
       )}
     >
-      <div className="absolute inset-0 overflow-y-auto overscroll-contain">
+      <div
+        ref={scrollRef}
+        className="absolute inset-0 overflow-y-auto overscroll-contain"
+      >
         <main
           className={cn(
             'mx-auto flex w-full max-w-[480px] flex-col px-5 pt-[calc(var(--safe-top)+8px)]',

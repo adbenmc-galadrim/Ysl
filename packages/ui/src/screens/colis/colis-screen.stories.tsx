@@ -185,3 +185,30 @@ export const EnAttenteDepuis24h: Story = {
     ),
   },
 };
+
+const CAST = [PARCELS.ines, PARCELS.hugo, PARCELS.nora, PARCELS.camille];
+
+/** A busy desk: hundreds of rows, only those in view are in the page. */
+export const ListeLongue: Story = {
+  name: 'Liste longue',
+  args: {
+    sync: 'synced',
+    summary: '400 colis, dont 150 à traiter',
+    sections: [
+      {
+        title: 'À notifier',
+        parcels: Array.from({ length: 150 }, (_, i) => ({
+          ...PARCELS.camille,
+          id: `notify-${i}`,
+        })),
+      },
+      {
+        title: 'En attente de retrait',
+        parcels: Array.from({ length: 250 }, (_, i) => ({
+          ...CAST[i % CAST.length]!,
+          id: `waiting-${i}`,
+        })),
+      },
+    ],
+  },
+};
