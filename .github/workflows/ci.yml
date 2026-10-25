@@ -66,6 +66,11 @@ jobs:
         if: steps.chromium.outputs.cache-hit != 'true'
         run: pnpm --filter @repo/ui exec playwright install chromium
 
+      # La coque de l'app sur un iPhone 390 × 844 : barre du bas au-dessus de la zone
+      # sûre, dernier colis d'une longue liste atteignable, hauteur en `dvh`.
+      - name: Teste la coque de l'app
+        run: pnpm --filter @repo/web test:layout
+
       - name: Construit le Storybook
         run: pnpm build-storybook
       # `vite preview` plutôt qu'un serveur statique minimal : `python3 -m http.server`

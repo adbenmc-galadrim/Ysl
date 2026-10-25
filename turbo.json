@@ -19,7 +19,7 @@
     "PUBLIC_APP_URL",
     "LOG_LEVEL"
   ],
-  "globalPassThroughEnv": ["GITHUB_STEP_SUMMARY"],
+  "globalPassThroughEnv": ["GITHUB_STEP_SUMMARY", "LAYOUT_BROWSER"],
   "tasks": {
     "lint": { "dependsOn": ["^lint"] },
     "check-types": { "dependsOn": ["^check-types"] },

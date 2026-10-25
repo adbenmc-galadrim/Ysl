@@ -44,6 +44,18 @@ html:has([data-shell='app']) body {
   overflow: hidden;
 }
 
+/*
+ * Installed, iOS 26 lays the page under the translucent status bar only while
+ * the document is at least as tall as the screen; shorter, the viewport loses
+ * the status bar for good. The body holds the full screen height behind the
+ * shell, which itself follows the visible viewport (`h-dvh`).
+ */
+@media (display-mode: standalone) {
+  html:has([data-shell='app']) body {
+    min-height: 100lvh;
+  }
+}
+
 html:has([data-shell='app'] [data-tone='fill']) {
   background: var(--color-fill);
 }

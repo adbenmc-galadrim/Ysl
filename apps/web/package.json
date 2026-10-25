@@ -13,7 +13,8 @@
     "generate-icons": "tsx scripts/generate-icons.ts",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:layout": "vitest run --config vitest.layout.config.ts"
   },
   "dependencies": {
     "@fontsource/inter-tight": "catalog:",
@@ -49,6 +50,7 @@
     "@vitejs/plugin-react": "catalog:",
     "eslint": "catalog:",
     "fake-indexeddb": "^6.2.6",
+    "playwright": "catalog:",
     "sharp": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
