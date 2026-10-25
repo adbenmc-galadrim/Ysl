@@ -23,7 +23,7 @@ export function ocrReader(): OcrReader {
 export type ReadText = {
   draftId: string;
   ocrName: string | null;
-  /** The draft's sender once the text has been read, from its codes or its `FROM` block. */
+  /** The draft's sender after the text: from its `FROM` block, else what the codes gave, skipped or failed included. */
   sender: DraftSender | null;
   /** False when the draft was undone meanwhile: nothing to show. */
   kept: boolean;
@@ -57,11 +57,21 @@ export function readText(
   return reading;
 }
 
+/** The sender the draft already holds: what the screen keeps when the text says nothing. */
+async function currentSender(
+  db: CourrierDatabase,
+  draftId: string,
+): Promise<DraftSender | null> {
+  const draft = await db.draftParcel.get(draftId).catch(() => undefined);
+  return draft?.sender ?? null;
+}
+
 async function skip(db: CourrierDatabase, draftId: string): Promise<ReadText> {
+  const sender = await currentSender(db, draftId);
   const kept = await updateDraft(db, draftId, { ocrState: 'skipped' }).catch(
     () => false,
   );
-  return { draftId, ocrName: null, sender: null, kept, failed: false };
+  return { draftId, ocrName: null, sender, kept, failed: false };
 }
 
 /**
@@ -103,6 +113,12 @@ async function read(
     const kept = await updateDraft(db, draftId, { ocrState: 'failed' }).catch(
       () => false,
     );
-    return { draftId, ocrName: null, sender: null, kept, failed: true };
+    return {
+      draftId,
+      ocrName: null,
+      sender: await currentSender(db, draftId),
+      kept,
+      failed: true,
+    };
   }
 }

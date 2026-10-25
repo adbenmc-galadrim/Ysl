@@ -242,4 +242,26 @@ describe('readText — sender', () => {
     expect(text.sender).toBeNull();
     expect((await db.draftParcel.get(draft.id))?.sender).toBeNull();
   });
+
+  it('keeps the codes’ sender when the text is skipped or fails', async () => {
+    const batch = await openBatch(db, NOW);
+    const settled = {
+      name: 'Metalworks SpA',
+      id: null,
+      level: 'sure' as const,
+      source: '2d' as const,
+      account: null,
+    };
+    const skipped = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, skipped.id, { sender: settled });
+    const failed = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, failed.id, { sender: settled });
+    const broken = { recognize: () => Promise.reject(new Error('boom')) };
+
+    const a = await readText(db, skipped.id, photo().blob, broken, false);
+    const b = await readText(db, failed.id, photo().blob, broken, true);
+
+    expect(a).toMatchObject({ sender: settled, failed: false });
+    expect(b).toMatchObject({ sender: settled, failed: true });
+  });
 });
