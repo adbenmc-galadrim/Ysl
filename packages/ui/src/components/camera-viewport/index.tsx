@@ -79,6 +79,11 @@ export type CameraViewportProps = {
    */
   floor?: boolean;
   /**
+   * The zoom level of a pinch, « ×2,0 », low in the viewfinder; a tap on it
+   * goes back to ×1. Absent at ×1.
+   */
+  zoom?: { label: string; onReset?: () => void };
+  /**
    * The controls over the picture, stacked top to bottom between the safe
    * areas: top bar, panels, a spacer, the shutter row.
    */
@@ -102,6 +107,7 @@ export function CameraViewport({
   dim,
   flash = false,
   floor = true,
+  zoom,
   children,
   className,
 }: CameraViewportProps) {
@@ -144,6 +150,19 @@ export function CameraViewport({
       {frame && (
         <div className="absolute inset-x-0 top-[calc(var(--safe-top)+146px)] flex justify-center">
           <Viewfinder tone={frame} />
+        </div>
+      )}
+      {/* Low inside the viewfinder: 146 + 336 − 44. */}
+      {zoom && (
+        <div className="absolute inset-x-0 top-[calc(var(--safe-top)+438px)] z-10 flex justify-center">
+          <button
+            type="button"
+            aria-label={`Zoom ${zoom.label}, revenir à ×1`}
+            onClick={zoom.onReset}
+            className="h-7 min-w-[52px] rounded-full bg-black/55 px-2.5 text-13 leading-4 font-semibold text-white tabular-nums ring-1 ring-white/15 ring-inset"
+          >
+            <span role="status">{zoom.label}</span>
+          </button>
         </div>
       )}
       <div className="relative mx-auto flex h-full min-h-dvh w-full max-w-[480px] flex-col pt-[calc(var(--safe-top)+6px)] pb-[calc(var(--safe-bottom)+18px)]">

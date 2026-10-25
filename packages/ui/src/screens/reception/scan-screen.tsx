@@ -10,7 +10,10 @@ import {
   CameraPanel,
   LastScanPanel,
 } from '#components/camera-panel';
-import { CameraViewport } from '#components/camera-viewport';
+import {
+  CameraViewport,
+  type CameraViewportProps,
+} from '#components/camera-viewport';
 import { Keypad } from '#components/keypad';
 import {
   KeypadField,
@@ -93,6 +96,8 @@ export type ScanScreenProps = {
   dim?: number;
   /** A label was just read: green corners and a green flash, for a moment. */
   flash?: boolean;
+  /** The pinch zoom level, see `CameraViewport`. */
+  zoom?: CameraViewportProps['zoom'];
   /** Shows the torch square, when the phone has one. */
   torch?: boolean;
   /** The torch is lit: the square turns white. */
@@ -149,6 +154,7 @@ export function ScanScreen({
   controls = true,
   dim,
   flash,
+  zoom,
   torch,
   torchOn,
   onClose,
@@ -193,6 +199,7 @@ export function ScanScreen({
       }
       dim={dim ?? (unreadable ? 0.25 : starting ? 1 : undefined)}
       flash={confirmed}
+      zoom={zoom}
     >
       <CameraTopBar
         title={<span role="status">{`Lot : ${count} colis`}</span>}

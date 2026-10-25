@@ -88,3 +88,4 @@ export * from '#foundations/corners';
 export * from '#icons';
 export * from '#screens';
 export { cn, cx, tv, type VariantProps } from '#lib/tv';
+export { usePageLock } from '#lib/page-lock';

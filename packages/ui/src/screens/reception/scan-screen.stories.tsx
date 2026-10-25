@@ -125,6 +125,11 @@ export const LectureConfirmee: Story = {
   args: { ...Lecture.args, flash: true },
 };
 
+/** Two fingers spread on the picture: the camera zooms, the level shows low in the frame; a tap on it goes back to ×1. */
+export const Zoom: Story = {
+  args: { count: 12, reading: { kind: 'idle' }, zoom: { label: '×2,5' } },
+};
+
 /** Right after the tap: the band says the reading is on its way. */
 export const LectureEnCours: Story = {
   name: 'Lecture en cours',
