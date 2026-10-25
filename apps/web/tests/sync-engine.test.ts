@@ -62,6 +62,7 @@ describe('createSyncEngine', () => {
       lastSyncAt: NOW,
       lastError: null,
       pulled: 0,
+      settled: true,
     });
     expect((await db.syncState.get(SYNC_STATE_KEYS.lastSyncAt))?.value).toEqual(
       NOW,
@@ -78,9 +79,13 @@ describe('createSyncEngine', () => {
       online: () => true,
     });
 
+    expect(engine.getSnapshot().settled).toBe(false);
     const first = engine.syncNow();
     const second = engine.syncNow();
-    expect(engine.getSnapshot().status).toBe('syncing');
+    expect(engine.getSnapshot()).toMatchObject({
+      status: 'syncing',
+      settled: false,
+    });
     gate.resolve(empty);
 
     expect(await Promise.all([first, second])).toEqual([
@@ -103,7 +108,10 @@ describe('createSyncEngine', () => {
 
     expect(run.status).toBe('offline');
     expect(push).not.toHaveBeenCalled();
-    expect(engine.getSnapshot().status).toBe('offline');
+    expect(engine.getSnapshot()).toMatchObject({
+      status: 'offline',
+      settled: true,
+    });
   });
 
   it('backs off after a failure, except when forced', async () => {

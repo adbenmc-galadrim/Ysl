@@ -17,6 +17,7 @@ import {
   toSections,
 } from '#/features/parcels/sections';
 import {
+  awaitsServer,
   pendingBanner,
   showsPendingBanner,
   syncPill,
@@ -33,9 +34,13 @@ export function ColisHome() {
   const update = useUpdate();
   const parcels = useHomeParcels();
   const [folded, toggleFolded] = useFoldedSections();
-  const loading = useDelayedPending(parcels === undefined);
+  // The rows already on the iPhone show at once; only what the server may
+  // still send is drawn as a skeleton, and "nothing waits" only once it spoke.
+  const waiting = awaitsServer(sync);
+  const loading = useDelayedPending(parcels === undefined || waiting);
   const rows = parcels ?? [];
-  const empty = parcels !== undefined && rows.length === 0;
+  const empty = parcels !== undefined && rows.length === 0 && !waiting;
+  const counted = parcels !== undefined && (rows.length > 0 || !waiting);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
 
   const scan = () => void navigate({ to: '/scan' });
@@ -44,7 +49,7 @@ export function ColisHome() {
   return (
     <ColisScreen
       sync={syncPill(sync)}
-      summary={parcels ? summarize(rows) : t('colis.summary.loading')}
+      summary={counted ? summarize(rows) : t('colis.summary.loading')}
       sections={toSections(rows)}
       folded={sectionTitles(folded)}
       onToggleSection={(title) => {

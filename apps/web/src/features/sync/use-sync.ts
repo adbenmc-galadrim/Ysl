@@ -14,6 +14,7 @@ export type SyncView = OutboxCounts & {
   online: boolean;
   status: SyncRunStatus;
   lastSyncAt: Date | null;
+  settled: boolean;
 };
 
 /** What the screens show of the synchronisation: live, from the engine and the outbox. */
@@ -32,5 +33,6 @@ export function useSync(): SyncView {
     rejected: counts.rejected,
     oldestAt: counts.oldestAt,
     lastSyncAt: snapshot.lastSyncAt,
+    settled: snapshot.settled,
   };
 }

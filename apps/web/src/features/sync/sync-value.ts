@@ -35,6 +35,16 @@ export function syncPill(
 }
 
 /**
+ * The run that opens the app is still pulling: what the server holds may
+ * not be on the iPhone yet. Offline, nothing will come, so nothing waits.
+ */
+export function awaitsServer(
+  sync: Pick<SyncView, 'online' | 'settled'>,
+): boolean {
+  return sync.online && !sync.settled;
+}
+
+/**
  * Changes still on the phone are announced once the server cannot be
  * reached, and whatever the network once they have waited for a day.
  */

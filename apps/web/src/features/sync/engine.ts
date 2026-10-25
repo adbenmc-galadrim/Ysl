@@ -12,6 +12,11 @@ export type SyncSnapshot = {
   lastError: string | null;
   /** Rows written by the pull of the run in flight, or of the last one. */
   pulled: number;
+  /**
+   * A run has ended since the app was opened, whatever its outcome: until
+   * then, rows from the server may still be on their way.
+   */
+  settled: boolean;
 };
 
 export type SyncEngineOptions = {
@@ -49,6 +54,7 @@ export const INITIAL_SYNC_SNAPSHOT: SyncSnapshot = {
   lastSyncAt: null,
   lastError: null,
   pulled: 0,
+  settled: false,
 };
 
 function isUnauthorized(error: unknown): boolean {
@@ -86,7 +92,7 @@ export function createSyncEngine({
     failures += 1;
     retryAt = now().getTime() + backoffAfter(failures);
     const status = online() ? 'error' : 'offline';
-    set({ status, lastError: describeError(error) });
+    set({ status, lastError: describeError(error), settled: true });
     return nothing(status);
   }
 
@@ -97,7 +103,7 @@ export function createSyncEngine({
 
   async function run(): Promise<SyncRun> {
     if (!online()) {
-      set({ status: 'offline' });
+      set({ status: 'offline', settled: true });
       return nothing('offline');
     }
     set({ status: 'syncing', pulled: 0 });
@@ -120,6 +126,7 @@ export function createSyncEngine({
         status,
         lastSyncAt: at,
         lastError: pushed.stopped === 'retry' ? 'retry' : null,
+        settled: true,
       });
       return {
         status,
