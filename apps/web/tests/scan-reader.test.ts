@@ -140,6 +140,7 @@ describe('readDraft', () => {
     expect(await db.draftParcel.get(draft.id)).toMatchObject({
       reading: 'read',
       carrier: 'UPS',
+      annex: { service: { code: '04', label: null, level: 'sure' } },
       tracking: '1ZE6344W0499230622',
       symbols: [
         { format: 'Code128', text: '1ZE6344W0499230622' },

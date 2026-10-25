@@ -236,19 +236,87 @@ describe('extractFields — inputs', () => {
       accounts: [],
       pieces: null,
       weightKg: null,
+      service: null,
+      reference: null,
       codes: [],
     });
   });
 
-  it('accepts an OCR input and ignores it for now', () => {
-    const { tracking } = extractFields({
+  it('reads the service and the reference of a structured code', () => {
+    const { service, reference } = extractFields({
+      symbols: [{ format: 'PDF417', text: fedexPdf417(FEDEX) }],
+    });
+    expect(service).toMatchObject({
+      value: { code: '020', label: 'Express Saver' },
+      confidence: 0.97,
+      level: 'sure',
+    });
+    expect(service?.sources).toEqual([
+      {
+        kind: '2d',
+        format: 'PDF417',
+        confidence: 0.97,
+        value: 'Express Saver',
+      },
+    ]);
+    expect(reference).toBeNull();
+  });
+
+  it('keeps a service code the carrier does not name', () => {
+    const { service } = extractFields({
+      symbols: [{ format: 'Aztec', text: dpdAztec(DPD) }],
+    });
+    expect(service).toMatchObject({
+      value: { code: '328', label: null },
+      sources: [{ value: '328' }],
+    });
+  });
+
+  it('reads a GS1 reference and a shipment id as the reference', () => {
+    const { reference } = extractFields({
+      symbols: [
+        { format: 'DataMatrix', text: '(00)340123450000000012(401)REF-42' },
+      ],
+    });
+    expect(reference).toMatchObject({ value: 'REF-42', confidence: 0.97 });
+  });
+
+  it('derives the UPS service from the 1Z alone, at 0.93', () => {
+    const { service } = extractFields({
       symbols: [{ format: 'Code128', text: UPS }],
-      ocr: { text: `TRACKING ${FEDEX}` },
     });
-    expect(tracking).toMatchObject({
-      value: UPS,
-      candidates: [{ value: UPS }],
+    expect(service).toMatchObject({
+      value: { code: '02', label: '2nd Day Air' },
+      confidence: CONFIDENCE.derived,
+      level: 'sure',
+      sources: [{ kind: '1d', format: 'Code128' }],
     });
+  });
+
+  it('marks a registered S10 item from its number', () => {
+    const { service } = extractFields({
+      symbols: [{ format: 'Code128', text: 'RA123456785FR' }],
+    });
+    expect(service).toMatchObject({
+      value: { code: null, label: 'Recommandé' },
+      confidence: CONFIDENCE.derived,
+    });
+  });
+
+  it('combines the MaxiCode service with the 1Z that agrees', () => {
+    const maxicode = `[)>${RS}01${GS}9675007${GS}250${GS}002${GS}1Z0205271686${GS}UPSN${GS}12345E${GS}042${GS}${GS}1/1${GS}3${GS}N${GS}${GS}PARIS${GS}${RS}${EOT}`;
+    const { service } = extractFields({
+      symbols: [
+        { format: 'MaxiCode', text: maxicode },
+        { format: 'Code128', text: UPS },
+      ],
+    });
+    expect(service).toMatchObject({
+      value: { code: '02', label: '2nd Day Air' },
+      confidence: 0.99,
+      flags: [],
+    });
+    expect(service?.sources.map((s) => s.kind)).toEqual(['2d', '1d']);
   });
 });
 

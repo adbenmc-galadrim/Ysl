@@ -256,8 +256,15 @@ Un envoi livré en plusieurs cartons porte sur chacun un code 2D qui annonce « 
   `pieces = { total, read: [n], key, photoIds: [] }`. La **clé** est le numéro d'expédition du code
   (`reference` : shipment ID UPS, GS1 401/402) préfixé du transporteur, sinon le numéro de
   suivi normalisé (DHL Express, Chronopost impriment le même numéro sur chaque carton). Un
-  « 1/1 » (tout MaxiCode UPS) n'est pas un colis en plusieurs pièces ; les n/N lus par
-  l'OCR (« 1 OF 3 ») attendent YSL-41.
+  « 1/1 » (tout MaxiCode UPS) n'est pas un colis en plusieurs pièces. Quand aucun code ne
+  dit n/N mais que le texte imprimé le fait (« PKG 1 OF 3 », YSL-41), `readText` pose
+  `pieces` sur le premier carton à l'arrivée de l'OCR (`pieceOfAnnex`, clé = numéro de
+  suivi seulement : DHL Express, Chronopost). Le carton suivant porte le même numéro :
+  l'alerte « Déjà dans ce lot » s'affiche aussitôt, puis l'OCR du brouillon retenu
+  (`readHeldPiece`, lecture depuis la copie de l'écran, rien n'est écrit) dit « 2 OF 3 »
+  et la pièce rejoint son colis à la place de l'alerte ; sinon rien n'est gardé et
+  « Ajouter quand même » relit le texte comme avant (la lecture d'un brouillon retenu a
+  sa propre entrée dans la file `inFlight`, elle ne tient pas lieu de la lecture normale).
 - La pièce suivante : `findPieceGroup` cherche un brouillon **plus ancien** du lot de même
   clé ; si son indice n'y est pas encore, `attachPiece` l'ajoute aux indices lus, range la
   photo dans `pieces.photoIds` et supprime le brouillon de la pièce (le compteur ne bouge
@@ -322,11 +329,39 @@ malus de conflit (0,82, à vérifier).
   les mots, initiales recollées (`S.p.A.` et `SPA` partagent une clé). La changer réécrit
   toutes les colonnes normalisées et force un pull complet.
 
+## Champs annexes : n/N, poids, service, référence (`features/scan/annex.ts`, F20)
+
+Ce que l'étiquette dit du colis au-delà de son numéro passe par la fusion de
+`@repo/contract/extract` (`extractFields`), que l'écran Scan n'utilisait pas encore pour
+le suivi et le destinataire : `annexOf(symbols, ocrLines)` en tire `DraftAnnex`
+(`pieces`, `weightKg`, `service { code, label }`, `reference`), chaque champ avec son
+niveau `sure` ou `to-verify` (§4.4) ; un champ sous 0,60 n'est pas gardé.
+
+- **Sources** (§4.3, §4.5) : les codes 2D structurés à 0,97 (`ParsedCode.pieces`,
+  `weightKg`, `service`, `reference`) ; le service déduit du numéro seul à 0,93
+  (`serviceOfTracking` : les deux caractères de service du 1Z UPS, la lettre `R` d'un S10
+  = « Recommandé ») ; le texte imprimé (`extract/ocr.ts`) à 0,65 quand la forme est
+  reconnue (« PKG 1 OF 3 », « COLIS 2 SUR 3 », « WT 1.2 KG », « 2.5 LBS », « EXPRESS
+  SAVER », « RECOMMANDÉ ») et à 0,40 pour un « n/N » nu ou ce qui suit « REF ». Deux
+  sources qui concordent se combinent (2D « 1/3 » + OCR « 1 OF 3 » → 0,99) ; une
+  contradiction garde la mieux classée avec le malus de 0,15 et le drapeau `conflict`.
+  Un poids hors 0,01–70 kg, un n > N, une date (« 12/10/2026 ») sont ignorés.
+- **Service** : `codes/services.ts` nomme les codes UPS (deux derniers chiffres de la classe
+  de service du MaxiCode) et FedEx ; les codes Geopost (`801`, `328`, `925`) restent des
+  codes, gardés en base mais jamais affichés.
+- **Brouillon** : `readDraft` écrit `annex` depuis les codes ; `readText` le recalcule
+  avec les lignes OCR. **Écran** : lignes Colis (N > 1 seulement), Poids, Service (libellé
+  seulement), avec « ? » et avertissement quand le texte seul les donne ; pas de ligne
+  Référence (fiche colis, YSL-48). **Colis** (`toParcel`) : `weightKg`, `carrierService`
+  (libellé, sinon code), `reference` ; `pieceN` / `pieceTotal` inchangés. **Liste** : « 3
+  colis UPS », ou « 1 sur 3 colis UPS » tant que des pièces manquent, à la place du numéro
+  quand `pieceTotal` > 1.
+
 ## Le lot en cours (`features/batch/store.ts`, schéma Dexie version 2)
 
 Deux tables locales, **sans outbox** : `draft_batch` (`id, startedAt`) et `draft_parcel`
-(`id, batchId, createdAt, trackingNorm` ; `pieces` non indexé, absent des brouillons
-d'avant YSL-38). Un seul lot à la fois, et un lot brouillon n'est
+(`id, batchId, createdAt, trackingNorm` ; `pieces` et `annex` non indexés, absents des
+brouillons d'avant YSL-38 et YSL-41). Un seul lot à la fois, et un lot brouillon n'est
 jamais « fermé » : il disparaît à la promotion. Rouvrir `/scan` reprend donc le lot laissé
 là (compteur, dernier ajouté).
 
@@ -347,10 +382,10 @@ un lot »).
 ## Ce qui attend d'autres tickets
 
 Choix du transporteur à la main quand le format est ambigu (revue de lot, YSL-58), liste
-du lot et revue (YSL-58), n/N par l'OCR, poids, service et référence à l'écran (YSL-41),
-expéditeur DPD du format 07 GeoPost (`S01` / `NotifSender*`, structure non publiée, aucun
-échantillon au corpus), expéditeur corrigé par l'agent et appris (YSL-60), fiche colis qui
-l'affiche et le modifie (YSL-48), capture automatique sur image nette (F06,
+du lot et revue (YSL-58), référence et poids sur la fiche colis (YSL-48), revue d'un champ
+annexe « à vérifier » (YSL-58), expéditeur DPD du format 07 GeoPost (`S01` / `NotifSender*`,
+structure non publiée, aucun échantillon au corpus), expéditeur corrigé par l'agent et appris
+(YSL-60), fiche colis qui l'affiche et le modifie (YSL-48), capture automatique sur image nette (F06,
 lot L3). Pièces d'un colis : le regroupement ne joue qu'à la lecture dans l'écran Scan,
 pas à la reprise après relance (`recoverPending` écrit `pieces` sans regrouper : un envoi
 relu en trois cartons après une relance donne trois colis « 1 sur 3 ») ; les numéros de

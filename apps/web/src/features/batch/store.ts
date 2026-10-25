@@ -10,6 +10,7 @@ import type {
 } from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
+import { serviceText } from '#/features/scan/annex';
 
 export type DraftPhoto = { blob: Blob; width: number; height: number };
 
@@ -27,6 +28,7 @@ export type DraftPatch = Partial<
     | 'ocrLines'
     | 'pieces'
     | 'sender'
+    | 'annex'
   >
 >;
 
@@ -86,6 +88,7 @@ export async function addDraft(
     ocrLines: [],
     pieces: null,
     sender: null,
+    annex: null,
   };
   await db.draftParcel.add(draft);
   return draft;
@@ -119,6 +122,7 @@ export function typedDraft(
     ocrLines: [],
     pieces: null,
     sender: null,
+    annex: null,
     ...typed,
   };
 }
@@ -259,9 +263,9 @@ function toParcel(
     senderName: sender?.name ?? null,
     pieceN: draft.pieces ? draft.pieces.read.length : null,
     pieceTotal: draft.pieces?.total ?? null,
-    weightKg: null,
-    carrierService: null,
-    reference: null,
+    weightKg: draft.annex?.weightKg?.value ?? null,
+    carrierService: serviceText(draft.annex),
+    reference: draft.annex?.reference?.value ?? null,
     location: null,
     notes: null,
     receivedAt: draft.createdAt,

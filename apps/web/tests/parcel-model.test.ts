@@ -95,6 +95,24 @@ describe('toParcelRow', () => {
     expect(row?.note).toBeUndefined();
   });
 
+  it('counts the boxes of a parcel in several pieces instead of its number', () => {
+    const row = toParcelRow(
+      parcel({ personId: camille.id, pieceN: 3, pieceTotal: 3 }),
+      context,
+      NOW,
+      t,
+    );
+    expect(row?.detail).toBe('Studio, 3 colis UPS');
+    expect(row?.pieces).toBe(3);
+    const partial = toParcelRow(
+      parcel({ personId: camille.id, pieceN: 1, pieceTotal: 3 }),
+      context,
+      NOW,
+      t,
+    );
+    expect(partial?.detail).toBe('Studio, 1 sur 3 colis UPS');
+  });
+
   it('falls back to the contact, then to the name read on the label', () => {
     const contact = toParcelRow(
       parcel({ contactId: livreur.id, readName: 'ATELIER RG' }),

@@ -155,7 +155,20 @@ export function toParcelRow(
   const department = person?.department ?? parcel.department ?? '';
   const last4 = parcel.tracking ? parcel.tracking.slice(-4) : '';
   const carrier = carrierLabel(parcel, t);
-  const carrierLine = last4 ? `${carrier} ···${last4}` : carrier;
+  const pieces = parcel.pieceTotal ?? 0;
+  const received = parcel.pieceN ?? pieces;
+  const carrierLine =
+    pieces > 1
+      ? received < pieces
+        ? t('parcel.pieces.partial', {
+            count: received,
+            total: pieces,
+            carrier,
+          })
+        : t('parcel.pieces', { count: pieces, carrier })
+      : last4
+        ? `${carrier} ···${last4}`
+        : carrier;
   const note =
     !person && !contact && parcel.readName
       ? t('parcel.readName', { name: parcel.readName })
