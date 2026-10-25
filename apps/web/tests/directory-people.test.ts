@@ -100,16 +100,23 @@ describe('directoryEntries', () => {
   const people = [
     personRow({
       firstName: 'Hélène',
+      nameNorm: 'helene dubois',
       lastName: 'Dubois',
       department: 'Finance',
     }),
     personRow({
       firstName: 'Axelle',
+      nameNorm: 'axelle bernard',
       lastName: 'Bernard',
       department: null,
-      email: 'axelle@example.com',
+      email: 'axelle@atelier.test',
     }),
-    personRow({ firstName: 'Hugo', lastName: 'Lefèvre', department: 'Studio' }),
+    personRow({
+      firstName: 'Hugo',
+      nameNorm: 'hugo lefevre',
+      lastName: 'Lefèvre',
+      department: 'Studio',
+    }),
     personRow({ firstName: 'Paul', lastName: 'Parti', active: false }),
     personRow({ firstName: 'Zoé', lastName: 'Effacée', deletedAt: NOW }),
   ];
@@ -128,13 +135,13 @@ describe('directoryEntries', () => {
 
     expect(names('helene')).toEqual(['Hélène Dubois']);
     expect(names('STUDIO')).toEqual(['Hugo Lefèvre']);
-    expect(names('axelle@')).toEqual(['Axelle Bernard']);
+    expect(names('atelier.test')).toEqual(['Axelle Bernard']);
   });
 
   it('falls back on the e-mail when the department is unknown', () => {
     expect(directoryEntries(people, 'axelle')[0]).toMatchObject({
       initials: 'AB',
-      detail: 'axelle@example.com',
+      detail: 'axelle@atelier.test',
     });
   });
 });
