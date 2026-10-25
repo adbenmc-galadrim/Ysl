@@ -17,6 +17,7 @@ import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
+import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_authenticated/reglages/apparence'
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
@@ -62,6 +63,12 @@ const AuthenticatedReglagesIndexRoute =
     path: '/reglages/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesApparenceRoute =
+  AuthenticatedReglagesApparenceRouteImport.update({
+    id: '/reglages/apparence',
+    path: '/reglages/apparence',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesArrondisRoute =
   AuthenticatedReglagesArrondisRouteImport.update({
     id: '/reglages/arrondis',
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/preparation': typeof AuthenticatedPreparationRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/preparation'
     | '/remise'
     | '/scan'
+    | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/synchronisation'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/remise'
     | '/scan'
     | '/'
+    | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/synchronisation'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/remise'
     | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/reglages/apparence'
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/synchronisation'
@@ -223,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/apparence': {
+      id: '/_authenticated/reglages/apparence'
+      path: '/reglages/apparence'
+      fullPath: '/reglages/apparence'
+      preLoaderRoute: typeof AuthenticatedReglagesApparenceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/arrondis': {
       id: '/_authenticated/reglages/arrondis'
       path: '/reglages/arrondis'
@@ -252,6 +272,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedReglagesApparenceRoute: typeof AuthenticatedReglagesApparenceRoute
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
@@ -263,6 +284,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedReglagesApparenceRoute: AuthenticatedReglagesApparenceRoute,
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
   AuthenticatedReglagesSynchronisationRoute:

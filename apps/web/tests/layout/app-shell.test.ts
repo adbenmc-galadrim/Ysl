@@ -1,7 +1,13 @@
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import viteReact from '@vitejs/plugin-react';
-import { type Browser, chromium, type Page, webkit } from 'playwright';
+import {
+  type Browser,
+  type BrowserContextOptions,
+  chromium,
+  type Page,
+  webkit,
+} from 'playwright';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -43,13 +49,16 @@ afterAll(async () => {
   await server?.close();
 });
 
-async function open(query: string): Promise<Page> {
-  const page = await browser.newPage({ viewport: VIEWPORT });
+async function open(
+  query: string,
+  options: BrowserContextOptions = {},
+): Promise<Page> {
+  const page = await browser.newPage({ viewport: VIEWPORT, ...options });
   await page.goto(`${base}?${query}`);
   await page.addStyleTag({
     content: `:root{--safe-top:${SAFE.top}px;--safe-bottom:${SAFE.bottom}px}`,
   });
-  await page.locator('[data-shell=app]').waitFor();
+  await page.locator('[data-shell]').first().waitFor();
   return page;
 }
 
@@ -161,6 +170,83 @@ describe('app frame', () => {
     for (const name of ['Taper le code', 'Chercher un nom']) {
       expect(await bottomOf(page, name)).toBeLessThanOrEqual(usableBottom);
     }
+    await page.close();
+  });
+});
+
+/** The canvas iOS paints around the Dynamic Island, and what `theme-color` says. */
+function canvas(page: Page) {
+  return page.evaluate(() => {
+    const html = getComputedStyle(document.documentElement);
+    return {
+      scheme: html.colorScheme,
+      background: html.backgroundColor,
+      themeColor: document
+        .querySelector('meta[name="theme-color"]')!
+        .getAttribute('content'),
+    };
+  });
+}
+
+const LIGHT = 'rgb(255, 255, 255)';
+const DARK = 'rgb(28, 28, 30)';
+
+describe('theme', () => {
+  it('turns the canvas and the bars dark when the iPhone is dark', async () => {
+    const page = await open('screen=colis&count=2', { colorScheme: 'dark' });
+    await expect
+      .poll(() => canvas(page))
+      .toEqual({
+        scheme: 'light dark',
+        background: DARK,
+        themeColor: DARK,
+      });
+    await page.close();
+  });
+
+  it('keeps the canvas light when Réglages pins it, whatever the iPhone', async () => {
+    const page = await open('screen=colis&count=2&theme=clair', {
+      colorScheme: 'dark',
+    });
+    await expect
+      .poll(() => canvas(page))
+      .toEqual({
+        scheme: 'light',
+        background: LIGHT,
+        themeColor: LIGHT,
+      });
+    await page.close();
+  });
+
+  it('repaints the bars as soon as the theme is switched', async () => {
+    const page = await open('screen=colis&count=2&theme=sombre', {
+      colorScheme: 'light',
+    });
+    await expect.poll(async () => (await canvas(page)).themeColor).toBe(DARK);
+    await page.evaluate(() => {
+      document.documentElement.dataset.theme = 'clair';
+    });
+    await expect.poll(async () => (await canvas(page)).themeColor).toBe(LIGHT);
+    await page.close();
+  });
+
+  it('keeps the landing page and its bars light on a dark iPhone', async () => {
+    const page = await open('screen=site', { colorScheme: 'dark' });
+    await expect
+      .poll(() => canvas(page))
+      .toEqual({
+        scheme: 'light',
+        background: 'rgb(242, 242, 247)',
+        themeColor: '#ffffff',
+      });
+    await page.close();
+  });
+
+  it('repaints the bars when the iPhone switches while the app follows it', async () => {
+    const page = await open('screen=colis&count=2', { colorScheme: 'light' });
+    await expect.poll(async () => (await canvas(page)).themeColor).toBe(LIGHT);
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await expect.poll(async () => (await canvas(page)).themeColor).toBe(DARK);
     await page.close();
   });
 });

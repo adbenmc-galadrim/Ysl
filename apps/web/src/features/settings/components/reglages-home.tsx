@@ -1,12 +1,18 @@
 import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { CORNER_RADII, ReglagesScreen, type SettingsGroup } from '@repo/ui';
+import {
+  CORNER_RADII,
+  ReglagesScreen,
+  THEMES,
+  type SettingsGroup,
+} from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { useCornerSetting } from '#/features/settings/corners';
 import { setScanSound, useScanSound } from '#/features/settings/sound';
 import { initialsOf } from '#/features/settings/initials';
+import { useThemeSetting } from '#/features/settings/theme';
 import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
 import { useStorageStatus } from '#/features/settings/api/use-storage-status';
@@ -47,9 +53,11 @@ export function ReglagesHome() {
   const server = useServerState();
   const storage = useStorageStatus();
   const sync = useSync();
+  const theme = useThemeSetting();
   const corners = useCornerSetting();
   const sound = useScanSound();
   const update = useUpdate();
+  const themeTitle = THEMES.find((option) => option.value === theme)?.title;
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
   )?.title;
@@ -111,6 +119,13 @@ export function ReglagesHome() {
       },
       {
         icon: 'sun',
+        color: 'grey',
+        label: t('settings.appearance'),
+        value: themeTitle,
+        onPress: () => void navigate({ to: '/reglages/apparence' }),
+      },
+      {
+        icon: 'edit',
         color: 'grey',
         label: t('settings.corners'),
         value: cornersTitle,

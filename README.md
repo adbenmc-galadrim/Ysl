@@ -140,7 +140,8 @@ dans l'artefact `planches-visuelles` du run (7 jours). En local : `pnpm storyboo
 Connecté, l'agent arrive sur **Colis** (`/`), la liste de ce qu'il reste à faire. De là :
 « Scanner » ouvre la réception (`/scan`), « Remettre » la remise (`/remise`), et le bouton
 « Menu » les **Réglages** (`/reglages`), avec le compte (`/reglages/compte`, déconnexion) et
-le choix des arrondis (`/reglages/arrondis`). Le groupe « Service courrier » des réglages
+l'apparence (`/reglages/apparence` : automatique, clair ou sombre) et le choix des arrondis
+(`/reglages/arrondis`). Le groupe « Service courrier » des réglages
 n'apparaît qu'aux administrateurs. Une adresse inconnue affiche « Page introuvable » et un
 retour aux colis.
 
@@ -152,7 +153,9 @@ rafale (voir `docs/architecture/capture-rafale.md`) ; l'écran Remise reste une 
 Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le
 premier rendu (`data-radius`, `data-tiles`). Storybook propose les mêmes presets dans sa
-barre d'outils.
+barre d'outils. L'apparence suit le même chemin (`courrier.theme`, `data-theme` sur
+`<html>`, rien en automatique) : elle règle `color-scheme`, que suivent les jetons
+`light-dark()` de `@repo/ui`, le fond du document et `theme-color`.
 
 ### Lecteur de codes-barres
 
