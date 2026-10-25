@@ -23,22 +23,43 @@ export type ParcelSectionProps = {
   className?: string;
 };
 
+export type SectionParcelRowProps = {
+  section: Omit<ParcelSectionProps, 'className'>;
+  parcel: Parcel;
+  separator: boolean;
+};
+
+/**
+ * One row of a section, as the section wants it drawn. Shared with the home
+ * screen's virtual list, so a parcel reads the same everywhere.
+ */
+export function SectionParcelRow({
+  section,
+  parcel,
+  separator,
+}: SectionParcelRowProps) {
+  const { rowAction, selectedIds, onSelectedChange, onParcelClick } = section;
+  return (
+    <ParcelRow
+      parcel={parcel}
+      // In selection mode a tap ticks the row instead of opening it,
+      // so the chevron would promise a screen that never comes.
+      trailing={rowAction?.(parcel) ?? (selectedIds ? null : 'chevron')}
+      selected={selectedIds?.includes(parcel.id)}
+      onSelectedChange={(selected) => onSelectedChange?.(parcel, selected)}
+      separator={separator}
+      onClick={onParcelClick && (() => onParcelClick(parcel))}
+    />
+  );
+}
+
 /**
  * One group of the parcel list: its title with the count, then the rows.
- * The home screen, the search results and the selection mode are all
- * stacks of these, so a parcel reads the same everywhere.
+ * The search results and the selection mode are stacks of these; the home
+ * screen draws the same headers and rows in a virtual list.
  */
-export function ParcelSection({
-  title,
-  parcels,
-  count,
-  action,
-  rowAction,
-  selectedIds,
-  onSelectedChange,
-  onParcelClick,
-  className,
-}: ParcelSectionProps) {
+export function ParcelSection({ className, ...props }: ParcelSectionProps) {
+  const { title, parcels, count, action } = props;
   return (
     <section className={className}>
       <SectionHeader
@@ -48,16 +69,11 @@ export function ParcelSection({
       />
       <div className="mt-6">
         {parcels.map((parcel, i) => (
-          <ParcelRow
+          <SectionParcelRow
             key={parcel.id}
+            section={props}
             parcel={parcel}
-            // In selection mode a tap ticks the row instead of opening it,
-            // so the chevron would promise a screen that never comes.
-            trailing={rowAction?.(parcel) ?? (selectedIds ? null : 'chevron')}
-            selected={selectedIds?.includes(parcel.id)}
-            onSelectedChange={(selected) => onSelectedChange?.(parcel, selected)}
             separator={i < parcels.length - 1}
-            onClick={onParcelClick && (() => onParcelClick(parcel))}
           />
         ))}
       </div>

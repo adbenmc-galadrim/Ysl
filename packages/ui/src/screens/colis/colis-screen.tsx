@@ -11,8 +11,10 @@ import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
-import { ParcelRow } from '#components/parcel-row';
-import type { ParcelSectionProps } from '#components/parcel-section';
+import {
+  type ParcelSectionProps,
+  SectionParcelRow,
+} from '#components/parcel-section';
 import { Screen } from '#components/screen';
 import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
@@ -249,7 +251,11 @@ function ColisList({
     getItemKey: (i) => items[i]!.key,
     scrollMargin: offset,
     overscan: 8,
+    // Before the scroller is measured, a phone's height of rows is drawn,
+    // so the first frame is not an empty list.
     initialRect: { width: 0, height: 844 },
+    // React 19 warns on `flushSync` inside a render; a frame late on a
+    // fast fling is invisible, a console full of warnings is not.
     useFlushSync: false,
   });
 
@@ -304,26 +310,14 @@ function ListItemView({
         </div>
       );
     }
-    case 'row': {
-      const { section, parcel } = item;
+    case 'row':
       return (
-        <ParcelRow
-          parcel={parcel}
-          trailing={
-            section.rowAction?.(parcel) ??
-            (section.selectedIds ? null : 'chevron')
-          }
-          selected={section.selectedIds?.includes(parcel.id)}
-          onSelectedChange={(selected) =>
-            section.onSelectedChange?.(parcel, selected)
-          }
+        <SectionParcelRow
+          section={item.section}
+          parcel={item.parcel}
           separator={item.separator}
-          onClick={
-            section.onParcelClick && (() => section.onParcelClick?.(parcel))
-          }
         />
       );
-    }
     case 'skeleton':
       return (
         <div style={{ paddingTop: item.top }}>
