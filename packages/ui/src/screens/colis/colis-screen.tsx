@@ -174,7 +174,7 @@ function toItems(
       header,
       ...section.parcels.map((parcel, i): ListItem => ({
         kind: 'row',
-        key: `r:${parcel.id}`,
+        key: `r:${section.title}:${parcel.id}`,
         section,
         parcel,
         separator: i < section.parcels.length - 1,
@@ -233,7 +233,7 @@ function ColisList({
       if (child !== list) observer.observe(child);
     }
     return () => observer.disconnect();
-  }, [scroller]);
+  }, [scroller, notice]);
 
   const virtualizer = useVirtualizer({
     count: items.length,

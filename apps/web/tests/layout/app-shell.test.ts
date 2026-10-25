@@ -135,6 +135,8 @@ describe('app frame', () => {
   it('draws only the rows in view of a very long list, down to the last', async () => {
     const page = await open('screen=colis&count=500');
     const rows = page.locator('[data-index]');
+    await page.getByText('Colis 1', { exact: true }).waitFor();
+    expect(await rows.count()).toBeGreaterThan(5);
     expect(await rows.count()).toBeLessThan(40);
 
     const scroller = page.locator('main').locator('..');
