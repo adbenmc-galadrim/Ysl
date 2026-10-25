@@ -81,6 +81,26 @@ export const LectureExpediteurDouteux: Story = {
   },
 };
 
+/** A 2D code that says more than the number: the box, its weight, the service (F20). */
+export const LecturePoidsService: Story = {
+  name: 'Lecture, poids et service',
+  args: {
+    onUndo: () => undefined,
+    reading: {
+      kind: 'read',
+      last: { name: 'Hugo Lefèvre', meta: 'DHL ···7112' },
+      fields: [
+        { label: 'Transporteur', value: 'UPS' },
+        { label: 'Suivi', value: SCANNED_LABEL.tracking, mono: true },
+        { label: 'Destinataire', value: 'Camille Morel' },
+        { label: 'Colis', value: '2/3' },
+        { label: 'Poids', value: '1,2 kg' },
+        { label: 'Service', value: '2nd Day Air' },
+      ],
+    },
+  },
+};
+
 /** No one named on the label: the previous parcel's recipient is one tap away (F11). */
 export const LectureMemeDestinataire: Story = {
   name: 'Lecture, même destinataire',
