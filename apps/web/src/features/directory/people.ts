@@ -121,6 +121,17 @@ export async function savePerson(
   return { kind: 'saved', person };
 }
 
+/** A new card prefilled from a search that found nobody: an e-mail, or a name. */
+export function draftFromQuery(query: string): Partial<ContactDraft> {
+  const text = query.trim();
+  if (!text) return {};
+  if (text.includes('@')) return { email: text };
+  const [firstName = '', ...rest] = text.split(/\s+/);
+  return rest.length
+    ? { firstName, lastName: rest.join(' ') }
+    : { lastName: firstName };
+}
+
 export function toDraft(person: LocalDirectoryPerson): ContactDraft {
   return {
     firstName: person.firstName,

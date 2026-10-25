@@ -1,7 +1,12 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
-import { directoryEntries, savePerson } from '#/features/directory/people';
+import {
+  directoryEntries,
+  draftFromQuery,
+  savePerson,
+  toDraft,
+} from '#/features/directory/people';
 import { NOW, openTestDatabase, personRow } from './helpers/local-rows';
 
 let db: CourrierDatabase;
@@ -78,6 +83,15 @@ describe('savePerson', () => {
     });
   });
 
+  it('brings an inactive card back to the list when it is saved again', async () => {
+    const parti = personRow({ active: false });
+    await db.directoryPerson.put(parti);
+
+    await savePerson(db, toDraft(parti), { id: parti.id, now: NOW });
+
+    expect((await db.directoryPerson.get(parti.id))?.active).toBe(true);
+  });
+
   it('refuses a card without a name or with an unfinished e-mail', async () => {
     const result = await savePerson(db, {
       ...draft,
@@ -93,6 +107,20 @@ describe('savePerson', () => {
       },
     });
     expect(await db.outbox.count()).toBe(0);
+  });
+});
+
+describe('draftFromQuery', () => {
+  it('puts an e-mail in the e-mail field, a name in the name fields', () => {
+    expect(draftFromQuery(' ines@atelier.test ')).toEqual({
+      email: 'ines@atelier.test',
+    });
+    expect(draftFromQuery('Garnier')).toEqual({ lastName: 'Garnier' });
+    expect(draftFromQuery('Inès  de la Tour')).toEqual({
+      firstName: 'Inès',
+      lastName: 'de la Tour',
+    });
+    expect(draftFromQuery('  ')).toEqual({});
   });
 });
 
