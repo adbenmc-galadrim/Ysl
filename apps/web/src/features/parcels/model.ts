@@ -117,7 +117,7 @@ function statusLine(
         time: formatTime(parcel.deliveredAt ?? parcel.receivedAt),
       });
     case 'returned':
-      return t('parcel.state.retourne');
+      return t('parcel.status.returned');
   }
 }
 
@@ -136,14 +136,31 @@ export function toParcelRow(
   t: TranslateFn,
 ): ParcelRow | undefined {
   const state = homeState(parcel, now);
-  if (!state) return undefined;
+  return state && describeParcel(parcel, state, context, now, t);
+}
 
-  const person = parcel.personId
-    ? context.people.get(parcel.personId)
-    : undefined;
-  const contact = parcel.contactId
-    ? context.contacts.get(parcel.contactId)
-    : undefined;
+/** Who the parcel is for, as the rows name them. */
+export function recipientOf(
+  parcel: LocalParcel,
+  context: RecipientContext,
+): { person?: LocalDirectoryPerson; contact?: LocalContact } {
+  return {
+    person: parcel.personId ? context.people.get(parcel.personId) : undefined,
+    contact: parcel.contactId
+      ? context.contacts.get(parcel.contactId)
+      : undefined,
+  };
+}
+
+/** The list row of a parcel drawn in `state`, wherever it is listed. */
+export function describeParcel(
+  parcel: LocalParcel,
+  state: ParcelState,
+  context: RecipientContext,
+  now: Date,
+  t: TranslateFn,
+): ParcelRow {
+  const { person, contact } = recipientOf(parcel, context);
   const recipient = person
     ? `${person.firstName} ${person.lastName}`
     : (contact?.name ?? t('parcel.recipient.unknown'));
