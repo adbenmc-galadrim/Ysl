@@ -69,6 +69,18 @@ export function ReglagesHome() {
     (preset) => preset.value === corners.radius,
   )?.title;
 
+  const steering: SettingsGroup = {
+    header: t('settings.group.steering'),
+    items: [
+      {
+        icon: 'list',
+        color: 'sky',
+        label: t('settings.export'),
+        onPress: () => void navigate({ to: '/reglages/export' }),
+      },
+    ],
+  };
+
   const data: SettingsGroup = {
     header: t('settings.group.data'),
     items: [
@@ -167,7 +179,11 @@ export function ReglagesHome() {
         description: t(`settings.account.${role}`),
         onPress: () => void navigate({ to: '/reglages/compte' }),
       }}
-      groups={role === 'admin' ? [data, service, app] : [data, app]}
+      groups={
+        role === 'admin'
+          ? [steering, data, service, app]
+          : [steering, data, app]
+      }
       onBack={() => void navigate({ to: '/' })}
     />
   );
