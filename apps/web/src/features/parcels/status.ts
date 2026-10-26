@@ -6,10 +6,11 @@ import {
 } from '@repo/contract/parcel-status';
 import { commitLocal, MissingRowError } from '#/features/db/commit';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import { parcelEvent } from '#/features/parcels/events';
 
 export type StatusChangeOptions = { agentId: string; now?: Date };
 
-async function liveParcel(
+export async function liveParcel(
   db: CourrierDatabase,
   parcelId: string,
 ): Promise<LocalParcel> {
@@ -24,7 +25,8 @@ async function liveParcel(
  * (`commitLocal`); the counter it carries lets the server tell an undo from a
  * stale copy, a pull landing in between included. Leaving `remis` also needs
  * its handover cancelled first in the outbox (the handover screen, YSL-75).
- * Returns the op id.
+ * The record's history gets the change in the same write. Returns the op id
+ * of the parcel.
  */
 export async function changeParcelStatus(
   db: CourrierDatabase,
@@ -36,7 +38,16 @@ export async function changeParcelStatus(
   const patch = statusPatch(parcel, to, { now, agentId });
   const [opId] = await commitLocal(
     db,
-    { upserts: [{ entity: 'parcel', row: { ...parcel, ...patch } }] },
+    {
+      upserts: [
+        { entity: 'parcel', row: { ...parcel, ...patch } },
+        parcelEvent(
+          parcelId,
+          { type: 'parcel.status', from: parcel.status, to },
+          { agentId, now },
+        ),
+      ],
+    },
     { now },
   );
   return opId as string;
@@ -52,4 +63,26 @@ export async function stepBackParcel(
   const to = stepBackOf(parcel);
   if (!to) throw new StatusTransitionError(parcel.status, parcel.status);
   return changeParcelStatus(db, parcelId, to, options);
+}
+
+/**
+ * "Supprimer": the parcel goes from every list, here and on the server, but
+ * stays in the base with its history (deletes are logical, §8.4).
+ */
+export async function deleteParcel(
+  db: CourrierDatabase,
+  parcelId: string,
+  { agentId, now = new Date() }: StatusChangeOptions,
+): Promise<void> {
+  await liveParcel(db, parcelId);
+  await commitLocal(
+    db,
+    {
+      upserts: [
+        parcelEvent(parcelId, { type: 'parcel.deleted' }, { agentId, now }),
+      ],
+      deletes: [{ entity: 'parcel', id: parcelId }],
+    },
+    { now },
+  );
 }
