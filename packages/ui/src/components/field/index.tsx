@@ -120,7 +120,10 @@ export function FieldSelect({
       className={fieldBoxVariants({
         variant,
         mono,
-        class: ['cursor-pointer focus-visible:ring-2 focus-visible:ring-blue', className],
+        class: [
+          'cursor-pointer focus-visible:ring-2 focus-visible:ring-blue',
+          className,
+        ],
       })}
       {...props}
     >
@@ -134,6 +137,66 @@ export function FieldSelect({
       </span>
       <Icon name={icon} size={20} className="shrink-0 text-muted" />
     </button>
+  );
+}
+
+export type FieldPickerOption = { value: string; label: string };
+
+export type FieldPickerProps = Omit<
+  ComponentProps<'select'>,
+  'children' | 'value' | 'onChange'
+> & {
+  value: string;
+  options: readonly FieldPickerOption[];
+  onValueChange?: (value: string) => void;
+  /** Shown while nothing is picked; also the empty choice of the list. */
+  placeholder?: string;
+};
+
+/**
+ * A field picked from a short fixed list — a carrier — drawn as
+ * `FieldSelect`, with the iPhone's own wheel under the finger: a native
+ * `<select>` lies invisible over the box.
+ */
+export function FieldPicker({
+  value,
+  options,
+  onValueChange,
+  placeholder,
+  className,
+  ...props
+}: FieldPickerProps) {
+  const label = options.find((option) => option.value === value)?.label;
+  return (
+    <div
+      className={fieldBoxVariants({
+        class: ['relative focus-within:ring-blue', className],
+      })}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          'min-w-0 flex-1 truncate',
+          !label && 'font-normal text-muted',
+        )}
+      >
+        {label ?? placeholder}
+      </span>
+      <Icon name="chevron" size={20} className="shrink-0 text-muted" />
+      <select
+        value={value}
+        onChange={(event) => onValueChange?.(event.target.value)}
+        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+        {...props}
+      >
+        <option value="">{placeholder ?? ''}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
 
