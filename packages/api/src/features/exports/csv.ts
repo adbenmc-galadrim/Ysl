@@ -1,5 +1,5 @@
 /** Excel reads UTF-8 only when the file opens with a byte order mark. */
-export const BOM = '﻿';
+export const BOM = '\uFEFF';
 
 const SEPARATOR = ';';
 const NEWLINE = '\r\n';

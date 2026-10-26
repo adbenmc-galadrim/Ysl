@@ -4,7 +4,7 @@ export function parseCsv(text: string): string[][] {
   let row: string[] = [];
   let cell = '';
   let quoted = false;
-  const body = text.startsWith('﻿') ? text.slice(1) : text;
+  const body = text.startsWith('\uFEFF') ? text.slice(1) : text;
   for (let i = 0; i < body.length; i++) {
     const char = body[i];
     if (quoted) {

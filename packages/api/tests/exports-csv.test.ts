@@ -70,7 +70,8 @@ describe('toCsv', () => {
   );
 
   it('starts with a BOM and ends every line with \\r\\n', () => {
-    expect(csv.startsWith(BOM)).toBe(true);
+    expect(BOM).toBe('\uFEFF');
+    expect(csv.charCodeAt(0)).toBe(0xfeff);
     expect(csv.slice(1).split('\r\n')[0]).toBe('id;notes');
     expect(csv.endsWith('\r\n')).toBe(true);
   });

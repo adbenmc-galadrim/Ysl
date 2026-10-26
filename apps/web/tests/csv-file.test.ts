@@ -4,7 +4,7 @@ import { csvFile } from '#/features/exports/csv-file';
 describe('csvFile', () => {
   const file = csvFile({
     filename: 'courrier-historique-2026-10-26.csv',
-    csv: '﻿id;notes\r\n1;Laissé à l’accueil\r\n',
+    csv: '\uFEFFid;notes\r\n1;Laissé à l’accueil\r\n',
     count: 1,
   });
 
