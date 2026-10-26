@@ -1,4 +1,4 @@
-const BOM = '﻿';
+const BOM = '\uFEFF';
 
 /**
  * The separator of a CSV file, guessed from its first line the way the v1

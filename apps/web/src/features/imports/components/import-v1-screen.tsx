@@ -37,6 +37,10 @@ export function ImportV1Page() {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
+    if (file.size > V1_CSV_MAX_LENGTH) {
+      setState({ step: 'failed', message: t('import.v1.failed.tooBig') });
+      return;
+    }
     setState({ step: 'importing', fileName: file.name });
     let csv: string;
     try {
