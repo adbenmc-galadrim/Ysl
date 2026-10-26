@@ -36,7 +36,7 @@ export function optionOf(
 ): Choice | null {
   if (kind === 'person') {
     const person = people.find((p) => p.id === id);
-    return person && !person.deletedAt ? personOption(person) : null;
+    return person?.active && !person.deletedAt ? personOption(person) : null;
   }
   const contact = contacts.find((c) => c.id === id);
   return contact && !contact.deletedAt ? contactOption(contact) : null;

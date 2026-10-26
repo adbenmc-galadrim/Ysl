@@ -214,7 +214,7 @@ describe('nameLine', () => {
 });
 
 describe('recentOptions', () => {
-  it('lists the last recipients once each, newest first, gone ones left out', () => {
+  it('lists the last recipients once each, newest first, gone or inactive ones left out', () => {
     const nora = contactRow({ id: 'nora', name: 'Nora Haddad' });
     const parcels = [
       parcelRow({ personId: 'lea', receivedAt: later(1) }),
@@ -222,10 +222,15 @@ describe('recentOptions', () => {
       parcelRow({ personId: 'lea', receivedAt: later(4) }),
       parcelRow({ personId: 'gone', receivedAt: later(5) }),
       parcelRow({ receivedAt: later(6) }),
+      parcelRow({ personId: 'off', receivedAt: later(7) }),
     ];
 
     expect(
-      recentOptions(parcels, [LEA, HUGO], [nora]).map((o) => o.id),
+      recentOptions(
+        parcels,
+        [LEA, HUGO, personRow({ id: 'off', active: false })],
+        [nora],
+      ).map((o) => o.id),
     ).toEqual(['lea', 'nora']);
   });
 });
