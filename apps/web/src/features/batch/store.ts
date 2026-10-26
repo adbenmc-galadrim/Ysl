@@ -29,6 +29,7 @@ export type DraftPatch = Partial<
     | 'pieces'
     | 'sender'
     | 'annex'
+    | 'recipient'
   >
 >;
 
@@ -226,11 +227,11 @@ export type FinishOptions = { batchId: string; agentId: string; now?: Date };
 
 /**
  * Received when the mailroom can notify it: a carrier, a number and someone
- * to tell. Only a structured code names someone surely enough; a name the
- * OCR guessed leaves the draft to a hand or to the directory.
+ * to tell. A structured code names someone surely enough, and so does the
+ * agent choosing a card; a name the OCR guessed leaves the draft to a hand.
  */
 export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
-  return draft.carrier && draft.tracking && draft.readName
+  return draft.carrier && draft.tracking && (draft.readName || draft.recipient)
     ? 'recu'
     : 'a_completer';
 }
@@ -255,8 +256,8 @@ function toParcel(
     carrier: draft.carrier,
     tracking: draft.tracking,
     trackingNorm: draft.trackingNorm,
-    personId: null,
-    contactId: null,
+    personId: draft.recipient?.kind === 'person' ? draft.recipient.id : null,
+    contactId: draft.recipient?.kind === 'contact' ? draft.recipient.id : null,
     readName: draft.readName,
     notificationEmail: null,
     department: null,

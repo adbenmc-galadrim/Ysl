@@ -51,6 +51,61 @@ describe('recipientFromLines', () => {
     ).toBeNull();
   });
 
+  it('takes a last name after its initial, not a lone word', () => {
+    expect(
+      recipientFromLines(lines('DESTINATAIRE :', 'L. FONTAINE', 'PARIS')),
+    ).toBe('L. FONTAINE');
+    expect(recipientFromLines(lines('DESTINATAIRE:', 'L.FONTAINE'))).toBe(
+      'L. FONTAINE',
+    );
+    expect(recipientFromLines(lines('DESTINATAIRE :', 'FONTAINE'))).toBeNull();
+    expect(
+      recipientFromLines(lines('DESTINATAIRE :', 'L FONTAINE')),
+    ).toBeNull();
+  });
+
+  it('never takes the host company for the person', () => {
+    expect(
+      recipientFromLines(
+        lines('DESTINATAIRE', 'SAINT LAURENT', 'Léa FONTAINE', '75007 PARIS'),
+      ),
+    ).toBe('Léa FONTAINE');
+    expect(recipientFromLines(lines('SHIP TO: YSL Léa Fontaine'))).toBe(
+      'Léa Fontaine',
+    );
+  });
+
+  it('reads the CONTACT line when no anchor shows (v1)', () => {
+    expect(
+      recipientFromLines(lines('DPD', 'CONTACT : Hugo Lefèvre', 'TEL 0102')),
+    ).toBe('Hugo Lefèvre');
+    expect(
+      recipientFromLines(lines('C0NTACT', 'Hugo Lefèvre', '24 av. Montaigne')),
+    ).toBe('Hugo Lefèvre');
+  });
+
+  it('looks around the host company, then above its street (v1)', () => {
+    expect(
+      recipientFromLines(
+        lines('GLS', 'SA1NT LAURENT', 'Nora HADDAD', '37 RUE DE BELLECHASSE'),
+      ),
+    ).toBe('Nora HADDAD');
+    expect(
+      recipientFromLines(lines('Nora HADDAD', 'SAINT LAURENT', '75007 PARIS')),
+    ).toBe('Nora HADDAD');
+    expect(
+      recipientFromLines(
+        lines('Léa Fontaine', '3e étage', '37 RUE DE BELLECHASSE', 'PARIS'),
+      ),
+    ).toBe('Léa Fontaine');
+  });
+
+  it('keeps the landmarks out of the sender block', () => {
+    expect(
+      recipientFromLines(lines('FROM: Louis Bernard', 'SAINT LAURENT')),
+    ).toBeNull();
+  });
+
   it('gives nothing without an anchor, or when only digits follow', () => {
     expect(
       recipientFromLines(lines('Camille MOREL', '12 RUE DES LILAS')),

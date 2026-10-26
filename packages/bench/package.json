@@ -11,6 +11,7 @@
   },
   "scripts": {
     "measure": "tsx src/cli.ts",
+    "recipients": "tsx src/recipients-cli.ts",
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run"

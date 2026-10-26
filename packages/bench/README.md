@@ -32,6 +32,18 @@ l'annotation, les annotations `reviewed: false` signalées), `results.json`,
 `contents-2d.json` (contenus bruts des codes 2D : données personnelles, ne
 jamais verser au dépôt).
 
+## Rapprochement destinataire
+
+```sh
+pnpm --filter @repo/bench recipients [--sizes 10,100,1000,2000] [--per 200] [--out <dossier>]
+```
+
+Annuaire fictif, noms dégradés comme la v1 et le corpus les montrent (initiale, mot
+coupé, chiffre pour une lettre, `|` pour `I`, débris de la société…) : part retrouvée
+dans les 3 suggestions (O3), sélections justes, personnes réglées en silence à tort
+(toujours 0) et temps par rapprochement. Sortie : `recipients.md`. Résultats dans
+[`docs/banc-extraction.md`](../../docs/banc-extraction.md).
+
 ## Bases de mesure
 
 | Base              | Contenu                                                                   |

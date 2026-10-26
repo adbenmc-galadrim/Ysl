@@ -4,8 +4,8 @@ import { ListRow } from '#components/list-row';
 import { NavBar } from '#components/nav-bar';
 import { Screen } from '#components/screen';
 import { SectionHeader } from '#components/section-header';
-import { whereabouts, type DirectoryEntry } from '#fixtures/reception';
 import { Icon } from '#icons';
+import type { RecipientOption } from '#screens/reception/verifier-colis-screen';
 
 /**
  * The directory search of the picker: 48 px, taller than the search screen's
@@ -15,10 +15,13 @@ import { Icon } from '#icons';
 function DirectorySearch({
   query,
   showCaret = false,
+  onQueryChange,
 }: {
   query: string;
   showCaret?: boolean;
+  onQueryChange?: (query: string) => void;
 }) {
+  const controlled = onQueryChange !== undefined;
   return (
     <label className="flex h-12 items-center gap-2.5 rounded-control bg-fill pr-4 pl-3.5 text-17 focus-within:ring-2 focus-within:ring-blue">
       <Icon
@@ -29,9 +32,16 @@ function DirectorySearch({
       />
       <input
         type="search"
-        defaultValue={query}
+        {...(controlled
+          ? {
+              value: query,
+              onChange: (event) => onQueryChange(event.target.value),
+            }
+          : { defaultValue: query })}
         aria-label="Rechercher une personne"
         placeholder="Nom, service, e-mail"
+        autoComplete="off"
+        autoCorrect="off"
         className="h-full min-w-0 bg-transparent text-ink caret-blue outline-none [field-sizing:content] [&::-webkit-search-cancel-button]:hidden"
         style={showCaret ? { caretColor: 'transparent' } : undefined}
       />
@@ -43,6 +53,7 @@ function DirectorySearch({
         <button
           type="button"
           aria-label="Effacer"
+          onClick={() => onQueryChange?.('')}
           className="flex shrink-0 cursor-pointer text-muted outline-none focus-visible:ring-2 focus-visible:ring-blue"
         >
           <Icon name="x" size={16} strokeWidth={2.4} />
@@ -54,13 +65,25 @@ function DirectorySearch({
 
 export type ChoisirDestinataireScreenProps = {
   query: string;
-  results: DirectoryEntry[];
-  recents: DirectoryEntry[];
+  /** The people the search finds, or the scanner's suggestions before any search. */
+  results: RecipientOption[];
+  /** Title of the first section: "Résultats" with a count while searching. */
+  resultsTitle?: string;
+  recents: RecipientOption[];
   /** Draws the caret of the focused field, for stories. */
   showCaret?: boolean;
+  onQueryChange?: (query: string) => void;
+  onClose?: () => void;
+  onPick?: (id: string) => void;
+  /** "Personne hors annuaire": a new card for someone not listed yet. */
+  onOutside?: () => void;
 };
 
-const rows = (people: DirectoryEntry[], withEmail: boolean) =>
+const rows = (
+  people: RecipientOption[],
+  withEmail: boolean,
+  onPick?: (id: string) => void,
+) =>
   people.map((person, i) => (
     <ListRow
       key={person.id}
@@ -68,11 +91,11 @@ const rows = (people: DirectoryEntry[], withEmail: boolean) =>
       leading={<Avatar initials={person.initials} tone="fill" />}
       title={person.name}
       lines={[
-        { text: whereabouts(person) },
+        ...(person.detail ? [{ text: person.detail }] : []),
         ...(withEmail && person.email ? [{ text: person.email }] : []),
       ]}
       separator={i < people.length - 1}
-      onClick={() => {}}
+      onClick={() => onPick?.(person.id)}
     />
   ));
 
@@ -84,9 +107,15 @@ const rows = (people: DirectoryEntry[], withEmail: boolean) =>
 export function ChoisirDestinataireScreen({
   query,
   results,
+  resultsTitle = 'Résultats',
   recents,
   showCaret,
+  onQueryChange,
+  onClose,
+  onPick,
+  onOutside,
 }: ChoisirDestinataireScreenProps) {
+  const searching = query.trim() !== '';
   return (
     <Screen>
       <NavBar
@@ -97,27 +126,45 @@ export function ChoisirDestinataireScreen({
             label="Fermer"
             size="lg"
             iconSize={22}
+            onClick={onClose}
             // The bar pads a text action; the square bleeds like the back one.
             className="-ml-0.5"
           />
         }
       />
       <div className="mt-3">
-        <DirectorySearch query={query} showCaret={showCaret} />
+        <DirectorySearch
+          query={query}
+          showCaret={showCaret}
+          onQueryChange={onQueryChange}
+        />
       </div>
 
-      <section className="mt-6">
-        <SectionHeader title="Résultats" count={results.length} />
-        <div className="mt-[13px]">{rows(results, true)}</div>
-      </section>
+      {results.length > 0 && (
+        <section className="mt-6">
+          <SectionHeader
+            title={resultsTitle}
+            count={searching ? results.length : undefined}
+          />
+          <div className="mt-[13px]">{rows(results, true, onPick)}</div>
+        </section>
+      )}
+      {searching && results.length === 0 && (
+        <p className="mt-6 text-15 text-muted">
+          Personne dans l’annuaire pour « {query.trim()} ».
+        </p>
+      )}
 
-      <section className="mt-[22px]">
-        <SectionHeader title="Récents" />
-        <div className="mt-[13px]">{rows(recents, false)}</div>
-      </section>
+      {recents.length > 0 && (
+        <section className="mt-[22px]">
+          <SectionHeader title="Récents" />
+          <div className="mt-[13px]">{rows(recents, false, onPick)}</div>
+        </section>
+      )}
 
       <button
         type="button"
+        onClick={onOutside}
         className="mt-5 flex h-16 cursor-pointer items-center gap-[15px] rounded-card border border-dashed border-border pb-0.5 pl-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue"
       >
         <Icon name="user" size={22} className="shrink-0" />

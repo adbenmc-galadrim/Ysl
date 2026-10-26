@@ -11,7 +11,6 @@ import {
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { modelsReady, subscribeModels } from '#/features/offline/models-state';
-import { useSession } from '#/features/auth/api/use-session';
 import {
   dropHeld,
   findDuplicate,
@@ -28,7 +27,6 @@ import { copyRecipient, previousNamed } from '#/features/batch/recipient';
 import {
   addDraft,
   addTypedDraft,
-  finishBatch,
   openBatch,
   typedDraft,
   undoLast,
@@ -130,7 +128,6 @@ type SameRecipient = { draftId: string; name: string };
 
 function ScanPage() {
   const navigate = useNavigate();
-  const session = useSession();
   const close = () => void navigate({ to: '/' });
   const videoRef = useRef<HTMLVideoElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -711,19 +708,19 @@ function ScanPage() {
     void trackWork(onTyped(entry));
   };
 
+  /**
+   * "Terminer": once every reading has landed, the parcels whose recipient
+   * the scanner could not settle go through « Vérifier un colis » (F18),
+   * which promotes the batch after the last one.
+   */
   const onDone = async () => {
     if (finishing.current) return;
     finishing.current = true;
     dropHeldDraft();
     try {
       await settled();
-      if (view?.batch) {
-        await finishBatch(db, {
-          batchId: view.batch.id,
-          agentId: session.user.id,
-        });
-      }
-      close();
+      if (view?.batch) await navigate({ to: '/verifier' });
+      else close();
     } finally {
       finishing.current = false;
     }

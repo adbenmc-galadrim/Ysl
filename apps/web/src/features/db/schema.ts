@@ -16,6 +16,7 @@ import type {
   SYNCED_ENTITIES,
 } from '@repo/db/schema';
 import type { ConfidenceLevel, SourceKind } from '@repo/contract/extract';
+import type { RecipientKind } from '@repo/contract/recipient';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
 export const DATABASE_NAME = 'courrier';
@@ -159,6 +160,18 @@ export type DraftSender = {
 };
 
 /**
+ * Who the parcel is for, once settled (F18): a card of the directory or a
+ * contact, chosen by the agent, or named by a code that matched one card
+ * exactly. `name` is the card's name at the time.
+ */
+export type DraftRecipient = {
+  kind: RecipientKind;
+  id: string;
+  name: string;
+  source: 'code' | 'agent';
+};
+
+/**
  * A parcel of the batch in progress: one tap, one photo, the reading when
  * it lands. Local only, never queued; `finishBatch` turns it into a parcel.
  */
@@ -185,6 +198,8 @@ export type DraftParcel = {
   sender?: DraftSender | null;
   /** The annex fields (F20); absent on drafts stored before YSL-41. */
   annex?: DraftAnnex | null;
+  /** The recipient settled; absent on drafts stored before YSL-46. */
+  recipient?: DraftRecipient | null;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */

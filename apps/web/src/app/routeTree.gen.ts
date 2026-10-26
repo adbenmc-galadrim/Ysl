@@ -17,6 +17,7 @@ import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenti
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
+import { Route as AuthenticatedVerifierRouteImport } from './routes/_authenticated/verifier'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 import { Route as AuthenticatedReglagesAnnuaireRouteImport } from './routes/_authenticated/reglages/annuaire'
 import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_authenticated/reglages/apparence'
@@ -64,6 +65,11 @@ const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedVerifierRoute = AuthenticatedVerifierRouteImport.update({
+  id: '/verifier',
+  path: '/verifier',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedReglagesIndexRoute =
   AuthenticatedReglagesIndexRouteImport.update({
     id: '/reglages/',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/verifier': typeof AuthenticatedVerifierRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/verifier': typeof AuthenticatedVerifierRoute
   '/': typeof AuthenticatedIndexRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
+  '/_authenticated/verifier': typeof AuthenticatedVerifierRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/_authenticated/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/recherche'
     | '/remise'
     | '/scan'
+    | '/verifier'
     | '/reglages/annuaire'
     | '/reglages/apparence'
     | '/reglages/arrondis'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/recherche'
     | '/remise'
     | '/scan'
+    | '/verifier'
     | '/'
     | '/reglages/annuaire'
     | '/reglages/apparence'
@@ -188,6 +199,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recherche'
     | '/_authenticated/remise'
     | '/_authenticated/scan'
+    | '/_authenticated/verifier'
     | '/_authenticated/'
     | '/_authenticated/reglages/annuaire'
     | '/_authenticated/reglages/apparence'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScanRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/verifier': {
+      id: '/_authenticated/verifier'
+      path: '/verifier'
+      fullPath: '/verifier'
+      preLoaderRoute: typeof AuthenticatedVerifierRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/': {
       id: '/_authenticated/reglages/'
       path: '/reglages'
@@ -311,6 +330,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
+  AuthenticatedVerifierRoute: typeof AuthenticatedVerifierRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedReglagesAnnuaireRoute: typeof AuthenticatedReglagesAnnuaireRoute
   AuthenticatedReglagesApparenceRoute: typeof AuthenticatedReglagesApparenceRoute
@@ -325,6 +345,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
+  AuthenticatedVerifierRoute: AuthenticatedVerifierRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedReglagesAnnuaireRoute: AuthenticatedReglagesAnnuaireRoute,
   AuthenticatedReglagesApparenceRoute: AuthenticatedReglagesApparenceRoute,

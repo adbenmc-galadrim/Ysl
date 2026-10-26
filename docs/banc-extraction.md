@@ -145,6 +145,56 @@ encore (ses formats attendus vivent dans `apps/web`).
   PDF417 FedEx lu comme expéditeur contredit par l'étiquette DJI, où c'est la société
   destinataire (TODO YSL-25).
 
+## Rapprochement destinataire (YSL-46, 26/10/2026)
+
+**Ce qui est mesuré.** Le rapprochement de `@repo/contract/recipient` (F18) : le nom lu,
+corrigé à la manière de la v1, comparé à chaque fiche de l'annuaire (2 points par mot
+trouvé tel quel, 1 à une erreur près à partir de 5 lettres ou pour un mot coupé, 0,5 pour
+une initiale ; nom seul compté à moitié ; prénom et nom sur des mots lus distincts). Le
+banc ne fait pas tourner Paddle sous Node : il part des noms d'un annuaire fictif et leur
+applique les dégradations relevées en v1 et sur le corpus (voir `packages/bench/src/recipients.ts`).
+`pnpm --filter @repo/bench recipients` écrit `out/recipients.md`.
+
+**L'annuaire fictif** croise 48 prénoms et 54 noms : à 1 000 et 2 000 personnes, chaque
+nom de famille revient 18 à 37 fois, bien plus que dans l'annuaire réel (101 personnes
+en v1). Les tailles 10 et 100 sont les plus proches du service ; 1 000 et 2 000 sont un
+cas défavorable.
+
+| Lecture (annuaire de 100)    |     Cas | Dans les 3 suggestions (O3) | Sélectionné juste | Autre réglé en silence |
+| ---------------------------- | ------: | --------------------------: | ----------------: | ---------------------: |
+| Nom complet                  |     100 |                     100,0 % |           100,0 % |                      0 |
+| Nom puis prénom, sans accent |     100 |                     100,0 % |           100,0 % |                      0 |
+| Initiale du prénom           |     100 |                     100,0 % |            86,0 % |                      0 |
+| Nom coupé (reflet, pli)      |      83 |                     100,0 % |           100,0 % |                      0 |
+| Chiffre pour une lettre      |      94 |                     100,0 % |            97,9 % |                      0 |
+| « \| » pour « I »            |       8 |                     100,0 % |           100,0 % |                      0 |
+| Mot coupé en deux            |      83 |                     100,0 % |           100,0 % |                      0 |
+| Espace perdu                 |     100 |                      95,0 % |            95,0 % |                      0 |
+| Une lettre fausse            |      98 |                     100,0 % |           100,0 % |                      0 |
+| Débris de la société         |     100 |                     100,0 % |           100,0 % |                      0 |
+| Nom seul                     |     100 |                      95,0 % |             0,0 % |                      0 |
+| **Toutes**                   | **966** |                  **99,0 %** |            87,5 % |                  **0** |
+
+| Annuaire | O3, toutes lectures | O3 sans « nom seul » | Autre réglé en silence | Temps p50 / p95 |
+| -------: | ------------------: | -------------------: | ---------------------: | --------------: |
+|       10 |              98,0 % |               97,7 % |                      0 |  0,02 / 0,07 ms |
+|      100 |              99,0 % |               99,4 % |                      0 |  0,05 / 0,10 ms |
+|    1 000 |              90,2 % |               98,1 % |                      0 |  0,53 / 0,75 ms |
+|    2 000 |              87,8 % |               96,9 % |                      0 |  1,03 / 1,40 ms |
+
+**Lecture.** O3 tient (≥ 95 %) à la taille du service ; au-delà, l'écart vient presque tout
+entier du nom de famille seul, que 18 à 37 homonymes se partagent : aucune règle ne peut
+le départager, c'est « Chercher dans l'annuaire ». La colonne « réglé en
+silence » vérifie un invariant plutôt qu'elle ne mesure : la règle (`silentMatch`) ne règle
+seule qu'une lecture d'un code 2D, exacte en prénom et nom et sans égale, et l'annuaire
+fictif n'a pas d'homonyme complet ; un homonyme partiel ou un nom OCR va toujours à « Vérifier un colis ». Le temps
+reste sous 2 ms pour 2 000 fiches (étape 9 du §4.2 : 10 à 30 ms budgétés), dans un Worker
+de l'app. Annuaire vide (D15) : chaque nom lu est gardé pour préremplir une nouvelle fiche.
+
+**Ce qui reste à mesurer.** O3 de bout en bout (photo → OCR Paddle → rapprochement) sur
+les vraies photos, dans l'app sur iPhone : le corpus n'a que 24 destinataires annotés à
+la base du critère, et le banc Node ne lit pas le texte imprimé.
+
 ## Relancer
 
 ```sh
