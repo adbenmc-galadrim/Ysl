@@ -48,7 +48,7 @@ export type ModifierColisScreenProps = {
   /** The fields the mockup leaves out (e-mail, service, weight…), below the note. */
   annex?: boolean;
   errors?: ModifierColisErrors;
-  /** Grey line under the bar: why saving failed. */
+  /** Red line under the bar: why saving failed. */
   failure?: ReactNode;
   saving?: boolean;
   onRecipientClick?: () => void;

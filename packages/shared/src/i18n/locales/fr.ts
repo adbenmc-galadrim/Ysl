@@ -208,8 +208,6 @@ export const fr = {
   'history.field.location': 'emplacement',
   'history.pending': '{{when}}, pas encore envoyé',
   'history.rejected': 'Refusé par le serveur : {{reason}}',
-  'history.more': 'Tout afficher ({{count}})',
-  'edit.title': 'Modifier le colis',
   'edit.failed': 'Modification non enregistrée sur l’iPhone, réessayez.',
   'edit.tracking.valid': 'Clé de contrôle {{carrier}} valide',
   'edit.tracking.invalid': 'Clé de contrôle {{carrier}} invalide',

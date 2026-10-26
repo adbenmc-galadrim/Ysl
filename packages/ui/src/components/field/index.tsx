@@ -170,7 +170,10 @@ export function FieldPicker({
   return (
     <div
       className={fieldBoxVariants({
-        class: ['relative focus-within:ring-blue', className],
+        class: [
+          'relative focus-within:ring-2 focus-within:ring-blue',
+          className,
+        ],
       })}
     >
       <span

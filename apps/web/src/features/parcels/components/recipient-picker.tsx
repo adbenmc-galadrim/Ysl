@@ -67,7 +67,10 @@ function rows(
 /**
  * Who the parcel is for, picked from the directory and the contacts this
  * mailroom already typed, or typed by hand for someone outside both — a
- * temp, a visitor. Drawn after « Choisir le destinataire » (04 · Réception).
+ * temp, a visitor. Drawn after « Choisir le destinataire » (04 · Réception)
+ * with the pieces of the design system: the screen of the design system is
+ * being wired for the scan's own picker (YSL-46), and this one moves onto it
+ * once that lands.
  */
 export function RecipientPicker({
   readName,
