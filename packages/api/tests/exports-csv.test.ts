@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BOM, csvCell, toCsv } from '#features/exports/csv';
+import { BOM, csvCell, textCell, toCsv } from '#features/exports/csv';
 import { parseCsv } from './helpers/csv';
 
 describe('csvCell', () => {
@@ -39,6 +39,24 @@ describe('csvCell', () => {
     expect(csvCell(null)).toBe('');
     expect(csvCell(undefined)).toBe('');
     expect(csvCell('')).toBe('');
+  });
+});
+
+describe('textCell', () => {
+  it('keeps a code of digits as text, leading zeros and all', () => {
+    expect(csvCell(textCell('008123456789012345'))).toBe(
+      '"=""008123456789012345"""',
+    );
+  });
+
+  it('leaves any other code to the plain rules, formulas still neutralised', () => {
+    expect(csvCell(textCell('1Z999AA10123456784'))).toBe('1Z999AA10123456784');
+    expect(csvCell(textCell('=1+1'))).toBe("'=1+1");
+    expect(csvCell(textCell(null))).toBe('');
+  });
+
+  it('never wraps something that is not only digits', () => {
+    expect(csvCell({ text: '1")+cmd("' })).toBe('"1"")+cmd("""');
   });
 });
 

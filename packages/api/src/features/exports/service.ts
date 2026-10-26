@@ -8,7 +8,7 @@ import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
 import { contact, directoryPerson, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import { toCsv, type CsvCell } from '#features/exports/csv';
+import { textCell, toCsv, type CsvCell } from '#features/exports/csv';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -112,7 +112,7 @@ function toCells({ parcel: p, person, contact: c }: ExportedParcel): CsvCell[] {
     formatExportDate(p.deliveredAt),
     V1_STATUS[p.status],
     p.carrier,
-    p.tracking,
+    textCell(p.tracking),
     recipient,
     p.notificationEmail ?? person?.email ?? c?.email,
     p.department ?? person?.department,
@@ -123,7 +123,7 @@ function toCells({ parcel: p, person, contact: c }: ExportedParcel): CsvCell[] {
     translate(STATUS_LABEL[p.status]),
     translate(TYPE_LABEL[p.type]),
     p.carrierService,
-    p.reference,
+    textCell(p.reference),
     p.weightKg === null ? '' : kilograms.format(p.weightKg),
     p.location,
     formatExportDate(p.notifiedAt),
