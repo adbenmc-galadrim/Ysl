@@ -110,7 +110,7 @@ export function ReglagesHome() {
         icon: 'pin',
         color: 'red',
         label: t('settings.pickup'),
-        chevron: false,
+        onPress: () => void navigate({ to: '/reglages/lieu-et-horaires' }),
       },
     ],
   };
