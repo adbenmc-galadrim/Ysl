@@ -1,4 +1,5 @@
-export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled';
+/** `blocked`: WebKit wants a fresh touch, the one that started the work has expired. */
+export type ShareOutcome = 'shared' | 'downloaded' | 'cancelled' | 'blocked';
 
 type ShareHost = {
   navigator: Pick<Navigator, 'share'> & { canShare?: Navigator['canShare'] };
@@ -12,7 +13,8 @@ const REVOKE_AFTER_MS = 60_000;
 /**
  * Hands a file to the user: the share sheet when the browser offers one for
  * files (iOS, where Fichiers, AirDrop and Mail then take it), a download
- * otherwise. Closing the sheet is not an error.
+ * otherwise. Closing the sheet is not an error, nor a sheet refused for want
+ * of a fresh touch.
  */
 export async function shareFile(
   file: File,
@@ -26,6 +28,9 @@ export async function shareFile(
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         return 'cancelled';
+      }
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        return 'blocked';
       }
       throw error;
     }

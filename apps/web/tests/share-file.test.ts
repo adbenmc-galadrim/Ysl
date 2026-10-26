@@ -40,6 +40,18 @@ describe('shareFile', () => {
     expect(anchor.click).not.toHaveBeenCalled();
   });
 
+  it('says the sheet was refused when WebKit wants a fresh touch', async () => {
+    const refused = new Error('not allowed');
+    refused.name = 'NotAllowedError';
+    const { host, anchor } = download();
+    const outcome = await shareFile(file, 'Export', {
+      ...host,
+      navigator: { canShare: () => true, share: () => Promise.reject(refused) },
+    });
+    expect(outcome).toBe('blocked');
+    expect(anchor.click).not.toHaveBeenCalled();
+  });
+
   it('treats a closed sheet as a cancellation, not a failure', async () => {
     const abort = new Error('closed');
     abort.name = 'AbortError';

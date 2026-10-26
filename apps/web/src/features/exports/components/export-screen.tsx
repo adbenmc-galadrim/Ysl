@@ -29,21 +29,14 @@ export function ExportScreen() {
   const [progress, setProgress] = useState<Progress>({ state: 'idle' });
 
   const share = async (file: File, count: number) => {
-    try {
-      const outcome = await shareFile(file, t('export.share.title'));
-      setProgress(
-        outcome === 'cancelled'
-          ? { state: 'ready', file, count }
-          : { state: 'done', count, at: new Date() },
-      );
-    } catch (error) {
-      // The wait for the server can outlast the touch WebKit needs to open the sheet.
-      if (error instanceof Error && error.name === 'NotAllowedError') {
-        setProgress({ state: 'ready', file, count });
-        return;
-      }
-      throw error;
-    }
+    const outcome = await shareFile(file, t('export.share.title'));
+    // Closed, or refused once the server took longer than the touch lasts:
+    // the file is kept and the next touch only opens the sheet.
+    setProgress(
+      outcome === 'cancelled' || outcome === 'blocked'
+        ? { state: 'ready', file, count }
+        : { state: 'done', count, at: new Date() },
+    );
   };
 
   const run = async () => {
