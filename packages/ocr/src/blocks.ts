@@ -16,6 +16,18 @@ export const RECIPIENT_ANCHORS =
 export const SENDER_ANCHORS =
   /^(?:EXPEDITEUR|EXP|ABSENDER|MITTENTE|REMITENTE|SHIPPER|SENDER|SHIP(?:PED)? FROM|FROM|RETURN(?: TO| ADDRESS)?|RETOUR)\b\s*:?\s*/;
 
+/**
+ * The host company and its street as the OCR reads them (v1 `RE_CO`,
+ * `RE_ADDR`): the recipient's name sits around these lines when no anchor
+ * announces it, and the company's own words are never the person.
+ */
+export const HOST_COMPANY =
+  /\b(?:Y[VW]ES\s*)?S[A4][I1L!|]NT\s*-?\s*L[A4][UV]R[A-Z0-9]*|\bYSL\b/i;
+export const HOST_STREET = /BELLECH|ECHASSE/;
+
+/** « CONTACT : Léa Fontaine » on carriers that print no recipient anchor. */
+export const CONTACT_ANCHOR = /\bC[O0]NTACT\b\s*:?\s*/i;
+
 export const COMPANY_WORDS = new Set([
   'SARL',
   'SAS',
