@@ -9,6 +9,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { db } from '#/features/db/database';
+import type { LocalDirectoryPerson } from '#/features/db/schema';
 import type { RecipientChoice } from '#/features/parcels/edit';
 import { loadRecipientBook } from '#/features/parcels/recipients';
 import {
@@ -35,10 +36,14 @@ export type RecipientPickerProps = {
   onClose: () => void;
 };
 
-const labelOf = (option: Choice) =>
-  option.detail && option.kind === 'person'
-    ? `${option.name}, ${option.detail}`
-    : option.name;
+/** As the form names a recipient: the person with their department, else the name. */
+const labelOf = (option: Choice, people: readonly LocalDirectoryPerson[]) => {
+  const department =
+    option.kind === 'person'
+      ? people.find((person) => person.id === option.id)?.department
+      : undefined;
+  return department ? `${option.name}, ${department}` : option.name;
+};
 
 /**
  * Who the parcel is for, on « Choisir le destinataire »: the directory and
@@ -77,7 +82,7 @@ export function RecipientPicker({
           if (option) {
             onPick({
               choice: { kind: option.kind, id: option.id },
-              label: labelOf(option),
+              label: labelOf(option, people),
             });
           }
         }}

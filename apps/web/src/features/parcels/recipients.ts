@@ -7,9 +7,9 @@ import type {
 
 /** What the recipient picker searches: the directory, the contacts, the latest parcels for "Récents". */
 export type RecipientBook = {
-  people: LocalDirectoryPerson[];
-  contacts: LocalContact[];
-  latest: LocalParcel[];
+  people: readonly LocalDirectoryPerson[];
+  contacts: readonly LocalContact[];
+  latest: readonly LocalParcel[];
 };
 
 export async function loadRecipientBook(
