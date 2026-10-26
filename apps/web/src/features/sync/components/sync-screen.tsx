@@ -62,7 +62,7 @@ export function SyncScreen() {
         t('sync.export'),
       );
       setExporting(
-        outcome === 'cancelled'
+        outcome === 'cancelled' || outcome === 'blocked'
           ? { state: 'idle' }
           : { state: 'done', at: now },
       );
