@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { PhotoViewer } from '#components/photo-viewer';
+import { LABEL_PHOTO_URL } from '#fixtures/label-photo';
 import { PARCELS } from '#fixtures/parcels';
 import { FicheColisScreen } from '#screens/colis/fiche-colis-screen';
 
@@ -41,5 +43,108 @@ export const ANotifier: Story = {
       { label: 'Note', value: 'Aucune' },
     ],
     primaryAction: 'Notifier maintenant',
+  },
+};
+
+const ines = PARCELS.ines;
+
+export const EnAttenteDeRetrait: Story = {
+  name: 'En attente de retrait',
+  args: {
+    recipient: ines.recipient,
+    place: 'Ressources humaines, 4e étage',
+    tracking: '7712 9450 3338',
+    carrier: ines.carrier,
+    notice: {
+      tone: 'orange',
+      icon: 'cloud',
+      title: 'Modifié sur cet iPhone, pas encore envoyé',
+      description: 'Partira à la prochaine connexion',
+    },
+    state: {
+      icon: 'mail',
+      title: 'Notifiée il y a 2 h',
+      description: 'En attente de retrait par le destinataire',
+    },
+    steps: [
+      { label: 'Reçu', state: 'done' },
+      { label: 'Notifié', state: 'current' },
+      { label: 'Remis', state: 'todo' },
+    ],
+    photo: { src: LABEL_PHOTO_URL },
+    details: [
+      { label: 'Expéditeur', value: 'Zalando SE' },
+      { label: 'Nombre de colis', value: '2 sur 3' },
+      { label: 'Poids', value: '2,4 kg' },
+      { label: 'Service', value: 'FedEx Priority' },
+      { label: 'Emplacement', value: 'Étagère A' },
+      { label: 'Note', value: 'Fragile' },
+      { label: 'Reçu', value: 'Aujourd’hui à 9 h 12' },
+      { label: 'Synchronisation', value: 'Non envoyé' },
+    ],
+    history: [
+      {
+        id: 'e4',
+        title: 'Modifié : poids, note',
+        detail: 'Aujourd’hui à 11 h 05, pas encore envoyé',
+        tone: 'orange',
+      },
+      { id: 'e3', title: 'Notifié', detail: 'Aujourd’hui à 9 h 30' },
+      {
+        id: 'e2',
+        title: 'Destinataire choisi',
+        detail: 'Aujourd’hui à 9 h 20',
+      },
+      { id: 'e1', title: 'Reçu', detail: 'Aujourd’hui à 9 h 12' },
+    ],
+    secondaryAction: { label: 'Annuler la notification' },
+  },
+};
+
+export const ACompleter: Story = {
+  name: 'À compléter, photo restée sur un autre iPhone',
+  args: {
+    recipient: 'Destinataire inconnu',
+    place: 'Nom lu sur l’étiquette : C. MOREL',
+    tracking: 'XW 1234 5678 9FR',
+    carrier: 'Colissimo',
+    notice: {
+      tone: 'red',
+      icon: 'alert',
+      title: 'Refusé par le serveur',
+      description: 'Données invalides, à corriger sur l’appareil.',
+    },
+    state: {
+      icon: 'alert',
+      title: 'À compléter',
+      description: 'Choisir le destinataire pour pouvoir le notifier',
+    },
+    steps: [
+      { label: 'Reçu', state: 'current' },
+      { label: 'Notifié', state: 'todo' },
+      { label: 'Remis', state: 'todo' },
+    ],
+    photo: { absent: 'Photo restée sur l’iPhone qui a scanné ce colis' },
+    details: [
+      { label: 'Expéditeur', value: 'Inconnu' },
+      { label: 'Nombre de colis', value: 1 },
+      { label: 'Note', value: 'Aucune' },
+    ],
+    primaryAction: 'Compléter',
+  },
+};
+
+export const PhotoPleinEcran: Story = {
+  name: 'Photo en plein écran',
+  args: {
+    ...ANotifier.args,
+    photo: { src: LABEL_PHOTO_URL },
+    overlay: (
+      <PhotoViewer
+        src={LABEL_PHOTO_URL}
+        alt="Photo de l’étiquette"
+        onClose={() => {}}
+      />
+    ),
   },
 };
