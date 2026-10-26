@@ -6,6 +6,8 @@ import type { Parcel } from '#fixtures/parcels';
 
 export type ParcelSectionProps = {
   title: string;
+  /** Tells apart sections whose titles may repeat (two people of one name). */
+  id?: string;
   parcels: Parcel[];
   /** The real total when only the first rows are drawn. */
   count?: number;
