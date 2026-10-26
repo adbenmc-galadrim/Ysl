@@ -528,7 +528,7 @@ describe('sync.push', () => {
       deletedAt: null,
       key: 'pickup',
       value,
-      updatedBy: AGENT_ID,
+      updatedBy: 'someone-else',
     });
     const stored = (id: string) =>
       db.select().from(schema.setting).where(eq(schema.setting.id, id));
@@ -576,7 +576,10 @@ describe('sync.push', () => {
       expect(results[1]?.message).toBe(
         'Ce réglage a déjà été enregistré depuis un autre appareil : rouvrez-le avant de le modifier.',
       );
-      expect((await stored(first.entityId))[0]?.value).toEqual(pickup);
+      expect((await stored(first.entityId))[0]).toMatchObject({
+        value: pickup,
+        updatedBy: AGENT_ID,
+      });
       expect(await stored(second.entityId)).toEqual([]);
     });
   });

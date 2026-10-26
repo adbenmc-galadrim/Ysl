@@ -110,13 +110,11 @@ function checkSetting(op: SyncOp, { role }: Writer): void {
   }
 }
 
-async function upsert(
-  tx: AnyDb,
-  op: SyncOp,
-  { organizationId }: Writer,
-): Promise<void> {
+async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
+  const { organizationId } = writer;
   const table = tableOf(op.entity);
-  const values = { ...valuesOf(table, op), organizationId };
+  const values: Values = { ...valuesOf(table, op), organizationId };
+  if (op.entity === 'setting') values.updatedBy = writer.userId;
   const insert = tx.insert(table).values(values as never);
 
   if (op.entity === 'event') {
