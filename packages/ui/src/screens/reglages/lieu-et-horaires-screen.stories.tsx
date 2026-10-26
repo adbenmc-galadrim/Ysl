@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 
 import { LieuEtHorairesScreen } from '#screens/reglages/lieu-et-horaires-screen';
 
@@ -54,5 +55,43 @@ export const LieuEtHoraires: Story = {
         },
       ],
     },
+  },
+};
+
+const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+
+/**
+ * The screen as the app shows it: the place, each day and the instructions
+ * are text boxes, an empty day reads "Fermé". No reminders until they send
+ * anything, so the note moves under the instructions.
+ */
+export const Modifiable: Story = {
+  args: {
+    place: '',
+    hours: [],
+  },
+  render: function Render() {
+    const [place, setPlace] = useState('Rez-de-chaussée, comptoir courrier');
+    const [hours, setHours] = useState(
+      DAYS.map((day, index) => ({ day, hours: index === 4 ? '' : WEEK })),
+    );
+    const [instructions, setInstructions] = useState('');
+    return (
+      <LieuEtHorairesScreen
+        place={place}
+        onPlaceChange={setPlace}
+        hours={hours}
+        onHoursChange={(index, value) =>
+          setHours((days) =>
+            days.map((day, at) =>
+              at === index ? { ...day, hours: value } : day,
+            ),
+          )
+        }
+        instructions={instructions}
+        onInstructionsChange={setInstructions}
+        footer="Ces informations apparaissent dans chaque e-mail."
+      />
+    );
   },
 };
