@@ -171,6 +171,10 @@ export const fr = {
   'directory.edit.description':
     'Le changement vaut sur tous les iPhone du service.',
   'directory.edit.submit': 'Enregistrer',
+  'recipient.submit.next': 'Valider et suivant',
+  'recipient.submit.last': 'Valider et terminer',
+  'recipient.suggestions': 'Suggestions',
+  'recipient.photo.close': 'Fermer la photo',
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.group.app': 'App',
   'settings.sound': 'Son au scan',
