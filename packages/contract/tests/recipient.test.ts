@@ -5,6 +5,7 @@ import {
   matchRecipient,
   readableName,
   type RecipientEntry,
+  silentMatch,
   type RecipientRead,
 } from '@repo/contract/recipient';
 
@@ -185,6 +186,18 @@ describe('matchRecipient — without a name', () => {
       best: null,
     });
     expect(matchRecipient(empty, [], LABEL).readName).toBeNull();
+  });
+});
+
+describe('silentMatch', () => {
+  const silent = (reads: RecipientRead[]) =>
+    silentMatch(matchRecipient(DIRECTORY, reads))?.entry.id ?? null;
+
+  it('settles only a code name exact in first and last name', () => {
+    expect(silent([code('HUGO DUPONT')])).toBe('hugo');
+    expect(silent([ocr('HUGO DUPONT')])).toBeNull();
+    expect(silent([code('H. DUPONT')])).toBeNull();
+    expect(silent([code('HUGO DUPOND')])).toBeNull();
   });
 });
 

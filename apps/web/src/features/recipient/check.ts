@@ -1,7 +1,7 @@
-import type {
-  RecipientMatch,
-  RecipientRead,
-  RecipientResult,
+import {
+  type RecipientRead,
+  type RecipientResult,
+  silentMatch,
 } from '@repo/contract/recipient';
 import { normalizeName } from '@repo/shared/text';
 import { listDrafts, updateDraft } from '#/features/batch/store';
@@ -12,18 +12,24 @@ import type {
   DraftRecipient,
 } from '#/features/db/schema';
 import { fullName } from '#/features/directory/people';
+import { recipientInCodes } from '#/features/scan/extract';
 import type { MatchEngine } from '#/features/recipient/matcher';
 
 /**
- * The chain of F18, in its order: the name a code gave (or the agent, by
- * « Même destinataire »), then the OCR's name. The whole text only speaks
- * when neither did.
+ * The chain of F18, in its order: the name a structured code prints, then
+ * the OCR's name. A name the agent copied from the parcel before
+ * (« Même destinataire ») is weighed too, but as a reading to confirm: the
+ * copy may carry that parcel's OCR guess, so it never settles a card alone.
  */
 export function readsOf(
-  draft: Pick<DraftParcel, 'readName' | 'ocrName'>,
+  draft: Pick<DraftParcel, 'readName' | 'ocrName' | 'symbols'>,
 ): RecipientRead[] {
+  const coded = recipientInCodes(draft.symbols);
   const reads: RecipientRead[] = [];
-  if (draft.readName) reads.push({ text: draft.readName, source: 'code' });
+  if (coded) reads.push({ text: coded, source: 'code' });
+  if (draft.readName && draft.readName !== coded) {
+    reads.push({ text: draft.readName, source: 'ocr' });
+  }
   if (draft.ocrName) reads.push({ text: draft.ocrName, source: 'ocr' });
   return reads;
 }
@@ -40,16 +46,6 @@ export const toRecipient = (
   name: chosen.name,
   source,
 });
-
-/**
- * The only match taken without the agent: a name a code printed that is,
- * first name and last name, one card and no other. An OCR name, however
- * exact, and a partial homonym always go before the agent.
- */
-export function silentMatch(result: RecipientResult): RecipientMatch | null {
-  const { best } = result;
-  return best?.exact && best.source === 'code' ? best : null;
-}
 
 /**
  * What « Vérifier un colis » shows selected: the agent's earlier choice,

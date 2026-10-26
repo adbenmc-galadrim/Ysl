@@ -6,6 +6,7 @@ export {
   matchRecipient,
   MIN_SCORE,
   PREFIX_MIN_LENGTH,
+  silentMatch,
   SUGGESTIONS,
 } from './match';
 export type {

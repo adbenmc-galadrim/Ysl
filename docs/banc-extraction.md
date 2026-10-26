@@ -184,9 +184,10 @@ cas défavorable.
 
 **Lecture.** O3 tient (≥ 95 %) à la taille du service ; au-delà, l'écart vient presque tout
 entier du nom de famille seul, que 18 à 37 homonymes se partagent : aucune règle ne peut
-le départager, c'est « Chercher dans l'annuaire ». Aucune personne n'est jamais réglée en
-silence à tort : seule une lecture d'un code 2D, exacte en prénom et nom et sans égale,
-l'est ; un homonyme partiel ou un nom OCR va toujours à « Vérifier un colis ». Le temps
+le départager, c'est « Chercher dans l'annuaire ». La colonne « réglé en
+silence » vérifie un invariant plutôt qu'elle ne mesure : la règle (`silentMatch`) ne règle
+seule qu'une lecture d'un code 2D, exacte en prénom et nom et sans égale, et l'annuaire
+fictif n'a pas d'homonyme complet ; un homonyme partiel ou un nom OCR va toujours à « Vérifier un colis ». Le temps
 reste sous 2 ms pour 2 000 fiches (étape 9 du §4.2 : 10 à 30 ms budgétés), dans un Worker
 de l'app. Annuaire vide (D15) : chaque nom lu est gardé pour préremplir une nouvelle fiche.
 

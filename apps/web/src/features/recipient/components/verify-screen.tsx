@@ -47,6 +47,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 const NO_PEOPLE: LocalDirectoryPerson[] = [];
 const NO_CONTACTS: LocalContact[] = [];
 const NO_PARCELS: LocalParcel[] = [];
+const NO_SYMBOLS: DraftParcel['symbols'] = [];
 
 type Sheet = { initial: string; key: number };
 
@@ -176,17 +177,20 @@ export function VerifyScreen() {
 
   const readName = draft?.readName ?? null;
   const ocrName = draft?.ocrName ?? null;
+  const symbols = draft?.symbols ?? NO_SYMBOLS;
   const text = draft ? textOf(draft) : null;
   useEffect(() => {
     if (!draftId) return;
     let current = true;
-    void matcher.match(readsOf({ readName, ocrName }), text).then((found) => {
-      if (current) setMatched({ draftId, result: found });
-    });
+    void matcher
+      .match(readsOf({ readName, ocrName, symbols }), text)
+      .then((found) => {
+        if (current) setMatched({ draftId, result: found });
+      });
     return () => {
       current = false;
     };
-  }, [matcher, draftId, readName, ocrName, text, people, contacts]);
+  }, [matcher, draftId, readName, ocrName, symbols, text, people, contacts]);
 
   const result = matched && matched.draftId === draftId ? matched.result : null;
   const suggestions = (result?.suggestions ?? [])

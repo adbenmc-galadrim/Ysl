@@ -260,3 +260,13 @@ export function matchRecipient(
         : null,
   };
 }
+
+/**
+ * The only match taken without the agent: a name a code printed that is,
+ * first name and last name, one card and no other. An OCR name, however
+ * exact, and a partial homonym always go before the agent.
+ */
+export function silentMatch(result: RecipientResult): RecipientMatch | null {
+  const { best } = result;
+  return best?.exact && best.source === 'code' ? best : null;
+}

@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { GS, RS } from '@repo/contract/codes';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   addDraft,
@@ -47,10 +48,32 @@ beforeEach(async () => {
   matcher.setEntries(recipientEntries([LEA, LOUIS, HUGO], []));
 });
 
+/** A GeoPost Aztec that prints the recipient, as the parsers read it. */
+const aztecFor = (name: string) =>
+  [
+    `[)>${RS}01`,
+    '02',
+    '0075007',
+    '250',
+    '801',
+    '118J0229907975',
+    'GEOP',
+    '123456',
+    '',
+    '',
+    '001/001',
+    '00.50KG',
+    'N',
+    '37 RUE DE BELLECHASSE',
+    'PARIS',
+    '',
+    name,
+  ].join(GS);
+
 const draftWith = async (
   batchId: string,
   seconds: number,
-  patch: Partial<Pick<DraftParcel, 'readName' | 'ocrName'>>,
+  patch: Partial<Pick<DraftParcel, 'readName' | 'ocrName' | 'symbols'>>,
 ) => {
   const draft = await addDraft(db, files, batchId, null, later(seconds));
   await updateDraft(db, draft.id, patch);
@@ -60,14 +83,18 @@ const draftWith = async (
 describe('settleRecipients', () => {
   it('settles only a code name matching one card exactly, and queues the rest in order', async () => {
     const batch = await openBatch(db, NOW);
-    const coded = await draftWith(batch.id, 1, { readName: 'DUPONT HUGO' });
+    const coded = await draftWith(batch.id, 1, {
+      readName: 'DUPONT HUGO',
+      symbols: [{ format: 'Aztec', text: aztecFor('DUPONT HUGO') }],
+    });
     const read = await draftWith(batch.id, 2, { ocrName: 'LEA FONTAINE' });
     const homonym = await draftWith(batch.id, 3, { readName: 'FONTAINE' });
     const unknown = await draftWith(batch.id, 4, { readName: 'NORA HADDAD' });
+    const copied = await draftWith(batch.id, 5, { readName: 'HUGO DUPONT' });
 
     const queue = await settleRecipients(db, batch.id, matcher);
 
-    expect(queue).toEqual([read, homonym, unknown]);
+    expect(queue).toEqual([read, homonym, unknown, copied]);
     expect((await db.draftParcel.get(coded))?.recipient).toEqual({
       kind: 'person',
       id: 'hugo',
@@ -95,7 +122,7 @@ describe('settleRecipients', () => {
 
 describe('preselection', () => {
   const match = (ocrName: string) =>
-    matcher.match(readsOf({ readName: null, ocrName }));
+    matcher.match(readsOf({ readName: null, ocrName, symbols: [] }));
 
   it('selects an OCR name that stands out, for the agent to validate', async () => {
     expect(preselection({}, await match('LEA FONTAINE'))).toMatchObject({

@@ -4,6 +4,7 @@ import {
   indexRecipients,
   matchRecipient,
   type RecipientEntry,
+  silentMatch,
   type RecipientRead,
 } from '@repo/contract/recipient';
 
@@ -306,7 +307,8 @@ export function benchRecipients(
         if (result.best && same(result.best.entry)) outcome.top1 += 1;
         if (result.suggestions.some((s) => same(s.entry))) outcome.top3 += 1;
         if (result.best && !same(result.best.entry)) outcome.wrongBest += 1;
-        if (result.best?.exact && !same(result.best.entry)) {
+        const silent = silentMatch(result);
+        if (silent && !same(silent.entry)) {
           outcome.wrongSilent += 1;
         }
       }
