@@ -14,6 +14,7 @@ import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
+import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
@@ -48,6 +49,11 @@ const AuthenticatedPreparationRoute =
     path: '/preparation',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRechercheRoute = AuthenticatedRechercheRouteImport.update({
+  id: '/recherche',
+  path: '/recherche',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedRemiseRoute = AuthenticatedRemiseRouteImport.update({
   id: '/remise',
   path: '/remise',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/preparation': typeof AuthenticatedPreparationRoute
+  '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/preparation': typeof AuthenticatedPreparationRoute
+  '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
+  '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/preparation'
+    | '/recherche'
     | '/remise'
     | '/scan'
     | '/reglages/annuaire'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/preparation'
+    | '/recherche'
     | '/remise'
     | '/scan'
     | '/'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/_authenticated/preparation'
+    | '/_authenticated/recherche'
     | '/_authenticated/remise'
     | '/_authenticated/scan'
     | '/_authenticated/'
@@ -226,6 +238,13 @@ declare module '@tanstack/react-router' {
       path: '/preparation'
       fullPath: '/preparation'
       preLoaderRoute: typeof AuthenticatedPreparationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/recherche': {
+      id: '/_authenticated/recherche'
+      path: '/recherche'
+      fullPath: '/recherche'
+      preLoaderRoute: typeof AuthenticatedRechercheRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/remise': {
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
+  AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -302,6 +322,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
+  AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

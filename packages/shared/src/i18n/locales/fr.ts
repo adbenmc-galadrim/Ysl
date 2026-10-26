@@ -102,6 +102,7 @@ export const fr = {
   'search.empty.clear': 'Effacer',
   'search.none.title': 'Aucun colis',
   'search.none.description': 'Aucun colis ne correspond à ce filtre.',
+  'search.none.empty': 'Les colis réceptionnés apparaîtront ici.',
   'search.none.all': 'Tout afficher',
   'update.available': 'Nouvelle version disponible',
   'update.apply': 'Mettre à jour',
