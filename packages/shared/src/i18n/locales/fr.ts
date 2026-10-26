@@ -130,6 +130,9 @@ export const fr = {
   'parcel.state.notifie': 'Notifié',
   'parcel.state.remis': 'Remis',
   'parcel.state.retourne': 'Retourné',
+  'parcel.type.colis': 'Colis',
+  'parcel.type.recommande': 'Recommandé',
+  'parcel.type.sans_suivi': 'Sans suivi',
   'parcel.todo.a_completer':
     'Compléter le destinataire ou le numéro avant de notifier',
   'parcel.todo.recu': 'Pas encore notifié : prévenir le destinataire',
