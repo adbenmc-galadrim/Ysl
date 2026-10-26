@@ -25,6 +25,8 @@ import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_aut
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './routes/_authenticated/reglages/lieu-et-horaires'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
+import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
+import { Route as AuthenticatedColisParcelIdModifierRouteImport } from './routes/_authenticated/colis/$parcelId/modifier'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -113,6 +115,18 @@ const AuthenticatedReglagesSynchronisationRoute =
     path: '/reglages/synchronisation',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedColisParcelIdIndexRoute =
+  AuthenticatedColisParcelIdIndexRouteImport.update({
+    id: '/colis/$parcelId/',
+    path: '/colis/$parcelId/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedColisParcelIdModifierRoute =
+  AuthenticatedColisParcelIdModifierRouteImport.update({
+    id: '/colis/$parcelId/modifier',
+    path: '/colis/$parcelId/modifier',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -130,6 +144,8 @@ export interface FileRoutesByFullPath {
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
+  '/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
@@ -147,6 +163,8 @@ export interface FileRoutesByTo {
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
+  '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
+  '/colis/$parcelId': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -166,6 +184,8 @@ export interface FileRoutesById {
   '/_authenticated/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/_authenticated/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
+  '/_authenticated/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -185,6 +205,8 @@ export interface FileRouteTypes {
     | '/reglages/lieu-et-horaires'
     | '/reglages/synchronisation'
     | '/reglages/'
+    | '/colis/$parcelId/modifier'
+    | '/colis/$parcelId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/bienvenue'
@@ -202,6 +224,8 @@ export interface FileRouteTypes {
     | '/reglages/lieu-et-horaires'
     | '/reglages/synchronisation'
     | '/reglages'
+    | '/colis/$parcelId/modifier'
+    | '/colis/$parcelId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -220,6 +244,8 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/lieu-et-horaires'
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
+    | '/_authenticated/colis/$parcelId/modifier'
+    | '/_authenticated/colis/$parcelId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,6 +368,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesSynchronisationRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/colis/$parcelId/': {
+      id: '/_authenticated/colis/$parcelId/'
+      path: '/colis/$parcelId'
+      fullPath: '/colis/$parcelId/'
+      preLoaderRoute: typeof AuthenticatedColisParcelIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/colis/$parcelId/modifier': {
+      id: '/_authenticated/colis/$parcelId/modifier'
+      path: '/colis/$parcelId/modifier'
+      fullPath: '/colis/$parcelId/modifier'
+      preLoaderRoute: typeof AuthenticatedColisParcelIdModifierRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -359,6 +399,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesLieuEtHorairesRoute: typeof AuthenticatedReglagesLieuEtHorairesRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
+  AuthenticatedColisParcelIdModifierRoute: typeof AuthenticatedColisParcelIdModifierRoute
+  AuthenticatedColisParcelIdIndexRoute: typeof AuthenticatedColisParcelIdIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -377,6 +419,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesSynchronisationRoute:
     AuthenticatedReglagesSynchronisationRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
+  AuthenticatedColisParcelIdModifierRoute:
+    AuthenticatedColisParcelIdModifierRoute,
+  AuthenticatedColisParcelIdIndexRoute: AuthenticatedColisParcelIdIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

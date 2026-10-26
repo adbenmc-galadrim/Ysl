@@ -18,6 +18,9 @@ function SearchPage() {
       entries={entries}
       now={now}
       onCancel={() => void navigate({ to: '/' })}
+      onOpen={(parcelId) =>
+        void navigate({ to: '/colis/$parcelId', params: { parcelId } })
+      }
     />
   );
 }

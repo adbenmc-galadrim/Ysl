@@ -189,6 +189,39 @@ récents. Un pull par curseur rend tous les nouveaux événements, quel que soit
   avec leur nombre. Sinon le compte est déconnecté, la synchro arrêtée, puis la base
   locale et les photos OPFS sont effacées.
 
+## Fiche colis et historique
+
+La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le reste :
+`commitLocal`, hors ligne compris.
+
+- **Modification** (`features/parcels/edit.ts`) : la ligne `parcel`, un `contact`
+  quand le destinataire est saisi à la main (« Personne hors annuaire ») et un
+  événement, dans le même commit. L'enregistrement recalcule la complétude comme la
+  fin d'un lot : un colis à compléter qui a désormais un transporteur, un numéro
+  (sauf `sans_suivi`) et un destinataire passe à `recu` ; un colis `recu` auquel on
+  retire ce qui le rendait complet revient à `a_completer`, avec le compteur
+  `status_seq`. Un colis `notifie` ou `remis` garde un destinataire de l'annuaire ou
+  un contact (`parcel_recipient_check`). Le numéro de suivi n'est jamais bloquant ;
+  il est revalidé contre le transporteur choisi (`validateTracking`).
+- **Retour arrière** depuis la fiche : « Annuler la notification » et « Annuler le
+  retour » (`changeParcelStatus`). « Annuler la remise » attend l'écran de remise :
+  il faut annuler la `handover` avec son motif dans le même commit.
+- **Suppression** : logique (`deleted_at`), avec son événement ; le colis quitte les
+  listes de tous les appareils, son historique reste.
+- **Événements** (`@repo/contract/parcel-event`) : `event.entity = 'parcel'`,
+  `type` `parcel.edited` (`detail.fields`, les champs changés), `parcel.status`
+  (`detail.from`, `detail.to`) ou `parcel.deleted`, `actor_id` = l'agent. La
+  réception n'a pas d'événement : la ligne la porte (`received_at`). Un appareil
+  ignore un type ou un `detail` qu'il ne sait pas lire. L'historique de la fiche y
+  ajoute la notification et la remise portées par la ligne sans événement, et l'état
+  de chaque événement dans l'outbox (pas encore envoyé, refusé avec le motif).
+- **État de synchronisation** de la fiche : `Refusé` si une opération du colis est
+  `rejected` (bandeau rouge avec le motif), `Non envoyé` si une opération attend
+  et que la bannière d'attente de Colis s'affiche, `À jour` sinon.
+- **Photo** : lue dans OPFS par `parcelId` ; elle n'existe que sur l'iPhone qui a
+  scanné (D8), les autres affichent « Photo restée sur l'iPhone qui a scanné ce
+  colis ».
+
 ## Alerte et export de secours
 
 Ticket YSL-36 (F47, §8.4.7). Tant qu'un changement n'a pas atteint le serveur, le

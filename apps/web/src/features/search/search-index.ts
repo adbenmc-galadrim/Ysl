@@ -9,6 +9,7 @@ import {
   homeState,
   type RecipientContext,
   recipientOf,
+  shortDate,
   startOfDay,
 } from '#/features/parcels/model';
 
@@ -52,23 +53,6 @@ export function searchState(
   if (parcel.status === 'remis') return 'handedOver';
   if (parcel.status === 'retourne') return 'returned';
   return homeState(parcel, now);
-}
-
-const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'short',
-});
-const DAY_MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-/** "14 oct.", with the year once it is not this one. */
-function shortDate(date: Date, now: Date): string {
-  return (
-    date.getFullYear() === now.getFullYear() ? DAY_MONTH : DAY_MONTH_YEAR
-  ).format(date);
 }
 
 /**

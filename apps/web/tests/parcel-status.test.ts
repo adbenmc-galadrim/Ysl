@@ -27,9 +27,17 @@ describe('changeParcelStatus', () => {
       notifiedAt: NOW,
       updatedAt: NOW,
     });
-    const [op] = await db.outbox.toArray();
+    const [op, event] = await db.outbox.toArray();
     expect(op).toMatchObject({ opId, entityId: row.id, type: 'upsert' });
     expect(op?.patch).toMatchObject({ status: 'notifie', statusSeq: 3 });
+    expect(event).toMatchObject({ entity: 'event', type: 'upsert' });
+    expect(event?.patch).toMatchObject({
+      entity: 'parcel',
+      entityId: row.id,
+      type: 'parcel.status',
+      detail: { from: 'recu', to: 'notifie' },
+      actorId: 'agent-1',
+    });
   });
 
   it('counts from 0 on a row pulled before the counter', async () => {
@@ -68,6 +76,11 @@ describe('stepBackParcel', () => {
       status: 'recu',
       notifiedAt: null,
       statusSeq: 1,
+    });
+    const [, event] = await db.outbox.toArray();
+    expect(event?.patch).toMatchObject({
+      type: 'parcel.status',
+      detail: { from: 'notifie', to: 'recu' },
     });
   });
 

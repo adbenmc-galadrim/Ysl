@@ -26,6 +26,8 @@ export type SearchViewProps = {
   entries: readonly SearchEntry[] | undefined;
   now: Date;
   onCancel: () => void;
+  /** A tap on a result opens its record. */
+  onOpen?: (parcelId: string) => void;
 };
 
 /**
@@ -34,7 +36,12 @@ export type SearchViewProps = {
  * the field never waits for the list, which follows a frame later when
  * the iPhone is busy.
  */
-export function SearchView({ entries, now, onCancel }: SearchViewProps) {
+export function SearchView({
+  entries,
+  now,
+  onCancel,
+  onOpen,
+}: SearchViewProps) {
   const { search, grouping, update, group, reset } = useSearchState();
   const query = useDeferredValue(search.query);
   const results = useMemo(
@@ -42,8 +49,13 @@ export function SearchView({ entries, now, onCancel }: SearchViewProps) {
     [entries, query, search.filter, now],
   );
   const sections = useMemo(
-    () => groupResults(results, grouping, now, t),
-    [results, grouping, now],
+    () =>
+      groupResults(results, grouping, now, t).map((section) => ({
+        ...section,
+        onParcelClick:
+          onOpen && ((parcel: { id: string }) => onOpen(parcel.id)),
+      })),
+    [results, grouping, now, onOpen],
   );
   const filters = SEARCH_FILTERS.map((id) => ({
     id,

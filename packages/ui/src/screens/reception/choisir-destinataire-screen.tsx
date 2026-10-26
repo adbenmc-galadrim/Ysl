@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { Avatar } from '#components/avatar';
 import { IconButton } from '#components/icon-button';
 import { ListRow } from '#components/list-row';
@@ -77,6 +79,8 @@ export type ChoisirDestinataireScreenProps = {
   onPick?: (id: string) => void;
   /** "Personne hors annuaire": a new card for someone not listed yet. */
   onOutside?: () => void;
+  /** Under the list, e.g. taking away the recipient chosen so far. */
+  footer?: ReactNode;
 };
 
 const rows = (
@@ -114,6 +118,7 @@ export function ChoisirDestinataireScreen({
   onClose,
   onPick,
   onOutside,
+  footer,
 }: ChoisirDestinataireScreenProps) {
   const searching = query.trim() !== '';
   return (
@@ -177,6 +182,7 @@ export function ChoisirDestinataireScreen({
           </span>
         </span>
       </button>
+      {footer}
     </Screen>
   );
 }

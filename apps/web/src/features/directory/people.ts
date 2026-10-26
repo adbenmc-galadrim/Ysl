@@ -17,6 +17,11 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** An address that can take a message: something, an at sign, a domain with a dot. */
+export function isEmail(email: string): boolean {
+  return EMAIL.test(email);
+}
+
 /** The key the directory is deduplicated on (F50): the e-mail, trimmed, in lower case. */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -38,7 +43,7 @@ export function validatePerson(draft: ContactDraft): ContactDraftErrors {
   if (!draft.lastName.trim()) errors.lastName = t('directory.error.lastName');
   const email = normalizeEmail(draft.email);
   if (!email) errors.email = t('directory.error.emailMissing');
-  else if (!EMAIL.test(email)) errors.email = t('directory.error.emailInvalid');
+  else if (!isEmail(email)) errors.email = t('directory.error.emailInvalid');
   return errors;
 }
 
