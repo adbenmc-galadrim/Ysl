@@ -112,19 +112,43 @@ export function isComplete(
   );
 }
 
-function typedContact(
+/**
+ * The contact a hand-typed name stands for: the one this mailroom already
+ * typed with that e-mail, or with that name and no e-mail yet, counted once
+ * more; a new one otherwise. Typing the same temp twice keeps one card.
+ */
+async function typedContact(
+  db: CourrierDatabase,
   name: string,
   email: string,
   { agentId, now }: Required<EditOptions>,
-): LocalContact {
+): Promise<LocalContact> {
   const key = normalizeEmail(email);
+  const nameNorm = normalizeName(name);
+  const live = (row: LocalContact) => row.deletedAt === null;
+  const known =
+    (key
+      ? (await db.contact.where('email').equals(key).toArray()).find(live)
+      : undefined) ??
+    (await db.contact.where('nameNorm').equals(nameNorm).toArray()).find(
+      (row) => live(row) && row.email === null,
+    );
+  if (known) {
+    return {
+      ...known,
+      email: known.email ?? (key || null),
+      updatedAt: now,
+      usageCount: known.usageCount + 1,
+      lastUsedAt: now,
+    };
+  }
   return {
     id: newId(),
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
     name: name.trim(),
-    nameNorm: normalizeName(name),
+    nameNorm,
     email: key || null,
     createdBy: agentId,
     usageCount: 1,
@@ -232,7 +256,12 @@ export async function saveParcelEdit(
   const options = { agentId, now };
   const contact =
     edit.recipient.kind === 'typed' && edit.recipient.name.trim()
-      ? typedContact(edit.recipient.name, edit.recipient.email, options)
+      ? await typedContact(
+          db,
+          edit.recipient.name,
+          edit.recipient.email,
+          options,
+        )
       : undefined;
   const recipient = contact
     ? { personId: null, contactId: contact.id }

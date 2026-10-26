@@ -200,6 +200,38 @@ describe('saveParcelEdit', () => {
     expect(parcel).toMatchObject({ personId: null, status: 'recu' });
   });
 
+  it('keeps one contact for a name typed twice', async () => {
+    const first = parcelRow({ status: 'a_completer' });
+    const second = parcelRow({ status: 'a_completer' });
+    await db.parcel.bulkPut([first, second]);
+    const typed = (email: string) => ({
+      kind: 'typed' as const,
+      name: 'Paul Intérim',
+      email,
+    });
+
+    await saveParcelEdit(
+      db,
+      first.id,
+      { ...editOf(first), recipient: typed('') },
+      options,
+    );
+    await saveParcelEdit(
+      db,
+      second.id,
+      { ...editOf(second), recipient: typed('paul@example.com') },
+      options,
+    );
+
+    const contacts = await db.contact.toArray();
+    expect(contacts).toHaveLength(1);
+    expect(contacts[0]).toMatchObject({
+      email: 'paul@example.com',
+      usageCount: 2,
+    });
+    expect((await db.parcel.get(second.id))?.contactId).toBe(contacts[0]?.id);
+  });
+
   it('refuses a weight, an e-mail or pieces it cannot keep', async () => {
     const row = parcelRow();
     await db.parcel.put(row);
