@@ -67,3 +67,14 @@ export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   }
   return next({ ctx: { ...ctx, organizationId } });
 });
+
+/** An admin of the mailroom: the screens of Réglages › Service courrier. */
+export const adminMemberProcedure = memberProcedure.use(({ ctx, next }) => {
+  if (roleOf(ctx.session) !== 'admin') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('error.forbidden'),
+    });
+  }
+  return next();
+});

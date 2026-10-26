@@ -16,6 +16,8 @@ describe('parcel events', () => {
       { type: 'parcel.edited', fields: ['recipient', 'weightKg'] },
       { type: 'parcel.status', from: 'notifie', to: 'recu' },
       { type: 'parcel.deleted' },
+      { type: 'parcel.imported', flags: ['tracking-rejected'] },
+      { type: 'parcel.imported', flags: [] },
     ];
     for (const event of events) expect(roundTrip(event)).toEqual(event);
   });

@@ -24,6 +24,7 @@ import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_au
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 import { Route as AuthenticatedReglagesExportRouteImport } from './routes/_authenticated/reglages/export'
+import { Route as AuthenticatedReglagesImportV1RouteImport } from './routes/_authenticated/reglages/import-v1'
 import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './routes/_authenticated/reglages/lieu-et-horaires'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
@@ -110,6 +111,12 @@ const AuthenticatedReglagesExportRoute =
     path: '/reglages/export',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesImportV1Route =
+  AuthenticatedReglagesImportV1RouteImport.update({
+    id: '/reglages/import-v1',
+    path: '/reglages/import-v1',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesLieuEtHorairesRoute =
   AuthenticatedReglagesLieuEtHorairesRouteImport.update({
     id: '/reglages/lieu-et-horaires',
@@ -149,6 +156,7 @@ export interface FileRoutesByFullPath {
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
+  '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
+  '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
@@ -191,6 +200,7 @@ export interface FileRoutesById {
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/export': typeof AuthenticatedReglagesExportRoute
+  '/_authenticated/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/_authenticated/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/export'
+    | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
     | '/reglages/synchronisation'
     | '/reglages/'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/export'
+    | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
     | '/reglages/synchronisation'
     | '/reglages'
@@ -254,6 +266,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/export'
+    | '/_authenticated/reglages/import-v1'
     | '/_authenticated/reglages/lieu-et-horaires'
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
@@ -374,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesExportRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/import-v1': {
+      id: '/_authenticated/reglages/import-v1'
+      path: '/reglages/import-v1'
+      fullPath: '/reglages/import-v1'
+      preLoaderRoute: typeof AuthenticatedReglagesImportV1RouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/lieu-et-horaires': {
       id: '/_authenticated/reglages/lieu-et-horaires'
       path: '/reglages/lieu-et-horaires'
@@ -417,6 +437,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesExportRoute: typeof AuthenticatedReglagesExportRoute
+  AuthenticatedReglagesImportV1Route: typeof AuthenticatedReglagesImportV1Route
   AuthenticatedReglagesLieuEtHorairesRoute: typeof AuthenticatedReglagesLieuEtHorairesRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
@@ -436,6 +457,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
   AuthenticatedReglagesExportRoute: AuthenticatedReglagesExportRoute,
+  AuthenticatedReglagesImportV1Route: AuthenticatedReglagesImportV1Route,
   AuthenticatedReglagesLieuEtHorairesRoute:
     AuthenticatedReglagesLieuEtHorairesRoute,
   AuthenticatedReglagesSynchronisationRoute:

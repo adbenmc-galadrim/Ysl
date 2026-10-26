@@ -11,6 +11,7 @@
     "./exports": "./src/exports.ts",
     "./extract": "./src/extract/index.ts",
     "./health": "./src/health.ts",
+    "./imports": "./src/imports.ts",
     "./parcel-event": "./src/parcel-event.ts",
     "./parcel-status": "./src/parcel-status.ts",
     "./recipient": "./src/recipient/index.ts",

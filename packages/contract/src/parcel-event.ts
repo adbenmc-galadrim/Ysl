@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IMPORT_FLAGS, type ImportFlag } from './imports';
 import { PARCEL_STATUSES, type ParcelStatus } from './parcel-status';
 
 /** The `entity` of the `event` rows that tell a parcel's story. */
@@ -29,7 +30,8 @@ export type ParcelEditField = (typeof PARCEL_EDIT_FIELDS)[number];
 export type ParcelEvent =
   | { type: 'parcel.edited'; fields: ParcelEditField[] }
   | { type: 'parcel.status'; from: ParcelStatus; to: ParcelStatus }
-  | { type: 'parcel.deleted' };
+  | { type: 'parcel.deleted' }
+  | { type: 'parcel.imported'; flags: ImportFlag[] };
 
 const status = z.enum(PARCEL_STATUSES);
 
@@ -43,6 +45,13 @@ const details = {
   }),
   'parcel.status': z.object({ from: status, to: status }),
   'parcel.deleted': z.unknown(),
+  'parcel.imported': z.object({
+    flags: z
+      .array(z.string())
+      .transform((flags) =>
+        IMPORT_FLAGS.filter((flag) => flags.includes(flag)),
+      ),
+  }),
 } as const;
 
 /** The `type` and `detail` columns of an event row. */
@@ -57,6 +66,8 @@ export function eventColumns(event: ParcelEvent): {
       return { type: event.type, detail: { from: event.from, to: event.to } };
     case 'parcel.deleted':
       return { type: event.type, detail: null };
+    case 'parcel.imported':
+      return { type: event.type, detail: { flags: event.flags } };
   }
 }
 
@@ -82,6 +93,10 @@ export function readParcelEvent(
     }
     case 'parcel.deleted':
       return { type };
+    case 'parcel.imported': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, flags: read.data.flags } : undefined;
+    }
     default:
       return undefined;
   }

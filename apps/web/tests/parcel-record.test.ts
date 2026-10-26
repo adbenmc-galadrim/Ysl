@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, OutboxOp } from '#/features/db/schema';
@@ -180,6 +181,38 @@ describe('describeRecord', () => {
     expect(online.notice).toBeUndefined();
     expect(offline.notice).toMatchObject({ tone: 'orange' });
     expect(offline.history?.[0]).toMatchObject({ tone: 'orange' });
+  });
+
+  it('tells why an imported parcel needs a look', async () => {
+    const flags = [
+      [
+        ['tracking-rejected', 'status-unknown'],
+        'Importé de la v1, tracking douteux',
+      ],
+      [['status-unknown'], 'Importé de la v1, statut inconnu'],
+      [['recipient-missing'], 'Importé de la v1, sans destinataire'],
+      [[], 'Importé de la v1'],
+    ] as const;
+    for (const [list, title] of flags) {
+      const row = parcelRow({ status: 'a_completer' });
+      await db.parcel.put(row);
+      await db.event.put({
+        id: newId(),
+        createdAt: NOW,
+        updatedAt: NOW,
+        deletedAt: null,
+        entity: 'parcel',
+        entityId: row.id,
+        type: 'parcel.imported',
+        actorId: 'admin-1',
+        at: at(11),
+        detail: { flags: [...list] },
+      });
+
+      const view = describeRecord(await record(row.id), options);
+
+      expect(view.history?.[0]?.title).toBe(title);
+    }
   });
 
   it('asks to complete a parcel without a recipient', async () => {

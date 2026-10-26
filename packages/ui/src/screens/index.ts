@@ -15,6 +15,7 @@ export * from '#screens/reception/scan-screen';
 export * from '#screens/reception/verifier-colis-screen';
 export * from '#screens/reception-zones/reprendre-lot-screen';
 export * from '#screens/reglages/annuaire-screen';
+export * from '#screens/reglages/import-v1-screen';
 export * from '#screens/reglages/lieu-et-horaires-screen';
 export * from '#screens/reglages/new-contact-sheet';
 export * from '#screens/reglages/reglages-screen';
