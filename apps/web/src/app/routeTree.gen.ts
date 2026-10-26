@@ -25,6 +25,7 @@ import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_aut
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
+import { Route as AuthenticatedColisParcelIdModifierRouteImport } from './routes/_authenticated/colis/$parcelId/modifier'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -113,6 +114,12 @@ const AuthenticatedColisParcelIdIndexRoute =
     path: '/colis/$parcelId/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedColisParcelIdModifierRoute =
+  AuthenticatedColisParcelIdModifierRouteImport.update({
+    id: '/colis/$parcelId/modifier',
+    path: '/colis/$parcelId/modifier',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -146,6 +154,7 @@ export interface FileRoutesByTo {
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
+  '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/colis/$parcelId': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRoutesById {
@@ -165,6 +174,7 @@ export interface FileRoutesById {
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/_authenticated/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/_authenticated/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/reglages/compte'
     | '/reglages/synchronisation'
     | '/reglages/'
+    | '/colis/$parcelId/modifier'
     | '/colis/$parcelId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -201,6 +212,7 @@ export interface FileRouteTypes {
     | '/reglages/compte'
     | '/reglages/synchronisation'
     | '/reglages'
+    | '/colis/$parcelId/modifier'
     | '/colis/$parcelId'
   id:
     | '__root__'
@@ -219,6 +231,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
+    | '/_authenticated/colis/$parcelId/modifier'
     | '/_authenticated/colis/$parcelId/'
   fileRoutesById: FileRoutesById
 }
@@ -342,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedColisParcelIdIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/colis/$parcelId/modifier': {
+      id: '/_authenticated/colis/$parcelId/modifier'
+      path: '/colis/$parcelId/modifier'
+      fullPath: '/colis/$parcelId/modifier'
+      preLoaderRoute: typeof AuthenticatedColisParcelIdModifierRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -358,6 +378,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
+  AuthenticatedColisParcelIdModifierRoute: typeof AuthenticatedColisParcelIdModifierRoute
   AuthenticatedColisParcelIdIndexRoute: typeof AuthenticatedColisParcelIdIndexRoute
 }
 
@@ -375,6 +396,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesSynchronisationRoute:
     AuthenticatedReglagesSynchronisationRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
+  AuthenticatedColisParcelIdModifierRoute:
+    AuthenticatedColisParcelIdModifierRoute,
   AuthenticatedColisParcelIdIndexRoute: AuthenticatedColisParcelIdIndexRoute,
 }
 

@@ -97,6 +97,11 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     t,
     showUnsent: showsPendingBanner(sync, now),
   });
+  const edit = () =>
+    void navigate({
+      to: '/colis/$parcelId/modifier',
+      params: { parcelId },
+    });
   const photo = photoOf(photoUrl, () => setViewing(true));
   const options = { agentId: session.user.id };
 
@@ -185,6 +190,10 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     <FicheColisScreen
       {...view}
       photo={photo}
+      primaryAction={
+        action?.kind === 'complete' ? t('record.action.complete') : undefined
+      }
+      onPrimaryAction={edit}
       secondaryAction={
         action?.kind === 'stepBack'
           ? {
@@ -201,6 +210,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
         setConfirm('delete');
       }}
       onBack={back}
+      onEdit={edit}
       overlay={
         <>
           {sheet}
