@@ -34,6 +34,7 @@ import {
   shortDate,
   startOfDay,
 } from '#/features/parcels/model';
+import { groupTyped } from '#/features/scan/typed';
 
 /** A parcel's record as the local database holds it. */
 export type ParcelRecord = {
@@ -91,9 +92,13 @@ export function formatTracking(value: string): string {
     value,
   );
   if (ups) return `1Z ${ups.slice(1).join(' ')}`;
-  return value.replace(/(.{4})(?=.)/g, '$1 ');
+  return groupTyped(value);
 }
 
+/**
+ * As the Colis list tells it: from the parcel's own changes. A refused
+ * event says so on its line of the history.
+ */
 function syncOf(ops: readonly OutboxOp[]): RecordSync {
   if (ops.some((op) => op.state === 'rejected')) return 'rejected';
   return ops.length ? 'unsent' : 'synced';
@@ -298,7 +303,8 @@ function history(
 function action(parcel: LocalParcel): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
   // Undoing a handover needs the handover cancelled with its reason (F44,
-  // YSL-75); "Remettre à compléter" is the form's: remove the recipient.
+  // YSL-75). A received parcel goes back to "À compléter" from the form,
+  // once it lacks a number or anyone to tell, a name read included.
   if (parcel.status !== 'notifie' && parcel.status !== 'retourne') return;
   const to = stepBackOf(parcel);
   return to && { kind: 'stepBack', from: parcel.status, to };
@@ -323,8 +329,9 @@ export function describeRecord(
 ): RecordView {
   const { parcel, person, contact } = record;
   const { now, t, showUnsent } = options;
-  const sync = syncOf(record.ops);
-  const rejected = record.ops.find((op) => op.state === 'rejected');
+  const own = record.ops.filter((op) => op.entity === 'parcel');
+  const sync = syncOf(own);
+  const rejected = own.find((op) => op.state === 'rejected');
   const recipient = person
     ? fullName(person)
     : (contact?.name ?? t('parcel.recipient.unknown'));
