@@ -9,7 +9,7 @@ import type {
   LocalContact,
   LocalParcel,
 } from '#/features/db/schema';
-import { normalizeEmail } from '#/features/directory/people';
+import { isEmail, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { liveParcel } from '#/features/parcels/status';
 
@@ -42,9 +42,12 @@ export type ParcelEdit = {
 export type EditErrorKey =
   'recipientRequired' | 'emailInvalid' | 'weightInvalid' | 'piecesInvalid';
 
-export type EditErrors = Partial<
-  Record<'recipient' | 'email' | 'weight' | 'pieces', EditErrorKey>
->;
+export type EditErrors = {
+  recipient?: Extract<EditErrorKey, 'recipientRequired' | 'emailInvalid'>;
+  email?: Extract<EditErrorKey, 'emailInvalid'>;
+  weight?: Extract<EditErrorKey, 'weightInvalid'>;
+  pieces?: Extract<EditErrorKey, 'piecesInvalid'>;
+};
 
 export type EditResult =
   | { kind: 'saved'; fields: ParcelEditField[] }
@@ -52,8 +55,6 @@ export type EditResult =
   | { kind: 'invalid'; errors: EditErrors };
 
 export type EditOptions = { agentId: string; now?: Date };
-
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const text = (value: string) => value.trim() || null;
 
@@ -165,20 +166,28 @@ function changedFields(
   );
 }
 
+/**
+ * A notified parcel keeps someone to answer for it (the server's
+ * `parcel_recipient_check`), and so does a returned one that was notified:
+ * undoing the return brings it back to `notifie`.
+ */
+function keepsRecipient(
+  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'>,
+): boolean {
+  return (
+    parcel.status === 'notifie' ||
+    parcel.status === 'remis' ||
+    (parcel.status === 'retourne' && parcel.notifiedAt !== null)
+  );
+}
+
 export function validateEdit(
   edit: ParcelEdit,
-  status: LocalParcel['status'],
+  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'>,
 ): EditErrors {
   const errors: EditErrors = {};
   const email = normalizeEmail(edit.notificationEmail);
-  if (email && !EMAIL.test(email)) errors.email = 'emailInvalid';
-  if (
-    edit.recipient.kind === 'typed' &&
-    edit.recipient.email.trim() &&
-    !EMAIL.test(normalizeEmail(edit.recipient.email))
-  ) {
-    errors.email = 'emailInvalid';
-  }
+  if (email && !isEmail(email)) errors.email = 'emailInvalid';
   if (parseWeight(edit.weightKg) === undefined) errors.weight = 'weightInvalid';
   if (
     edit.pieceTotal < 1 ||
@@ -191,8 +200,13 @@ export function validateEdit(
     edit.recipient.kind === 'person' ||
     edit.recipient.kind === 'contact' ||
     (edit.recipient.kind === 'typed' && edit.recipient.name.trim() !== '');
-  if ((status === 'notifie' || status === 'remis') && !named) {
-    errors.recipient = 'recipientRequired';
+  if (keepsRecipient(parcel) && !named) errors.recipient = 'recipientRequired';
+  else if (
+    edit.recipient.kind === 'typed' &&
+    edit.recipient.email.trim() &&
+    !isEmail(normalizeEmail(edit.recipient.email))
+  ) {
+    errors.recipient = 'emailInvalid';
   }
   return errors;
 }
@@ -212,7 +226,7 @@ export async function saveParcelEdit(
   { agentId, now = new Date() }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
-  const errors = validateEdit(edit, parcel.status);
+  const errors = validateEdit(edit, parcel);
   if (Object.keys(errors).length) return { kind: 'invalid', errors };
 
   const options = { agentId, now };

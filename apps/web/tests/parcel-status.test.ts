@@ -77,6 +77,11 @@ describe('stepBackParcel', () => {
       notifiedAt: null,
       statusSeq: 1,
     });
+    const [, event] = await db.outbox.toArray();
+    expect(event?.patch).toMatchObject({
+      type: 'parcel.status',
+      detail: { from: 'notifie', to: 'recu' },
+    });
   });
 
   it('has nothing to take back from a parcel to complete', async () => {

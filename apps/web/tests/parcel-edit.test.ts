@@ -131,6 +131,47 @@ describe('saveParcelEdit', () => {
     expect(await db.outbox.count()).toBe(0);
   });
 
+  it('keeps a recipient on a returned parcel that was notified', async () => {
+    const row = parcelRow({
+      status: 'retourne',
+      contactId: 'c-1',
+      notifiedAt: NOW,
+    });
+    await db.parcel.put(row);
+
+    const result = await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(row), recipient: { kind: 'none' } },
+      options,
+    );
+
+    expect(result).toEqual({
+      kind: 'invalid',
+      errors: { recipient: 'recipientRequired' },
+    });
+  });
+
+  it('says a typed e-mail is wrong under the recipient', async () => {
+    const row = parcelRow({ status: 'a_completer' });
+    await db.parcel.put(row);
+
+    const result = await saveParcelEdit(
+      db,
+      row.id,
+      {
+        ...editOf(row),
+        recipient: { kind: 'typed', name: 'Paul', email: 'paul@' },
+      },
+      options,
+    );
+
+    expect(result).toEqual({
+      kind: 'invalid',
+      errors: { recipient: 'emailInvalid' },
+    });
+  });
+
   it('turns a name typed by hand into a contact', async () => {
     const row = parcelRow({ status: 'a_completer' });
     await db.parcel.put(row);
