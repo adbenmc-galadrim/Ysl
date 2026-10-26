@@ -194,6 +194,8 @@ export const fr = {
   'history.received': 'Reçu',
   'history.edited': 'Modifié : {{fields}}',
   'history.deleted': 'Supprimé',
+  'history.imported': 'Importé de la v1',
+  'history.imported.flagged': 'Importé de la v1, tracking douteux',
   'history.status.recu': 'Complété',
   'history.status.notifie': 'Notifié',
   'history.status.remis': 'Remis',
@@ -286,6 +288,9 @@ export const fr = {
   'settings.pickup.day.wed': 'Mercredi',
   'settings.pickup.day.thu': 'Jeudi',
   'settings.pickup.day.fri': 'Vendredi',
+  'import.v1.error.notV1':
+    'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
+  'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',
   'settings.group.app': 'App',
   'settings.sound': 'Son au scan',
   'settings.version': 'Version {{version}}',

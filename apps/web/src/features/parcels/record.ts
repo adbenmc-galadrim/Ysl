@@ -1,3 +1,4 @@
+import { isTrackingFlag } from '@repo/contract/imports';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import {
   isStepBack,
@@ -234,6 +235,10 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
         : t(`history.status.${event.to === 'a_completer' ? 'recu' : event.to}`);
     case 'parcel.deleted':
       return t('history.deleted');
+    case 'parcel.imported':
+      return event.flags.some(isTrackingFlag)
+        ? t('history.imported.flagged')
+        : t('history.imported');
   }
 }
 
