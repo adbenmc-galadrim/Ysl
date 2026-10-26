@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { guessSeparator, readCsv } from '../src/csv-read';
+import { guessSeparator, readCsv, readCsvRecords } from '../src/csv-read';
 
 describe('guessSeparator', () => {
   it('keeps the semicolon unless commas outnumber it, as the v1 did', () => {
@@ -11,7 +11,7 @@ describe('guessSeparator', () => {
 
 describe('readCsv', () => {
   it('drops the byte order mark and splits on the separator', () => {
-    expect(readCsv('﻿id;tracking\r\n1;1Z9\r\n')).toEqual([
+    expect(readCsv('\uFEFFid;tracking\r\n1;1Z9\r\n')).toEqual([
       ['id', 'tracking'],
       ['1', '1Z9'],
     ]);
@@ -32,11 +32,17 @@ describe('readCsv', () => {
     ]);
   });
 
-  it('skips blank rows but keeps empty cells', () => {
-    expect(readCsv('a;b\n\n;\r\n\r\n1;\n')).toEqual([
+  it('skips blank rows and rows of separators, keeps empty cells', () => {
+    expect(readCsv('a;b\n\n;\r\n\r\n1;\n;;\n')).toEqual([
       ['a', 'b'],
-      ['', ''],
       ['1', ''],
+    ]);
+  });
+
+  it('tells the line of the file each row starts on', () => {
+    const text = 'a;b\r\n1;"x\r\ny"\r\n\r\n2;z\n3;"\n\n"\r4;w';
+    expect(readCsvRecords(text).map((record) => record.line)).toEqual([
+      1, 2, 5, 6, 9,
     ]);
   });
 

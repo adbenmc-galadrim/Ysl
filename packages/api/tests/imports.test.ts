@@ -94,11 +94,11 @@ describe('imports.v1Csv', () => {
       contactsCreated: 3,
     });
     expect(report.skips.map(({ line, reason }) => [line, reason])).toEqual([
-      [7, 'duplicate-in-file'],
       [8, 'duplicate-in-file'],
-      [9, 'date-invalid'],
-      [10, 'tracking-missing'],
-      [13, 'already-present'],
+      [9, 'duplicate-in-file'],
+      [10, 'date-invalid'],
+      [11, 'tracking-missing'],
+      [14, 'already-present'],
     ]);
     expect(report.flagged).toEqual([
       {
@@ -109,14 +109,14 @@ describe('imports.v1Csv', () => {
         flags: ['tracking-rejected'],
       },
       {
-        line: 6,
+        line: 7,
         tracking: '10464000209404',
         recipient: 'Jean-Noël Bréhat',
         carrier: 'DPD',
         flags: ['status-unknown'],
         status: 'Perdu',
       },
-      expect.objectContaining({ line: 12, flags: ['recipient-missing'] }),
+      expect.objectContaining({ line: 13, flags: ['recipient-missing'] }),
     ]);
   });
 

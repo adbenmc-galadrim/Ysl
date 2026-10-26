@@ -75,11 +75,28 @@ describe('v1Date', () => {
     expect(v1Date('6/3/2026')).toEqual(new Date('2026-03-05T23:00:00.000Z'));
   });
 
+  it('reads an ISO date without a zone in Paris time too', () => {
+    expect(v1Date('2026-03-02T08:15:00')).toEqual(
+      new Date('2026-03-02T07:15:00.000Z'),
+    );
+    expect(v1Date('2026-07-15 14:05')).toEqual(
+      new Date('2026-07-15T12:05:00.000Z'),
+    );
+    expect(v1Date('2026-03-02T08:15:00+02:00')).toEqual(
+      new Date('2026-03-02T06:15:00.000Z'),
+    );
+    expect(v1Date('2026-03-02 08:15:00+02:00')).toEqual(
+      new Date('2026-03-02T06:15:00.000Z'),
+    );
+  });
+
   it('refuses what is no date', () => {
     expect(v1Date('')).toBeNull();
     expect(v1Date('hier')).toBeNull();
     expect(v1Date('31/02/2026')).toBeNull();
     expect(v1Date('2026-13-45')).toBeNull();
+    expect(v1Date('06/03/2026 14:75')).toBeNull();
+    expect(v1Date('2026-03-06 24:10')).toBeNull();
   });
 });
 
@@ -95,13 +112,13 @@ describe('readV1File', () => {
     const byLine = new Map(file.rows.map((row) => [row.line, row]));
 
     expect(file.rows.map((row) => row.line)).toEqual([
-      2, 3, 4, 5, 6, 11, 12, 13,
+      2, 3, 4, 6, 7, 12, 13, 14,
     ]);
     expect(file.skips).toEqual([
-      expect.objectContaining({ line: 7, reason: 'duplicate-in-file' }),
       expect.objectContaining({ line: 8, reason: 'duplicate-in-file' }),
-      expect.objectContaining({ line: 9, reason: 'date-invalid' }),
-      expect.objectContaining({ line: 10, reason: 'tracking-missing' }),
+      expect.objectContaining({ line: 9, reason: 'duplicate-in-file' }),
+      expect.objectContaining({ line: 10, reason: 'date-invalid' }),
+      expect.objectContaining({ line: 11, reason: 'tracking-missing' }),
     ]);
 
     expect(byLine.get(2)).toMatchObject({
@@ -118,13 +135,13 @@ describe('readV1File', () => {
       pieces: 2,
       notes: "Laissé à l'accueil\r\nsignature au dos",
     });
-    expect(byLine.get(5)).toMatchObject({
+    expect(byLine.get(6)).toMatchObject({
       status: 'a_completer',
       carrier: 'DHL Express',
       notes: '=HYPERLINK("x")',
       flags: [],
     });
-    expect(byLine.get(11)).toMatchObject({
+    expect(byLine.get(12)).toMatchObject({
       status: 'remis',
       receivedAt: new Date('2026-03-06T13:05:00.000Z'),
       deliveredAt: new Date('2026-03-07T08:30:00.000Z'),
@@ -145,12 +162,12 @@ describe('readV1File', () => {
   it('marks an unknown status and a row without recipient', () => {
     const file = readV1File(sample, t);
     if (!file.ok) throw new Error('sample refused');
-    expect(file.rows.find((row) => row.line === 6)).toMatchObject({
+    expect(file.rows.find((row) => row.line === 7)).toMatchObject({
       status: 'a_completer',
       flags: ['status-unknown'],
       unknownStatus: 'Perdu',
     });
-    expect(file.rows.find((row) => row.line === 12)).toMatchObject({
+    expect(file.rows.find((row) => row.line === 13)).toMatchObject({
       status: 'a_completer',
       flags: ['recipient-missing'],
     });

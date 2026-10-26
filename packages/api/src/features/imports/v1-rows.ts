@@ -1,4 +1,8 @@
-import type { ImportFlag, ImportSkip } from '@repo/contract/imports';
+import {
+  type ImportFlag,
+  type ImportSkip,
+  isTrackingFlag,
+} from '@repo/contract/imports';
 import type { ParcelStatus } from '@repo/contract/parcel-status';
 import {
   normalizeTracking,
@@ -6,7 +10,7 @@ import {
   trackingContexts,
   validateTracking,
 } from '@repo/contract/tracking';
-import { readCsv } from '@repo/shared/csv-read';
+import { readCsvRecords } from '@repo/shared/csv-read';
 import type { TranslateFn } from '@repo/shared/i18n';
 
 /** The columns of the v1 export (§3.2 of the v1 review); only two are required. */
@@ -143,33 +147,45 @@ const offsetInParis = (utc: number) => {
 const FRENCH_DATE =
   /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T]+(\d{1,2})[:h](\d{2})(?::(\d{2}))?)?$/;
 
-/**
- * A date of the file: ISO as the v1 wrote it, or `JJ/MM/AAAA HH:MM` in
- * Paris time as the v2 export writes it and Excel saves it back.
- */
-export function v1Date(text: string): Date | null {
-  const value = text.trim();
-  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-    const time = Date.parse(value);
-    return Number.isNaN(time) ? null : new Date(time);
-  }
-  const match = FRENCH_DATE.exec(value);
-  if (!match) return null;
-  const [day, month, year, hour, minute, second] = match
-    .slice(1)
-    .map((part) => Number(part ?? 0)) as [
-    number,
-    number,
-    number,
-    number,
-    number,
-    number,
-  ];
-  if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23) return null;
+const ISO_WITH_ZONE = /^\d{4}-\d{2}-\d{2}[ T][\d:.]+(?:Z|[+-]\d{2}:?\d{2})$/i;
+
+const ISO_LOCAL =
+  /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/;
+
+/** A wall-clock time in Paris, checked field by field (no 31/02, no 14:75). */
+function parisTime(
+  parts: readonly (string | undefined)[],
+  order: 'dmy' | 'ymd',
+): Date | null {
+  const numbers = parts.map((part) => Number(part ?? 0));
+  const [day, month, year] =
+    order === 'dmy'
+      ? [numbers[0]!, numbers[1]!, numbers[2]!]
+      : [numbers[2]!, numbers[1]!, numbers[0]!];
+  const [hour, minute, second] = [numbers[3]!, numbers[4]!, numbers[5]!];
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  if (hour > 23 || minute > 59 || second > 59) return null;
   const wall = Date.UTC(year, month - 1, day, hour, minute, second);
   if (new Date(wall).getUTCDate() !== day) return null;
   const first = wall - offsetInParis(wall);
   return new Date(wall - offsetInParis(first));
+}
+
+/**
+ * A date of the file: ISO with its zone as the v1 wrote it, ISO without a
+ * zone or `JJ/MM/AAAA HH:MM` in Paris time, as the v2 export writes it and
+ * Excel saves it back.
+ */
+export function v1Date(text: string): Date | null {
+  const value = text.trim();
+  if (ISO_WITH_ZONE.test(value)) {
+    const time = Date.parse(value);
+    return Number.isNaN(time) ? null : new Date(time);
+  }
+  const iso = ISO_LOCAL.exec(value);
+  if (iso) return parisTime(iso.slice(1), 'ymd');
+  const french = FRENCH_DATE.exec(value);
+  return french ? parisTime(french.slice(1), 'dmy') : null;
 }
 
 const orNull = (text: string) => text || null;
@@ -181,9 +197,9 @@ const orNull = (text: string) => text || null;
  * v1, and so is a row already met higher in the file.
  */
 export function readV1File(text: string, t: TranslateFn): V1File {
-  const [header, ...records] = readCsv(text);
+  const [header, ...records] = readCsvRecords(text);
   if (!header) return { ok: false };
-  const names = header.map((name) => key(unguard(name)));
+  const names = header.cells.map((name) => key(unguard(name)));
   const index = Object.fromEntries(
     V1_COLUMNS.map((column) => [column, names.indexOf(column)]),
   ) as Record<V1Column, number>;
@@ -194,11 +210,10 @@ export function readV1File(text: string, t: TranslateFn): V1File {
   const seenIds = new Set<string>();
   const seenKeys = new Set<string>();
 
-  records.forEach((record, position) => {
-    const line = position + 2;
+  records.forEach(({ line, cells }) => {
     const cell = (column: V1Column) => {
       const at = index[column];
-      return at < 0 ? '' : unguard(record[at] ?? '').trim();
+      return at < 0 ? '' : unguard(cells[at] ?? '').trim();
     };
     const tracking = cell('tracking');
     const recipient = orNull(cell('destinataire'));
@@ -244,10 +259,7 @@ export function readV1File(text: string, t: TranslateFn): V1File {
       flags.push('recipient-missing');
       if (status !== 'retourne') status = 'a_completer';
     }
-    if (
-      flags.some((flag) => flag.startsWith('tracking-')) &&
-      OPEN.includes(status)
-    ) {
+    if (flags.some(isTrackingFlag) && OPEN.includes(status)) {
       status = 'a_completer';
     }
 
