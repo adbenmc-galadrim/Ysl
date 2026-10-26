@@ -1,3 +1,4 @@
+import { V1_CSV_MAX_LENGTH } from '@repo/contract/imports';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { ImportV1Screen } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
@@ -44,6 +45,15 @@ export function ImportV1Page() {
       setState({ step: 'failed', message: t('import.v1.failed.read') });
       return;
     }
+    if (!csv.trim() || csv.length > V1_CSV_MAX_LENGTH) {
+      setState({
+        step: 'failed',
+        message: t(
+          csv.trim() ? 'import.v1.failed.tooBig' : 'import.v1.failed.empty',
+        ),
+      });
+      return;
+    }
     try {
       const report = await trpcClient.imports.v1Csv.mutate({ csv });
       setState({ step: 'done', report });
@@ -66,7 +76,7 @@ export function ImportV1Page() {
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,text/csv,text/plain"
+        accept=".csv,text/csv"
         className="hidden"
         aria-hidden
         tabIndex={-1}

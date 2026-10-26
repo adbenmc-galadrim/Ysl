@@ -304,8 +304,11 @@ export const fr = {
     'L’import passe par le serveur : reconnectez l’iPhone.',
   'import.v1.failed.title': 'Fichier refusé',
   'import.v1.failed.network':
-    'Le serveur n’a pas répondu. Rien n’a été importé : réessayez.',
+    'Le serveur n’a pas répondu. Relancez l’import : un import répété n’ajoute rien.',
   'import.v1.failed.read': 'Ce fichier n’a pas pu être lu.',
+  'import.v1.failed.empty': 'Ce fichier est vide.',
+  'import.v1.failed.tooBig':
+    'Ce fichier dépasse 10 Mo : ce n’est pas un export de la v1.',
   'import.v1.imported.none': 'Aucun colis importé',
   'import.v1.imported.one': '1 colis importé',
   'import.v1.imported.many': '{{count}} colis importés',
