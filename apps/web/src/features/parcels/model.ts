@@ -138,7 +138,11 @@ function statusLine(
   }
 }
 
-function carrierLabel(parcel: LocalParcel, t: TranslateFn): string {
+/** The carrier as the screens name it, or why there is none. */
+export function carrierLabel(
+  parcel: Pick<LocalParcel, 'carrier' | 'type'>,
+  t: TranslateFn,
+): string {
   if (parcel.carrier) return parcel.carrier;
   return parcel.type === 'sans_suivi'
     ? t('parcel.carrier.none')

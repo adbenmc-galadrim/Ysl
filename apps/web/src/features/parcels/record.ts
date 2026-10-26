@@ -26,6 +26,7 @@ import type {
 import { fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
+  carrierLabel,
   DAY_MS,
   formatAgo,
   formatTime,
@@ -333,18 +334,13 @@ export function describeRecord(
     (!person && !contact && parcel.readName
       ? t('parcel.readName', { name: parcel.readName })
       : '');
-  const carrier =
-    parcel.carrier ??
-    (parcel.type === 'sans_suivi'
-      ? t('parcel.carrier.none')
-      : t('parcel.carrier.unknown'));
   return {
     recipient,
     place,
     tracking: parcel.tracking
       ? formatTracking(parcel.tracking)
       : t('record.tracking.none'),
-    carrier,
+    carrier: carrierLabel(parcel, t),
     state: stateCard(parcel, now, t),
     notice:
       sync === 'rejected'

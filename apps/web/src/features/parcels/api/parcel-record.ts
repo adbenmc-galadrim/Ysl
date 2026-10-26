@@ -75,6 +75,7 @@ export function useLabelPhotoUrl(parcelId: string): PhotoUrl {
       setUrl({ state: 'absent' });
       return;
     }
+    setUrl({ state: 'loading' });
     let current: string | null = null;
     let live = true;
     db.photo
