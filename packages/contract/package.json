@@ -10,6 +10,7 @@
     "./codes": "./src/codes/index.ts",
     "./extract": "./src/extract/index.ts",
     "./health": "./src/health.ts",
+    "./parcel-event": "./src/parcel-event.ts",
     "./parcel-status": "./src/parcel-status.ts",
     "./recipient": "./src/recipient/index.ts",
     "./sync": "./src/sync.ts",
