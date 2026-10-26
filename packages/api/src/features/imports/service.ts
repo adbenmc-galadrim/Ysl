@@ -165,6 +165,11 @@ export async function importV1Csv(
   const skips = [...file.skips];
 
   return db.transaction(async (tx) => {
+    // One import at a time per mailroom: two at once would both create the
+    // same contacts, which carry no unique e-mail index.
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtext(${`imports.v1:${org}`}))`,
+    );
     const ids = new Map(
       file.rows.map((row) => [row.line, importedParcelId(org, row)]),
     );
