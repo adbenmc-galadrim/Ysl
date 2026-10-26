@@ -204,6 +204,26 @@ describe('readV1File', () => {
     ]);
   });
 
+  it('marks a recipient no name can be read from, so the row stays importable', () => {
+    const file = readV1File(
+      [
+        'id;date_reception;statut;transporteur;tracking;destinataire;email',
+        '1;2026-01-05T09:00:00Z;Notifie;UPS;1ZE6344W0499230622;-;',
+        '2;2026-01-06T09:00:00Z;Remis;UPS;1ZE6344W0499230622;?;',
+      ].join('\n'),
+      t,
+    );
+    if (!file.ok) throw new Error('refused');
+    expect(file.rows).toMatchObject([
+      { status: 'a_completer', flags: ['recipient-missing'] },
+      {
+        status: 'a_completer',
+        deliveredAt: null,
+        flags: ['recipient-missing'],
+      },
+    ]);
+  });
+
   it('reads a comma file whose optional columns are missing', () => {
     const file = readV1File(
       'tracking,destinataire,date_reception\n1ZE6344W0499230622,Ana Ruiz,2026-01-05T09:00:00Z',

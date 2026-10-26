@@ -11,6 +11,7 @@ import {
   validateTracking,
 } from '@repo/contract/tracking';
 import { readCsvRecords } from '@repo/shared/csv-read';
+import { normalizeName } from '@repo/shared/text';
 import type { TranslateFn } from '@repo/shared/i18n';
 
 /** The columns of the v1 export (§3.2 of the v1 review); only two are required. */
@@ -261,7 +262,7 @@ export function readV1File(text: string, t: TranslateFn): V1File {
       status = 'a_completer';
     }
     const email = orNull(cell('email'));
-    if (!recipient && !email) {
+    if (!email && !normalizeName(recipient ?? '')) {
       flags.push('recipient-missing');
       if (status !== 'retourne') status = 'a_completer';
     }

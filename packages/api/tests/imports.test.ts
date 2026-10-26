@@ -147,6 +147,7 @@ describe('imports.v1Csv', () => {
     expect(byTracking.get('1ZE6344W0499230622')).toMatchObject({
       personId: HELENE_ID,
       contactId: null,
+      notificationEmail: null,
       status: 'recu',
       carrier: 'UPS',
       senderName: 'Maison Lefèvre; Paris',
@@ -214,6 +215,26 @@ describe('imports.v1Csv', () => {
         ),
       );
     expect(eloise?.usageCount).toBe(2);
+  });
+
+  it('imports a notified row whose recipient cannot be read, to complete', async () => {
+    const report = await admin().imports.v1Csv({
+      csv: 'id;date_reception;statut;transporteur;tracking;destinataire\n9001;2026-04-01T09:00:00Z;Notifie;UPS;1ZE6344W0499230622;—\n',
+    });
+
+    expect(report).toMatchObject({
+      imported: 1,
+      flagged: [{ line: 2, flags: ['recipient-missing'] }],
+    });
+    const [row] = await db
+      .select()
+      .from(schema.parcel)
+      .where(eq(schema.parcel.receivedAt, new Date('2026-04-01T09:00:00Z')));
+    expect(row).toMatchObject({
+      status: 'a_completer',
+      personId: null,
+      contactId: null,
+    });
   });
 
   it('finds every parcel already there in its own CSV export (#60)', async () => {

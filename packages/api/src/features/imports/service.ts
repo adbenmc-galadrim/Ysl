@@ -237,7 +237,6 @@ export async function importV1Csv(
         trackingNorm: row.trackingNorm,
         ...recipient,
         readName: row.recipient,
-        notificationEmail: row.email,
         department: row.department,
         senderName: row.sender,
         pieceN: row.pieces,
