@@ -216,6 +216,22 @@ describe('imports.v1Csv', () => {
     expect(eloise?.usageCount).toBe(2);
   });
 
+  it('finds every parcel already there in its own CSV export (#60)', async () => {
+    const parcels = await parcelsOf(ORGANIZATION_ID);
+    const { csv } = await admin().exports.parcelsCsv();
+
+    const report = await admin().imports.v1Csv({ csv });
+
+    expect(report).toMatchObject({ imported: 0, contactsCreated: 0 });
+    expect(report.skips).toHaveLength(parcels.length);
+    expect(new Set(report.skips.map((skip) => skip.reason))).toEqual(
+      new Set(['already-present']),
+    );
+    expect(report.skips.map((skip) => skip.tracking).sort()).toEqual(
+      parcels.map((row) => row.tracking).sort(),
+    );
+  });
+
   it('leaves the other mailroom alone, and imports there on its own', async () => {
     expect(await parcelsOf(OTHER_ORGANIZATION_ID)).toEqual([]);
 

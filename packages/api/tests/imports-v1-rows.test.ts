@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
+import { textCell, toCsv } from '#features/exports/csv';
+import {
+  formatExportDate,
+  PARCELS_CSV_HEADER,
+} from '#features/exports/service';
 import {
   readV1File,
   unguard,
@@ -25,6 +30,12 @@ describe('unguard', () => {
     expect(unguard("'\tx")).toBe('\tx');
     expect(unguard("l'accueil")).toBe("l'accueil");
     expect(unguard("'Hélène'")).toBe("'Hélène'");
+  });
+
+  it('unwraps the number the v2 export writes as ="…"', () => {
+    expect(unguard('="7185713569"')).toBe('7185713569');
+    expect(unguard('="0012"')).toBe('0012');
+    expect(unguard('=1+1')).toBe('=1+1');
   });
 });
 
@@ -202,5 +213,96 @@ describe('readV1File', () => {
       ok: true,
       rows: [{ line: 2, carrier: 'UPS', status: 'recu', flags: [] }],
     });
+  });
+});
+
+describe('readV1File on a file of the v2 export (#60)', () => {
+  const received = new Date('2026-10-26T13:32:00Z');
+  const delivered = new Date('2026-10-27T08:05:00Z');
+  const v2Columns = ['Remis', 'Colis', '', '', '', '', '', ''];
+  const csv = toCsv(PARCELS_CSV_HEADER, [
+    [
+      '01920000-0000-7000-8000-000000000001',
+      formatExportDate(received),
+      formatExportDate(delivered),
+      'Remis',
+      'FedEx',
+      textCell('877974873338'),
+      "Zoé O'Neil",
+      'zoe.oneil@example.com',
+      'Studio',
+      '=Maison Lefèvre',
+      '1',
+      '-fragile; "haut"\nen haut',
+      ...v2Columns,
+    ],
+    [
+      '01920000-0000-7000-8000-000000000002',
+      formatExportDate(received),
+      '',
+      'En attente',
+      'FedEx',
+      textCell('7185713569'),
+      'Éloïse Martin',
+      'eloise.martin@example.com',
+      'RH',
+      '',
+      '1',
+      '',
+      ...v2Columns,
+    ],
+    [
+      '01920000-0000-7000-8000-000000000003',
+      formatExportDate(received),
+      '',
+      'Retourne',
+      'UPS',
+      textCell('1ZE6344W0499230622'),
+      '@Hélène Dupré',
+      '',
+      '',
+      '',
+      '1',
+      '',
+      ...v2Columns,
+    ],
+  ]);
+
+  it('reads back the trackings, dates and guarded cells it wrote', () => {
+    expect(csv).toContain('"=""877974873338"""');
+    expect(csv).toContain("'=Maison Lefèvre");
+    expect(csv).toContain('26/10/2026 14:32');
+    const file = readV1File(csv, t);
+    if (!file.ok) throw new Error('export refused');
+
+    expect(file.skips).toEqual([]);
+    expect(file.rows).toMatchObject([
+      {
+        line: 2,
+        sourceId: '01920000-0000-7000-8000-000000000001',
+        tracking: '877974873338',
+        trackingNorm: '877974873338',
+        carrier: 'FedEx',
+        receivedAt: received,
+        deliveredAt: delivered,
+        status: 'remis',
+        sender: '=Maison Lefèvre',
+        notes: '-fragile; "haut"\nen haut',
+        flags: [],
+      },
+      {
+        line: 4,
+        tracking: '7185713569',
+        status: 'a_completer',
+        flags: ['tracking-rejected'],
+      },
+      {
+        line: 5,
+        tracking: '1ZE6344W0499230622',
+        recipient: '@Hélène Dupré',
+        status: 'retourne',
+        flags: [],
+      },
+    ]);
   });
 });

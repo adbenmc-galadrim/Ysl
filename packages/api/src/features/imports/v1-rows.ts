@@ -85,8 +85,14 @@ export type V1Skip = {
 export type V1File =
   { ok: true; rows: V1Row[]; skips: V1Skip[] } | { ok: false };
 
-/** The formula guard of the v1 and v2 exports: a quote before `=+-@`, tab or CR. */
+/**
+ * A cell as written before the exports guarded it: the quote of the v1 and
+ * v2 exports before `=+-@`, tab or CR, and the `="…"` the v2 export wraps
+ * a number of digits in so Excel keeps it as text.
+ */
 export function unguard(cell: string): string {
+  const text = /^="([^"]*)"$/.exec(cell);
+  if (text) return text[1]!;
   return cell.replace(/^'(?=[=+\-@\t\r])/, '');
 }
 
