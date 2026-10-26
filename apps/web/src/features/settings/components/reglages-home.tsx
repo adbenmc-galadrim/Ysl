@@ -7,6 +7,7 @@ import {
   type SettingsGroup,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { useCornerSetting } from '#/features/settings/corners';
@@ -15,6 +16,8 @@ import { initialsOf } from '#/features/settings/initials';
 import { useThemeSetting } from '#/features/settings/theme';
 import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
+import { db } from '#/features/db/database';
+import { listed } from '#/features/directory/people';
 import { useStorageStatus } from '#/features/settings/api/use-storage-status';
 import { storageValue } from '#/features/settings/storage-value';
 import { syncValue } from '#/features/sync/sync-value';
@@ -57,6 +60,10 @@ export function ReglagesHome() {
   const corners = useCornerSetting();
   const sound = useScanSound();
   const update = useUpdate();
+  const directorySize = useLiveQuery(
+    () => db.directoryPerson.filter(listed).count(),
+    [],
+  );
   const themeTitle = THEMES.find((option) => option.value === theme)?.title;
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
@@ -96,13 +103,14 @@ export function ReglagesHome() {
         icon: 'users',
         color: 'orange',
         label: t('settings.directory'),
+        value: directorySize ? String(directorySize) : undefined,
         onPress: () => void navigate({ to: '/reglages/annuaire' }),
       },
       {
         icon: 'pin',
         color: 'red',
         label: t('settings.pickup'),
-        chevron: false,
+        onPress: () => void navigate({ to: '/reglages/lieu-et-horaires' }),
       },
     ],
   };

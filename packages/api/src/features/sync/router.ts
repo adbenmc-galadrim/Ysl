@@ -5,7 +5,7 @@ import {
   pushOutput,
 } from '@repo/contract/sync';
 import { db } from '@repo/db';
-import { memberProcedure, router } from '#lib/trpc';
+import { memberProcedure, roleOf, router } from '#lib/trpc';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
 
@@ -20,7 +20,11 @@ export const syncRouter = router({
     .mutation(({ ctx, input }) =>
       push(
         db,
-        { organizationId: ctx.organizationId, userId: ctx.session.user.id },
+        {
+          organizationId: ctx.organizationId,
+          userId: ctx.session.user.id,
+          role: roleOf(ctx.session),
+        },
         input,
       ),
     ),

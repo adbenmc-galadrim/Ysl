@@ -21,7 +21,12 @@ let client: PGlite;
 let db: TestDb;
 let sync: AnyDb;
 
-const writer = { organizationId: ORGANIZATION_ID, userId: AGENT_ID };
+const writer = {
+  organizationId: ORGANIZATION_ID,
+  userId: AGENT_ID,
+  role: 'agent',
+} as const;
+const admin = { ...writer, role: 'admin' } as const;
 const NOW = new Date('2026-10-24T09:30:00Z');
 
 beforeAll(async () => {
@@ -501,6 +506,81 @@ describe('sync.push', () => {
         message:
           'Un destinataire est requis pour notifier ou remettre un colis.',
       });
+    });
+  });
+
+  describe('settings', () => {
+    const pickup = {
+      place: 'Rez-de-chaussée, comptoir courrier',
+      hours: {
+        mon: '9:00–12:30, 14:00–18:00',
+        tue: '',
+        wed: '',
+        thu: '',
+        fri: '',
+      },
+      instructions: 'Munissez-vous d’un badge.',
+    };
+    const setting = (id: string, value: unknown = pickup) => ({
+      id,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      key: 'pickup',
+      value,
+      updatedBy: 'someone-else',
+    });
+    const stored = (id: string) =>
+      db.select().from(schema.setting).where(eq(schema.setting.id, id));
+
+    it('refuses a setting written by an agent', async () => {
+      const change = op('setting', setting(newId()));
+
+      const { results } = await push(sync, writer, { ops: [change] });
+
+      expect(results[0]).toMatchObject({
+        status: 403,
+        message:
+          'Seul un administrateur du service courrier peut modifier ce réglage.',
+      });
+      expect(await stored(change.entityId)).toEqual([]);
+      expect((await recorded(change.opId))?.status).toBe(403);
+    });
+
+    it('refuses a value its key does not describe', async () => {
+      const tooLong = op(
+        'setting',
+        setting(newId(), { ...pickup, place: 'x'.repeat(121) }),
+      );
+      const unknownKey = op('setting', {
+        ...setting(newId()),
+        key: 'sounds',
+      });
+
+      const { results } = await push(sync, admin, {
+        ops: [tooLong, unknownKey],
+      });
+
+      expect(results.map((result) => result.status)).toEqual([400, 400]);
+      expect(await stored(tooLong.entityId)).toEqual([]);
+      expect(await stored(unknownKey.entityId)).toEqual([]);
+    });
+
+    it('saves the pickup of an admin, once per key', async () => {
+      const first = op('setting', setting(newId()));
+      const second = op('setting', setting(newId()));
+
+      const { results } = await push(sync, admin, { ops: [first, second] });
+
+      expect(results.map((result) => result.status)).toEqual([200, 409]);
+      expect(results[1]?.message).toBe(
+        'Ce réglage a déjà été enregistré depuis un autre appareil : rouvrez-le avant de le modifier.',
+      );
+      expect((await stored(first.entityId))[0]).toMatchObject({
+        value: pickup,
+        updatedBy: AGENT_ID,
+      });
+      expect(await stored(second.entityId)).toEqual([]);
     });
   });
 

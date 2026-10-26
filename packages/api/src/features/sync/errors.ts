@@ -1,5 +1,9 @@
 import { SYNC_STATUS, type SyncStatus } from '@repo/contract/sync';
-import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import {
+  createTranslator,
+  DEFAULT_LOCALE,
+  type TranslationKey,
+} from '@repo/shared/i18n';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -41,7 +45,8 @@ export function constraintOf(error: unknown): string | undefined {
  * status outside the graph of §8.3, a copy that missed a change of status,
  * a delivery a stale copy would undo, a cancellation it would revive, a
  * notification or a delivery without anyone to give it to; and, by its
- * unique index, a person whose e-mail the directory already has (F50).
+ * unique index, a person whose e-mail the directory already has (F50) and
+ * a setting another device saved first under its key.
  */
 export const GUARDS = {
   parcel_status_transition: {
@@ -71,6 +76,10 @@ export const GUARDS = {
   directory_person_email_idx: {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.directoryEmail',
+  },
+  setting_key_idx: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.settingKey',
   },
 } as const;
 
@@ -186,8 +195,9 @@ export class SyncRejected extends Error {
   constructor(
     readonly status: Exclude<FailureStatus, 503>,
     readonly reason: string,
+    key?: Extract<TranslationKey, `sync.op.${string}`>,
   ) {
-    super(messageOf(status));
+    super(key ? translate(key) : messageOf(status));
     this.name = 'SyncRejected';
   }
 }

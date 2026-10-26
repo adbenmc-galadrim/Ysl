@@ -20,6 +20,10 @@ export const fr = {
   'sync.op.recipient':
     'Un destinataire est requis pour notifier ou remettre un colis.',
   'sync.op.directoryEmail': 'Cette adresse e-mail est déjà dans l’annuaire.',
+  'sync.op.adminOnly':
+    'Seul un administrateur du service courrier peut modifier ce réglage.',
+  'sync.op.settingKey':
+    'Ce réglage a déjà été enregistré depuis un autre appareil : rouvrez-le avant de le modifier.',
   'sync.op.retry':
     'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
@@ -176,6 +180,14 @@ export const fr = {
   'recipient.suggestions': 'Suggestions',
   'recipient.photo.close': 'Fermer la photo',
   'settings.pickup': 'Lieu et horaires de retrait',
+  'settings.pickup.footer': 'Ces informations apparaissent dans chaque e-mail.',
+  'settings.pickup.saveFailed':
+    'Lieu et horaires non enregistrés sur l’iPhone, réessayez.',
+  'settings.pickup.day.mon': 'Lundi',
+  'settings.pickup.day.tue': 'Mardi',
+  'settings.pickup.day.wed': 'Mercredi',
+  'settings.pickup.day.thu': 'Jeudi',
+  'settings.pickup.day.fri': 'Vendredi',
   'settings.group.app': 'App',
   'settings.sound': 'Son au scan',
   'settings.version': 'Version {{version}}',

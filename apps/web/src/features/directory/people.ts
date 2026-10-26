@@ -28,7 +28,7 @@ export function fullName(
   return `${person.firstName} ${person.lastName}`.trim();
 }
 
-const listed = (person: LocalDirectoryPerson) =>
+export const listed = (person: LocalDirectoryPerson) =>
   person.active && !person.deletedAt;
 
 export function validatePerson(draft: ContactDraft): ContactDraftErrors {
