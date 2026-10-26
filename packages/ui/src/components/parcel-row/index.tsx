@@ -17,6 +17,7 @@ const LOOK: Record<ParcelState, Look> = {
   notified: { tile: { icon: 'mail', tone: 'blue' }, line: 'muted' },
   late: { tile: { icon: 'clock', tone: 'orange' }, line: 'orange' },
   handedOver: { tile: { icon: 'check', tone: 'green' }, line: 'muted' },
+  returned: { tile: { icon: 'undo', tone: 'grey' }, line: 'muted' },
 };
 
 /** A recipient's reply overrides the state look until it is dealt with. */

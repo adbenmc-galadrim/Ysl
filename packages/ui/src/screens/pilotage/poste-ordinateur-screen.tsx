@@ -16,6 +16,7 @@ const STATE_TONE: Record<ParcelState, StatusDotProps['tone']> = {
   notified: 'blue',
   late: 'orange',
   handedOver: 'green',
+  returned: 'grey',
 };
 
 export type DeskFilter = { id: string; label: string; count: number };

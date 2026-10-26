@@ -11,12 +11,37 @@ import type {
   LocalDirectoryPerson,
   LocalParcel,
 } from '#/features/db/schema';
-import { startOfDay, toParcelRow } from '#/features/parcels/model';
+import {
+  type RecipientContext,
+  startOfDay,
+  toParcelRow,
+} from '#/features/parcels/model';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const byId = <Row extends { id: string }>(rows: (Row | undefined)[]) =>
   new Map(rows.flatMap((row): [string, Row][] => (row ? [[row.id, row]] : [])));
+
+/** The people and contacts these parcels are for, read in two queries. */
+export async function loadRecipientContext(
+  database: CourrierDatabase,
+  parcels: readonly LocalParcel[],
+): Promise<RecipientContext> {
+  const personIds = [
+    ...new Set(parcels.flatMap((parcel) => parcel.personId ?? [])),
+  ];
+  const contactIds = [
+    ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
+  ];
+  const [people, contacts] = await Promise.all([
+    database.directoryPerson.bulkGet(personIds),
+    database.contact.bulkGet(contactIds),
+  ]);
+  return {
+    people: byId<LocalDirectoryPerson>(people),
+    contacts: byId<LocalContact>(contacts),
+  };
+}
 
 /**
  * The parcels the home list shows, oldest first within a status: still on
@@ -46,20 +71,7 @@ export async function listHomeParcels(
     ...open.flat(),
     ...delivered.sort(byReception),
   ];
-  const personIds = [
-    ...new Set(parcels.flatMap((parcel) => parcel.personId ?? [])),
-  ];
-  const contactIds = [
-    ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
-  ];
-  const [people, contacts] = await Promise.all([
-    database.directoryPerson.bulkGet(personIds),
-    database.contact.bulkGet(contactIds),
-  ]);
-  const context = {
-    people: byId<LocalDirectoryPerson>(people),
-    contacts: byId<LocalContact>(contacts),
-  };
+  const context = await loadRecipientContext(database, parcels);
   return parcels.flatMap(
     (parcel) => toParcelRow(parcel, context, now, t) ?? [],
   );
@@ -67,18 +79,18 @@ export async function listHomeParcels(
 
 const TICK_MS = 60 * 1000;
 
-/** Re-reads once a minute, so "il y a 2 h" and "aujourd'hui" stay true. */
-function useMinuteTick() {
-  const [tick, setTick] = useState(0);
+/** The time, moved on once a minute so "il y a 2 h" and "aujourd'hui" stay true. */
+export function useMinuteClock(): Date {
+  const [now, setNow] = useState(() => new Date());
   useEffect(() => {
-    const timer = setInterval(() => setTick((value) => value + 1), TICK_MS);
+    const timer = setInterval(() => setNow(new Date()), TICK_MS);
     return () => clearInterval(timer);
   }, []);
-  return tick;
+  return now;
 }
 
 /** `undefined` while the first read is on its way, then live rows. */
 export function useHomeParcels(): ParcelRow[] | undefined {
-  const tick = useMinuteTick();
-  return useLiveQuery(() => listHomeParcels(db), [tick]);
+  const now = useMinuteClock();
+  return useLiveQuery(() => listHomeParcels(db, now), [now]);
 }

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Chip, ChipGroup } from '#components/chip';
+import { Chip, ChipGroup, ChipSelect } from '#components/chip';
 
 const meta = {
   title: 'Composants/Chip',
@@ -43,5 +43,20 @@ export const GroupeMultiligne: Story = {
         <Chip>Erreur d’adresse</Chip>
       </ChipGroup>
     </div>
+  ),
+};
+
+/** A setting of the list, opening the system menu: how results are grouped. */
+export const Menu: Story = {
+  render: () => (
+    <ChipSelect
+      label="Grouper"
+      value="status"
+      options={[
+        { value: 'status', label: 'Par statut' },
+        { value: 'recipient', label: 'Par destinataire' },
+        { value: 'date', label: 'Par date' },
+      ]}
+    />
   ),
 };

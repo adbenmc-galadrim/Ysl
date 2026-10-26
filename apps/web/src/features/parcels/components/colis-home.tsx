@@ -72,6 +72,7 @@ export function ColisHome() {
 
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
+  const searchParcels = () => void navigate({ to: '/recherche' });
 
   return (
     <ColisScreen
@@ -111,8 +112,15 @@ export function ColisHome() {
         ) : undefined
       }
       bottomBar={!empty}
-      actions={<RemettreActions onHandover={handover} onScan={scan} />}
+      actions={
+        <RemettreActions
+          onSearch={searchParcels}
+          onHandover={handover}
+          onScan={scan}
+        />
+      }
       onMenu={() => void navigate({ to: '/reglages' })}
+      onSearch={searchParcels}
       onScan={scan}
     >
       {empty ? (

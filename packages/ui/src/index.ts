@@ -51,6 +51,7 @@ export * from '#components/option-card';
 export * from '#components/page-intro';
 export * from '#components/parcel-check-row';
 export * from '#components/parcel-label';
+export * from '#components/parcel-list';
 export * from '#components/parcel-row';
 export * from '#components/parcel-section';
 export * from '#components/parcel-thumb';

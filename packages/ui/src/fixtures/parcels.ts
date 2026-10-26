@@ -12,7 +12,9 @@ export type ParcelState =
   | 'notified'
   /** Notified long enough ago that it needs chasing. */
   | 'late'
-  | 'handedOver';
+  | 'handedOver'
+  /** Sent back to the sender: nothing left to do, found by the search. */
+  | 'returned';
 
 export type Parcel = {
   id: string;

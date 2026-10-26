@@ -31,7 +31,7 @@ export const searchFieldVariants = tv({
       sm: { root: 'h-9 gap-2 rounded-chip pl-3 text-14' },
       /** 44 at chip radius: the search screen's own field, beside "Annuler". */
       bar: {
-        root: 'h-11 flex-1 gap-[9px] rounded-chip pr-[13px] pl-[15px] text-17',
+        root: 'h-11 flex-1 gap-[9px] rounded-chip pr-[13px] pl-[15px] text-17 focus-within:ring-0',
       },
     },
   },
@@ -113,4 +113,3 @@ export function SearchField({
     </label>
   );
 }
-
