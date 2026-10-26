@@ -181,6 +181,8 @@ export const fr = {
   'recipient.photo.close': 'Fermer la photo',
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.pickup.footer': 'Ces informations apparaissent dans chaque e-mail.',
+  'settings.pickup.saveFailed':
+    'Lieu et horaires non enregistrés sur l’iPhone, réessayez.',
   'settings.pickup.day.mon': 'Lundi',
   'settings.pickup.day.tue': 'Mardi',
   'settings.pickup.day.wed': 'Mercredi',

@@ -9,7 +9,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { LieuEtHorairesScreen } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { readPickup, savePickup } from '#/features/settings/pickup';
@@ -26,13 +26,23 @@ export function PickupScreen() {
   const session = useSession();
   const stored = useLiveQuery(() => readPickup(db), []);
   const [draft, setDraft] = useState<PickupSetting | null>(null);
+  const [failed, setFailed] = useState(false);
+  const leaving = useRef(false);
   const value = draft ?? stored;
   if (!value) return null;
 
   const edit = (change: Partial<PickupSetting>) =>
     setDraft({ ...value, ...change });
   const leave = async () => {
-    if (draft) await savePickup(db, draft, { userId: session.user.id });
+    if (leaving.current) return;
+    leaving.current = true;
+    try {
+      if (draft) await savePickup(db, draft, { userId: session.user.id });
+    } catch {
+      leaving.current = false;
+      setFailed(true);
+      return;
+    }
     await navigate({ to: '/reglages' });
   };
 
@@ -51,6 +61,7 @@ export function PickupScreen() {
       instructions={value.instructions}
       onInstructionsChange={(instructions) => edit({ instructions })}
       footer={t('settings.pickup.footer')}
+      error={failed ? t('settings.pickup.saveFailed') : undefined}
       placeMaxLength={PICKUP_PLACE_MAX}
       hoursMaxLength={PICKUP_HOURS_MAX}
       instructionsMaxLength={PICKUP_INSTRUCTIONS_MAX}

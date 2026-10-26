@@ -24,6 +24,8 @@ export type LieuEtHorairesScreenProps = {
   reminders?: SettingsGroup;
   /** The note under the last card, when the reminders do not carry it. */
   footer?: string;
+  /** Why the last save did not go through; shown under the cards. */
+  error?: string;
   placeMaxLength?: number;
   hoursMaxLength?: number;
   instructionsMaxLength?: number;
@@ -48,6 +50,7 @@ export function LieuEtHorairesScreen({
   onInstructionsChange,
   reminders,
   footer,
+  error,
   placeMaxLength,
   hoursMaxLength,
   instructionsMaxLength,
@@ -114,6 +117,11 @@ export function LieuEtHorairesScreen({
             className={`${input} block w-full resize-none px-4 py-3.5 leading-[1.35] text-ink`}
           />
         </GroupedSection>
+      )}
+      {error && (
+        <p role="alert" className="px-4 text-13 leading-[1.4] text-red">
+          {error}
+        </p>
       )}
     </SettingsScreen>
   );
