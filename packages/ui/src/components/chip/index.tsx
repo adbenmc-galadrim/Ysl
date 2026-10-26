@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from 'react';
 
+import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
 export type ChipProps = ComponentProps<'button'> & {
@@ -31,6 +32,56 @@ export function Chip({
       )}
       {...props}
     />
+  );
+}
+
+export type ChipSelectOption = { value: string; label: string };
+
+export type ChipSelectProps = {
+  /** Accessible name of the choice, e.g. "Grouper". */
+  label: string;
+  value: string;
+  options: readonly ChipSelectOption[];
+  onChange?: (value: string) => void;
+  className?: string;
+};
+
+/**
+ * A chip that shows the current choice and opens the system menu on tap:
+ * a setting of the list (how it is grouped) rather than a filter, so it is
+ * never filled.
+ */
+export function ChipSelect({
+  label,
+  value,
+  options,
+  onChange,
+  className,
+}: ChipSelectProps) {
+  const current = options.find((option) => option.value === value);
+  return (
+    <span
+      className={cn(
+        'relative inline-flex h-9 shrink-0 items-center gap-1 rounded-chip bg-surface pr-3 pl-4 text-15 font-medium whitespace-nowrap text-ink ring-1 ring-border ring-inset',
+        'focus-within:ring-2 focus-within:ring-blue',
+        className,
+      )}
+    >
+      {current?.label}
+      <Icon name="chevron" size={16} strokeWidth={2.2} className="rotate-90" />
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange?.(e.target.value)}
+        className="absolute inset-0 cursor-pointer appearance-none opacity-0"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 

@@ -116,6 +116,8 @@ function statusLine(
       return t('parcel.status.delivered', {
         time: formatTime(parcel.deliveredAt ?? parcel.receivedAt),
       });
+    case 'returned':
+      return t('parcel.state.retourne');
   }
 }
 
