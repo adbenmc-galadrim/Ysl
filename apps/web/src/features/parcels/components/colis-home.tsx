@@ -51,22 +51,23 @@ export function ColisHome() {
   const labelled = banner !== null;
   const sections = useMemo(
     () =>
-      toSections(parcels ?? []).map((section) =>
-        labelled
-          ? {
-              ...section,
-              rowAction: (parcel: { id: string }) => {
-                const state = pending.get(parcel.id);
-                return (
-                  state && (
-                    <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
-                  )
-                );
-              },
-            }
-          : section,
-      ),
-    [parcels, labelled, pending],
+      toSections(parcels ?? []).map((section) => ({
+        ...section,
+        onParcelClick: (parcel: { id: string }) =>
+          void navigate({
+            to: '/colis/$parcelId',
+            params: { parcelId: parcel.id },
+          }),
+        ...(labelled && {
+          rowAction: (parcel: { id: string }) => {
+            const state = pending.get(parcel.id);
+            return (
+              state && <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
+            );
+          },
+        }),
+      })),
+    [parcels, labelled, pending, navigate],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 

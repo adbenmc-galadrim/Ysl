@@ -65,6 +65,23 @@ export function formatTime(date: Date): string {
   return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+});
+const DAY_MONTH_YEAR = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+/** "14 oct.", with the year once it is not this one. */
+export function shortDate(date: Date, now: Date): string {
+  return (
+    date.getFullYear() === now.getFullYear() ? DAY_MONTH : DAY_MONTH_YEAR
+  ).format(date);
+}
+
 /** "il y a 25 min", "il y a 2 h", "hier" (the calendar day), "il y a 3 jours". */
 export function formatAgo(date: Date, now: Date, t: TranslateFn): string {
   const elapsed = Math.max(0, now.getTime() - date.getTime());

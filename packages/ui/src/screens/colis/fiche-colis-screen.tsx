@@ -19,7 +19,10 @@ import { Icon, type IconName } from '#icons';
  * device). Left out, the mockup's drawn label stands in.
  */
 export type FicheColisPhoto =
-  { src: string; alt?: string; onOpen?: () => void } | { absent: string };
+  | { src: string; alt?: string; onOpen?: () => void }
+  | { absent: string }
+  /** Still being read from the iPhone: its room is kept. */
+  | { loading: true };
 
 export type FicheColisAction = { label: string; onClick?: () => void };
 
@@ -62,6 +65,9 @@ export type FicheColisScreenProps = {
 
 function PhotoSlot({ photo }: { photo?: FicheColisPhoto }) {
   if (!photo) return <LabelPhoto className="mt-5" />;
+  if ('loading' in photo) {
+    return <div className="mt-5 h-[148px] rounded-control bg-fill" />;
+  }
   if ('absent' in photo) {
     return (
       <p className="mt-5 flex items-center gap-2.5 rounded-control bg-fill px-4 py-3.5 text-15 text-muted">
