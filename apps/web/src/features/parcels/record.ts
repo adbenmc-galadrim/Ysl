@@ -236,8 +236,14 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
     case 'parcel.deleted':
       return t('history.deleted');
     case 'parcel.imported':
-      return event.flags.some(isTrackingFlag)
-        ? t('history.imported.flagged')
+      if (event.flags.some(isTrackingFlag)) {
+        return t('history.imported.flagged');
+      }
+      if (event.flags.includes('status-unknown')) {
+        return t('history.imported.status');
+      }
+      return event.flags.includes('recipient-missing')
+        ? t('history.imported.recipient')
         : t('history.imported');
   }
 }

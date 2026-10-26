@@ -196,6 +196,8 @@ export const fr = {
   'history.deleted': 'Supprimé',
   'history.imported': 'Importé de la v1',
   'history.imported.flagged': 'Importé de la v1, tracking douteux',
+  'history.imported.status': 'Importé de la v1, statut inconnu',
+  'history.imported.recipient': 'Importé de la v1, sans destinataire',
   'history.status.recu': 'Complété',
   'history.status.notifie': 'Notifié',
   'history.status.remis': 'Remis',
@@ -288,10 +290,10 @@ export const fr = {
   'settings.pickup.day.wed': 'Mercredi',
   'settings.pickup.day.thu': 'Jeudi',
   'settings.pickup.day.fri': 'Vendredi',
+  'settings.importV1': 'Importer l’historique v1',
   'import.v1.error.notV1':
     'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
   'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',
-  'settings.importV1': 'Importer l’historique v1',
   'import.v1.ready.title': 'Importer l’historique de la v1',
   'import.v1.ready.detail':
     'Le fichier CSV exporté par l’ancienne app. Chaque tracking est vérifié par la clé de son transporteur ; un import répété n’ajoute rien.',
