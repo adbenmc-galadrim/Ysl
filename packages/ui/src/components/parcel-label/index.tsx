@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
@@ -254,6 +254,82 @@ export function LabelZoom({
           </span>
         ))}
       </div>
+      {action && (
+        <div className="absolute right-1.5 bottom-1.5 flex">{action}</div>
+      )}
+    </div>
+  );
+}
+
+/** A region of a photo, in the photo's own pixels. */
+export type PhotoRegion = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type LabelCropProps = {
+  src: string;
+  /** The photo's natural size. */
+  width: number;
+  height: number;
+  /** The line to bring forward, e.g. where the recipient's name was read. */
+  focus?: PhotoRegion | null;
+  alt?: string;
+  action?: ReactNode;
+  className?: string;
+};
+
+/** How much wider than the line the crop shows, and the closest it zooms in. */
+const FOCUS_MARGIN = 1.6;
+const MIN_SHOWN = 0.35;
+
+/**
+ * The real photo of the label in `LabelZoom`'s frame: centred on the line
+ * that needs a human eye, zoomed so it fills the width, or whole when no
+ * line is known. Sized with container units, so no measuring in script.
+ */
+export function LabelCrop({
+  src,
+  width,
+  height,
+  focus,
+  alt = 'Photo de l’étiquette',
+  action,
+  className,
+}: LabelCropProps) {
+  let style: CSSProperties = { inset: 0, width: '100%', height: '100%' };
+  if (focus && width > 0) {
+    const shown = Math.min(
+      width,
+      Math.max(focus.width * FOCUS_MARGIN, width * MIN_SHOWN),
+    );
+    const centreX = focus.x + focus.width / 2;
+    const centreY = focus.y + focus.height / 2;
+    const left = Math.min(Math.max(centreX - shown / 2, 0), width - shown);
+    style = {
+      width: `calc(100cqw * ${width / shown})`,
+      maxWidth: 'none',
+      left: `calc(-100cqw * ${left / shown})`,
+      top: `calc(50cqh - 100cqw * ${centreY / shown})`,
+    };
+  }
+  return (
+    <div
+      className={cn(
+        'relative h-[170px] overflow-hidden rounded-card bg-kraft [container-type:size]',
+        className,
+      )}
+    >
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        className={cn('absolute', focus ? 'h-auto' : 'object-contain')}
+        style={style}
+      />
       {action && (
         <div className="absolute right-1.5 bottom-1.5 flex">{action}</div>
       )}

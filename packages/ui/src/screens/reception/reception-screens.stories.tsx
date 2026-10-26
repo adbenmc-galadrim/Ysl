@@ -1,10 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { DIRECTORY, RECEPTION_BATCH, UNCERTAIN_LABEL } from '#fixtures/reception';
+import {
+  DIRECTORY,
+  type DirectoryEntry,
+  RECEPTION_BATCH,
+  UNCERTAIN_LABEL,
+  whereabouts,
+} from '#fixtures/reception';
 import { ChoisirDestinataireScreen } from '#screens/reception/choisir-destinataire-screen';
 import { LotEnregistreScreen } from '#screens/reception/lot-enregistre-screen';
 import { RevueLotScreen } from '#screens/reception/revue-lot-screen';
-import { VerifierColisScreen } from '#screens/reception/verifier-colis-screen';
+import {
+  type RecipientOption,
+  VerifierColisScreen,
+} from '#screens/reception/verifier-colis-screen';
 
 /**
  * After the burst: review the batch, fix what the scanner doubted, save.
@@ -23,6 +32,11 @@ const meta = {
 export default meta;
 
 type Story = StoryObj;
+
+const option = (entry: DirectoryEntry): RecipientOption => ({
+  ...entry,
+  detail: whereabouts(entry),
+});
 
 export const RevueDuLot: Story = {
   name: 'Revue du lot',
@@ -55,7 +69,7 @@ export const VerifierUnColis: Story = {
         glare: { left: 106, width: 90 },
       }}
       readName={UNCERTAIN_LABEL.name}
-      candidates={[DIRECTORY.lea, DIRECTORY.lise, DIRECTORY.louis]}
+      candidates={[DIRECTORY.lea, DIRECTORY.lise, DIRECTORY.louis].map(option)}
       selectedId={DIRECTORY.lea.id}
       fields={[
         { label: 'Transporteur', value: UNCERTAIN_LABEL.carrier },
@@ -75,8 +89,44 @@ export const ChoisirLeDestinataire: Story = {
     <ChoisirDestinataireScreen
       query="fonta"
       showCaret
-      results={[DIRECTORY.lea, DIRECTORY.louis, DIRECTORY.lise]}
-      recents={[DIRECTORY.nora, DIRECTORY.hugo]}
+      results={[DIRECTORY.lea, DIRECTORY.louis, DIRECTORY.lise].map(option)}
+      recents={[DIRECTORY.nora, DIRECTORY.hugo].map(option)}
+    />
+  ),
+};
+
+/** D15: the directory grows at the desk, so a name read may match nobody yet. */
+export const VerifierPersonneInconnue: Story = {
+  name: 'Vérifier un colis, personne inconnue',
+  render: () => (
+    <VerifierColisScreen
+      step={{ index: 2, total: 2 }}
+      label={{
+        heading: UNCERTAIN_LABEL.heading,
+        name: 'NORA HADDAD',
+        address: UNCERTAIN_LABEL.address,
+      }}
+      readName="Nora Haddad"
+      candidates={[]}
+      addPerson={{ name: 'Nora Haddad', onClick: () => {} }}
+      submitLabel="Valider et terminer"
+      fields={[
+        { label: 'Transporteur', value: UNCERTAIN_LABEL.carrier },
+        { label: 'Suivi', value: UNCERTAIN_LABEL.tracking, mono: true },
+      ]}
+    />
+  ),
+};
+
+/** Before any search, the scanner's three guesses head the picker. */
+export const ChoisirSuggestions: Story = {
+  name: 'Choisir le destinataire, suggestions',
+  render: () => (
+    <ChoisirDestinataireScreen
+      query=""
+      resultsTitle="Suggestions"
+      results={[DIRECTORY.lea, DIRECTORY.lise, DIRECTORY.louis].map(option)}
+      recents={[DIRECTORY.nora, DIRECTORY.hugo].map(option)}
     />
   ),
 };
