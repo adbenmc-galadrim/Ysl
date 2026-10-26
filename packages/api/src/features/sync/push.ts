@@ -1,3 +1,5 @@
+import type { UserRole } from '@repo/contract/auth';
+import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
   SYNC_STATUS,
@@ -39,6 +41,7 @@ const IMMUTABLE_COLUMNS = new Set([
 type Writer = {
   organizationId: string;
   userId: string;
+  role: UserRole;
 };
 
 type Values = Record<string, unknown>;
@@ -82,6 +85,29 @@ function updatesOf(table: SyncTable, values: Values): Values {
     set.deletedAt = sql`coalesce(${table.deletedAt}, excluded.deleted_at)`;
   }
   return set;
+}
+
+/**
+ * The settings of the mailroom are the admin's (§529): a device signed in as
+ * an agent cannot change them, and a value that does not match its key would
+ * end up in every e-mail.
+ */
+function checkSetting(op: SyncOp, { role }: Writer): void {
+  if (role !== 'admin') {
+    throw new SyncRejected(
+      SYNC_STATUS.forbidden,
+      `setting ${op.entityId} written by a non-admin`,
+      'sync.op.adminOnly',
+    );
+  }
+  if (op.type === 'delete') return;
+  const { key, value } = op.patch;
+  if (!isSettingKey(key) || !SETTING_VALUES[key].safeParse(value).success) {
+    throw new SyncRejected(
+      SYNC_STATUS.badRequest,
+      `setting ${op.entityId} has no valid value for its key`,
+    );
+  }
 }
 
 async function upsert(
@@ -243,6 +269,7 @@ async function applyOne(
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
+        if (op.entity === 'setting') checkSetting(op, writer);
         if (op.type === 'delete') await softDelete(tx, op, writer);
         else await upsert(tx, op, writer);
         return null;
