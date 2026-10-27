@@ -2,16 +2,13 @@ import type { NotificationStatus } from '@repo/contract/mail';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { LocalNotification, LocalParcel } from '#/features/db/schema';
 import { statusOf } from '#/features/mail/notifications';
-import type { RecipientMail } from '#/features/mail/recipients';
+import { namedRecipient, type RecipientMail } from '#/features/mail/recipients';
 import {
   carrierLabel,
-  DAY_MS,
-  formatTime,
   recipientOf,
-  shortDate,
-  startOfDay,
   type RecipientContext,
 } from '#/features/parcels/model';
+import { formatWhen, type WhenKeys } from '#/features/parcels/record';
 
 /**
  * Where a mail stands for the agent who wrote it (D2: the app knows it
@@ -43,7 +40,7 @@ function newestFirst(a: LocalNotification, b: LocalNotification): number {
 }
 
 /** Still at the desk, waiting for a first notice. */
-function awaitsNotice(parcel: LocalParcel | undefined): boolean {
+function stillToNotify(parcel: LocalParcel | undefined): parcel is LocalParcel {
   return !!parcel && !parcel.deletedAt && parcel.status === 'recu';
 }
 
@@ -76,7 +73,7 @@ export function trackMails(
         other.parcelIds.some((id) => notification.parcelIds.includes(id)),
     );
     const settled = !notification.parcelIds.some((id) =>
-      awaitsNotice(parcels.get(id)),
+      stillToNotify(parcels.get(id)),
     );
     return {
       notification,
@@ -177,13 +174,7 @@ export function lastMailLine(
 ): string {
   switch (statusOf(notification)) {
     case 'sent':
-      return t('mails.status.sent', {
-        when: formatWhen(
-          notification.sentAt ?? notification.preparedAt,
-          now,
-          t,
-        ),
-      });
+      return sentLine(notification, now, t);
     case 'failed':
       return t('mails.status.failed');
     case 'opened':
@@ -193,14 +184,25 @@ export function lastMailLine(
   }
 }
 
+const MAIL_WHEN: WhenKeys = {
+  today: 'mails.when.today',
+  yesterday: 'mails.when.yesterday',
+  day: 'mails.when.before',
+};
+
 /** "à 10 h 58" today, "hier à 9 h 00", "le 14 oct. à 9 h 00" before. */
-export function formatWhen(date: Date, now: Date, t: TranslateFn): string {
-  const time = formatTime(date);
-  const today = startOfDay(now);
-  if (date >= today) return t('mails.when.today', { time });
-  if (date.getTime() >= today.getTime() - DAY_MS)
-    return t('mails.when.yesterday', { time });
-  return t('mails.when.before', { date: shortDate(date, now), time });
+function when(date: Date, now: Date, t: TranslateFn): string {
+  return formatWhen(date, now, t, MAIL_WHEN);
+}
+
+function sentLine(
+  notification: LocalNotification,
+  now: Date,
+  t: TranslateFn,
+): string {
+  return t('mails.status.sent', {
+    when: when(notification.sentAt ?? notification.preparedAt, now, t),
+  });
 }
 
 /** "2 colis Amazon", "Relance, 1 colis FedEx", "3 colis" across carriers. */
@@ -230,26 +232,20 @@ export function mailStatusLine(
   const { notification } = mail;
   switch (mail.state) {
     case 'sent':
-      return t('mails.status.sent', {
-        when: formatWhen(
-          notification.sentAt ?? notification.preparedAt,
-          now,
-          t,
-        ),
-      });
+      return sentLine(notification, now, t);
     case 'waiting':
       return mail.status === 'opened'
         ? t('mails.status.opened', {
-            when: formatWhen(openedSince(notification), now, t),
+            when: when(openedSince(notification), now, t),
           })
         : t('mails.status.prepared', {
-            when: formatWhen(notification.preparedAt, now, t),
+            when: when(notification.preparedAt, now, t),
           });
     case 'failed':
       return notification.failedReason ?? t('mails.status.failed');
     case 'closed':
       return mail.resentAt
-        ? t('mails.status.resent', { when: formatWhen(mail.resentAt, now, t) })
+        ? t('mails.status.resent', { when: when(mail.resentAt, now, t) })
         : t('mails.status.settled');
   }
 }
@@ -266,7 +262,7 @@ export function mailOf(
 ): RecipientMail {
   const waiting = notification.parcelIds.flatMap((id) => {
     const parcel = parcels.get(id);
-    return parcel && awaitsNotice(parcel) ? [parcel] : [];
+    return stillToNotify(parcel) ? [parcel] : [];
   });
   const person = notification.personId
     ? context.people.get(notification.personId)
@@ -276,23 +272,14 @@ export function mailOf(
     : waiting[0]
       ? recipientOf(waiting[0], context).contact
       : undefined;
-  const named = person
-    ? {
-        name: `${person.firstName} ${person.lastName}`.trim(),
-        firstName: person.firstName,
-        lastName: person.lastName,
-      }
-    : {
-        name: contact?.name ?? notification.recipients[0] ?? '',
-        firstName: contact?.name.trim().split(/\s+/)[0] ?? null,
-        lastName: contact?.name ?? null,
-      };
+  const named = namedRecipient(person, notification.contactId, contact);
   return {
     key: notification.id,
+    ...named,
+    name: named.name || (notification.recipients[0] ?? ''),
     personId: notification.personId,
     contactId: notification.contactId,
     address: notification.recipients[0] ?? null,
     parcels: waiting,
-    ...named,
   };
 }

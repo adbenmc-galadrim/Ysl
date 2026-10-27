@@ -91,15 +91,35 @@ export type DescribeOptions = {
   showUnsent: boolean;
 };
 
-/** "Aujourd'hui à 10 h 42", "Hier à 9 h 05", "Le 14 oct. à 12 h 05". */
-export function formatWhen(date: Date, now: Date, t: TranslateFn): string {
+export type WhenKeys = {
+  today: 'record.when.today' | 'mails.when.today';
+  yesterday: 'record.when.yesterday' | 'mails.when.yesterday';
+  day: 'record.when.day' | 'mails.when.before';
+};
+
+const RECORD_WHEN: WhenKeys = {
+  today: 'record.when.today',
+  yesterday: 'record.when.yesterday',
+  day: 'record.when.day',
+};
+
+/**
+ * "Aujourd'hui à 10 h 42", "Hier à 9 h 05", "Le 14 oct. à 12 h 05"; other
+ * `keys` word it inside a sentence ("Envoyé à 10 h 42").
+ */
+export function formatWhen(
+  date: Date,
+  now: Date,
+  t: TranslateFn,
+  keys: WhenKeys = RECORD_WHEN,
+): string {
   const time = formatTime(date);
   const today = startOfDay(now);
-  if (date >= today) return t('record.when.today', { time });
+  if (date >= today) return t(keys.today, { time });
   if (date.getTime() >= today.getTime() - DAY_MS) {
-    return t('record.when.yesterday', { time });
+    return t(keys.yesterday, { time });
   }
-  return t('record.when.day', { date: shortDate(date, now), time });
+  return t(keys.day, { date: shortDate(date, now), time });
 }
 
 /** As the label prints it: UPS in its 1Z groups, the others by four. */

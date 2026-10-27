@@ -27,7 +27,7 @@ export type SentEmail = {
   state: SentEmailState;
   /** What the e-mail is about: "1 colis DPD", "Relance, 1 colis FedEx". */
   summary: string;
-  /** Where it stands: the refusal, "Partira au retour du réseau", the times. */
+  /** Where it stands: why it failed, "Partira au retour du réseau", the times. */
   status: string;
 };
 

@@ -21,7 +21,7 @@ export type FixAddressSheetProps = {
   valid?: boolean;
   /** Under the field, in red: why the address cannot be used. */
   error?: string;
-  /** Also fix the directory record, so the next e-mail does not bounce. */
+  /** Also fix the card (directory or contact), so the next e-mail goes right. */
   updateDirectory?: boolean;
   onUpdateDirectoryChange?: (checked: boolean) => void;
   updateLabel?: string;
@@ -45,9 +45,9 @@ export type FixAddressSheetProps = {
 };
 
 /**
- * Fixing a bounced address without leaving the sending log. Updating the
- * directory is on by default: a wrong address fixed only once bounces again
- * with the next parcel.
+ * Fixing the address of a mail that did not go, without leaving the
+ * sending log. Updating the card is on by default: an address fixed only
+ * once goes wrong again with the next parcel.
  */
 export function FixAddressSheet({
   recipient,

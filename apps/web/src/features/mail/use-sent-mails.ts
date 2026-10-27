@@ -58,6 +58,8 @@ export function useMailNotes(): MailNotes | undefined {
   const now = useMinuteClock();
   return useLiveQuery(async () => {
     const rows = await db.notification.toArray();
+    // Only the unanswered mails are counted here, and they do not depend
+    // on their parcels: the failures, closed for want of parcels, are not read.
     const mails = trackMails(rows, { userId, parcels: new Map() });
     return {
       failed: lastMailFailed(rows),
