@@ -199,6 +199,22 @@ async function correctedSender(
   return { senderId: sender?.id ?? null, upserts: lessons.upserts() };
 }
 
+/** A contact chosen for the parcel, counted as used (§9.2: kept 12 months after its last use). */
+async function chosenContact(
+  db: CourrierDatabase,
+  id: string,
+  now: Date,
+): Promise<LocalContact | undefined> {
+  const known = await db.contact.get(id);
+  if (!known || known.deletedAt) return undefined;
+  return {
+    ...known,
+    updatedAt: now,
+    usageCount: known.usageCount + 1,
+    lastUsedAt: now,
+  };
+}
+
 /** The card's name today, which a printed name equal to it needs no alias for. */
 async function cardName(
   db: CourrierDatabase,
@@ -336,7 +352,10 @@ export async function saveParcelEdit(
           edit.recipient.email,
           options,
         )
-      : undefined;
+      : edit.recipient.kind === 'contact' &&
+          edit.recipient.id !== parcel.contactId
+        ? await chosenContact(db, edit.recipient.id, now)
+        : undefined;
   const recipient = contact
     ? { personId: null, contactId: contact.id }
     : edit.recipient.kind === 'person'
