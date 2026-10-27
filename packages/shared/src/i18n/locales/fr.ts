@@ -515,6 +515,8 @@ export const fr = {
     'Lien « Ce n’est pas à moi » vers votre adresse',
   'mail.variable.lien_collegue':
     'Lien « Un collègue passera » vers votre adresse',
+  'mail.parcel.today': '{{name}}, reçu à {{time}}',
+  'mail.parcel.before': '{{name}}, reçu le {{date}}',
   'import.v1.error.notV1':
     'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
   'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',

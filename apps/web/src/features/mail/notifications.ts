@@ -14,6 +14,7 @@ import {
   type Upsert,
 } from '#/features/db/commit';
 import type { CourrierDatabase, LocalNotification } from '#/features/db/schema';
+import { pickupCodeWrites } from '#/features/mail/pickup-code';
 import { parcelEvent } from '#/features/parcels/events';
 
 export type PrepareNotification = {
@@ -25,6 +26,8 @@ export type PrepareNotification = {
   parcelIds: readonly string[];
   templateId: string | null;
   target: MailTarget;
+  /** The pickup code the mail quotes, made the recipient's in the same write. */
+  pickupPin?: string;
 };
 
 export type NotificationOptions = { userId: string; now?: Date };
@@ -56,7 +59,9 @@ export function statusOf(row: LocalNotification): NotificationStatus {
 /**
  * The mail about to open in the mail app, recorded before the tap (S5: the
  * app can only tell it opened the mail app). Its text is not kept: it holds
- * the pickup code in clear, and the agent's mail app has the sent copy.
+ * the pickup code in clear, and the agent's mail app has the sent copy. The
+ * code it quotes becomes the recipient's at the same time, whatever the
+ * agent says next: a mail that did not go leaves a code nobody holds.
  */
 export async function prepareNotification(
   db: CourrierDatabase,
@@ -83,9 +88,17 @@ export async function prepareNotification(
     sentAt: null,
     failedReason: null,
   };
+  const codes = input.pickupPin
+    ? await pickupCodeWrites(
+        db,
+        { personId: row.personId, contactId: row.contactId },
+        input.pickupPin,
+        { now },
+      )
+    : [];
   await commitLocal(
     db,
-    { upserts: [{ entity: 'notification', row }] },
+    { upserts: [...codes, { entity: 'notification', row }] },
     { now },
   );
   return row;
