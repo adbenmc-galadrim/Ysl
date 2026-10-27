@@ -260,6 +260,9 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       onReportDamage={() =>
         void navigate({ to: '/colis/$parcelId/dommage', params: { parcelId } })
       }
+      onShowReading={() =>
+        void navigate({ to: '/colis/$parcelId/lecture', params: { parcelId } })
+      }
       primaryAction={
         action?.kind === 'complete' ? t('record.action.complete') : undefined
       }

@@ -30,6 +30,7 @@ import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './route
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
 import { Route as AuthenticatedColisParcelIdDommageRouteImport } from './routes/_authenticated/colis/$parcelId/dommage'
+import { Route as AuthenticatedColisParcelIdLectureRouteImport } from './routes/_authenticated/colis/$parcelId/lecture'
 import { Route as AuthenticatedColisParcelIdModifierRouteImport } from './routes/_authenticated/colis/$parcelId/modifier'
 import { Route as AuthenticatedReglagesModelesEmailIndexRouteImport } from './routes/_authenticated/reglages/modeles-email/index'
 import { Route as AuthenticatedReglagesModelesEmailTemplateIdRouteImport } from './routes/_authenticated/reglages/modeles-email/$templateId'
@@ -151,6 +152,12 @@ const AuthenticatedColisParcelIdDommageRoute =
     path: '/colis/$parcelId/dommage',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedColisParcelIdLectureRoute =
+  AuthenticatedColisParcelIdLectureRouteImport.update({
+    id: '/colis/$parcelId/lecture',
+    path: '/colis/$parcelId/lecture',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedColisParcelIdModifierRoute =
   AuthenticatedColisParcelIdModifierRouteImport.update({
     id: '/colis/$parcelId/modifier',
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
+  '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/reglages/modeles-email/$templateId': typeof AuthenticatedReglagesModelesEmailTemplateIdRoute
   '/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
@@ -215,6 +223,7 @@ export interface FileRoutesByTo {
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
+  '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/reglages/modeles-email/$templateId': typeof AuthenticatedReglagesModelesEmailTemplateIdRoute
   '/colis/$parcelId': typeof AuthenticatedColisParcelIdIndexRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/_authenticated/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
+  '/_authenticated/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/_authenticated/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
   '/_authenticated/reglages/modeles-email/$templateId': typeof AuthenticatedReglagesModelesEmailTemplateIdRoute
   '/_authenticated/colis/$parcelId/': typeof AuthenticatedColisParcelIdIndexRoute
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/reglages/synchronisation'
     | '/reglages/'
     | '/colis/$parcelId/dommage'
+    | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
     | '/reglages/modeles-email/$templateId'
     | '/colis/$parcelId/'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/reglages/synchronisation'
     | '/reglages'
     | '/colis/$parcelId/dommage'
+    | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
     | '/reglages/modeles-email/$templateId'
     | '/colis/$parcelId'
@@ -320,6 +332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
     | '/_authenticated/colis/$parcelId/dommage'
+    | '/_authenticated/colis/$parcelId/lecture'
     | '/_authenticated/colis/$parcelId/modifier'
     | '/_authenticated/reglages/modeles-email/$templateId'
     | '/_authenticated/colis/$parcelId/'
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedColisParcelIdDommageRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/colis/$parcelId/lecture': {
+      id: '/_authenticated/colis/$parcelId/lecture'
+      path: '/colis/$parcelId/lecture'
+      fullPath: '/colis/$parcelId/lecture'
+      preLoaderRoute: typeof AuthenticatedColisParcelIdLectureRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/colis/$parcelId/modifier': {
       id: '/_authenticated/colis/$parcelId/modifier'
       path: '/colis/$parcelId/modifier'
@@ -523,6 +543,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
   AuthenticatedColisParcelIdDommageRoute: typeof AuthenticatedColisParcelIdDommageRoute
+  AuthenticatedColisParcelIdLectureRoute: typeof AuthenticatedColisParcelIdLectureRoute
   AuthenticatedColisParcelIdModifierRoute: typeof AuthenticatedColisParcelIdModifierRoute
   AuthenticatedReglagesModelesEmailTemplateIdRoute: typeof AuthenticatedReglagesModelesEmailTemplateIdRoute
   AuthenticatedColisParcelIdIndexRoute: typeof AuthenticatedColisParcelIdIndexRoute
@@ -550,6 +571,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
   AuthenticatedColisParcelIdDommageRoute:
     AuthenticatedColisParcelIdDommageRoute,
+  AuthenticatedColisParcelIdLectureRoute:
+    AuthenticatedColisParcelIdLectureRoute,
   AuthenticatedColisParcelIdModifierRoute:
     AuthenticatedColisParcelIdModifierRoute,
   AuthenticatedReglagesModelesEmailTemplateIdRoute:
