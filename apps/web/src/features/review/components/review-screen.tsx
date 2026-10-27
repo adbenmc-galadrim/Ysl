@@ -1,5 +1,10 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { IconButton, type ReviewRow, RevueLotScreen } from '@repo/ui';
+import {
+  IconButton,
+  type ReviewRow,
+  RevueLotScreen,
+  VerifierSourceLink,
+} from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
@@ -10,9 +15,11 @@ import { useDraftPhotos } from '#/features/batch/use-draft-photos';
 import { db } from '#/features/db/database';
 import type {
   DraftParcel,
+  ExtractionFieldName,
   LocalContact,
   LocalDirectoryPerson,
 } from '#/features/db/schema';
+import { ReadingView } from '#/features/diagnostic/components/reading-view';
 import { settleRecipients } from '#/features/recipient/check';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
@@ -97,6 +104,9 @@ export function ReviewScreen() {
   const [settled, setSettled] = useState(false);
   const [walk, setWalk] = useState<Walk | null>(null);
   const [zoomed, setZoomed] = useState(false);
+  const [explaining, setExplaining] = useState<ExtractionFieldName | null>(
+    null,
+  );
   const [saving, setSaving] = useState(false);
   const settling = useRef(false);
   const savingRef = useRef(false);
@@ -232,8 +242,10 @@ export function ReviewScreen() {
           : 'recipient.submit.next',
       ),
       onZoom: shown ? () => setZoomed(true) : undefined,
+      source: <VerifierSourceLink onClick={() => setExplaining(step.field)} />,
       onBack: () => {
         setZoomed(false);
+        setExplaining(null);
         setWalk(null);
       },
       onSkip: () => {
@@ -256,6 +268,17 @@ export function ReviewScreen() {
           />
         ) : (
           <AnnexStep key={key} {...frame} field={step.field} />
+        )}
+        {explaining && (
+          // Over the step, which stays mounted: the parcel and the choice in
+          // progress are still there when the agent comes back.
+          <div className="fixed inset-0 z-40">
+            <ReadingView
+              id={current.id}
+              field={explaining}
+              onBack={() => setExplaining(null)}
+            />
+          </div>
         )}
         {zoomed && shown && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">

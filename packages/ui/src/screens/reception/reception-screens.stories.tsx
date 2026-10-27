@@ -14,6 +14,7 @@ import {
   type RecipientOption,
   VerifierChampScreen,
   VerifierColisScreen,
+  VerifierSourceLink,
   VerifierSuiviScreen,
 } from '#screens/reception/verifier-colis-screen';
 
@@ -157,6 +158,26 @@ export const VerifierSuivi: Story = {
       choices={[{ value: '5413337112', carrier: 'DHL Express' }]}
       selected="5413337112"
       fields={SETTLED_FIELDS}
+    />
+  ),
+};
+
+/** The link to the diagnostic under the question (YSL-59, no reference). */
+export const VerifierSuiviSource: Story = {
+  name: 'Vérifier un colis, d’où vient cette valeur',
+  render: () => (
+    <VerifierSuiviScreen
+      step={{ index: 1, total: 2 }}
+      label={{
+        heading: 'WAYBILL',
+        name: '54 1333 7112',
+        address: UNCERTAIN_LABEL.address,
+      }}
+      level="to-verify"
+      choices={[{ value: '5413337112', carrier: 'DHL Express' }]}
+      selected="5413337112"
+      fields={SETTLED_FIELDS}
+      source={<VerifierSourceLink />}
     />
   ),
 };
