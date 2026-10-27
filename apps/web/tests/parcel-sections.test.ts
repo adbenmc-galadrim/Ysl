@@ -1,6 +1,8 @@
 import type { Parcel, ParcelState } from '@repo/ui';
 import { describe, expect, it } from 'vitest';
 import {
+  counters,
+  filterRows,
   sectionId,
   sectionTitles,
   summarize,
@@ -66,5 +68,36 @@ describe('section titles', () => {
     ]);
     expect(sectionId('En attente de retrait')).toBe('waiting');
     expect(sectionId('Inconnue')).toBeUndefined();
+  });
+});
+
+describe('counters', () => {
+  const rows = [
+    parcel('a', 'incomplete'),
+    parcel('b', 'notified'),
+    parcel('c', 'late'),
+    parcel('d', 'toNotify'),
+  ];
+
+  it('counts what is left to complete, to hand over, to chase', () => {
+    expect(counters(rows, null)).toEqual([
+      { id: 'incomplete', label: 'À compléter', count: 1 },
+      { id: 'waiting', label: 'À retirer', count: 2 },
+      { id: 'late', label: 'En souffrance', count: 1 },
+    ]);
+  });
+
+  it('keeps only the rows of the counter on', () => {
+    expect(filterRows(rows, 'incomplete').map((p) => p.id)).toEqual(['a']);
+    expect(filterRows(rows, 'waiting').map((p) => p.id)).toEqual(['b', 'c']);
+    expect(filterRows(rows, null)).toHaveLength(4);
+  });
+
+  it('leaves out a counter at zero, unless it is on', () => {
+    const done = [parcel('d', 'toNotify')];
+    expect(counters(done, null)).toEqual([]);
+    expect(counters(done, 'incomplete')).toEqual([
+      { id: 'incomplete', label: 'À compléter', count: 0 },
+    ]);
   });
 });

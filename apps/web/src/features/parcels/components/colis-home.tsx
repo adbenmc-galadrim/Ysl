@@ -20,6 +20,9 @@ import { RecipientChooser } from '#/features/recipient/components/recipient-choo
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
+  type CounterId,
+  counters,
+  filterRows,
   sectionId,
   sectionTitles,
   summarize,
@@ -59,12 +62,14 @@ export function ColisHome() {
   // for, with the name read on their label, open the picker in place.
   const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
   const [choosing, setChoosing] = useState<string | null>(null);
+  // F32: a counter on keeps only its parcels; the sections fold as before.
+  const [counter, setCounter] = useState<CounterId | null>(null);
   // Next to the banner, the rows say which parcels its changes are; online,
   // a change leaves within seconds and a label would only flicker.
   const labelled = banner !== null;
   const sections = useMemo(
     () =>
-      toSections(parcels ?? []).map((section) => ({
+      toSections(filterRows(parcels ?? [], counter)).map((section) => ({
         ...section,
         ...(sectionId(section.title) === 'toNotify' && {
           action: (
@@ -103,7 +108,7 @@ export function ColisHome() {
             </Button>
           ),
       })),
-    [parcels, labelled, pending, navigate, unaddressed],
+    [parcels, counter, labelled, pending, navigate, unaddressed],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
@@ -117,6 +122,16 @@ export function ColisHome() {
         sync={syncPill(sync)}
         summary={counted ? summarize(rows) : t('colis.summary.loading')}
         sections={sections}
+        counters={
+          empty
+            ? undefined
+            : counters(rows, counter).map(({ id, label, count }) => ({
+                label,
+                count,
+                selected: id === counter,
+                onClick: () => setCounter(id === counter ? null : id),
+              }))
+        }
         folded={foldedTitles}
         onToggleSection={(title) => {
           const id = sectionId(title);

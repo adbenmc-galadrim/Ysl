@@ -63,3 +63,42 @@ export function summarize(parcels: readonly Parcel[]) {
   ).length;
   return t('colis.summary', { count: parcels.length, todo });
 }
+
+/** The counters over the list (F32), each a filter: what is left to complete, to hand over, to chase. */
+export const COUNTER_IDS = ['incomplete', 'waiting', 'late'] as const;
+
+export type CounterId = (typeof COUNTER_IDS)[number];
+
+const COUNTER_STATES: Record<CounterId, readonly ParcelState[]> = {
+  incomplete: ['incomplete'],
+  waiting: ['notified', 'late'],
+  late: ['late'],
+};
+
+/** The rows a counter keeps; all of them with none on. */
+export function filterRows(
+  parcels: readonly Parcel[],
+  counter: CounterId | null,
+): Parcel[] {
+  if (!counter) return [...parcels];
+  return parcels.filter((parcel) =>
+    COUNTER_STATES[counter].includes(parcel.state),
+  );
+}
+
+/**
+ * « À compléter 1 », « À retirer 3 », « En souffrance 1 »: the counters
+ * worth a tap, those above zero, and the one on even when it fell to zero
+ * so the agent can turn it off.
+ */
+export function counters(
+  parcels: readonly Parcel[],
+  on: CounterId | null,
+): { id: CounterId; label: string; count: number }[] {
+  return COUNTER_IDS.flatMap((id) => {
+    const count = filterRows(parcels, id).length;
+    return count > 0 || id === on
+      ? [{ id, label: t(`colis.counter.${id}`), count }]
+      : [];
+  });
+}
