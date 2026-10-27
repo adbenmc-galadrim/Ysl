@@ -21,6 +21,8 @@ export const env = createEnv({
       : z.string().min(32).default(DEV_AUTH_SECRET),
     BETTER_AUTH_URL: localOnly(z.url(), `http://localhost:${SERVER_PORT}`),
     TRUST_PROXY: z.stringbool().default(false),
+    /** Minutes between two retention purges (§9.2); 0 turns the job off. */
+    PURGE_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(1440),
     LOG_LEVEL: z
       .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
       .default('info'),

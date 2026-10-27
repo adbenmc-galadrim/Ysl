@@ -15,9 +15,30 @@ import { stopSync, syncNow } from '#/features/sync/sync';
 
 export { SignOutBlockedError };
 
-export function useSignOut() {
+/**
+ * What leaving the session does to the device: forget the session, stop the
+ * synchronisation, empty Dexie and OPFS, and go back to sign-in.
+ */
+function useWipeDevice() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  return async () => {
+    forgetSession(localStorage);
+    forgetPrepared(localStorage);
+    resetOfflinePrep();
+    await stopSync();
+    try {
+      await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);
+    } catch (cause) {
+      console.warn('Local data was not fully cleared', cause);
+    }
+    queryClient.clear();
+    await router.navigate({ to: '/connexion', search: {} });
+  };
+}
+
+export function useSignOut() {
+  const wipe = useWipeDevice();
 
   return useMutation({
     mutationFn: async ({
@@ -32,18 +53,30 @@ export function useSignOut() {
       const { error } = await signOut();
       if (error) throw new Error(error.message);
     },
-    onSuccess: async () => {
-      forgetSession(localStorage);
-      forgetPrepared(localStorage);
-      resetOfflinePrep();
-      await stopSync();
-      try {
-        await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);
-      } catch (cause) {
-        console.warn('Local data was not fully cleared', cause);
+    onSuccess: wipe,
+  });
+}
+
+/**
+ * "Effacer les données de cet iPhone" (§9.1): the sign-out, except that the
+ * admin may give up every change still on the phone, queued or refused,
+ * once told how many. The session is closed on the server first: a wipe
+ * that kept the cookie would pull everything back at the next launch.
+ */
+export function useEraseDevice() {
+  const wipe = useWipeDevice();
+
+  return useMutation({
+    mutationFn: async ({ force = false }: { force?: boolean } = {}) => {
+      if (!force) {
+        const check = await prepareSignOut(db, () => syncNow({ force: true }));
+        if (!check.ok) {
+          throw new SignOutBlockedError(check.pending, check.rejected);
+        }
       }
-      queryClient.clear();
-      await router.navigate({ to: '/connexion', search: {} });
+      const { error } = await signOut();
+      if (error) throw new Error(error.message);
     },
+    onSuccess: wipe,
   });
 }

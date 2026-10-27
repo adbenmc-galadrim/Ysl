@@ -8,6 +8,7 @@ import {
 } from '@repo/contract/sync';
 import { event, syncGeneration } from '@repo/db/schema';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
+import { purgeHorizon } from '#features/maintenance/purge';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 
 type Row = Record<string, unknown> & { id: string; serverXid: number };
@@ -79,7 +80,8 @@ function withoutOrganization(row: Row): PullChange['row'] {
  * `sync.pull`: the rows of one mailroom written since the cursor, up to the
  * snapshot bound fixed by the first page, entity after entity in
  * `(server_xid, id)` order. A row may come back twice across two pulls; the
- * device upserts. A cursor from another generation or beyond the bound is
+ * device upserts. A cursor from another generation, beyond the bound, or
+ * below the purge horizon (a mark it never pulled was erased since) is
  * unusable: the pull starts over and says so.
  */
 export async function pull(
@@ -98,12 +100,24 @@ export async function pull(
     range = { from: input.page.from, bound: input.page.bound };
     entity = input.page.entity;
     after = input.page.after;
+    // A purge may have erased a mark of this range since the first page:
+    // the device would never see it go, so the read starts over.
+    if (
+      range.from > 0 &&
+      range.from < (await purgeHorizon(db, organizationId))
+    ) {
+      reset = true;
+      range = { from: 0, bound: range.bound };
+      entity = 0;
+      after = null;
+    }
   } else {
     const { cursor } = input;
     const usable =
       cursor !== null &&
       cursor.generation === generation &&
-      cursor.xid <= bound;
+      cursor.xid <= bound &&
+      cursor.xid >= (await purgeHorizon(db, organizationId));
     reset = cursor !== null && !usable;
     range = { from: usable ? cursor.xid : 0, bound };
   }

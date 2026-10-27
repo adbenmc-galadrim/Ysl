@@ -78,6 +78,16 @@ export function ReglagesHome() {
         label: t('settings.export'),
         onPress: () => void navigate({ to: '/reglages/export' }),
       },
+      ...(role === 'admin'
+        ? [
+            {
+              icon: 'lock' as const,
+              color: 'grey' as const,
+              label: t('settings.privacy'),
+              onPress: () => void navigate({ to: '/reglages/donnees' }),
+            },
+          ]
+        : []),
     ],
   };
 

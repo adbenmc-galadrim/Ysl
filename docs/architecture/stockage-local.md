@@ -51,8 +51,10 @@ une opération dans `outbox` :
 | `clientTs`              | horodatage client, qui devient `updated_at` au push       |
 | `attempts`, `lastError` | tenus par le push (YSL-28)                                |
 
-Une suppression est logique (`deletedAt`), jamais physique : la purge en deux temps est
-une règle serveur (YSL-55). Si une écriture du lot échoue, rien n'est écrit, rien n'est
+Une suppression faite sur l'iPhone est logique (`deletedAt`) et part au serveur. La ligne
+quitte l'iPhone quand le pull la rend marquée, ou qu'un `reset` ne la rend plus ; la
+purge locale retire les photos et les `extraction` passé leur durée (§9.2, YSL-55, voir
+`docs/synchronisation.md`). Si une écriture du lot échoue, rien n'est écrit, rien n'est
 mis en file.
 
 ## Les photos : OPFS, jamais le serveur (D8)

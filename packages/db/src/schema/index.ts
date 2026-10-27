@@ -5,6 +5,7 @@ export * from '#schema/handover';
 export * from '#schema/notification';
 export * from '#schema/organization';
 export * from '#schema/parcel';
+export * from '#schema/purge-run';
 export * from '#schema/sender';
 export * from '#schema/setting';
 export * from '#schema/sync';

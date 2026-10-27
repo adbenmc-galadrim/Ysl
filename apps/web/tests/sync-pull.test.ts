@@ -158,6 +158,170 @@ describe('pullChanges', () => {
     expect(await db.parcel.get(row.id)).toBeDefined();
   });
 
+  it('drops a row the server marked deleted, with its parcel’s events and reading', async () => {
+    const parcel = parcelRow();
+    await db.parcel.put(parcel);
+    await db.event.put({
+      id: newId(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      entity: 'parcel',
+      entityId: parcel.id,
+      type: 'parcel.status',
+      actorId: null,
+      at: NOW,
+      detail: null,
+    });
+    await db.extraction.put({
+      parcelId: parcel.id,
+      version: 1,
+      fields: {},
+      codes: [],
+      ocrText: 'MORE CAMILLE',
+      durations: { codesMs: null, ocrMs: null },
+      provenance: 'device',
+      createdAt: NOW,
+    });
+    const client = vi.fn().mockResolvedValue(
+      page([
+        {
+          entity: 'parcel',
+          row: serverRow({ ...parcel, deletedAt: NOW }, 420),
+        },
+      ]),
+    );
+
+    await pullChanges(db, client);
+
+    expect(await db.parcel.get(parcel.id)).toBeUndefined();
+    expect(await db.event.count()).toBe(0);
+    expect(await db.extraction.count()).toBe(0);
+  });
+
+  it('keeps a row marked deleted on the server while this device has a change of it to send', async () => {
+    const parcel = parcelRow({ notes: 'à envoyer' });
+    await commitLocal(db, { upserts: [{ entity: 'parcel', row: parcel }] });
+    const client = vi.fn().mockResolvedValue(
+      page([
+        {
+          entity: 'parcel',
+          row: serverRow({ ...parcel, deletedAt: NOW }, 420),
+        },
+      ]),
+    );
+
+    await pullChanges(db, client);
+
+    expect((await db.parcel.get(parcel.id))?.notes).toBe('à envoyer');
+  });
+
+  it('after a reset, drops what the full read did not bring back, except what is still to send', async () => {
+    await db.syncState.put({
+      key: SYNC_STATE_KEYS.cursor,
+      value: { generation: GENERATION, xid: 3 },
+    });
+    const erased = parcelRow();
+    const kept = parcelRow();
+    const unsent = parcelRow();
+    await db.parcel.bulkPut([erased, kept]);
+    await commitLocal(db, { upserts: [{ entity: 'parcel', row: unsent }] });
+    const client = vi
+      .fn()
+      .mockResolvedValueOnce(
+        page([{ entity: 'directory_person', row: serverRow(personRow(), 5) }], {
+          reset: true,
+          next: { from: 0, bound: 20, entity: 5, after: null },
+        }),
+      )
+      .mockResolvedValueOnce(
+        page([{ entity: 'parcel', row: serverRow(kept, 6) }], { cursor: 20 }),
+      )
+      .mockResolvedValueOnce(page([], { cursor: 25 }));
+
+    const outcome = await pullChanges(db, client);
+
+    expect(client).toHaveBeenLastCalledWith({
+      cursor: { generation: GENERATION, xid: 20 },
+      page: null,
+      limit: 200,
+    });
+    expect(outcome.cursor).toEqual({ generation: GENERATION, xid: 25 });
+    expect(await db.parcel.get(erased.id)).toBeUndefined();
+    expect(await db.parcel.get(kept.id)).toBeDefined();
+    expect(await db.parcel.get(unsent.id)).toBeDefined();
+    expect(await db.directoryPerson.count()).toBe(1);
+  });
+
+  it('after a reset, keeps a row rewritten during the full read, which the second read brings', async () => {
+    await db.syncState.put({
+      key: SYNC_STATE_KEYS.cursor,
+      value: { generation: GENERATION, xid: 3 },
+    });
+    const rewritten = parcelRow();
+    await db.parcel.put(rewritten);
+    const client = vi
+      .fn()
+      .mockResolvedValueOnce(page([], { reset: true, cursor: 20 }))
+      .mockResolvedValueOnce(
+        page([{ entity: 'parcel', row: serverRow(rewritten, 21) }], {
+          cursor: 30,
+        }),
+      );
+
+    await pullChanges(db, client);
+
+    expect(await db.parcel.get(rewritten.id)).toBeDefined();
+  });
+
+  it('starts the count over when a later page says the read restarted from zero', async () => {
+    await db.syncState.put({
+      key: SYNC_STATE_KEYS.cursor,
+      value: { generation: GENERATION, xid: 300 },
+    });
+    const stale = parcelRow();
+    const live = parcelRow();
+    await db.parcel.bulkPut([stale, live]);
+    const client = vi
+      .fn()
+      .mockResolvedValueOnce(
+        page([{ entity: 'parcel', row: serverRow(stale, 310) }], {
+          next: { from: 300, bound: 500, entity: 5, after: null },
+        }),
+      )
+      .mockResolvedValueOnce(
+        page([{ entity: 'parcel', row: serverRow(live, 12) }], {
+          reset: true,
+          cursor: 500,
+        }),
+      )
+      .mockResolvedValueOnce(page([], { cursor: 510 }));
+
+    const outcome = await pullChanges(db, client);
+
+    expect(outcome.reset).toBe(true);
+    expect(await db.parcel.get(live.id)).toBeDefined();
+    expect(await db.parcel.get(stale.id)).toBeUndefined();
+  });
+
+  it('after a reset, keeps a row whose change the server refused', async () => {
+    await db.syncState.put({
+      key: SYNC_STATE_KEYS.cursor,
+      value: { generation: GENERATION, xid: 3 },
+    });
+    const refused = parcelRow();
+    await commitLocal(db, { upserts: [{ entity: 'parcel', row: refused }] });
+    await db.outbox.toCollection().modify({ state: 'rejected' });
+    const client = vi
+      .fn()
+      .mockResolvedValueOnce(page([], { reset: true, cursor: 20 }))
+      .mockResolvedValueOnce(page([], { cursor: 20 }));
+
+    await pullChanges(db, client);
+
+    expect(await db.parcel.get(refused.id)).toBeDefined();
+  });
+
   it('keeps the old cursor when a page fails', async () => {
     await db.syncState.put({
       key: SYNC_STATE_KEYS.cursor,

@@ -164,10 +164,17 @@ devient le curseur suivant une fois la dernière page reçue. Une ligne peut rev
 deux fois d'un pull à l'autre : l'appareil la réécrit (`bulkPut`). Une ligne que
 l'appareil n'a pas encore envoyée n'est pas écrasée par la copie du serveur.
 
-`reset: true` quand le curseur est inutilisable (génération différente, ou `xid`
-au-delà de la borne) : les lignes repartent de zéro et l'appareil les prend toutes.
-Les suppressions étant logiques, rien n'est vidé localement ; la purge physique
-(YSL-55) traitera le reste.
+`reset: true` quand le curseur est inutilisable (génération différente, `xid`
+au-delà de la borne, ou sous l'horizon de purge de l'organisation) : les lignes
+repartent de zéro, l'appareil les prend toutes, relit une fois depuis la nouvelle borne
+(une ligne récrite pendant la lecture complète est au-dessus de sa borne), puis retire
+ce que ni l'une ni l'autre n'a rendu, sauf une ligne qui a une opération dans l'outbox.
+Une page suivante peut aussi dire `reset` quand une purge a effacé entre-temps une
+marque de la plage : la lecture repart de zéro.
+
+Une ligne arrivée avec `deletedAt` quitte l'appareil (pas de tombstone local), avec,
+pour un colis, ses événements et sa lecture (`extraction`) ; une ligne qui a une
+opération `queued` reste, son push portera la version de l'appareil.
 
 **Horizon du premier pull.** Un pull qui repart de zéro (premier lancement, `reset`)
 ne rend que les `event` des 90 derniers jours (`EVENT_HORIZON_DAYS`, sur `at`) : le
@@ -209,6 +216,45 @@ récents. Un pull par curseur rend tous les nouveaux événements, quel que soit
   ou `rejected` (seule copie d'un changement à corriger), la déconnexion est refusée
   avec leur nombre. Sinon le compte est déconnecté, la synchro arrêtée, puis la base
   locale et les photos OPFS sont effacées.
+
+## Purge selon les durées de conservation
+
+Durées du §9.2 (validées, D7) dans `RETENTION` de `@repo/contract/retention`.
+
+**Serveur** (`packages/api/src/features/maintenance/purge.ts`), par organisation, en
+deux temps et par lots de 500 en transactions courtes :
+
+1. **Marquage** `deleted_at` (que le pull propage) : colis `remis` depuis 12 mois
+   (`delivered_at`) ou `retourne` depuis 12 mois (`updated_at`) ; remises et
+   notifications dont tous les colis sont marqués ; codes de retrait utilisés ou
+   expirés depuis 12 mois ; lots vides de plus de 12 mois ; contacts inutilisés depuis
+   12 mois (`last_used_at`, à défaut `updated_at`) et personnes désactivées depuis 30 jours, sans colis,
+   remise, notification ni code vivant.
+2. **Suppression physique** des lignes marquées depuis plus de 30 jours, enfants
+   avant parents (remises, notifications, codes, colis avec leurs `event` sous
+   `set_config('app.purge', 'on', true)` local à la transaction, lots, comptes
+   transporteurs, expéditeurs, modèles, réglages, contacts, personnes), une ligne
+   encore référencée attendant la purge suivante ; `sync_op` au-delà de 90 jours.
+
+Chaque passage écrit une ligne `purge_run` (compteurs par table, `horizon_xid` = le
+plus grand `server_xid` supprimé + 1, relevé dans la transaction de chaque lot). Un appareil dont le curseur est sous l'horizon
+de son organisation a pu manquer un marquage : son pull repart à zéro (`reset`).
+Job planifié dans `apps/server` (`PURGE_INTERVAL_MINUTES`, 1440 par défaut, 0 le
+coupe ; premier passage une minute après le démarrage), une instance à la fois par
+`pg_try_advisory_lock` ; `maintenance.purgeNow` (admin) purge son organisation à la
+demande, `maintenance.status` rend le dernier passage.
+
+**iPhone** (`apps/web/src/features/retention`), à l'ouverture puis après une
+synchronisation (au plus tous les quarts d'heure), au repos du fil principal :
+photos d'étiquette et de dommage 7 jours après la sortie du colis (remise ou retour)
+une fois sa ligne confirmée par le serveur, signatures après 12 mois, photos d'un
+colis disparu de l'iPhone, `extraction` après 30 jours ou sans son colis.
+Réglages › Données et confidentialité (admin) montre les durées, le dernier passage,
+« Purger maintenant » et « Effacer les données de cet iPhone » (synchro, puis
+déconnexion et vidage de Dexie et d'OPFS ; les changements non envoyés sont comptés
+et ne se perdent qu'après confirmation). L'effacement demande le réseau : la session
+est fermée sur le serveur d'abord, sinon le cookie ramènerait tout au lancement
+suivant.
 
 ## Fiche colis et historique
 
@@ -322,7 +368,7 @@ changes[] }`, chaque changement étant l'opération d'outbox (`opId`, `entity`,
 - **Transactions longues** : la borne du pull est l'`xmin` de l'instance entière, toutes
   bases confondues. Instance dédiée, `max_prepared_transactions = 0`,
   `idle_in_transaction_session_timeout` court, purges par petits lots.
-- **`sync_op`** grandit d'une ligne par opération : purge au-delà de la profondeur
-  d'une outbox (quelques semaines), index `sync_op_applied_at_idx` (YSL-55).
+- **`sync_op`** grandit d'une ligne par opération : la purge le vide au-delà de
+  90 jours (`RETENTION.syncOp`), index `sync_op_applied_at_idx`.
 - **Index `*_cursor_idx`** : `REINDEX CONCURRENTLY` périodique (pages coupées par les
   insertions de plusieurs organisations).

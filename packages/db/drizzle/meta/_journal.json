@@ -57,6 +57,13 @@
       "when": 1793127336811,
       "tag": "0007_suivi_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793129566465,
+      "tag": "0008_purge",
+      "breakpoints": true
     }
   ]
 }

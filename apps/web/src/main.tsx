@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { AppProvider } from '#/app/provider';
 import { router } from '#/app/router';
 import { bootLocalStore } from '#/features/db/boot';
+import { startLocalPurge } from '#/features/retention/start';
 import { bootCorners } from '#/features/settings/corners';
 import { bootTheme } from '#/features/settings/theme';
 import { startUpdater } from '#/features/update/updater';
@@ -23,5 +24,5 @@ if (rootElement && !rootElement.innerHTML) {
       <RouterProvider router={router} />
     </AppProvider>,
   );
-  void bootLocalStore();
+  void bootLocalStore().then(startLocalPurge);
 }
