@@ -99,6 +99,7 @@ export function ReviewScreen() {
   const [zoomed, setZoomed] = useState(false);
   const [saving, setSaving] = useState(false);
   const settling = useRef(false);
+  const savingRef = useRef(false);
   const matcher = recipientMatcher();
   const urls = useDraftPhotos(drafts ?? []);
 
@@ -198,12 +199,14 @@ export function ReviewScreen() {
   };
 
   const save = async () => {
-    if (!batchId || saving) return;
+    if (!batchId || savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       await finishBatch(db, { batchId, agentId: session.user.id });
       await navigate({ to: '/' });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   };

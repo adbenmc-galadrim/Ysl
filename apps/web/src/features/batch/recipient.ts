@@ -23,7 +23,8 @@ export async function previousNamed(
 
 /**
  * The agent says the parcel is for the same person: a correction of theirs
- * (§4.3, rank 9), so the name is sure, however the previous parcel got it.
+ * (§4.3, rank 9), so the name is sure, however the previous parcel got it;
+ * the card to notify is still settled in the batch review (F26).
  * False when the draft was undone meanwhile.
  */
 export function copyRecipient(

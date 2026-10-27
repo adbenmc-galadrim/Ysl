@@ -179,7 +179,7 @@ export const VerifierSuiviIncertain: Story = {
         { value: '5413337117', carrier: 'DHL Express' },
       ]}
       fields={[{ label: 'Destinataire', value: DIRECTORY.lea.name }]}
-      submitLabel="Valider et terminer"
+      submitLabel="Valider"
     />
   ),
 };

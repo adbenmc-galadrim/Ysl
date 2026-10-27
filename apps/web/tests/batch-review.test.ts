@@ -235,8 +235,35 @@ describe('the batch saved from the review', () => {
     );
   });
 
+  it('saves a parcel doubted on an annex field alone « Reçu », as read', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, null, NOW);
+    await updateDraft(db, draft.id, {
+      ...read(UPS, 'UPS'),
+      recipient: card,
+      annex: {
+        pieces: null,
+        weightKg: { value: 2.4, level: 'to-verify' },
+        service: null,
+        reference: null,
+      },
+    });
+    expect(reviewOf((await db.draftParcel.get(draft.id))!).group).toBe(
+      'toCheck',
+    );
+
+    await skipDraft(db, draft.id);
+    expect(reviewOf((await db.draftParcel.get(draft.id))!).group).toBe('ready');
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+    expect(await db.parcel.get(draft.id)).toMatchObject({
+      status: 'recu',
+      weightKg: 2.4,
+    });
+  });
+
   it('refuses a correction that does not hold', () => {
     expect(parseAnnex('weightKg', '900', null)).toBeUndefined();
+    expect(parseAnnex('weightKg', '1e1', null)).toBeUndefined();
     expect(parseAnnex('pieces', '4/3', null)).toBeUndefined();
     expect(parseAnnex('pieces', '2 sur 3', null)).toEqual({
       index: 2,

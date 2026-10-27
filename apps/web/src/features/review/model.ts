@@ -1,3 +1,4 @@
+import { CONFIDENCE } from '@repo/contract/extract';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { DraftParcel } from '#/features/db/schema';
 import type { DraftAnnex } from '#/features/scan/annex';
@@ -42,7 +43,12 @@ export type Review = {
   ready: ReviewItem[];
 };
 
-/** A field below « sûr » that F26 needs: the parcel is not notified without it. */
+/**
+ * A field below « sûr » that F26 needs: the parcel is not notified without
+ * it. An annex field does not hold the parcel back (§4.4): one left « à
+ * vérifier » is saved as read, the parcel « Reçu », and a parcel passed on
+ * it alone counts as ready.
+ */
 const blocks = (step: ReviewStep) =>
   step.field === 'tracking' || step.field === 'recipient';
 
@@ -79,7 +85,7 @@ export function reviewOf(draft: DraftParcel): ReviewItem {
   for (const field of ANNEX_FIELDS) {
     if (draft.annex?.[field]?.level !== 'to-verify') continue;
     steps.push({ field });
-    scores.push(extraction[field]?.confidence ?? 0.6);
+    scores.push(extraction[field]?.confidence ?? CONFIDENCE.toVerify);
   }
   const blocked = steps.some(blocks) || !draft.carrier;
   const group: ReviewGroup = !blocked
