@@ -238,7 +238,8 @@ export function ColisHome() {
               pick.kind === 'card'
                 ? { kind: pick.choice.kind, id: pick.choice.id }
                 : { ...pick, kind: 'typed' },
-              { agentId: session.user.id },
+              // Only the name shows here: a number still in doubt stays so.
+              { agentId: session.user.id, seesTracking: false },
             );
             setChoosing(null);
           }}

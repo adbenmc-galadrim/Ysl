@@ -59,7 +59,16 @@ export type EditResult =
   | { kind: 'unchanged' }
   | { kind: 'invalid'; errors: EditErrors };
 
-export type EditOptions = { agentId: string; now?: Date };
+export type EditOptions = {
+  agentId: string;
+  now?: Date;
+  /**
+   * The agent has the parcel's number under their eyes (its record): a
+   * recipient chosen then vouches for it too (YSL-52). False for the
+   * « Choisir » of Colis, where only the name shows.
+   */
+  seesTracking?: boolean;
+};
 
 const text = (value: string) => value.trim() || null;
 
@@ -85,7 +94,8 @@ export function editOf(parcel: LocalParcel): ParcelEdit {
       : parcel.contactId
         ? { kind: 'contact', id: parcel.contactId }
         : { kind: 'none' },
-    tracking: parcel.tracking ?? '',
+    // The app's own number of a parcel « Sans suivi » is not the agent's to edit.
+    tracking: parcel.type === 'sans_suivi' ? '' : (parcel.tracking ?? ''),
     carrier: parcel.carrier ?? '',
     sender: parcel.senderName ?? '',
     pieceTotal: total,
@@ -198,6 +208,19 @@ async function printedOn(
   );
 }
 
+/**
+ * A number nobody doubts: none to doubt (« Sans suivi »), or read sure or
+ * confirmed by the agent at « Terminer », as this iPhone's reading kept it.
+ */
+async function trackingVouched(
+  db: CourrierDatabase,
+  parcel: LocalParcel,
+): Promise<boolean> {
+  if (parcel.type === 'sans_suivi') return true;
+  const reading = await db.extraction.get(parcel.id);
+  return reading?.fields.tracking?.level === 'sure';
+}
+
 /** One piece unless the label said otherwise: a parcel that never said stays silent. */
 function pieces(parcel: LocalParcel, edit: ParcelEdit) {
   if (edit.pieceTotal > 1) {
@@ -290,7 +313,7 @@ export async function saveParcelEdit(
   db: CourrierDatabase,
   parcelId: string,
   edit: ParcelEdit,
-  { agentId, now = new Date() }: EditOptions,
+  { agentId, now = new Date(), seesTracking = true }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
   const errors = validateEdit(edit, parcel);
@@ -316,7 +339,11 @@ export async function saveParcelEdit(
       : edit.recipient.kind === 'contact'
         ? { personId: null, contactId: edit.recipient.id }
         : { personId: null, contactId: null };
-  const tracking = normalizeTracking(edit.tracking) || null;
+  const typed = normalizeTracking(edit.tracking) || null;
+  // A parcel « Sans suivi » keeps its number until a real one is typed,
+  // which makes it a parcel like any other.
+  const untracked = parcel.type === 'sans_suivi' && typed === null;
+  const tracking = untracked ? parcel.tracking : typed;
   const senderName = text(edit.sender);
   const renamed =
     senderName !== null &&
@@ -327,6 +354,7 @@ export async function saveParcelEdit(
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
+    type: parcel.type === 'sans_suivi' && !untracked ? 'colis' : parcel.type,
     tracking,
     trackingNorm: tracking,
     carrier: text(edit.carrier),
@@ -344,11 +372,16 @@ export async function saveParcelEdit(
     reference: text(edit.reference),
     weightKg: parseWeight(edit.weightKg) ?? null,
     location: text(edit.location),
-    department:
-      edit.recipient.kind === 'typed' && edit.recipient.department?.trim()
-        ? edit.recipient.department.trim()
-        : parcel.department,
   };
+  // The department typed with someone outside the directory goes with them:
+  // another recipient chosen takes it away.
+  edited.department =
+    edit.recipient.kind === 'typed'
+      ? edit.recipient.department?.trim() || null
+      : edited.personId !== parcel.personId ||
+          edited.contactId !== parcel.contactId
+        ? null
+        : parcel.department;
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };
 
@@ -366,10 +399,18 @@ export async function saveParcelEdit(
   }
 
   const complete = isComplete(edited);
+  const vouched =
+    seesTracking ||
+    fields.includes('tracking') ||
+    fields.includes('carrier') ||
+    (await trackingVouched(db, edited));
   const to =
-    parcel.status === 'a_completer' && complete && confirmsIdentity(fields)
+    parcel.status === 'a_completer' &&
+    complete &&
+    confirmsIdentity(fields) &&
+    vouched
       ? 'recu'
-      : parcel.status === 'recu' && !complete && isComplete(parcel)
+      : parcel.status === 'recu' && !complete && confirmsIdentity(fields)
         ? 'a_completer'
         : undefined;
   const row = to ? { ...edited, ...statusPatch(edited, to, options) } : edited;

@@ -160,6 +160,74 @@ describe('assignRecipient', () => {
     expect(events.map((row) => row.type)).not.toContain('parcel.status');
   });
 
+  it('leaves a number in doubt « À compléter » when only the name showed', async () => {
+    const camille = personRow();
+    const doubted = parcelRow({ status: 'a_completer' });
+    const read = parcelRow({ status: 'a_completer' });
+    await db.directoryPerson.put(camille);
+    await db.parcel.bulkPut([doubted, read]);
+    await db.extraction.put({
+      parcelId: read.id,
+      version: 1,
+      fields: {
+        tracking: {
+          value: read.tracking,
+          confidence: 0.98,
+          level: 'sure',
+          flags: [],
+          sources: [],
+        },
+      },
+      codes: [],
+      ocrText: null,
+      durations: { codesMs: null, ocrMs: null },
+      provenance: 'device',
+      createdAt: NOW,
+    });
+    const fromList = { ...options, seesTracking: false };
+
+    for (const parcel of [doubted, read]) {
+      await assignRecipient(
+        db,
+        parcel.id,
+        { kind: 'person', id: camille.id },
+        fromList,
+      );
+    }
+
+    expect(await db.parcel.get(doubted.id)).toMatchObject({
+      status: 'a_completer',
+      personId: camille.id,
+    });
+    expect(await db.parcel.get(read.id)).toMatchObject({ status: 'recu' });
+  });
+
+  it('takes the typed department away with the recipient it came with', async () => {
+    const camille = personRow();
+    const parcel = parcelRow({ status: 'a_completer' });
+    await db.directoryPerson.put(camille);
+    await db.parcel.put(parcel);
+    const typed = {
+      kind: 'typed' as const,
+      name: 'Marc Petit',
+      email: '',
+      department: 'Intérim',
+    };
+
+    await assignRecipient(db, parcel.id, typed, options);
+    await assignRecipient(
+      db,
+      parcel.id,
+      { kind: 'person', id: camille.id },
+      options,
+    );
+
+    expect(await db.parcel.get(parcel.id)).toMatchObject({
+      personId: camille.id,
+      department: null,
+    });
+  });
+
   it('keeps the department typed with someone outside the directory', async () => {
     const parcel = parcelRow({ status: 'a_completer' });
     await db.parcel.put(parcel);

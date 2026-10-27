@@ -118,6 +118,54 @@ describe('saveParcelEdit', () => {
     });
   });
 
+  it('moves a parcel received on a name read alone back when its carrier goes', async () => {
+    const row = parcelRow({ status: 'recu', readName: 'C. MOREL' });
+    await db.parcel.put(row);
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(row), notes: 'Fragile' },
+      options,
+    );
+    expect(await db.parcel.get(row.id)).toMatchObject({ status: 'recu' });
+
+    await saveParcelEdit(db, row.id, { ...editOf(row), carrier: '' }, options);
+    expect(await db.parcel.get(row.id)).toMatchObject({
+      status: 'a_completer',
+    });
+  });
+
+  it('keeps the app’s number of a parcel « Sans suivi » out of the form', async () => {
+    const row = parcelRow({
+      type: 'sans_suivi',
+      carrier: null,
+      tracking: 'INT7K2Q9MXA',
+      trackingNorm: 'INT7K2Q9MXA',
+      personId: 'p-1',
+    });
+    await db.parcel.put(row);
+    expect(editOf(row).tracking).toBe('');
+
+    await saveParcelEdit(db, row.id, { ...editOf(row), notes: 'Pli' }, options);
+    expect(await db.parcel.get(row.id)).toMatchObject({
+      type: 'sans_suivi',
+      tracking: 'INT7K2Q9MXA',
+    });
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(row), tracking: '1ZE6344W0499230622', carrier: 'UPS' },
+      options,
+    );
+    expect(await db.parcel.get(row.id)).toMatchObject({
+      type: 'colis',
+      tracking: '1ZE6344W0499230622',
+      carrier: 'UPS',
+    });
+  });
+
   it('moves a parcel back to complete when its carrier goes', async () => {
     const row = parcelRow({ status: 'recu', personId: 'p-1' });
     await db.parcel.put(row);
