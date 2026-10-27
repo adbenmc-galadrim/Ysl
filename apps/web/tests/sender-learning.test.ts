@@ -354,3 +354,32 @@ describe('a sender respelled on the parcel’s sheet', () => {
     expect(await db.sender.count()).toBe(1);
   });
 });
+
+describe('one OCR text learned apart on two iPhones', () => {
+  it('folds the rows into one, so a correction holds everywhere', async () => {
+    const old = senderRow({ displayName: 'Ancien', nameNorm: 'ancien' });
+    await db.sender.add(old);
+    const alias = (id: string, confirmations: number) => ({
+      id,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      aliasNorm: 'arg paris sept',
+      senderId: old.id,
+      confirmations,
+    });
+    await db.senderAlias.bulkAdd([alias('a', 3), alias('b', 2)]);
+
+    await scanOnce(guessed({ level: 'to-verify' }), (draft) =>
+      settleSender(db, draft.id, 'Atelier Rive Gauche'),
+    );
+
+    const live = (await db.senderAlias.toArray()).filter(
+      (row) => row.deletedAt === null,
+    );
+    expect(live).toHaveLength(1);
+    expect((await resolveSender(db, [], MISREAD))?.name).toBe(
+      'Atelier Rive Gauche',
+    );
+  });
+});

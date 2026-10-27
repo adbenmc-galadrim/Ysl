@@ -132,12 +132,17 @@ function teachAccount(
  * What the parcels of one write teach the sender dictionary (§4.8), pooled
  * so that two parcels of a batch count on the same rows: the sender seen
  * once more, its carrier account, and the OCR text the agent took for it.
+ * Alias rows two iPhones learned apart for one text are folded into the
+ * most confirmed one (confirmations added when they agree), the others
+ * deleted: a correction then holds on every iPhone.
  */
 export function senderLessons(db: CourrierDatabase, now: Date) {
   const senders = new Map<string, LocalSender>();
   const accounts = new Map<string, LocalSenderAccount>();
   const aliases = new Map<string, LocalSenderAlias>();
   const changed = new Set<object>();
+  /** Rows two iPhones learned apart for one text, folded into the best one. */
+  const retired: LocalSenderAlias[] = [];
 
   const senderFor = async (
     name: string,
@@ -187,7 +192,17 @@ export function senderLessons(db: CourrierDatabase, now: Date) {
       .filter((row) => row.deletedAt === null)
       .toArray();
     const best = bestAlias(rows, () => true);
-    if (best) aliases.set(key, best);
+    if (!best) return null;
+    for (const other of rows) {
+      if (other === best) continue;
+      if (other.senderId === best.senderId) {
+        best.confirmations += other.confirmations;
+      }
+      other.deletedAt = now;
+      touch(other);
+      retired.push(other);
+    }
+    aliases.set(key, best);
     return best;
   };
 
@@ -246,7 +261,7 @@ export function senderLessons(db: CourrierDatabase, now: Date) {
           entity: 'sender_account' as const,
           row,
         })),
-        ...kept(aliases).map((row) => ({
+        ...[...kept(aliases), ...retired].map((row) => ({
           entity: 'sender_alias' as const,
           row,
         })),

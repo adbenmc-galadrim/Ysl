@@ -98,10 +98,15 @@ const sameCard = (
  * so that two parcels of a batch count on the same rows: each name the
  * label printed is taken for the card the agent chose, once more when it
  * already was, from scratch when it pointed elsewhere. A name that already
- * spells the card teaches nothing: the directory finds it as it is.
+ * spells the card teaches nothing: the directory finds it as it is. Rows
+ * two iPhones learned apart for one name are folded into the most
+ * confirmed one (their confirmations added when they agree), the others
+ * deleted: a correction then holds on every iPhone.
  */
 export function recipientLessons(db: CourrierDatabase, now: Date) {
   const aliases = new Map<string, LocalRecipientAlias>();
+  /** Rows two iPhones learned apart for one name, folded into the best one. */
+  const retired: LocalRecipientAlias[] = [];
 
   const aliasFor = async (key: string) => {
     const pooled = aliases.get(key);
@@ -111,7 +116,19 @@ export function recipientLessons(db: CourrierDatabase, now: Date) {
       .equals(key)
       .filter((row) => row.deletedAt === null)
       .toArray();
-    return bestAlias(rows, () => true);
+    const best = bestAlias(rows, () => true);
+    if (!best) return null;
+    for (const other of rows) {
+      if (other === best) continue;
+      if (
+        other.personId === best.personId &&
+        other.contactId === best.contactId
+      ) {
+        best.confirmations += other.confirmations;
+      }
+      retired.push({ ...other, deletedAt: now, updatedAt: now });
+    }
+    return best;
   };
 
   return {
@@ -144,7 +161,7 @@ export function recipientLessons(db: CourrierDatabase, now: Date) {
     },
 
     upserts(): Upsert[] {
-      return [...aliases.values()].map((row) => ({
+      return [...aliases.values(), ...retired].map((row) => ({
         entity: 'recipient_alias' as const,
         row,
       }));

@@ -229,7 +229,10 @@ les colis qui en découlent :
 | `recipient_alias` | `name_norm` (nom imprimé, sans accents) | fiche choisie par l'agent pour le nom du code 2D ou de l'OCR (revue, fiche) | fiche en tête et présélectionnée, 0,30 à 0,89, jamais réglée en silence    |
 
 Pas d'index unique sur les alias : deux iPhone qui apprennent le même nom hors ligne
-gardent chacun leur ligne, la lecture prend la plus confirmée (`bestAlias`). Dernier
+gardent chacun leur ligne, la lecture prend la plus confirmée (`bestAlias`) ; le
+prochain apprentissage de ce nom fond les lignes dans la plus confirmée (confirmations
+additionnées quand elles s'accordent) et supprime les autres, pour qu'une correction
+tienne sur tous les appareils. Dernier
 écrit gagne sur `confirmations`, comme ailleurs (§8.4.4). `recipient_alias` pointe une
 personne **ou** un contact (`recipient_alias_target_check`), par les clés composites
 `(organization_id, …)` de 0002 ; un contact choisi compte comme utilisé (`usage_count`,

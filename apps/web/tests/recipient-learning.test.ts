@@ -217,3 +217,85 @@ describe('a recipient set on the parcel’s sheet', () => {
     ).toBeNull();
   });
 });
+
+describe('one name learned apart on two iPhones', () => {
+  it('folds the rows into one, so a correction holds everywhere', async () => {
+    const louis = personRow({
+      id: 'louis',
+      firstName: 'Louis',
+      lastName: 'Fontaine',
+      nameNorm: 'louis fontaine',
+    });
+    await db.directoryPerson.add(louis);
+    const row = (personId: string, confirmations: number) => ({
+      id: `${personId}-${confirmations}`,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      nameNorm: 'dji europe bv',
+      personId,
+      contactId: null,
+      confirmations,
+    });
+    await db.recipientAlias.bulkAdd([row(LEA.id, 3), row(LEA.id, 2)]);
+
+    await scanOnce(
+      PRINTED,
+      choose({ kind: 'person', id: louis.id, name: 'Louis Fontaine' }),
+    );
+
+    const live = (await db.recipientAlias.toArray()).filter(
+      (alias) => alias.deletedAt === null,
+    );
+    expect(live).toEqual([
+      expect.objectContaining({ personId: louis.id, confirmations: 1 }),
+    ]);
+    expect(
+      await learnedRecipientOf(db, { symbols: [], ocrName: PRINTED }),
+    ).toMatchObject({ id: louis.id });
+  });
+
+  it('adds up the confirmations of rows that agree', async () => {
+    const row = (id: string, confirmations: number) => ({
+      id,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      nameNorm: 'dji europe bv',
+      personId: LEA.id,
+      contactId: null,
+      confirmations,
+    });
+    await db.recipientAlias.bulkAdd([row('a', 1), row('b', 2)]);
+
+    await scanOnce(PRINTED, choose(lea));
+
+    const live = (await db.recipientAlias.toArray()).filter(
+      (alias) => alias.deletedAt === null,
+    );
+    expect(live).toEqual([
+      expect.objectContaining({ id: 'b', confirmations: 4 }),
+    ]);
+  });
+});
+
+describe('a contact chosen on the parcel’s sheet', () => {
+  it('counts as used', async () => {
+    const temp = contactRow({ usageCount: 1, lastUsedAt: null });
+    await db.contact.add(temp);
+    const parcel = parcelRow({ personId: null, contactId: null });
+    await db.parcel.put(parcel);
+
+    await saveParcelEdit(
+      db,
+      parcel.id,
+      { ...editOf(parcel), recipient: { kind: 'contact', id: temp.id } },
+      { agentId: 'agent-1', now: NOW },
+    );
+
+    expect(await db.contact.get(temp.id)).toMatchObject({
+      usageCount: 2,
+      lastUsedAt: NOW,
+    });
+  });
+});
