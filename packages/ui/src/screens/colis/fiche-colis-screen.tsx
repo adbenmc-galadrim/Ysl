@@ -66,6 +66,8 @@ export type FicheColisScreenProps = {
   damage?: FicheColisDamage;
   /** Offered while the parcel carries no reserve. */
   onReportDamage?: () => void;
+  /** Opens what the reader made of the label (F22), under the photo. */
+  onShowReading?: () => void;
   details: DetailsItem[];
   history?: HistoryEntry[];
   /** The one black action, which depends on the state: complete, notify. */
@@ -181,6 +183,7 @@ export function FicheColisScreen({
   photo,
   damage,
   onReportDamage,
+  onShowReading,
   details,
   history,
   primaryAction,
@@ -271,6 +274,16 @@ export function FicheColisScreen({
         {damage && <DamageCard damage={damage} />}
         {steps.length > 0 && <StatusTimeline steps={steps} className="mt-6" />}
         <PhotoSlot photo={photo} />
+        {onShowReading && (
+          <button
+            type="button"
+            onClick={onShowReading}
+            className="mt-1 flex h-11 cursor-pointer items-center gap-2 self-start text-16 font-semibold text-blue outline-none focus-visible:underline"
+          >
+            <Icon name="scan" size={20} />
+            Voir ce qui a été lu
+          </button>
+        )}
         <DetailsList title="Détails" items={details} className="mt-5" />
         {!damage && onReportDamage && (
           <Button

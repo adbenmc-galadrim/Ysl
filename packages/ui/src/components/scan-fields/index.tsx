@@ -26,6 +26,8 @@ export type ScanField = {
   mono?: boolean;
   /** Below « à vérifier » the field is empty and offers these instead (§4.4). */
   suggestions?: ScanSuggestion[];
+  /** Opens the diagnostic on this field: « D'où vient cette valeur ? » (§6.4). */
+  onExplain?: () => void;
 };
 
 /**
@@ -161,6 +163,20 @@ export function ScanFields({
               >
                 {field.value}
               </dd>
+            )}
+            {field.onExplain && (
+              <button
+                type="button"
+                aria-label="D’où vient cette valeur ?"
+                onClick={field.onExplain}
+                className={cn(
+                  // 44 px to the finger, 16 px to the eye, on the 17 px pitch.
+                  '-my-[13.5px] -mr-3.5 ml-auto flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue',
+                  tone === 'light' ? 'text-muted' : 'text-night-muted',
+                )}
+              >
+                <Icon name="info" size={16} />
+              </button>
             )}
           </div>
         );
