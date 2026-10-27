@@ -59,7 +59,7 @@ describe('describeRecord', () => {
       'todo',
       'todo',
     ]);
-    expect(view.action).toBeUndefined();
+    expect(view.action).toEqual({ kind: 'notify' });
   });
 
   it('tells the history newest first, the reception last', async () => {

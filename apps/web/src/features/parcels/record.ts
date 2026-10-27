@@ -18,6 +18,7 @@ import type {
   IconName,
   TimelineStep,
 } from '@repo/ui';
+import { awaitsNotice } from '#/features/mail/recipients';
 import type {
   LocalContact,
   LocalDirectoryPerson,
@@ -55,6 +56,7 @@ export type RecordSync = 'synced' | 'unsent' | 'rejected';
 /** What the bottom bar offers beside "Supprimer". */
 export type RecordAction =
   | { kind: 'complete' }
+  | { kind: 'notify' }
   | { kind: 'stepBack'; from: 'notifie' | 'retourne'; to: ParcelStatus };
 
 export type RecordView = Pick<
@@ -339,6 +341,7 @@ function history(
 
 function action(parcel: LocalParcel): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
+  if (awaitsNotice(parcel)) return { kind: 'notify' };
   // Undoing a handover needs the handover cancelled with its reason (F44,
   // YSL-75). A received parcel goes back to "À compléter" from the form,
   // once it lacks a number or anyone to tell, a name read included.
