@@ -1,4 +1,4 @@
-import { renderMail } from '@repo/contract/mail';
+import { renderMail, type MailMessage } from '@repo/contract/mail';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -21,6 +21,9 @@ import {
   type AddressCard,
 } from '#/features/mail/fix-address';
 import { useAddressEntry } from '#/features/mail/use-address-entry';
+import { MailFallback } from '#/features/mail/components/mail-fallback';
+import { needsFallback } from '#/features/mail/fallback';
+import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import { drawPins } from '#/features/mail/pickup-code';
 import { parcelName, recipientValues } from '#/features/mail/recipients';
@@ -122,6 +125,12 @@ function FixSheet({
   const mail = mailOf(notification, sent.parcels, sent.context);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [failed, setFailed] = useState(false);
+  // The mail app did not open (YSL-62): the fallback sheet takes over.
+  const [stayed, setStayed] = useState<{
+    id: string;
+    message: MailMessage;
+  } | null>(null);
+  const target = useMailTarget();
   const busy = useRef(false);
   const entry = useAddressEntry(draft?.card ?? null, mail.address ?? '');
   const { address, onCard } = entry;
@@ -149,23 +158,20 @@ function FixSheet({
         t,
       }),
     );
-  const prepared =
+  const message: MailMessage | undefined =
     rendered && address && mail.parcels.length > 0
-      ? MAILERS.mailto.prepare({
-          to: [address],
-          subject: rendered.subject,
-          body: rendered.body,
-        })
+      ? { to: [address], subject: rendered.subject, body: rendered.body }
       : undefined;
+  const prepared = message && MAILERS[target].prepare(message);
 
   const resend = (event: MouseEvent) => {
-    if (!draft || !prepared || !address || busy.current) {
+    if (!draft || !prepared || !message || !address || busy.current) {
       event.preventDefault();
       return;
     }
     busy.current = true;
     setFailed(false);
-    const opening = MAILERS.mailto.open(prepared);
+    const opening = MAILERS[target].open(prepared);
     // Recorded from the tap, as Notifier does: the new code's hash and the
     // mail to confirm exist even if iOS ends the app while Mail is open.
     const parcelIds = mail.parcels.map(({ id }) => id);
@@ -176,7 +182,7 @@ function FixSheet({
       recipients: [address],
       parcelIds,
       templateId: draft.template.stored ? draft.template.id : null,
-      target: 'mailto',
+      target,
       pickupPin: draft.pin ?? undefined,
     });
     const fixing = fixAddress(
@@ -187,7 +193,12 @@ function FixSheet({
     void (async () => {
       try {
         const row = await preparing;
-        if ((await opening) === 'opened') await outbox.markOpened(row.id);
+        if (needsFallback(await opening)) {
+          setStayed({ id: row.id, message });
+          await fixing;
+          return;
+        }
+        await outbox.markOpened(row.id);
         await whenVisible();
         // The mail left the app: ask about it even if the card was not
         // written, which the sheet then says.
@@ -201,6 +212,18 @@ function FixSheet({
     })();
   };
 
+  if (stayed)
+    return (
+      <MailFallback
+        message={stayed.message}
+        target={target}
+        notificationId={stayed.id}
+        onOpened={() => void whenVisible().then(() => onAsk(stayed.id))}
+        onSent={onDismiss}
+        onAbandoned={onDismiss}
+        onClose={onDismiss}
+      />
+    );
   return (
     <FixAddressSheet
       fixed
