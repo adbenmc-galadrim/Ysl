@@ -12,7 +12,7 @@ import { SwitchRow } from '#components/switch-row';
 import type { Parcel } from '#fixtures/parcels';
 
 export type ColisAbimeScreenProps = {
-  parcel: Parcel;
+  parcel: Pick<Parcel, 'recipient' | 'carrier' | 'last4'>;
   reasons: readonly string[];
   reason?: string;
   onReasonChange?: (reason: string) => void;
@@ -27,8 +27,14 @@ export type ColisAbimeScreenProps = {
   /** Record a reserve with the carrier, for a claim. */
   carrierReserve: boolean;
   onCarrierReserveChange?: (value: boolean) => void;
+  /** The save failed: said in red under the switches, the form kept. */
+  error?: string;
+  /** Saving: the button waits. */
+  busy?: boolean;
   onClose?: () => void;
   onSave?: () => void;
+  /** A photo opened over the form, see `PhotoViewer`. */
+  overlay?: ReactNode;
 };
 
 /**
@@ -50,80 +56,92 @@ export function ColisAbimeScreen({
   onNotifyRecipientChange,
   carrierReserve,
   onCarrierReserveChange,
+  error,
+  busy,
   onClose,
   onSave,
+  overlay,
 }: ColisAbimeScreenProps) {
   return (
-    <Screen
-      bottom={
-        <BottomBar>
-          <Button block disabled={!reason} onClick={onSave}>
-            Enregistrer le dommage
-          </Button>
-        </BottomBar>
-      }
-    >
-      <NavBar
-        title="Signaler un dommage"
-        leading={
-          // The leading slot pads for text actions; the square hangs into
-          // the gutter like the back square instead.
-          <IconButton
-            icon="x"
-            label="Fermer"
-            size="lg"
-            iconSize={22}
-            onClick={onClose}
-            className="-ml-0.5"
-          />
+    <>
+      <Screen
+        bottom={
+          <BottomBar>
+            <Button block disabled={!reason || busy} onClick={onSave}>
+              Enregistrer le dommage
+            </Button>
+          </BottomBar>
         }
-      />
-      <p className="mt-3 text-15 text-muted">
-        {parcel.recipient}, {parcel.carrier} ···{parcel.last4}
-      </p>
-      <h2 className="mt-2.5 text-22 font-bold">Qu’est-ce qui ne va pas ?</h2>
-      <ChipGroup label="Dommage" className="mt-[18px]">
-        {reasons.map((item) => (
-          <Chip
-            key={item}
-            selected={item === reason}
-            onClick={() => onReasonChange?.(item)}
-          >
-            {item}
-          </Chip>
-        ))}
-      </ChipGroup>
+      >
+        <NavBar
+          title="Signaler un dommage"
+          leading={
+            // The leading slot pads for text actions; the square hangs into
+            // the gutter like the back square instead.
+            <IconButton
+              icon="x"
+              label="Fermer"
+              size="lg"
+              iconSize={22}
+              onClick={onClose}
+              className="-ml-0.5"
+            />
+          }
+        />
+        <p className="mt-3 text-15 text-muted">
+          {parcel.recipient}, {parcel.carrier}
+          {parcel.last4 && ` ···${parcel.last4}`}
+        </p>
+        <h2 className="mt-2.5 text-22 font-bold">Qu’est-ce qui ne va pas ?</h2>
+        <ChipGroup label="Dommage" className="mt-[18px]">
+          {reasons.map((item) => (
+            <Chip
+              key={item}
+              selected={item === reason}
+              onClick={() => onReasonChange?.(item)}
+            >
+              {item}
+            </Chip>
+          ))}
+        </ChipGroup>
 
-      <section className="mt-[26px] flex flex-col">
-        <h3 className="text-13 font-medium text-muted">Photos du dommage</h3>
-        <PhotoPicker onAdd={onAddPhoto} className="mt-2">
-          {photos}
-        </PhotoPicker>
-      </section>
+        <section className="mt-[26px] flex flex-col">
+          <h3 className="text-13 font-medium text-muted">Photos du dommage</h3>
+          <PhotoPicker onAdd={onAddPhoto} className="mt-2">
+            {photos}
+          </PhotoPicker>
+        </section>
 
-      <Field label="Remarque" className="mt-6">
-        {(id) => (
-          <FieldInput
-            id={id}
-            value={remark}
-            onChange={(event) => onRemarkChange?.(event.target.value)}
-            placeholder="Ce que vous voyez"
+        <Field label="Remarque" className="mt-6">
+          {(id) => (
+            <FieldInput
+              id={id}
+              value={remark}
+              onChange={(event) => onRemarkChange?.(event.target.value)}
+              placeholder="Ce que vous voyez"
+            />
+          )}
+        </Field>
+
+        <div className="mt-9 flex flex-col gap-3">
+          <SwitchRow
+            label="Prévenir dans l’e-mail au salarié"
+            checked={notifyRecipient}
+            onCheckedChange={onNotifyRecipientChange}
           />
+          <SwitchRow
+            label="Réserve auprès du transporteur"
+            checked={carrierReserve}
+            onCheckedChange={onCarrierReserveChange}
+          />
+        </div>
+        {error && (
+          <p role="alert" className="mt-4 text-14 font-medium text-red">
+            {error}
+          </p>
         )}
-      </Field>
-
-      <div className="mt-9 flex flex-col gap-3">
-        <SwitchRow
-          label="Prévenir dans l’e-mail au salarié"
-          checked={notifyRecipient}
-          onCheckedChange={onNotifyRecipientChange}
-        />
-        <SwitchRow
-          label="Réserve auprès du transporteur"
-          checked={carrierReserve}
-          onCheckedChange={onCarrierReserveChange}
-        />
-      </div>
-    </Screen>
+      </Screen>
+      {overlay}
+    </>
   );
 }

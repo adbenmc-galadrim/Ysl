@@ -13,6 +13,7 @@ export * from '#screens/pilotage/export-screen';
 export * from '#screens/reception/choisir-destinataire-screen';
 export * from '#screens/reception/scan-screen';
 export * from '#screens/reception/verifier-colis-screen';
+export * from '#screens/reception-zones/colis-abime-screen';
 export * from '#screens/reception-zones/reprendre-lot-screen';
 export * from '#screens/reglages/annuaire-screen';
 export * from '#screens/reglages/import-v1-screen';

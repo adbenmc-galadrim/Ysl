@@ -26,6 +26,20 @@ export type FicheColisPhoto =
 
 export type FicheColisAction = { label: string; onClick?: () => void };
 
+/**
+ * The reserve on the parcel's state: the reason, the remark and when, the
+ * photos of the damage — or a word saying they stayed on the iPhone that
+ * reported it — and the way to lift it.
+ */
+export type FicheColisDamage = {
+  title: string;
+  description?: string;
+  photos?: { src: string; alt: string; onOpen?: () => void }[];
+  /** The photos were taken on another iPhone. */
+  photosAbsent?: string;
+  onLift?: () => void;
+};
+
 export type FicheColisScreenProps = {
   recipient: string;
   /** Where the recipient sits: "Studio, 2e étage". */
@@ -49,6 +63,9 @@ export type FicheColisScreenProps = {
   /** Reçu, Notifié, Remis; empty for a parcel off that line (returned). */
   steps: TimelineStep[];
   photo?: FicheColisPhoto;
+  damage?: FicheColisDamage;
+  /** Offered while the parcel carries no reserve. */
+  onReportDamage?: () => void;
   details: DetailsItem[];
   history?: HistoryEntry[];
   /** The one black action, which depends on the state: complete, notify. */
@@ -94,6 +111,60 @@ function PhotoSlot({ photo }: { photo?: FicheColisPhoto }) {
   );
 }
 
+function DamageCard({ damage }: { damage: FicheColisDamage }) {
+  return (
+    <section
+      aria-label="Réserve"
+      className="mt-3 rounded-control bg-orange-soft pt-3 pr-3 pb-1.5 pl-[13px] text-orange-strong"
+    >
+      <div className="flex gap-[11px]">
+        <Icon name="alert" size={22} className="shrink-0" />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-16 font-semibold">{damage.title}</h2>
+          {damage.description && (
+            <p className="mt-1 text-14">{damage.description}</p>
+          )}
+        </div>
+      </div>
+      {damage.photos && damage.photos.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2 pl-[33px]">
+          {damage.photos.map((photo) => (
+            <button
+              key={photo.src}
+              type="button"
+              onClick={photo.onOpen}
+              aria-label={`${photo.alt}, agrandir`}
+              className="size-16 cursor-zoom-in overflow-hidden rounded-[10px] bg-fill outline-none focus-visible:ring-2 focus-visible:ring-blue"
+            >
+              <img
+                src={photo.src}
+                alt=""
+                draggable={false}
+                className="size-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      {damage.photosAbsent && (
+        <p className="mt-2 flex items-center gap-2 pl-[33px] text-13">
+          <Icon name="image" size={16} className="shrink-0" />
+          <span className="min-w-0">{damage.photosAbsent}</span>
+        </p>
+      )}
+      {damage.onLift && (
+        <button
+          type="button"
+          onClick={damage.onLift}
+          className="mt-1 ml-[33px] h-9 text-14 font-semibold outline-none focus-visible:underline"
+        >
+          Lever la réserve
+        </button>
+      )}
+    </section>
+  );
+}
+
 /**
  * A parcel's record: who, the tracking number as printed, where it stands,
  * the label photo to check what the scan read, then the details and what
@@ -108,6 +179,8 @@ export function FicheColisScreen({
   notice,
   steps,
   photo,
+  damage,
+  onReportDamage,
   details,
   history,
   primaryAction,
@@ -195,9 +268,22 @@ export function FicheColisScreen({
             notice ? 'mt-3 rounded-control' : 'mt-[15px] rounded-control'
           }
         />
+        {damage && <DamageCard damage={damage} />}
         {steps.length > 0 && <StatusTimeline steps={steps} className="mt-6" />}
         <PhotoSlot photo={photo} />
         <DetailsList title="Détails" items={details} className="mt-5" />
+        {!damage && onReportDamage && (
+          <Button
+            variant="secondary"
+            icon="alert"
+            iconSize={20}
+            block
+            onClick={onReportDamage}
+            className="mt-5 text-16"
+          >
+            Signaler un dommage
+          </Button>
+        )}
         {history && history.length > 0 && (
           <EventHistory entries={history} className="mt-7" />
         )}

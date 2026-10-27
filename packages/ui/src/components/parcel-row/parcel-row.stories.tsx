@@ -34,3 +34,8 @@ export const Selectionne: Story = {
   name: 'Sélectionné',
   args: { parcel: PARCELS.hugo, selected: true, trailing: null },
 };
+
+export const AvecReserve: Story = {
+  name: 'Avec une réserve',
+  args: { parcel: { ...PARCELS.camille, damage: 'Réserve · Carton abîmé' } },
+};
