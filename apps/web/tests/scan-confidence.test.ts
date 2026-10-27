@@ -1,10 +1,7 @@
 import { EOT, GS, RS } from '@repo/contract/codes';
 import { describe, expect, it } from 'vitest';
 import type { DraftParcel } from '#/features/db/schema';
-import {
-  draftFields,
-  notifiable,
-} from '#/features/scan/confidence';
+import { draftFields, notifiable } from '#/features/scan/confidence';
 
 const UPS = '1ZE6344W0499230622';
 
