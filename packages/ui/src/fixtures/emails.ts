@@ -3,6 +3,8 @@
  * day's sending log the agent follows. Same cast as `parcels.ts`.
  */
 
+import type { SentEmail } from '#screens/notification/sent-emails-screen';
+
 /** Modules of the QR for code 4821, as drawn in the mockup. */
 export const QR_4821 = [
   '####..#..####',
@@ -52,23 +54,6 @@ export const PICKUP_EMAIL = {
   hours: 'Lun. au ven., 9 h à 12 h 30 et 14 h à 18 h',
   signature: 'Service courrier, Saint Laurent',
 } satisfies PickupEmail;
-
-export type SentEmailState =
-  /** The mail server refused the address: the agent has to fix it. */
-  | 'failed'
-  /** Written while offline, sent as soon as the network is back. */
-  | 'queued'
-  | 'sent';
-
-export type SentEmail = {
-  id: string;
-  recipient: string;
-  state: SentEmailState;
-  /** What the e-mail is about: "1 colis DPD", "Relance, 1 colis FedEx". */
-  summary: string;
-  /** Where it stands: the refusal, "Partira au retour du réseau", the times. */
-  status: string;
-};
 
 export const SENT_EMAILS = {
   paul: {
