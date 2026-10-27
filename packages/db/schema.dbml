@@ -508,6 +508,26 @@ Table "sync_op" {
   }
 }
 
+Table "purge_run" {
+  "id" uuid [pk, not null, default: `gen_random_uuid()`]
+  "organization_id" uuid [not null]
+  "trigger" text [not null]
+  "user_id" text
+  "started_at" timestamptz [not null]
+  "finished_at" timestamptz
+  "counts" jsonb [not null, default: `'{}'::jsonb`]
+  "horizon_xid" bigint [not null, default: 0]
+
+  Checks {
+    `"purge_run"."trigger" in ('auto', 'manual')` [name: 'purge_run_trigger_check']
+  }
+
+  Indexes {
+    (organization_id, started_at) [type: btree, name: "purge_run_started_at_idx"]
+    (organization_id, horizon_xid) [type: btree, name: "purge_run_horizon_idx"]
+  }
+}
+
 Table "sync_generation" {
   "id" smallint [pk, not null, default: 1]
   "generation" uuid [not null, default: `gen_random_uuid()`]
@@ -551,6 +571,8 @@ Ref "sender_account_organization_id_organization_id_fk":"organization"."id" <? "
 Ref "setting_organization_id_organization_id_fk":"organization"."id" <? "setting"."organization_id" [update: no action, delete: no action]
 
 Ref "sync_op_organization_id_organization_id_fk":"organization"."id" <? "sync_op"."organization_id" [update: no action, delete: no action]
+
+Ref "purge_run_organization_id_organization_id_fk":"organization"."id" <? "purge_run"."organization_id" [update: no action, delete: no action]
 
 Ref "contact_created_by_fk":"organization_member".("organization_id", "user_id") ?<? "contact".("organization_id", "created_by") [delete: no action]
 
