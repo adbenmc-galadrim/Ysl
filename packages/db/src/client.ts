@@ -25,6 +25,21 @@ export type Db = typeof db;
 /** Any Postgres drizzle over the schema: the pool above, or PGlite in tests. */
 export type AnyDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 
+/**
+ * Runs `work` on one connection of the pool, for what must stay on the same
+ * session: an advisory lock taken and released around several transactions.
+ */
+export async function withConnection<T>(
+  work: (db: AnyDb) => Promise<T>,
+): Promise<T> {
+  const client = await pool.connect();
+  try {
+    return await work(drizzle({ client, schema }));
+  } finally {
+    client.release();
+  }
+}
+
 export async function closeDb(): Promise<void> {
   await pool.end();
 }
