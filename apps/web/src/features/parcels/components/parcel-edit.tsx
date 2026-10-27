@@ -1,5 +1,6 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
+  Button,
   type ModifierColisErrors,
   ModifierColisScreen,
   type ModifierColisValues,
@@ -12,15 +13,16 @@ import { db } from '#/features/db/database';
 import { fullName } from '#/features/directory/people';
 import { useParcelRecord } from '#/features/parcels/api/parcel-record';
 import {
-  RecipientPicker,
-  type PickedRecipient,
-} from '#/features/parcels/components/recipient-picker';
-import {
   editOf,
   type EditErrors,
   type ParcelEdit,
+  type RecipientChoice,
   saveParcelEdit,
 } from '#/features/parcels/edit';
+import {
+  RecipientChooser,
+  type RecipientPick,
+} from '#/features/recipient/components/recipient-chooser';
 import type { ParcelRecord } from '#/features/parcels/record';
 import { formatTracking } from '#/features/parcels/record';
 import {
@@ -32,10 +34,41 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const CARRIERS = carrierOptions(t);
 
+type PickedRecipient = {
+  choice: RecipientChoice;
+  /** How the form's field names it: "Camille Morel, Studio". */
+  label: string;
+};
+
 type Form = {
   values: ModifierColisValues;
   recipient: PickedRecipient;
 };
+
+/** The chooser's answer as the form keeps it, typed names saved with the form. */
+function pickedOf(pick: RecipientPick): PickedRecipient {
+  if (pick.kind === 'typed') {
+    return {
+      choice: {
+        kind: 'typed',
+        name: pick.name,
+        email: pick.email,
+        department: pick.department,
+      },
+      label: [pick.name, pick.department].filter(Boolean).join(', '),
+    };
+  }
+  const { choice } = pick;
+  return {
+    choice: { kind: choice.kind, id: choice.id },
+    label:
+      choice.kind === 'person' &&
+      choice.detail &&
+      choice.detail !== choice.email
+        ? `${choice.name}, ${choice.detail}`
+        : choice.name,
+  };
+}
 
 function formOf({ parcel, person, contact }: ParcelRecord): Form {
   const edit = editOf(parcel);
@@ -166,21 +199,27 @@ function EditForm({ record }: { record: ParcelRecord }) {
         onSave={() => void onSave()}
       />
       {picking && (
-        <RecipientPicker
+        <RecipientChooser
           readName={parcel.readName}
-          onClear={
-            form.recipient.choice.kind === 'none'
-              ? undefined
-              : () => {
+          footer={
+            form.recipient.choice.kind !== 'none' && (
+              <Button
+                variant="link"
+                onClick={() => {
                   setForm({
                     ...form,
                     recipient: { choice: { kind: 'none' }, label: '' },
                   });
                   setPicking(false);
-                }
+                }}
+                className="mt-5 self-center text-16 font-semibold text-red"
+              >
+                {t('edit.recipient.clear')}
+              </Button>
+            )
           }
-          onPick={(recipient) => {
-            setForm({ ...form, recipient });
+          onPick={(pick) => {
+            setForm({ ...form, recipient: pickedOf(pick) });
             setErrors({});
             setPicking(false);
           }}

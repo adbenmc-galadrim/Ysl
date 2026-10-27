@@ -57,6 +57,46 @@ export const Accueil: Story = {
   },
 };
 
+/**
+ * F32, no Penpot frame: the counters under the title filter the list; here
+ * « À compléter » is on and only its section is left. A missing number
+ * reads in red under the carrier.
+ */
+export const Compteurs: Story = {
+  name: 'Compteurs, À compléter',
+  args: {
+    sync: 'synced',
+    summary: '18 colis, dont 6 à traiter',
+    counters: [
+      { label: 'À compléter', count: 2, selected: true },
+      { label: 'À retirer', count: 3 },
+      { label: 'En souffrance', count: 1 },
+    ],
+    sections: [
+      {
+        title: 'À compléter',
+        parcels: [
+          PARCELS.unknown,
+          {
+            ...PARCELS.camille,
+            id: 'p-0000',
+            state: 'incomplete',
+            detail: 'Studio, Transporteur inconnu',
+            status: 'Numéro non lu',
+          },
+        ],
+        rowControl: (parcel) =>
+          parcel.id === PARCELS.unknown.id ? (
+            <Button variant="danger" size="xs" className="w-[81px]">
+              Choisir
+            </Button>
+          ) : undefined,
+        onParcelClick: () => {},
+      },
+    ],
+  },
+};
+
 export const Chargement: Story = {
   parameters: { reference: '05-colis/colis--colis-chargement' },
   args: {

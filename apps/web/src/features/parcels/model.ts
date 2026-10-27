@@ -1,3 +1,4 @@
+import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
@@ -61,6 +62,53 @@ export function homeState(
   }
 }
 
+const GAP_KEYS = {
+  recipient: 'parcel.missing.recipient',
+  tracking: 'parcel.missing.tracking',
+  carrier: 'parcel.missing.carrier',
+} as const satisfies Record<ParcelGap, string>;
+
+/** What a recorded parcel lacks to be notified (F26): someone set — a card, not a name read —, a number, its carrier. */
+export function gapsOf(
+  parcel: Pick<
+    LocalParcel,
+    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
+  >,
+): ParcelGap[] {
+  return parcelGaps({
+    type: parcel.type,
+    carrier: parcel.carrier,
+    tracking: parcel.tracking,
+    recipient: Boolean(parcel.personId || parcel.contactId),
+  });
+}
+
+/**
+ * Why a parcel waits « À compléter » (F26): « Destinataire inconnu »,
+ * « Numéro non lu », « Transporteur inconnu »; « Numéro à vérifier » when
+ * nothing is missing but the number was never vouched for. Empty for a
+ * parcel past that status.
+ */
+export function missingOf(
+  parcel: Pick<
+    LocalParcel,
+    'status' | 'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
+  >,
+  t: TranslateFn,
+  /** Gaps the screen already says otherwise: the row's title names a missing recipient. */
+  shown: readonly ParcelGap[] = [],
+): string {
+  if (parcel.status !== 'a_completer') return '';
+  const gaps = gapsOf(parcel);
+  if (gaps.length === 0) {
+    return parcel.type === 'sans_suivi' ? '' : t('parcel.missing.doubt');
+  }
+  return gaps
+    .filter((gap) => !shown.includes(gap))
+    .map((gap) => t(GAP_KEYS[gap]))
+    .join(' · ');
+}
+
 /** "10 h 42", as the desk says it. */
 export function formatTime(date: Date): string {
   return `${date.getHours()} h ${String(date.getMinutes()).padStart(2, '0')}`;
@@ -110,7 +158,7 @@ function statusLine(
 ): string {
   switch (state) {
     case 'incomplete':
-      return '';
+      return missingOf(parcel, t, ['recipient']);
     case 'toNotify':
       return t('parcel.status.received', {
         time: formatTime(parcel.receivedAt),
@@ -198,7 +246,11 @@ export function describeParcel(
     ? `${person.firstName} ${person.lastName}`
     : (contact?.name ?? t('parcel.recipient.unknown'));
   const department = person?.department ?? parcel.department ?? '';
-  const last4 = parcel.tracking ? parcel.tracking.slice(-4) : '';
+  // A parcel « Sans suivi » carries the app's own number: no « ···MXA4 ».
+  const last4 =
+    parcel.tracking && parcel.type !== 'sans_suivi'
+      ? parcel.tracking.slice(-4)
+      : '';
   const carrier = carrierLabel(parcel, t);
   const pieces = parcel.pieceTotal ?? 0;
   const received = parcel.pieceN ?? pieces;

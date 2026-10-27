@@ -9,17 +9,28 @@ import {
   Toast,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo, useState } from 'react';
+import { useSession } from '#/features/auth/api/use-session';
+import { db } from '#/features/db/database';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
-import { useHomeParcels } from '#/features/parcels/api/use-parcels';
+import {
+  listUnaddressed,
+  useHomeParcels,
+} from '#/features/parcels/api/use-parcels';
+import { assignRecipient } from '#/features/parcels/complete';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
+  type CounterId,
+  counters,
+  filterRows,
   sectionId,
   sectionTitles,
   summarize,
   toSections,
 } from '#/features/parcels/sections';
+import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 import {
   awaitsServer,
   pendingBanner,
@@ -32,8 +43,11 @@ import { useDelayedPending } from '#/lib/use-delayed-pending';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
+const NOBODY: ReadonlyMap<string, string | null> = new Map();
+
 export function ColisHome() {
   const navigate = useNavigate();
+  const session = useSession();
   const sync = useSync();
   const update = useUpdate();
   const parcels = useHomeParcels();
@@ -48,12 +62,18 @@ export function ColisHome() {
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
   const pending = usePendingParcels();
   const mails = useMailNotes();
+  // « Choisir » (maquette 05): the parcels « À compléter » nobody is set
+  // for, with the name read on their label, open the picker in place.
+  const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
+  const [choosing, setChoosing] = useState<string | null>(null);
+  // F32: a counter on keeps only its parcels; the sections fold as before.
+  const [counter, setCounter] = useState<CounterId | null>(null);
   // Next to the banner, the rows say which parcels its changes are; online,
   // a change leaves within seconds and a label would only flicker.
   const labelled = banner !== null;
   const sections = useMemo(
     () =>
-      toSections(parcels ?? []).map((section) => ({
+      toSections(filterRows(parcels ?? [], counter)).map((section) => ({
         ...section,
         ...(sectionId(section.title) === 'toNotify' && {
           action: (
@@ -84,8 +104,20 @@ export function ColisHome() {
             </ListRowValue>
           ) : undefined;
         },
+        rowControl: (parcel: { id: string }) =>
+          unaddressed.has(parcel.id) &&
+          !(labelled && pending.has(parcel.id)) && (
+            <Button
+              variant="danger"
+              size="xs"
+              className="w-[81px]"
+              onClick={() => setChoosing(parcel.id)}
+            >
+              {t('colis.row.choose')}
+            </Button>
+          ),
       })),
-    [parcels, labelled, pending, mails, navigate],
+    [parcels, counter, labelled, pending, mails, navigate, unaddressed],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
@@ -94,94 +126,125 @@ export function ColisHome() {
   const searchParcels = () => void navigate({ to: '/recherche' });
 
   return (
-    <ColisScreen
-      sync={syncPill(sync)}
-      summary={counted ? summarize(rows) : t('colis.summary.loading')}
-      sections={sections}
-      folded={foldedTitles}
-      onToggleSection={(title) => {
-        const id = sectionId(title);
-        if (id) toggleFolded(id);
-      }}
-      notice={
-        !banner && mails?.stale ? (
-          <Banner
-            tone="orange"
-            icon="mail"
-            title={
-              mails.stale === 1
-                ? t('mails.stale.one')
-                : t('mails.stale.many', { count: mails.stale })
-            }
-            description={t('mails.stale.description')}
-            onClick={() =>
-              void navigate({
-                to: '/reglages/e-mails',
-                search: { filtre: 'toConfirm' },
-              })
-            }
-            classNames={{
-              root: 'h-16 py-[11px]',
-              description: 'mt-[3px] leading-4',
-            }}
+    <>
+      <ColisScreen
+        sync={syncPill(sync)}
+        summary={counted ? summarize(rows) : t('colis.summary.loading')}
+        sections={sections}
+        counters={
+          empty
+            ? undefined
+            : counters(rows, counter).map(({ id, label, count }) => ({
+                label,
+                count,
+                selected: id === counter,
+                onClick: () => setCounter(id === counter ? null : id),
+              }))
+        }
+        folded={foldedTitles}
+        onToggleSection={(title) => {
+          const id = sectionId(title);
+          if (id) toggleFolded(id);
+        }}
+        notice={
+          !banner && mails?.stale ? (
+            <Banner
+              tone="orange"
+              icon="mail"
+              title={
+                mails.stale === 1
+                  ? t('mails.stale.one')
+                  : t('mails.stale.many', { count: mails.stale })
+              }
+              description={t('mails.stale.description')}
+              onClick={() =>
+                void navigate({
+                  to: '/reglages/e-mails',
+                  search: { filtre: 'toConfirm' },
+                })
+              }
+              classNames={{
+                root: 'h-16 py-[11px]',
+                description: 'mt-[3px] leading-4',
+              }}
+            />
+          ) : banner ? (
+            <Banner
+              tone={banner.tone}
+              icon={banner.icon}
+              title={banner.title}
+              description={banner.description}
+              onClick={() => void navigate({ to: '/reglages/synchronisation' })}
+              // Penpot fixes the orange card at 64 px; the red title runs on
+              // two lines and needs the card to grow.
+              classNames={{
+                root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
+                description: 'mt-[3px] leading-4',
+              }}
+            />
+          ) : undefined
+        }
+        loading={loading}
+        toast={
+          update.offered ? (
+            <Toast
+              message={t('update.available')}
+              actionLabel={t('update.apply')}
+              onAction={() => void applyUpdate()}
+            />
+          ) : undefined
+        }
+        bottomBar={!empty}
+        actions={
+          <RemettreActions
+            onSearch={searchParcels}
+            onHandover={handover}
+            onScan={scan}
           />
-        ) : banner ? (
-          <Banner
-            tone={banner.tone}
-            icon={banner.icon}
-            title={banner.title}
-            description={banner.description}
-            onClick={() => void navigate({ to: '/reglages/synchronisation' })}
-            // Penpot fixes the orange card at 64 px; the red title runs on
-            // two lines and needs the card to grow.
-            classNames={{
-              root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
-              description: 'mt-[3px] leading-4',
-            }}
-          />
-        ) : undefined
-      }
-      loading={loading}
-      toast={
-        update.offered ? (
-          <Toast
-            message={t('update.available')}
-            actionLabel={t('update.apply')}
-            onAction={() => void applyUpdate()}
-          />
-        ) : undefined
-      }
-      bottomBar={!empty}
-      actions={
-        <RemettreActions
-          onSearch={searchParcels}
-          onHandover={handover}
-          onScan={scan}
-        />
-      }
-      onMenu={() => void navigate({ to: '/reglages' })}
-      onSearch={searchParcels}
-      onScan={scan}
-    >
-      {empty ? (
-        <EmptyState
-          icon="inbox"
-          title={t('colis.empty.title')}
-          description={t('colis.empty.description')}
-          className="mt-[129px]"
-        >
-          <Button onClick={scan} className="w-[201px]">
-            {t('colis.empty.scan')}
-          </Button>
-          <Button
-            variant="link"
-            onClick={handover}
-            className="text-16 font-semibold"
+        }
+        onMenu={() => void navigate({ to: '/reglages' })}
+        onSearch={searchParcels}
+        onScan={scan}
+      >
+        {empty ? (
+          <EmptyState
+            icon="inbox"
+            title={t('colis.empty.title')}
+            description={t('colis.empty.description')}
+            className="mt-[129px]"
           >
-            {t('colis.empty.handover')}
-          </Button>
-        </EmptyState>
-      ) : undefined}
-    </ColisScreen>
+            <Button onClick={scan} className="w-[201px]">
+              {t('colis.empty.scan')}
+            </Button>
+            <Button
+              variant="link"
+              onClick={handover}
+              className="text-16 font-semibold"
+            >
+              {t('colis.empty.handover')}
+            </Button>
+          </EmptyState>
+        ) : undefined}
+      </ColisScreen>
+      {choosing && (
+        <RecipientChooser
+          readName={unaddressed.get(choosing)}
+          onClose={() => setChoosing(null)}
+          onPick={async (pick) => {
+            const parcelId = choosing;
+            await assignRecipient(
+              db,
+              parcelId,
+              pick.kind === 'card'
+                ? { kind: pick.choice.kind, id: pick.choice.id }
+                : { ...pick, kind: 'typed' },
+              // Only the name shows here: a number still in doubt stays so.
+              { agentId: session.user.id, seesTracking: false },
+            );
+            setChoosing(null);
+          }}
+        />
+      )}
+    </>
   );
 }

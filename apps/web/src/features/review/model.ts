@@ -20,7 +20,7 @@ export type AnnexField = (typeof ANNEX_FIELDS)[number];
  * a time).
  */
 export type ReviewStep =
-  | { field: 'tracking'; level: 'to-verify' | 'none' }
+  | { field: 'tracking'; level: 'to-verify' | 'none' | 'carrier' }
   | { field: 'recipient' }
   | { field: 'sender' }
   | { field: AnnexField };
@@ -66,28 +66,24 @@ const blocks = (step: ReviewStep) =>
 
 /**
  * What the agent still has to look at on a draft. A number not sure nor
- * confirmed, or no carrier for it; no card settled for the recipient, a
- * name a code printed included (a company is not someone to tell); an
- * annex field or a sender read « à vérifier ». A number the agent
- * confirmed with no carrier its format names is left « À compléter »: the
- * carrier is chosen on the parcel's sheet.
+ * confirmed; a number sure, its format naming no carrier, the carrier to
+ * choose; no card settled for the recipient, a name a code printed
+ * included (a company is not someone to tell); an annex field or a sender
+ * read « à vérifier ». A parcel « Sans suivi » has no number to check.
  */
 export function reviewOf(draft: DraftParcel): ReviewItem {
   const { tracking, recipient, extraction } = draftFields(draft);
   const steps: ReviewStep[] = [];
   const scores: number[] = [];
-  if (
-    tracking?.level !== 'sure' ||
-    (!draft.carrier && !draft.trackingConfirmed)
-  ) {
+  const untracked = draft.type === 'sans_suivi';
+  if (!untracked && tracking?.level !== 'sure') {
     steps.push({
       field: 'tracking',
-      level:
-        tracking?.level === 'to-verify' ||
-        (tracking?.level === 'sure' && !draft.carrier)
-          ? 'to-verify'
-          : 'none',
+      level: tracking?.level === 'to-verify' ? 'to-verify' : 'none',
     });
+    scores.push(tracking?.confidence ?? 0);
+  } else if (!untracked && !draft.carrier) {
+    steps.push({ field: 'tracking', level: 'carrier' });
     scores.push(tracking?.confidence ?? 0);
   }
   if (!draft.recipient) {
@@ -103,7 +99,8 @@ export function reviewOf(draft: DraftParcel): ReviewItem {
     steps.push({ field });
     scores.push(extraction[field]?.confidence ?? CONFIDENCE.toVerify);
   }
-  const blocked = steps.some(blocks) || !draft.carrier;
+  const blocked =
+    steps.some(blocks) || (!untracked && (!draft.carrier || !tracking));
   const group: ReviewGroup = !blocked
     ? steps.length === 0 || draft.reviewSkipped
       ? 'ready'

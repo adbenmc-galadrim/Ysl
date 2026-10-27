@@ -8,6 +8,8 @@ import {
   whereabouts,
 } from '#fixtures/reception';
 import { ChoisirDestinataireScreen } from '#screens/reception/choisir-destinataire-screen';
+import { HorsAnnuaireSheet } from '#screens/reception/hors-annuaire-sheet';
+import { TransporteurSheet } from '#screens/reception/transporteur-sheet';
 import { LotEnregistreScreen } from '#screens/reception/lot-enregistre-screen';
 import { RevueLotScreen } from '#screens/reception/revue-lot-screen';
 import {
@@ -201,6 +203,104 @@ export const VerifierSuiviIncertain: Story = {
       ]}
       fields={[{ label: 'Destinataire', value: DIRECTORY.lea.name }]}
       submitLabel="Valider"
+    />
+  ),
+};
+
+/** Nothing read: the number is typed, or the parcel has none (YSL-64, no reference). */
+export const VerifierSuiviNonLu: Story = {
+  name: 'Vérifier un colis, numéro non lu',
+  render: () => (
+    <VerifierSuiviScreen
+      step={{ index: 1, total: 1 }}
+      label={{
+        heading: 'Destinataire :',
+        name: 'L. FONTAIN',
+        address: UNCERTAIN_LABEL.address,
+        glare: { left: 40, width: 220 },
+      }}
+      level="none"
+      choices={[]}
+      fields={[]}
+      onType={() => {}}
+      onUntracked={() => {}}
+    />
+  ),
+};
+
+/** The number holds but names no carrier: the agent says which (YSL-64). */
+export const VerifierTransporteur: Story = {
+  name: 'Vérifier un colis, transporteur inconnu',
+  render: () => (
+    <VerifierSuiviScreen
+      step={{ index: 1, total: 1 }}
+      label={{
+        heading: 'WAYBILL',
+        name: '4815 1623 42',
+        address: UNCERTAIN_LABEL.address,
+      }}
+      level="carrier"
+      choices={[{ value: '4815162342' }]}
+      selected="4815162342"
+      submitLabel="Choisir le transporteur"
+      fields={[{ label: 'Destinataire', value: DIRECTORY.lea.name }]}
+      onType={() => {}}
+      onUntracked={() => {}}
+    />
+  ),
+};
+
+const CARRIERS = [
+  'Colissimo',
+  'Chronopost',
+  'La Poste',
+  'DHL Express',
+  'DHL Paket',
+  'UPS',
+  'FedEx',
+  'DPD',
+  'GLS',
+  'TNT',
+  'Amazon',
+  'Mondial Relay',
+  'Colis Privé',
+];
+
+export const ChoisirTransporteur: Story = {
+  name: 'Choisir le transporteur',
+  render: () => (
+    <TransporteurSheet
+      tracking="4815162342"
+      carriers={CARRIERS}
+      value="DPD"
+      onPick={() => {}}
+      behind={
+        <VerifierSuiviScreen
+          step={{ index: 1, total: 1 }}
+          level="carrier"
+          choices={[{ value: '4815162342' }]}
+          selected="4815162342"
+          fields={[]}
+        />
+      }
+    />
+  ),
+};
+
+export const PersonneHorsAnnuaire: Story = {
+  name: 'Personne hors annuaire',
+  render: () => (
+    <HorsAnnuaireSheet
+      value={{ name: 'Marc Petit', email: '', department: 'Intérim' }}
+      onChange={() => {}}
+      onSubmit={() => {}}
+      behind={
+        <ChoisirDestinataireScreen
+          query="marc"
+          results={[]}
+          recents={[DIRECTORY.nora, DIRECTORY.hugo].map(option)}
+        />
+      }
     />
   ),
 };

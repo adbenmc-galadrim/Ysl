@@ -2,10 +2,10 @@ import { extractFields } from '@repo/contract/extract';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
-import { newId } from '@repo/shared/id';
 import { normalizeName } from '@repo/shared/text';
 import { senderReadOf } from '#/features/batch/extraction';
 import { senderLessons } from '#/features/batch/senders';
+import { typedContact } from '#/features/recipient/contacts';
 import { recipientLessons } from '#/features/recipient/learning';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
@@ -15,14 +15,15 @@ import type {
 } from '#/features/db/schema';
 import { fullName, isEmail, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
+import { gapsOf } from '#/features/parcels/model';
 import { liveParcel } from '#/features/parcels/status';
 
 /** Who the parcel is for, as the form leaves it. */
 export type RecipientChoice =
   | { kind: 'person'; id: string }
   | { kind: 'contact'; id: string }
-  /** "Personne hors annuaire": a name typed by hand, an e-mail if known. */
-  | { kind: 'typed'; name: string; email: string }
+  /** "Personne hors annuaire": a name typed by hand, an e-mail and a department if known. */
+  | { kind: 'typed'; name: string; email: string; department?: string }
   /** Nobody chosen: the name read on the label, if any, is all there is. */
   | { kind: 'none' };
 
@@ -58,7 +59,16 @@ export type EditResult =
   | { kind: 'unchanged' }
   | { kind: 'invalid'; errors: EditErrors };
 
-export type EditOptions = { agentId: string; now?: Date };
+export type EditOptions = {
+  agentId: string;
+  now?: Date;
+  /**
+   * The agent has the parcel's number under their eyes (its record): a
+   * recipient chosen then vouches for it too (YSL-52). False for the
+   * « Choisir » of Colis, where only the name shows.
+   */
+  seesTracking?: boolean;
+};
 
 const text = (value: string) => value.trim() || null;
 
@@ -84,7 +94,8 @@ export function editOf(parcel: LocalParcel): ParcelEdit {
       : parcel.contactId
         ? { kind: 'contact', id: parcel.contactId }
         : { kind: 'none' },
-    tracking: parcel.tracking ?? '',
+    // The app's own number of a parcel « Sans suivi » is not the agent's to edit.
+    tracking: parcel.type === 'sans_suivi' ? '' : (parcel.tracking ?? ''),
     carrier: parcel.carrier ?? '',
     sender: parcel.senderName ?? '',
     pieceTotal: total,
@@ -99,21 +110,17 @@ export function editOf(parcel: LocalParcel): ParcelEdit {
 }
 
 /**
- * Received once the mailroom can notify it — a carrier and a number, unless
- * the parcel has none, and someone to tell — as `promotedStatus` decides at
- * the end of a batch.
+ * Received once the mailroom can notify it (F26, `@repo/contract/parcel-completion`):
+ * a carrier and a number, unless the parcel has none, and someone to tell —
+ * a card or a contact, a name read on the label is not enough.
  */
 export function isComplete(
   parcel: Pick<
     LocalParcel,
-    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId' | 'readName'
+    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
   >,
 ): boolean {
-  const traced =
-    parcel.type === 'sans_suivi' || Boolean(parcel.carrier && parcel.tracking);
-  return (
-    traced && Boolean(parcel.personId || parcel.contactId || parcel.readName)
-  );
+  return gapsOf(parcel).length === 0;
 }
 
 /**
@@ -126,50 +133,6 @@ const confirmsIdentity = (fields: readonly ParcelEditField[]) =>
     (field) =>
       field === 'recipient' || field === 'tracking' || field === 'carrier',
   );
-
-/**
- * The contact a hand-typed name stands for: the one this mailroom already
- * typed with that e-mail, or with that name and no e-mail yet, counted once
- * more; a new one otherwise. Typing the same temp twice keeps one card.
- */
-async function typedContact(
-  db: CourrierDatabase,
-  name: string,
-  email: string,
-  { agentId, now }: Required<EditOptions>,
-): Promise<LocalContact> {
-  const key = normalizeEmail(email);
-  const nameNorm = normalizeName(name);
-  const live = (row: LocalContact) => row.deletedAt === null;
-  const known =
-    (key
-      ? (await db.contact.where('email').equals(key).toArray()).find(live)
-      : undefined) ??
-    (await db.contact.where('nameNorm').equals(nameNorm).toArray()).find(
-      (row) => live(row) && row.email === null,
-    );
-  if (known) {
-    return {
-      ...known,
-      email: known.email ?? (key || null),
-      updatedAt: now,
-      usageCount: known.usageCount + 1,
-      lastUsedAt: now,
-    };
-  }
-  return {
-    id: newId(),
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-    name: name.trim(),
-    nameNorm,
-    email: key || null,
-    createdBy: agentId,
-    usageCount: 1,
-    lastUsedAt: now,
-  };
-}
 
 /**
  * A sender the agent typed on the sheet is a correction (§4.3 rank 9): it
@@ -243,6 +206,19 @@ async function printedOn(
   return [...new Set([parcel.readName, ...read])].filter(
     (name): name is string => Boolean(name),
   );
+}
+
+/**
+ * A number nobody doubts: none to doubt (« Sans suivi »), or read sure or
+ * confirmed by the agent at « Terminer », as this iPhone's reading kept it.
+ */
+async function trackingVouched(
+  db: CourrierDatabase,
+  parcel: LocalParcel,
+): Promise<boolean> {
+  if (parcel.type === 'sans_suivi') return true;
+  const reading = await db.extraction.get(parcel.id);
+  return reading?.fields.tracking?.level === 'sure';
 }
 
 /** One piece unless the label said otherwise: a parcel that never said stays silent. */
@@ -337,7 +313,7 @@ export async function saveParcelEdit(
   db: CourrierDatabase,
   parcelId: string,
   edit: ParcelEdit,
-  { agentId, now = new Date() }: EditOptions,
+  { agentId, now = new Date(), seesTracking = true }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
   const errors = validateEdit(edit, parcel);
@@ -363,7 +339,11 @@ export async function saveParcelEdit(
       : edit.recipient.kind === 'contact'
         ? { personId: null, contactId: edit.recipient.id }
         : { personId: null, contactId: null };
-  const tracking = normalizeTracking(edit.tracking) || null;
+  const typed = normalizeTracking(edit.tracking) || null;
+  // A parcel « Sans suivi » keeps its number until a real one is typed,
+  // which makes it a parcel like any other.
+  const untracked = parcel.type === 'sans_suivi' && typed === null;
+  const tracking = untracked ? parcel.tracking : typed;
   const senderName = text(edit.sender);
   const renamed =
     senderName !== null &&
@@ -374,6 +354,7 @@ export async function saveParcelEdit(
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
+    type: parcel.type === 'sans_suivi' && !untracked ? 'colis' : parcel.type,
     tracking,
     trackingNorm: tracking,
     carrier: text(edit.carrier),
@@ -392,6 +373,15 @@ export async function saveParcelEdit(
     weightKg: parseWeight(edit.weightKg) ?? null,
     location: text(edit.location),
   };
+  // The department typed with someone outside the directory goes with them:
+  // another recipient chosen takes it away.
+  edited.department =
+    edit.recipient.kind === 'typed'
+      ? edit.recipient.department?.trim() || null
+      : edited.personId !== parcel.personId ||
+          edited.contactId !== parcel.contactId
+        ? null
+        : parcel.department;
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };
 
@@ -409,10 +399,18 @@ export async function saveParcelEdit(
   }
 
   const complete = isComplete(edited);
+  const vouched =
+    seesTracking ||
+    fields.includes('tracking') ||
+    fields.includes('carrier') ||
+    (await trackingVouched(db, edited));
   const to =
-    parcel.status === 'a_completer' && complete && confirmsIdentity(fields)
+    parcel.status === 'a_completer' &&
+    complete &&
+    confirmsIdentity(fields) &&
+    vouched
       ? 'recu'
-      : parcel.status === 'recu' && !complete && isComplete(parcel)
+      : parcel.status === 'recu' && !complete && confirmsIdentity(fields)
         ? 'a_completer'
         : undefined;
   const row = to ? { ...edited, ...statusPatch(edited, to, options) } : edited;

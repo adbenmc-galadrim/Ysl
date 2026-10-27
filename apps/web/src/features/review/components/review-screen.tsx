@@ -51,6 +51,7 @@ const issueOf = (step: ReviewStep, draft: DraftParcel) => {
     if (!(draft.trackingNorm ?? draft.tracking)) {
       return t('review.issue.tracking.missing');
     }
+    if (step.level === 'carrier') return t('review.issue.carrier');
     return step.level === 'to-verify'
       ? t('review.issue.tracking.toVerify')
       : t('review.issue.tracking.none');
@@ -59,6 +60,8 @@ const issueOf = (step: ReviewStep, draft: DraftParcel) => {
 };
 
 const carrierLine = (draft: DraftParcel) => {
+  // The app's own number of a parcel « Sans suivi » means nothing to the agent.
+  if (draft.type === 'sans_suivi') return t('parcel.carrier.none');
   const carrier = draft.carrier ?? t('review.line.noCarrier');
   const number = draft.trackingNorm ?? draft.tracking;
   return number ? `${carrier} ···${number.slice(-4)}` : carrier;

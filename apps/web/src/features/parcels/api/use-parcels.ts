@@ -77,6 +77,24 @@ export async function listHomeParcels(
   );
 }
 
+/**
+ * The parcels « À compléter » with nobody set for them, by id, with the
+ * name read on their label: those Colis offers to « Choisir » for.
+ */
+export async function listUnaddressed(
+  database: CourrierDatabase,
+): Promise<Map<string, string | null>> {
+  const parcels = await database.parcel
+    .where('[status+receivedAt]')
+    .between(['a_completer', Dexie.minKey], ['a_completer', Dexie.maxKey])
+    .toArray();
+  return new Map(
+    parcels
+      .filter((p) => !p.deletedAt && !p.personId && !p.contactId)
+      .map((p) => [p.id, p.readName]),
+  );
+}
+
 const TICK_MS = 60 * 1000;
 
 /** The time, moved on once a minute so "il y a 2 h" and "aujourd'hui" stay true. */

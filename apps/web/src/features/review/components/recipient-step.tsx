@@ -1,15 +1,11 @@
 import { type RecipientResult, SUGGESTIONS } from '@repo/contract/recipient';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { ChoisirDestinataireScreen, VerifierColisScreen } from '@repo/ui';
-import { useLiveQuery } from 'dexie-react-hooks';
+import { VerifierColisScreen } from '@repo/ui';
 import { useEffect, useRef, useState } from 'react';
+import { useSession } from '#/features/auth/api/use-session';
 import { updateDraft } from '#/features/batch/store';
 import { db } from '#/features/db/database';
-import type {
-  LocalContact,
-  LocalDirectoryPerson,
-  LocalParcel,
-} from '#/features/db/schema';
+import type { LocalContact, LocalDirectoryPerson } from '#/features/db/schema';
 import { PersonSheet } from '#/features/directory/components/person-sheet';
 import { draftFromQuery } from '#/features/directory/people';
 import {
@@ -19,20 +15,21 @@ import {
   textOf,
   toRecipient,
 } from '#/features/recipient/check';
+import {
+  RecipientChooser,
+  type RecipientPick,
+} from '#/features/recipient/components/recipient-chooser';
+import { saveOutsideContact } from '#/features/recipient/contacts';
 import type { MatchEngine } from '#/features/recipient/matcher';
 import {
   type Choice,
   optionOf,
   personOption,
-  recentOptions,
-  searchOptions,
 } from '#/features/recipient/options';
 import type { StepProps } from '#/features/review/components/step';
 import { checkFields } from '#/features/scan/reading';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-const NO_PARCELS: LocalParcel[] = [];
 
 type Sheet = { initial: string; key: number };
 
@@ -43,9 +40,11 @@ type RecipientStepProps = StepProps & {
 };
 
 /**
- * Who the parcel is for (F18): the three closest people of YSL-46, the
- * directory one tap away, a new card from the name read. The card chosen
- * settles the recipient, which F26 needs to notify.
+ * Who the parcel is for (F18): the three closest people of YSL-46, then
+ * « Chercher dans l'annuaire » for « Choisir le destinataire », where the
+ * label's suggestions head the directory and someone outside it becomes a
+ * contact (F27); a new card from the name read. The card chosen settles
+ * the recipient, which F26 needs to notify.
  */
 export function RecipientStep({
   draft,
@@ -59,14 +58,9 @@ export function RecipientStep({
   const [result, setResult] = useState<RecipientResult | null>(null);
   const [chosen, setChosen] = useState<Choice>();
   const [picking, setPicking] = useState(false);
-  const [query, setQuery] = useState('');
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const submitting = useRef(false);
-  const parcels = useLiveQuery(
-    () => (picking ? db.parcel.toArray() : NO_PARCELS),
-    [picking],
-    NO_PARCELS,
-  );
+  const session = useSession();
 
   const { readName, ocrName, symbols } = draft;
   const text = textOf(draft);
@@ -132,33 +126,32 @@ export function RecipientStep({
     setChosen(personOption(person));
     setSheet(null);
     setPicking(false);
-    setQuery('');
+  };
+
+  const onPick = async (pick: RecipientPick) => {
+    const chosen =
+      pick.kind === 'card'
+        ? pick.choice
+        : await saveOutsideContact(db, pick, { agentId: session.user.id });
+    // The department typed goes with the contact typed, and only with it.
+    await updateDraft(db, draft.id, {
+      department:
+        pick.kind === 'typed' && chosen.kind === 'contact'
+          ? pick.department || null
+          : null,
+    });
+    setChosen(chosen);
+    setPicking(false);
   };
 
   return (
     <>
       {picking ? (
-        <ChoisirDestinataireScreen
-          query={query}
-          onQueryChange={setQuery}
-          results={
-            query.trim() ? searchOptions(people, contacts, query) : suggestions
-          }
-          resultsTitle={query.trim() ? undefined : t('recipient.suggestions')}
-          recents={recentOptions(parcels, people, contacts)}
-          onClose={() => {
-            setPicking(false);
-            setQuery('');
-          }}
-          onPick={(id) => {
-            const option =
-              optionOf('person', id, people, contacts) ??
-              optionOf('contact', id, people, contacts);
-            if (option) setChosen(option);
-            setPicking(false);
-            setQuery('');
-          }}
-          onOutside={() => openSheet(query.trim() || shownName || '')}
+        <RecipientChooser
+          suggestions={candidates}
+          readName={shownName}
+          onClose={() => setPicking(false)}
+          onPick={onPick}
         />
       ) : (
         <VerifierColisScreen

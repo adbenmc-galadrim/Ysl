@@ -146,6 +146,33 @@ describe('toParcelRow', () => {
     });
   });
 
+  it('says in red what a parcel « À compléter » still lacks', () => {
+    const row = (overrides: Parameters<typeof parcel>[0]) =>
+      toParcelRow(
+        parcel({ status: 'a_completer', personId: camille.id, ...overrides }),
+        context,
+        NOW,
+        t,
+      )?.status;
+    expect(row({ tracking: null, carrier: null })).toBe('Numéro non lu');
+    expect(row({ carrier: null })).toBe('Transporteur inconnu');
+    expect(row({})).toBe('Numéro à vérifier');
+    expect(row({ personId: null, tracking: null, carrier: null })).toBe(
+      'Numéro non lu',
+    );
+  });
+
+  it('hides the app’s own number of a parcel « Sans suivi »', () => {
+    expect(
+      toParcelRow(
+        parcel({ type: 'sans_suivi', carrier: null, tracking: 'INT7K2Q9MXA' }),
+        context,
+        NOW,
+        t,
+      ),
+    ).toMatchObject({ last4: '', detail: 'Sans suivi' });
+  });
+
   it('describes a parcel without tracking by its kind', () => {
     const row = toParcelRow(
       parcel({ type: 'sans_suivi', carrier: null, tracking: null }),

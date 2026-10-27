@@ -34,6 +34,7 @@ import {
   formatAgo,
   formatTime,
   homeState,
+  missingOf,
   shortDate,
   startOfDay,
 } from '#/features/parcels/model';
@@ -159,7 +160,7 @@ function stateCard(
       return {
         icon: 'alert',
         title: t('record.state.a_completer'),
-        description,
+        description: missingOf(parcel, t) || description,
       };
     case 'recu':
       return {

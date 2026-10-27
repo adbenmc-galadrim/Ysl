@@ -1,7 +1,9 @@
 import { plausibleWeight } from '@repo/contract/extract';
+import { normalizeTracking } from '@repo/contract/tracking';
 import { updateDraft } from '#/features/batch/store';
 import type { CourrierDatabase, DraftSender } from '#/features/db/schema';
 import { formatWeight, parseWeight } from '#/features/parcels/edit';
+import { newInternalTracking } from '#/features/parcels/internal-tracking';
 import { type DraftAnnex, serviceText } from '#/features/scan/annex';
 import { AGENT_CONFIDENCE } from '#/features/scan/confidence';
 import type { AnnexField } from '#/features/review/model';
@@ -146,4 +148,50 @@ export function skipDraft(
   draftId: string,
 ): Promise<boolean> {
   return updateDraft(db, draftId, { reviewSkipped: true });
+}
+
+/**
+ * A number typed in the review, with the carrier its format names or the
+ * agent chose (§4.4): the agent's own, sure, so F26 can notify.
+ */
+export function typeDraftTracking(
+  db: CourrierDatabase,
+  draftId: string,
+  { tracking, carrier }: { tracking: string; carrier: string },
+): Promise<boolean> {
+  const value = normalizeTracking(tracking);
+  return updateDraft(db, draftId, {
+    tracking: value,
+    trackingNorm: value,
+    carrier,
+    trackingConfirmed: true,
+    type: 'colis',
+  });
+}
+
+/** The carrier the agent chose for a number whose format names none. */
+export function setDraftCarrier(
+  db: CourrierDatabase,
+  draftId: string,
+  carrier: string,
+): Promise<boolean> {
+  return updateDraft(db, draftId, { carrier, trackingConfirmed: true });
+}
+
+/**
+ * « Sans suivi »: a courier, an envelope handed in. The app numbers the
+ * parcel itself (`INT…`), no carrier; only the recipient is left to settle.
+ */
+export async function untrackDraft(
+  db: CourrierDatabase,
+  draftId: string,
+): Promise<boolean> {
+  const id = await newInternalTracking(db);
+  return updateDraft(db, draftId, {
+    type: 'sans_suivi',
+    tracking: id,
+    trackingNorm: id,
+    carrier: null,
+    trackingConfirmed: true,
+  });
 }
