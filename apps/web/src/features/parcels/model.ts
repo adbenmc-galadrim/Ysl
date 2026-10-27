@@ -68,6 +68,21 @@ const GAP_KEYS = {
   carrier: 'parcel.missing.carrier',
 } as const satisfies Record<ParcelGap, string>;
 
+/** What a recorded parcel lacks to be notified (F26): someone set — a card, not a name read —, a number, its carrier. */
+export function gapsOf(
+  parcel: Pick<
+    LocalParcel,
+    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
+  >,
+): ParcelGap[] {
+  return parcelGaps({
+    type: parcel.type,
+    carrier: parcel.carrier,
+    tracking: parcel.tracking,
+    recipient: Boolean(parcel.personId || parcel.contactId),
+  });
+}
+
 /**
  * Why a parcel waits « À compléter » (F26): « Destinataire inconnu »,
  * « Numéro non lu », « Transporteur inconnu »; « Numéro à vérifier » when
@@ -84,12 +99,7 @@ export function missingOf(
   shown: readonly ParcelGap[] = [],
 ): string {
   if (parcel.status !== 'a_completer') return '';
-  const gaps = parcelGaps({
-    type: parcel.type,
-    carrier: parcel.carrier,
-    tracking: parcel.tracking,
-    recipient: Boolean(parcel.personId || parcel.contactId),
-  });
+  const gaps = gapsOf(parcel);
   if (gaps.length === 0) {
     return parcel.type === 'sans_suivi' ? '' : t('parcel.missing.doubt');
   }

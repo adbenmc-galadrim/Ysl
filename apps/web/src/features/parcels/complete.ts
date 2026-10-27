@@ -1,4 +1,3 @@
-import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { type ParcelStatus, statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
@@ -15,21 +14,6 @@ import {
 import { parcelEvent } from '#/features/parcels/events';
 import { newInternalTracking } from '#/features/parcels/internal-tracking';
 import { liveParcel } from '#/features/parcels/status';
-
-/** What a recorded parcel lacks to be notified (F26): someone set, a number, its carrier. */
-export function gapsOf(
-  parcel: Pick<
-    LocalParcel,
-    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
-  >,
-): ParcelGap[] {
-  return parcelGaps({
-    type: parcel.type,
-    carrier: parcel.carrier,
-    tracking: parcel.tracking,
-    recipient: Boolean(parcel.personId || parcel.contactId),
-  });
-}
 
 /**
  * The recipient chosen for a recorded parcel outside its form — the

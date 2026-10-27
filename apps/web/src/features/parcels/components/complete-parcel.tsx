@@ -1,17 +1,16 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, Sheet } from '@repo/ui';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
 import {
   assignRecipient,
   completeTracking,
-  gapsOf,
   type TrackingInput,
 } from '#/features/parcels/complete';
 import { TrackingEntry } from '#/features/parcels/components/tracking-entry';
-import { missingOf } from '#/features/parcels/model';
+import { gapsOf, missingOf } from '#/features/parcels/model';
 import { formatTracking } from '#/features/parcels/record';
 import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 
@@ -39,6 +38,7 @@ export function CompleteParcel({
   const session = useSession();
   const [step, setStep] = useState<Step>('menu');
   const [busy, setBusy] = useState(false);
+  const writing = useRef(false);
   const [failed, setFailed] = useState(false);
   const options = { agentId: session.user.id };
   const gaps = gapsOf(parcel);
@@ -46,7 +46,8 @@ export function CompleteParcel({
   const doubted = gaps.length === 0 && numbered && parcel.tracking !== null;
 
   const run = async (write: () => Promise<unknown>) => {
-    if (busy) return;
+    if (writing.current) return;
+    writing.current = true;
     setBusy(true);
     setFailed(false);
     try {
@@ -56,6 +57,7 @@ export function CompleteParcel({
       setFailed(true);
       setStep('menu');
     } finally {
+      writing.current = false;
       setBusy(false);
     }
   };
@@ -68,7 +70,7 @@ export function CompleteParcel({
         readName={parcel.readName}
         onClose={() => setStep('menu')}
         onPick={(pick) =>
-          void run(() =>
+          run(() =>
             assignRecipient(
               db,
               parcel.id,

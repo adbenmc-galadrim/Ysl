@@ -1,5 +1,4 @@
 import { extractFields } from '@repo/contract/extract';
-import { isParcelComplete } from '@repo/contract/parcel-completion';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
@@ -16,6 +15,7 @@ import type {
 } from '#/features/db/schema';
 import { fullName, isEmail, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
+import { gapsOf } from '#/features/parcels/model';
 import { liveParcel } from '#/features/parcels/status';
 
 /** Who the parcel is for, as the form leaves it. */
@@ -110,12 +110,7 @@ export function isComplete(
     'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
   >,
 ): boolean {
-  return isParcelComplete({
-    type: parcel.type,
-    carrier: parcel.carrier,
-    tracking: parcel.tracking,
-    recipient: Boolean(parcel.personId || parcel.contactId),
-  });
+  return gapsOf(parcel).length === 0;
 }
 
 /**
