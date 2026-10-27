@@ -56,6 +56,19 @@ describe('checkFields — « Vérifier un colis »', () => {
     });
   });
 
+  it('keeps a carrier the codes did not vote for plain', () => {
+    const fields = checkFields(
+      draft({
+        carrier: 'Chronopost',
+        tracking: '5413337112',
+        trackingNorm: '5413337112',
+        symbols: [{ format: 'Code128', text: '5413337112' }],
+      }),
+      t,
+    );
+    expect(fields[0]).toEqual({ label: 'Transporteur', value: 'Chronopost' });
+  });
+
   it('leaves a number of unknown shape empty, offered as a chip to pick', () => {
     const picked: string[] = [];
     const fields = checkFields(

@@ -348,7 +348,10 @@ export function checkFields(
       ? levelField(
           carrierLabel,
           draft.carrier,
-          extraction.carrier?.level ?? 'sure',
+          extraction.carrier &&
+            carrierName(extraction.carrier.value, t) === draft.carrier
+            ? extraction.carrier.level
+            : 'sure',
         )
       : {
           label: carrierLabel,
