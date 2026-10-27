@@ -101,7 +101,11 @@ export function ReadingView({
     if (!extraction) return;
     try {
       await navigator.clipboard.writeText(
-        diagnosticText(extraction, { t, now }),
+        diagnosticText(extraction, {
+          t,
+          now,
+          draft: reading.kind === 'draft',
+        }),
       );
       setCopy('done');
     } catch {

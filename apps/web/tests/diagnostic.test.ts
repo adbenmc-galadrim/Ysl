@@ -213,6 +213,11 @@ describe('diagnosticText — the copy for support', () => {
     expect(text).not.toMatch(/CAMILLE|MOREL|DUPUIS|WAYBILL|XQ4/);
   });
 
+  it('says a draft was read in the batch in progress, not when copied', () => {
+    const text = diagnosticText(extraction(), { t, now: NOW, draft: true });
+    expect(text.split('\n')[1]).toMatch(/^Lecture du lot en cours · /);
+  });
+
   it('cuts a name to its initials', () => {
     expect(initials('  camille  Morel ')).toBe('C. M.');
   });

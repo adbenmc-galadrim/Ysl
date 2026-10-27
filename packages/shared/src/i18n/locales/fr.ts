@@ -230,7 +230,7 @@ export const fr = {
   'reading.adjust.agreement': 'Concordance de {{count}} sources',
   'reading.adjust.conflict': 'Contradiction entre sources',
   'reading.adjust.forward': 'Adressé hors de 75007 (réexpédition ?)',
-  'reading.adjust.unkeyed': 'Plafond sans clé de contrôle (0,89)',
+  'reading.adjust.unkeyed': 'Plafond sans clé de contrôle ({{cap}})',
   'reading.adjust.directory': 'Bonus annuaire',
   'reading.adjust.tie': 'Égalité du vote transporteur',
   'reading.adjust.other': 'Autre ajustement',

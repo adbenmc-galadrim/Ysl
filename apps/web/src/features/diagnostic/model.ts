@@ -1,6 +1,7 @@
 import { parseCode } from '@repo/contract/codes';
 import {
   type AdjustmentKind,
+  CONFIDENCE,
   type ConfidenceLevel,
   explainField,
   type FieldSource,
@@ -123,9 +124,16 @@ export function adjustmentLabel(
   sources: number,
   t: TranslateFn,
 ): string {
-  return kind === 'agreement'
-    ? t('reading.adjust.agreement', { count: sources })
-    : t(`reading.adjust.${kind}`);
+  switch (kind) {
+    case 'agreement':
+      return t('reading.adjust.agreement', { count: sources });
+    case 'unkeyed':
+      return t('reading.adjust.unkeyed', {
+        cap: formatConfidence(CONFIDENCE.unkeyedCap),
+      });
+    default:
+      return t(`reading.adjust.${kind}`);
+  }
 }
 
 /**

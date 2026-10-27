@@ -39,11 +39,11 @@ export const initials = (name: string) =>
  */
 export function diagnosticText(
   extraction: LocalExtraction,
-  { t, now }: { t: TranslateFn; now: Date },
+  { t, now, draft = false }: { t: TranslateFn; now: Date; draft?: boolean },
 ): string {
   const out: string[] = [
     t('reading.title'),
-    `${t('reading.subtitle.device', { when: readAt(extraction.createdAt, now) })} · ${t('reading.fact.version')} ${extraction.version}`,
+    `${draft ? t('reading.subtitle.draft') : t('reading.subtitle.device', { when: readAt(extraction.createdAt, now) })} · ${t('reading.fact.version')} ${extraction.version}`,
     `${t('reading.fact.codes')} ${formatMs(extraction.durations.codesMs, t)} · ${t('reading.fact.ocr')} ${formatMs(extraction.durations.ocrMs, t)} · ${t('reading.fact.fusion')} ${formatMs(extraction.durations.fusionMs, t)}`,
     '',
   ];
