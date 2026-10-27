@@ -974,6 +974,6 @@ Chaque décision est accompagnée d'une recommandation.
 | D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | Export CSV (nom, prénom, e-mail, service, site) fourni par les RH ou la DSI ; Entra en cible |
 | D16 | Sort du dépôt public v1 | Utilisateur | Archiver, purger l'historique (annuaire, `worker.js`), migrer les données par l'export CSV v1 |
 | D17 | Connexion des agents au MVP | Utilisateur | E-mail + mot de passe (Better Auth) ; Entra ID en cible |
-| D18 | Déploiement par MDM (web clip, autorisation caméra, code de verrouillage) | DSI | À demander ; non bloquant |
-| D19 | Chiffrement applicatif des données locales (code propre à l'app) | DPO | Non au MVP si l'iPhone est verrouillé par code et géré par MDM ; à réexaminer sinon |
+| D18 | Déploiement par MDM (web clip, autorisation caméra, code de verrouillage) | DSI | Tranchée : non, installation manuelle depuis Safari ([guide](installation-iphone.md)) |
+| D19 | Chiffrement applicatif des données locales (code propre à l'app) | DPO | Tranchée : non au MVP, sans MDM (D18) ; le code de verrouillage d'iOS reste exigé sur chaque iPhone |
 | D20 | Interlocuteurs DSI et calendrier pour la cible (Graph, Entra, RBAC) | DSI | Ouvrir la demande dès maintenant, en parallèle du MVP |

@@ -165,7 +165,9 @@ chiffrées tant que l'iPhone est verrouillé.
 1. **Déconnecter l'iPhone** depuis un autre appareil, avec un compte administrateur :
    dans l'app, **Réglages › Appareils connectés**, touchez la ligne de l'iPhone perdu
    (nom de l'agent, « iPhone » et date de connexion), puis
-   **Déconnecter cet appareil**.
+   **Déconnecter cet appareil**. Si l'agent a plusieurs lignes « iPhone » et qu'on ne
+   sait pas laquelle est la bonne, déconnectez-les toutes : il suffira de se reconnecter
+   sur les iPhone encore en main.
 
    ![Appareils connectés](images/installation/13-appareils-connectes.png)
 
