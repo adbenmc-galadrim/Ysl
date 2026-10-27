@@ -1,5 +1,9 @@
 import { listDrafts, updateDraft } from '#/features/batch/store';
-import type { CourrierDatabase, DraftParcel } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  DraftParcel,
+  DraftRecipient,
+} from '#/features/db/schema';
 
 /** The parcel scanned just before, and the name it carries. */
 export type PreviousRecipient = { draft: DraftParcel; name: string };
@@ -23,14 +27,19 @@ export async function previousNamed(
 
 /**
  * The agent says the parcel is for the same person: a correction of theirs
- * (§4.3, rank 9), so the name is sure, however the previous parcel got it;
- * the card to notify is still settled in the batch review (F26).
- * False when the draft was undone meanwhile.
+ * (§4.3, rank 9), so the name is sure, however the previous parcel got it,
+ * and the card that parcel was settled to comes along (F26). Without one,
+ * the card is settled in the batch review. False when the draft was undone
+ * meanwhile.
  */
 export function copyRecipient(
   db: CourrierDatabase,
   draftId: string,
   name: string,
+  recipient: DraftRecipient | null = null,
 ): Promise<boolean> {
-  return updateDraft(db, draftId, { readName: name });
+  return updateDraft(db, draftId, {
+    readName: name,
+    ...(recipient ? { recipient } : {}),
+  });
 }

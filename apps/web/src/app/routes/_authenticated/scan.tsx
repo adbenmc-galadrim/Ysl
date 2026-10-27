@@ -64,7 +64,7 @@ import {
   zoomLabel,
 } from '#/features/camera/zoom';
 import { db } from '#/features/db/database';
-import type { DraftParcel } from '#/features/db/schema';
+import type { DraftParcel, DraftRecipient } from '#/features/db/schema';
 import { photoFiles, StorageUnavailableError } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
 import {
@@ -127,7 +127,11 @@ type Opening = 'pending' | 'explain' | 'scan';
 type Held = { draft: DraftParcel; found: Duplicate; recipient: string };
 
 /** The name "Même destinataire que le précédent" would give the draft on screen. */
-type SameRecipient = { draftId: string; name: string };
+type SameRecipient = {
+  draftId: string;
+  name: string;
+  recipient: DraftRecipient | null;
+};
 
 function ScanPage() {
   const navigate = useNavigate();
@@ -440,7 +444,11 @@ function ScanPage() {
     if (recipientInCodes(symbols) !== null) return;
     const previous = await previousNamed(db, draft);
     if (previous && shownDraft.current === draft.id) {
-      setSameAs({ draftId: draft.id, name: previous.name });
+      setSameAs({
+        draftId: draft.id,
+        name: previous.name,
+        recipient: previous.draft.recipient ?? null,
+      });
     }
   };
 
@@ -449,7 +457,9 @@ function ScanPage() {
     const same = sameAs;
     if (!same) return;
     setSameAs(null);
-    if (!(await copyRecipient(db, same.draftId, same.name))) return;
+    if (!(await copyRecipient(db, same.draftId, same.name, same.recipient))) {
+      return;
+    }
     const draft = await db.draftParcel.get(same.draftId);
     if (draft && shownDraft.current === draft.id) {
       setReading(

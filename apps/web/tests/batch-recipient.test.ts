@@ -48,6 +48,24 @@ describe('previousNamed', () => {
 });
 
 describe('copyRecipient', () => {
+  it('brings the card the previous parcel was settled to', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, null, NOW);
+    const card = {
+      kind: 'person' as const,
+      id: 'p-camille',
+      name: 'Camille Morel',
+      source: 'agent' as const,
+    };
+
+    await copyRecipient(db, draft.id, 'Camille Morel', card);
+
+    expect(await db.draftParcel.get(draft.id)).toMatchObject({
+      readName: 'Camille Morel',
+      recipient: card,
+    });
+  });
+
   it('makes the name sure, and the OCR leaves it alone', async () => {
     const batch = await openBatch(db, NOW);
     const draft = await addDraft(db, files, batch.id, null, NOW);
