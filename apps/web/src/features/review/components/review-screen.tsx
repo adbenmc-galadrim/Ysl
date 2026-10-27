@@ -214,8 +214,17 @@ export function ReviewScreen() {
     savingRef.current = true;
     setSaving(true);
     try {
-      await finishBatch(db, { batchId, agentId: session.user.id });
-      await navigate({ to: '/' });
+      const saved = await finishBatch(db, {
+        batchId,
+        agentId: session.user.id,
+      });
+      await (saved.length > 0
+        ? navigate({
+            to: '/lot/$batchId',
+            params: { batchId },
+            replace: true,
+          })
+        : navigate({ to: '/' }));
     } finally {
       savingRef.current = false;
       setSaving(false);

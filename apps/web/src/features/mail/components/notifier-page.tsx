@@ -18,7 +18,6 @@ import {
   type NotifierMailState,
 } from '@repo/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
-import { Dexie } from 'dexie';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
@@ -34,8 +33,8 @@ import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import { drawPins } from '#/features/mail/pickup-code';
 import {
-  groupByRecipient,
   mailsAbout,
+  mailsOfBatch,
   recipientValues,
   type RecipientMail,
 } from '#/features/mail/recipients';
@@ -43,14 +42,18 @@ import {
   listTemplates,
   type EmailTemplateView,
 } from '#/features/mail/templates';
+import { loadPendingMails } from '#/features/mail/pending-mails';
+import { pageAfter, pickTemplate } from '#/features/mail/round';
 import { useNotifications } from '#/features/mail/use-notifications';
 import { whenVisible } from '#/features/mail/visibility';
 import { templateWarnings } from '#/features/mail/warnings';
-import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { initialsOf } from '#/features/settings/initials';
 import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
+
+/** Every mail to send, one recipient's (from a record), or one batch's. */
+export type NotifierScope = { parcelId?: string; batchId?: string };
 
 type Session = {
   mails: RecipientMail[];
@@ -67,18 +70,15 @@ type Session = {
  */
 async function openSession(
   userId: string,
-  parcelId: string | undefined,
+  { parcelId, batchId }: NotifierScope,
 ): Promise<Session> {
   const now = new Date();
-  const received = await db.parcel
-    .where('[status+receivedAt]')
-    .between(['recu', Dexie.minKey], ['recu', Dexie.maxKey])
-    .toArray();
-  const all = groupByRecipient(
-    received,
-    await loadRecipientContext(db, received),
-  );
-  const mails = parcelId ? mailsAbout(all, parcelId) : all;
+  const all = await loadPendingMails(db);
+  const mails = parcelId
+    ? mailsAbout(all, parcelId)
+    : batchId
+      ? mailsOfBatch(all, batchId)
+      : all;
   const [pins, templates, pickup] = await Promise.all([
     drawPins(db, mails.length, { now }),
     listTemplates(db, userId),
@@ -164,14 +164,15 @@ function AddAddressSheet({
 type Sent = { state: NotifierMailState; count?: number };
 
 /**
- * One mail per recipient of the "À notifier" parcels (F34), or of one
- * parcel's recipient when opened from its record. Each "Envoyer" opens the
+ * One mail per recipient of the "À notifier" parcels (F34), of one
+ * parcel's recipient when opened from its record, or of the recipients of
+ * a batch just saved (« Lot enregistré »). Each "Envoyer" opens the
  * mail app chosen in Réglages on a real link (S5); the agent then says
  * whether it left, and only a "yes" notifies the parcels (D2, declarative
  * follow-up). When the page stays in front, the fallback sheet offers the
  * other apps, the text to copy or share, and how it ended.
  */
-export function NotifierPage({ parcelId }: { parcelId?: string }) {
+export function NotifierPage({ parcelId, batchId }: NotifierScope) {
   const navigate = useNavigate();
   const router = useRouter();
   const session = useSession();
@@ -202,13 +203,13 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
 
   useEffect(() => {
     let live = true;
-    void openSession(userId, parcelId).then((value) => {
+    void openSession(userId, { parcelId, batchId }).then((value) => {
       if (live) setOpened(value);
     });
     return () => {
       live = false;
     };
-  }, [userId, parcelId]);
+  }, [userId, parcelId, batchId]);
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
@@ -232,10 +233,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
     );
   }
 
-  const template =
-    templates.find((row) => row.id === templateId) ??
-    templates.find((row) => row.isDefault) ??
-    templates[0]!;
+  const template = pickTemplate(templates, templateId)!;
   const code = pins[index] ?? null;
   const rendered = renderMail(
     template,
@@ -309,7 +307,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   const confirmSent = (key: string, changes: NotifyChange[]) => {
     const count = changes.filter((change) => !('skip' in change)).length;
     setDone((all) => ({ ...all, [key]: { state: 'sent', count } }));
-    if (index < mails.length - 1) setIndex(index + 1);
+    setIndex(pageAfter(index, mails.length, 'sent'));
   };
 
   const answer = async (left: boolean) => {
@@ -322,6 +320,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       } else {
         await outbox.markFailed(asking.id, t('notify.notSent.reason'));
         setDone((all) => ({ ...all, [asking.key]: { state: 'failed' } }));
+        setIndex(pageAfter(index, mails.length, 'failed'));
       }
       setAsking(null);
     } catch {
@@ -369,6 +368,12 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
         name: template.name,
         onClick: templates.length > 1 ? () => setChoosing(true) : undefined,
       }}
+      onEditTemplate={() =>
+        void navigate({
+          to: '/reglages/modeles-email/$templateId',
+          params: { templateId: template.id },
+        })
+      }
       preview={rendered}
       warnings={templateWarnings(rendered, t)}
       sendLabel={
@@ -405,6 +410,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
                 ...all,
                 [stayed.key]: { state: 'failed' },
               }));
+              setIndex(pageAfter(index, mails.length, 'failed'));
               setStayed(null);
             }}
           />

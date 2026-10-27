@@ -17,6 +17,7 @@ export * from '#screens/notification/sent-emails-screen';
 export * from '#screens/pilotage/donnees-screen';
 export * from '#screens/pilotage/export-screen';
 export * from '#screens/reception/choisir-destinataire-screen';
+export * from '#screens/reception/lot-enregistre-screen';
 export * from '#screens/reception/revue-lot-screen';
 export * from '#screens/reception/scan-screen';
 export * from '#screens/reception/verifier-colis-screen';
