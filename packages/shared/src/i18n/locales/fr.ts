@@ -37,6 +37,9 @@ export const fr = {
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
   'agents.error.notFound': 'Ce compte n’existe pas.',
   'agents.error.invalid': 'Les informations saisies sont invalides.',
+  'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
+  'devices.error.current':
+    'Pour cet iPhone, utilisez « Effacer les données de cet iPhone ».',
   'auth.signIn.title': 'Service courrier',
   'auth.signIn.description': 'Connectez-vous avec votre compte personnel.',
   'auth.signIn.email': 'Adresse e-mail',

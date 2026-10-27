@@ -7,6 +7,7 @@
     "./account": "./src/account.ts",
     "./agents": "./src/agents.ts",
     "./auth": "./src/auth.ts",
+    "./devices": "./src/devices.ts",
     "./codes": "./src/codes/index.ts",
     "./exports": "./src/exports.ts",
     "./extract": "./src/extract/index.ts",
