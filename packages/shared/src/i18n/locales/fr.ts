@@ -504,6 +504,10 @@ export const fr = {
   'mail.template.restore.description':
     'Le nom, l’objet et le message reprennent le texte livré avec l’app.',
   'mail.template.restore.confirm': 'Rétablir',
+  'mail.target.mailto': 'Mail',
+  'mail.target.outlook': 'Outlook',
+  'mail.target.gmail': 'Gmail',
+  'mail.fallback.reason': '{{app}} ne s’est pas ouvert, e-mail abandonné',
   'mail.variable.prénom': 'Prénom du destinataire',
   'mail.variable.nom': 'Nom du destinataire',
   'mail.variable.code': 'Code de retrait',
