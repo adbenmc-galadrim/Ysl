@@ -131,6 +131,35 @@ describe('assignRecipient', () => {
     );
   });
 
+  it('keeps « À compléter » when the number is still missing', async () => {
+    const camille = personRow();
+    const parcel = parcelRow({
+      status: 'a_completer',
+      tracking: null,
+      trackingNorm: null,
+      carrier: null,
+    });
+    await db.directoryPerson.put(camille);
+    await db.parcel.put(parcel);
+
+    await assignRecipient(
+      db,
+      parcel.id,
+      { kind: 'person', id: camille.id },
+      options,
+    );
+
+    expect(await db.parcel.get(parcel.id)).toMatchObject({
+      status: 'a_completer',
+      personId: camille.id,
+    });
+    const events = await db.event
+      .where('[entity+entityId]')
+      .equals(['parcel', parcel.id])
+      .toArray();
+    expect(events.map((row) => row.type)).not.toContain('parcel.status');
+  });
+
   it('keeps the department typed with someone outside the directory', async () => {
     const parcel = parcelRow({ status: 'a_completer' });
     await db.parcel.put(parcel);

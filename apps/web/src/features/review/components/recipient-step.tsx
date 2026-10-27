@@ -129,16 +129,18 @@ export function RecipientStep({
   };
 
   const onPick = async (pick: RecipientPick) => {
-    if (pick.kind === 'card') {
-      setChosen(pick.choice);
-    } else {
-      setChosen(
-        await saveOutsideContact(db, pick, { agentId: session.user.id }),
-      );
-      if (pick.department) {
-        await updateDraft(db, draft.id, { department: pick.department });
-      }
-    }
+    const chosen =
+      pick.kind === 'card'
+        ? pick.choice
+        : await saveOutsideContact(db, pick, { agentId: session.user.id });
+    // The department typed goes with the contact typed, and only with it.
+    await updateDraft(db, draft.id, {
+      department:
+        pick.kind === 'typed' && chosen.kind === 'contact'
+          ? pick.department || null
+          : null,
+    });
+    setChosen(chosen);
     setPicking(false);
   };
 
@@ -149,7 +151,7 @@ export function RecipientStep({
           suggestions={candidates}
           readName={shownName}
           onClose={() => setPicking(false)}
-          onPick={(pick) => void onPick(pick)}
+          onPick={onPick}
         />
       ) : (
         <VerifierColisScreen

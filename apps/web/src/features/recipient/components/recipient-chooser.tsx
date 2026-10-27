@@ -5,7 +5,7 @@ import {
   type OutsideContactDraft,
 } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
 import { isEmail, normalizeEmail } from '#/features/directory/people';
 import { loadRecipientBook } from '#/features/parcels/recipients';
@@ -29,7 +29,8 @@ export type RecipientChooserProps = {
   suggestions?: readonly Choice[];
   /** Prefills the name of « Personne hors annuaire »: the name read on the label. */
   readName?: string | null;
-  onPick: (pick: RecipientPick) => void;
+  /** Awaited: the sheet stays locked while a typed contact is saved. */
+  onPick: (pick: RecipientPick) => void | Promise<unknown>;
   onClose: () => void;
   /** Under the list, e.g. « Retirer le destinataire ». */
   footer?: ReactNode;
@@ -54,6 +55,8 @@ export function RecipientChooser({
   const [query, setQuery] = useState('');
   const [typing, setTyping] = useState<OutsideContactDraft | null>(null);
   const [emailError, setEmailError] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const picking = useRef(false);
   const people = book?.people ?? [];
   const contacts = book?.contacts ?? [];
   const searching = query.trim() !== '';
@@ -61,12 +64,25 @@ export function RecipientChooser({
     ? outsideDuplicate(typing.email, people, contacts)
     : null;
 
+  // One answer per chooser: a double tap must not save the same contact twice.
+  const answer = async (picked: RecipientPick) => {
+    if (picking.current) return;
+    picking.current = true;
+    setSaving(true);
+    try {
+      await onPick(picked);
+    } finally {
+      picking.current = false;
+      setSaving(false);
+    }
+  };
+
   const pick = (id: string) => {
     const choice =
       suggestions.find((option) => option.id === id) ??
       optionOf('person', id, people, contacts) ??
       optionOf('contact', id, people, contacts);
-    if (choice) onPick({ kind: 'card', choice });
+    if (choice) void answer({ kind: 'card', choice });
   };
 
   const submit = () => {
@@ -76,7 +92,7 @@ export function RecipientChooser({
       setEmailError(true);
       return;
     }
-    onPick({
+    void answer({
       kind: 'typed',
       name: typing.name.trim().replace(/\s+/g, ' '),
       email,
@@ -118,9 +134,10 @@ export function RecipientChooser({
           }}
           emailError={emailError ? t('edit.error.emailInvalid') : undefined}
           duplicate={duplicate}
+          saving={saving}
           onUseDuplicate={
             duplicate
-              ? () => onPick({ kind: 'card', choice: duplicate })
+              ? () => void answer({ kind: 'card', choice: duplicate })
               : undefined
           }
           onSubmit={submit}
