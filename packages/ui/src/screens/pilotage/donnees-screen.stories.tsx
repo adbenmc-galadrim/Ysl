@@ -48,7 +48,7 @@ export const DansLApp: Story = {
           icon: 'image',
           color: 'indigo',
           label: 'Photos d’étiquettes',
-          subtitle: 'Après la remise du colis',
+          subtitle: 'Après la remise ou le retour du colis',
           value: '7 jours',
           chevron: false,
         },
@@ -106,7 +106,7 @@ export const HorsLigne: Story = {
     purge: {
       title: 'Dernière purge',
       subtitle:
-        'Hors ligne : la date de la dernière purge revient avec le réseau',
+        'Hors ligne : la dernière purge s’affiche avec le réseau',
       action: 'Purger maintenant',
       disabled: true,
     },

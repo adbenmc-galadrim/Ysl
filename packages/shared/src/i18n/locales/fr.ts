@@ -276,7 +276,7 @@ export const fr = {
   'settings.privacy': 'Données et confidentialité',
   'privacy.retention.header': 'Durées de conservation (validées par le DPO)',
   'privacy.retention.photo': 'Photos d’étiquettes',
-  'privacy.retention.photo.detail': 'Après la remise du colis',
+  'privacy.retention.photo.detail': 'Après la remise ou le retour du colis',
   'privacy.retention.extraction': 'Lectures des étiquettes',
   'privacy.retention.extraction.detail': 'Texte lu et codes bruts',
   'privacy.retention.parcel': 'Colis remis',

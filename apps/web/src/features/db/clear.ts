@@ -4,8 +4,9 @@ import type { PhotoFiles } from '#/features/photos/opfs';
 /**
  * Empties the device: every local table in one transaction, then the photo
  * files. Rows first, so a crash in between leaves orphan files (swept at the
- * next launch), never rows without their photos. Called only once the
- * outbox is empty: what is not on the server would be lost.
+ * next launch), never rows without their photos. Sign-out calls it once
+ * the outbox is empty; "Effacer les données de cet iPhone" may call it with
+ * changes still queued, after the admin was told they would be lost.
  */
 export async function clearLocalData(
   db: CourrierDatabase,

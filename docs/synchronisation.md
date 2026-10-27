@@ -166,8 +166,11 @@ l'appareil n'a pas encore envoyée n'est pas écrasée par la copie du serveur.
 
 `reset: true` quand le curseur est inutilisable (génération différente, `xid`
 au-delà de la borne, ou sous l'horizon de purge de l'organisation) : les lignes
-repartent de zéro, l'appareil les prend toutes puis retire ce qui n'est pas revenu
-(sauf une ligne qu'il doit encore envoyer).
+repartent de zéro, l'appareil les prend toutes, relit une fois depuis la nouvelle borne
+(une ligne récrite pendant la lecture complète est au-dessus de sa borne), puis retire
+ce que ni l'une ni l'autre n'a rendu, sauf une ligne qui a une opération dans l'outbox.
+Une page suivante peut aussi dire `reset` quand une purge a effacé entre-temps une
+marque de la plage : la lecture repart de zéro.
 
 Une ligne arrivée avec `deletedAt` quitte l'appareil (pas de tombstone local), avec,
 pour un colis, ses événements et sa lecture (`extraction`) ; une ligne qui a une
@@ -225,7 +228,7 @@ deux temps et par lots de 500 en transactions courtes :
    (`delivered_at`) ou `retourne` depuis 12 mois (`updated_at`) ; remises et
    notifications dont tous les colis sont marqués ; codes de retrait utilisés ou
    expirés depuis 12 mois ; lots vides de plus de 12 mois ; contacts inutilisés depuis
-   12 mois (`last_used_at`) et personnes désactivées depuis 30 jours, sans colis,
+   12 mois (`last_used_at`, à défaut `updated_at`) et personnes désactivées depuis 30 jours, sans colis,
    remise, notification ni code vivant.
 2. **Suppression physique** des lignes marquées depuis plus de 30 jours, enfants
    avant parents (remises, notifications, codes, colis avec leurs `event` sous
@@ -234,7 +237,7 @@ deux temps et par lots de 500 en transactions courtes :
    encore référencée attendant la purge suivante ; `sync_op` au-delà de 90 jours.
 
 Chaque passage écrit une ligne `purge_run` (compteurs par table, `horizon_xid` = le
-plus grand `server_xid` supprimé + 1). Un appareil dont le curseur est sous l'horizon
+plus grand `server_xid` supprimé + 1, relevé dans la transaction de chaque lot). Un appareil dont le curseur est sous l'horizon
 de son organisation a pu manquer un marquage : son pull repart à zéro (`reset`).
 Job planifié dans `apps/server` (`PURGE_INTERVAL_MINUTES`, 1440 par défaut, 0 le
 coupe ; premier passage une minute après le démarrage), une instance à la fois par
