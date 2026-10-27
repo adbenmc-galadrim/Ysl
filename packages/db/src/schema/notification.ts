@@ -9,14 +9,13 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import {
+  MAIL_TARGETS,
+  NOTIFICATION_STATUSES,
+  NOTIFICATION_TYPES,
+} from '@repo/contract/mail';
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
-
-export const NOTIFICATION_TYPES = [
-  'avis',
-  'relance',
-  'resume_service',
-] as const;
 
 export const emailTemplate = pgTable(
   'email_template',
@@ -56,10 +55,27 @@ export const notification = pgTable(
     preparedAt: timestamp('prepared_at', { withTimezone: true }).notNull(),
     preparedBy: text('prepared_by').notNull(),
     sentAt: timestamp('sent_at', { withTimezone: true }),
+    // Declared by the agent (S5): the app only knows it opened the mail app.
+    status: text('status', { enum: NOTIFICATION_STATUSES })
+      .default('prepared')
+      .notNull(),
+    target: text('target', { enum: MAIL_TARGETS }),
+    openedAt: timestamp('opened_at', { withTimezone: true }),
+    failedReason: text('failed_reason'),
   },
   (table) => [
     ...syncConstraints('notification', table),
     oneOf('notification_type_check', table.type, NOTIFICATION_TYPES),
+    oneOf('notification_status_check', table.status, NOTIFICATION_STATUSES),
+    oneOf('notification_target_check', table.target, MAIL_TARGETS),
+    check(
+      'notification_sent_check',
+      sql`(${table.status} = 'sent') = (${table.sentAt} is not null)`,
+    ),
+    check(
+      'notification_failed_check',
+      sql`${table.status} = 'failed' or ${table.failedReason} is null`,
+    ),
     check(
       'notification_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,

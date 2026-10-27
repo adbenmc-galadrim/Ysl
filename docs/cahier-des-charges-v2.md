@@ -102,6 +102,9 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 4. « Valider le lot » ouvre le récapitulatif : N colis enregistrés, M e-mails prêts, K à compléter.
 
 **P3. Notification**
+
+> **Périmé sur l'envoi (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'app ouvre un e-mail prérempli par destinataire dans la messagerie de l'iPhone, l'agent l'envoie depuis son adresse et confirme l'envoi ; il n'y a ni file d'envoi serveur ni reprises.
+
 1. À la validation, l'app prépare un e-mail par destinataire, qui regroupe tous ses colis en attente. Ces e-mails partent dans la file d'envoi, en ligne ou hors ligne.
 2. Le serveur envoie, avec des reprises en cas d'échec. Chaque colis affiche « E-mail envoyé à 10:42 » ou « Échec : adresse refusée · Corriger ».
 3. Si le serveur d'envoi est indisponible, l'agent peut utiliser le repli `mailto:`, colis par colis.
@@ -180,10 +183,10 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 
 | ID | Exigence | Origine | Prio | Lot |
 | --- | --- | --- | --- | --- |
-| F33 | Envoi par le serveur via une file d'attente (outbox), avec reprises ; statut visible (en file, envoyé, échec) | Nouveau (remplace `mailto:`) | M | L2 |
+| F33 | ~~Envoi par le serveur via une file d'attente (outbox), avec reprises~~ **Périmé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail part de l'adresse de l'agent, ouvert prérempli dans la messagerie de l'iPhone (`mailto:`, Outlook ou Gmail en option) depuis ses propres modèles ; suivi déclaratif de chaque e-mail (préparé, messagerie ouverte, envoyé confirmé par l'agent, échec) | Nouveau (remplace l'envoi manuel) | M | L2 |
 | F34 | Un e-mail par destinataire, regroupant ses colis ; « par service » devient un résumé optionnel | Amélioré (F17) | M | L2 |
-| F35 | E-mail en HTML et en texte, accents corrects ; lieu et horaires de retrait ; QR et PIN de retrait | Amélioré | M | L2 |
-| F36 | Repli `mailto:` manuel si l'envoi serveur est indisponible | Repris (en repli) | S | L2 |
+| F35 | E-mail ~~en HTML et en texte~~ en texte brut (D2 révisée, S5), accents corrects ; lieu et horaires de retrait ; ~~QR et~~ code de retrait écrit en clair (le QR ne passe pas par `mailto:`) | Amélioré | M | L2 |
+| F36 | ~~Repli `mailto:` manuel si l'envoi serveur est indisponible~~ **Périmé (D2 révisée) :** `mailto:` devient la voie principale, il n'y a plus d'envoi serveur ; Outlook, Gmail et « copier le texte » restent en option | Repris (voie principale) | S | L2 |
 | F37 | Relances automatiques, puis alerte « En souffrance » à l'agent | Nouveau | S | L2 |
 | F38 | Copie à un délégué ou à des collègues, par e-mail | Amélioré (F18) | C | L3 |
 | F39 | Envoi à heures fixes (créneaux) plutôt qu'immédiat | Nouveau | C | L3 |
@@ -646,7 +649,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | Auth | Better Auth (email + mot de passe) ; Microsoft Entra en cible | `^1.6.26` | Identique ; plugin `jwt()` inutile sans PowerSync |
 | Base de données | PostgreSQL + drizzle-orm / drizzle-kit + `pg` | 17 (image épinglée) ; `^0.45.2` ; `^0.31.10` ; `^8.22.0` | Identique ; `wal_level=logical` n'est plus nécessaire |
 | File de tâches | Table Postgres + `SELECT … FOR UPDATE SKIP LOCKED`, worker dans le process serveur | — | Volume faible (20 à 100 colis par jour **[estimation]**) : pas de Redis ni de BullMQ |
-| E-mail | Interface `Mailer` : Scaleway TEM (MVP), Microsoft Graph `sendMail` (cible) | — | Rapport 05 ; changer de fournisseur ne demande pas de réécriture |
+| E-mail | Interface `Mailer` : messagerie du téléphone par `mailto:` (MVP, D2 révisée), Microsoft Graph `sendMail` (cible) | — | Rapport 05 et spike S5 ; Scaleway TEM abandonné ; changer de voie ne demande pas de réécriture |
 | Suivi transporteur | Interface `TrackingProvider` : agrégateur (Ship24 ou 17TRACK) + API La Poste Okapi | — | Optionnel (L4) |
 | Env, logs, i18n | `@t3-oss/env-core`, pino, i18n maison | `^0.13.1` ; `^10.3.1` | Identique ; fusionnés dans `@repo/shared` |
 | Tests | Vitest, Playwright | `^4.1.10` ; `^1.57.0` | Identique ; 2 ou 3 tests e2e de base + banc d'essai d'extraction |
@@ -702,7 +705,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | Lecture des QR de remise | 05 : jsQR ou zxing-wasm | zxing-wasm seul (déjà embarqué) |
 | Taille de zxing-wasm | 03 et 04 : ~1,04 Mio · 06 : ~2 Mo | ~1 Mo pour le lecteur seul ; à mesurer dans le build |
 | OCR dans le cloud | v1 : « la photo n'est jamais envoyée » (mais `worker.js` envoyait vers l'API d'Anthropic) · 04 : renfort cloud hybride | Désactivé par défaut. Activable seulement après avis du DPO, en envoyant **uniquement le recadrage** de l'étiquette (sans EXIF), vers une région UE (Mistral, Vertex UE, Azure France), via un proxy serveur. Le tracking ne vient **jamais** d'un LLM |
-| Envoi des e-mails | v1 : jamais d'envoi sans action de l'agent · 05 : envoi serveur automatique | L'action de l'agent est **la validation du lot** ; l'envoi suit sans autre geste. Repli `mailto:` conservé |
+| Envoi des e-mails | v1 : jamais d'envoi sans action de l'agent · 05 : envoi serveur automatique | **Périmé (D2 révisée)** : l'agent envoie chaque e-mail depuis la messagerie de l'iPhone, prérempli par l'app, et confirme l'envoi ; pas d'envoi serveur |
 
 ---
 
@@ -731,7 +734,7 @@ flowchart LR
         WK <--> PG
     end
     DX -- "sync.push / sync.pull" --> API
-    WK --> MAIL[Mailer<br/>Scaleway TEM puis Graph sendMail]
+    WK --> MAIL[Mailer serveur<br/>Graph sendMail, cible D20]
     WK --> DIR[Annuaire<br/>CSV puis Entra ID delta]
     WK -.-> TRK[TrackingProvider<br/>agrégateur, La Poste]
     MAIL --> EMP[Salarié<br/>e-mail + QR / PIN]
@@ -752,7 +755,7 @@ Clés primaires : UUID v7 générés par le client. Chaque table synchronisée p
 | `photo` | id, parcel_id, type (`etiquette`, `signature`), chemin OPFS, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
 | `sender` | id, nom_affiche, nom_norm, adresse?, nb_vues, last_seen | Expéditeurs déjà vus |
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
-| `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, send_at, statut (`en_file`, `envoye`, `delivre`, `echec`), tentatives, message_id du fournisseur, erreur | Outbox serveur ; `delivre` seulement si le fournisseur le remonte |
+| `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, statut (`prepared`, `opened`, `sent`, `failed`), messagerie (`mailto`, `outlook`, `gmail`), prepared_at/by, opened_at, sent_at, failed_reason | Suivi déclaratif (D2 révisée, S5) : l'app sait qu'elle a ouvert la messagerie, l'agent confirme l'envoi ; le texte de l'e-mail n'est pas stocké |
 | `pickup_code` | id, person_id ou contact_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne, qui couvre tous ses colis en attente |
 | `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), signature_photo_id?, agent_id, at, annulé_at? | Preuve de remise |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
@@ -819,10 +822,12 @@ stateDiagram-v2
 | `reports.summary` | tRPC (admin) | Rapports (L3) |
 | `tracking.lookup` | tRPC | Suivi transporteur (L4, optionnel) |
 | `extraction.cloudAssist` | tRPC | Renfort cloud (L4, désactivé par défaut) |
-| `POST /api/webhooks/mail` | Hono | Statuts remontés par le fournisseur d'e-mail (si disponible) |
+| ~~`POST /api/webhooks/mail`~~ | Hono | **Périmé (D2 révisée)** : pas de fournisseur d'envoi, pas de statut remonté |
 | `/health`, `/ready`, `/version.json` | Hono | Sondes, détection de nouvelle version |
 
 ### 8.7 E-mail et retrait
+
+> **Périmé en partie (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail est en texte brut, envoyé depuis la messagerie de l'agent à partir de ses modèles ; pas de version HTML ni de QR dans le mail, le code de retrait s'écrit en clair en tête du message.
 
 - **Objet** : « Colis en attente de retrait – Service Courrier » (« N colis… » s'il y en a plusieurs).
 - **Corps** : une ligne par colis (transporteur, tracking, expéditeur, n/N, heure de réception), lieu et horaires de retrait (paramétrables), QR de retrait et PIN.
@@ -905,7 +910,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | **S2 Codes-barres** | zxing-wasm sur le corpus : taux de lecture par format et par transporteur, en mode viseur et en mode photo native ; MaxiCode avec ou sans recadrage maison ; contenu réel des Aztec Colissimo et Chronopost, des PDF417 FedEx Express et des Data Matrix GLS et La Poste | Tracking lu par code-barres sur ≥ 90 % du corpus **[cible]** | Le mode photo native devient le défaut pour les transporteurs à 2D ; essai de Dynamsoft si le MaxiCode manque (décision D11) |
 | **S3 OCR** | PaddleOCR v5 mobile, v6 tiny et v6 small, et Tesseract v7, en WASM et en WebGPU : p50 et p95, pic mémoire, exactitude destinataire et expéditeur | p95 ≤ 5 s, pic < 250 Mo, aucun plantage sur 50 photos d'affilée, destinataire ≥ 90 % (top 3) avant l'apprentissage **[cible]** | Plan B Tesseract v7 par zones ; renfort cloud à arbitrer (décision D9) |
 | **S4 Stockage et mises à jour** | Dexie + OPFS en PWA installée : mode avion, app tuée, relance, `persist()`, verrouillage pendant une écriture ; déploiement v1 puis v2 et prise en compte de la mise à jour au retour au premier plan | Aucune perte sur les scénarios ; mise à jour détectée sans réinstallation | Ajustement de la stratégie de mise à jour ; réexamen de PowerSync seulement si IndexedDB échoue |
-| **S5 E-mail** | Envoi via Scaleway TEM vers 5 boîtes Saint Laurent : spam, rendu Outlook et Mail iOS, QR lisible | 5/5 en boîte de réception, rendu correct | Accélérer la voie Graph (DSI) ; `mailto:` en attendant |
+| **S5 E-mail** | ~~Envoi via Scaleway TEM vers 5 boîtes Saint Laurent : spam, rendu Outlook et Mail iOS, QR lisible~~ **Périmé, remplacé par la messagerie du téléphone (D2 révisée), voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md) :** e-mail prérempli ouvert dans Mail, Outlook et Gmail depuis la PWA ; accents, sauts de ligne, longueur ; modèles gérés par l'agent | Brouillon complet dans Mail iOS et Outlook, rendu intact (verdict go du 23/10/2026) | `mailto:` seul, en texte brut, code de retrait écrit en clair |
 | S6 (optionnel) | 20 vrais colis passés dans Ship24 et 17TRACK (essai) : quels champs reviennent réellement | — | Le suivi reste hors du MVP |
 
 ### 10.2 Lots
@@ -914,7 +919,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | --- | --- | --- |
 | **L0 Fondations** | Monorepo (stack §7), CI, déploiement UE, PWA installable (manifest, icônes, `apple-touch-icon`, SW en mode prompt, `/version.json`), auth agent/admin, jetons de design, Dexie + `sync.push` / `sync.pull` + outbox, pastille de synchronisation (F01, F45, F46, F48, F49) | App installée sur l'iPhone ; relance en mode avion → l'app s'ouvre ; une écriture faite hors ligne arrive sur l'ordinateur au retour du réseau ; mise à jour proposée sans réinstallation ; aucune donnée personnelle dans le dépôt |
 | **L1 Réception** (MVP, partie 1) | Mode rafale, chaîne d'extraction complète (§4), revue de lot, À compléter, journal et fiche, annuaire CSV, contacts, doublons, apprentissage, diagnostic, export CSV, import v1, mode sombre (F02 à F14, F16 à F23, F25 à F30, F47, F50 à F52, F63) | Corpus : objectifs O1 à O4 et O6 atteints ; 50 colis en rafale sans plantage ; tous les cas de non-régression du §4.6 passent en CI ; l'import v1 signale les trackings invalides, dont `7185713569` ; parcours P1, P2 et P6 faits par l'agent sur un vrai lot |
-| **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | Outbox e-mail avec Scaleway TEM, regroupement par personne, QR et PIN, repli `mailto:`, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge (F31 à F37, F40 à F44, F53) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 faits par l'agent → **mise en production pilote** |
+| **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | E-mail prérempli dans la messagerie du téléphone (D2 révisée) et suivi déclaratif, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge (F31 à F37, F40 à F44, F53) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 faits par l'agent → **mise en production pilote** |
 | **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, vues ordinateur et rapports, statut Retourné (F06, F15, F38, F39, F54 à F57) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé ne peut pas être remis sans signature ; rapports exacts sur un jeu de test |
 | **L4 Cible avec DSI** | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
 
@@ -951,7 +956,7 @@ Chaque décision est accompagnée d'une recommandation.
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
 | D1 | Hébergeur du serveur et domaine de l'app | Utilisateur + DSI | Hébergeur en UE (conteneurs, Postgres), domaine maîtrisé par l'entreprise ; plus de GitHub Pages personnel |
-| D2 | E-mail pour le MVP | Utilisateur | Scaleway TEM (UE) sur un domaine du projet, validé par le spike S5 ; `mailto:` en repli ; Graph en cible |
+| D2 | E-mail pour le MVP | Utilisateur | **Révisée :** l'e-mail part de l'adresse de l'agent, prérempli dans la messagerie du téléphone (`mailto:`), depuis des modèles qu'il crée et gère ; plus de Scaleway TEM ni d'envoi serveur (spike S5, go) ; Graph en cible (D20) |
 | D3 | Base hors ligne | Utilisateur | Dexie + outbox (§7.2) ; PowerSync seulement en cas de multi-sites ou de forte concurrence |
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |

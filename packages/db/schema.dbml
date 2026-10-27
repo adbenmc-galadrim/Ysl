@@ -291,10 +291,18 @@ Table "notification" {
   "prepared_at" timestamptz [not null]
   "prepared_by" text [not null]
   "sent_at" timestamptz
+  "status" text [not null, default: 'prepared']
+  "target" text
+  "opened_at" timestamptz
+  "failed_reason" text
 
   Checks {
     `coalesce(uuid_extract_version("notification"."id"), 0) = 7` [name: 'notification_id_v7']
     `"notification"."type" in ('avis', 'relance', 'resume_service')` [name: 'notification_type_check']
+    `"notification"."status" in ('prepared', 'opened', 'sent', 'failed')` [name: 'notification_status_check']
+    `"notification"."target" in ('mailto', 'outlook', 'gmail')` [name: 'notification_target_check']
+    `("notification"."status" = 'sent') = ("notification"."sent_at" is not null)` [name: 'notification_sent_check']
+    `"notification"."status" = 'failed' or "notification"."failed_reason" is null` [name: 'notification_failed_check']
     `"notification"."person_id" is null or "notification"."contact_id" is null` [name: 'notification_single_recipient']
     `cardinality("notification"."parcel_ids") >= 1` [name: 'notification_parcels_check']
     `cardinality("notification"."recipients") >= 1` [name: 'notification_recipients_check']

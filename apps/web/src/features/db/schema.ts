@@ -294,6 +294,11 @@ const DRAFT_STORES = {
 /** Version 4 (YSL-52): what the reader made of each parcel's label. */
 const EXTRACTION_STORES = { extraction: 'parcelId, createdAt' };
 
+/** Version 5 (YSL-54): the mails by where they stand, for their follow-up. */
+const NOTIFICATION_V5 = {
+  notification: 'id, personId, contactId, preparedAt, sentAt, status',
+};
+
 /** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
 const OUTBOX_V3 = {
   outbox: '++seq, &opId, [entity+entityId], clientTs, state',
@@ -336,6 +341,7 @@ export class CourrierDatabase extends Dexie {
           }),
       );
     this.version(4).stores(EXTRACTION_STORES);
+    this.version(5).stores(NOTIFICATION_V5);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');

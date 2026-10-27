@@ -81,6 +81,10 @@ export const GUARDS = {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.settingKey',
   },
+  email_template_default_idx: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.defaultTemplateTwice',
+  },
 } as const;
 
 export type Guard = keyof typeof GUARDS;

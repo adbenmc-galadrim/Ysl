@@ -41,7 +41,7 @@ Un statut par opération, dans l'ordre envoyé :
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | 200    | appliquée, maintenant ou par un envoi précédent                                                                                                                                                                | retirée de l'outbox                                         |
 | 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                      |
-| 403    | identifiant d'une autre organisation                                                                                                                                                                           | `rejected`                                                  |
+| 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails »)                              | `rejected`                                                  |
 | 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                  |
 | 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger »                  |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
@@ -61,6 +61,27 @@ status = 409` est le journal des conflits du §8.4. Le dernier écrit gagne **li
 ligne**, et non champ par champ comme le §8.4 le prévoit (écart assumé tant qu'une
 ligne n'a qu'un auteur à la fois), dans l'ordre d'arrivée au serveur ; une suppression
 reste acquise, une copie en retard ne la défait pas.
+
+## Modèles et e-mails
+
+Les modèles d'e-mail (`email_template`) appartiennent à leur agent (D2) et les e-mails
+(`notification`) à qui les a préparés ; `sync.push` le vérifie avant d'écrire :
+
+| Cas                                                                                          | Statut | Message                        |
+| -------------------------------------------------------------------------------------------- | ------ | ------------------------------ |
+| modèle dont `owner_id` (envoyé ou en base) n'est pas l'agent qui pousse                      | 403    | `sync.op.templateOwner`        |
+| suppression du modèle par défaut (`delete`, ou `deleted_at` posé sur une ligne `is_default`) | 409    | `sync.op.defaultTemplate`      |
+| second modèle par défaut du même agent et du même type (`email_template_default_idx`)        | 409    | `sync.op.defaultTemplateTwice` |
+| notification qui ne suit pas le contrat `notificationRow` (`@repo/contract/mail`)            | 400    | message générique              |
+| notification dont `prepared_by` n'est pas l'agent qui pousse                                 | 403    | `sync.op.notificationOwner`    |
+| notification qui recule (`sent` vers `opened`…, `canMoveNotification`)                       | 409    | `sync.op.notificationStale`    |
+
+Le suivi est déclaratif (spike S5) : `prepared` avant le toucher du lien, `opened` si la
+page est passée en arrière-plan dans les 2 s, `sent` ou `failed` selon ce que l'agent
+déclare. `markSent` écrit l'e-mail, les colis passés à `notifie` (ou leur relance datée
+dans `last_notified_at`) et un événement `parcel.notified` par colis dans le même
+`commitLocal`. Le texte de l'e-mail n'est pas stocké. Le pull ramène les modèles de toute
+l'organisation ; l'app n'affiche que ceux de l'agent connecté.
 
 ## Garde-fous des statuts et de la remise
 
@@ -279,7 +300,7 @@ lâcher.
   partage (`navigator.share` avec fichier : Fichiers, AirDrop, Mail) ; sans partage
   de fichiers (Safari sur Mac, Chromium), il se télécharge. Contenu :
   `{ format: 'courrier-secours', version: 1, exportedAt, app, pending, rejected,
-  changes[] }`, chaque changement étant l'opération d'outbox (`opId`, `entity`,
+changes[] }`, chaque changement étant l'opération d'outbox (`opId`, `entity`,
   `entityId`, `type`, `state`, `clientTs`, `attempts`, `lastError`, `patch`) avec la
   ligne locale courante (`row`, `null` si elle a disparu). Jamais de photo ni de
   signature (D8, §8.5) : les données seulement, dates en ISO 8601.

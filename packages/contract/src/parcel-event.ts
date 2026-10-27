@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { IMPORT_FLAGS, type ImportFlag } from './imports';
 import { DAMAGE_REASONS, type DamageReason } from './parcel-damage';
+import { NOTIFICATION_TYPES, type NotificationType } from './mail/templates';
 import { PARCEL_STATUSES, type ParcelStatus } from './parcel-status';
 
 /** The `entity` of the `event` rows that tell a parcel's story. */
@@ -42,7 +43,12 @@ export type ParcelEvent =
       /** Photos taken on the iPhone that reported it; they stay there (D8). */
       photos: number;
     }
-  | { type: 'parcel.damage_lifted'; reason: DamageReason };
+  | { type: 'parcel.damage_lifted'; reason: DamageReason }
+  | {
+      type: 'parcel.notified';
+      notificationId: string;
+      kind: NotificationType;
+    };
 
 const status = z.enum(PARCEL_STATUSES);
 const reason = z.enum(DAMAGE_REASONS);
@@ -57,6 +63,10 @@ const details = {
   }),
   'parcel.status': z.object({ from: status, to: status }),
   'parcel.deleted': z.unknown(),
+  'parcel.notified': z.object({
+    notificationId: z.string(),
+    kind: z.enum(NOTIFICATION_TYPES),
+  }),
   'parcel.imported': z.object({
     flags: z
       .array(z.string())
@@ -97,6 +107,11 @@ export function eventColumns(event: ParcelEvent): {
     }
     case 'parcel.damage_lifted':
       return { type: event.type, detail: { reason: event.reason } };
+    case 'parcel.notified':
+      return {
+        type: event.type,
+        detail: { notificationId: event.notificationId, kind: event.kind },
+      };
   }
 }
 
@@ -133,6 +148,10 @@ export function readParcelEvent(
     case 'parcel.damage_lifted': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, reason: read.data.reason } : undefined;
+    }
+    case 'parcel.notified': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
     }
     default:
       return undefined;

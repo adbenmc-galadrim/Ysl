@@ -20,6 +20,14 @@ export const fr = {
   'sync.op.recipient':
     'Un destinataire est requis pour notifier ou remettre un colis.',
   'sync.op.directoryEmail': 'Cette adresse e-mail est déjà dans l’annuaire.',
+  'sync.op.templateOwner': 'Ce modèle d’e-mail appartient à un autre agent.',
+  'sync.op.defaultTemplate':
+    'Le modèle par défaut ne se supprime pas ; il se rétablit.',
+  'sync.op.defaultTemplateTwice':
+    'Un autre modèle par défaut existe déjà pour ce type d’e-mail.',
+  'sync.op.notificationStale':
+    'Cet e-mail a changé d’état depuis un autre appareil.',
+  'sync.op.notificationOwner': 'Cet e-mail a été préparé par un autre agent.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
@@ -210,6 +218,8 @@ export const fr = {
   'history.deleted': 'Supprimé',
   'history.damaged': 'Réserve : {{reason}}',
   'history.damageLifted': 'Réserve levée : {{reason}}',
+  'history.notified': 'Notifié par e-mail',
+  'history.reminded': 'Relance envoyée',
   'history.imported': 'Importé de la v1',
   'history.imported.flagged': 'Importé de la v1, tracking douteux',
   'history.imported.status': 'Importé de la v1, statut inconnu',
@@ -307,6 +317,48 @@ export const fr = {
   'settings.pickup.day.thu': 'Jeudi',
   'settings.pickup.day.fri': 'Vendredi',
   'settings.importV1': 'Importer l’historique v1',
+  'settings.group.mail': 'E-mails',
+  'settings.mailTemplates': 'Modèles d’e-mail',
+  'mail.template.newName': 'Nouveau modèle',
+  'mail.template.copyName': '{{name}} (copie)',
+  'mail.template.untitled': 'Sans nom',
+  'mail.template.previewNote':
+    'Sur un colis d’exemple, avec le lieu et les horaires de Réglages.',
+  'mail.template.saveFailed': 'Modèle non enregistré sur l’iPhone, réessayez.',
+  'mail.template.unknown': 'Variable inconnue : {{names}}',
+  'mail.template.unknownMany': 'Variables inconnues : {{names}}',
+  'mail.template.unknown.description':
+    'Elle restera telle quelle dans l’e-mail.',
+  'mail.template.unknown.suggest':
+    'Elle restera telle quelle dans l’e-mail. Vouliez-vous dire {{name}} ?',
+  'mail.template.pickupMissing': 'Lieu ou horaires de retrait non renseignés',
+  'mail.template.pickupMissing.description':
+    'Ils restent entre accolades dans l’e-mail tant qu’un administrateur ne les a pas saisis dans Réglages › Lieu et horaires de retrait.',
+  'mail.template.tooLong': 'Message très long',
+  'mail.template.tooLong.description':
+    'Plus de {{max}} caractères : la messagerie de l’iPhone n’a pas été essayée au-delà.',
+  'mail.template.delete.title': 'Supprimer ce modèle ?',
+  'mail.template.delete.description':
+    'Il disparaît de vos appareils. Les e-mails déjà envoyés ne changent pas.',
+  'mail.template.delete.confirm': 'Supprimer le modèle',
+  'mail.template.restore.title': 'Rétablir le texte d’origine ?',
+  'mail.template.restore.description':
+    'Le nom, l’objet et le message reprennent le texte livré avec l’app.',
+  'mail.template.restore.confirm': 'Rétablir',
+  'mail.variable.prénom': 'Prénom du destinataire',
+  'mail.variable.nom': 'Nom du destinataire',
+  'mail.variable.code': 'Code de retrait',
+  'mail.variable.colis': 'Les colis, une puce par colis',
+  'mail.variable.lieu': 'Lieu de retrait (Réglages)',
+  'mail.variable.horaires': 'Horaires de retrait (Réglages)',
+  'mail.variable.consignes': 'Consignes (Réglages), ligne retirée si vide',
+  'mail.variable.reserve':
+    'Colis arrivés abîmés à signaler, ligne retirée s’il n’y en a pas',
+  'mail.variable.agent': 'Votre nom',
+  'mail.variable.lien_pas_moi':
+    'Lien « Ce n’est pas à moi » vers votre adresse',
+  'mail.variable.lien_collegue':
+    'Lien « Un collègue passera » vers votre adresse',
   'import.v1.error.notV1':
     'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
   'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',

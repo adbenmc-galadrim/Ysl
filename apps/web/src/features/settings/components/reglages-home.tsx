@@ -108,6 +108,18 @@ export function ReglagesHome() {
     ],
   };
 
+  const mail: SettingsGroup = {
+    header: t('settings.group.mail'),
+    items: [
+      {
+        icon: 'mail',
+        color: 'blue',
+        label: t('settings.mailTemplates'),
+        onPress: () => void navigate({ to: '/reglages/modeles-email' }),
+      },
+    ],
+  };
+
   const service: SettingsGroup = {
     header: t('settings.group.service'),
     items: [
@@ -187,8 +199,8 @@ export function ReglagesHome() {
       }}
       groups={
         role === 'admin'
-          ? [steering, data, service, app]
-          : [steering, data, app]
+          ? [steering, data, mail, service, app]
+          : [steering, data, mail, app]
       }
       onBack={() => void navigate({ to: '/' })}
     />

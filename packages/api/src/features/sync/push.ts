@@ -1,4 +1,9 @@
 import type { UserRole } from '@repo/contract/auth';
+import {
+  canMoveNotification,
+  notificationRow,
+  type NotificationStatus,
+} from '@repo/contract/mail';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
@@ -8,7 +13,11 @@ import {
   type PushResult,
   type SyncOp,
 } from '@repo/contract/sync';
-import { syncOp as syncOpTable } from '@repo/db/schema';
+import {
+  emailTemplate,
+  notification,
+  syncOp as syncOpTable,
+} from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
 import {
@@ -106,6 +115,107 @@ function checkSetting(op: SyncOp, { role }: Writer): void {
     throw new SyncRejected(
       SYNC_STATUS.badRequest,
       `setting ${op.entityId} has no valid value for its key`,
+    );
+  }
+}
+
+/**
+ * Templates are each agent's own (D2): written by their owner only, and the
+ * default one, which every mail falls back on, is restored, never deleted.
+ */
+async function checkTemplate(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, userId }: Writer,
+): Promise<void> {
+  const [row] = await tx
+    .select({
+      ownerId: emailTemplate.ownerId,
+      isDefault: emailTemplate.isDefault,
+    })
+    .from(emailTemplate)
+    .where(
+      and(
+        eq(emailTemplate.id, op.entityId),
+        eq(emailTemplate.organizationId, organizationId),
+      ),
+    );
+  const owner = op.type === 'upsert' ? op.patch.ownerId : row?.ownerId;
+  if (
+    (row && row.ownerId !== userId) ||
+    (owner !== undefined && owner !== userId)
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.forbidden,
+      `email_template ${op.entityId} written by another agent`,
+      'sync.op.templateOwner',
+    );
+  }
+  const isDefault =
+    row?.isDefault === true ||
+    (op.type === 'upsert' && op.patch.isDefault === true);
+  const deleting =
+    op.type === 'delete' || (op.patch.deletedAt ?? null) !== null;
+  if (isDefault && deleting) {
+    throw new SyncRejected(
+      SYNC_STATUS.conflict,
+      `email_template ${op.entityId} is a default template`,
+      'sync.op.defaultTemplate',
+    );
+  }
+}
+
+/**
+ * A mail is declared by the agent who prepared it (S5): the row has the shape
+ * of the contract, and nobody else moves it.
+ */
+async function checkNotification(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, userId }: Writer,
+): Promise<void> {
+  if (
+    op.type === 'upsert' &&
+    !notificationRow.safeParse({ ...op.patch, id: op.entityId }).success
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.badRequest,
+      `notification ${op.entityId} does not match the contract`,
+    );
+  }
+  const [row] = await tx
+    .select({
+      preparedBy: notification.preparedBy,
+      status: notification.status,
+    })
+    .from(notification)
+    .where(
+      and(
+        eq(notification.id, op.entityId),
+        eq(notification.organizationId, organizationId),
+      ),
+    );
+  const author = op.type === 'upsert' ? op.patch.preparedBy : undefined;
+  if (
+    (row && row.preparedBy !== userId) ||
+    (author !== undefined && author !== userId)
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.forbidden,
+      `notification ${op.entityId} written by another agent`,
+      'sync.op.notificationOwner',
+    );
+  }
+  if (
+    op.type === 'upsert' &&
+    row &&
+    row.status !== op.patch.status &&
+    !canMoveNotification(row.status, op.patch.status as NotificationStatus)
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.conflict,
+      `notification ${op.entityId} cannot go from ${row.status} to ${String(op.patch.status)}`,
+      'sync.op.notificationStale',
     );
   }
 }
@@ -268,6 +378,10 @@ async function applyOne(
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
         if (op.entity === 'setting') checkSetting(op, writer);
+        if (op.entity === 'email_template') await checkTemplate(tx, op, writer);
+        if (op.entity === 'notification') {
+          await checkNotification(tx, op, writer);
+        }
         if (op.type === 'delete') await softDelete(tx, op, writer);
         else await upsert(tx, op, writer);
         return null;
