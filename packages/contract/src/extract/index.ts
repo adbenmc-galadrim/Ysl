@@ -14,12 +14,19 @@ import { CONFIDENCE } from './confidence';
 import { capUnkeyed, mergeField, type Observation } from './fields';
 import { type AccountRead, accountsOf, extractSender } from './sender';
 import { observeOcr, ocrTrackings, plausibleWeight, weightKey } from './ocr';
-import { extractRecipient, type RecipientRead } from './recipient';
+import { extractRecipientField, type RecipientRead } from './recipient';
 import type { Extraction, ExtractInput, Field, FieldSource } from './types';
 
 export { CONFIDENCE, combine, levelOf } from './confidence';
-export { elsewhere, extractRecipient, MAILROOM } from './recipient';
-export type { RecipientRead } from './recipient';
+export {
+  elsewhere,
+  extractRecipient,
+  extractRecipientField,
+  MAILROOM,
+} from './recipient';
+export type { RecipientCard, RecipientField, RecipientRead } from './recipient';
+export { aliasKey, bestAlias, LEARNED, learnedConfidence } from './learning';
+export type { KnownRecipientAlias, KnownSenderAlias } from './learning';
 export { VOTE } from './carrier';
 export { adjust, canonical, capUnkeyed } from './fields';
 export { explainField, sourceRank } from './explain';
@@ -161,6 +168,7 @@ export const extractFields = ({
   ocr,
   senders,
   directory,
+  recipients: learnedRecipients,
 }: ExtractInput): Extraction => {
   const reads: Read[] = symbols.map((symbol) => ({
     symbol,
@@ -349,12 +357,19 @@ export const extractFields = ({
     references.push(...read.references);
   }
 
+  const recipient = extractRecipientField(
+    recipients,
+    directory ?? [],
+    learnedRecipients ?? [],
+  );
   return {
     tracking: capUnkeyed(mergeField(trackings), keyed),
     carrier,
-    recipient: extractRecipient(recipients, directory ?? []),
+    recipient: recipient.field,
+    recipientCard: recipient.card,
     sender: sender.field,
     senderId: sender.senderId,
+    senderAlias: sender.alias,
     accounts,
     pieces: mergeField(pieces),
     weightKg: mergeField(weights),

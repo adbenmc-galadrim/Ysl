@@ -25,6 +25,7 @@ import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
 import { skipDraft } from '#/features/review/actions';
 import { AnnexStep } from '#/features/review/components/annex-step';
+import { SenderStep } from '#/features/review/components/sender-step';
 import { RecipientStep } from '#/features/review/components/recipient-step';
 import type { StepProps } from '#/features/review/components/step';
 import { TrackingStep } from '#/features/review/components/tracking-step';
@@ -266,6 +267,8 @@ export function ReviewScreen() {
             people={people}
             contacts={contacts}
           />
+        ) : step.field === 'sender' ? (
+          <SenderStep key={key} {...frame} />
         ) : (
           <AnnexStep key={key} {...frame} field={step.field} />
         )}

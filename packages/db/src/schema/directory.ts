@@ -8,6 +8,7 @@ import {
   text,
   timestamp,
   uniqueIndex,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
@@ -60,6 +61,37 @@ export const contact = pgTable(
     index('contact_last_used_at_idx').on(
       table.organizationId,
       table.lastUsedAt,
+    ),
+  ],
+);
+
+export const recipientAlias = pgTable(
+  'recipient_alias',
+  {
+    ...syncColumns(),
+    nameNorm: text('name_norm').notNull(),
+    personId: uuid('person_id'),
+    contactId: uuid('contact_id'),
+    confirmations: integer('confirmations').default(1).notNull(),
+  },
+  (table) => [
+    ...syncConstraints('recipient_alias', table),
+    index('recipient_alias_name_norm_idx')
+      .on(table.organizationId, table.nameNorm)
+      .where(sql`${table.deletedAt} is null`),
+    index('recipient_alias_person_id_idx')
+      .on(table.personId)
+      .where(sql`${table.personId} is not null`),
+    index('recipient_alias_contact_id_idx')
+      .on(table.contactId)
+      .where(sql`${table.contactId} is not null`),
+    check(
+      'recipient_alias_target_check',
+      sql`num_nonnulls(${table.personId}, ${table.contactId}) = 1`,
+    ),
+    check(
+      'recipient_alias_confirmations_check',
+      sql`${table.confirmations} >= 1`,
     ),
   ],
 );

@@ -3,6 +3,12 @@ import type { ParsedCode } from '../codes';
 import type { TrackingVerdict } from '../tracking/validate';
 import { CONFIDENCE } from './confidence';
 import { canonical, mergeField, type Observation } from './fields';
+import {
+  aliasKey,
+  bestAlias,
+  type KnownSenderAlias,
+  learnedConfidence,
+} from './learning';
 import type { Field, FieldSource } from './types';
 
 /** A carrier account already tied to a sender (§4.8, `sender_account`). */
@@ -20,6 +26,8 @@ export type KnownSender = { id: string; name: string; nameNorm: string };
 export type SenderKnowledge = {
   accounts?: readonly KnownAccount[];
   known?: readonly KnownSender[];
+  /** OCR texts the agent took for a sender before (§4.8, `sender_alias`). */
+  aliases?: readonly KnownSenderAlias[];
 };
 
 /** A carrier account as a code printed it, with the carrier that owns it. */
@@ -36,6 +44,8 @@ export type SenderInput = {
 export type SenderField = {
   field: Field<string> | null;
   senderId: string | null;
+  /** The field names the sender an alias learned from the agent gave. */
+  alias: boolean;
 };
 
 /** Confirmations of an account before its sender is prefilled at 0,95 (§4.8). */
@@ -94,8 +104,10 @@ const bestKnown = (
 
 /**
  * The sender of §4.5: a structured code first, then the account dictionary
- * (0,90, 0,95 once confirmed), then the OCR block, read as a known sender
- * when it matches one and as a bare guess (0,40) otherwise. A match derives
+ * (0,90, 0,95 once confirmed), then the OCR block: the sender the agent
+ * took that very text for (an alias, 0,30 rising to 0,90 with each
+ * confirmation, never below the known sender it also matches), else a
+ * known sender it matches, else a bare guess (0,40). A match derives
  * from the OCR text, so the two never count as independent sources.
  */
 export const extractSender = ({
@@ -143,9 +155,27 @@ export const extractSender = ({
     remember(account.name, account.senderId);
   }
 
+  let alias: KnownSenderAlias | null = null;
   if (ocrName) {
+    const key = aliasKey(ocrName);
+    alias =
+      key === ''
+        ? null
+        : bestAlias(knowledge?.aliases ?? [], (a) => a.aliasNorm === key);
     const match = bestKnown(ocrName, knowledge?.known ?? []);
-    if (match) {
+    if (alias) {
+      const agrees = match?.sender.id === alias.senderId;
+      const confidence = Math.max(
+        learnedConfidence(alias.confirmations),
+        agrees ? match.confidence : 0,
+      );
+      observations.push({
+        key: canonical(alias.name),
+        value: alias.name,
+        source: learned('alias', confidence, alias.name),
+      });
+      remember(alias.name, alias.senderId);
+    } else if (match) {
       observations.push({
         key: canonical(match.sender.name),
         value: match.sender.name,
@@ -170,5 +200,8 @@ export const extractSender = ({
   return {
     field,
     senderId: field ? (ids.get(canonical(field.value)) ?? null) : null,
+    alias:
+      field !== null &&
+      field.sources.some((s) => s.kind === 'learned' && s.format === 'alias'),
   };
 };

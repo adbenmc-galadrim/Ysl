@@ -2,6 +2,7 @@ import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
+import { learnRecipients } from '#/features/recipient/learning';
 import {
   type DamageInput,
   damagedEvent,
@@ -42,6 +43,7 @@ export type DraftPatch = Partial<
     | 'trackingConfirmed'
     | 'durations'
     | 'reviewSkipped'
+    | 'learnedRecipient'
   >
 >;
 
@@ -320,9 +322,10 @@ export async function setDraftDamage(
 
 /**
  * "Terminer": the batch and its parcels become server rows in one write
- * (queued for `sync.push`), with what the sure senders teach the dictionary
- * ahead of them (§4.8), the photos point at their parcel, what the reader
- * made of each label stays on this device (`extraction`), the drafts go.
+ * (queued for `sync.push`), with what the sure senders and the agent's
+ * choices of recipient teach ahead of them (§4.8), the photos point at
+ * their parcel, what the reader made of each label stays on this device
+ * (`extraction`), the drafts go.
  * An empty batch leaves nothing behind. Returns the parcel ids, in order.
  */
 export function finishBatch(
@@ -339,6 +342,9 @@ export function finishBatch(
       db.parcel,
       db.sender,
       db.senderAccount,
+      db.senderAlias,
+      db.recipientAlias,
+      db.contact,
       db.event,
       db.outbox,
       db.extraction,
@@ -362,6 +368,7 @@ export function finishBatch(
         parcelCount: drafts.length,
       };
       const learned = await learnSenders(db, drafts, now);
+      const recipients = await learnRecipients(db, drafts, now);
       const parcels = drafts.map((draft) =>
         toParcel(draft, options, learned.senderIds.get(draft.id)),
       );
@@ -370,6 +377,7 @@ export function finishBatch(
         {
           upserts: [
             ...learned.upserts,
+            ...recipients,
             { entity: 'batch', row: batch },
             ...parcels.map((row) => ({ entity: 'parcel' as const, row })),
             ...drafts.flatMap(({ id, damage }) =>

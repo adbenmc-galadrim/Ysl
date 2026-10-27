@@ -1,8 +1,9 @@
 import { plausibleWeight } from '@repo/contract/extract';
 import { updateDraft } from '#/features/batch/store';
-import type { CourrierDatabase } from '#/features/db/schema';
+import type { CourrierDatabase, DraftSender } from '#/features/db/schema';
 import { formatWeight, parseWeight } from '#/features/parcels/edit';
 import { type DraftAnnex, serviceText } from '#/features/scan/annex';
+import { AGENT_CONFIDENCE } from '#/features/scan/confidence';
 import type { AnnexField } from '#/features/review/model';
 
 const PIECES = /^(\d{1,2})\s*(?:\/|sur|of)\s*(\d{1,2})$/i;
@@ -107,6 +108,36 @@ export async function settleAnnex(
         }
       : draft.pieces;
   return updateDraft(db, draftId, { annex, pieces });
+}
+
+/**
+ * « Garder » or a correction on the sender: the name is the agent's from
+ * then on (§4.3 rank 9), with the account and the OCR text it came with,
+ * which « Terminer » teaches the dictionary. A name kept keeps its row; an
+ * emptied box leaves the parcel without a sender. False when the draft is
+ * gone.
+ */
+export async function settleSender(
+  db: CourrierDatabase,
+  draftId: string,
+  text: string,
+): Promise<boolean> {
+  const draft = await db.draftParcel.get(draftId);
+  if (!draft) return false;
+  const name = text.trim().replace(/\s+/g, ' ');
+  if (name === '') return updateDraft(db, draftId, { sender: null });
+  const current = draft.sender ?? null;
+  const sender: DraftSender = {
+    name,
+    id: current && current.name === name ? current.id : null,
+    level: 'sure',
+    confidence: AGENT_CONFIDENCE,
+    source: 'agent',
+    account: current?.account ?? null,
+    read: current?.read ?? null,
+    alias: false,
+  };
+  return updateDraft(db, draftId, { sender });
 }
 
 /** « Passer »: the parcel is saved « À compléter », as it stands (P2.3). */

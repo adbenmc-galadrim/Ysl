@@ -90,6 +90,8 @@ describe('readDraft', () => {
       confidence: 0.95,
       source: 'learned',
       account: { carrier: 'ups', accountNumber: 'E6344W' },
+      read: null,
+      alias: false,
     };
     expect(reading.sender).toEqual(expected);
     expect(await db.draftParcel.get(draft.id)).toMatchObject({

@@ -60,6 +60,10 @@ beforeEach(async () => {
   await db.delete(schema.pickupCode);
   await db.delete(schema.parcel);
   await db.delete(schema.batch);
+  await db.delete(schema.recipientAlias);
+  await db.delete(schema.senderAlias);
+  await db.delete(schema.senderAccount);
+  await db.delete(schema.sender);
   await db.delete(schema.contact);
   await db.delete(schema.directoryPerson);
   await db.delete(schema.syncOp);
@@ -134,7 +138,12 @@ function eventOf(parcelId: string) {
 }
 
 async function deletedAtOf(
-  table: typeof schema.parcel | typeof schema.contact | typeof schema.handover,
+  table:
+    | typeof schema.parcel
+    | typeof schema.contact
+    | typeof schema.handover
+    | typeof schema.recipientAlias
+    | typeof schema.senderAlias,
   id: string,
 ) {
   const [row] = await db
@@ -548,5 +557,89 @@ describe('retention purge, inactive people', () => {
     expect(deletedAt.get(left.id)).toEqual(NOW);
     expect(deletedAt.get(justLeft.id)).toBeNull();
     expect(deletedAt.get(active.id)).toBeNull();
+  });
+});
+
+describe('retention purge of what the agent taught (§4.8)', () => {
+  const purge = () =>
+    runPurge(purgeDb, {
+      now: NOW,
+      organizationId: ORGANIZATION_ID,
+      trigger: 'auto',
+    });
+
+  const recipientAliasOf = (
+    contactId: string,
+    deletedAt: Date | null = null,
+  ) => ({
+    id: newId(),
+    organizationId: ORGANIZATION_ID,
+    nameNorm: 'dji europe bv',
+    contactId,
+    deletedAt,
+  });
+
+  it('marks an alias with the contact it names, and keeps one whose contact lives', async () => {
+    const unused = contactRow(monthsAgo(13));
+    const used = contactRow(monthsAgo(2));
+    await db.insert(schema.contact).values([unused, used]);
+    const gone = recipientAliasOf(unused.id);
+    const kept = recipientAliasOf(used.id);
+    await db.insert(schema.recipientAlias).values([gone, kept]);
+
+    const outcome = await purge();
+
+    expect(await deletedAtOf(schema.contact, unused.id)).toEqual(NOW);
+    expect(await deletedAtOf(schema.recipientAlias, gone.id)).toEqual(NOW);
+    expect(await deletedAtOf(schema.recipientAlias, kept.id)).toBeNull();
+    expect(outcome).toMatchObject({ status: 'done' });
+  });
+
+  it('marks a sender alias once its sender is marked', async () => {
+    const sender = {
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      displayName: 'Atelier Rive Gauche',
+      nameNorm: 'atelier rive gauche',
+      deletedAt: daysAgo(1),
+    };
+    await db.insert(schema.sender).values(sender);
+    const alias = {
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      aliasNorm: 'arg paris sept',
+      senderId: sender.id,
+    };
+    await db.insert(schema.senderAlias).values(alias);
+
+    await purge();
+
+    expect(await deletedAtOf(schema.senderAlias, alias.id)).toEqual(NOW);
+  });
+
+  it('erases the alias, then the contact it named, in one run', async () => {
+    const person = contactRow(monthsAgo(14), daysAgo(40));
+    await db.insert(schema.contact).values(person);
+    const alias = recipientAliasOf(person.id, daysAgo(40));
+    await db.insert(schema.recipientAlias).values(alias);
+
+    await purge();
+
+    expect(await deletedAtOf(schema.recipientAlias, alias.id)).toBe('erased');
+    expect(await deletedAtOf(schema.contact, person.id)).toBe('erased');
+  });
+
+  it('keeps a marked contact while a newer alias still names it', async () => {
+    const person = contactRow(monthsAgo(14), daysAgo(40));
+    await db.insert(schema.contact).values(person);
+    const alias = recipientAliasOf(person.id, daysAgo(5));
+    await db.insert(schema.recipientAlias).values(alias);
+
+    await purge();
+
+    expect(await deletedAtOf(schema.recipientAlias, alias.id)).toEqual(
+      daysAgo(5),
+    );
+    expect(await deletedAtOf(schema.contact, person.id)).toEqual(daysAgo(40));
   });
 });

@@ -1,5 +1,7 @@
 import type { CarrierService, CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
+import type { KnownRecipientAlias } from './learning';
+import type { RecipientCard } from './recipient';
 import type { AccountRead, SenderKnowledge } from './sender';
 
 /** Where a value comes from; `agent` is a value typed, chosen or confirmed (§4.3 rank 9). */
@@ -55,15 +57,21 @@ export type ExtractInput = {
   senders?: SenderKnowledge | null;
   /** Full names of the directory cards the recipient may be (§4.3 bonus). */
   directory?: readonly string[] | null;
+  /** Printed names the agent took for a card before (§4.8, `recipient_alias`). */
+  recipients?: readonly KnownRecipientAlias[] | null;
 };
 
 export type Extraction = {
   tracking: Field<string> | null;
   carrier: Field<TrackingContext> | null;
   recipient: Field<string> | null;
+  /** The card a learned name points the recipient at; never settled by itself. */
+  recipientCard: RecipientCard | null;
   sender: Field<string> | null;
   /** The known sender the sender field names, when it comes from the dictionary. */
   senderId: string | null;
+  /** The sender field comes from an alias the agent's corrections taught. */
+  senderAlias: boolean;
   /** The carrier accounts the codes carry, to look up and to learn (§4.8). */
   accounts: AccountRead[];
   pieces: Field<Pieces> | null;
