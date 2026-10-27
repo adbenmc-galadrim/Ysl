@@ -2,10 +2,10 @@ import { extractFields } from '@repo/contract/extract';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
-import { newId } from '@repo/shared/id';
 import { normalizeName } from '@repo/shared/text';
 import { senderReadOf } from '#/features/batch/extraction';
 import { senderLessons } from '#/features/batch/senders';
+import { typedContact } from '#/features/recipient/contacts';
 import { recipientLessons } from '#/features/recipient/learning';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
@@ -21,8 +21,8 @@ import { liveParcel } from '#/features/parcels/status';
 export type RecipientChoice =
   | { kind: 'person'; id: string }
   | { kind: 'contact'; id: string }
-  /** "Personne hors annuaire": a name typed by hand, an e-mail if known. */
-  | { kind: 'typed'; name: string; email: string }
+  /** "Personne hors annuaire": a name typed by hand, an e-mail and a department if known. */
+  | { kind: 'typed'; name: string; email: string; department?: string }
   /** Nobody chosen: the name read on the label, if any, is all there is. */
   | { kind: 'none' };
 
@@ -126,50 +126,6 @@ const confirmsIdentity = (fields: readonly ParcelEditField[]) =>
     (field) =>
       field === 'recipient' || field === 'tracking' || field === 'carrier',
   );
-
-/**
- * The contact a hand-typed name stands for: the one this mailroom already
- * typed with that e-mail, or with that name and no e-mail yet, counted once
- * more; a new one otherwise. Typing the same temp twice keeps one card.
- */
-async function typedContact(
-  db: CourrierDatabase,
-  name: string,
-  email: string,
-  { agentId, now }: Required<EditOptions>,
-): Promise<LocalContact> {
-  const key = normalizeEmail(email);
-  const nameNorm = normalizeName(name);
-  const live = (row: LocalContact) => row.deletedAt === null;
-  const known =
-    (key
-      ? (await db.contact.where('email').equals(key).toArray()).find(live)
-      : undefined) ??
-    (await db.contact.where('nameNorm').equals(nameNorm).toArray()).find(
-      (row) => live(row) && row.email === null,
-    );
-  if (known) {
-    return {
-      ...known,
-      email: known.email ?? (key || null),
-      updatedAt: now,
-      usageCount: known.usageCount + 1,
-      lastUsedAt: now,
-    };
-  }
-  return {
-    id: newId(),
-    createdAt: now,
-    updatedAt: now,
-    deletedAt: null,
-    name: name.trim(),
-    nameNorm,
-    email: key || null,
-    createdBy: agentId,
-    usageCount: 1,
-    lastUsedAt: now,
-  };
-}
 
 /**
  * A sender the agent typed on the sheet is a correction (§4.3 rank 9): it
@@ -391,6 +347,10 @@ export async function saveParcelEdit(
     reference: text(edit.reference),
     weightKg: parseWeight(edit.weightKg) ?? null,
     location: text(edit.location),
+    department:
+      edit.recipient.kind === 'typed' && edit.recipient.department?.trim()
+        ? edit.recipient.department.trim()
+        : parcel.department,
   };
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };

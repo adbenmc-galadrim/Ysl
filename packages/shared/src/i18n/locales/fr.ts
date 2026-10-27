@@ -89,6 +89,7 @@ export const fr = {
     'Exportez-les par sécurité dans Réglages › Synchronisation.',
   'colis.row.unsent': 'Non envoyé',
   'colis.row.rejected': 'Refusé',
+  'colis.row.choose': 'Choisir',
   'search.filter.all': 'Tout',
   'search.filter.waiting': 'En attente',
   'search.filter.delivered': 'Remis',

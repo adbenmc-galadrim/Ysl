@@ -1,7 +1,11 @@
 import type { RecipientKind } from '@repo/contract/recipient';
 import { normalizeName } from '@repo/shared/text';
 import type { RecipientOption } from '@repo/ui';
-import { directoryEntries, toEntry } from '#/features/directory/people';
+import {
+  directoryEntries,
+  normalizeEmail,
+  toEntry,
+} from '#/features/directory/people';
 import type {
   LocalContact,
   LocalDirectoryPerson,
@@ -42,7 +46,11 @@ export function optionOf(
   return contact && !contact.deletedAt ? contactOption(contact) : null;
 }
 
-/** « Choisir le destinataire »: the directory's search, then the contacts whose name matches. */
+/**
+ * « Choisir le destinataire »: the directory's search, then the contacts
+ * whose name or e-mail matches; accents and case aside, so « lefevre »
+ * finds Hugo Lefèvre.
+ */
 export function searchOptions(
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
@@ -50,12 +58,18 @@ export function searchOptions(
 ): Choice[] {
   const needle = normalizeName(query);
   if (!needle) return [];
+  const mail = normalizeEmail(query);
   const byId = new Map(people.map((person) => [person.id, person]));
   const cards = directoryEntries(people, query).map((entry) =>
     personOption(byId.get(entry.id)!),
   );
   const others = contacts
-    .filter((c) => !c.deletedAt && normalizeName(c.name).includes(needle))
+    .filter(
+      (c) =>
+        !c.deletedAt &&
+        (normalizeName(c.name).includes(needle) ||
+          (c.email !== null && c.email.toLowerCase().includes(mail))),
+    )
     .map(contactOption);
   return [...cards, ...others];
 }

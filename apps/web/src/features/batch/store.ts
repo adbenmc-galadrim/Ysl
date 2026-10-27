@@ -44,6 +44,7 @@ export type DraftPatch = Partial<
     | 'durations'
     | 'reviewSkipped'
     | 'learnedRecipient'
+    | 'department'
   >
 >;
 
@@ -275,7 +276,7 @@ function toParcel(
     contactId: draft.recipient?.kind === 'contact' ? draft.recipient.id : null,
     readName: draft.readName,
     notificationEmail: null,
-    department: null,
+    department: draft.department ?? null,
     senderId,
     senderName: sender?.name ?? null,
     pieceN: draft.pieces ? draft.pieces.read.length : null,

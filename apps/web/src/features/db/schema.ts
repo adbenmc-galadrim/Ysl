@@ -243,6 +243,8 @@ export type DraftParcel = {
   reviewSkipped?: boolean;
   /** The card the agent chose before for the name this label prints (§4.8); absent before YSL-60. */
   learnedRecipient?: KnownRecipientAlias | null;
+  /** The department typed with someone outside the directory (F27); absent before YSL-64. */
+  department?: string | null;
 };
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };
