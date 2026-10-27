@@ -125,7 +125,8 @@ export function draftFields(
  * F26: a parcel is notified only when its tracking and its recipient are
  * sure (≥ 0,90) or confirmed by the agent, and someone is there to tell: a
  * card of the directory or a contact settled. A name a code prints alone
- * may be a company's; otherwise it waits, « À compléter ».
+ * may be a company's; otherwise it waits, « À compléter ». A parcel
+ * « Sans suivi » has the app's own number: only its recipient counts.
  */
 export function notifiable(
   draft: Readable & Pick<DraftParcel, 'carrier' | 'type'>,

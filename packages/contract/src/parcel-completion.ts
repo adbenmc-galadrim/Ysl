@@ -39,7 +39,7 @@ const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 
 export const INTERNAL_PREFIX = 'INT';
 
-const INTERNAL = /^INT[0-9A-HJKMNP-TV-Z]{8}$/;
+const INTERNAL = new RegExp(`^${INTERNAL_PREFIX}[0-9A-HJKMNP-TV-Z]{8}$`);
 
 /**
  * The number the app gives a parcel with none (« Sans suivi »: a courier, an

@@ -1,16 +1,17 @@
-import { trackingContexts } from '@repo/contract/tracking';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { SaisieManuelleSheet, TransporteurSheet } from '@repo/ui';
 import { useState } from 'react';
+import { carrierOptions } from '#/features/parcels/tracking-check';
 import { carrierName } from '#/features/scan/carriers';
 import { appendTyped, groupTyped, typedEntry } from '#/features/scan/typed';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 /** The carriers the sheet offers; « Autre » is the sheet's own, typed. */
-const CARRIERS = trackingContexts
-  .filter((context) => context !== 'other')
-  .map((context) => carrierName(context, t));
+const OTHER = carrierName('other', t);
+const CARRIERS = carrierOptions(t)
+  .map(({ value }) => value)
+  .filter((name) => name !== OTHER);
 
 export type TrackingEntered = { tracking: string; carrier: string };
 
