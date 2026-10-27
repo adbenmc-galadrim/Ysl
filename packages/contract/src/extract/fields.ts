@@ -1,4 +1,4 @@
-import { CONFIDENCE, combine, levelOf, round } from './confidence';
+import { CONFIDENCE, clamp, combine, levelOf, round } from './confidence';
 import type { Candidate, Field, FieldFlag, FieldSource } from './types';
 
 export type Observation<T> = { key: string; value: T; source: FieldSource };
@@ -55,6 +55,48 @@ export const resolve = <T>(
 export const mergeField = <T>(
   observations: readonly Observation<T>[],
 ): Field<T> | null => resolve(candidatesOf(observations).sort(byRank));
+
+const flagged = (flags: readonly FieldFlag[], flag: FieldFlag) =>
+  flags.includes(flag) ? [...flags] : [...flags, flag];
+
+/** A bonus or a malus of §4.3 on a settled field, with the flag that says why. */
+export const adjust = <T>(
+  field: Field<T>,
+  delta: number,
+  flag?: FieldFlag,
+): Field<T> => {
+  const confidence = round(clamp(field.confidence + delta));
+  return {
+    ...field,
+    confidence,
+    level: levelOf(confidence),
+    flags: flag ? flagged(field.flags, flag) : field.flags,
+  };
+};
+
+/**
+ * O1: a tracking is sure only when a check digit vouches for it, or a
+ * structured code states it. Any other value, even read twice, stays
+ * below « sûr » and says why.
+ */
+export const capUnkeyed = (
+  field: Field<string> | null,
+  keyed: ReadonlySet<string>,
+): Field<string> | null => {
+  if (field === null || keyed.has(field.value)) return field;
+  const cap = (confidence: number) =>
+    Math.min(confidence, CONFIDENCE.unkeyedCap);
+  const confidence = cap(field.confidence);
+  return {
+    ...field,
+    confidence,
+    level: levelOf(confidence),
+    flags: flagged(field.flags, 'unkeyed'),
+    candidates: field.candidates.map((c) =>
+      keyed.has(c.value) ? c : { ...c, confidence: cap(c.confidence) },
+    ),
+  };
+};
 
 export const canonical = (text: string) =>
   text
