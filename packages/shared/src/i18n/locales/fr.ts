@@ -39,11 +39,11 @@ export const fr = {
   'agents.error.invalid': 'Les informations saisies sont invalides.',
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
   'devices.error.current':
-    'Pour cet iPhone, utilisez « Effacer les données de cet iPhone ».',
+    'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',
   'devices.title': 'Appareils connectés',
   'devices.header': 'Sessions ouvertes',
   'devices.footer':
-    'Un appareil déconnecté revient à l’écran de connexion et efface ses données dès qu’il retrouve le réseau. Pour cet iPhone, passez par Données et confidentialité.',
+    'Un appareil déconnecté revient à l’écran de connexion et efface ses données dès qu’il retrouve le réseau. Pour l’appareil que vous tenez, passez par Données et confidentialité.',
   'devices.kind.iphone': 'iPhone',
   'devices.kind.ipad': 'iPad',
   'devices.kind.mac': 'Mac',
