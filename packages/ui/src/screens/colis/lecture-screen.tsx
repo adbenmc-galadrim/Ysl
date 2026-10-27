@@ -158,7 +158,10 @@ function Row({
 function FieldCard({ field }: { field: LectureField }) {
   const hue = SCAN_FIELD_STATUS.light[field.status];
   return (
-    <section id={field.id} className="flex scroll-mt-3 flex-col">
+    <section
+      id={field.id}
+      className="flex scroll-mt-[calc(var(--safe-top)+12px)] flex-col"
+    >
       <GroupedHeader className="mb-1.5">{field.label}</GroupedHeader>
       <GroupedList>
         <Row trailing={field.confidence}>
