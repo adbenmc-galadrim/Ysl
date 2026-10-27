@@ -2,16 +2,13 @@ import { signOut } from '@repo/auth/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { forgetSession } from '#/features/auth/session-cache';
-import { clearLocalData } from '#/features/db/clear';
+import { wipeLocalData } from '#/features/auth/wipe';
 import { db } from '#/features/db/database';
-import { resetOfflinePrep } from '#/features/offline/prep';
-import { forgetPrepared } from '#/features/offline/prepared';
-import { hasPhotoStorage, photoFiles } from '#/features/photos/opfs';
 import {
   prepareSignOut,
   SignOutBlockedError,
 } from '#/features/sync/sign-out-guard';
-import { stopSync, syncNow } from '#/features/sync/sync';
+import { syncNow } from '#/features/sync/sync';
 
 export { SignOutBlockedError };
 
@@ -23,15 +20,7 @@ function useWipeDevice() {
   const queryClient = useQueryClient();
   const router = useRouter();
   return async () => {
-    forgetSession(localStorage);
-    forgetPrepared(localStorage);
-    resetOfflinePrep();
-    await stopSync();
-    try {
-      await clearLocalData(db, hasPhotoStorage() ? photoFiles : null);
-    } catch (cause) {
-      console.warn('Local data was not fully cleared', cause);
-    }
+    await wipeLocalData();
     queryClient.clear();
     await router.navigate({ to: '/connexion', search: {} });
   };
@@ -50,6 +39,7 @@ export function useSignOut() {
       if (!check.ok) {
         throw new SignOutBlockedError(check.pending, check.rejected);
       }
+      forgetSession(localStorage);
       const { error } = await signOut();
       if (error) throw new Error(error.message);
     },
@@ -74,6 +64,7 @@ export function useEraseDevice() {
           throw new SignOutBlockedError(check.pending, check.rejected);
         }
       }
+      forgetSession(localStorage);
       const { error } = await signOut();
       if (error) throw new Error(error.message);
     },

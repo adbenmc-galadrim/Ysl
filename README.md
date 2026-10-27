@@ -64,6 +64,13 @@ pnpm auth:attach-organization --email admin@example.com [--organization "<nom>"]
 En production, `BETTER_AUTH_SECRET` (32 caractères au moins) et `BETTER_AUTH_URL` (URL
 publique de l'API) sont obligatoires ; en local, des valeurs de développement s'appliquent.
 
+## Installation sur iPhone
+
+L'app s'installe depuis Safari, sans App Store ni MDM (D18) :
+[docs/installation-iphone.md](docs/installation-iphone.md) donne le pas à pas illustré,
+les réglages d'iPhone recommandés, la marche à suivre en cas de perte ou de vol
+(Réglages › Appareils connectés) et la liste de vérification sur un vrai iPhone.
+
 ## Déploiement
 
 L'app tourne sur Coolify, sur un serveur Hetzner situé dans l'UE : les données y restent.
