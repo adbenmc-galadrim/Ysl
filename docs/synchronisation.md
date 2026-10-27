@@ -248,6 +248,12 @@ dommage », `/colis/<id>/dommage`).
 - **E-mail au salarié** (YSL-61) : `damageForEmail` de `@repo/contract/parcel-damage`
   rend le motif et la remarque quand « Prévenir » est allumé, rien sinon.
 - **Export CSV** : colonne `reserve` (« Carton abîmé : coin enfoncé »).
+- **Limites connues** : la réserve suit la règle de la ligne entière (dernier écrit gagne,
+  §8.4.4, comme les autres champs) : un iPhone qui n'a pas encore reçu la réserve et
+  modifie le colis renvoie sa copie sans réserve, et la réserve disparaît de la ligne
+  sans événement de levée ; seul le statut a un compteur (`status_seq`). L'auteur est
+  enregistré (`actor_id`) mais l'historique de la fiche n'affiche que la date. Les
+  photos d'une réserve levée restent dans OPFS, sans être montrées.
 
 ## Alerte et export de secours
 

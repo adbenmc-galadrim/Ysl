@@ -69,7 +69,8 @@ export function damagedEvent(
 /**
  * Sets a reserve on a parcel (zone d'ombre « Colis abîmé »): its photos,
  * then the parcel's columns and the event that tells the history, in one
- * write queued for `sync.push`. A second report replaces the first.
+ * write queued for `sync.push`. The record only offers it on a parcel
+ * without a reserve: one is lifted before another is set.
  */
 export async function reportDamage(
   db: CourrierDatabase,
