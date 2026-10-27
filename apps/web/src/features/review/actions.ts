@@ -1,6 +1,7 @@
 import { plausibleWeight } from '@repo/contract/extract';
 import { updateDraft } from '#/features/batch/store';
 import type { CourrierDatabase } from '#/features/db/schema';
+import { formatWeight, parseWeight } from '#/features/parcels/edit';
 import { type DraftAnnex, serviceText } from '#/features/scan/annex';
 import type { AnnexField } from '#/features/review/model';
 
@@ -13,9 +14,7 @@ export function annexText(
 ): string {
   switch (field) {
     case 'weightKg':
-      return annex?.weightKg
-        ? String(annex.weightKg.value).replace('.', ',')
-        : '';
+      return formatWeight(annex?.weightKg?.value ?? null);
     case 'pieces':
       return annex?.pieces ? `${annex.pieces.index}/${annex.pieces.total}` : '';
     case 'service':
@@ -40,11 +39,9 @@ export function parseAnnex<F extends AnnexField>(
   const kept = value === annexText(field, annex);
   switch (field) {
     case 'weightKg': {
-      const kg = Number(value.replace(',', '.'));
+      const kg = parseWeight(value);
       return (
-        Number.isFinite(kg) && plausibleWeight(kg)
-          ? { value: kg, level: 'sure' }
-          : undefined
+        kg && plausibleWeight(kg) ? { value: kg, level: 'sure' } : undefined
       ) as DraftAnnex[F] | undefined;
     }
     case 'pieces': {
@@ -90,15 +87,23 @@ export async function settleAnnex(
   if (!draft) return false;
   const parsed = parseAnnex(field, text, draft.annex);
   if (parsed === undefined) return false;
-  const annex = { ...(draft.annex ?? EMPTY_ANNEX), [field]: parsed };
-  const pieces =
-    field === 'pieces' && parsed && draft.pieces
+  const read = draft.pieces?.read.length ?? 0;
+  const settled =
+    field === 'pieces' && parsed
       ? {
-          ...draft.pieces,
+          ...(parsed as NonNullable<DraftAnnex['pieces']>),
           total: Math.max(
             (parsed as NonNullable<DraftAnnex['pieces']>).total,
-            draft.pieces.read.length,
+            read,
           ),
+        }
+      : parsed;
+  const annex = { ...(draft.annex ?? EMPTY_ANNEX), [field]: settled };
+  const pieces =
+    field === 'pieces' && settled && draft.pieces
+      ? {
+          ...draft.pieces,
+          total: (settled as NonNullable<DraftAnnex['pieces']>).total,
         }
       : draft.pieces;
   return updateDraft(db, draftId, { annex, pieces });
