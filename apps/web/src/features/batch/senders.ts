@@ -1,4 +1,9 @@
-import { accountKey, aliasKey, carrierKey } from '@repo/contract/extract';
+import {
+  accountKey,
+  aliasKey,
+  bestAlias,
+  carrierKey,
+} from '@repo/contract/extract';
 import { newId } from '@repo/shared/id';
 import { normalizeName } from '@repo/shared/text';
 import type { Upsert } from '#/features/db/commit';
@@ -88,7 +93,7 @@ const newAlias = (
   deletedAt: null,
   aliasNorm,
   senderId,
-  confirmations: 0,
+  confirmations: 1,
 });
 
 /**
@@ -181,9 +186,9 @@ export function senderLessons(db: CourrierDatabase, now: Date) {
       .equals(key)
       .filter((row) => row.deletedAt === null)
       .toArray();
-    const best = rows.sort((a, b) => b.confirmations - a.confirmations)[0];
+    const best = bestAlias(rows, () => true);
     if (best) aliases.set(key, best);
-    return best ?? null;
+    return best;
   };
 
   const touch = <Row extends { updatedAt: Date }>(row: Row) => {
@@ -220,7 +225,6 @@ export function senderLessons(db: CourrierDatabase, now: Date) {
         const alias = await aliasFor(key);
         if (!alias) {
           const row = newAlias(key, sender.id, now);
-          row.confirmations = 1;
           aliases.set(key, row);
           touch(row);
         } else {

@@ -260,7 +260,7 @@ export async function purgeOrganization(
     ['sender_alias', null],
     [
       'sender',
-      sql`(${anyReference('sender_account', ['sender_id', 'challenger_id'], sql.raw('t.id'))} or ${anyReference('sender_alias', ['sender_id'], sql.raw('t.id'))})`,
+      sql`(${anyReference('sender_account', ['sender_id'], sql.raw('t.id'))} or ${anyReference('sender_alias', ['sender_id'], sql.raw('t.id'))})`,
     ],
     ['email_template', null],
     ['setting', null],

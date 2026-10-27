@@ -111,7 +111,7 @@ export function recipientLessons(db: CourrierDatabase, now: Date) {
       .equals(key)
       .filter((row) => row.deletedAt === null)
       .toArray();
-    return rows.sort((a, b) => b.confirmations - a.confirmations)[0] ?? null;
+    return bestAlias(rows, () => true);
   };
 
   return {
@@ -132,7 +132,7 @@ export function recipientLessons(db: CourrierDatabase, now: Date) {
           nameNorm: key,
           personId: null,
           contactId: null,
-          confirmations: 0,
+          confirmations: 1,
         };
         row.confirmations =
           known && sameCard(known, card) ? known.confirmations + 1 : 1;

@@ -13,7 +13,7 @@ import type {
   LocalContact,
   LocalParcel,
 } from '#/features/db/schema';
-import { isEmail, normalizeEmail } from '#/features/directory/people';
+import { fullName, isEmail, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { liveParcel } from '#/features/parcels/status';
 
@@ -207,7 +207,7 @@ async function cardName(
 ): Promise<string> {
   if (card.kind === 'person') {
     const person = await db.directoryPerson.get(card.id);
-    return person ? `${person.firstName} ${person.lastName}` : '';
+    return person ? fullName(person) : '';
   }
   return typed?.name ?? (await db.contact.get(card.id))?.name ?? '';
 }
@@ -347,7 +347,8 @@ export async function saveParcelEdit(
   const tracking = normalizeTracking(edit.tracking) || null;
   const senderName = text(edit.sender);
   const learned =
-    senderName !== null && senderName !== parcel.senderName
+    senderName !== null &&
+    normalizeName(senderName) !== normalizeName(parcel.senderName ?? '')
       ? await correctedSender(db, parcelId, senderName, now)
       : null;
   const edited: LocalParcel = {
