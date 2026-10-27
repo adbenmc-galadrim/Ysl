@@ -48,6 +48,8 @@ function InfoNote({ children }: { children: ReactNode }) {
 export type LotOutcome = Pick<IconTileProps, 'icon' | 'tone'> & {
   title: string;
   detail: string;
+  /** The row opens what it counts: the mails, the parcel to complete. */
+  onClick?: () => void;
 };
 
 export type LotEnregistreScreenProps = {
@@ -58,6 +60,14 @@ export type LotEnregistreScreenProps = {
   outcomes: LotOutcome[];
   /** Number of e-mails the main button sends. */
   emails: number;
+  /** "Envoyer 9 e-mails", worded by the app for one mail. */
+  sendLabel?: string;
+  /** The rule worth knowing under the card. */
+  note?: ReactNode;
+  onLater?: () => void;
+  onSend?: () => void;
+  /** With no mail to send, the main button starts the next batch. */
+  onNewBatch?: () => void;
 };
 
 /**
@@ -71,23 +81,36 @@ export function LotEnregistreScreen({
   span,
   outcomes,
   emails,
+  sendLabel = `Envoyer ${emails} e-mails`,
+  note = 'Chaque personne reçoit un seul e-mail avec tous ses colis, son QR code et son code de retrait.',
+  onLater,
+  onSend,
+  onNewBatch,
 }: LotEnregistreScreenProps) {
   return (
     <Screen
       bottom={
         // The fade only shows on a short phone, where the note scrolls under.
         <BottomBar>
-          <Button variant="secondary" className="w-[120px]">
+          <Button variant="secondary" className="w-[120px]" onClick={onLater}>
             Plus tard
           </Button>
-          <Button className="flex-1">Envoyer {emails} e-mails</Button>
+          {emails > 0 ? (
+            <Button className="flex-1" onClick={onSend}>
+              {sendLabel}
+            </Button>
+          ) : (
+            <Button className="flex-1" onClick={onNewBatch}>
+              Nouveau lot
+            </Button>
+          )}
         </BottomBar>
       }
     >
       <div className="mt-[82px] flex flex-col">
         <SavedBadge />
         <h1 className="mt-6 text-center text-28 font-bold">
-          {count} colis enregistrés
+          {count} colis {count === 1 ? 'enregistré' : 'enregistrés'}
         </h1>
         <p className="mt-2 text-center text-15 text-muted">{span}</p>
       </div>
@@ -101,15 +124,14 @@ export function LotEnregistreScreen({
             leading={<IconTile icon={outcome.icon} tone={outcome.tone} />}
             title={outcome.title}
             subtitle={outcome.detail}
+            accessory={outcome.onClick ? 'chevron' : undefined}
+            onClick={outcome.onClick}
           />
         ))}
       </GroupedList>
 
       <div className="mt-5">
-        <InfoNote>
-          Chaque personne reçoit un seul e-mail avec tous ses colis, son QR
-          code et son code de retrait.
-        </InfoNote>
+        <InfoNote>{note}</InfoNote>
       </div>
     </Screen>
   );

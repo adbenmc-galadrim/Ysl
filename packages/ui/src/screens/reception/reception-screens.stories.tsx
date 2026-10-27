@@ -277,3 +277,67 @@ export const LotEnregistre: Story = {
     />
   ),
 };
+
+/** As the app shows it: offline row hidden, the parcels it could not settle. */
+export const LotEnregistreReserveEtPieces: Story = {
+  name: 'Lot enregistré, réserve et pièces',
+  render: () => (
+    <LotEnregistreScreen
+      count={6}
+      span="Lot de 14 h 02 à 14 h 09"
+      emails={3}
+      sendLabel="Envoyer 3 e-mails"
+      note="Chaque personne reçoit un seul e-mail avec tous ses colis et son code de retrait."
+      outcomes={[
+        {
+          icon: 'mail',
+          tone: 'blue',
+          title: '3 e-mails prêts',
+          detail: '5 colis pour 3 personnes',
+          onClick: () => {},
+        },
+        {
+          icon: 'alert',
+          tone: 'red',
+          title: '1 à compléter',
+          detail: 'Rangé dans À compléter, non notifié',
+          onClick: () => {},
+        },
+        {
+          icon: 'alert',
+          tone: 'orange',
+          title: '1 avec réserve',
+          detail: 'Notée sur la fiche du colis',
+        },
+        {
+          icon: 'package',
+          tone: 'neutral',
+          title: '2 en plusieurs pièces',
+          detail: 'Comptés pièce par pièce',
+        },
+      ]}
+    />
+  ),
+};
+
+/** Nothing to send: every parcel waits for its record. */
+export const LotEnregistreSansEmail: Story = {
+  name: 'Lot enregistré, aucun e-mail',
+  render: () => (
+    <LotEnregistreScreen
+      count={1}
+      span="Lot de 14 h 02 à 14 h 03"
+      emails={0}
+      note="Chaque personne reçoit un seul e-mail avec tous ses colis et son code de retrait."
+      outcomes={[
+        {
+          icon: 'alert',
+          tone: 'red',
+          title: '1 à compléter',
+          detail: 'Rangé dans À compléter, non notifié',
+          onClick: () => {},
+        },
+      ]}
+    />
+  ),
+};

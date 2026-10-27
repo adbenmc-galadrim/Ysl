@@ -28,6 +28,8 @@ export type NotifierScreenProps = {
   state: NotifierMailState;
   /** The template the mails start from, and the way to pick another. */
   template: { name: string; onClick?: () => void };
+  /** "Modifier le modèle": its page in Réglages. */
+  onEditTemplate?: () => void;
   preview: { subject: string; body: string };
   /** What the agent should know before it leaves: a variable left blank. */
   warnings?: TemplateWarning[];
@@ -61,6 +63,7 @@ export function NotifierScreen({
   recipient,
   state,
   template,
+  onEditTemplate,
   preview,
   warnings = [],
   sendLabel,
@@ -135,6 +138,16 @@ export function NotifierScreen({
           />
         ))}
         <EmailText {...preview} className="mt-3.5" />
+        {onEditTemplate && (
+          <Button
+            variant="link"
+            block
+            className="mt-3 text-16"
+            onClick={onEditTemplate}
+          >
+            Modifier le modèle
+          </Button>
+        )}
       </Screen>
       {sheet}
     </>

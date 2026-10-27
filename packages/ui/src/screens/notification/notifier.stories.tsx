@@ -48,6 +48,7 @@ const meta = {
     },
     state: 'ready',
     template: { name: 'Avis de retrait', onClick: () => {} },
+    onEditTemplate: () => {},
     preview: {
       subject: 'Des colis vous attendent au service courrier',
       body: BODY,
