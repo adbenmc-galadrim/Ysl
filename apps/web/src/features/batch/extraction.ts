@@ -1,6 +1,7 @@
 import type { Field } from '@repo/contract/extract';
 import type {
   DraftParcel,
+  ExtractionCandidate,
   ExtractionField,
   ExtractionFieldName,
   LocalExtraction,
@@ -11,7 +12,21 @@ import { draftFields } from '#/features/scan/confidence';
 /** Moves up whenever the rules that score the fields change (§8.2 `version`). */
 export const EXTRACTION_VERSION = 1;
 
-const stored = <T>(field: Field<T> | null): ExtractionField | undefined =>
+const candidatesOf = <T>(field: Field<T>): ExtractionCandidate[] =>
+  field.candidates.map(({ value, confidence, sources }) => ({
+    value,
+    confidence,
+    sources,
+  }));
+
+/**
+ * A field as stored: what was kept and why, with the values the reader
+ * weighed — those of `read` when the agent's confirmation replaced them.
+ */
+const stored = <T>(
+  field: Field<T> | null,
+  read: Field<T> | null = field,
+): ExtractionField | undefined =>
   field === null
     ? undefined
     : {
@@ -20,6 +35,7 @@ const stored = <T>(field: Field<T> | null): ExtractionField | undefined =>
         level: field.level,
         flags: field.flags,
         sources: field.sources,
+        candidates: candidatesOf(read ?? field),
       };
 
 /** The sender as the draft settled it, with the dictionary the reading had (§4.8). */
@@ -43,12 +59,18 @@ const senderOf = (draft: DraftParcel): ExtractionField | undefined => {
  * each field with its sources and confidence as the batch was finished,
  * the codes, the text, the time each step took.
  */
-export function extractionOf(draft: DraftParcel, now: Date): LocalExtraction {
+export function extractionOf(
+  draft: DraftParcel,
+  now: Date,
+  clock: () => number = () => performance.now(),
+): LocalExtraction {
+  const started = clock();
   const { extraction, tracking, recipient } = draftFields(draft);
+  const fusionMs = Math.round(clock() - started);
   const fields: Partial<Record<ExtractionFieldName, ExtractionField>> = {
-    tracking: stored(tracking),
+    tracking: stored(tracking, extraction.tracking),
     carrier: stored(extraction.carrier),
-    recipient: stored(recipient),
+    recipient: stored(recipient, extraction.recipient),
     sender: senderOf(draft),
     pieces: stored(extraction.pieces),
     weightKg: stored(extraction.weightKg),
@@ -67,6 +89,7 @@ export function extractionOf(draft: DraftParcel, now: Date): LocalExtraction {
     durations: {
       codesMs: draft.durations?.codesMs ?? null,
       ocrMs: draft.durations?.ocrMs ?? null,
+      fusionMs,
     },
     provenance: 'device',
     createdAt: now,

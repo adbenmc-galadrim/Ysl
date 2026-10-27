@@ -227,6 +227,13 @@ export type DraftParcel = {
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };
 
+/** A value the reader weighed for a field, with the sources behind it. */
+export type ExtractionCandidate = {
+  value: unknown;
+  confidence: number;
+  sources: FieldSource[];
+};
+
 /** A field as the reader scored it: its value, how sure, why, and from where (§4.3). */
 export type ExtractionField = {
   value: unknown;
@@ -234,6 +241,8 @@ export type ExtractionField = {
   level: ConfidenceLevel;
   flags: FieldFlag[];
   sources: FieldSource[];
+  /** Every value the reader weighed, the agent's confirmation aside; absent before YSL-59. */
+  candidates?: ExtractionCandidate[];
 };
 
 export type ExtractionFieldName =
@@ -259,7 +268,12 @@ export type LocalExtraction = {
   fields: Partial<Record<ExtractionFieldName, ExtractionField>>;
   codes: DraftSymbol[];
   ocrText: string | null;
-  durations: { codesMs: number | null; ocrMs: number | null };
+  durations: {
+    codesMs: number | null;
+    ocrMs: number | null;
+    /** Scoring the fields at « Terminer »; absent before YSL-59. */
+    fusionMs?: number | null;
+  };
   provenance: 'device';
   createdAt: Date;
 };
