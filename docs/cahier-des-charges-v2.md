@@ -867,7 +867,7 @@ stateDiagram-v2
 
 ### 9.2 Durées de conservation
 
-Propositions à valider par le DPO (décision D7).
+Durées validées par le client (décision D7, YSL-55). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
 
 | Donnée | Proposition | Fondement |
 | --- | --- | --- |
@@ -961,7 +961,7 @@ Chaque décision est accompagnée d'une recommandation.
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
 | D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou PIN par défaut, signature en secours et obligatoire pour les recommandés ; pas de photo du salarié |
-| D7 | Durées de conservation | DPO | Valider ou ajuster le tableau du §9.2 |
+| D7 | Durées de conservation | DPO | Validé : le tableau du §9.2 tel quel, signatures à 12 mois (réponse du client, appliqué par YSL-55) |
 | D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone, jamais envoyées au serveur (réponse du client du 22/10/2026) |
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
