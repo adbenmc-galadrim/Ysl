@@ -1,4 +1,9 @@
-import { renderMail } from '@repo/contract/mail';
+import {
+  renderMail,
+  type MailMessage,
+  type MailTarget,
+  type NotifyChange,
+} from '@repo/contract/mail';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -16,6 +21,9 @@ import { Dexie } from 'dexie';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { MailFallback } from '#/features/mail/components/mail-fallback';
+import { needsFallback } from '#/features/mail/fallback';
+import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import { drawPins } from '#/features/mail/pickup-code';
 import {
@@ -116,6 +124,13 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   );
   const [done, setDone] = useState<Record<string, Sent>>({});
   const [failed, setFailed] = useState(false);
+  const mailTarget = useMailTarget();
+  const [stayed, setStayed] = useState<{
+    key: string;
+    id: string;
+    message: MailMessage;
+    target: MailTarget;
+  } | null>(null);
   const busy = useRef(false);
 
   useEffect(() => {
@@ -166,13 +181,11 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       t,
     }),
   );
-  const prepared = mail.address
-    ? MAILERS.mailto.prepare({
-        to: [mail.address],
-        subject: rendered.subject,
-        body: rendered.body,
-      })
+  const message: MailMessage | undefined = mail.address
+    ? { to: [mail.address], subject: rendered.subject, body: rendered.body }
     : undefined;
+  const target = mailTarget;
+  const prepared = message && MAILERS[target].prepare(message);
   const sent = done[mail.key];
   const state: NotifierMailState = !mail.address
     ? 'missing'
@@ -183,13 +196,13 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   const last = index === mails.length - 1;
 
   const send = (event: MouseEvent) => {
-    if (!prepared || !mail.address || busy.current) {
+    if (!prepared || !message || !mail.address || busy.current) {
       event.preventDefault();
       return;
     }
     busy.current = true;
     setFailed(false);
-    const opening = MAILERS.mailto.open(prepared);
+    const opening = MAILERS[target].open(prepared);
     const preparing = outbox.prepare({
       type: template.type,
       personId: mail.personId,
@@ -197,13 +210,18 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       recipients: [mail.address],
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
-      target: 'mailto',
+      target,
       pickupPin: code ?? undefined,
     });
     void (async () => {
       try {
         const row = await preparing;
-        if ((await opening) === 'opened') await outbox.markOpened(row.id);
+        const outcome = await opening;
+        if (needsFallback(outcome)) {
+          setStayed({ key: mail.key, id: row.id, message, target });
+          return;
+        }
+        await outbox.markOpened(row.id);
         await whenVisible();
         setAsking({ key: mail.key, id: row.id });
       } catch {
@@ -214,15 +232,19 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
     })();
   };
 
+  const confirmSent = (key: string, changes: NotifyChange[]) => {
+    const count = changes.filter((change) => !('skip' in change)).length;
+    setDone((all) => ({ ...all, [key]: { state: 'sent', count } }));
+    if (index < mails.length - 1) setIndex(index + 1);
+  };
+
   const answer = async (left: boolean) => {
     if (!asking || busy.current) return;
     busy.current = true;
     try {
       if (left) {
         const { changes } = await outbox.markSent(asking.id);
-        const count = changes.filter((change) => !('skip' in change)).length;
-        setDone((all) => ({ ...all, [asking.key]: { state: 'sent', count } }));
-        if (index < mails.length - 1) setIndex(index + 1);
+        confirmSent(asking.key, changes);
       } else {
         await outbox.markFailed(asking.id, t('notify.notSent.reason'));
         setDone((all) => ({ ...all, [asking.key]: { state: 'failed' } }));
@@ -289,7 +311,29 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       onNext={() => (last ? void navigate({ to: '/' }) : setIndex(index + 1))}
       onBack={back}
       sheet={
-        asking ? (
+        stayed ? (
+          <MailFallback
+            message={stayed.message}
+            target={stayed.target}
+            notificationId={stayed.id}
+            onOpened={() => {
+              const { key, id } = stayed;
+              setStayed(null);
+              void whenVisible().then(() => setAsking({ key, id }));
+            }}
+            onSent={({ changes }) => {
+              confirmSent(stayed.key, changes);
+              setStayed(null);
+            }}
+            onAbandoned={() => {
+              setDone((all) => ({
+                ...all,
+                [stayed.key]: { state: 'failed' },
+              }));
+              setStayed(null);
+            }}
+          />
+        ) : asking ? (
           <MailSentSheet
             recipient={
               mails.find((other) => other.key === asking.key)?.name ?? mail.name
