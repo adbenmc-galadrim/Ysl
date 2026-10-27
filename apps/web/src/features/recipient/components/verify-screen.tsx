@@ -33,6 +33,7 @@ import {
 } from '#/features/recipient/check';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
+import { confirmsTracking } from '#/features/scan/confidence';
 import { pickTracking } from '#/features/scan/confirm';
 import { checkFields } from '#/features/scan/reading';
 import {
@@ -212,6 +213,7 @@ export function VerifyScreen() {
     try {
       await updateDraft(db, draft.id, {
         recipient: toRecipient(chosen, 'agent'),
+        ...(confirmsTracking(draft) ? { trackingConfirmed: true } : {}),
       });
       next();
     } finally {

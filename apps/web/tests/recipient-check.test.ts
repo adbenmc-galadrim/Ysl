@@ -73,7 +73,17 @@ const aztecFor = (name: string) =>
 const draftWith = async (
   batchId: string,
   seconds: number,
-  patch: Partial<Pick<DraftParcel, 'readName' | 'ocrName' | 'symbols'>>,
+  patch: Partial<
+    Pick<
+      DraftParcel,
+      | 'readName'
+      | 'ocrName'
+      | 'symbols'
+      | 'carrier'
+      | 'tracking'
+      | 'trackingNorm'
+    >
+  >,
 ) => {
   const draft = await addDraft(db, files, batchId, null, later(seconds));
   await updateDraft(db, draft.id, patch);
@@ -116,6 +126,29 @@ describe('settleRecipients', () => {
       },
     });
 
+    expect(await settleRecipients(db, batch.id, matcher)).toEqual([]);
+  });
+
+  it('queues a settled draft whose number is only « à vérifier » (F26)', async () => {
+    const batch = await openBatch(db, NOW);
+    const unsure = await draftWith(batch.id, 1, {
+      carrier: 'DHL Express',
+      tracking: '5413337112',
+      trackingNorm: '5413337112',
+      symbols: [{ format: 'Code128', text: '5413337112' }],
+    });
+    await updateDraft(db, unsure, {
+      recipient: {
+        kind: 'person',
+        id: 'louis',
+        name: 'Louis Fontaine',
+        source: 'agent',
+      },
+    });
+
+    expect(await settleRecipients(db, batch.id, matcher)).toEqual([unsure]);
+
+    await updateDraft(db, unsure, { trackingConfirmed: true });
     expect(await settleRecipients(db, batch.id, matcher)).toEqual([]);
   });
 });

@@ -12,6 +12,7 @@ import type {
   DraftRecipient,
 } from '#/features/db/schema';
 import { fullName } from '#/features/directory/people';
+import { trackingToCheck } from '#/features/scan/confidence';
 import { recipientInCodes } from '#/features/scan/extract';
 import type { MatchEngine } from '#/features/recipient/matcher';
 
@@ -63,7 +64,8 @@ export function preselection(
 /**
  * Before « Terminer » promotes the batch: each draft with no recipient yet
  * is matched; the sure ones are settled silently, the others are returned,
- * in batch order, for « Vérifier un colis ».
+ * in batch order, for « Vérifier un colis », with every draft whose number
+ * is not sure yet (F26), its recipient settled or not.
  */
 export async function settleRecipients(
   db: CourrierDatabase,
@@ -72,7 +74,11 @@ export async function settleRecipients(
 ): Promise<string[]> {
   const toCheck: string[] = [];
   for (const draft of await listDrafts(db, batchId)) {
-    if (draft.recipient) continue;
+    const unsure = trackingToCheck(draft);
+    if (draft.recipient) {
+      if (unsure) toCheck.push(draft.id);
+      continue;
+    }
     const silent = silentMatch(
       await matcher.match(readsOf(draft), textOf(draft)),
     );
@@ -83,7 +89,8 @@ export async function settleRecipients(
           { ...silent.entry, name: fullName(silent.entry) },
           'code',
         ),
-      }))
+      })) &&
+      !unsure
     ) {
       continue;
     }
