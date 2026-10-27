@@ -1,8 +1,11 @@
+import { extractFields } from '@repo/contract/extract';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
 import { newId } from '@repo/shared/id';
 import { normalizeName } from '@repo/shared/text';
+import { senderReadOf } from '#/features/batch/extraction';
+import { senderLessons } from '#/features/batch/senders';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -167,6 +170,34 @@ async function typedContact(
   };
 }
 
+/**
+ * A sender the agent typed on the sheet is a correction (§4.3 rank 9): it
+ * teaches the dictionary like one made in the batch review (§4.8), with
+ * the carrier account the label's codes carried and the `FROM` block the
+ * OCR read, when this iPhone still holds the label's reading (`extraction`,
+ * 30 days).
+ */
+async function correctedSender(
+  db: CourrierDatabase,
+  parcelId: string,
+  name: string,
+  now: Date,
+): Promise<{ senderId: string | null; upserts: Upsert[] }> {
+  const reading = await db.extraction.get(parcelId);
+  const account = reading
+    ? (extractFields({ symbols: reading.codes }).accounts[0] ?? null)
+    : null;
+  const lessons = senderLessons(db, now);
+  const sender = await lessons.learn({
+    name,
+    id: null,
+    account,
+    read: senderReadOf(reading),
+    byAgent: true,
+  });
+  return { senderId: sender?.id ?? null, upserts: lessons.upserts() };
+}
+
 /** One piece unless the label said otherwise: a parcel that never said stays silent. */
 function pieces(parcel: LocalParcel, edit: ParcelEdit) {
   if (edit.pieceTotal > 1) {
@@ -283,6 +314,10 @@ export async function saveParcelEdit(
         : { personId: null, contactId: null };
   const tracking = normalizeTracking(edit.tracking) || null;
   const senderName = text(edit.sender);
+  const learned =
+    senderName !== null && senderName !== parcel.senderName
+      ? await correctedSender(db, parcelId, senderName, now)
+      : null;
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
@@ -290,7 +325,10 @@ export async function saveParcelEdit(
     trackingNorm: tracking,
     carrier: text(edit.carrier),
     senderName,
-    senderId: senderName === parcel.senderName ? parcel.senderId : null,
+    senderId:
+      senderName === parcel.senderName
+        ? parcel.senderId
+        : (learned?.senderId ?? null),
     ...pieces(parcel, edit),
     notes: text(edit.notes),
     notificationEmail: normalizeEmail(edit.notificationEmail) || null,
@@ -311,6 +349,7 @@ export async function saveParcelEdit(
         : undefined;
   const row = to ? { ...edited, ...statusPatch(edited, to, options) } : edited;
   const upserts: Upsert[] = [
+    ...(learned?.upserts ?? []),
     ...(contact ? [{ entity: 'contact' as const, row: contact }] : []),
     { entity: 'parcel', row },
     parcelEvent(parcelId, { type: 'parcel.edited', fields }, options),

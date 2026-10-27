@@ -1,4 +1,4 @@
-import type { Field } from '@repo/contract/extract';
+import { CONFIDENCE, type Field } from '@repo/contract/extract';
 import type {
   DraftParcel,
   ExtractionCandidate,
@@ -38,7 +38,9 @@ const stored = <T>(
         candidates: candidatesOf(read ?? field),
       };
 
-/** The sender as the draft settled it, with the dictionary the reading had (§4.8). */
+const SENDER_BLOCK = 'block';
+
+/** The sender as the draft settled it, with the `FROM` block it was read from (§4.8). */
 const senderOf = (draft: DraftParcel): ExtractionField | undefined => {
   const sender = draft.sender;
   if (!sender) return undefined;
@@ -50,9 +52,28 @@ const senderOf = (draft: DraftParcel): ExtractionField | undefined => {
     flags: [],
     sources: [
       { kind: sender.source, format: 'sender', confidence, value: sender.name },
+      ...(sender.read
+        ? [
+            {
+              kind: 'ocr' as const,
+              format: SENDER_BLOCK,
+              confidence: CONFIDENCE.unvalidated,
+              value: sender.read,
+            },
+          ]
+        : []),
     ],
   };
 };
+
+/**
+ * The `FROM` block the OCR read on a parcel's label, kept with its reading:
+ * what a correction on the parcel's sheet teaches (§4.8).
+ */
+export const senderReadOf = (extraction: LocalExtraction | undefined) =>
+  extraction?.fields.sender?.sources.find(
+    (source) => source.kind === 'ocr' && source.format === SENDER_BLOCK,
+  )?.value ?? null;
 
 /**
  * What the reader made of a draft's label, kept with the parcel it becomes:

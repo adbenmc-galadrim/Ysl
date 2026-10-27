@@ -106,7 +106,8 @@ const bestKnown = (
  * The sender of §4.5: a structured code first, then the account dictionary
  * (0,90, 0,95 once confirmed), then the OCR block: the sender the agent
  * took that very text for (an alias, 0,30 rising to 0,90 with each
- * confirmation), else a known sender it matches, else a bare guess (0,40). A match derives
+ * confirmation, never below the known sender it also matches), else a
+ * known sender it matches, else a bare guess (0,40). A match derives
  * from the OCR text, so the two never count as independent sources.
  */
 export const extractSender = ({
@@ -161,16 +162,17 @@ export const extractSender = ({
       key === ''
         ? null
         : bestAlias(knowledge?.aliases ?? [], (a) => a.aliasNorm === key);
-    const match = alias ? null : bestKnown(ocrName, knowledge?.known ?? []);
+    const match = bestKnown(ocrName, knowledge?.known ?? []);
     if (alias) {
+      const agrees = match?.sender.id === alias.senderId;
+      const confidence = Math.max(
+        learnedConfidence(alias.confirmations),
+        agrees ? match.confidence : 0,
+      );
       observations.push({
         key: canonical(alias.name),
         value: alias.name,
-        source: learned(
-          'alias',
-          learnedConfidence(alias.confirmations),
-          alias.name,
-        ),
+        source: learned('alias', confidence, alias.name),
       });
       remember(alias.name, alias.senderId);
     } else if (match) {

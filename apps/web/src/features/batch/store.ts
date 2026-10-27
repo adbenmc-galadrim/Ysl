@@ -339,6 +339,7 @@ export function finishBatch(
       db.parcel,
       db.sender,
       db.senderAccount,
+      db.senderAlias,
       db.event,
       db.outbox,
       db.extraction,

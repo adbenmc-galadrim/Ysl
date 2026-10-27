@@ -284,6 +284,8 @@ describe('readText — sender', () => {
       confidence: 0.4,
       source: 'ocr',
       account: null,
+      read: 'ATELIER TISSAGE NORD',
+      alias: false,
     });
     expect(text.ocrName).toBe('Camille MOREL');
     expect((await db.draftParcel.get(draft.id))?.sender).toEqual(text.sender);

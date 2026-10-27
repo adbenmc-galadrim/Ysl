@@ -1,10 +1,12 @@
 import {
   type AccountRead,
   accountKey,
+  aliasKey,
   carrierKey,
   extractFields,
   type KnownAccount,
   type KnownSender,
+  type KnownSenderAlias,
 } from '@repo/contract/extract';
 import type {
   CourrierDatabase,
@@ -52,10 +54,36 @@ export async function knownSenders(
   }));
 }
 
+/** The senders the agent took this OCR text for before (§4.8, `sender_alias`). */
+export async function knownSenderAliases(
+  db: CourrierDatabase,
+  ocrName: string,
+): Promise<KnownSenderAlias[]> {
+  const key = aliasKey(ocrName);
+  if (key === '') return [];
+  const rows = await db.senderAlias
+    .where('aliasNorm')
+    .equals(key)
+    .filter((row) => row.deletedAt === null)
+    .toArray();
+  const found: KnownSenderAlias[] = [];
+  for (const row of rows) {
+    const sender = await db.sender.get(row.senderId);
+    if (!sender || sender.deletedAt !== null) continue;
+    found.push({
+      aliasNorm: row.aliasNorm,
+      senderId: sender.id,
+      name: sender.displayName,
+      confirmations: row.confirmations,
+    });
+  }
+  return found;
+}
+
 /**
  * The sender of a draft, from its codes and the OCR's `FROM` block when it
- * has landed: the codes first, then the local dictionary, then the senders
- * already seen. `null` when nothing names one.
+ * has landed: the codes first, then the local dictionary, then what the
+ * agent's corrections taught, then the senders already seen. `null` when nothing names one.
  */
 export async function resolveSender(
   db: CourrierDatabase,
@@ -68,10 +96,11 @@ export async function resolveSender(
     ? await knownAccounts(db, probe.accounts)
     : [];
   const known = ocrName ? await knownSenders(db) : [];
-  const { sender, senderId } = extractFields({
+  const aliases = ocrName ? await knownSenderAliases(db, ocrName) : [];
+  const { sender, senderId, senderAlias } = extractFields({
     symbols: bare,
     ocr: ocrName ? { text: '', senderName: ocrName } : null,
-    senders: { accounts, known },
+    senders: { accounts, known, aliases },
   });
   if (!sender) return null;
   const source = sender.sources[0]?.kind ?? 'ocr';
@@ -82,5 +111,7 @@ export async function resolveSender(
     confidence: sender.confidence,
     source,
     account: probe.accounts[0] ?? null,
+    read: ocrName,
+    alias: senderAlias,
   };
 }

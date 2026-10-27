@@ -138,3 +138,19 @@ describe('a recipient alias read again', () => {
     expect(recipientCard).toBeNull();
   });
 });
+
+describe('an alias of a sender the OCR already nearly spells', () => {
+  it('keeps the fuzzy match’s confidence until the alias earns more', () => {
+    const read = (n: number) =>
+      extractFields({
+        symbols: [],
+        ocr: { text: '', senderName: 'METALW0RKS SPA' },
+        senders: {
+          known: [metalworks],
+          aliases: [{ ...senderAlias(n), aliasNorm: 'metalw0rks spa' }],
+        },
+      }).sender;
+    expect(read(1)?.confidence).toBe(CONFIDENCE.knownSenderFuzzy);
+    expect(read(4)?.confidence).toBe(0.9);
+  });
+});

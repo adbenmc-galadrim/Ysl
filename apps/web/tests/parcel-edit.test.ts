@@ -281,7 +281,7 @@ describe('saveParcelEdit', () => {
     });
   });
 
-  it('normalizes the tracking number and forgets a sender renamed', async () => {
+  it('normalizes the tracking number and learns a sender renamed', async () => {
     const row = parcelRow({ senderId: 's-1', senderName: 'Metalworks' });
     await db.parcel.put(row);
 
@@ -300,7 +300,8 @@ describe('saveParcelEdit', () => {
       tracking: '1ZE6344W0499230623',
       trackingNorm: '1ZE6344W0499230623',
       senderName: 'Zalando',
-      senderId: null,
+      senderId: (await db.sender.where('nameNorm').equals('zalando').first())
+        ?.id,
     });
   });
 });

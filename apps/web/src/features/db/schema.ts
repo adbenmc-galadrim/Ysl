@@ -178,6 +178,10 @@ export type DraftSender = {
   confidence?: number;
   source: SourceKind;
   account: { carrier: string; accountNumber: string } | null;
+  /** The `FROM` block as the OCR read it, which a correction teaches (§4.8); absent before YSL-60. */
+  read?: string | null;
+  /** The name comes from an alias the agent's corrections taught; absent before YSL-60. */
+  alias?: boolean;
 };
 
 /**
