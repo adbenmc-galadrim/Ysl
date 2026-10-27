@@ -83,7 +83,7 @@ export const GUARDS = {
   },
   email_template_default_idx: {
     status: SYNC_STATUS.conflict,
-    key: 'sync.op.defaultTemplate',
+    key: 'sync.op.defaultTemplateTwice',
   },
 } as const;
 

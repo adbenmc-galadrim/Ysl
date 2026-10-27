@@ -5,8 +5,7 @@ import {
   type RenderedMail,
 } from '@repo/contract/mail';
 import type { TranslateFn } from '@repo/shared/i18n';
-
-export type TemplateWarning = { title: string; description?: string };
+import type { TemplateWarning } from '@repo/ui';
 
 const bare = (name: string) =>
   name

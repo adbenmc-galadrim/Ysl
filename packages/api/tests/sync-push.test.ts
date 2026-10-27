@@ -618,13 +618,11 @@ describe('sync.push', () => {
     const colleague = { ...writer, userId: 'agent-3' } as const;
 
     beforeAll(async () => {
-      await db
-        .insert(schema.user)
-        .values({
-          id: 'agent-3',
-          name: 'Collègue',
-          email: 'collegue@example.test',
-        });
+      await db.insert(schema.user).values({
+        id: 'agent-3',
+        name: 'Collègue',
+        email: 'collegue@example.test',
+      });
       await db
         .insert(schema.organizationMember)
         .values({ userId: 'agent-3', organizationId: ORGANIZATION_ID });
@@ -687,12 +685,20 @@ describe('sync.push', () => {
           op('email_template', {
             ...preset.patch,
             id: preset.entityId,
+            isDefault: false,
+            deletedAt: NOW,
+          }),
+          op('email_template', {
+            ...preset.patch,
+            id: preset.entityId,
             body: 'Rétabli',
           }),
         ],
       });
 
-      expect(results.map((result) => result.status)).toEqual([409, 409, 200]);
+      expect(results.map((result) => result.status)).toEqual([
+        409, 409, 409, 200,
+      ]);
       expect(results[0]?.message).toBe(
         'Le modèle par défaut ne se supprime pas ; il se rétablit.',
       );
@@ -767,6 +773,21 @@ describe('sync.push', () => {
         .from(schema.notification)
         .where(eq(schema.notification.id, mail.entityId));
       expect(row).toMatchObject({ status: 'sent', sentAt: NOW });
+
+      const { results: stale } = await push(sync, writer, {
+        ops: [
+          op('notification', {
+            ...mail.patch,
+            id: mail.entityId,
+            status: 'opened',
+            openedAt: NOW,
+          }),
+        ],
+      });
+      expect(stale[0]).toMatchObject({
+        status: 409,
+        message: 'Cet e-mail a changé d’état depuis un autre appareil.',
+      });
     });
   });
 

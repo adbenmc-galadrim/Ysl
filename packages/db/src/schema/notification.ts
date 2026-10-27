@@ -17,8 +17,6 @@ import {
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export { NOTIFICATION_STATUSES, NOTIFICATION_TYPES };
-
 export const emailTemplate = pgTable(
   'email_template',
   {

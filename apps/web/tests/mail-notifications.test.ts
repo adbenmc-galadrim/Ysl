@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { onLocalCommit } from '#/features/db/commit';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
   markFailed,
@@ -70,8 +71,11 @@ describe('the outbox of e-mails', () => {
     const mail = await prepared([received.id, reminded.id, handedOver.id]);
     await markOpened(db, mail.id, { now: NOW });
     const before = await db.outbox.count();
+    let commits = 0;
+    const stop = onLocalCommit(() => (commits += 1));
 
     const { notification, changes } = await markSent(db, mail.id, options);
+    stop();
 
     expect(notification).toMatchObject({
       status: 'sent',
@@ -101,7 +105,7 @@ describe('the outbox of e-mails', () => {
       'parcel',
       'event',
     ]);
-    expect(ops.map((op) => op.clientTs)).toEqual(ops.map(() => NOW));
+    expect(commits).toBe(1);
     expect(ops[2]?.patch).toMatchObject({
       entityId: received.id,
       type: 'parcel.notified',

@@ -18,6 +18,8 @@ export type EmailTemplatesScreenProps = {
   templates: EmailTemplateItem[];
   onOpen?: (id: string) => void;
   onCreate?: () => void;
+  /** Why the last write did not go through; shown under the list. */
+  error?: string;
   onBack?: () => void;
 };
 
@@ -30,6 +32,7 @@ export function EmailTemplatesScreen({
   templates,
   onOpen,
   onCreate,
+  error,
   onBack,
 }: EmailTemplatesScreenProps) {
   return (
@@ -57,6 +60,11 @@ export function EmailTemplatesScreen({
           />
         ))}
       </GroupedSection>
+      {error && (
+        <p role="alert" className="px-4 text-13 leading-[1.4] text-red">
+          {error}
+        </p>
+      )}
     </SettingsScreen>
   );
 }

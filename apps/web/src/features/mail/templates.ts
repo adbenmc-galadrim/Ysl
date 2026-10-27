@@ -33,7 +33,7 @@ export class DefaultTemplateError extends Error {
 
 /**
  * The id of an agent's default template, the same on every iPhone: two
- * iPhone that each save it write the same row, never a second default
+ * iPhones that each save it write the same row, never a second default
  * (`email_template_default_idx`). Shaped as a UUID v7, as every id is.
  */
 export async function defaultTemplateId(

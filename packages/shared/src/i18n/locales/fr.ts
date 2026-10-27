@@ -23,6 +23,10 @@ export const fr = {
   'sync.op.templateOwner': 'Ce modèle d’e-mail appartient à un autre agent.',
   'sync.op.defaultTemplate':
     'Le modèle par défaut ne se supprime pas ; il se rétablit.',
+  'sync.op.defaultTemplateTwice':
+    'Un autre modèle par défaut existe déjà pour ce type d’e-mail.',
+  'sync.op.notificationStale':
+    'Cet e-mail a changé d’état depuis un autre appareil.',
   'sync.op.notificationOwner': 'Cet e-mail a été préparé par un autre agent.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
@@ -341,7 +345,6 @@ export const fr = {
   'mail.template.restore.description':
     'Le nom, l’objet et le message reprennent le texte livré avec l’app.',
   'mail.template.restore.confirm': 'Rétablir',
-  'mail.template.cancel': 'Annuler',
   'mail.variable.prénom': 'Prénom du destinataire',
   'mail.variable.nom': 'Nom du destinataire',
   'mail.variable.code': 'Code de retrait',

@@ -1,5 +1,9 @@
 import type { UserRole } from '@repo/contract/auth';
-import { notificationRow } from '@repo/contract/mail';
+import {
+  canMoveNotification,
+  notificationRow,
+  type NotificationStatus,
+} from '@repo/contract/mail';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
@@ -148,9 +152,8 @@ async function checkTemplate(
     );
   }
   const isDefault =
-    op.type === 'upsert' && 'isDefault' in op.patch
-      ? op.patch.isDefault === true
-      : row?.isDefault === true;
+    row?.isDefault === true ||
+    (op.type === 'upsert' && op.patch.isDefault === true);
   const deleting =
     op.type === 'delete' || (op.patch.deletedAt ?? null) !== null;
   if (isDefault && deleting) {
@@ -181,7 +184,10 @@ async function checkNotification(
     );
   }
   const [row] = await tx
-    .select({ preparedBy: notification.preparedBy })
+    .select({
+      preparedBy: notification.preparedBy,
+      status: notification.status,
+    })
     .from(notification)
     .where(
       and(
@@ -198,6 +204,18 @@ async function checkNotification(
       SYNC_STATUS.forbidden,
       `notification ${op.entityId} written by another agent`,
       'sync.op.notificationOwner',
+    );
+  }
+  if (
+    op.type === 'upsert' &&
+    row &&
+    row.status !== op.patch.status &&
+    !canMoveNotification(row.status, op.patch.status as NotificationStatus)
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.conflict,
+      `notification ${op.entityId} cannot go from ${row.status} to ${String(op.patch.status)}`,
+      'sync.op.notificationStale',
     );
   }
 }

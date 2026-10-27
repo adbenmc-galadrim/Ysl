@@ -149,7 +149,7 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
           className="mt-3"
           onClick={() => setConfirm(null)}
         >
-          {t('mail.template.cancel')}
+          {t('record.cancel')}
         </Button>
       </Sheet>
     ) : (
@@ -181,7 +181,7 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
           className="mt-3"
           onClick={() => setConfirm(null)}
         >
-          {t('mail.template.cancel')}
+          {t('record.cancel')}
         </Button>
       </Sheet>
     ));

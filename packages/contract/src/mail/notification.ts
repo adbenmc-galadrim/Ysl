@@ -60,8 +60,11 @@ export const notificationRow = z.object({
 
 export type NotificationRow = z.infer<typeof notificationRow>;
 
-/** Why a parcel of a sent mail did not move: already handed over, or nobody to notify. */
-export type NotifySkip = 'closed' | 'incomplete' | 'no-recipient';
+/**
+ * Why a parcel of a sent mail did not move: handed over or deleted, still to
+ * complete, nobody on it, or not on this iPhone.
+ */
+export type NotifySkip = 'closed' | 'incomplete' | 'no-recipient' | 'missing';
 
 export type NotifiableParcel = StatusFields & {
   id: string;

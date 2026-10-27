@@ -179,7 +179,7 @@ export async function markSent(
           const parcel = parcels[index];
           return parcel
             ? notifyParcel(parcel, { sentAt: now, agentId: userId })
-            : { parcelId, skip: 'closed' };
+            : { parcelId, skip: 'missing' };
         });
         return changes.flatMap((change, index): Upsert[] => {
           const parcel = parcels[index];
