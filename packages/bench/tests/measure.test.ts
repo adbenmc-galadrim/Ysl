@@ -72,6 +72,32 @@ describe('measure', () => {
     });
   });
 
+  it('takes another valid number the label prints as right', () => {
+    const outcomes = measure(
+      label({
+        tracking: '1Z999AA10123456784',
+        otherTrackings: ['1Z12345E0205271686'],
+      }),
+      extractFields({
+        symbols: [{ format: 'Code128', text: '1Z12345E0205271686' }],
+      }),
+    );
+    expect(byField(outcomes, 'tracking')).toMatchObject({
+      status: 'sure-ok',
+      expected: '1Z12345E0205271686',
+    });
+  });
+
+  it('reads an SSCC with its application identifier as the same number', () => {
+    const outcomes = measure(
+      label({ carrier: 'dhl-paket', tracking: '340433929710469734' }),
+      extractFields({
+        symbols: [{ format: 'Code128', text: '(00)340433929710469734' }],
+      }),
+    );
+    expect(byField(outcomes, 'tracking').status).toMatch(/-ok$/);
+  });
+
   it('leaves un-annotated fields out and reports empty ones', () => {
     const outcomes = measure(label(), extractFields({ symbols: [] }));
     expect(byField(outcomes, 'tracking').status).toBe('empty');

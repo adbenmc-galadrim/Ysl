@@ -47,6 +47,10 @@ export const WEIGHT_TOLERANCE_KG = 0.25;
 
 const tokens = (text: string) => canonical(text).split(' ').filter(Boolean);
 
+/** An SSCC written with its GS1 application identifier `00` is the same number. */
+const sscc = (tracking: string) =>
+  /^00\d{18}$/.test(tracking) ? tracking.slice(2) : tracking;
+
 /**
  * « Dupont Jean » and « JEAN DUPONT » name the same person, and so does
  * « MME MARIE CURIE » : the same words, or all the words of the shorter name
@@ -68,7 +72,7 @@ const same: Record<
   tracking: (e, p) =>
     typeof e === 'string' &&
     typeof p === 'string' &&
-    normalizeTracking(e) === normalizeTracking(p),
+    sscc(normalizeTracking(e)) === sscc(normalizeTracking(p)),
   carrier: (e, p) => e === p,
   recipient: (e, p) =>
     typeof e === 'string' && typeof p === 'string' && sameName(e, p),
@@ -117,5 +121,24 @@ const outcome = (
   sources: proposed?.sources.map((s) => `${s.kind}:${s.format}`) ?? [],
 });
 
+/** The number expected: the annotated one, or another the label prints that was read. */
+const expectedOf = (
+  label: Label,
+  field: FieldName,
+  proposed: Field<Expected> | null,
+): Expected => {
+  const other =
+    field === 'tracking' && proposed !== null
+      ? label.otherTrackings?.find((t) => same.tracking(t, proposed.value))
+      : undefined;
+  return other ?? label[field];
+};
+
 export const measure = (label: Label, extraction: Extraction): FieldOutcome[] =>
-  FIELDS.map((field) => outcome(field, label[field], extraction[field]));
+  FIELDS.map((field) =>
+    outcome(
+      field,
+      expectedOf(label, field, extraction[field]),
+      extraction[field],
+    ),
+  );

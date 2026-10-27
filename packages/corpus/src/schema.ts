@@ -51,6 +51,8 @@ export const labelSchema = z
     file: z.string().min(1),
     carrier: carrierSchema,
     tracking: z.string().min(1).nullable(),
+    /** Other valid numbers the label prints (a registered sticker over the carrier's): reading one is right too. */
+    otherTrackings: z.array(z.string().min(1)).optional(),
     recipient: z.string().min(1).nullable(),
     sender: z.string().min(1).nullable(),
     pieces: z
