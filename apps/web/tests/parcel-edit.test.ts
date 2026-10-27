@@ -96,6 +96,28 @@ describe('saveParcelEdit', () => {
     });
   });
 
+  it('keeps a parcel to complete when the agent only adds a note (F26)', async () => {
+    const row = parcelRow({
+      status: 'a_completer',
+      carrier: 'DHL Express',
+      tracking: '5413337112',
+      readName: 'C. MOREL',
+    });
+    await db.parcel.put(row);
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(row), notes: 'Carton abîmé' },
+      options,
+    );
+
+    expect(await db.parcel.get(row.id)).toMatchObject({
+      notes: 'Carton abîmé',
+      status: 'a_completer',
+    });
+  });
+
   it('moves a parcel back to complete when its carrier goes', async () => {
     const row = parcelRow({ status: 'recu', readName: 'C. MOREL' });
     await db.parcel.put(row);
