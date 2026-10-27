@@ -158,6 +158,7 @@ export const fr = {
   'record.damage.carrier': 'Réserve faite auprès du transporteur',
   'record.damage.when': 'Signalée {{when}}',
   'record.damage.photo.alt': 'Photo {{n}} du dommage',
+  'record.photo.zoom': '{{alt}}, agrandir',
   'record.damage.photos.absent.one':
     'Photo restée sur l’iPhone qui a signalé le dommage',
   'record.damage.photos.absent.other':
@@ -166,7 +167,6 @@ export const fr = {
   'record.lift.description':
     'Le colis ne sera plus signalé abîmé. L’historique garde la réserve.',
   'record.lift.confirm': 'Lever la réserve',
-  'damage.error.photo': 'Photo illisible, choisissez-en une autre.',
   'record.detail.sender': 'Expéditeur',
   'record.detail.pieces': 'Nombre de colis',
   'record.detail.weight': 'Poids',
@@ -548,6 +548,7 @@ export const fr = {
   'scan.duplicate.message': 'Ce colis n’a pas été ajouté une deuxième fois.',
   'scan.recipient.same': 'Même destinataire que le précédent',
   'scan.damage.report': 'Signaler un dommage',
+  'damage.error.photo': 'Photo illisible, choisissez-en une autre.',
   'scan.damage.set': 'Réserve : {{reason}}',
   'shell.loading': 'Chargement',
   'shell.notFound.title': 'Page introuvable',

@@ -105,7 +105,9 @@ export function DamageForm({ parcel, onClose, onSave }: DamageFormProps) {
           <button
             key={photo.url}
             type="button"
-            aria-label={`${t('record.damage.photo.alt', { n: index + 1 })}, agrandir`}
+            aria-label={t('record.photo.zoom', {
+              alt: t('record.damage.photo.alt', { n: index + 1 }),
+            })}
             onClick={() => setViewing(photo.url)}
             className="size-[104px] cursor-zoom-in overflow-hidden rounded-control bg-fill"
           >
