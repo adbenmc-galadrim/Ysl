@@ -41,6 +41,7 @@ export type DraftPatch = Partial<
     | 'recipient'
     | 'trackingConfirmed'
     | 'durations'
+    | 'reviewSkipped'
   >
 >;
 

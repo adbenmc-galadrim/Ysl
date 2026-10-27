@@ -72,7 +72,19 @@ describe('draftFields', () => {
       flags: ['conflict'],
     });
     expect(notifiable(read)).toBe(false);
-    expect(notifiable({ ...read, ocrName: null, ocrLines: [] })).toBe(true);
+    expect(
+      notifiable({
+        ...read,
+        ocrName: null,
+        ocrLines: [],
+        recipient: {
+          kind: 'person',
+          id: 'p',
+          name: 'Marie Curie',
+          source: 'code',
+        },
+      }),
+    ).toBe(true);
   });
 });
 

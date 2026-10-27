@@ -2,13 +2,9 @@ import 'fake-indexeddb/auto';
 import type { OcrResult } from '@repo/ocr/worker';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { copyRecipient, previousNamed } from '#/features/batch/recipient';
-import {
-  addDraft,
-  openBatch,
-  promotedStatus,
-  updateDraft,
-} from '#/features/batch/store';
+import { addDraft, openBatch, updateDraft } from '#/features/batch/store';
 import type { CourrierDatabase } from '#/features/db/schema';
+import { draftFields } from '#/features/scan/confidence';
 import { readText } from '#/features/scan/text';
 import { NOW, openTestDatabase } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
@@ -52,7 +48,7 @@ describe('previousNamed', () => {
 });
 
 describe('copyRecipient', () => {
-  it('makes the name sure enough to receive the parcel, and the OCR leaves it alone', async () => {
+  it('makes the name sure, and the OCR leaves it alone', async () => {
     const batch = await openBatch(db, NOW);
     const draft = await addDraft(db, files, batch.id, null, NOW);
     await updateDraft(db, draft.id, {
@@ -85,7 +81,7 @@ describe('copyRecipient', () => {
 
     const copied = await db.draftParcel.get(draft.id);
     expect(copied?.readName).toBe('Camille Morel');
-    expect(promotedStatus(copied!)).toBe('recu');
+    expect(draftFields(copied!).recipient?.level).toBe('sure');
     expect(await copyRecipient(db, 'gone', 'Camille Morel')).toBe(false);
   });
 });

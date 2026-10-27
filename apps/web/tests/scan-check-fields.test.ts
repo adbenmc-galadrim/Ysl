@@ -107,6 +107,12 @@ describe('pickTracking', () => {
       tracking: DHL,
       trackingNorm: DHL,
       readName: 'Camille Morel',
+      recipient: {
+        kind: 'person',
+        id: 'p-camille',
+        name: 'Camille Morel',
+        source: 'agent',
+      },
       symbols: [{ format: 'Code128', text: DHL }],
     });
     expect(promotedStatus((await db.draftParcel.get(added.id))!)).toBe(

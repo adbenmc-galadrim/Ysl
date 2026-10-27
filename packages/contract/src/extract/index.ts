@@ -37,7 +37,7 @@ export type {
   SenderInput,
   SenderKnowledge,
 } from './sender';
-export { observeOcr, ocrTrackings } from './ocr';
+export { observeOcr, ocrTrackings, plausibleWeight } from './ocr';
 export type {
   Candidate,
   ConfidenceLevel,
