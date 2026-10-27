@@ -85,6 +85,14 @@ function anyReference(table: string, columns: string[], id: SQL): SQL {
   )}))`;
 }
 
+/**
+ * The live row of `table` a learned alias points at (§4.8): an alias lives
+ * as long as its sender, card or contact, and is marked with it.
+ */
+function liveParent(table: string, column: string): SQL {
+  return sql`exists (select 1 from ${sql.raw(table)} p where p.organization_id = t.organization_id and p.id = ${sql.raw(column)} and p.deleted_at is null)`;
+}
+
 /** A parcel, handover, notification or pickup code still pointing at a person or a contact. */
 function recipientInUse(
   column: 'person_id' | 'contact_id',
@@ -190,8 +198,9 @@ function add(
 /**
  * The retention purge of one mailroom (§9.2), in two passes. First the rows
  * past their time get `deleted_at`, which every iPhone pulls and applies.
- * Then the rows marked longer ago than the tombstone delay are erased, the
- * children before what they point to; the event log goes with its parcels,
+ * The aliases the agent's corrections taught follow their parent. Then the
+ * rows marked longer ago than the tombstone delay are erased, the children
+ * (aliases included) before what they point to; the event log goes with its parcels,
  * under the purge flag its trigger asks for. Every step works by batches in
  * short transactions.
  */
@@ -230,6 +239,11 @@ export async function purgeOrganization(
       'directory_person',
       sql`t.active = false and t.updated_at < ${at.inactivePerson} and not ${recipientInUse('person_id', liveReference)}`,
     ],
+    [
+      'recipient_alias',
+      sql`not (${liveParent('directory_person', 't.person_id')} or ${liveParent('contact', 't.contact_id')})`,
+    ],
+    ['sender_alias', sql`not ${liveParent('sender', 't.sender_id')}`],
   ];
   for (const [table, where] of marks) {
     const { n } = await inBatches(db, mark(organizationId, table, now, where));
@@ -243,11 +257,22 @@ export async function purgeOrganization(
     ['parcel', null],
     ['batch', anyReference('parcel', ['batch_id'], sql.raw('t.id'))],
     ['sender_account', null],
-    ['sender', anyReference('sender_account', ['sender_id'], sql.raw('t.id'))],
+    ['sender_alias', null],
+    [
+      'sender',
+      sql`(${anyReference('sender_account', ['sender_id', 'challenger_id'], sql.raw('t.id'))} or ${anyReference('sender_alias', ['sender_id'], sql.raw('t.id'))})`,
+    ],
     ['email_template', null],
     ['setting', null],
-    ['contact', recipientInUse('contact_id', anyReference)],
-    ['directory_person', recipientInUse('person_id', anyReference)],
+    ['recipient_alias', null],
+    [
+      'contact',
+      sql`(${recipientInUse('contact_id', anyReference)} or ${anyReference('recipient_alias', ['contact_id'], sql.raw('t.id'))})`,
+    ],
+    [
+      'directory_person',
+      sql`(${recipientInUse('person_id', anyReference)} or ${anyReference('recipient_alias', ['person_id'], sql.raw('t.id'))})`,
+    ],
   ];
   for (const [table, keep] of erasures) {
     if (table === 'parcel') {
