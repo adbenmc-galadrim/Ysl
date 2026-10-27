@@ -19,6 +19,7 @@ import { Route as AuthenticatedRechercheRouteImport } from './routes/_authentica
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/revue'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
+import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 import { Route as AuthenticatedReglagesAnnuaireRouteImport } from './routes/_authenticated/reglages/annuaire'
 import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_authenticated/reglages/apparence'
@@ -86,6 +87,11 @@ const AuthenticatedRevueRoute = AuthenticatedRevueRouteImport.update({
 const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
   id: '/scan',
   path: '/scan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedLotBatchIdRoute = AuthenticatedLotBatchIdRouteImport.update({
+  id: '/lot/$batchId',
+  path: '/lot/$batchId',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedReglagesIndexRoute =
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/remise': typeof AuthenticatedRemiseRoute
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
+  '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/_authenticated/revue': typeof AuthenticatedRevueRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/_authenticated/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/_authenticated/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
@@ -298,6 +307,7 @@ export interface FileRouteTypes {
     | '/remise'
     | '/revue'
     | '/scan'
+    | '/lot/$batchId'
     | '/reglages/annuaire'
     | '/reglages/apparence'
     | '/reglages/arrondis'
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/revue'
     | '/scan'
     | '/'
+    | '/lot/$batchId'
     | '/reglages/annuaire'
     | '/reglages/apparence'
     | '/reglages/arrondis'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/_authenticated/revue'
     | '/_authenticated/scan'
     | '/_authenticated/'
+    | '/_authenticated/lot/$batchId'
     | '/_authenticated/reglages/annuaire'
     | '/_authenticated/reglages/apparence'
     | '/_authenticated/reglages/arrondis'
@@ -453,6 +465,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/scan'
       preLoaderRoute: typeof AuthenticatedScanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/lot/$batchId': {
+      id: '/_authenticated/lot/$batchId'
+      path: '/lot/$batchId'
+      fullPath: '/lot/$batchId'
+      preLoaderRoute: typeof AuthenticatedLotBatchIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/reglages/': {
@@ -592,6 +611,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRevueRoute: typeof AuthenticatedRevueRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedLotBatchIdRoute: typeof AuthenticatedLotBatchIdRoute
   AuthenticatedReglagesAnnuaireRoute: typeof AuthenticatedReglagesAnnuaireRoute
   AuthenticatedReglagesApparenceRoute: typeof AuthenticatedReglagesApparenceRoute
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
@@ -620,6 +640,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRevueRoute: AuthenticatedRevueRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedLotBatchIdRoute: AuthenticatedLotBatchIdRoute,
   AuthenticatedReglagesAnnuaireRoute: AuthenticatedReglagesAnnuaireRoute,
   AuthenticatedReglagesApparenceRoute: AuthenticatedReglagesApparenceRoute,
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
