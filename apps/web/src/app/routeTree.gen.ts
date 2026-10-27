@@ -22,6 +22,7 @@ import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 import { Route as AuthenticatedReglagesAnnuaireRouteImport } from './routes/_authenticated/reglages/annuaire'
+import { Route as AuthenticatedReglagesAppareilsRouteImport } from './routes/_authenticated/reglages/appareils'
 import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_authenticated/reglages/apparence'
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
@@ -104,6 +105,12 @@ const AuthenticatedReglagesAnnuaireRoute =
   AuthenticatedReglagesAnnuaireRouteImport.update({
     id: '/reglages/annuaire',
     path: '/reglages/annuaire',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedReglagesAppareilsRoute =
+  AuthenticatedReglagesAppareilsRouteImport.update({
+    id: '/reglages/appareils',
+    path: '/reglages/appareils',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedReglagesApparenceRoute =
@@ -215,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/scan': typeof AuthenticatedScanRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
+  '/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -245,6 +253,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
+  '/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
   '/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -277,6 +286,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/_authenticated/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
+  '/_authenticated/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
   '/_authenticated/reglages/apparence': typeof AuthenticatedReglagesApparenceRoute
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/scan'
     | '/lot/$batchId'
     | '/reglages/annuaire'
+    | '/reglages/appareils'
     | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
@@ -339,6 +350,7 @@ export interface FileRouteTypes {
     | '/'
     | '/lot/$batchId'
     | '/reglages/annuaire'
+    | '/reglages/appareils'
     | '/reglages/apparence'
     | '/reglages/arrondis'
     | '/reglages/compte'
@@ -370,6 +382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/lot/$batchId'
     | '/_authenticated/reglages/annuaire'
+    | '/_authenticated/reglages/appareils'
     | '/_authenticated/reglages/apparence'
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
@@ -486,6 +499,13 @@ declare module '@tanstack/react-router' {
       path: '/reglages/annuaire'
       fullPath: '/reglages/annuaire'
       preLoaderRoute: typeof AuthenticatedReglagesAnnuaireRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reglages/appareils': {
+      id: '/_authenticated/reglages/appareils'
+      path: '/reglages/appareils'
+      fullPath: '/reglages/appareils'
+      preLoaderRoute: typeof AuthenticatedReglagesAppareilsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/reglages/apparence': {
@@ -613,6 +633,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedLotBatchIdRoute: typeof AuthenticatedLotBatchIdRoute
   AuthenticatedReglagesAnnuaireRoute: typeof AuthenticatedReglagesAnnuaireRoute
+  AuthenticatedReglagesAppareilsRoute: typeof AuthenticatedReglagesAppareilsRoute
   AuthenticatedReglagesApparenceRoute: typeof AuthenticatedReglagesApparenceRoute
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
@@ -642,6 +663,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedLotBatchIdRoute: AuthenticatedLotBatchIdRoute,
   AuthenticatedReglagesAnnuaireRoute: AuthenticatedReglagesAnnuaireRoute,
+  AuthenticatedReglagesAppareilsRoute: AuthenticatedReglagesAppareilsRoute,
   AuthenticatedReglagesApparenceRoute: AuthenticatedReglagesApparenceRoute,
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,

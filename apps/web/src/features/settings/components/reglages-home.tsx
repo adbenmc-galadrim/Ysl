@@ -187,6 +187,12 @@ export function ReglagesHome() {
         label: t('settings.importV1'),
         onPress: () => void navigate({ to: '/reglages/import-v1' }),
       },
+      {
+        icon: 'phone',
+        color: 'grey',
+        label: t('settings.devices'),
+        onPress: () => void navigate({ to: '/reglages/appareils' }),
+      },
     ],
   };
 
