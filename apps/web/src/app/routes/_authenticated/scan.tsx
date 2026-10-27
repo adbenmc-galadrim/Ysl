@@ -1,3 +1,4 @@
+import { DAMAGE_LABEL } from '@repo/contract/parcel-damage';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { env } from '@repo/shared/env/web';
 import {
@@ -28,6 +29,7 @@ import {
   addDraft,
   addTypedDraft,
   openBatch,
+  setDraftDamage,
   typedDraft,
   undoLast,
   updateDraft,
@@ -38,6 +40,7 @@ import {
   type UndoWindow,
 } from '#/features/batch/undo-window';
 import { useBatch } from '#/features/batch/use-batch';
+import { DamageForm } from '#/features/damage/components/damage-form';
 import { encodePhoto, grabFrame } from '#/features/camera/capture';
 import { frameQuality } from '#/features/camera/quality';
 import {
@@ -70,7 +73,7 @@ import {
   recipientOf,
 } from '#/features/scan/duplicate';
 import { recipientInCodes } from '#/features/scan/extract';
-import { lastOf } from '#/features/scan/last';
+import { carrierMeta, lastOf, nameOf } from '#/features/scan/last';
 import { pieceReading } from '#/features/scan/piece';
 import {
   readDraft,
@@ -172,6 +175,8 @@ function ScanPage() {
   const shownShot = useRef<ShotHint | undefined>(undefined);
   const held = useRef<Held | null>(null);
   const [sameAs, setSameAs] = useState<SameRecipient | null>(null);
+  /** The draft « Signaler un dommage » was opened on, over the viewfinder. */
+  const [damaging, setDamaging] = useState<DraftParcel | null>(null);
 
   useEffect(() => holdUpdates(), []);
 
@@ -727,13 +732,25 @@ function ScanPage() {
   };
 
   const last = view?.last && lastOf(view.last, t);
+  /* The reserve is offered on the parcel just read, the one the band names. */
+  const damageable =
+    view?.last && view.last.id === shownDraft.current ? view.last : undefined;
   const action =
     sameAs && sameAs.draftId === shownDraft.current
       ? {
           label: t('scan.recipient.same'),
           onClick: () => void onSameRecipient(),
         }
-      : undefined;
+      : damageable
+        ? {
+            label: damageable.damage
+              ? t('scan.damage.set', {
+                  reason: DAMAGE_LABEL[damageable.damage.reason].toLowerCase(),
+                })
+              : t('scan.damage.report'),
+            onClick: () => setDamaging(damageable),
+          }
+        : undefined;
   const shown: ScanReading = typing
     ? { kind: 'idle' }
     : reading.kind === 'read'
@@ -835,6 +852,28 @@ function ScanPage() {
               onSubmit={onSubmit}
               onDismiss={() => setTyping(null)}
             />
+          )}
+          {damaging && (
+            <div className="fixed inset-0 z-50">
+              <DamageForm
+                parcel={{
+                  recipient: nameOf(damaging, t),
+                  carrier: carrierMeta(damaging.carrier, damaging.tracking, t),
+                  last4: '',
+                }}
+                onClose={() => setDamaging(null)}
+                onSave={async (input, photos) => {
+                  await setDraftDamage(
+                    db,
+                    photoFiles,
+                    damaging.id,
+                    input,
+                    photos,
+                  );
+                  setDamaging(null);
+                }}
+              />
+            </div>
           )}
         </>
       )}
