@@ -162,3 +162,15 @@ export const Purgee: Story = {
     },
   },
 };
+
+export const LuAilleurs: Story = {
+  name: 'Lu sur un autre iPhone',
+  args: {
+    empty: {
+      icon: 'phone',
+      title: 'Lu sur un autre iPhone',
+      description:
+        'La lecture reste sur l’iPhone qui a scanné ce colis : ouvrez ce diagnostic depuis celui-ci.',
+    },
+  },
+};
