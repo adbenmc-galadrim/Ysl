@@ -37,8 +37,7 @@ qui permet de savoir qui a reçu ou remis un colis.
 
 ### 1. Ouvrir l'adresse de l'app dans Safari
 
-Sur l'iPhone, ouvrez Safari et tapez l'adresse de l'app communiquée par la DSI
-(aujourd'hui `https://ysl.shinseo.fr`).
+Sur l'iPhone, ouvrez Safari et tapez l'adresse de l'app communiquée par la DSI.
 
 Depuis un ordinateur, la même adresse affiche une page avec un QR code : visez-le avec
 l'appareil photo de l'iPhone et touchez le lien qui apparaît. Il s'ouvre dans Safari.
@@ -101,7 +100,8 @@ L'app s'ouvre ensuite sur la liste **Colis**.
 
 ### 5. Autoriser la caméra
 
-Touchez **Scanner des colis**. L'app explique pourquoi elle a besoin de la caméra ;
+Touchez **Scanner** en bas de la liste (**Scanner des colis** quand la liste est vide).
+L'app explique pourquoi elle a besoin de la caméra ;
 touchez **Autoriser la caméra**.
 
 ![Explication avant la demande](images/installation/10-autoriser-camera.png)
@@ -133,7 +133,7 @@ pastille en haut à gauche indique **À jour** une fois envoyé au serveur.
 
 ## Réglages de l'iPhone recommandés
 
-L'app ne chiffre pas elle-même ses données (choix validé pour cette version, D19) : elle
+L'app ne chiffre pas elle-même ses données (choix validé pour cette version) : elle
 s'appuie sur la protection d'iOS. Celle-ci ne protège vraiment les données que si
 l'iPhone a un code. Sur chaque iPhone du service :
 
@@ -164,7 +164,7 @@ chiffrées tant que l'iPhone est verrouillé.
 
 1. **Déconnecter l'iPhone** depuis un autre appareil, avec un compte administrateur :
    dans l'app, **Réglages › Appareils connectés**, touchez la ligne de l'iPhone perdu
-   (nom de l'agent, « iPhone », dernière activité), puis
+   (nom de l'agent, « iPhone » et date de connexion), puis
    **Déconnecter cet appareil**.
 
    ![Appareils connectés](images/installation/13-appareils-connectes.png)
@@ -194,9 +194,9 @@ utilisable sur place avec ce qu'elle avait déjà ; elle se vide à la première
   connectez-vous avec le même compte. Les colis, l'annuaire et les modèles d'e-mail
   reviennent du serveur pendant la préparation hors ligne.
 - **Les photos d'étiquettes ne suivent pas** : elles ne quittent jamais l'iPhone où elles
-  ont été prises (D8).
+  ont été prises.
 - **Avant de rendre ou de réattribuer l'ancien iPhone** : dans l'app,
-  **Réglages › Compte › Se déconnecter**. L'app envoie d'abord ce qui reste, puis efface
+  **Réglages**, touchez votre nom en haut, puis **Se déconnecter**. L'app envoie d'abord ce qui reste, puis efface
   ses données. Un administrateur peut aussi passer par
   **Réglages › Données et confidentialité › Effacer les données de cet iPhone**.
   Supprimez ensuite l'icône (appui long › Supprimer l'app web).
@@ -243,7 +243,7 @@ simulateur ne remplacent pas ces gestes) :
 - [ ] Code de verrouillage, verrouillage automatique et Face ID réglés comme
       [recommandé](#réglages-de-liphone-recommandés).
 
-Les points de détail déjà relevés par les livraisons précédentes (plein écran et barre
-d'état, coque et hauteur de l'app installée, caméra, préparation hors ligne, mise à
-jour) sont tenus à jour dans le `TODO.md` de suivi du projet (hors de ce dépôt), sections YSL-104, YSL-106, YSL-107,
-YSL-15, YSL-29, YSL-35 et YSL-19 : les vérifier en même temps.
+> **Pour l'équipe technique** : les points de détail relevés pendant le développement
+> (plein écran et barre d'état, hauteur de l'app installée, caméra, préparation hors
+> ligne, mise à jour) sont suivis dans son fichier de suivi (`TODO.md`, tenu hors de ce
+> dépôt) ; elle les vérifie en même temps que cette liste.
