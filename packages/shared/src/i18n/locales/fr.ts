@@ -49,7 +49,7 @@ export const fr = {
   'devices.kind.mac': 'Mac',
   'devices.kind.android': 'Android',
   'devices.kind.computer': 'Ordinateur',
-  'devices.subtitle': '{{kind}} · actif {{when}}',
+  'devices.subtitle': '{{kind}} · connecté {{when}}',
   'devices.current': '{{kind}} · cet appareil',
   'devices.loading': 'Chargement…',
   'devices.offline': 'Liste disponible avec une connexion.',

@@ -3,7 +3,7 @@ import type { AnyDb } from '@repo/db';
 import { organizationMember, session, user } from '@repo/db/schema';
 import { and, desc, eq, gt, inArray } from 'drizzle-orm';
 
-/** The live sessions of the mailroom's members, the most recently used first. */
+/** The live sessions of the mailroom's members, the most recently signed in first. */
 export async function listDevices(
   db: AnyDb,
   {
@@ -16,10 +16,8 @@ export async function listDevices(
     .select({
       id: session.id,
       userName: user.name,
-      userEmail: user.email,
       userAgent: session.userAgent,
-      createdAt: session.createdAt,
-      lastActiveAt: session.updatedAt,
+      signedInAt: session.createdAt,
     })
     .from(session)
     .innerJoin(user, eq(user.id, session.userId))
@@ -30,7 +28,7 @@ export async function listDevices(
         gt(session.expiresAt, now),
       ),
     )
-    .orderBy(desc(session.updatedAt));
+    .orderBy(desc(session.createdAt));
   return rows.map((row) => ({ ...row, current: row.id === currentSessionId }));
 }
 

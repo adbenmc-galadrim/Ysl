@@ -4,7 +4,7 @@ import { formatSyncTime } from '#/features/sync/sync-card';
 
 export type DeviceKind = 'iphone' | 'ipad' | 'mac' | 'android' | 'computer';
 
-/** What the browser says it runs on; iPadOS passes for a Mac, as Safari wants. */
+/** What the browser says it runs on; a recent iPad says Macintosh and is listed as a Mac. */
 export function deviceKind(userAgent: string | null): DeviceKind {
   const agent = userAgent ?? '';
   if (/iPhone|iPod/.test(agent)) return 'iphone';
@@ -14,9 +14,9 @@ export function deviceKind(userAgent: string | null): DeviceKind {
   return 'computer';
 }
 
-/** "iPhone · actif à 10 h 42", "Mac · actif le 27 octobre à 9 h 05". */
+/** "iPhone · connecté à 10 h 42", "Mac · connecté le 27 octobre à 9 h 05". */
 export function deviceSubtitle(
-  device: Pick<Device, 'userAgent' | 'lastActiveAt' | 'current'>,
+  device: Pick<Device, 'userAgent' | 'signedInAt' | 'current'>,
   t: TranslateFn,
   now = new Date(),
 ): string {
@@ -24,6 +24,6 @@ export function deviceSubtitle(
   if (device.current) return t('devices.current', { kind });
   return t('devices.subtitle', {
     kind,
-    when: formatSyncTime(device.lastActiveAt, now),
+    when: formatSyncTime(device.signedInAt, now),
   });
 }

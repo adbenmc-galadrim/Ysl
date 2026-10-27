@@ -78,10 +78,7 @@ describe('devices router', () => {
         ['phone', false],
       ],
     );
-    expect(devices[0]).toMatchObject({
-      userName: 'Agent',
-      userEmail: 'agent@example.test',
-    });
+    expect(devices[0]).toMatchObject({ userName: 'Agent' });
   });
 
   it('deletes the session of a device of the mailroom', async () => {

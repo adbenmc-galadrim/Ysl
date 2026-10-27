@@ -24,24 +24,24 @@ describe('deviceKind', () => {
 describe('deviceSubtitle', () => {
   const now = new Date(2026, 9, 28, 15, 0);
 
-  it('says what the device is and when it was last used', () => {
+  it('says what the device is and when it signed in', () => {
     expect(
       deviceSubtitle(
         {
           userAgent: IPHONE,
-          lastActiveAt: new Date(2026, 9, 27, 9, 5),
+          signedInAt: new Date(2026, 9, 27, 9, 5),
           current: false,
         },
         t,
         now,
       ),
-    ).toBe('iPhone · actif le 27 octobre à 9 h 05');
+    ).toBe('iPhone · connecté le 27 octobre à 9 h 05');
   });
 
   it('marks the device the admin is holding', () => {
     expect(
       deviceSubtitle(
-        { userAgent: IPHONE, lastActiveAt: now, current: true },
+        { userAgent: IPHONE, signedInAt: now, current: true },
         t,
         now,
       ),

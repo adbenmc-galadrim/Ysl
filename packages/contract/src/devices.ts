@@ -7,10 +7,9 @@ import { z } from 'zod';
 export const device = z.object({
   id: z.string(),
   userName: z.string(),
-  userEmail: z.string(),
   userAgent: z.string().nullable(),
-  createdAt: z.date(),
-  lastActiveAt: z.date(),
+  /** When the device signed in: Better Auth refreshes nothing finer than once a day. */
+  signedInAt: z.date(),
   /** The device the admin is holding: erased from Données, not from here. */
   current: z.boolean(),
 });
