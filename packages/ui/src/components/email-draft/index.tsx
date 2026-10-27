@@ -7,7 +7,9 @@ import { cn } from '#lib/tv';
 export type EmailRecipientProps = {
   name: string;
   initials: string;
-  email: string;
+  email?: string;
+  /** In place of the address when there is none: "Adresse manquante", in orange. */
+  missing?: string;
   onClick?: () => void;
   className?: string;
 };
@@ -20,6 +22,7 @@ export function EmailRecipient({
   name,
   initials,
   email,
+  missing,
   onClick,
   className,
 }: EmailRecipientProps) {
@@ -42,7 +45,13 @@ export function EmailRecipient({
       {/* Penpot centres the two lines 1.5 px above the middle. */}
       <span className="mb-[3px] flex min-w-0 flex-1 flex-col gap-px">
         <span className="truncate text-15 font-semibold">{name}</span>
-        <span className="truncate text-12 text-muted">{email}</span>
+        {missing ? (
+          <span className="truncate text-12 font-semibold text-orange-strong">
+            {missing}
+          </span>
+        ) : (
+          <span className="truncate text-12 text-muted">{email}</span>
+        )}
       </span>
       <Icon
         name="chevron"
@@ -144,6 +153,35 @@ export function EmailDraft({
           <p className="mt-1.5 text-13 leading-[18px]">{note.text}</p>
         </div>
       )}
+    </article>
+  );
+}
+
+export type EmailTextProps = {
+  subject: ReactNode;
+  /** The body as the mail app receives it: plain text, line breaks kept. */
+  body: ReactNode;
+  className?: string;
+};
+
+/**
+ * A mail written from the agent's own template, shown in the card of the
+ * preview: plain text, since that is all a `mailto:` carries (S5).
+ */
+export function EmailText({ subject, body, className }: EmailTextProps) {
+  return (
+    <article
+      className={cn(
+        'flex flex-col rounded-card bg-surface px-[18px] pt-4 pb-[18px] text-ink',
+        className,
+      )}
+    >
+      <p className="text-12 text-muted">Objet</p>
+      <h2 className="mt-1 text-15 font-semibold break-words">{subject}</h2>
+      <hr className="mt-3 border-separator" />
+      <p className="mt-[13px] text-13 leading-[18px] break-words whitespace-pre-wrap">
+        {body}
+      </p>
     </article>
   );
 }

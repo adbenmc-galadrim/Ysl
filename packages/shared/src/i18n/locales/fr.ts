@@ -518,6 +518,31 @@ export const fr = {
     'Lien « Ce n’est pas à moi » vers votre adresse',
   'mail.variable.lien_collegue':
     'Lien « Un collègue passera » vers votre adresse',
+  'mail.parcel.today': '{{name}}, reçu à {{time}}',
+  'mail.parcel.before': '{{name}}, reçu le {{date}}',
+  'notify.title': 'Notifier',
+  'notify.empty.title': 'Aucun e-mail à préparer',
+  'notify.empty.description':
+    'Les colis « À notifier » sans destinataire réglé attendent leur fiche.',
+  'notify.send': 'Envoyer à {{name}}',
+  'notify.next': 'Suivant',
+  'notify.finish': 'Terminer',
+  'notify.complete': 'Compléter la fiche',
+  'notify.missing': 'Adresse manquante',
+  'notify.missing.title': 'Pas d’adresse e-mail',
+  'notify.missing.description':
+    'Saisissez-la sur la fiche du colis pour lui écrire.',
+  'notify.sent.title': 'E-mail envoyé',
+  'notify.sent.one': '1 colis passe « Notifié ».',
+  'notify.sent.many': '{{count}} colis passent « Notifié ».',
+  'notify.notSent.title': 'Pas envoyé',
+  'notify.notSent.description':
+    'Les colis restent « À notifier ». Renvoyez quand vous voulez.',
+  'notify.notSent.reason': 'Non envoyé, d’après l’agent',
+  'notify.error': 'E-mail non préparé sur l’iPhone, réessayez.',
+  'notify.template.title': 'Modèle d’e-mail',
+  'colis.section.notify': 'Notifier',
+  'record.action.notify': 'Notifier maintenant',
   'import.v1.error.notV1':
     'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
   'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',

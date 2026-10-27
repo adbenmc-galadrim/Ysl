@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
 import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
@@ -52,6 +53,11 @@ const ConnexionRoute = ConnexionRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedNotifierRoute = AuthenticatedNotifierRouteImport.update({
+  id: '/notifier',
+  path: '/notifier',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPreparationRoute =
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
   '/remise': typeof AuthenticatedRemiseRoute
@@ -234,6 +242,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
+  '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
   '/_authenticated/remise': typeof AuthenticatedRemiseRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/'
     | '/bienvenue'
     | '/connexion'
+    | '/notifier'
     | '/preparation'
     | '/recherche'
     | '/remise'
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
   to:
     | '/bienvenue'
     | '/connexion'
+    | '/notifier'
     | '/preparation'
     | '/recherche'
     | '/remise'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/bienvenue'
     | '/connexion'
+    | '/_authenticated/notifier'
     | '/_authenticated/preparation'
     | '/_authenticated/recherche'
     | '/_authenticated/remise'
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifier': {
+      id: '/_authenticated/notifier'
+      path: '/notifier'
+      fullPath: '/notifier'
+      preLoaderRoute: typeof AuthenticatedNotifierRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/preparation': {
@@ -526,6 +545,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
   AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
@@ -551,6 +571,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
   AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,

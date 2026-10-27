@@ -38,7 +38,7 @@ const at = (hours: number, minutes = 0) =>
   new Date(2026, 9, 24, hours, minutes);
 
 describe('describeRecord', () => {
-  it('names the recipient, the place and the tracking number as printed', async () => {
+  it('names the recipient, the place and the tracking number, and offers to notify', async () => {
     const person = personRow();
     await db.directoryPerson.put(person);
     const row = parcelRow({ personId: person.id });
@@ -59,7 +59,7 @@ describe('describeRecord', () => {
       'todo',
       'todo',
     ]);
-    expect(view.action).toBeUndefined();
+    expect(view.action).toEqual({ kind: 'notify' });
   });
 
   it('tells the history newest first, the reception last', async () => {

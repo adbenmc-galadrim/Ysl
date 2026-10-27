@@ -264,9 +264,18 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
         void navigate({ to: '/colis/$parcelId/lecture', params: { parcelId } })
       }
       primaryAction={
-        action?.kind === 'complete' ? t('record.action.complete') : undefined
+        action?.kind === 'complete'
+          ? t('record.action.complete')
+          : action?.kind === 'notify'
+            ? t('record.action.notify')
+            : undefined
       }
-      onPrimaryAction={edit}
+      onPrimaryAction={
+        action?.kind === 'notify'
+          ? () =>
+              void navigate({ to: '/notifier', search: { colis: parcelId } })
+          : edit
+      }
       secondaryAction={
         action?.kind === 'stepBack'
           ? {

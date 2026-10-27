@@ -53,6 +53,17 @@ export function ColisHome() {
     () =>
       toSections(parcels ?? []).map((section) => ({
         ...section,
+        ...(sectionId(section.title) === 'toNotify' && {
+          action: (
+            <Button
+              size="xs"
+              className="w-[84px]"
+              onClick={() => void navigate({ to: '/notifier' })}
+            >
+              {t('colis.section.notify')}
+            </Button>
+          ),
+        }),
         onParcelClick: (parcel: { id: string }) =>
           void navigate({
             to: '/colis/$parcelId',
