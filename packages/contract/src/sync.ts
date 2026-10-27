@@ -14,6 +14,8 @@ export const SYNCED_ENTITIES = [
   'handover',
   'event',
   'setting',
+  'sender_alias',
+  'recipient_alias',
 ] as const;
 
 export const syncedEntity = z.enum(SYNCED_ENTITIES);

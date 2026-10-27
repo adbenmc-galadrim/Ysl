@@ -49,6 +49,8 @@ const ENTITY_ROW: Record<SyncedEntity, Pick<SettingsItem, 'icon' | 'color'>> = {
   handover: { icon: 'check', color: 'green' },
   event: { icon: 'clock', color: 'grey' },
   setting: { icon: 'list', color: 'grey' },
+  sender_alias: { icon: 'send', color: 'grey' },
+  recipient_alias: { icon: 'user', color: 'indigo' },
 };
 
 const dayFormat = new Intl.DateTimeFormat('fr-FR', {
@@ -108,6 +110,10 @@ function subject({ op, row }: WaitingChange, t: TranslateFn): Subject {
       return { label: t('sync.change.entity.batch') };
     case 'sender_account':
       return { label: t('sync.change.entity.sender_account') };
+    case 'sender_alias':
+      return { label: t('sync.change.entity.sender_alias') };
+    case 'recipient_alias':
+      return { label: t('sync.change.entity.recipient_alias') };
     case 'notification':
       return { label: t('sync.change.entity.notification') };
     case 'pickup_code':

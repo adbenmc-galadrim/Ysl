@@ -9,8 +9,10 @@ import {
   notification,
   parcel,
   pickupCode,
+  recipientAlias,
   sender,
   senderAccount,
+  senderAlias,
   setting,
 } from '@repo/db/schema';
 
@@ -28,6 +30,8 @@ export const SYNC_TABLES = {
   handover,
   event,
   setting,
+  sender_alias: senderAlias,
+  recipient_alias: recipientAlias,
 } as const satisfies Record<SyncedEntity, unknown>;
 
 export type SyncTable = (typeof SYNC_TABLES)[SyncedEntity];

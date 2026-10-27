@@ -617,6 +617,8 @@ export const fr = {
   'sync.change.entity.contact': 'Contact',
   'sync.change.entity.sender': 'Expéditeur',
   'sync.change.entity.sender_account': 'Compte transporteur',
+  'sync.change.entity.sender_alias': 'Expéditeur appris',
+  'sync.change.entity.recipient_alias': 'Destinataire appris',
   'sync.change.entity.email_template': 'Modèle d’e-mail',
   'sync.change.entity.notification': 'Notification',
   'sync.change.entity.pickup_code': 'Code de retrait',

@@ -11,8 +11,10 @@ import type {
   notification,
   parcel,
   pickupCode,
+  recipientAlias,
   sender,
   senderAccount,
+  senderAlias,
   setting,
   SYNCED_ENTITIES,
 } from '@repo/db/schema';
@@ -43,7 +45,16 @@ export type LocalDirectoryPerson = LocalRow<
 >;
 export type LocalContact = LocalRow<typeof contact.$inferSelect>;
 export type LocalSender = LocalRow<typeof sender.$inferSelect>;
-export type LocalSenderAccount = LocalRow<typeof senderAccount.$inferSelect>;
+/** `challengerId` and `challenges` are missing on a row pulled before YSL-60: read them as none. */
+export type LocalSenderAccount = Omit<
+  LocalRow<typeof senderAccount.$inferSelect>,
+  'challengerId' | 'challenges'
+> & {
+  challengerId?: string | null;
+  challenges?: number;
+};
+export type LocalSenderAlias = LocalRow<typeof senderAlias.$inferSelect>;
+export type LocalRecipientAlias = LocalRow<typeof recipientAlias.$inferSelect>;
 export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
 /** `statusSeq` is missing on a row pulled before the column existed: read it as 0. */
 export type LocalParcel = Omit<
@@ -72,6 +83,8 @@ export type SyncedRows = {
   handover: LocalHandover;
   event: LocalEvent;
   setting: LocalSetting;
+  sender_alias: LocalSenderAlias;
+  recipient_alias: LocalRecipientAlias;
 };
 
 export type OutboxOpType = 'upsert' | 'delete';
@@ -279,7 +292,10 @@ export type LocalExtraction = {
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */
-const SYNCED_STORES: Record<SyncedEntity, string> = {
+const FIRST_SYNCED_STORES: Record<
+  Exclude<SyncedEntity, keyof typeof ALIAS_STORES>,
+  string
+> = {
   directory_person: 'id, nameNorm, email',
   contact: 'id, nameNorm, email',
   sender: 'id, nameNorm',
@@ -315,6 +331,17 @@ const NOTIFICATION_V5 = {
   notification: 'id, personId, contactId, preparedAt, sentAt, status',
 };
 
+/** Version 6 (YSL-60): what the agent's corrections teach (§4.8). */
+const ALIAS_STORES = {
+  sender_alias: 'id, aliasNorm, senderId',
+  recipient_alias: 'id, nameNorm, personId, contactId',
+};
+
+const SYNCED_STORES: Record<SyncedEntity, string> = {
+  ...FIRST_SYNCED_STORES,
+  ...ALIAS_STORES,
+};
+
 /** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
 const OUTBOX_V3 = {
   outbox: '++seq, &opId, [entity+entityId], clientTs, state',
@@ -327,6 +354,8 @@ export class CourrierDatabase extends Dexie {
   contact!: Table<LocalContact, string>;
   sender!: Table<LocalSender, string>;
   senderAccount!: Table<LocalSenderAccount, string>;
+  senderAlias!: Table<LocalSenderAlias, string>;
+  recipientAlias!: Table<LocalRecipientAlias, string>;
   batch!: Table<LocalBatch, string>;
   parcel!: Table<LocalParcel, string>;
   emailTemplate!: Table<LocalEmailTemplate, string>;
@@ -344,7 +373,7 @@ export class CourrierDatabase extends Dexie {
 
   constructor(name = DATABASE_NAME) {
     super(name);
-    this.version(1).stores({ ...SYNCED_STORES, ...LOCAL_STORES });
+    this.version(1).stores({ ...FIRST_SYNCED_STORES, ...LOCAL_STORES });
     this.version(2).stores(DRAFT_STORES);
     this.version(3)
       .stores(OUTBOX_V3)
@@ -358,10 +387,13 @@ export class CourrierDatabase extends Dexie {
       );
     this.version(4).stores(EXTRACTION_STORES);
     this.version(5).stores(NOTIFICATION_V5);
+    this.version(6).stores(ALIAS_STORES);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
     this.senderAccount = this.table('sender_account');
+    this.senderAlias = this.table('sender_alias');
+    this.recipientAlias = this.table('recipient_alias');
     this.batch = this.table('batch');
     this.parcel = this.table('parcel');
     this.emailTemplate = this.table('email_template');
