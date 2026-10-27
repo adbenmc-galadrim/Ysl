@@ -9,6 +9,7 @@ export * from '#screens/colis/modifier-colis-screen';
 export * from '#screens/colis/recherche-screen';
 export * from '#screens/demarrage/camera-permission-screen';
 export * from '#screens/demarrage/offline-prep-screen';
+export * from '#screens/pilotage/donnees-screen';
 export * from '#screens/pilotage/export-screen';
 export * from '#screens/reception/choisir-destinataire-screen';
 export * from '#screens/reception/scan-screen';

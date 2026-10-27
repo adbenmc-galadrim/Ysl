@@ -10,6 +10,8 @@ export type ActionCardProps = Pick<IconTileProps, 'icon' | 'tone'> & {
   /** The blue action under the hairline: "Synchroniser maintenant". */
   action?: ReactNode;
   onAction?: () => void;
+  /** Greyed out while it cannot run: offline, or already running. */
+  actionDisabled?: boolean;
   /**
    * `lg` is a state the screen is about (44 px tile, 18 px title); `md` a
    * notice among other cards (40 px tile, 16 px title).
@@ -30,6 +32,7 @@ export function ActionCard({
   subtitle,
   action,
   onAction,
+  actionDisabled = false,
   size = 'md',
   className,
 }: ActionCardProps) {
@@ -63,9 +66,11 @@ export function ActionCard({
           <button
             type="button"
             onClick={onAction}
+            disabled={actionDisabled}
             className={cn(
               'w-full cursor-pointer text-center text-16 font-semibold text-blue outline-none',
               'focus-visible:ring-2 focus-visible:ring-blue active:opacity-60',
+              'disabled:cursor-default disabled:opacity-40',
               lg ? 'pt-[13px] pb-[15px]' : 'py-[17px]',
             )}
           >

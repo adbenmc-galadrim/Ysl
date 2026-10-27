@@ -32,7 +32,83 @@ export const DonneesEtConfidentialite: Story = {
         { icon: 'mail', color: 'blue', label: 'Historique des e-mails', value: '6 mois' },
       ],
     },
-    nextPurge: 'Le 1er novembre : 214 photos et 38 colis',
+    purge: { subtitle: 'Le 1er novembre : 214 photos et 38 colis' },
     note: 'Les photos restent sur l’iPhone et le serveur de l’entreprise. Aucune donnée n’est envoyée à un service tiers.',
+  },
+};
+
+/** As the app mounts it: the durations of §9.2, the last run, purge and erase. */
+export const DansLApp: Story = {
+  name: 'Dans l’app',
+  args: {
+    retention: {
+      header: 'Durées de conservation (validées par le DPO)',
+      items: [
+        {
+          icon: 'image',
+          color: 'indigo',
+          label: 'Photos d’étiquettes',
+          subtitle: 'Après la remise du colis',
+          value: '7 jours',
+          chevron: false,
+        },
+        {
+          icon: 'scan',
+          color: 'sky',
+          label: 'Lectures des étiquettes',
+          subtitle: 'Texte lu et codes bruts',
+          value: '30 jours',
+          chevron: false,
+        },
+        {
+          icon: 'package',
+          color: 'ink',
+          label: 'Colis remis',
+          subtitle: 'Avec leur historique et les remises',
+          value: '12 mois',
+          chevron: false,
+        },
+        {
+          icon: 'sign',
+          color: 'purple',
+          label: 'Signatures',
+          value: '12 mois',
+          chevron: false,
+        },
+        {
+          icon: 'user',
+          color: 'orange',
+          label: 'Contacts hors annuaire',
+          subtitle: 'Après leur dernier colis',
+          value: '12 mois',
+          chevron: false,
+        },
+      ],
+    },
+    purge: {
+      title: 'Dernière purge',
+      subtitle: 'Aujourd’hui à 3 h 00 : 38 colis et 4 contacts retirés',
+      action: 'Purger maintenant',
+    },
+    note: 'Le serveur purge chaque jour ; cet iPhone purge ses photos et ses lectures à l’ouverture et après chaque synchronisation. Les photos restent sur l’iPhone. Aucune donnée n’est envoyée à un service tiers.',
+    erase: {
+      label: 'Effacer les données de cet iPhone',
+      note: 'Vide la base locale et les photos, puis revient à la connexion.',
+    },
+  },
+};
+
+/** Offline: the purge waits for the network, the last run read from before. */
+export const HorsLigne: Story = {
+  name: 'Hors ligne',
+  args: {
+    ...DansLApp.args,
+    purge: {
+      title: 'Dernière purge',
+      subtitle:
+        'Hors ligne : la date de la dernière purge revient avec le réseau',
+      action: 'Purger maintenant',
+      disabled: true,
+    },
   },
 };
