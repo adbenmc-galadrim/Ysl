@@ -146,6 +146,8 @@ export type MailSentSheetProps = {
   onSent?: () => void;
   onNotSent?: () => void;
   onDismiss?: () => void;
+  /** From the sending log: the parcels the mail was about. */
+  onShowParcels?: () => void;
 };
 
 /**
@@ -157,6 +159,7 @@ export function MailSentSheet({
   onSent,
   onNotSent,
   onDismiss,
+  onShowParcels,
 }: MailSentSheetProps) {
   return (
     <Sheet
@@ -172,6 +175,16 @@ export function MailSentSheet({
       <Button variant="secondary" block className="mt-3" onClick={onNotSent}>
         Non, pas envoyé
       </Button>
+      {onShowParcels && (
+        <Button
+          variant="link"
+          block
+          className="mt-3 text-16"
+          onClick={onShowParcels}
+        >
+          Voir les colis
+        </Button>
+      )}
     </Sheet>
   );
 }

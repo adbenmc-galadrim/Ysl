@@ -20,6 +20,8 @@ import {
   useLabelPhotoUrl,
   useParcelRecord,
 } from '#/features/parcels/api/parcel-record';
+import { lastMailLine } from '#/features/mail/tracking';
+import { useLatestMail } from '#/features/mail/use-sent-mails';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import {
   describeRecord,
@@ -94,6 +96,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const [viewingDamage, setViewingDamage] = useState<string | null>(null);
   const damagedAt = record?.parcel.damagedAt ?? null;
   const damageUrls = useDamagePhotoUrls(parcelId, damagedAt);
+  const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -246,9 +249,38 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     ));
 
   const { action, damage, ...shown } = view;
+  // The last mail about the parcel, a tap from the sending log.
+  // Only the agent who wrote the mail can act on it from the log; a
+  // colleague's mail is said, not linked.
+  const details = lastMail
+    ? [
+        ...shown.details,
+        {
+          label: t('record.mail'),
+          value:
+            lastMail.preparedBy === session.user.id ? (
+              <button
+                type="button"
+                className="text-blue"
+                onClick={() =>
+                  void navigate({
+                    to: '/reglages/e-mails',
+                    search: { colis: parcelId },
+                  })
+                }
+              >
+                {lastMailLine(lastMail, now, t)}
+              </button>
+            ) : (
+              lastMailLine(lastMail, now, t)
+            ),
+        },
+      ]
+    : shown.details;
   return (
     <FicheColisScreen
       {...shown}
+      details={details}
       photo={photo}
       damage={
         damage &&

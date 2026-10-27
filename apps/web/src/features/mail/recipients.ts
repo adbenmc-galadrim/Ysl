@@ -2,7 +2,12 @@ import { damageNotice, mailValues, type MailValues } from '@repo/contract/mail';
 import { damageForEmail } from '@repo/contract/parcel-damage';
 import type { PickupSetting } from '@repo/contract/settings';
 import type { TranslateFn } from '@repo/shared/i18n';
-import type { LocalParcel } from '#/features/db/schema';
+import type {
+  LocalContact,
+  LocalDirectoryPerson,
+  LocalParcel,
+} from '#/features/db/schema';
+import { fullName } from '#/features/directory/people';
 import {
   carrierLabel,
   formatTime,
@@ -27,6 +32,36 @@ export type RecipientMail = {
   address: string | null;
   parcels: LocalParcel[];
 };
+
+/**
+ * Who a mail greets and names: the directory person, else the contact. A
+ * contact has one name: its first word greets ("Bonjour Marc"), the whole
+ * of it stands for {nom}.
+ */
+export function namedRecipient(
+  person: LocalDirectoryPerson | undefined,
+  contactId: string | null,
+  contact: LocalContact | undefined,
+): Pick<
+  RecipientMail,
+  'personId' | 'contactId' | 'name' | 'firstName' | 'lastName'
+> {
+  if (person)
+    return {
+      personId: person.id,
+      contactId: null,
+      name: fullName(person),
+      firstName: person.firstName,
+      lastName: person.lastName,
+    };
+  return {
+    personId: null,
+    contactId,
+    name: contact?.name ?? '',
+    firstName: contact?.name.trim().split(/\s+/)[0] ?? null,
+    lastName: contact?.name ?? null,
+  };
+}
 
 /** Received, not notified yet, and its record says who it is for. */
 export function awaitsNotice(parcel: LocalParcel): boolean {
@@ -75,23 +110,7 @@ export function groupByRecipient(
       mail.parcels.push(parcel);
       continue;
     }
-    const named = person
-      ? {
-          personId: person.id,
-          contactId: null,
-          name: `${person.firstName} ${person.lastName}`.trim(),
-          firstName: person.firstName,
-          lastName: person.lastName,
-        }
-      : {
-          personId: null,
-          contactId: parcel.contactId,
-          name: contact?.name ?? '',
-          // A contact has one name: its first word greets ("Bonjour
-          // Marc"), the whole of it stands for {nom}.
-          firstName: contact?.name.trim().split(/\s+/)[0] ?? null,
-          lastName: contact?.name ?? null,
-        };
+    const named = namedRecipient(person, parcel.contactId, contact);
     mails.set(key, {
       key,
       address,
@@ -130,7 +149,7 @@ export function mailsAbout(
 }
 
 /** "UPS ···0622", as the desk names a parcel. */
-function parcelName(parcel: LocalParcel, t: TranslateFn): string {
+export function parcelName(parcel: LocalParcel, t: TranslateFn): string {
   const carrier = carrierLabel(parcel, t);
   return parcel.tracking
     ? `${carrier} ···${parcel.tracking.slice(-4)}`

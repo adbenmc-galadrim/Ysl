@@ -10,6 +10,7 @@ import {
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
+import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
@@ -46,6 +47,7 @@ export function ColisHome() {
   const counted = parcels !== undefined && (rows.length > 0 || !waiting);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
   const pending = usePendingParcels();
+  const mails = useMailNotes();
   // Next to the banner, the rows say which parcels its changes are; online,
   // a change leaves within seconds and a label would only flicker.
   const labelled = banner !== null;
@@ -69,16 +71,21 @@ export function ColisHome() {
             to: '/colis/$parcelId',
             params: { parcelId: parcel.id },
           }),
-        ...(labelled && {
-          rowAction: (parcel: { id: string }) => {
-            const state = pending.get(parcel.id);
-            return (
-              state && <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
-            );
-          },
-        }),
+        rowAction: (parcel: { id: string }) => {
+          const state = labelled ? pending.get(parcel.id) : undefined;
+          if (state)
+            return <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>;
+          // A mail declared not sent never notifies: the parcel stays
+          // here, and says why the agent may want to look at it.
+          return sectionId(section.title) === 'toNotify' &&
+            mails?.failed.has(parcel.id) ? (
+            <ListRowValue className="text-red">
+              {t('mails.row.failed')}
+            </ListRowValue>
+          ) : undefined;
+        },
       })),
-    [parcels, labelled, pending, navigate],
+    [parcels, labelled, pending, mails, navigate],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
@@ -97,7 +104,28 @@ export function ColisHome() {
         if (id) toggleFolded(id);
       }}
       notice={
-        banner ? (
+        !banner && mails?.stale ? (
+          <Banner
+            tone="orange"
+            icon="mail"
+            title={
+              mails.stale === 1
+                ? t('mails.stale.one')
+                : t('mails.stale.many', { count: mails.stale })
+            }
+            description={t('mails.stale.description')}
+            onClick={() =>
+              void navigate({
+                to: '/reglages/e-mails',
+                search: { filtre: 'toConfirm' },
+              })
+            }
+            classNames={{
+              root: 'h-16 py-[11px]',
+              description: 'mt-[3px] leading-4',
+            }}
+          />
+        ) : banner ? (
           <Banner
             tone={banner.tone}
             icon={banner.icon}
