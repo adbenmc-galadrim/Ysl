@@ -126,7 +126,11 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   );
   const [done, setDone] = useState<Record<string, Sent>>({});
   const [failed, setFailed] = useState(false);
-  const mailTarget = useMailTarget();
+  const chosenTarget = useMailTarget();
+  // The app that opened on a retry carries the rest of the round: the chosen
+  // one just failed, and every next mail would fall back again.
+  const [roundTarget, setRoundTarget] = useState<MailTarget | null>(null);
+  const mailTarget = roundTarget ?? chosenTarget;
   const [stayed, setStayed] = useState<{
     key: string;
     id: string;
@@ -322,7 +326,8 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
             message={stayed.message}
             target={stayed.target}
             notificationId={stayed.id}
-            onOpened={() => {
+            onOpened={(opened) => {
+              setRoundTarget(opened);
               const { key, id } = stayed;
               setStayed(null);
               void whenVisible().then(() => setAsking({ key, id }));
