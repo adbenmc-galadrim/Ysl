@@ -616,8 +616,10 @@ export const fr = {
   'mails.stale.description':
     'Messagerie ouverte, sans réponse : est-il parti ?',
   'mails.row.failed': 'E-mail non envoyé',
+  'mails.last.opened': 'Messagerie ouverte, sans réponse',
+  'mails.last.prepared': 'Préparé, sans réponse',
   'settings.sentMails': 'E-mails envoyés',
-  'record.mail': 'E-mail',
+  'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',
   'mails.when.before': 'le {{date}} à {{time}}',

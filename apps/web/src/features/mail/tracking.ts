@@ -159,6 +159,40 @@ export function lastMailFailed(
   );
 }
 
+/** The newest mail naming this parcel, whoever wrote it. */
+export function latestMail(
+  rows: readonly LocalNotification[],
+  parcelId: string,
+): LocalNotification | undefined {
+  return rows
+    .filter((row) => !row.deletedAt && row.parcelIds.includes(parcelId))
+    .sort(newestFirst)[0];
+}
+
+/** "Envoyé à 10 h 58", "Non envoyé": where a parcel's last mail stands. */
+export function lastMailLine(
+  notification: LocalNotification,
+  now: Date,
+  t: TranslateFn,
+): string {
+  switch (statusOf(notification)) {
+    case 'sent':
+      return t('mails.status.sent', {
+        when: formatWhen(
+          notification.sentAt ?? notification.preparedAt,
+          now,
+          t,
+        ),
+      });
+    case 'failed':
+      return t('mails.status.failed');
+    case 'opened':
+      return t('mails.last.opened');
+    case 'prepared':
+      return t('mails.last.prepared');
+  }
+}
+
 /** "à 10 h 58" today, "hier à 9 h 00", "le 14 oct. à 9 h 00" before. */
 export function formatWhen(date: Date, now: Date, t: TranslateFn): string {
   const time = formatTime(date);

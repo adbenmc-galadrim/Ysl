@@ -13,6 +13,8 @@ import {
   countMails,
   filterMails,
   lastMailFailed,
+  lastMailLine,
+  latestMail,
   mailStatusLine,
   mailSummary,
   STALE_OPEN_MS,
@@ -193,5 +195,22 @@ describe('the sending log', () => {
     expect(mailSummary({ ...one, type: 'relance' }, parcels, t)).toBe(
       'Relance, 1 colis Amazon',
     );
+  });
+
+  it('tells a parcel’s record where its latest mail stands', async () => {
+    const parcel = parcelRow({ personId });
+    await db.parcel.put(parcel);
+    const first = await prepare([parcel]);
+    await markFailed(db, first.id, 'Non envoyé', options);
+    const again = await prepare([parcel], { now: minutes(5) });
+    await markOpened(db, again.id, { now: minutes(5) });
+
+    const rows = await db.notification.toArray();
+    const latest = latestMail(rows, parcel.id)!;
+    expect(latest.id).toBe(again.id);
+    expect(lastMailLine(latest, minutes(6), t)).toBe(
+      'Messagerie ouverte, sans réponse',
+    );
+    expect(latestMail(rows, parcelRow().id)).toBeUndefined();
   });
 });

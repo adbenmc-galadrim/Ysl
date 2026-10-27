@@ -2,8 +2,17 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
-import { trackMails, type TrackedMail } from '#/features/mail/tracking';
-import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
+import {
+  lastMailFailed,
+  latestMail,
+  staleMails,
+  trackMails,
+  type TrackedMail,
+} from '#/features/mail/tracking';
+import {
+  loadRecipientContext,
+  useMinuteClock,
+} from '#/features/parcels/api/use-parcels';
 import type { RecipientContext } from '#/features/parcels/model';
 
 export type SentMails = {
@@ -34,4 +43,33 @@ export async function loadSentMails(
 export function useSentMails(): SentMails | undefined {
   const userId = useSession().user.id;
   return useLiveQuery(() => loadSentMails(db, userId), [userId]);
+}
+
+export type MailNotes = {
+  /** Parcels whose latest mail, whoever wrote it, did not go. */
+  failed: ReadonlySet<string>;
+  /** The agent's mails left unanswered for ten minutes. */
+  stale: number;
+};
+
+/** What the parcel list says of the mails: live, and moved on each minute. */
+export function useMailNotes(): MailNotes | undefined {
+  const userId = useSession().user.id;
+  const now = useMinuteClock();
+  return useLiveQuery(async () => {
+    const rows = await db.notification.toArray();
+    const mails = trackMails(rows, { userId, parcels: new Map() });
+    return {
+      failed: lastMailFailed(rows),
+      stale: staleMails(mails, now).length,
+    };
+  }, [userId, now]);
+}
+
+/** The latest mail about one parcel, for its record. */
+export function useLatestMail(parcelId: string) {
+  return useLiveQuery(
+    async () => latestMail(await db.notification.toArray(), parcelId) ?? null,
+    [parcelId],
+  );
 }
