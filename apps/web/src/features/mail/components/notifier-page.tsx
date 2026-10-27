@@ -85,7 +85,7 @@ async function openSession(
   };
 }
 
-/** Resolves once the app is in front again: the agent is back from Mail. */
+/** Resolves once the app is in front again: the agent is back from the mail app. */
 function whenVisible(): Promise<void> {
   return new Promise((resolve) => {
     if (document.visibilityState === 'visible') {
@@ -106,8 +106,10 @@ type Sent = { state: NotifierMailState; count?: number };
 /**
  * One mail per recipient of the "À notifier" parcels (F34), or of one
  * parcel's recipient when opened from its record. Each "Envoyer" opens the
- * mail app on a real link (S5); the agent then says whether it left, and
- * only a "yes" notifies the parcels (D2, declarative follow-up).
+ * mail app chosen in Réglages on a real link (S5); the agent then says
+ * whether it left, and only a "yes" notifies the parcels (D2, declarative
+ * follow-up). When the page stays in front, the fallback sheet offers the
+ * other apps, the text to copy or share, and how it ended.
  */
 export function NotifierPage({ parcelId }: { parcelId?: string }) {
   const navigate = useNavigate();
@@ -184,8 +186,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   const message: MailMessage | undefined = mail.address
     ? { to: [mail.address], subject: rendered.subject, body: rendered.body }
     : undefined;
-  const target = mailTarget;
-  const prepared = message && MAILERS[target].prepare(message);
+  const prepared = message && MAILERS[mailTarget].prepare(message);
   const sent = done[mail.key];
   const state: NotifierMailState = !mail.address
     ? 'missing'
@@ -202,7 +203,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
     }
     busy.current = true;
     setFailed(false);
-    const opening = MAILERS[target].open(prepared);
+    const opening = MAILERS[mailTarget].open(prepared);
     const preparing = outbox.prepare({
       type: template.type,
       personId: mail.personId,
@@ -210,7 +211,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       recipients: [mail.address],
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
-      target,
+      target: mailTarget,
       pickupPin: code ?? undefined,
     });
     void (async () => {
@@ -218,7 +219,12 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
         const row = await preparing;
         const outcome = await opening;
         if (needsFallback(outcome)) {
-          setStayed({ key: mail.key, id: row.id, message, target });
+          setStayed({
+            key: mail.key,
+            id: row.id,
+            message,
+            target: mailTarget,
+          });
           return;
         }
         await outbox.markOpened(row.id);

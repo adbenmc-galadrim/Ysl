@@ -1,10 +1,11 @@
 import type { MailMessage, MailTarget } from '@repo/contract/mail';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { MailFallbackSheet } from '@repo/ui';
-import { useRef, useState } from 'react';
+import { useRef, useState, type MouseEvent } from 'react';
 import {
   copyText,
   mailText,
+  notOpenedHint,
   notOpenedReason,
   otherTargets,
   shareMail,
@@ -14,16 +15,6 @@ import type { SentResult } from '#/features/mail/notifications';
 import { useNotifications } from '#/features/mail/use-notifications';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-/** Why `target` may have stayed shut, in the words of S5. */
-export function notOpenedHint(target: MailTarget): string {
-  if (target === 'mailto') return t('mail.fallback.hint.mailto');
-  const app = t(`mail.target.${target}`);
-  const hint = t('mail.fallback.hint.app', { app });
-  return target === 'gmail'
-    ? `${hint} ${t('mail.fallback.hint.slow', { app })}`
-    : hint;
-}
 
 export type MailFallbackProps = {
   message: MailMessage;
@@ -78,7 +69,11 @@ export function MailFallback({
     return {
       label: app(other),
       href: prepared.url,
-      onClick: () => {
+      onClick: (event: MouseEvent) => {
+        if (busy.current) {
+          event.preventDefault();
+          return;
+        }
         const opening = MAILERS[other].open(prepared);
         void guard(async () => {
           if (notificationId) await outbox.retarget(notificationId, other);
@@ -108,7 +103,9 @@ export function MailFallback({
           ? t('mail.fallback.shared')
           : outcome === 'cancelled'
             ? t('mail.fallback.shareCancelled')
-            : t('mail.fallback.shareUnavailable'),
+            : outcome === 'blocked'
+              ? t('mail.fallback.shareBlocked')
+              : t('mail.fallback.shareUnavailable'),
       );
     });
   };
@@ -117,7 +114,7 @@ export function MailFallback({
 
   return (
     <MailFallbackSheet
-      description={notOpenedHint(failed)}
+      description={notOpenedHint(failed, t)}
       retry={retry}
       onCopyText={() => copy(mailText(message), t('mail.fallback.copied'))}
       address={address || undefined}

@@ -521,6 +521,8 @@ export const fr = {
   'mail.fallback.shared':
     'Texte partagé. Une fois l’e-mail parti, marquez-le comme envoyé.',
   'mail.fallback.shareCancelled': 'Partage annulé.',
+  'mail.fallback.shareBlocked':
+    'L’iPhone n’a pas ouvert le partage : touchez à nouveau.',
   'mail.fallback.shareUnavailable':
     'Partage indisponible ici : copiez le texte.',
   'mail.fallback.stayed': '{{app}} ne s’est pas ouvert non plus.',

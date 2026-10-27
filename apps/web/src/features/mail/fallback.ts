@@ -41,7 +41,9 @@ export async function copyText(
   }
 }
 
-export type MailShareOutcome = 'shared' | 'cancelled' | 'unavailable';
+/** `blocked`: WebKit wants a fresh tap (the gesture expired), as in `lib/share-file.ts`. */
+export type MailShareOutcome =
+  'shared' | 'cancelled' | 'blocked' | 'unavailable';
 
 type ShareHost = Partial<Pick<Navigator, 'share'>>;
 
@@ -62,8 +64,21 @@ export async function shareMail(
     if (error instanceof Error && error.name === 'AbortError') {
       return 'cancelled';
     }
+    if (error instanceof Error && error.name === 'NotAllowedError') {
+      return 'blocked';
+    }
     return 'unavailable';
   }
+}
+
+/** Why `target` may have stayed shut, in the words of S5. */
+export function notOpenedHint(target: MailTarget, t: TranslateFn): string {
+  if (target === 'mailto') return t('mail.fallback.hint.mailto');
+  const app = t(`mail.target.${target}`);
+  const hint = t('mail.fallback.hint.app', { app });
+  return target === 'gmail'
+    ? `${hint} ${t('mail.fallback.hint.slow', { app })}`
+    : hint;
 }
 
 /** Why a mail was given up, for the log of sent mails (YSL-63). */

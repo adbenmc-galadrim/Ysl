@@ -130,11 +130,11 @@ describe('the fallback when the mail app did not open', () => {
     expect(await shareMail(message, { share })).toBe('cancelled');
   });
 
-  it('says sharing is unavailable without the share sheet or when refused', async () => {
+  it('tells a missing share sheet from one refused for an expired tap', async () => {
     expect(await shareMail(message, {})).toBe('unavailable');
     const refused = () =>
       Promise.reject(new DOMException('no gesture', 'NotAllowedError'));
-    expect(await shareMail(message, { share: refused })).toBe('unavailable');
+    expect(await shareMail(message, { share: refused })).toBe('blocked');
   });
 
   it('gives up with the name of the mail app that did not open', () => {
