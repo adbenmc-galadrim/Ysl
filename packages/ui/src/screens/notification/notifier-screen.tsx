@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
@@ -34,7 +34,8 @@ export type NotifierScreenProps = {
   /** "Envoyer à Nora": a real link, the only way iOS opens a mail app. */
   sendLabel: string;
   sendHref?: string;
-  onSend?: () => void;
+  /** Called with the tap: `preventDefault` keeps a second tap from opening Mail again. */
+  onSend?: (event: MouseEvent<HTMLAnchorElement>) => void;
   /** Where the address is typed when there is none. */
   completeLabel?: string;
   onComplete?: () => void;

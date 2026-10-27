@@ -13,7 +13,7 @@ import {
 } from '@repo/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Dexie } from 'dexie';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { MAILERS } from '#/features/mail/mailer';
@@ -61,8 +61,16 @@ async function openSession(
     received,
     await loadRecipientContext(db, received),
   );
+  const target = received.find(({ id }) => id === parcelId);
   const mails = parcelId
-    ? all.filter((mail) => mail.parcels.some(({ id }) => id === parcelId))
+    ? all.filter((mail) =>
+        mail.parcels.some(
+          (parcel) =>
+            parcel.id === parcelId ||
+            (!!target?.personId && parcel.personId === target.personId) ||
+            (!!target?.contactId && parcel.contactId === target.contactId),
+        ),
+      )
     : all;
   const [pins, templates, pickup] = await Promise.all([
     drawPins(db, mails.length, { now }),
@@ -183,8 +191,11 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
     void navigate({ to, params: { parcelId: mail.parcels[0]!.id } });
   const last = index === mails.length - 1;
 
-  const send = () => {
-    if (!prepared || !mail.address || busy.current) return;
+  const send = (event: MouseEvent) => {
+    if (!prepared || !mail.address || busy.current) {
+      event.preventDefault();
+      return;
+    }
     busy.current = true;
     setFailed(false);
     const opening = MAILERS.mailto.open(prepared);
