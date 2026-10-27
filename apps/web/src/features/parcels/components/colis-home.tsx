@@ -13,11 +13,13 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
-import { listUnaddressed } from '#/features/parcels/api/use-parcels';
+import {
+  listUnaddressed,
+  useHomeParcels,
+} from '#/features/parcels/api/use-parcels';
 import { assignRecipient } from '#/features/parcels/complete';
-import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
-import { useHomeParcels } from '#/features/parcels/api/use-parcels';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
   type CounterId,
@@ -28,6 +30,7 @@ import {
   summarize,
   toSections,
 } from '#/features/parcels/sections';
+import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 import {
   awaitsServer,
   pendingBanner,
@@ -58,6 +61,7 @@ export function ColisHome() {
   const counted = parcels !== undefined && (rows.length > 0 || !waiting);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
   const pending = usePendingParcels();
+  const mails = useMailNotes();
   // « Choisir » (maquette 05): the parcels « À compléter » nobody is set
   // for, with the name read on their label, open the picker in place.
   const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
@@ -87,14 +91,19 @@ export function ColisHome() {
             to: '/colis/$parcelId',
             params: { parcelId: parcel.id },
           }),
-        ...(labelled && {
-          rowAction: (parcel: { id: string }) => {
-            const state = pending.get(parcel.id);
-            return (
-              state && <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>
-            );
-          },
-        }),
+        rowAction: (parcel: { id: string }) => {
+          const state = labelled ? pending.get(parcel.id) : undefined;
+          if (state)
+            return <ListRowValue>{t(`colis.row.${state}`)}</ListRowValue>;
+          // A mail declared not sent never notifies: the parcel stays
+          // here, and says why the agent may want to look at it.
+          return sectionId(section.title) === 'toNotify' &&
+            mails?.failed.has(parcel.id) ? (
+            <ListRowValue className="text-red">
+              {t('mails.row.failed')}
+            </ListRowValue>
+          ) : undefined;
+        },
         rowControl: (parcel: { id: string }) =>
           unaddressed.has(parcel.id) &&
           !(labelled && pending.has(parcel.id)) && (
@@ -108,7 +117,7 @@ export function ColisHome() {
             </Button>
           ),
       })),
-    [parcels, counter, labelled, pending, navigate, unaddressed],
+    [parcels, counter, labelled, pending, mails, navigate, unaddressed],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
@@ -138,7 +147,28 @@ export function ColisHome() {
           if (id) toggleFolded(id);
         }}
         notice={
-          banner ? (
+          !banner && mails?.stale ? (
+            <Banner
+              tone="orange"
+              icon="mail"
+              title={
+                mails.stale === 1
+                  ? t('mails.stale.one')
+                  : t('mails.stale.many', { count: mails.stale })
+              }
+              description={t('mails.stale.description')}
+              onClick={() =>
+                void navigate({
+                  to: '/reglages/e-mails',
+                  search: { filtre: 'toConfirm' },
+                })
+              }
+              classNames={{
+                root: 'h-16 py-[11px]',
+                description: 'mt-[3px] leading-4',
+              }}
+            />
+          ) : banner ? (
             <Banner
               tone={banner.tone}
               icon={banner.icon}
@@ -200,10 +230,9 @@ export function ColisHome() {
         <RecipientChooser
           readName={unaddressed.get(choosing)}
           onClose={() => setChoosing(null)}
-          onPick={(pick) => {
+          onPick={async (pick) => {
             const parcelId = choosing;
-            setChoosing(null);
-            void assignRecipient(
+            await assignRecipient(
               db,
               parcelId,
               pick.kind === 'card'
@@ -211,6 +240,7 @@ export function ColisHome() {
                 : { ...pick, kind: 'typed' },
               { agentId: session.user.id },
             );
+            setChoosing(null);
           }}
         />
       )}
