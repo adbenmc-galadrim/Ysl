@@ -1,4 +1,5 @@
 import { isTrackingFlag } from '@repo/contract/imports';
+import { DAMAGE_LABEL } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import {
   isStepBack,
@@ -245,6 +246,14 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
       return event.flags.includes('recipient-missing')
         ? t('history.imported.recipient')
         : t('history.imported');
+    case 'parcel.damaged':
+      return t('history.damaged', {
+        reason: DAMAGE_LABEL[event.reason].toLowerCase(),
+      });
+    case 'parcel.damage_lifted':
+      return t('history.damageLifted', {
+        reason: DAMAGE_LABEL[event.reason].toLowerCase(),
+      });
   }
 }
 

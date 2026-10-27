@@ -1,3 +1,4 @@
+import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import {
   CourrierDatabase,
@@ -44,6 +45,7 @@ export function parcelRow(overrides: Partial<LocalParcel> = {}): LocalParcel {
     reference: null,
     location: null,
     notes: null,
+    ...damageColumns(null),
     receivedAt: new Date(2026, 9, 24, 10, 42),
     receivedBy: 'agent-1',
     validatedAt: null,

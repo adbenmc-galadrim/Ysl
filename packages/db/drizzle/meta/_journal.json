@@ -43,6 +43,13 @@
       "when": 1792924781450,
       "tag": "0005_statuts_reversibles",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793123203282,
+      "tag": "0006_reserve_colis",
+      "breakpoints": true
     }
   ]
 }

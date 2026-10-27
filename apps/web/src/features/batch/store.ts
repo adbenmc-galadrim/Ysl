@@ -1,3 +1,4 @@
+import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
@@ -272,6 +273,7 @@ function toParcel(
     reference: draft.annex?.reference?.value ?? null,
     location: null,
     notes: null,
+    ...damageColumns(null),
     receivedAt: draft.createdAt,
     receivedBy: agentId,
     validatedAt: null,

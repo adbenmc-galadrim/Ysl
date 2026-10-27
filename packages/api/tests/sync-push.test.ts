@@ -141,6 +141,36 @@ describe('sync.push', () => {
     expect(after?.serverXid).toBeGreaterThan(before?.serverXid ?? Infinity);
   });
 
+  it('takes a reserve on the parcel, then its lifting', async () => {
+    const row = localParcel();
+    const reserve = {
+      damage: 'carton_abime',
+      damageNote: 'Coin enfoncé',
+      damageNotify: true,
+      damageCarrierReserve: false,
+      damagedAt: NOW,
+    };
+    const lifted = {
+      damage: null,
+      damageNote: null,
+      damageNotify: false,
+      damageCarrierReserve: false,
+      damagedAt: null,
+    };
+
+    const set = await push(sync, writer, {
+      ops: [op('parcel', { ...row, ...reserve })],
+    });
+    expect(set.results[0]?.status).toBe(200);
+    expect(await parcel(row.id)).toMatchObject(reserve);
+
+    const lift = await push(sync, writer, {
+      ops: [op('parcel', { ...row, ...lifted })],
+    });
+    expect(lift.results[0]?.status).toBe(200);
+    expect(await parcel(row.id)).toMatchObject(lifted);
+  });
+
   it('refuses a row of another organization and leaves it intact', async () => {
     const theirs = parcelRow(OTHER_ORGANIZATION_ID);
     await db.insert(schema.parcel).values(theirs);

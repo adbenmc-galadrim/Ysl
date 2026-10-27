@@ -1,6 +1,8 @@
+import { DAMAGE_REASONS } from '@repo/contract/parcel-damage';
 import { PARCEL_STATUSES } from '@repo/contract/parcel-status';
 import { relations, sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   integer,
@@ -68,6 +70,16 @@ export const parcel = pgTable(
     reference: text('reference'),
     location: text('location'),
     notes: text('notes'),
+    /** The reserve on the parcel's state (YSL-53), see `@repo/contract/parcel-damage`; null when none or lifted. */
+    damage: text('damage', { enum: DAMAGE_REASONS }),
+    damageNote: text('damage_note'),
+    /** Mention the damage in the pickup e-mail. */
+    damageNotify: boolean('damage_notify').default(false).notNull(),
+    /** A reserve was also made with the carrier, for a claim. */
+    damageCarrierReserve: boolean('damage_carrier_reserve')
+      .default(false)
+      .notNull(),
+    damagedAt: timestamp('damaged_at', { withTimezone: true }),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
     receivedBy: text('received_by').notNull(),
     validatedAt: timestamp('validated_at', { withTimezone: true }),
@@ -97,6 +109,10 @@ export const parcel = pgTable(
       sql`(${table.pieceN} is null or ${table.pieceN} >= 1) and (${table.pieceTotal} is null or (${table.pieceTotal} >= 1 and (${table.pieceN} is null or ${table.pieceN} <= ${table.pieceTotal})))`,
     ),
     check('parcel_status_seq_check', sql`${table.statusSeq} >= 0`),
+    check(
+      'parcel_damage_check',
+      sql`(${table.damage} is null or ${table.damage} in (${sql.raw(DAMAGE_REASONS.map((reason) => `'${reason}'`).join(', '))})) and (${table.damage} is null) = (${table.damagedAt} is null)`,
+    ),
     check(
       'parcel_weight_check',
       sql`${table.weightKg} is null or ${table.weightKg} >= 0`,
