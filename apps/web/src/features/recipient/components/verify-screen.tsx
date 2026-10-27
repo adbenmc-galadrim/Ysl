@@ -3,7 +3,6 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   ChoisirDestinataireScreen,
   IconButton,
-  type ScanField,
   VerifierColisScreen,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
@@ -34,6 +33,8 @@ import {
 } from '#/features/recipient/check';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
+import { pickTracking } from '#/features/scan/confirm';
+import { checkFields } from '#/features/scan/reading';
 import {
   type Choice,
   optionOf,
@@ -76,20 +77,6 @@ function usePhoto(photoId: string | null | undefined) {
     };
   }, [photoId]);
   return shown;
-}
-
-function fieldsOf(draft: DraftParcel): ScanField[] {
-  return [
-    {
-      label: t('scan.field.carrier'),
-      value: draft.carrier ?? t('scan.field.unknown'),
-    },
-    {
-      label: t('scan.field.tracking'),
-      value: draft.tracking ?? t('scan.field.missing'),
-      mono: true,
-    },
-  ];
 }
 
 /**
@@ -293,7 +280,11 @@ export function VerifyScreen() {
           readName={shownName}
           candidates={candidates}
           selectedId={chosen?.id}
-          fields={fieldsOf(draft)}
+          fields={checkFields(
+            draft,
+            t,
+            (tracking) => void pickTracking(draft.id, tracking),
+          )}
           addPerson={{
             name: shownName,
             onClick: () => openSheet(shownName ?? ''),

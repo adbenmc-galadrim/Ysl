@@ -34,3 +34,44 @@ export const Sombre: Story = {
     ),
   ],
 };
+
+const levels = [
+  { label: 'Transporteur', value: 'DHL Express' },
+  {
+    label: 'Suivi',
+    value: '54133 37112 ?',
+    mono: true,
+    status: 'warning' as const,
+  },
+  {
+    label: 'Destinataire',
+    value: '',
+    status: 'error' as const,
+    suggestions: [{ label: 'Léa Fontaine' }, { label: 'Lise Fontan' }],
+  },
+];
+
+/** The three levels of §4.4 over the camera: read, to verify, empty with suggestions. */
+export const TroisNiveaux: Story = {
+  args: { tone: 'dark', fields: levels },
+  decorators: Sombre.decorators,
+};
+
+/** The same on a white screen, the chips to tap. */
+export const TroisNiveauxClair: Story = {
+  args: {
+    tone: 'light',
+    fields: levels.map((field) =>
+      field.suggestions
+        ? {
+            ...field,
+            suggestions: field.suggestions.map((s) => ({
+              ...s,
+              onPick: () => undefined,
+              pickLabel: `Choisir ${s.label}`,
+            })),
+          }
+        : field,
+    ),
+  },
+};

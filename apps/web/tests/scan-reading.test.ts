@@ -283,6 +283,16 @@ describe('toScanReading with a structured 2D code', () => {
     expect((reading as { fields: unknown[] }).fields).toHaveLength(3);
   });
 
+  it('asks to verify a code name the OCR contradicts', () => {
+    const reading = toScanReading({ symbols: [symbol('Aztec', aztec)] }, t, {
+      ocrName: 'PAUL LANGEVIN',
+    });
+    expect(reading.kind === 'read' && reading.fields[2]).toMatchObject({
+      label: 'Destinataire',
+      status: 'warning',
+    });
+  });
+
   it('flags a tracking the carrier rules do not vouch for', () => {
     const chrono = aztec
       .replace('118J0229907975', 'HA915306631JB')
@@ -290,7 +300,12 @@ describe('toScanReading with a structured 2D code', () => {
     const reading = toScanReading({ symbols: [symbol('Aztec', chrono)] }, t);
     expect(reading.kind === 'read' && reading.fields.slice(0, 2)).toEqual([
       { label: 'Transporteur', value: 'Chronopost' },
-      { label: 'Suivi', value: 'HA915306631JB', mono: true, status: 'warning' },
+      {
+        label: 'Suivi',
+        value: 'HA915306631JB ?',
+        mono: true,
+        status: 'warning',
+      },
     ]);
   });
 
@@ -320,6 +335,28 @@ describe('toScanReading with a structured 2D code', () => {
     });
   });
 });
+
+describe('toScanReading — levels of §4.4', () => {
+  it('asks to verify a DHL Express number no context vouches for (O1)', () => {
+    const reading = toScanReading(
+      { symbols: [symbol('Code128', '5413337112')] },
+      t,
+    );
+    expect(reading.kind === 'read' && reading.fields[1]).toEqual({
+      label: 'Suivi',
+      value: '5413337112 ?',
+      mono: true,
+      status: 'warning',
+    });
+  });
+});
+
+const GUESSED_SENDER = {
+  label: 'Expéditeur',
+  value: '',
+  status: 'error',
+  suggestions: [{ label: 'Metalworks SpA' }],
+};
 
 describe('unreadableReading', () => {
   it('advises on the shot when nothing was read: blur, glare, or the torch', () => {
@@ -383,18 +420,21 @@ describe('toScanReading — sender', () => {
     });
   });
 
-  it('asks about a sender to verify or guessed, in orange', () => {
-    for (const level of ['to-verify', 'none'] as const) {
-      const reading = toScanReading({ symbols: ups }, t, {
-        ocrName: null,
-        sender: sender(level),
-      });
-      expect(reading.kind === 'read' && reading.fields[3]).toEqual({
-        label: 'Expéditeur',
-        value: 'Metalworks SpA ?',
-        status: 'warning',
-      });
-    }
+  it('asks about a sender to verify, and offers a guess as a chip (§4.4)', () => {
+    const verify = toScanReading({ symbols: ups }, t, {
+      ocrName: null,
+      sender: sender('to-verify'),
+    });
+    expect(verify.kind === 'read' && verify.fields[3]).toEqual({
+      label: 'Expéditeur',
+      value: 'Metalworks SpA ?',
+      status: 'warning',
+    });
+    const guess = toScanReading({ symbols: ups }, t, {
+      ocrName: null,
+      sender: sender('none'),
+    });
+    expect(guess.kind === 'read' && guess.fields[3]).toEqual(GUESSED_SENDER);
   });
 
   it('keeps the sender after the raw symbols and when nothing was read', () => {
@@ -414,7 +454,7 @@ describe('toScanReading — sender', () => {
       kind: 'read',
       fields: [
         { label: 'Destinataire', value: 'Non lu', status: 'warning' },
-        { label: 'Expéditeur', value: 'Metalworks SpA ?', status: 'warning' },
+        GUESSED_SENDER,
       ],
     });
   });

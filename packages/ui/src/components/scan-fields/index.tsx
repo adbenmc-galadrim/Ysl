@@ -3,8 +3,20 @@ import type { ReactNode } from 'react';
 import { Icon } from '#icons';
 import { cn, tv, type VariantProps } from '#lib/tv';
 
-/** How sure the reading is: read, read but doubtful, not read. */
+/**
+ * How sure the reading is (§4.4): read (≥ 0,90), read but doubtful
+ * (0,60 to 0,90), not read (below 0,60).
+ */
 export type ScanFieldStatus = 'ok' | 'warning' | 'error';
+
+/** A value the reader half saw, for the agent to pick when the field stays empty. */
+export type ScanSuggestion = {
+  label: ReactNode;
+  /** Absent over the camera: the chips only say what was seen. */
+  onPick?: () => void;
+  /** Accessible name of the pick: "Choisir 1Z E63…". */
+  pickLabel?: string;
+};
 
 export type ScanField = {
   label: ReactNode;
@@ -12,6 +24,8 @@ export type ScanField = {
   status?: ScanFieldStatus;
   /** Tracking numbers: set in the mono face so groups line up. */
   mono?: boolean;
+  /** Below « à vérifier » the field is empty and offers these instead (§4.4). */
+  suggestions?: ScanSuggestion[];
 };
 
 /**
@@ -27,6 +41,8 @@ export const scanFieldsVariants = tv({
     row: 'flex h-[17px] items-center text-14',
     label: 'shrink-0 truncate',
     value: 'min-w-0 truncate font-medium',
+    chips: 'flex min-w-0 flex-wrap gap-1.5',
+    chip: 'inline-flex h-7 max-w-full items-center truncate rounded-chip px-2.5 text-13 font-medium',
   },
   variants: {
     tone: {
@@ -35,6 +51,7 @@ export const scanFieldsVariants = tv({
         row: '*:first:mr-2.5',
         label: 'w-[100px] text-night-muted',
         value: 'text-white',
+        chip: 'bg-white/15 text-white',
       },
       light: {
         root: 'gap-[15px]',
@@ -42,6 +59,7 @@ export const scanFieldsVariants = tv({
         row: 'pl-0.5 *:first:mr-2',
         label: 'w-[104px] text-muted',
         value: 'text-ink',
+        chip: 'bg-surface text-ink ring-1 ring-border ring-inset',
       },
     },
   },
@@ -63,39 +81,87 @@ export type ScanFieldsProps = VariantProps<typeof scanFieldsVariants> & {
   className?: string;
 };
 
+const STATUS_LABEL: Record<ScanFieldStatus, string> = {
+  ok: 'Lu',
+  warning: 'À vérifier',
+  error: 'Non lu',
+};
+
 /**
  * What was read off the label, one line per field with its status in front:
  * carrier, tracking, recipient. The icons form a column, so a doubtful field
- * stands out before the line is read.
+ * stands out before the line is read: a tick « Lu », an alert « À vérifier »
+ * with a « ? » after the value, or, when nothing is sure enough, an empty
+ * field and the best suggestions as chips (§4.4).
  */
-export function ScanFields({ fields, tone = 'dark', className }: ScanFieldsProps) {
+export function ScanFields({
+  fields,
+  tone = 'dark',
+  className,
+}: ScanFieldsProps) {
   const s = scanFieldsVariants({ tone });
   const hue = SCAN_FIELD_STATUS[tone ?? 'dark'];
   return (
     <dl className={s.root({ class: className })}>
       {fields.map((field, i) => {
         const status = field.status ?? 'ok';
+        const suggestions = field.suggestions ?? [];
         return (
-          <div key={i} className={s.row()}>
+          <div
+            key={i}
+            className={s.row({
+              class: suggestions.length > 0 && 'h-auto min-h-[17px]',
+            })}
+          >
             <Icon
               name={status === 'ok' ? 'check' : 'alert'}
               size={tone === 'light' ? 16 : 18}
-              aria-label={status === 'ok' ? 'Lu' : 'À vérifier'}
+              aria-label={STATUS_LABEL[status]}
               aria-hidden={undefined}
               role="img"
               className={cn('shrink-0', hue[status])}
             />
             <dt className={s.label()}>{field.label}</dt>
-            <dd
-              className={s.value({
-                class: [
-                  field.mono && 'font-mono',
-                  status !== 'ok' && hue[status],
-                ],
-              })}
-            >
-              {field.value}
-            </dd>
+            {suggestions.length > 0 ? (
+              <dd className={s.chips()}>
+                {suggestions.map((suggestion, j) =>
+                  suggestion.onPick ? (
+                    <button
+                      key={j}
+                      type="button"
+                      aria-label={suggestion.pickLabel}
+                      onClick={suggestion.onPick}
+                      className={s.chip({
+                        class: [
+                          field.mono && 'font-mono',
+                          'cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-blue',
+                        ],
+                      })}
+                    >
+                      {suggestion.label}
+                    </button>
+                  ) : (
+                    <span
+                      key={j}
+                      className={s.chip({ class: field.mono && 'font-mono' })}
+                    >
+                      {suggestion.label}
+                    </span>
+                  ),
+                )}
+              </dd>
+            ) : (
+              <dd
+                className={s.value({
+                  class: [
+                    field.mono && 'font-mono',
+                    status !== 'ok' && hue[status],
+                  ],
+                })}
+              >
+                {field.value}
+              </dd>
+            )}
           </div>
         );
       })}

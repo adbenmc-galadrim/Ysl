@@ -1,12 +1,11 @@
 import {
-  CONFIDENCE,
   type Extraction,
   extractFields,
   type Field,
   type FieldSource,
   levelOf,
+  scoreTrackingValue,
 } from '@repo/contract/extract';
-import { validateTracking } from '@repo/contract/tracking';
 import type { DraftParcel } from '#/features/db/schema';
 import { ocrText } from '#/features/scan/annex';
 import { recipientInCodes } from '#/features/scan/extract';
@@ -52,41 +51,21 @@ const agent = (value: string): Field<string> => {
   };
 };
 
-/** A number no code of the draft carries: its key alone speaks for it (O1). */
-const bare = (value: string): Field<string> => {
-  const keyed = validateTracking(value).reason === 'valid-key';
-  const confidence = keyed ? CONFIDENCE.keyed1d : CONFIDENCE.unkeyedCap;
-  const source: FieldSource = {
-    kind: '1d',
-    format: 'draft',
-    confidence,
-    value,
-  };
-  return {
-    value,
-    confidence,
-    level: levelOf(confidence),
-    sources: [source],
-    flags: keyed ? [] : ['unkeyed'],
-    candidates: [{ value, confidence, sources: [source] }],
-  };
-};
-
 /**
  * The tracking the draft keeps, scored by the rules of
  * `@repo/contract/extract`: its own candidate when the reading proposed
  * several, so the level always goes with the number shown.
  */
-function trackingOf(
-  draft: Readable,
+export function scoreTracking(
+  value: string | null,
   read: Field<string> | null,
+  confirmed = false,
 ): Field<string> | null {
-  const value = draft.trackingNorm ?? draft.tracking;
   if (value === null) return read;
-  if (draft.reading === 'typed' || draft.trackingConfirmed) return agent(value);
+  if (confirmed) return agent(value);
   if (read?.value === value) return read;
   const candidate = read?.candidates.find((c) => c.value === value);
-  if (!candidate) return bare(value);
+  if (!candidate) return scoreTrackingValue(value, 'draft');
   return {
     ...read!,
     value,
@@ -130,7 +109,11 @@ export function draftFields(
   });
   return {
     extraction,
-    tracking: trackingOf(draft, extraction.tracking),
+    tracking: scoreTracking(
+      draft.trackingNorm ?? draft.tracking,
+      extraction.tracking,
+      draft.reading === 'typed' || draft.trackingConfirmed === true,
+    ),
     recipient: recipientOf(draft, extraction.recipient),
   };
 }
