@@ -177,8 +177,8 @@ describe('the pieces follow their parcel', () => {
     await updateDraft(db, group.id, {
       reading: 'read',
       carrier: 'UPS',
-      tracking: '1Z99230623',
-      trackingNorm: '1Z99230623',
+      tracking: '1ZE6344W0499230622',
+      trackingNorm: '1ZE6344W0499230622',
       readName: 'Camille Morel',
       pieces: firstPiece({ index: 1, total: 3, key: 'ups:SHIP42' }),
     });

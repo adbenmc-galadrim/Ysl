@@ -11,6 +11,7 @@ import type {
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { serviceText } from '#/features/scan/annex';
+import { notifiable } from '#/features/scan/confidence';
 
 export type DraftPhoto = { blob: Blob; width: number; height: number };
 
@@ -30,6 +31,7 @@ export type DraftPatch = Partial<
     | 'sender'
     | 'annex'
     | 'recipient'
+    | 'trackingConfirmed'
   >
 >;
 
@@ -226,14 +228,12 @@ export async function discardBatch(
 export type FinishOptions = { batchId: string; agentId: string; now?: Date };
 
 /**
- * Received when the mailroom can notify it: a carrier, a number and someone
- * to tell. A structured code names someone surely enough, and so does the
- * agent choosing a card; a name the OCR guessed leaves the draft to a hand.
+ * Received when the mailroom can notify it (F26): a carrier, a number and
+ * someone to tell, the number and the person sure (≥ 0,90) or confirmed by
+ * the agent. Anything less is saved « À compléter », without a notification.
  */
 export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
-  return draft.carrier && draft.tracking && (draft.readName || draft.recipient)
-    ? 'recu'
-    : 'a_completer';
+  return notifiable(draft) ? 'recu' : 'a_completer';
 }
 
 function toParcel(

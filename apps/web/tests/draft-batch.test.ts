@@ -181,9 +181,12 @@ describe('discardBatch', () => {
   });
 });
 
+const UPS = '1ZE6344W0499230622';
+const DHL = '5413337112';
+
 describe('promotedStatus', () => {
   it('needs a carrier, a number and a name to count as received', () => {
-    const full = { carrier: 'UPS', tracking: '1Z', readName: 'Camille Morel' };
+    const full = { carrier: 'UPS', tracking: UPS, readName: 'Camille Morel' };
     expect(promotedStatus(draft(full))).toBe('recu');
     expect(promotedStatus(draft({ ...full, tracking: null }))).toBe(
       'a_completer',
@@ -199,9 +202,42 @@ describe('promotedStatus', () => {
   it('does not trust the name the OCR guessed', () => {
     expect(
       promotedStatus(
-        draft({ carrier: 'UPS', tracking: '1Z', ocrName: 'Camille Morel' }),
+        draft({ carrier: 'UPS', tracking: UPS, ocrName: 'Camille Morel' }),
       ),
     ).toBe('a_completer');
+  });
+
+  it('leaves a tracking no key vouches for to complete (F26, O1)', () => {
+    const read = {
+      carrier: 'DHL Express',
+      tracking: DHL,
+      trackingNorm: DHL,
+      readName: 'Camille Morel',
+      symbols: [{ format: 'Code128', text: DHL }],
+    };
+    expect(promotedStatus(draft(read))).toBe('a_completer');
+    expect(promotedStatus(draft({ ...read, reading: 'typed' }))).toBe('recu');
+    expect(promotedStatus(draft({ ...read, trackingConfirmed: true }))).toBe(
+      'recu',
+    );
+  });
+
+  it('takes the card the agent chose as a sure recipient', () => {
+    expect(
+      promotedStatus(
+        draft({
+          carrier: 'UPS',
+          tracking: UPS,
+          ocrName: 'C. Morel',
+          recipient: {
+            kind: 'person',
+            id: 'p',
+            name: 'Camille Morel',
+            source: 'agent',
+          },
+        }),
+      ),
+    ).toBe('recu');
   });
 });
 

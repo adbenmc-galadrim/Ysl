@@ -2,7 +2,8 @@ import type { CarrierService, CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
 import type { AccountRead, SenderKnowledge } from './sender';
 
-export type SourceKind = '2d' | '1d' | 'ocr' | 'learned';
+/** Where a value comes from; `agent` is a value typed, chosen or confirmed (§4.3 rank 9). */
+export type SourceKind = '2d' | '1d' | 'ocr' | 'learned' | 'agent';
 
 export type ConfidenceLevel = 'sure' | 'to-verify' | 'none';
 

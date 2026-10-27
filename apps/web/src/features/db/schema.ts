@@ -200,6 +200,8 @@ export type DraftParcel = {
   annex?: DraftAnnex | null;
   /** The recipient settled; absent on drafts stored before YSL-46. */
   recipient?: DraftRecipient | null;
+  /** The agent picked the tracking among the suggestions (§4.4); absent before YSL-52. */
+  trackingConfirmed?: boolean;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */
