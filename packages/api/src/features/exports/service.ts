@@ -4,6 +4,7 @@ import {
   parcelsCsvFilename,
   type ParcelsCsvOutput,
 } from '@repo/contract/exports';
+import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
 import { contact, directoryPerson, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -34,6 +35,7 @@ export const PARCELS_CSV_HEADER = [
   'emplacement',
   'date_notification',
   'derniere_notification',
+  'reserve',
 ] as const;
 
 /** The v1 vocabulary, so an export still reads as one to the v1 import. */
@@ -128,7 +130,16 @@ function toCells({ parcel: p, person, contact: c }: ExportedParcel): CsvCell[] {
     p.location,
     formatExportDate(p.notifiedAt),
     formatExportDate(p.lastNotifiedAt),
+    reserveCell(p),
   ];
+}
+
+/** "Carton abîmé : coin enfoncé", empty without a reserve. */
+function reserveCell(row: ExportedParcel['parcel']): string {
+  const damage = damageOf(row);
+  if (!damage) return '';
+  const label = DAMAGE_LABEL[damage.reason];
+  return damage.note ? `${label} : ${damage.note}` : label;
 }
 
 /** F51: every parcel the mailroom still holds a record of, for Excel. */

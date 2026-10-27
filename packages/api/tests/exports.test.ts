@@ -68,6 +68,9 @@ beforeAll(async () => {
       reference: 'PO-4512',
       location: 'Étagère B',
       notes: 'Laissé à l’accueil\npar le livreur; fragile',
+      damage: 'carton_abime',
+      damageNote: 'coin enfoncé',
+      damagedAt: new Date('2026-10-24T08:06:00Z'),
       receivedAt: new Date('2026-10-24T08:05:00Z'),
       notifiedAt: new Date('2026-10-24T08:30:00Z'),
       lastNotifiedAt: new Date('2026-10-25T07:00:00Z'),
@@ -182,6 +185,7 @@ describe('exportParcelsCsv', () => {
       emplacement: 'Étagère B',
       date_notification: '24/10/2026 10:30',
       derniere_notification: '25/10/2026 08:00',
+      reserve: 'Carton abîmé : coin enfoncé',
     });
   });
 
