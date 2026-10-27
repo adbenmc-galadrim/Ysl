@@ -83,7 +83,8 @@ export async function knownSenderAliases(
 /**
  * The sender of a draft, from its codes and the OCR's `FROM` block when it
  * has landed: the codes first, then the local dictionary, then what the
- * agent's corrections taught, then the senders already seen. `null` when nothing names one.
+ * agent's corrections taught, then the senders already seen. `null` when
+ * nothing names one.
  */
 export async function resolveSender(
   db: CourrierDatabase,

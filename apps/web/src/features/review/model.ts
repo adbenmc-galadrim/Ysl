@@ -46,14 +46,8 @@ export type Review = {
 };
 
 /**
- * A field below « sûr » that F26 needs: the parcel is not notified without
- * it. An annex field does not hold the parcel back (§4.4): one left « à
- * vérifier » is saved as read, the parcel « Reçu », and a parcel passed on
- * it alone counts as ready.
- */
-/**
  * A sender read « à vérifier » is proposed like an annex field (§4.4), and
- * so is one an alias proposes at any level: confirming it is how what the
+ * so is one an alias proposes below « sûr »: confirming it is how what the
  * agent taught gains confidence (§4.8). A bare OCR guess is not asked.
  */
 export const asksSender = (sender: DraftSender | null) =>
@@ -61,6 +55,12 @@ export const asksSender = (sender: DraftSender | null) =>
   sender.level !== 'sure' &&
   (sender.level === 'to-verify' || sender.alias === true);
 
+/**
+ * A field below « sûr » that F26 needs: the parcel is not notified without
+ * it. An annex field does not hold the parcel back (§4.4): one left « à
+ * vérifier » is saved as read, the parcel « Reçu », and a parcel passed on
+ * it alone counts as ready.
+ */
 const blocks = (step: ReviewStep) =>
   step.field === 'tracking' || step.field === 'recipient';
 
@@ -68,9 +68,9 @@ const blocks = (step: ReviewStep) =>
  * What the agent still has to look at on a draft. A number not sure nor
  * confirmed, or no carrier for it; no card settled for the recipient, a
  * name a code printed included (a company is not someone to tell); an
- * annex field or a sender read « à vérifier ». A number the agent confirmed with no
- * carrier its format names is left « À compléter »: the carrier is chosen
- * on the parcel's sheet.
+ * annex field or a sender read « à vérifier ». A number the agent
+ * confirmed with no carrier its format names is left « À compléter »: the
+ * carrier is chosen on the parcel's sheet.
  */
 export function reviewOf(draft: DraftParcel): ReviewItem {
   const { tracking, recipient, extraction } = draftFields(draft);

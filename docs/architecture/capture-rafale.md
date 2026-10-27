@@ -329,10 +329,10 @@ malus de conflit (0,82, à vérifier).
   lot et les colis : le serveur applique les opérations dans l'ordre et `parcel.sender_id`
   les référence.
 - **Corrections de l'agent (YSL-60).** La revue du lot propose l'étape « Expéditeur » pour un
-  expéditeur à vérifier, ou proposé par un alias à n'importe quel niveau (c'est ainsi qu'il
-  gagne ses confirmations) ; une supposition seule (0,40) n'est pas demandée. « Garder » ou
+  expéditeur à vérifier, ou proposé par un alias sous « sûr » (c'est ainsi qu'il gagne ses
+  confirmations) ; une supposition seule (0,40) n'est pas demandée. « Garder » ou
   « Corriger » rend l'expéditeur sûr, source `agent`, avec le compte et le texte du bloc
-  `FROM` lus (`draft.sender.read`). À Terminer (`senderLessons`), une correction enseigne en
+  `FROM` lus (`draft.sender.read`). À Terminer (`senderLessons`), « Garder » ou « Corriger » enseigne en
   plus l'alias `normalizeName(read) → sender` (créé à 1, +1 s'il nommait déjà ce sender,
   repris à 1 s'il en nommait un autre ; rien si le texte lu épelle déjà le nom) et conteste
   un compte possédé par un autre expéditeur : `challenger_id` / `challenges`, réattribution

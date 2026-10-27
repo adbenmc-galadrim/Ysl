@@ -323,8 +323,9 @@ export async function setDraftDamage(
 /**
  * "Terminer": the batch and its parcels become server rows in one write
  * (queued for `sync.push`), with what the sure senders and the agent's
- * choices of recipient teach ahead of them (§4.8), the photos point at their parcel, what the reader
- * made of each label stays on this device (`extraction`), the drafts go.
+ * choices of recipient teach ahead of them (§4.8), the photos point at
+ * their parcel, what the reader made of each label stays on this device
+ * (`extraction`), the drafts go.
  * An empty batch leaves nothing behind. Returns the parcel ids, in order.
  */
 export function finishBatch(
@@ -344,7 +345,6 @@ export function finishBatch(
       db.senderAlias,
       db.recipientAlias,
       db.contact,
-      db.directoryPerson,
       db.event,
       db.outbox,
       db.extraction,
