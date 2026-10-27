@@ -2,6 +2,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { LotEnregistreScreen, type LotOutcome } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import { lotOutcomes, type OutcomeTarget } from '#/features/batch/outcomes';
 import {
   batchSpan,
   loadBatchSummary,
@@ -38,96 +39,30 @@ export function LotEnregistrePage({ batchId }: { batchId: string }) {
 
   if (!summary) return null;
 
-  const ready = summary.mails.filter((mail) => mail.address);
-  const missing = summary.mails.length - ready.length;
-  const parcels = ready.reduce((sum, mail) => sum + mail.parcels.length, 0);
   const notify = () =>
     void navigate({ to: '/notifier', search: { lot: batchId } });
-  const toComplete = summary.toComplete;
-  const first = toComplete[0];
-
-  const outcomes: LotOutcome[] = [];
-  if (ready.length > 0)
-    outcomes.push({
-      icon: 'mail',
-      tone: 'blue',
-      title: t(ready.length === 1 ? 'lot.mails.one' : 'lot.mails.many', {
-        count: ready.length,
-      }),
-      detail: t('lot.mails.detail', {
-        parcels: t(
-          parcels === 1 ? 'lot.mails.parcels.one' : 'lot.mails.parcels.many',
-          { count: parcels },
-        ),
-        people: t(
-          ready.length === 1 ? 'lot.mails.people.one' : 'lot.mails.people.many',
-          { count: ready.length },
-        ),
-      }),
-      onClick: notify,
-    });
-  if (missing > 0)
-    outcomes.push({
-      icon: 'mail',
-      tone: 'orange',
-      title: t(missing === 1 ? 'lot.missing.one' : 'lot.missing.many', {
-        count: missing,
-      }),
-      detail: t('lot.missing.detail'),
-      onClick: notify,
-    });
-  if (first)
-    outcomes.push({
-      icon: 'alert',
-      tone: 'red',
-      title: t('lot.toComplete', { count: toComplete.length }),
-      detail: t(
-        toComplete.length === 1
-          ? 'lot.toComplete.detail'
-          : 'lot.toComplete.detail.many',
-      ),
-      onClick: () =>
-        void (toComplete.length === 1
-          ? navigate({
-              to: '/colis/$parcelId',
-              params: { parcelId: first.id },
-            })
-          : navigate({ to: '/' })),
-    });
-  if (summary.damaged > 0)
-    outcomes.push({
-      icon: 'alert',
-      tone: 'orange',
-      title: t('lot.damaged', { count: summary.damaged }),
-      detail: t(
-        summary.damaged === 1
-          ? 'lot.damaged.detail'
-          : 'lot.damaged.detail.many',
-      ),
-    });
-  if (summary.pieces > 0)
-    outcomes.push({
-      icon: 'package',
-      tone: 'neutral',
-      title: t('lot.pieces', { count: summary.pieces }),
-      detail: t('lot.pieces.detail'),
-    });
-  if (!online && ready.length > 0)
-    outcomes.push({
-      icon: 'wifiOff',
-      tone: 'grey',
-      title: t('lot.offline'),
-      detail: t('lot.offline.detail'),
-    });
+  const open = (target: OutcomeTarget) => {
+    if (target.to === 'mails') notify();
+    else if (target.to === 'record')
+      void navigate({
+        to: '/colis/$parcelId',
+        params: { parcelId: target.parcelId },
+      });
+    else void navigate({ to: '/' });
+  };
+  const { rows, ready } = lotOutcomes(summary, { online, t });
+  const outcomes: LotOutcome[] = rows.map(({ target, ...row }) =>
+    target ? { ...row, onClick: () => open(target) } : row,
+  );
 
   return (
     <LotEnregistreScreen
       count={summary.count}
       span={batchSpan(summary.batch, t)}
       outcomes={outcomes}
-      emails={ready.length}
-      sendLabel={t(ready.length === 1 ? 'lot.send.one' : 'lot.send.many', {
-        count: ready.length,
+      emails={ready}
+      sendLabel={t(ready === 1 ? 'lot.send.one' : 'lot.send.many', {
+        count: ready,
       })}
       note={t('lot.note')}
       onLater={() => void navigate({ to: '/' })}
