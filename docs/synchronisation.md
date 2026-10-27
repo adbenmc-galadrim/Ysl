@@ -222,6 +222,33 @@ La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le rest
   scanné (D8), les autres affichent « Photo restée sur l'iPhone qui a scanné ce
   colis ».
 
+## Colis abîmé : la réserve
+
+Zone d'ombre « Colis abîmé » (YSL-53). L'agent pose une **réserve** sur l'état du
+colis depuis le panneau du colis lu (écran Scan) ou depuis la fiche (« Signaler un
+dommage », `/colis/<id>/dommage`).
+
+- **Ligne** : colonnes de `parcel` (migration `0006_reserve_colis`) : `damage` (motif :
+  `carton_abime`, `ouvert`, `mouille`, `contenu_casse`, `autre`), `damage_note`,
+  `damage_notify` (« Prévenir dans l'e-mail au salarié »), `damage_carrier_reserve`
+  (« Réserve auprès du transporteur »), `damaged_at`. `parcel_damage_check` refuse un
+  motif inconnu et un motif sans date. La liste Colis et la fiche lisent la ligne :
+  ligne orange « Réserve · Carton abîmé », bandeau orange sur la fiche.
+- **Événements** : `parcel.damaged` (`detail` : motif, remarque, les deux bascules,
+  nombre de photos) et `parcel.damage_lifted` (`detail.reason`), dans le même commit
+  que la ligne (`features/damage/report.ts`).
+- **Lever la réserve** remet les colonnes à nul ; l'historique garde la pose et la
+  levée, et une réserve peut être reposée ensuite.
+- **Depuis Scan**, la réserve vit sur le brouillon (`draft_parcel.damage`) ; « Terminer »
+  l'écrit sur le colis avec son événement, daté du signalement.
+- **Photos** : nature `dommage`, dans OPFS comme l'étiquette (D8) : elles ne quittent
+  pas l'iPhone qui a signalé le dommage. Les photos d'une réserve sont celles prises
+  depuis `damaged_at` ; un autre iPhone affiche « N photos restées sur l'iPhone qui a
+  signalé le dommage » d'après le nombre porté par l'événement.
+- **E-mail au salarié** (YSL-61) : `damageForEmail` de `@repo/contract/parcel-damage`
+  rend le motif et la remarque quand « Prévenir » est allumé, rien sinon.
+- **Export CSV** : colonne `reserve` (« Carton abîmé : coin enfoncé »).
+
 ## Alerte et export de secours
 
 Ticket YSL-36 (F47, §8.4.7). Tant qu'un changement n'a pas atteint le serveur, le

@@ -63,7 +63,7 @@ Code : `apps/web/src/features/photos/`.
   L'écriture passe par un Web Worker et un `createSyncAccessHandle` (`truncate`, `write`,
   `flush`), la seule écriture OPFS dont le spike a vérifié la tenue sur iPhone.
 - La table `photo` ne contient que la description : chemin, SHA-256, dimensions, octets,
-  colis, nature (`etiquette`, `signature`). **Le blob n'est jamais dans IndexedDB** et
+  colis, nature (`etiquette`, `signature`, `dommage`). **Le blob n'est jamais dans IndexedDB** et
   aucune opération d'outbox n'est créée : la photo reste sur l'appareil.
 - **Ordre d'écriture** (S4) : le fichier d'abord, la ligne ensuite. Une ligne sans fichier
   serait une perte ; un fichier sans ligne est une orpheline que le **balayage au
