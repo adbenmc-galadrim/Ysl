@@ -4,7 +4,6 @@ import type { DraftParcel } from '#/features/db/schema';
 import {
   draftFields,
   notifiable,
-  trackingToCheck,
 } from '#/features/scan/confidence';
 
 const UPS = '1ZE6344W0499230622';
@@ -84,21 +83,5 @@ describe('draftFields', () => {
         },
       }),
     ).toBe(true);
-  });
-});
-
-describe('trackingToCheck', () => {
-  const DHL = '5413337112';
-  const unsure = draft({
-    carrier: 'DHL Express',
-    tracking: DHL,
-    trackingNorm: DHL,
-    symbols: [{ format: 'Code128', text: DHL }],
-  });
-
-  it('asks the agent about a number below « sûr », not about a keyed one', () => {
-    expect(trackingToCheck(unsure)).toBe(true);
-    expect(trackingToCheck(draft({}))).toBe(false);
-    expect(trackingToCheck({ ...unsure, trackingConfirmed: true })).toBe(false);
   });
 });

@@ -12,7 +12,6 @@ import type {
   DraftRecipient,
 } from '#/features/db/schema';
 import { fullName } from '#/features/directory/people';
-import { trackingToCheck } from '#/features/scan/confidence';
 import { recipientInCodes } from '#/features/scan/extract';
 import type { MatchEngine } from '#/features/recipient/matcher';
 
@@ -62,41 +61,28 @@ export function preselection(
 }
 
 /**
- * Before « Terminer » promotes the batch: each draft with no recipient yet
- * is matched; the sure ones are settled silently, the others are returned,
- * in batch order, for « Vérifier un colis », with every draft whose number
- * is not sure yet (F26), its recipient settled or not.
+ * When the batch review opens: each draft with no recipient yet is
+ * matched, and an exact code name settles its card silently; the review
+ * asks the agent about the others (F18, F25).
  */
 export async function settleRecipients(
   db: CourrierDatabase,
   batchId: string,
   matcher: MatchEngine,
-): Promise<string[]> {
-  const toCheck: string[] = [];
+): Promise<void> {
   for (const draft of await listDrafts(db, batchId)) {
-    const unsure = trackingToCheck(draft);
-    if (draft.recipient) {
-      if (unsure) toCheck.push(draft.id);
-      continue;
-    }
+    if (draft.recipient) continue;
     const silent = silentMatch(
       await matcher.match(readsOf(draft), textOf(draft)),
     );
-    if (
-      silent &&
-      (await updateDraft(db, draft.id, {
-        recipient: toRecipient(
-          { ...silent.entry, name: fullName(silent.entry) },
-          'code',
-        ),
-      })) &&
-      !unsure
-    ) {
-      continue;
-    }
-    toCheck.push(draft.id);
+    if (!silent) continue;
+    await updateDraft(db, draft.id, {
+      recipient: toRecipient(
+        { ...silent.entry, name: fullName(silent.entry) },
+        'code',
+      ),
+    });
   }
-  return toCheck;
 }
 
 const words = (text: string) =>

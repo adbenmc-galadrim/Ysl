@@ -91,7 +91,7 @@ const draftWith = async (
 };
 
 describe('settleRecipients', () => {
-  it('settles only a code name matching one card exactly, and queues the rest in order', async () => {
+  it('settles only a code name matching one card exactly', async () => {
     const batch = await openBatch(db, NOW);
     const coded = await draftWith(batch.id, 1, {
       readName: 'DUPONT HUGO',
@@ -102,54 +102,36 @@ describe('settleRecipients', () => {
     const unknown = await draftWith(batch.id, 4, { readName: 'NORA HADDAD' });
     const copied = await draftWith(batch.id, 5, { readName: 'HUGO DUPONT' });
 
-    const queue = await settleRecipients(db, batch.id, matcher);
+    await settleRecipients(db, batch.id, matcher);
 
-    expect(queue).toEqual([read, homonym, unknown, copied]);
     expect((await db.draftParcel.get(coded))?.recipient).toEqual({
       kind: 'person',
       id: 'hugo',
       name: 'Hugo Dupont',
       source: 'code',
     });
-    expect((await db.draftParcel.get(read))?.recipient).toBeUndefined();
+    for (const id of [read, homonym, unknown, copied]) {
+      expect((await db.draftParcel.get(id))?.recipient).toBeUndefined();
+    }
   });
 
   it('leaves a draft the agent already settled', async () => {
     const batch = await openBatch(db, NOW);
-    const chosen = await draftWith(batch.id, 1, { ocrName: 'L. FONTAINE' });
-    await updateDraft(db, chosen, {
-      recipient: {
-        kind: 'person',
-        id: 'louis',
-        name: 'Louis Fontaine',
-        source: 'agent',
-      },
+    const louis = {
+      kind: 'person' as const,
+      id: 'louis',
+      name: 'Louis Fontaine',
+      source: 'agent' as const,
+    };
+    const chosen = await draftWith(batch.id, 1, {
+      readName: 'DUPONT HUGO',
+      symbols: [{ format: 'Aztec', text: aztecFor('DUPONT HUGO') }],
     });
+    await updateDraft(db, chosen, { recipient: louis });
 
-    expect(await settleRecipients(db, batch.id, matcher)).toEqual([]);
-  });
+    await settleRecipients(db, batch.id, matcher);
 
-  it('queues a settled draft whose number is only « à vérifier » (F26)', async () => {
-    const batch = await openBatch(db, NOW);
-    const unsure = await draftWith(batch.id, 1, {
-      carrier: 'DHL Express',
-      tracking: '5413337112',
-      trackingNorm: '5413337112',
-      symbols: [{ format: 'Code128', text: '5413337112' }],
-    });
-    await updateDraft(db, unsure, {
-      recipient: {
-        kind: 'person',
-        id: 'louis',
-        name: 'Louis Fontaine',
-        source: 'agent',
-      },
-    });
-
-    expect(await settleRecipients(db, batch.id, matcher)).toEqual([unsure]);
-
-    await updateDraft(db, unsure, { trackingConfirmed: true });
-    expect(await settleRecipients(db, batch.id, matcher)).toEqual([]);
+    expect((await db.draftParcel.get(chosen))?.recipient).toEqual(louis);
   });
 });
 
