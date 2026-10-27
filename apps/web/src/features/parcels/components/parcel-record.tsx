@@ -250,25 +250,30 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
 
   const { action, damage, ...shown } = view;
   // The last mail about the parcel, a tap from the sending log.
+  // Only the agent who wrote the mail can act on it from the log; a
+  // colleague's mail is said, not linked.
   const details = lastMail
     ? [
         ...shown.details,
         {
           label: t('record.mail'),
-          value: (
-            <button
-              type="button"
-              className="text-blue"
-              onClick={() =>
-                void navigate({
-                  to: '/reglages/e-mails',
-                  search: { colis: parcelId },
-                })
-              }
-            >
-              {lastMailLine(lastMail, now, t)}
-            </button>
-          ),
+          value:
+            lastMail.preparedBy === session.user.id ? (
+              <button
+                type="button"
+                className="text-blue"
+                onClick={() =>
+                  void navigate({
+                    to: '/reglages/e-mails',
+                    search: { colis: parcelId },
+                  })
+                }
+              >
+                {lastMailLine(lastMail, now, t)}
+              </button>
+            ) : (
+              lastMailLine(lastMail, now, t)
+            ),
         },
       ]
     : shown.details;
