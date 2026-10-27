@@ -559,11 +559,10 @@ export const fr = {
   'notify.send': 'Envoyer à {{name}}',
   'notify.next': 'Suivant',
   'notify.finish': 'Terminer',
-  'notify.complete': 'Compléter la fiche',
   'notify.missing': 'Adresse manquante',
   'notify.missing.title': 'Pas d’adresse e-mail',
   'notify.missing.description':
-    'Saisissez-la sur la fiche du colis pour lui écrire.',
+    'Ajoutez-la pour lui écrire : elle restera sur sa fiche.',
   'notify.sent.title': 'E-mail envoyé',
   'notify.sent.one': '1 colis passe « Notifié ».',
   'notify.sent.many': '{{count}} colis passent « Notifié ».',

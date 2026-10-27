@@ -9,6 +9,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Button,
   EmptyState,
+  FixAddressSheet,
   MailSentSheet,
   NavBar,
   NotifierScreen,
@@ -21,6 +22,12 @@ import { Dexie } from 'dexie';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { useAddressEntry } from '#/features/mail/components/address-entry';
+import {
+  cardOf,
+  fixAddress,
+  type AddressCard,
+} from '#/features/mail/fix-address';
 import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
@@ -86,6 +93,74 @@ async function openSession(
   };
 }
 
+/**
+ * A recipient without an address (D-zone « Destinataire sans e-mail »):
+ * the agent types it, on the card by default so the next parcel has it,
+ * and the page then offers to send.
+ */
+function AddAddressSheet({
+  mail,
+  onAdded,
+  onDismiss,
+}: {
+  mail: RecipientMail;
+  onAdded: (address: string) => void;
+  onDismiss: () => void;
+}) {
+  const userId = useSession().user.id;
+  const [card, setCard] = useState<AddressCard | null>(null);
+  const [failed, setFailed] = useState(false);
+  const entry = useAddressEntry(card, '');
+  const busy = useRef(false);
+
+  useEffect(() => {
+    let live = true;
+    void cardOf(db, mail).then((next) => {
+      if (live) setCard(next);
+    });
+    return () => {
+      live = false;
+    };
+  }, [mail]);
+
+  const save = async () => {
+    const { address, onCard } = entry;
+    if (!card || !address || busy.current) return;
+    busy.current = true;
+    setFailed(false);
+    try {
+      await fixAddress(
+        db,
+        {
+          card,
+          parcelIds: mail.parcels.map(({ id }) => id),
+          address,
+          onCard,
+        },
+        { agentId: userId },
+      );
+      onAdded(address);
+    } catch {
+      setFailed(true);
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  return (
+    <FixAddressSheet
+      fixed
+      recipient={mail.name}
+      title={t('mails.fix.add')}
+      description={t('mails.fix.missing', { name: mail.name })}
+      {...entry.fields(failed)}
+      resendLabel={t('mails.fix.save')}
+      onResend={() => void save()}
+      onDismiss={onDismiss}
+    />
+  );
+}
+
 type Sent = { state: NotifierMailState; count?: number };
 
 /**
@@ -106,6 +181,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
   const [index, setIndex] = useState(0);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [asking, setAsking] = useState<{ key: string; id: string } | null>(
     null,
   );
@@ -181,8 +257,11 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
     ? 'missing'
     : (sent?.state ?? 'ready');
   const firstName = (mail.firstName ?? mail.name).split(/\s+/)[0] ?? '';
-  const record = (to: '/colis/$parcelId' | '/colis/$parcelId/modifier') =>
-    void navigate({ to, params: { parcelId: mail.parcels[0]!.id } });
+  const record = () =>
+    void navigate({
+      to: '/colis/$parcelId',
+      params: { parcelId: mail.parcels[0]!.id },
+    });
   const last = index === mails.length - 1;
 
   const send = (event: MouseEvent) => {
@@ -283,7 +362,7 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
         initials: initialsOf(mail.name),
         email: mail.address ?? undefined,
         missing: mail.address ? undefined : t('notify.missing'),
-        onClick: () => record('/colis/$parcelId'),
+        onClick: record,
       }}
       state={state}
       template={{
@@ -299,8 +378,8 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
       }
       sendHref={prepared?.url}
       onSend={send}
-      completeLabel={t('notify.complete')}
-      onComplete={() => record('/colis/$parcelId/modifier')}
+      completeLabel={t('mails.fix.add')}
+      onComplete={() => setAdding(true)}
       notice={notice}
       nextLabel={last ? t('notify.finish') : t('notify.next')}
       onNext={() => (last ? void navigate({ to: '/' }) : setIndex(index + 1))}
@@ -336,6 +415,20 @@ export function NotifierPage({ parcelId }: { parcelId?: string }) {
             }
             onSent={() => void answer(true)}
             onNotSent={() => void answer(false)}
+          />
+        ) : adding ? (
+          <AddAddressSheet
+            mail={mail}
+            onAdded={(address) => {
+              setOpened({
+                ...opened,
+                mails: mails.map((other) =>
+                  other.key === mail.key ? { ...other, address } : other,
+                ),
+              });
+              setAdding(false);
+            }}
+            onDismiss={() => setAdding(false)}
           />
         ) : choosing ? (
           <Sheet
