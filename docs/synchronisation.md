@@ -252,7 +252,9 @@ colis disparu de l'iPhone, `extraction` après 30 jours ou sans son colis.
 Réglages › Données et confidentialité (admin) montre les durées, le dernier passage,
 « Purger maintenant » et « Effacer les données de cet iPhone » (synchro, puis
 déconnexion et vidage de Dexie et d'OPFS ; les changements non envoyés sont comptés
-et ne se perdent qu'après confirmation).
+et ne se perdent qu'après confirmation). L'effacement demande le réseau : la session
+est fermée sur le serveur d'abord, sinon le cookie ramènerait tout au lancement
+suivant.
 
 ## Fiche colis et historique
 

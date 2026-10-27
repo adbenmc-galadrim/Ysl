@@ -859,7 +859,7 @@ stateDiagram-v2
   - Annuaire réduit à nom, e-mail, service et site.
   - Seul le recadrage de l'étiquette est envoyé, EXIF supprimé.
   - Suivi transporteur : seul le numéro est transmis.
-- **Journal d'audit** (`event`) : création, modification, remise, annulation, purge.
+- **Journal d'audit** (`event`) : création, modification, remise, annulation. Les purges sont tracées à part, une ligne `purge_run` par passage et par service (compteurs par table), le journal `event` d'un colis partant avec lui.
 - **Appareil.**
   - Le chiffrement repose sur la protection des données d'iOS, qui exige un code de déverrouillage (à imposer par MDM si possible).
   - Un chiffrement applicatif de la base locale demanderait un code propre à l'app : c'est la décision D19.
@@ -869,16 +869,18 @@ stateDiagram-v2
 
 Durées validées par le client (décision D7, YSL-55). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
 
-| Donnée | Proposition | Fondement |
+| Donnée | Durée | Fondement |
 | --- | --- | --- |
 | Photo locale | 7 jours après l'envoi confirmé | Réduire l'exposition en cas de perte de l'appareil |
-| Signature | 3 à 12 mois | Fourchette du rapport 05 |
+| Signature | 12 mois | Haut de la fourchette du rapport 05 (3 à 12 mois) |
 | Données d'extraction (texte OCR, codes bruts) | 30 jours, sauf échantillons versés au corpus avec accord | Diagnostic |
 | Ligne de colis et journal de remise | 12 mois après la remise | Proposition ; plafond légal de prescription de 5 ans (art. 2224 du Code civil), qui n'est pas un objectif |
 | Annuaire | Tant que la personne est active ; supprimée à son départ (CSV ou Entra delta) | Minimisation |
 | Contacts hors annuaire | 12 mois après la dernière utilisation | Proposition |
 
 La purge est automatique (job serveur) et s'applique aussi aux appareils au moment de la synchronisation.
+
+Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une ligne marquée supprimée est effacée 30 jours plus tard (le temps que chaque appareil la retire), une personne désactivée est retirée après 30 jours, le journal des opérations synchronisées (`sync_op`) est gardé 90 jours.
 
 ### 9.3 Points à faire valider par la DSI et le DPO
 
@@ -891,7 +893,7 @@ La purge est automatique (job serveur) et s'applique aussi aux appareils au mome
 5. SMTP AUTH Basic : désactivé par défaut fin décembre 2026 **[source tierce]**. Aucune dépendance prévue de notre côté.
 6. Déploiement MDM : web clip, autorisation de la caméra pour le domaine, code de verrouillage imposé (non vérifié).
 7. Usage du nom et de l'identité visuelle Saint Laurent.
-8. Durées de conservation (§9.2) et politique sur les signatures.
+8. Durées de conservation (§9.2) et politique sur les signatures : validées (D7), signatures à 12 mois.
 9. Sort du dépôt public v1 et de son historique (annuaire, `worker.js`, procédure IA périmée).
 
 Ce document n'est pas un avis juridique.
