@@ -112,6 +112,7 @@ export const fr = {
   'update.apply': 'Mettre à jour',
   'parcel.recipient.unknown': 'Destinataire inconnu',
   'parcel.readName': 'Nom lu sur l’étiquette : {{name}}',
+  'parcel.damage': 'Réserve · {{reason}}',
   'parcel.carrier.unknown': 'Transporteur inconnu',
   'parcel.carrier.none': 'Sans suivi',
   'parcel.pieces': '{{count}} colis {{carrier}}',
@@ -153,6 +154,19 @@ export const fr = {
   'record.photo.alt': 'Photo de l’étiquette',
   'record.photo.close': 'Fermer la photo',
   'record.photo.absent': 'Photo restée sur l’iPhone qui a scanné ce colis',
+  'record.damage.title': 'Réserve : {{reason}}',
+  'record.damage.carrier': 'Réserve faite auprès du transporteur',
+  'record.damage.when': 'Signalée {{when}}',
+  'record.damage.photo.alt': 'Photo {{n}} du dommage',
+  'record.damage.photos.absent.one':
+    'Photo restée sur l’iPhone qui a signalé le dommage',
+  'record.damage.photos.absent.other':
+    '{{count}} photos restées sur l’iPhone qui a signalé le dommage',
+  'record.lift.title': 'Lever la réserve ?',
+  'record.lift.description':
+    'Le colis ne sera plus signalé abîmé. L’historique garde la réserve.',
+  'record.lift.confirm': 'Lever la réserve',
+  'damage.error.photo': 'Photo illisible, choisissez-en une autre.',
   'record.detail.sender': 'Expéditeur',
   'record.detail.pieces': 'Nombre de colis',
   'record.detail.weight': 'Poids',

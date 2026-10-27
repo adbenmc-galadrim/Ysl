@@ -1,5 +1,5 @@
 import { isTrackingFlag } from '@repo/contract/imports';
-import { DAMAGE_LABEL } from '@repo/contract/parcel-damage';
+import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import {
   isStepBack,
@@ -68,7 +68,19 @@ export type RecordView = Pick<
   | 'steps'
   | 'details'
   | 'history'
-> & { sync: RecordSync; action?: RecordAction };
+> & { sync: RecordSync; action?: RecordAction; damage?: RecordDamage };
+
+/**
+ * The reserve the parcel carries, in words; its photos are read apart
+ * (OPFS). `photos` is how many the reporting iPhone took, to say where
+ * they are when this one has none.
+ */
+export type RecordDamage = {
+  title: string;
+  description: string;
+  at: Date;
+  photos: number;
+};
 
 export type DescribeOptions = {
   now: Date;
@@ -337,6 +349,38 @@ export function stepBackLabel(
   return t(STEP_BACK_LABEL[from]);
 }
 
+function damageCard(
+  record: ParcelRecord,
+  now: Date,
+  t: TranslateFn,
+): RecordDamage | undefined {
+  const damage = damageOf(record.parcel);
+  if (!damage) return undefined;
+  const row = record.events.find(
+    (event) =>
+      event.type === 'parcel.damaged' &&
+      event.at.getTime() === damage.at.getTime(),
+  );
+  const reported = row && readParcelEvent(row.type, row.detail);
+  const when = formatWhen(damage.at, now, t);
+  return {
+    title: t('record.damage.title', {
+      reason: DAMAGE_LABEL[damage.reason].toLowerCase(),
+    }),
+    description: [
+      damage.note,
+      damage.carrierReserve ? t('record.damage.carrier') : null,
+      t('record.damage.when', {
+        when: when.charAt(0).toLowerCase() + when.slice(1),
+      }),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    at: damage.at,
+    photos: reported?.type === 'parcel.damaged' ? reported.photos : 0,
+  };
+}
+
 const NOTICE_ICON: Record<'unsent' | 'rejected', IconName> = {
   unsent: 'cloud',
   rejected: 'alert',
@@ -390,5 +434,6 @@ export function describeRecord(
     history: history(record, showUnsent, now, t),
     sync,
     action: action(parcel),
+    damage: damageCard(record, now, t),
   };
 }

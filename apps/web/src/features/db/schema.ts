@@ -92,7 +92,7 @@ export type OutboxOp = {
   lastError: string | null;
 };
 
-export const PHOTO_KINDS = ['etiquette', 'signature'] as const;
+export const PHOTO_KINDS = ['etiquette', 'signature', 'dommage'] as const;
 export type PhotoKind = (typeof PHOTO_KINDS)[number];
 
 /** A photo kept on this iPhone only: the file lives in OPFS, never here. */
