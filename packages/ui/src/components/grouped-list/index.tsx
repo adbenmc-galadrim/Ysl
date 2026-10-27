@@ -138,6 +138,8 @@ export type GroupedRowProps = {
   /** `lg` is the account row: 44 px avatar, 17 px name. */
   size?: 'md' | 'lg';
   onClick?: () => void;
+  /** A row of a choice (Apparence, Messagerie): VoiceOver reads it as on or off. */
+  selected?: boolean;
   className?: string;
 };
 
@@ -154,6 +156,7 @@ export function GroupedRow({
   accessory,
   size = 'md',
   onClick,
+  selected,
   className,
 }: GroupedRowProps) {
   const chevron = accessory === 'chevron';
@@ -165,6 +168,7 @@ export function GroupedRow({
     <Root
       type={onClick ? 'button' : undefined}
       onClick={onClick}
+      aria-pressed={onClick ? selected : undefined}
       className={cn(
         'group/row flex w-full items-center text-left outline-none focus-visible:bg-fill',
         onClick && 'cursor-pointer active:bg-fill',

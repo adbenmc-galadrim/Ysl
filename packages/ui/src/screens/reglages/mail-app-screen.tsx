@@ -55,6 +55,7 @@ export function MailAppScreen({
             title={option.title}
             subtitle={option.subtitle}
             onClick={onChange && (() => onChange(option.value))}
+            selected={option.value === value}
             accessory={
               option.value === value ? (
                 <Icon
@@ -62,7 +63,6 @@ export function MailAppScreen({
                   size={20}
                   strokeWidth={2.4}
                   className="text-blue"
-                  aria-label="Choisie"
                 />
               ) : undefined
             }
