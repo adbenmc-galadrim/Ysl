@@ -37,6 +37,7 @@ import {
   type EmailTemplateView,
 } from '#/features/mail/templates';
 import { useNotifications } from '#/features/mail/use-notifications';
+import { whenVisible } from '#/features/mail/visibility';
 import { templateWarnings } from '#/features/mail/warnings';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { initialsOf } from '#/features/settings/initials';
@@ -83,22 +84,6 @@ async function openSession(
     pickup,
     now,
   };
-}
-
-/** Resolves once the app is in front again: the agent is back from the mail app. */
-function whenVisible(): Promise<void> {
-  return new Promise((resolve) => {
-    if (document.visibilityState === 'visible') {
-      resolve();
-      return;
-    }
-    const onChange = () => {
-      if (document.visibilityState !== 'visible') return;
-      document.removeEventListener('visibilitychange', onChange);
-      resolve();
-    };
-    document.addEventListener('visibilitychange', onChange);
-  });
 }
 
 type Sent = { state: NotifierMailState; count?: number };

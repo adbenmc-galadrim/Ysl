@@ -19,6 +19,8 @@ import { forceUpdate, useUpdate } from '#/features/update/updater';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { listed } from '#/features/directory/people';
+import { countMails, type MailCounts } from '#/features/mail/tracking';
+import { useSentMails } from '#/features/mail/use-sent-mails';
 import { useStorageStatus } from '#/features/settings/api/use-storage-status';
 import { storageValue } from '#/features/settings/storage-value';
 import { syncValue } from '#/features/sync/sync-value';
@@ -50,6 +52,17 @@ function useServerState(): keyof typeof SERVER_STATE {
     : 'down';
 }
 
+/** "2 à confirmer" first: an answer only this agent can give; then the failures. */
+function mailsValue(counts: MailCounts | undefined): string | undefined {
+  if (!counts) return undefined;
+  if (counts.toConfirm)
+    return t('mails.value.toConfirm', { count: counts.toConfirm });
+  if (counts.failed === 1) return t('mails.value.failed.one');
+  if (counts.failed)
+    return t('mails.value.failed.many', { count: counts.failed });
+  return undefined;
+}
+
 export function ReglagesHome() {
   const navigate = useNavigate();
   const session = useSession();
@@ -66,6 +79,8 @@ export function ReglagesHome() {
     () => db.directoryPerson.filter(listed).count(),
     [],
   );
+  const sent = useSentMails();
+  const sentMails = sent && countMails(sent.mails);
   const themeTitle = THEMES.find((option) => option.value === theme)?.title;
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
@@ -135,6 +150,17 @@ export function ReglagesHome() {
         label: t('settings.mailApp'),
         value: t(`mail.target.${mailTarget}`),
         onPress: () => void navigate({ to: '/reglages/messagerie' }),
+      },
+      {
+        icon: 'send',
+        color: 'blue',
+        label: t('settings.sentMails'),
+        value: mailsValue(sentMails),
+        onPress: () =>
+          void navigate({
+            to: '/reglages/e-mails',
+            search: sentMails?.toConfirm ? { filtre: 'toConfirm' } : {},
+          }),
       },
     ],
   };

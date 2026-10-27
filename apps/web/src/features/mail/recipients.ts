@@ -130,7 +130,7 @@ export function mailsAbout(
 }
 
 /** "UPS ···0622", as the desk names a parcel. */
-function parcelName(parcel: LocalParcel, t: TranslateFn): string {
+export function parcelName(parcel: LocalParcel, t: TranslateFn): string {
   const carrier = carrierLabel(parcel, t);
   return parcel.tracking
     ? `${carrier} ···${parcel.tracking.slice(-4)}`
