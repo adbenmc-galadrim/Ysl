@@ -10,6 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
+import { useMailTarget } from '#/features/mail/mail-target';
 import { useCornerSetting } from '#/features/settings/corners';
 import { setScanSound, useScanSound } from '#/features/settings/sound';
 import { initialsOf } from '#/features/settings/initials';
@@ -57,6 +58,7 @@ export function ReglagesHome() {
   const storage = useStorageStatus();
   const sync = useSync();
   const theme = useThemeSetting();
+  const mailTarget = useMailTarget();
   const corners = useCornerSetting();
   const sound = useScanSound();
   const update = useUpdate();
@@ -126,6 +128,13 @@ export function ReglagesHome() {
         color: 'blue',
         label: t('settings.mailTemplates'),
         onPress: () => void navigate({ to: '/reglages/modeles-email' }),
+      },
+      {
+        icon: 'send',
+        color: 'sky',
+        label: t('settings.mailApp'),
+        value: t(`mail.target.${mailTarget}`),
+        onPress: () => void navigate({ to: '/reglages/messagerie' }),
       },
     ],
   };

@@ -144,6 +144,28 @@ export function markOpened(
   });
 }
 
+/**
+ * The agent tries another mail app for the same mail: the log keeps the
+ * last one tried, the one that opened or the one given up on. `null` when
+ * the text left by copy or share, through an app the log cannot name.
+ */
+export async function retargetNotification(
+  db: CourrierDatabase,
+  id: string,
+  target: MailTarget | null,
+  { now = new Date() }: { now?: Date } = {},
+): Promise<LocalNotification> {
+  const row = await liveNotification(db, id);
+  if (row.target === target || statusOf(row) === 'sent') return row;
+  const next: LocalNotification = { ...row, target };
+  await commitLocal(
+    db,
+    { upserts: [{ entity: 'notification', row: next }] },
+    { now },
+  );
+  return next;
+}
+
 /** The agent says it did not go: why, in their words. */
 export function markFailed(
   db: CourrierDatabase,

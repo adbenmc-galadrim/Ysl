@@ -1,3 +1,4 @@
+import type { MailTarget } from '@repo/contract/mail';
 import { useMemo } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
@@ -6,6 +7,7 @@ import {
   markOpened,
   markSent,
   prepareNotification,
+  retargetNotification,
   type PrepareNotification,
 } from '#/features/mail/notifications';
 
@@ -22,6 +24,8 @@ export function useNotifications() {
       prepare: (input: PrepareNotification) =>
         prepareNotification(db, input, { userId }),
       markOpened: (id: string) => markOpened(db, id),
+      retarget: (id: string, target: MailTarget | null) =>
+        retargetNotification(db, id, target),
       markSent: (id: string) => markSent(db, id, { userId }),
       markFailed: (id: string, reason: string) => markFailed(db, id, reason),
     }),

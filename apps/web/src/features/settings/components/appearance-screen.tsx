@@ -27,6 +27,7 @@ export function AppearanceScreen() {
             title={option.title}
             subtitle={option.detail}
             onClick={() => setThemeSetting(option.value)}
+            selected={option.value === theme}
             accessory={
               option.value === theme ? (
                 <Icon

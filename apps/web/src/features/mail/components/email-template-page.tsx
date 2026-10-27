@@ -15,6 +15,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { MailFallback } from '#/features/mail/components/mail-fallback';
+import { needsFallback } from '#/features/mail/fallback';
+import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import {
   deleteTemplate,
@@ -41,8 +44,9 @@ const same = (a: TemplateText, b: TemplateText) =>
 /**
  * One template, edited in place and saved on leaving, by OK or back, as
  * Lieu et horaires does. The preview renders it on the sample parcel with
- * this mailroom's pickup, and "M'envoyer un essai" opens it in Mail,
- * addressed to the agent: the Mailer, tried without any parcel.
+ * this mailroom's pickup, and "M'envoyer un essai" opens it in the mail
+ * app chosen in Réglages, addressed to the agent: the Mailer, tried
+ * without any parcel, with its fallback when the app stays shut.
  */
 export function EmailTemplatePage({ templateId }: { templateId: string }) {
   const navigate = useNavigate();
@@ -56,6 +60,8 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
   const [draft, setDraft] = useState<TemplateText | null>(null);
   const [confirm, setConfirm] = useState<'delete' | 'restore' | null>(null);
   const [failed, setFailed] = useState(false);
+  const mailTarget = useMailTarget();
+  const [stayed, setStayed] = useState(false);
   const busy = useRef(false);
 
   if (template === null)
@@ -73,13 +79,14 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
       replyTo: session.user.email,
     }),
   );
-  const prepared = session.user.email
-    ? MAILERS.mailto.prepare({
+  const trial = session.user.email
+    ? {
         to: [session.user.email],
         subject: rendered.subject,
         body: rendered.body,
-      })
+      }
     : undefined;
+  const prepared = trial && MAILERS[mailTarget].prepare(trial);
 
   const edit = (change: Partial<TemplateText>) =>
     setDraft({ ...value, ...change });
@@ -200,7 +207,13 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
         preview={rendered}
         previewNote={t('mail.template.previewNote')}
         tryHref={prepared?.url}
-        onTry={prepared && (() => void MAILERS.mailto.open(prepared))}
+        onTry={
+          prepared &&
+          (() =>
+            void MAILERS[mailTarget]
+              .open(prepared)
+              .then((outcome) => setStayed(needsFallback(outcome))))
+        }
         onDuplicate={() =>
           void run(
             async () => {
@@ -235,6 +248,14 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
         onDone={leave}
       />
       {sheet}
+      {stayed && trial && !sheet && (
+        <MailFallback
+          message={trial}
+          target={mailTarget}
+          onOpened={() => setStayed(false)}
+          onClose={() => setStayed(false)}
+        />
+      )}
     </>
   );
 }

@@ -8,6 +8,7 @@ import {
   markSent,
   NotificationStateError,
   prepareNotification,
+  retargetNotification,
 } from '#/features/mail/notifications';
 import { NOW, openTestDatabase, parcelRow } from './helpers/local-rows';
 
@@ -134,5 +135,47 @@ describe('the outbox of e-mails', () => {
     expect((await markSent(db, mail.id, options)).notification.status).toBe(
       'sent',
     );
+  });
+
+  it('keeps the mail app tried last and why it was given up', async () => {
+    const mail = await prepared([parcelRow().id]);
+    await retargetNotification(db, mail.id, 'outlook', { now: NOW });
+    const failed = await markFailed(
+      db,
+      mail.id,
+      'Outlook ne s’est pas ouvert, e-mail abandonné',
+      { now: NOW },
+    );
+
+    expect(failed).toMatchObject({
+      status: 'failed',
+      target: 'outlook',
+      failedReason: 'Outlook ne s’est pas ouvert, e-mail abandonné',
+    });
+    expect(await db.notification.get(mail.id)).toMatchObject({
+      target: 'outlook',
+      status: 'failed',
+    });
+    const ops = (await db.outbox.toArray()).filter(
+      (op) => op.entityId === mail.id,
+    );
+    expect(ops.at(-1)?.patch).toMatchObject({
+      target: 'outlook',
+      failedReason: 'Outlook ne s’est pas ouvert, e-mail abandonné',
+    });
+  });
+
+  it('names no mail app once the text left by copy or share', async () => {
+    const mail = await prepared([parcelRow().id]);
+    await retargetNotification(db, mail.id, null, { now: NOW });
+    const { notification } = await markSent(db, mail.id, options);
+    expect(notification).toMatchObject({ status: 'sent', target: null });
+  });
+
+  it('leaves the mail app of a sent mail as it was', async () => {
+    const mail = await prepared([parcelRow().id]);
+    await markSent(db, mail.id, options);
+    const row = await retargetNotification(db, mail.id, 'gmail');
+    expect(row.target).toBe('mailto');
   });
 });
