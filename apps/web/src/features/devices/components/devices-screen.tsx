@@ -20,6 +20,14 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const DEVICES_KEY = ['devices', 'list'] as const;
 
+/** Another admin may have signed the device out first: say so, the list is refreshed. */
+function revokeMessage(error: unknown): string {
+  const code = (error as { data?: { code?: string } } | null)?.data?.code;
+  return code === 'NOT_FOUND'
+    ? t('devices.error.notFound')
+    : t('devices.revoke.failed');
+}
+
 /**
  * Réglages › Appareils connectés (admin): every session open in the
  * mailroom, and "Déconnecter cet appareil" for a phone lost, stolen or
@@ -44,6 +52,7 @@ export function DevicesScreen() {
       setTarget(null);
       await queryClient.invalidateQueries({ queryKey: DEVICES_KEY });
     },
+    onError: () => queryClient.invalidateQueries({ queryKey: DEVICES_KEY }),
   });
 
   const placeholder = devices.data
@@ -99,7 +108,7 @@ export function DevicesScreen() {
           title={t('devices.revoke.title')}
           description={
             revoke.isError
-              ? t('devices.revoke.failed')
+              ? revokeMessage(revoke.error)
               : t('devices.revoke.description', {
                   name: target.userName,
                   kind: t(`devices.kind.${deviceKind(target.userAgent)}`),
