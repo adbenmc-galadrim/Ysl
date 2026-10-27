@@ -180,10 +180,10 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 
 | ID | Exigence | Origine | Prio | Lot |
 | --- | --- | --- | --- | --- |
-| F33 | Envoi par le serveur via une file d'attente (outbox), avec reprises ; statut visible (en file, envoyé, échec) | Nouveau (remplace `mailto:`) | M | L2 |
+| F33 | ~~Envoi par le serveur via une file d'attente (outbox), avec reprises~~ **Périmé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail part de l'adresse de l'agent, ouvert prérempli dans la messagerie de l'iPhone (`mailto:`, Outlook ou Gmail en option) depuis ses propres modèles ; suivi déclaratif de chaque e-mail (préparé, messagerie ouverte, envoyé confirmé par l'agent, échec) | Nouveau (remplace l'envoi manuel) | M | L2 |
 | F34 | Un e-mail par destinataire, regroupant ses colis ; « par service » devient un résumé optionnel | Amélioré (F17) | M | L2 |
 | F35 | E-mail en HTML et en texte, accents corrects ; lieu et horaires de retrait ; QR et PIN de retrait | Amélioré | M | L2 |
-| F36 | Repli `mailto:` manuel si l'envoi serveur est indisponible | Repris (en repli) | S | L2 |
+| F36 | ~~Repli `mailto:` manuel si l'envoi serveur est indisponible~~ **Périmé (D2 révisée) :** `mailto:` devient la voie principale, il n'y a plus d'envoi serveur ; Outlook, Gmail et « copier le texte » restent en option | Repris (voie principale) | S | L2 |
 | F37 | Relances automatiques, puis alerte « En souffrance » à l'agent | Nouveau | S | L2 |
 | F38 | Copie à un délégué ou à des collègues, par e-mail | Amélioré (F18) | C | L3 |
 | F39 | Envoi à heures fixes (créneaux) plutôt qu'immédiat | Nouveau | C | L3 |
@@ -646,7 +646,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | Auth | Better Auth (email + mot de passe) ; Microsoft Entra en cible | `^1.6.26` | Identique ; plugin `jwt()` inutile sans PowerSync |
 | Base de données | PostgreSQL + drizzle-orm / drizzle-kit + `pg` | 17 (image épinglée) ; `^0.45.2` ; `^0.31.10` ; `^8.22.0` | Identique ; `wal_level=logical` n'est plus nécessaire |
 | File de tâches | Table Postgres + `SELECT … FOR UPDATE SKIP LOCKED`, worker dans le process serveur | — | Volume faible (20 à 100 colis par jour **[estimation]**) : pas de Redis ni de BullMQ |
-| E-mail | Interface `Mailer` : Scaleway TEM (MVP), Microsoft Graph `sendMail` (cible) | — | Rapport 05 ; changer de fournisseur ne demande pas de réécriture |
+| E-mail | Interface `Mailer` : messagerie du téléphone par `mailto:` (MVP, D2 révisée), Microsoft Graph `sendMail` (cible) | — | Rapport 05 et spike S5 ; Scaleway TEM abandonné ; changer de voie ne demande pas de réécriture |
 | Suivi transporteur | Interface `TrackingProvider` : agrégateur (Ship24 ou 17TRACK) + API La Poste Okapi | — | Optionnel (L4) |
 | Env, logs, i18n | `@t3-oss/env-core`, pino, i18n maison | `^0.13.1` ; `^10.3.1` | Identique ; fusionnés dans `@repo/shared` |
 | Tests | Vitest, Playwright | `^4.1.10` ; `^1.57.0` | Identique ; 2 ou 3 tests e2e de base + banc d'essai d'extraction |
@@ -731,7 +731,7 @@ flowchart LR
         WK <--> PG
     end
     DX -- "sync.push / sync.pull" --> API
-    WK --> MAIL[Mailer<br/>Scaleway TEM puis Graph sendMail]
+    WK --> MAIL[Mailer serveur<br/>Graph sendMail, cible D20]
     WK --> DIR[Annuaire<br/>CSV puis Entra ID delta]
     WK -.-> TRK[TrackingProvider<br/>agrégateur, La Poste]
     MAIL --> EMP[Salarié<br/>e-mail + QR / PIN]
@@ -905,7 +905,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | **S2 Codes-barres** | zxing-wasm sur le corpus : taux de lecture par format et par transporteur, en mode viseur et en mode photo native ; MaxiCode avec ou sans recadrage maison ; contenu réel des Aztec Colissimo et Chronopost, des PDF417 FedEx Express et des Data Matrix GLS et La Poste | Tracking lu par code-barres sur ≥ 90 % du corpus **[cible]** | Le mode photo native devient le défaut pour les transporteurs à 2D ; essai de Dynamsoft si le MaxiCode manque (décision D11) |
 | **S3 OCR** | PaddleOCR v5 mobile, v6 tiny et v6 small, et Tesseract v7, en WASM et en WebGPU : p50 et p95, pic mémoire, exactitude destinataire et expéditeur | p95 ≤ 5 s, pic < 250 Mo, aucun plantage sur 50 photos d'affilée, destinataire ≥ 90 % (top 3) avant l'apprentissage **[cible]** | Plan B Tesseract v7 par zones ; renfort cloud à arbitrer (décision D9) |
 | **S4 Stockage et mises à jour** | Dexie + OPFS en PWA installée : mode avion, app tuée, relance, `persist()`, verrouillage pendant une écriture ; déploiement v1 puis v2 et prise en compte de la mise à jour au retour au premier plan | Aucune perte sur les scénarios ; mise à jour détectée sans réinstallation | Ajustement de la stratégie de mise à jour ; réexamen de PowerSync seulement si IndexedDB échoue |
-| **S5 E-mail** | Envoi via Scaleway TEM vers 5 boîtes Saint Laurent : spam, rendu Outlook et Mail iOS, QR lisible | 5/5 en boîte de réception, rendu correct | Accélérer la voie Graph (DSI) ; `mailto:` en attendant |
+| **S5 E-mail** | ~~Envoi via Scaleway TEM vers 5 boîtes Saint Laurent : spam, rendu Outlook et Mail iOS, QR lisible~~ **Périmé, remplacé par la messagerie du téléphone (D2 révisée), voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md) :** e-mail prérempli ouvert dans Mail, Outlook et Gmail depuis la PWA ; accents, sauts de ligne, longueur ; modèles gérés par l'agent | Brouillon complet dans Mail iOS et Outlook, rendu intact (verdict go du 23/10/2026) | `mailto:` seul, en texte brut, code de retrait écrit en clair |
 | S6 (optionnel) | 20 vrais colis passés dans Ship24 et 17TRACK (essai) : quels champs reviennent réellement | — | Le suivi reste hors du MVP |
 
 ### 10.2 Lots
@@ -951,7 +951,7 @@ Chaque décision est accompagnée d'une recommandation.
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
 | D1 | Hébergeur du serveur et domaine de l'app | Utilisateur + DSI | Hébergeur en UE (conteneurs, Postgres), domaine maîtrisé par l'entreprise ; plus de GitHub Pages personnel |
-| D2 | E-mail pour le MVP | Utilisateur | Scaleway TEM (UE) sur un domaine du projet, validé par le spike S5 ; `mailto:` en repli ; Graph en cible |
+| D2 | E-mail pour le MVP | Utilisateur | **Révisée :** l'e-mail part de l'adresse de l'agent, prérempli dans la messagerie du téléphone (`mailto:`), depuis des modèles qu'il crée et gère ; plus de Scaleway TEM ni d'envoi serveur (spike S5, go) ; Graph en cible (D20) |
 | D3 | Base hors ligne | Utilisateur | Dexie + outbox (§7.2) ; PowerSync seulement en cas de multi-sites ou de forte concurrence |
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
