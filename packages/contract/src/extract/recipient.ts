@@ -105,8 +105,12 @@ export const extractRecipientField = (
   });
   let field = mergeField(observations);
   if (field === null) return { field: null, card: null };
-  const chosen = canonical(field.value);
-  if (reads.some((r) => canonical(r.name) === chosen && elsewhere(r.party))) {
+  const chosen = keyOf(field.value);
+  if (
+    reads.some(
+      (r, at) => observations[at]!.key === chosen && elsewhere(r.party),
+    )
+  ) {
     field = adjust(field, -CONFIDENCE.forwardMalus, 'forward');
   }
   const value = field.value;

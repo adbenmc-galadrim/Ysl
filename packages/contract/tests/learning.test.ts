@@ -154,3 +154,16 @@ describe('an alias of a sender the OCR already nearly spells', () => {
     expect(read(4)?.confidence).toBe(0.9);
   });
 });
+
+describe('a learned recipient addressed elsewhere', () => {
+  it('still asks « réexpédition ? » when the code addresses it outside 75007', () => {
+    const aztec = `[)>\u001e01\u001d02\u001d75008\u001d250\u001d328\u001d01234567890128\u001dGEOP\u001d123456\u001d\u001d\u001d001/001\u001d01.50KG\u001dN\u001d8 RUE ROYALE\u001dPARIS\u001d\u001dDJI EUROPE BV\u001d\u001e\u0004`;
+    const { recipient, recipientCard } = extractFields({
+      symbols: [{ format: 'Aztec', text: aztec }],
+      recipients: [lea(4)],
+    });
+    expect(recipientCard).toEqual({ kind: 'person', id: 'person-1' });
+    expect(recipient?.flags).toContain('forward');
+    expect(recipient?.confidence).toBeCloseTo(0.89 - CONFIDENCE.forwardMalus);
+  });
+});
