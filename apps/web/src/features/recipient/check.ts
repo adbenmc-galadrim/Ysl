@@ -3,6 +3,7 @@ import {
   type RecipientResult,
   silentMatch,
 } from '@repo/contract/recipient';
+import type { KnownRecipientAlias } from '@repo/contract/extract';
 import { normalizeName } from '@repo/shared/text';
 import { listDrafts, updateDraft } from '#/features/batch/store';
 import type {
@@ -13,6 +14,7 @@ import type {
 } from '#/features/db/schema';
 import { fullName } from '#/features/directory/people';
 import { recipientInCodes } from '#/features/scan/extract';
+import { learnedRecipientOf } from '#/features/recipient/learning';
 import type { MatchEngine } from '#/features/recipient/matcher';
 
 /**
@@ -49,21 +51,24 @@ export const toRecipient = (
 
 /**
  * What « Vérifier un colis » shows selected: the agent's earlier choice,
- * else the suggestion that stands out. Never a partial homonym: the
+ * else the card the agent chose before for the name this label prints
+ * (§4.8), else the suggestion that stands out. Never a partial homonym: the
  * matcher gives no `best` for one.
  */
 export function preselection(
-  draft: Pick<DraftParcel, 'recipient'>,
+  draft: Pick<DraftParcel, 'recipient' | 'learnedRecipient'>,
   result: RecipientResult | null,
 ): Pick<DraftRecipient, 'kind' | 'id'> | null {
   if (draft.recipient) return draft.recipient;
+  if (draft.learnedRecipient) return draft.learnedRecipient;
   return result?.best ? result.best.entry : null;
 }
 
 /**
  * When the batch review opens: each draft with no recipient yet is
  * matched, and an exact code name settles its card silently; the review
- * asks the agent about the others (F18, F25).
+ * asks the agent about the others (F18, F25), with the card the agent
+ * chose before for the same printed name put first (§4.8).
  */
 export async function settleRecipients(
   db: CourrierDatabase,
@@ -75,7 +80,13 @@ export async function settleRecipients(
     const silent = silentMatch(
       await matcher.match(readsOf(draft), textOf(draft)),
     );
-    if (!silent) continue;
+    if (!silent) {
+      const learned = await learnedRecipientOf(db, draft);
+      if (!sameLearned(learned, draft.learnedRecipient ?? null)) {
+        await updateDraft(db, draft.id, { learnedRecipient: learned });
+      }
+      continue;
+    }
     await updateDraft(db, draft.id, {
       recipient: toRecipient(
         { ...silent.entry, name: fullName(silent.entry) },
@@ -84,6 +95,14 @@ export async function settleRecipients(
     });
   }
 }
+
+const sameLearned = (
+  a: KnownRecipientAlias | null,
+  b: KnownRecipientAlias | null,
+) =>
+  a?.id === b?.id &&
+  a?.confirmations === b?.confirmations &&
+  a?.name === b?.name;
 
 const words = (text: string) =>
   normalizeName(text)

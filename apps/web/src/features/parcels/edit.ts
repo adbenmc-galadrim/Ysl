@@ -6,6 +6,7 @@ import { newId } from '@repo/shared/id';
 import { normalizeName } from '@repo/shared/text';
 import { senderReadOf } from '#/features/batch/extraction';
 import { senderLessons } from '#/features/batch/senders';
+import { recipientLessons } from '#/features/recipient/learning';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -198,6 +199,36 @@ async function correctedSender(
   return { senderId: sender?.id ?? null, upserts: lessons.upserts() };
 }
 
+/** The card's name today, which a printed name equal to it needs no alias for. */
+async function cardName(
+  db: CourrierDatabase,
+  card: { kind: 'person' | 'contact'; id: string },
+  typed: LocalContact | undefined,
+): Promise<string> {
+  if (card.kind === 'person') {
+    const person = await db.directoryPerson.get(card.id);
+    return person ? `${person.firstName} ${person.lastName}` : '';
+  }
+  return typed?.name ?? (await db.contact.get(card.id))?.name ?? '';
+}
+
+/**
+ * The names the label printed for its recipient, as this iPhone read them:
+ * the code's name kept on the parcel, and what the reading proposed.
+ */
+async function printedOn(
+  db: CourrierDatabase,
+  parcel: LocalParcel,
+): Promise<string[]> {
+  const reading = await db.extraction.get(parcel.id);
+  const read = (reading?.fields.recipient?.sources ?? [])
+    .filter((source) => source.kind !== 'agent' && source.kind !== 'learned')
+    .map((source) => source.value);
+  return [...new Set([parcel.readName, ...read])].filter(
+    (name): name is string => Boolean(name),
+  );
+}
+
 /** One piece unless the label said otherwise: a parcel that never said stays silent. */
 function pieces(parcel: LocalParcel, edit: ParcelEdit) {
   if (edit.pieceTotal > 1) {
@@ -279,8 +310,9 @@ export function validateEdit(
 
 /**
  * Saves the record's form, local first and queued for `sync.push` like any
- * change: the parcel, a contact typed by hand, and the event of the history
- * in one write, so it all works offline. Completing a parcel moves it to
+ * change: the parcel, a contact typed by hand, what a correction of the
+ * sender or the recipient teaches (§4.8), and the event of the history in
+ * one write, so it all works offline. Completing a parcel moves it to
  * "À notifier"; taking away what made it complete moves it back. A notified
  * or handed-over parcel keeps someone to answer for it (the server's
  * `parcel_recipient_check`). Nothing is written when nothing changed.
@@ -340,6 +372,19 @@ export async function saveParcelEdit(
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };
 
+  const card = edited.personId
+    ? { kind: 'person' as const, id: edited.personId }
+    : edited.contactId
+      ? { kind: 'contact' as const, id: edited.contactId }
+      : null;
+  const recipients = recipientLessons(db, now);
+  if (card && fields.includes('recipient')) {
+    await recipients.learn(await printedOn(db, parcel), {
+      ...card,
+      name: await cardName(db, card, contact),
+    });
+  }
+
   const complete = isComplete(edited);
   const to =
     parcel.status === 'a_completer' && complete && confirmsIdentity(fields)
@@ -351,6 +396,7 @@ export async function saveParcelEdit(
   const upserts: Upsert[] = [
     ...(learned?.upserts ?? []),
     ...(contact ? [{ entity: 'contact' as const, row: contact }] : []),
+    ...recipients.upserts(),
     { entity: 'parcel', row },
     parcelEvent(parcelId, { type: 'parcel.edited', fields }, options),
     ...(to

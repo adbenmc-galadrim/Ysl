@@ -32,6 +32,7 @@ type Readable = Pick<
   | 'readName'
   | 'recipient'
   | 'trackingConfirmed'
+  | 'learnedRecipient'
 >;
 
 const agent = (value: string): Field<string> => {
@@ -106,6 +107,7 @@ export function draftFields(
         ? null
         : { text, recipientName: draft.ocrName },
     directory,
+    recipients: draft.learnedRecipient ? [draft.learnedRecipient] : null,
   });
   return {
     extraction,

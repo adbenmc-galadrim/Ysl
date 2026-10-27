@@ -94,10 +94,22 @@ export function RecipientStep({
       ? (optionOf(preselected.kind, preselected.id, people, contacts) ??
         undefined)
       : undefined);
-  const candidates =
-    selected && !suggestions.some((option) => option.id === selected.id)
-      ? [selected, ...suggestions].slice(0, SUGGESTIONS)
-      : suggestions;
+  const learned = draft.learnedRecipient
+    ? optionOf(
+        draft.learnedRecipient.kind,
+        draft.learnedRecipient.id,
+        people,
+        contacts,
+      )
+    : null;
+  const first = [selected, learned].filter(
+    (option, at, all): option is Choice =>
+      option != null && all.findIndex((o) => o?.id === option.id) === at,
+  );
+  const candidates = [
+    ...first,
+    ...suggestions.filter((option) => !first.some((o) => o.id === option.id)),
+  ].slice(0, SUGGESTIONS);
   const shownName = result.readName ?? readName ?? ocrName;
   const line = nameLine(draft.ocrLines, ocrName ?? readName);
 

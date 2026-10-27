@@ -22,6 +22,7 @@ import type {
   ConfidenceLevel,
   FieldFlag,
   FieldSource,
+  KnownRecipientAlias,
   SourceKind,
 } from '@repo/contract/extract';
 import type { RecipientKind } from '@repo/contract/recipient';
@@ -240,6 +241,8 @@ export type DraftParcel = {
   damage?: DraftDamage | null;
   /** « Passer » in the batch review: saved « À compléter » as it stands (YSL-58). */
   reviewSkipped?: boolean;
+  /** The card the agent chose before for the name this label prints (§4.8); absent before YSL-60. */
+  learnedRecipient?: KnownRecipientAlias | null;
 };
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };
