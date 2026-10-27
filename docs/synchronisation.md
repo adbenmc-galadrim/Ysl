@@ -13,7 +13,7 @@ téléphone (D7, D8, §8.5) : la synchronisation ne porte que ce que le serveur 
 | Sens               | Quoi                                                                                                                                       | Clé                                                               |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | Appareil → serveur | une opération par écriture locale : `upsert` (la ligne entière) ou `delete` (suppression logique), avec son `op_id` et l'horodatage client | `op_id` (UUID v7, `sync_op`)                                      |
-| Serveur → appareil | les lignes des douze tables synchronisées de l'organisation, écrites depuis le curseur                                                     | `server_xid` (identifiant de la transaction qui a écrit la ligne) |
+| Serveur → appareil | les lignes des quatorze tables synchronisées de l'organisation, écrites depuis le curseur                                                  | `server_xid` (identifiant de la transaction qui a écrit la ligne) |
 
 Un appareil appartient à une organisation par le compte connecté
 (`organization_member`) ; sans rattachement, les deux procédures répondent 403
@@ -217,6 +217,24 @@ récents. Un pull par curseur rend tous les nouveaux événements, quel que soit
   avec leur nombre. Sinon le compte est déconnecté, la synchro arrêtée, puis la base
   locale et les photos OPFS sont effacées.
 
+## Apprentissage partagé (§4.8, YSL-60)
+
+Ce qu'apprennent les corrections de l'agent circule comme le reste, par l'outbox, avant
+les colis qui en découlent :
+
+| Table             | Clé lue                                 | Écrite par                                                                  | Effet à la lecture suivante                                                |
+| ----------------- | --------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `sender_account`  | (transporteur, compte)                  | expéditeur sûr à Terminer ; correction de l'agent (revue, fiche)            | prérempli 0,90, 0,95 après 3 confirmations ; `challenger_id`, `challenges` |
+| `sender_alias`    | `alias_norm` (texte du bloc `FROM`)     | expéditeur gardé ou corrigé par l'agent quand le texte lu diffère du nom    | 0,30, +0,20 par confirmation, plafond 0,90                                 |
+| `recipient_alias` | `name_norm` (nom imprimé, sans accents) | fiche choisie par l'agent pour le nom du code 2D ou de l'OCR (revue, fiche) | fiche en tête et présélectionnée, 0,30 à 0,89, jamais réglée en silence    |
+
+Pas d'index unique sur les alias : deux iPhone qui apprennent le même nom hors ligne
+gardent chacun leur ligne, la lecture prend la plus confirmée (`bestAlias`). Dernier
+écrit gagne sur `confirmations`, comme ailleurs (§8.4.4). `recipient_alias` pointe une
+personne **ou** un contact (`recipient_alias_target_check`), par les clés composites
+`(organization_id, …)` de 0002 ; un contact choisi compte comme utilisé (`usage_count`,
+`last_used_at`) à Terminer.
+
 ## Purge selon les durées de conservation
 
 Durées du §9.2 (validées, D7) dans `RETENTION` de `@repo/contract/retention`.
@@ -229,11 +247,14 @@ deux temps et par lots de 500 en transactions courtes :
    notifications dont tous les colis sont marqués ; codes de retrait utilisés ou
    expirés depuis 12 mois ; lots vides de plus de 12 mois ; contacts inutilisés depuis
    12 mois (`last_used_at`, à défaut `updated_at`) et personnes désactivées depuis 30 jours, sans colis,
-   remise, notification ni code vivant.
+   remise, notification ni code vivant ; alias appris (`sender_alias`, `recipient_alias`)
+   dont l'expéditeur, la personne ou le contact n'est plus vivant : ils suivent la durée
+   de leur parent.
 2. **Suppression physique** des lignes marquées depuis plus de 30 jours, enfants
    avant parents (remises, notifications, codes, colis avec leurs `event` sous
    `set_config('app.purge', 'on', true)` local à la transaction, lots, comptes
-   transporteurs, expéditeurs, modèles, réglages, contacts, personnes), une ligne
+   transporteurs, alias d'expéditeur, expéditeurs, modèles, réglages, alias de
+   destinataire, contacts, personnes), une ligne
    encore référencée attendant la purge suivante ; `sync_op` au-delà de 90 jours.
 
 Chaque passage écrit une ligne `purge_run` (compteurs par table, `horizon_xid` = le

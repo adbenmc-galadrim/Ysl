@@ -295,13 +295,14 @@ champ devient sûr, le colis sort en `recu`, et l'OCR qui atterrit ensuite ne to
 L'expéditeur aide le salarié à reconnaître son colis. Il vient, dans l'ordre du §4.5 du
 cahier, de `extractSender` (`@repo/contract/extract`) :
 
-| Source                                                           | Confiance                         | Niveau     | D'où                                                               |
-| ---------------------------------------------------------------- | --------------------------------- | ---------- | ------------------------------------------------------------------ |
-| Code 2D structuré (FedEx `11Z`, GS1 `4310+`)                     | 0,97                              | sûr        | `ParsedCode.sender`                                                |
-| Compte transporteur connu (`sender_account`)                     | 0,90, puis 0,95 à 3 confirmations | sûr        | `shipperAccount` du code 2D ou du 1Z UPS (caractères 3 à 8), FedEx |
-| Bloc `FROM` égal à un expéditeur déjà vu (`sender.name_norm`)    | 0,85                              | à vérifier | `senderFromLines` (`@repo/ocr/sender`) + `normalizeName`           |
-| Bloc `FROM` proche d'un expéditeur déjà vu (Jaro-Winkler ≥ 0,92) | 0,70                              | à vérifier | idem                                                               |
-| Bloc `FROM` seul                                                 | 0,40                              | aucun      | supposition, affichée « Nom ? »                                    |
+| Source                                                           | Confiance                                  | Niveau      | D'où                                                                                  |
+| ---------------------------------------------------------------- | ------------------------------------------ | ----------- | ------------------------------------------------------------------------------------- |
+| Code 2D structuré (FedEx `11Z`, GS1 `4310+`)                     | 0,97                                       | sûr         | `ParsedCode.sender`                                                                   |
+| Compte transporteur connu (`sender_account`)                     | 0,90, puis 0,95 à 3 confirmations          | sûr         | `shipperAccount` du code 2D ou du 1Z UPS (caractères 3 à 8), FedEx                    |
+| Bloc `FROM` déjà corrigé par l'agent (`sender_alias`, YSL-60)    | 0,30 + 0,20 par confirmation, plafond 0,90 | aucun → sûr | `alias_norm` = `normalizeName` du texte lu ; jamais sous la correspondance ci-dessous |
+| Bloc `FROM` égal à un expéditeur déjà vu (`sender.name_norm`)    | 0,85                                       | à vérifier  | `senderFromLines` (`@repo/ocr/sender`) + `normalizeName`                              |
+| Bloc `FROM` proche d'un expéditeur déjà vu (Jaro-Winkler ≥ 0,92) | 0,70                                       | à vérifier  | idem                                                                                  |
+| Bloc `FROM` seul                                                 | 0,40                                       | aucun       | supposition, affichée « Nom ? »                                                       |
 
 Une correspondance au dictionnaire dérive du texte OCR : les deux ne comptent jamais comme
 deux sources indépendantes. Un code et le dictionnaire en désaccord : le code gagne, avec le
@@ -326,7 +327,19 @@ malus de conflit (0,82, à vérifier).
   préfère n'y compter que les codes 2D ou une correction explicite, c'est `learnSenders`
   (source `learned`) qu'il faut restreindre. Ces lignes partent dans le même `commitLocal`, **avant** le
   lot et les colis : le serveur applique les opérations dans l'ordre et `parcel.sender_id`
-  les référence. Les corrections de l'agent et leur partage sont YSL-60.
+  les référence.
+- **Corrections de l'agent (YSL-60).** La revue du lot propose l'étape « Expéditeur » pour un
+  expéditeur à vérifier, ou proposé par un alias à n'importe quel niveau (c'est ainsi qu'il
+  gagne ses confirmations) ; une supposition seule (0,40) n'est pas demandée. « Garder » ou
+  « Corriger » rend l'expéditeur sûr, source `agent`, avec le compte et le texte du bloc
+  `FROM` lus (`draft.sender.read`). À Terminer (`senderLessons`), une correction enseigne en
+  plus l'alias `normalizeName(read) → sender` (créé à 1, +1 s'il nommait déjà ce sender,
+  repris à 1 s'il en nommait un autre ; rien si le texte lu épelle déjà le nom) et conteste
+  un compte possédé par un autre expéditeur : `challenger_id` / `challenges`, réattribution
+  à la **deuxième** correction concordante (`ACCOUNT_REATTRIBUTION`), le compte repart à 2
+  confirmations ; une confirmation du propriétaire entre-temps remet le défi à zéro. La
+  fiche colis apprend de même quand l'agent change l'expéditeur, avec le compte et le bloc
+  `FROM` gardés par `extraction` (sur l'iPhone qui a lu, 30 jours).
 - `normalizeName` (`@repo/shared/text`) est la règle figée de `name_norm` : forme de
   compatibilité, sans diacritique, minuscules, lettres et chiffres ASCII, un espace entre
   les mots, initiales recollées (`S.p.A.` et `SPA` partagent une clé). La changer réécrit

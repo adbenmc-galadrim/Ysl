@@ -239,6 +239,19 @@ de l'app. Annuaire vide (D15) : chaque nom lu est gardé pour préremplir une no
 les vraies photos, dans l'app sur iPhone : le corpus n'a que 24 destinataires annotés à
 la base du critère, et le banc Node ne lit pas le texte imprimé.
 
+## Apprentissage (YSL-60, 27/10/2026) : non mesuré
+
+Le banc ne mesure pas encore l'effet de l'apprentissage (§4.8). Une politique « dictionnaire
+rempli depuis le corpus, puis relecture » n'a de sens que pour les alias du bloc `FROM` et
+des noms imprimés, or `run.ts` n'appelle `extractFields` qu'avec les symboles : ni le texte
+OCR ni les blocs ancrés n'y passent (TODO YSL-27). Les comptes transporteurs, eux, se
+mesureraient sans OCR, mais le corpus n'a presque aucun expéditeur annoté pour un compte
+(UPS et FedEx Ground de synthèse inventent un compte par étiquette) : le chiffre ne dirait
+rien. À faire avec la politique OCR du banc : remplir `sender_alias` et `recipient_alias`
+depuis les annotations d'une moitié du corpus, relire l'autre, compter O4 et O3 avant et
+après. La courbe (0,30 + 0,20 par confirmation, plafond 0,90, 0,89 pour un destinataire)
+est un point de départ à recaler sur ce chiffre.
+
 ## Relancer
 
 ```sh
