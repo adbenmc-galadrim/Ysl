@@ -3,7 +3,15 @@ import type { PGlite } from '@electric-sql/pglite';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq, inArray, sql } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import {
   lastPurge,
   PURGE_BATCH,
@@ -188,6 +196,43 @@ describe('retention purge, first pass: marks', () => {
     expect(await deletedAtOf(schema.contact, kept.id)).toBeNull();
   });
 
+  it('marks a notification once its parcels are marked', async () => {
+    const person = contactRow(monthsAgo(1));
+    await db.insert(schema.contact).values(person);
+    const old = delivered(person.id, monthsAgo(13));
+    const young = delivered(person.id, monthsAgo(1));
+    await db.insert(schema.parcel).values([old, young]);
+    const notification = (parcelIds: string[]) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      type: 'avis' as const,
+      contactId: person.id,
+      recipients: ['camille@example.test'],
+      parcelIds,
+      preparedAt: monthsAgo(13),
+      preparedBy: AGENT_ID,
+    });
+    const gone = notification([old.id]);
+    const kept = notification([old.id, young.id]);
+    await db.insert(schema.notification).values([gone, kept]);
+
+    await runPurge(purgeDb, {
+      now: NOW,
+      organizationId: ORGANIZATION_ID,
+      trigger: 'auto',
+    });
+
+    const rows = await db
+      .select({
+        id: schema.notification.id,
+        deletedAt: schema.notification.deletedAt,
+      })
+      .from(schema.notification);
+    const deletedAt = new Map(rows.map((row) => [row.id, row.deletedAt]));
+    expect(deletedAt.get(gone.id)).toEqual(NOW);
+    expect(deletedAt.get(kept.id)).toBeNull();
+  });
+
   it('works through more rows than one batch', async () => {
     const person = contactRow(monthsAgo(1));
     await db.insert(schema.contact).values(person);
@@ -305,12 +350,10 @@ describe('retention purge, second pass: erasure', () => {
       batchId: batch.id,
     };
     await db.insert(schema.parcel).values(parcel);
-    await db
-      .insert(schema.handover)
-      .values({
-        ...handoverOf([parcel.id], person.id),
-        deletedAt: daysAgo(40),
-      });
+    await db.insert(schema.handover).values({
+      ...handoverOf([parcel.id], person.id),
+      deletedAt: daysAgo(40),
+    });
 
     await runPurge(purgeDb, {
       now: NOW,
@@ -410,6 +453,62 @@ describe('retention purge, record and horizon', () => {
     expect(late.reset).toBe(true);
     expect(late.rows.map((change) => change.row.id)).not.toContain(old.id);
     expect(upToDate.reset).toBe(false);
+  });
+});
+
+describe('retention purge, lock and failures', () => {
+  it('answers busy while another session holds the lock', async () => {
+    const execute = vi.fn().mockResolvedValue({ rows: [{ locked: false }] });
+    const held = { execute } as unknown as AnyDb;
+
+    await expect(runPurge(held, { trigger: 'auto' })).resolves.toEqual({
+      status: 'busy',
+    });
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the horizon of what it erased when a later step fails', async () => {
+    const person = contactRow(monthsAgo(1));
+    await db.insert(schema.contact).values(person);
+    const old = delivered(person.id, monthsAgo(14), daysAgo(31));
+    await db.insert(schema.parcel).values(old);
+    await db.execute(sql`
+      create function pg_temp.fail_sync_op() returns trigger language plpgsql as $$
+      begin raise exception 'disk full'; end $$`);
+    await db.execute(
+      sql`create trigger fail_sync_op before delete on sync_op for each statement execute function pg_temp.fail_sync_op()`,
+    );
+    try {
+      await expect(
+        runPurge(purgeDb, {
+          now: NOW,
+          organizationId: ORGANIZATION_ID,
+          trigger: 'auto',
+        }),
+      ).rejects.toThrow();
+    } finally {
+      await db.execute(sql`drop trigger fail_sync_op on sync_op`);
+    }
+
+    expect(await purgeHorizon(purgeDb, ORGANIZATION_ID)).toBeGreaterThan(0);
+    expect(await lastPurge(purgeDb, ORGANIZATION_ID)).toBeNull();
+  });
+
+  it('starts a pull over when a purge erased a mark of its range between two pages', async () => {
+    await db.insert(schema.purgeRun).values({
+      organizationId: ORGANIZATION_ID,
+      trigger: 'auto',
+      startedAt: NOW,
+      horizonXid: 1_000_000_000,
+    });
+
+    const output = await pull(purgeDb, ORGANIZATION_ID, {
+      cursor: null,
+      page: { from: 5, bound: 2_000_000_000, entity: 3, after: null },
+      limit: 200,
+    });
+
+    expect(output.reset).toBe(true);
   });
 });
 

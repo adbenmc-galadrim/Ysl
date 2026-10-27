@@ -128,14 +128,27 @@ function mark(
 }
 
 /**
+ * Moves the run's horizon past `xid`, in the transaction that erased it: a
+ * pull that starts once the erasure is visible sees the horizon too, even
+ * if the run fails later on.
+ */
+async function raiseHorizon(tx: AnyDb, runId: string, xid: number | null) {
+  if (xid === null) return;
+  await tx.execute(
+    sql`update purge_run set horizon_xid = greatest(horizon_xid, ${xid + 1}) where id = ${runId}`,
+  );
+}
+
+/**
  * Erases up to a batch of rows of `table` marked before the tombstone cutoff
- * and not held by `keep`. Returns the newest `server_xid` erased: the
- * horizon below which a device may have missed a mark.
+ * and not held by `keep`, and raises the run's horizon past the newest
+ * `server_xid` erased.
  */
 function erase(
   organizationId: string,
   table: PurgeTable,
   before: Date,
+  runId: string,
   keep: SQL | null = null,
 ): (tx: AnyDb) => Promise<Counted> {
   const name = sql.raw(`"${table}"`);
@@ -148,7 +161,7 @@ function erase(
        order by t.id
        limit ${PURGE_BATCH}
        for update skip locked`;
-    return counted(
+    const erased = await counted(
       tx,
       sql`with picked as (${picked}),
       erased as (
@@ -157,6 +170,8 @@ function erase(
       )
       select count(*)::int as n, max(server_xid)::text as xid from erased`,
     );
+    await raiseHorizon(tx, runId, erased.xid);
+    return erased;
   };
 }
 
@@ -172,8 +187,6 @@ function add(
   counts[table] = entry;
 }
 
-export type OrganizationPurge = { counts: PurgeCounts; horizonXid: number };
-
 /**
  * The retention purge of one mailroom (§9.2), in two passes. First the rows
  * past their time get `deleted_at`, which every iPhone pulls and applies.
@@ -186,10 +199,10 @@ export async function purgeOrganization(
   db: AnyDb,
   organizationId: string,
   now: Date,
-): Promise<OrganizationPurge> {
+  runId: string,
+): Promise<PurgeCounts> {
   const at = cutoffsAt(now);
   const counts: PurgeCounts = {};
-  let horizon = 0;
 
   const marks: [PurgeTable, SQL][] = [
     [
@@ -242,18 +255,17 @@ export async function purgeOrganization(
         db,
         organizationId,
         at.tombstone,
+        runId,
       );
       add(counts, 'event', 'deleted', erased.events);
       add(counts, 'parcel', 'deleted', erased.n);
-      if (erased.xid !== null) horizon = Math.max(horizon, erased.xid + 1);
       continue;
     }
-    const { n, xid } = await inBatches(
+    const { n } = await inBatches(
       db,
-      erase(organizationId, table, at.tombstone, keep),
+      erase(organizationId, table, at.tombstone, runId, keep),
     );
     add(counts, table, 'deleted', n);
-    if (xid !== null) horizon = Math.max(horizon, xid + 1);
   }
 
   const { n: ops } = await inBatches(db, (tx) =>
@@ -273,7 +285,7 @@ export async function purgeOrganization(
   );
   add(counts, 'sync_op', 'deleted', ops);
 
-  return { counts, horizonXid: horizon };
+  return counts;
 }
 
 /**
@@ -285,6 +297,7 @@ async function eraseParcelsWithEvents(
   db: AnyDb,
   organizationId: string,
   before: Date,
+  runId: string,
 ): Promise<{ n: number; events: number; xid: number | null }> {
   let n = 0;
   let events = 0;
@@ -320,11 +333,13 @@ async function eraseParcelsWithEvents(
                (select count(*)::int from events) as events,
                (select max(server_xid)::text from erased) as xid`,
       );
-      return {
+      const erased = {
         n: Number(row?.n ?? 0),
         events: Number(row?.events ?? 0),
         xid: row?.xid == null ? null : Number(row.xid),
       };
+      await raiseHorizon(tx, runId, erased.xid);
+      return erased;
     });
     n += batch.n;
     events += batch.events;
@@ -370,23 +385,35 @@ export async function runPurge(
           (row) => row.id,
         );
     const runs: PurgeRun[] = [];
+    let failure: Error | null = null;
     for (const id of organizations) {
       const [row] = await db
         .insert(purgeRun)
         .values({ organizationId: id, trigger, userId, startedAt: now })
         .returning({ id: purgeRun.id });
-      const { counts, horizonXid } = await purgeOrganization(db, id, now);
-      const finishedAt = new Date();
-      await db
-        .update(purgeRun)
-        .set({ finishedAt, counts, horizonXid })
-        .where(eq(purgeRun.id, row!.id));
-      logger.info(
-        { organizationId: id, trigger, counts },
-        'retention purge done',
-      );
-      runs.push({ trigger, startedAt: now, finishedAt, counts });
+      try {
+        const counts = await purgeOrganization(db, id, now, row!.id);
+        const finishedAt = new Date();
+        await db
+          .update(purgeRun)
+          .set({ finishedAt, counts })
+          .where(eq(purgeRun.id, row!.id));
+        logger.info(
+          { organizationId: id, trigger, counts },
+          'retention purge done',
+        );
+        runs.push({ trigger, startedAt: now, finishedAt, counts });
+      } catch (error) {
+        // One mailroom failing must not leave the others unpurged; its run
+        // stays unfinished, and the horizon it reached is already written.
+        logger.error(
+          { err: error, organizationId: id },
+          'retention purge failed',
+        );
+        failure ??= error instanceof Error ? error : new Error(String(error));
+      }
     }
+    if (failure) throw failure;
     return { status: 'done', runs };
   } finally {
     await db.execute(sql`select pg_advisory_unlock(${LOCK})`);

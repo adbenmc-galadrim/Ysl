@@ -144,9 +144,12 @@ export const pullChange = z.object({
 export type PullChange = z.infer<typeof pullChange>;
 
 /**
- * `reset` says the cursor was unusable (another generation, or beyond the
- * server's counter): the rows start from the beginning, and the device must
- * take them all. `cursor` is the next cursor once `next` is null.
+ * `reset` says the cursor was unusable (another generation, beyond the
+ * server's counter, or below the purge horizon): the rows start from the
+ * beginning, and the device must take them all and drop what does not come
+ * back. A later page may say it too, when a purge erased part of the range
+ * meanwhile: the read has started over from zero. `cursor` is the next
+ * cursor once `next` is null.
  */
 export const pullOutput = z.object({
   generation: z.uuid(),

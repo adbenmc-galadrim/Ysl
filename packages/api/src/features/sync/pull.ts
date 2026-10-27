@@ -100,6 +100,17 @@ export async function pull(
     range = { from: input.page.from, bound: input.page.bound };
     entity = input.page.entity;
     after = input.page.after;
+    // A purge may have erased a mark of this range since the first page:
+    // the device would never see it go, so the read starts over.
+    if (
+      range.from > 0 &&
+      range.from < (await purgeHorizon(db, organizationId))
+    ) {
+      reset = true;
+      range = { from: 0, bound: range.bound };
+      entity = 0;
+      after = null;
+    }
   } else {
     const { cursor } = input;
     const usable =
