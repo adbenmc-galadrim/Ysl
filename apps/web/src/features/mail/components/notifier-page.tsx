@@ -20,6 +20,7 @@ import { MAILERS } from '#/features/mail/mailer';
 import { drawPins } from '#/features/mail/pickup-code';
 import {
   groupByRecipient,
+  mailsAbout,
   recipientValues,
   type RecipientMail,
 } from '#/features/mail/recipients';
@@ -61,17 +62,7 @@ async function openSession(
     received,
     await loadRecipientContext(db, received),
   );
-  const target = received.find(({ id }) => id === parcelId);
-  const mails = parcelId
-    ? all.filter((mail) =>
-        mail.parcels.some(
-          (parcel) =>
-            parcel.id === parcelId ||
-            (!!target?.personId && parcel.personId === target.personId) ||
-            (!!target?.contactId && parcel.contactId === target.contactId),
-        ),
-      )
-    : all;
+  const mails = parcelId ? mailsAbout(all, parcelId) : all;
   const [pins, templates, pickup] = await Promise.all([
     drawPins(db, mails.length, { now }),
     listTemplates(db, userId),

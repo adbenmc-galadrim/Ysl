@@ -15,6 +15,7 @@ import {
 import { drawPins, pinHash } from '#/features/mail/pickup-code';
 import {
   groupByRecipient,
+  mailsAbout,
   recipientValues,
   type RecipientMail,
 } from '#/features/mail/recipients';
@@ -127,6 +128,30 @@ describe('one e-mail per recipient', () => {
       firstName: 'Marc',
       lastName: 'Marc Petit',
     });
+  });
+});
+
+describe('the mails of one parcel’s recipient', () => {
+  it('offers every mail of that person, an address typed on another parcel included', async () => {
+    await db.directoryPerson.put(nora);
+    const camille = personRow();
+    await db.directoryPerson.put(camille);
+    const opened = parcelRow({ personId: nora.id });
+    const forwarded = parcelRow({
+      personId: nora.id,
+      notificationEmail: 'assistante@example.com',
+    });
+    const other = parcelRow({ personId: camille.id });
+
+    const mails = mailsAbout(
+      await group([opened, forwarded, other]),
+      opened.id,
+    );
+
+    expect(mails.map((mail) => mail.address).sort()).toEqual([
+      'Nora.Haddad@example.com',
+      'assistante@example.com',
+    ]);
   });
 });
 

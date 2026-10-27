@@ -106,6 +106,29 @@ export function groupByRecipient(
   );
 }
 
+/**
+ * The mails of one parcel's recipient, opened from its record: every mail
+ * holding a parcel of the same person or contact, so one typed elsewhere
+ * on another of their parcels is offered too.
+ */
+export function mailsAbout(
+  mails: readonly RecipientMail[],
+  parcelId: string,
+): RecipientMail[] {
+  const target = mails
+    .flatMap((mail) => mail.parcels)
+    .find(({ id }) => id === parcelId);
+  if (!target) return [];
+  return mails.filter((mail) =>
+    mail.parcels.some(
+      (parcel) =>
+        parcel.id === parcelId ||
+        (!!target.personId && parcel.personId === target.personId) ||
+        (!!target.contactId && parcel.contactId === target.contactId),
+    ),
+  );
+}
+
 /** "UPS ···0622", as the desk names a parcel. */
 function parcelName(parcel: LocalParcel, t: TranslateFn): string {
   const carrier = carrierLabel(parcel, t);
