@@ -281,6 +281,7 @@ describe('readText — sender', () => {
       name: 'ATELIER TISSAGE NORD',
       id: null,
       level: 'none',
+      confidence: 0.4,
       source: 'ocr',
       account: null,
     });

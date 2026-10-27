@@ -15,7 +15,12 @@ import type {
   setting,
   SYNCED_ENTITIES,
 } from '@repo/db/schema';
-import type { ConfidenceLevel, SourceKind } from '@repo/contract/extract';
+import type {
+  ConfidenceLevel,
+  FieldFlag,
+  FieldSource,
+  SourceKind,
+} from '@repo/contract/extract';
 import type { RecipientKind } from '@repo/contract/recipient';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
@@ -155,6 +160,8 @@ export type DraftSender = {
   /** The `sender` row it names, when the dictionary knows it. */
   id: string | null;
   level: ConfidenceLevel;
+  /** The score behind `level`; absent on drafts stored before YSL-52. */
+  confidence?: number;
   source: SourceKind;
   account: { carrier: string; accountNumber: string } | null;
 };
@@ -202,6 +209,47 @@ export type DraftParcel = {
   recipient?: DraftRecipient | null;
   /** The agent picked the tracking among the suggestions (§4.4); absent before YSL-52. */
   trackingConfirmed?: boolean;
+  /** How long the codes and the text took to read, in ms; absent before YSL-52. */
+  durations?: DraftDurations;
+};
+
+export type DraftDurations = { codesMs?: number; ocrMs?: number };
+
+/** A field as the reader scored it: its value, how sure, why, and from where (§4.3). */
+export type ExtractionField = {
+  value: unknown;
+  confidence: number;
+  level: ConfidenceLevel;
+  flags: FieldFlag[];
+  sources: FieldSource[];
+};
+
+export type ExtractionFieldName =
+  | 'tracking'
+  | 'carrier'
+  | 'recipient'
+  | 'sender'
+  | 'pieces'
+  | 'weightKg'
+  | 'service'
+  | 'reference';
+
+/**
+ * What the reader made of a parcel's label (§8.2 `extraction`), kept on this
+ * device for the diagnostic (F22) and the batch review: every field with its
+ * sources and confidence, the codes as decoded, the printed text, the time
+ * each step took. Not synced: the server has no table for it yet.
+ */
+export type LocalExtraction = {
+  parcelId: string;
+  /** The rules that scored the fields (`EXTRACTION_VERSION`). */
+  version: number;
+  fields: Partial<Record<ExtractionFieldName, ExtractionField>>;
+  codes: DraftSymbol[];
+  ocrText: string | null;
+  durations: { codesMs: number | null; ocrMs: number | null };
+  provenance: 'device';
+  createdAt: Date;
 };
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */
@@ -233,6 +281,9 @@ const DRAFT_STORES = {
   draft_parcel: 'id, batchId, createdAt, trackingNorm',
 };
 
+/** Version 4 (YSL-52): what the reader made of each parcel's label. */
+const EXTRACTION_STORES = { extraction: 'parcelId, createdAt' };
+
 /** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
 const OUTBOX_V3 = {
   outbox: '++seq, &opId, [entity+entityId], clientTs, state',
@@ -258,6 +309,7 @@ export class CourrierDatabase extends Dexie {
   syncState!: Table<SyncStateEntry, string>;
   draftBatch!: Table<DraftBatch, string>;
   draftParcel!: Table<DraftParcel, string>;
+  extraction!: Table<LocalExtraction, string>;
 
   constructor(name = DATABASE_NAME) {
     super(name);
@@ -273,6 +325,7 @@ export class CourrierDatabase extends Dexie {
             op.state ??= 'queued';
           }),
       );
+    this.version(4).stores(EXTRACTION_STORES);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -290,6 +343,7 @@ export class CourrierDatabase extends Dexie {
     this.syncState = this.table('sync_state');
     this.draftBatch = this.table('draft_batch');
     this.draftParcel = this.table('draft_parcel');
+    this.extraction = this.table('extraction');
   }
 
   /** The Dexie table of a synced entity, by its server name. */

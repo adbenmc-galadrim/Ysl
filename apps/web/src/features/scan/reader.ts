@@ -81,6 +81,7 @@ export async function readDraft(
 ): Promise<Reading> {
   inFlight.add(draftId);
   let spare: ImageBitmap | undefined = clone;
+  const started = performance.now();
   try {
     let { symbols } = await queue.decode(bitmap);
     const missing = missingFormats(
@@ -112,6 +113,7 @@ export async function readDraft(
       pieces: piece && firstPiece(piece),
       sender,
       annex: annexOf(symbols, null),
+      durations: { codesMs: Math.round(performance.now() - started) },
     });
     return {
       draftId,

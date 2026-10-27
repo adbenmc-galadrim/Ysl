@@ -1,4 +1,5 @@
 import { newId } from '@repo/shared/id';
+import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
 import { commitLocal } from '#/features/db/commit';
 import type {
@@ -32,6 +33,7 @@ export type DraftPatch = Partial<
     | 'annex'
     | 'recipient'
     | 'trackingConfirmed'
+    | 'durations'
   >
 >;
 
@@ -283,7 +285,8 @@ function toParcel(
 /**
  * "Terminer": the batch and its parcels become server rows in one write
  * (queued for `sync.push`), with what the sure senders teach the dictionary
- * ahead of them (§4.8), the photos point at their parcel, the drafts go.
+ * ahead of them (§4.8), the photos point at their parcel, what the reader
+ * made of each label stays on this device (`extraction`), the drafts go.
  * An empty batch leaves nothing behind. Returns the parcel ids, in order.
  */
 export function finishBatch(
@@ -301,6 +304,7 @@ export function finishBatch(
       db.sender,
       db.senderAccount,
       db.outbox,
+      db.extraction,
     ],
     async () => {
       const open = await db.draftBatch.get(batchId);
@@ -334,6 +338,9 @@ export function finishBatch(
           ],
         },
         { now },
+      );
+      await db.extraction.bulkPut(
+        drafts.map((draft) => extractionOf(draft, now)),
       );
       for (const draft of drafts) {
         for (const photoId of photoIdsOf(draft)) {

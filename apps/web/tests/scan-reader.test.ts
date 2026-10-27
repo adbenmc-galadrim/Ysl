@@ -87,6 +87,7 @@ describe('readDraft', () => {
       name: 'Metalworks SpA',
       id: sender.id,
       level: 'sure',
+      confidence: 0.95,
       source: 'learned',
       account: { carrier: 'ups', accountNumber: 'E6344W' },
     };

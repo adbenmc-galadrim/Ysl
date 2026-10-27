@@ -242,6 +242,53 @@ describe('promotedStatus', () => {
 });
 
 describe('finishBatch', () => {
+  it('keeps what the reader made of each label, scored, on this device', async () => {
+    const batch = await openBatch(db, NOW);
+    const read = await addDraft(db, files, batch.id, photo(), NOW);
+    await updateDraft(db, read.id, {
+      reading: 'read',
+      carrier: 'DHL Express',
+      tracking: DHL,
+      trackingNorm: DHL,
+      readName: 'Camille Morel',
+      symbols: [{ format: 'Code128', text: DHL }],
+      ocrName: 'Camille Morel',
+      ocrLines: [
+        {
+          text: 'SHIP TO CAMILLE MOREL',
+          score: 0.9,
+          box: { x: 0, y: 0, width: 1, height: 1 },
+        },
+      ],
+      durations: { codesMs: 120, ocrMs: 900 },
+    });
+    const end = later(30);
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'a', now: end });
+
+    expect(await db.parcel.get(read.id)).toMatchObject({
+      status: 'a_completer',
+    });
+    expect(await db.extraction.get(read.id)).toMatchObject({
+      parcelId: read.id,
+      version: 1,
+      fields: {
+        tracking: {
+          value: DHL,
+          level: 'to-verify',
+          flags: ['unkeyed'],
+          sources: [{ kind: '1d', format: 'Code128' }],
+        },
+        recipient: { value: 'Camille Morel', level: 'sure' },
+      },
+      codes: [{ format: 'Code128', text: DHL }],
+      ocrText: 'SHIP TO CAMILLE MOREL',
+      durations: { codesMs: 120, ocrMs: 900 },
+      provenance: 'device',
+      createdAt: end,
+    });
+  });
+
   it('writes the weight, the service and the reference the label gave', async () => {
     const batch = await openBatch(db, NOW);
     const draft = await addDraft(db, files, batch.id, photo(), NOW);
