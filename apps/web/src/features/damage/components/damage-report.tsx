@@ -19,7 +19,9 @@ export function DamageReportView({ parcelId }: { parcelId: string }) {
   const record = useParcelRecord(parcelId);
 
   if (record === undefined) return <Screen>{null}</Screen>;
-  if (record === null) {
+  /* A reserve already set is lifted from the record first: setting another
+     over it would leave the history without the lifting. */
+  if (record === null || record.parcel.damagedAt) {
     return <Navigate to="/colis/$parcelId" params={{ parcelId }} replace />;
   }
 

@@ -1,4 +1,4 @@
-import type { DamageReason } from '@repo/contract/parcel-damage';
+import type { DamageInput } from '#/features/damage/report';
 import type { DraftAnnex } from '#/features/scan/annex';
 import type { OcrLine } from '@repo/ocr/worker';
 import type {
@@ -184,14 +184,7 @@ export type DraftRecipient = {
  * parcel's columns and event at « Terminer »; its photos wait meanwhile
  * with `parcelId: null`, like the label's.
  */
-export type DraftDamage = {
-  reason: DamageReason;
-  note: string;
-  notifyRecipient: boolean;
-  carrierReserve: boolean;
-  at: Date;
-  photoIds: string[];
-};
+export type DraftDamage = DamageInput & { at: Date; photoIds: string[] };
 
 /**
  * A parcel of the batch in progress: one tap, one photo, the reading when

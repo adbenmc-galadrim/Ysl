@@ -7,8 +7,9 @@ import { newId } from '@repo/shared/id';
 import type { DraftPhoto } from '#/features/batch/store';
 import { commitLocal } from '#/features/db/commit';
 import type { CourrierDatabase, LocalPhoto } from '#/features/db/schema';
+import type { ParcelEvent } from '@repo/contract/parcel-event';
 import type { PhotoFiles } from '#/features/photos/opfs';
-import { savePhoto } from '#/features/photos/store';
+import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { parcelEvent } from '#/features/parcels/events';
 import {
   liveParcel,
@@ -50,6 +51,21 @@ export async function saveDamagePhotos(
   return saved;
 }
 
+/** The `parcel.damaged` event of a reserve, as the history and the e-mail read it. */
+export function damagedEvent(
+  input: DamageInput,
+  photos: number,
+): Extract<ParcelEvent, { type: 'parcel.damaged' }> {
+  return {
+    type: 'parcel.damaged',
+    reason: input.reason,
+    note: input.note.trim() || null,
+    notifyRecipient: input.notifyRecipient,
+    carrierReserve: input.carrierReserve,
+    photos,
+  };
+}
+
 /**
  * Sets a reserve on a parcel (zone d'ombre « Colis abîmé »): its photos,
  * then the parcel's columns and the event that tells the history, in one
@@ -64,29 +80,28 @@ export async function reportDamage(
   { agentId, now = new Date() }: StatusChangeOptions,
 ): Promise<void> {
   const parcel = await liveParcel(db, parcelId);
-  await saveDamagePhotos(db, files, parcelId, photos, now);
-  const columns = damageColumns({ ...input, at: now });
-  await commitLocal(
-    db,
-    {
-      upserts: [
-        { entity: 'parcel', row: { ...parcel, ...columns } },
-        parcelEvent(
-          parcelId,
+  const saved = await saveDamagePhotos(db, files, parcelId, photos, now);
+  try {
+    await commitLocal(
+      db,
+      {
+        upserts: [
           {
-            type: 'parcel.damaged',
-            reason: input.reason,
-            note: columns.damageNote,
-            notifyRecipient: input.notifyRecipient,
-            carrierReserve: input.carrierReserve,
-            photos: photos.length,
+            entity: 'parcel',
+            row: { ...parcel, ...damageColumns({ ...input, at: now }) },
           },
-          { agentId, now },
-        ),
-      ],
-    },
-    { now },
-  );
+          parcelEvent(parcelId, damagedEvent(input, photos.length), {
+            agentId,
+            now,
+          }),
+        ],
+      },
+      { now },
+    );
+  } catch (error) {
+    for (const photo of saved) await deletePhoto(db, files, photo.id);
+    throw error;
+  }
 }
 
 /**

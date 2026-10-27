@@ -47,7 +47,7 @@ function photoOf(url: PhotoUrl, onOpen: () => void): FicheColisPhoto {
 }
 
 /** The reserve card: its photos when this iPhone has them, else where they are. */
-function damageOf(
+function damageCardOf(
   damage: RecordDamage,
   urls: { id: string; url: string }[] | undefined,
   onOpen: (url: string) => void,
@@ -252,7 +252,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       photo={photo}
       damage={
         damage &&
-        damageOf(damage, damageUrls, setViewingDamage, () => {
+        damageCardOf(damage, damageUrls, setViewingDamage, () => {
           setFailed(false);
           setConfirm('lift');
         })

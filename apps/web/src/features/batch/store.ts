@@ -2,7 +2,11 @@ import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
-import { type DamageInput, saveDamagePhotos } from '#/features/damage/report';
+import {
+  type DamageInput,
+  damagedEvent,
+  saveDamagePhotos,
+} from '#/features/damage/report';
 import { commitLocal } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -372,14 +376,7 @@ export function finishBatch(
                 ? [
                     parcelEvent(
                       id,
-                      {
-                        type: 'parcel.damaged',
-                        reason: damage.reason,
-                        note: damageColumns(damage).damageNote,
-                        notifyRecipient: damage.notifyRecipient,
-                        carrierReserve: damage.carrierReserve,
-                        photos: damage.photoIds.length,
-                      },
+                      damagedEvent(damage, damage.photoIds.length),
                       { agentId, now: damage.at },
                     ),
                   ]
