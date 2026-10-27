@@ -68,6 +68,11 @@ export function useLabelPhotoUrl(parcelId: string): PhotoUrl {
     async () => (await findLabelPhoto(db, parcelId))?.id ?? null,
     [parcelId],
   );
+  return usePhotoUrl(photoId);
+}
+
+/** An object URL of a photo of this iPhone; `undefined` while its id is read. */
+export function usePhotoUrl(photoId: string | null | undefined): PhotoUrl {
   const [url, setUrl] = useState<PhotoUrl>({ state: 'loading' });
   useEffect(() => {
     if (photoId === undefined) return;

@@ -195,3 +195,13 @@ export const SignalerUnDommage: Story = {
   name: 'Sans réserve, signaler un dommage',
   args: { ...ANotifier.args, onReportDamage: () => {} },
 };
+
+/** The label was read on this iPhone: « Voir ce qui a été lu » under the photo (YSL-59, no reference). */
+export const VoirCeQuiAEteLu: Story = {
+  name: 'Voir ce qui a été lu',
+  args: {
+    ...ANotifier.args,
+    photo: { src: LABEL_PHOTO_URL },
+    onShowReading: () => {},
+  },
+};

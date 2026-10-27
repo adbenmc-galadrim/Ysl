@@ -55,6 +55,32 @@ export type VerifierColisScreenProps = {
   source?: ReactNode;
 };
 
+/**
+ * The link under the question that opens the diagnostic on the field asked
+ * about (F22, §6.4), for the `source` room of every step.
+ */
+export function VerifierSourceLink({
+  onClick,
+  className,
+}: {
+  onClick?: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'mt-1 flex h-11 cursor-pointer items-center gap-2 self-start text-15 font-semibold text-blue outline-none focus-visible:underline',
+        className,
+      )}
+    >
+      <Icon name="info" size={18} />
+      D’où vient cette valeur ?
+    </button>
+  );
+}
+
 /** What every step of « Vérifier un colis » shares, whatever field it asks about. */
 type VerifyFrameProps = Pick<
   VerifierColisScreenProps,

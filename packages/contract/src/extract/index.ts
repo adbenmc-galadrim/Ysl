@@ -22,6 +22,8 @@ export { elsewhere, extractRecipient, MAILROOM } from './recipient';
 export type { RecipientRead } from './recipient';
 export { VOTE } from './carrier';
 export { adjust, canonical, capUnkeyed } from './fields';
+export { explainField, sourceRank } from './explain';
+export type { Adjustment, AdjustmentKind, Explanation } from './explain';
 export {
   ACCOUNT_CONFIRMED,
   accountKey,

@@ -75,3 +75,26 @@ export const TroisNiveauxClair: Story = {
     ),
   },
 };
+
+/** « Vérifier un colis » : each field opens the diagnostic (YSL-59, no reference). */
+export const DOuVientCetteValeur: Story = {
+  name: 'D’où vient cette valeur ?',
+  args: {
+    tone: 'light',
+    fields: [
+      { label: 'Transporteur', value: 'Colissimo', onExplain: () => {} },
+      {
+        label: 'Suivi',
+        value: '8J 02299 07975 0',
+        mono: true,
+        onExplain: () => {},
+      },
+      {
+        label: 'Destinataire',
+        value: 'L. Fontain ?',
+        status: 'warning',
+        onExplain: () => {},
+      },
+    ],
+  },
+};
