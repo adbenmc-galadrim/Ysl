@@ -248,6 +248,10 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
         : t(`history.status.${event.to === 'a_completer' ? 'recu' : event.to}`);
     case 'parcel.deleted':
       return t('history.deleted');
+    case 'parcel.notified':
+      return t(
+        event.kind === 'relance' ? 'history.reminded' : 'history.notified',
+      );
     case 'parcel.imported':
       if (event.flags.some(isTrackingFlag)) {
         return t('history.imported.flagged');
@@ -291,6 +295,7 @@ function history(
     const event = readParcelEvent(row.type, row.detail);
     if (!event) continue;
     if (event.type === 'parcel.status') reached.add(event.to);
+    if (event.type === 'parcel.notified') reached.add('notifie');
     const own = opsOf(row.id);
     const when = formatWhen(row.at, now, t);
     const rejected = own.find((op) => op.state === 'rejected');

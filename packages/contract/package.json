@@ -12,6 +12,7 @@
     "./extract": "./src/extract/index.ts",
     "./health": "./src/health.ts",
     "./imports": "./src/imports.ts",
+    "./mail": "./src/mail/index.ts",
     "./parcel-damage": "./src/parcel-damage.ts",
     "./parcel-event": "./src/parcel-event.ts",
     "./parcel-status": "./src/parcel-status.ts",

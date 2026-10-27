@@ -210,6 +210,8 @@ export const fr = {
   'history.deleted': 'Supprimé',
   'history.damaged': 'Réserve : {{reason}}',
   'history.damageLifted': 'Réserve levée : {{reason}}',
+  'history.notified': 'Notifié par e-mail',
+  'history.reminded': 'Relance envoyée',
   'history.imported': 'Importé de la v1',
   'history.imported.flagged': 'Importé de la v1, tracking douteux',
   'history.imported.status': 'Importé de la v1, statut inconnu',
