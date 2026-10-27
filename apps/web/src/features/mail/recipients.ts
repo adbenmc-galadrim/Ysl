@@ -148,6 +148,20 @@ export function mailsAbout(
   );
 }
 
+/**
+ * The mails of a saved batch: every recipient with a parcel in it, each
+ * mail still holding all their parcels to notify (D12: one mail per
+ * person, and one pickup code — a second mail would replace it).
+ */
+export function mailsOfBatch(
+  mails: readonly RecipientMail[],
+  batchId: string,
+): RecipientMail[] {
+  return mails.filter((mail) =>
+    mail.parcels.some((parcel) => parcel.batchId === batchId),
+  );
+}
+
 /** "UPS ···0622", as the desk names a parcel. */
 export function parcelName(parcel: LocalParcel, t: TranslateFn): string {
   const carrier = carrierLabel(parcel, t);
