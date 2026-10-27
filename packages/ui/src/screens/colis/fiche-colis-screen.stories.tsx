@@ -148,3 +148,50 @@ export const PhotoPleinEcran: Story = {
     ),
   },
 };
+
+/** A reserve was set at reception: the orange card, its photos, the way to lift it. */
+export const AvecReserve: Story = {
+  name: 'Avec une réserve',
+  args: {
+    ...ANotifier.args,
+    damage: {
+      title: 'Réserve : carton abîmé',
+      description:
+        'Coin enfoncé, emballage intérieur intact · Signalée à 10 h 44',
+      photos: [
+        { src: LABEL_PHOTO_URL, alt: 'Photo 1 du dommage' },
+        { src: LABEL_PHOTO_URL, alt: 'Photo 2 du dommage' },
+      ],
+      onLift: () => {},
+    },
+    photo: { src: LABEL_PHOTO_URL },
+    history: [
+      {
+        id: 'damage',
+        title: 'Réserve : carton abîmé',
+        detail: 'Aujourd’hui à 10 h 44',
+      },
+      { id: 'received', title: 'Reçu', detail: 'Aujourd’hui à 10 h 42' },
+    ],
+  },
+};
+
+/** The reserve came from another iPhone: its photos stayed there. */
+export const ReserveAutreIphone: Story = {
+  name: 'Réserve signalée sur un autre iPhone',
+  args: {
+    ...ANotifier.args,
+    damage: {
+      title: 'Réserve : mouillé',
+      description: 'Signalée hier à 17 h 05',
+      photosAbsent: '2 photos restées sur l’iPhone qui a signalé le dommage',
+      onLift: () => {},
+    },
+  },
+};
+
+/** No reserve yet: the grey button under the details opens « Signaler un dommage ». */
+export const SignalerUnDommage: Story = {
+  name: 'Sans réserve, signaler un dommage',
+  args: { ...ANotifier.args, onReportDamage: () => {} },
+};

@@ -259,6 +259,33 @@ describe('integrity', () => {
     );
   });
 
+  it('keep a reserve whole: a known reason, and its date with it', async () => {
+    await expectViolation(
+      db.insert(schema.parcel).values({ ...newParcel(), damage: 'ouvert' }),
+      'parcel_damage_check',
+    );
+    await expectViolation(
+      db
+        .insert(schema.parcel)
+        .values({ ...newParcel(), damagedAt: new Date() }),
+      'parcel_damage_check',
+    );
+    await expectViolation(
+      client.query(
+        `insert into parcel (id, organization_id, status, received_at, received_by, damage, damaged_at) values ('${newId()}', '${organizationId}', 'recu', now(), '${agentId}', 'perdu', now())`,
+      ),
+      'parcel_damage_check',
+    );
+    const reserved = { ...newParcel(), damage: 'mouille' as const };
+    await db
+      .insert(schema.parcel)
+      .values({ ...reserved, damagedAt: new Date() });
+    await db
+      .update(schema.parcel)
+      .set({ damage: null, damagedAt: null })
+      .where(eq(schema.parcel.id, reserved.id));
+  });
+
   it('refuse a handover of no parcel', async () => {
     await expectViolation(
       db.insert(schema.handover).values({

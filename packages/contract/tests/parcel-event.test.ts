@@ -18,6 +18,15 @@ describe('parcel events', () => {
       { type: 'parcel.deleted' },
       { type: 'parcel.imported', flags: ['tracking-rejected'] },
       { type: 'parcel.imported', flags: [] },
+      {
+        type: 'parcel.damaged',
+        reason: 'mouille',
+        note: null,
+        notifyRecipient: true,
+        carrierReserve: false,
+        photos: 2,
+      },
+      { type: 'parcel.damage_lifted', reason: 'mouille' },
     ];
     for (const event of events) expect(roundTrip(event)).toEqual(event);
   });
@@ -28,6 +37,9 @@ describe('parcel events', () => {
       readParcelEvent('parcel.status', { from: 'perdu', to: 'recu' }),
     ).toBeUndefined();
     expect(readParcelEvent('parcel.edited', 'poids')).toBeUndefined();
+    expect(
+      readParcelEvent('parcel.damage_lifted', { reason: 'perce' }),
+    ).toBeUndefined();
   });
 
   it('keeps the fields it knows of an edit, drops the others', () => {

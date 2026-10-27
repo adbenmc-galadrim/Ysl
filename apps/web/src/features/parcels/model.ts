@@ -1,3 +1,4 @@
+import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
 import type {
@@ -173,6 +174,17 @@ export function recipientOf(
   };
 }
 
+/** "Réserve · Carton abîmé": the parcel came damaged and the reserve stands. */
+export function damageLine(
+  parcel: LocalParcel,
+  t: TranslateFn,
+): string | undefined {
+  const damage = damageOf(parcel);
+  return damage
+    ? t('parcel.damage', { reason: DAMAGE_LABEL[damage.reason] })
+    : undefined;
+}
+
 /** The list row of a parcel drawn in `state`, wherever it is listed. */
 export function describeParcel(
   parcel: LocalParcel,
@@ -217,6 +229,7 @@ export function describeParcel(
     status: statusLine(parcel, state, now, t),
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,
+    damage: damageLine(parcel, t),
     tracking: parcel.tracking ?? undefined,
     sender: parcel.senderName ?? undefined,
     pieces: parcel.pieceTotal ?? undefined,

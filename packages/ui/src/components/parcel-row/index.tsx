@@ -63,6 +63,7 @@ export function ParcelRow({
         `${parcel.department}, ${parcel.carrier} ···${parcel.last4}`,
     },
   ];
+  if (parcel.damage) lines.push({ text: parcel.damage, tone: 'orange' });
   if (parcel.note) lines.push({ text: parcel.note, tone: look.line });
   if (parcel.reply)
     lines.push({ text: parcel.reply.text, tone: look.line, nowrap: true });

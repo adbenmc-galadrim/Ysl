@@ -1,6 +1,12 @@
+import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
+import {
+  type DamageInput,
+  damagedEvent,
+  saveDamagePhotos,
+} from '#/features/damage/report';
 import { commitLocal } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -10,6 +16,7 @@ import type {
   LocalParcel,
 } from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
+import { parcelEvent } from '#/features/parcels/events';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { serviceText } from '#/features/scan/annex';
 import { notifiable } from '#/features/scan/confidence';
@@ -172,7 +179,10 @@ export function countDrafts(
 
 /** The photos a draft holds: its own, then those of the pieces that joined it. */
 export function photoIdsOf(draft: DraftParcel): string[] {
-  const ids = draft.pieces?.photoIds ?? [];
+  const ids = [
+    ...(draft.pieces?.photoIds ?? []),
+    ...(draft.damage?.photoIds ?? []),
+  ];
   return draft.photoId ? [draft.photoId, ...ids] : ids;
 }
 
@@ -272,6 +282,7 @@ function toParcel(
     reference: draft.annex?.reference?.value ?? null,
     location: null,
     notes: null,
+    ...damageColumns(draft.damage ?? null),
     receivedAt: draft.createdAt,
     receivedBy: agentId,
     validatedAt: null,
@@ -280,6 +291,30 @@ function toParcel(
     deliveredAt: null,
     deliveredBy: null,
   };
+}
+
+/**
+ * « Signaler un dommage » on a parcel of the batch: its photos first, then
+ * the reserve on the draft, which « Terminer » turns into the parcel's.
+ * A second report replaces the first, its photos with it.
+ */
+export async function setDraftDamage(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  draftId: string,
+  input: DamageInput,
+  photos: readonly DraftPhoto[],
+  now = new Date(),
+): Promise<void> {
+  const draft = await db.draftParcel.get(draftId);
+  if (!draft) throw new Error(`No draft ${draftId}`);
+  const saved = await saveDamagePhotos(db, files, null, photos, now);
+  await db.draftParcel.update(draftId, {
+    damage: { ...input, at: now, photoIds: saved.map((photo) => photo.id) },
+  });
+  for (const id of draft.damage?.photoIds ?? []) {
+    await deletePhoto(db, files, id);
+  }
 }
 
 /**
@@ -303,6 +338,7 @@ export function finishBatch(
       db.parcel,
       db.sender,
       db.senderAccount,
+      db.event,
       db.outbox,
       db.extraction,
     ],
@@ -335,6 +371,17 @@ export function finishBatch(
             ...learned.upserts,
             { entity: 'batch', row: batch },
             ...parcels.map((row) => ({ entity: 'parcel' as const, row })),
+            ...drafts.flatMap(({ id, damage }) =>
+              damage
+                ? [
+                    parcelEvent(
+                      id,
+                      damagedEvent(damage, damage.photoIds.length),
+                      { agentId, now: damage.at },
+                    ),
+                  ]
+                : [],
+            ),
           ],
         },
         { now },

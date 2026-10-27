@@ -1,3 +1,4 @@
+import type { DamageInput } from '#/features/damage/report';
 import type { DraftAnnex } from '#/features/scan/annex';
 import type { OcrLine } from '@repo/ocr/worker';
 import type {
@@ -92,7 +93,7 @@ export type OutboxOp = {
   lastError: string | null;
 };
 
-export const PHOTO_KINDS = ['etiquette', 'signature'] as const;
+export const PHOTO_KINDS = ['etiquette', 'signature', 'dommage'] as const;
 export type PhotoKind = (typeof PHOTO_KINDS)[number];
 
 /** A photo kept on this iPhone only: the file lives in OPFS, never here. */
@@ -179,6 +180,13 @@ export type DraftRecipient = {
 };
 
 /**
+ * A reserve set on a parcel still in the batch (YSL-53): it becomes the
+ * parcel's columns and event at « Terminer »; its photos wait meanwhile
+ * with `parcelId: null`, like the label's.
+ */
+export type DraftDamage = DamageInput & { at: Date; photoIds: string[] };
+
+/**
  * A parcel of the batch in progress: one tap, one photo, the reading when
  * it lands. Local only, never queued; `finishBatch` turns it into a parcel.
  */
@@ -211,6 +219,8 @@ export type DraftParcel = {
   trackingConfirmed?: boolean;
   /** How long the codes and the text took to read, in ms; absent before YSL-52. */
   durations?: DraftDurations;
+  /** The reserve on the parcel's state; absent on drafts stored before YSL-53. */
+  damage?: DraftDamage | null;
 };
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };

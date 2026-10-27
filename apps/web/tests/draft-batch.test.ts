@@ -8,6 +8,7 @@ import {
   finishBatch,
   openBatch,
   promotedStatus,
+  setDraftDamage,
   typedDraft,
   addTypedDraft,
   undoLast,
@@ -395,6 +396,47 @@ describe('finishBatch', () => {
     ]);
     expect(await db.draftParcel.count()).toBe(0);
     expect(await currentBatch(db)).toBeUndefined();
+  });
+
+  it('carries a reserve set during the batch onto the parcel, its event and photos', async () => {
+    const batch = await openBatch(db, NOW);
+    const damaged = await addDraft(db, files, batch.id, photo(), NOW);
+    const input = {
+      reason: 'ouvert' as const,
+      note: 'Scotch arraché',
+      notifyRecipient: true,
+      carrierReserve: true,
+    };
+    await setDraftDamage(db, files, damaged.id, input, [photo()], later(5));
+    await setDraftDamage(db, files, damaged.id, input, [photo()], later(10));
+    const end = later(90);
+
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1', now: end });
+
+    expect(await db.parcel.get(damaged.id)).toMatchObject({
+      damage: 'ouvert',
+      damageNote: 'Scotch arraché',
+      damageNotify: true,
+      damageCarrierReserve: true,
+      damagedAt: later(10),
+    });
+    const [event] = await db.event.toArray();
+    expect(event).toMatchObject({
+      entityId: damaged.id,
+      type: 'parcel.damaged',
+      at: later(10),
+      actorId: 'agent-1',
+      detail: { reason: 'ouvert', photos: 1 },
+    });
+    const photos = await db.photo
+      .where('parcelId')
+      .equals(damaged.id)
+      .toArray();
+    expect(photos.map((row) => row.kind).sort()).toEqual([
+      'dommage',
+      'etiquette',
+    ]);
+    expect(files.files.size).toBe(2);
   });
 
   it('writes the sender on the parcel when it is sure or to verify, not a guess', async () => {

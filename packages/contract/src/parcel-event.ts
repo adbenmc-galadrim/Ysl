@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { IMPORT_FLAGS, type ImportFlag } from './imports';
+import { DAMAGE_REASONS, type DamageReason } from './parcel-damage';
 import { PARCEL_STATUSES, type ParcelStatus } from './parcel-status';
 
 /** The `entity` of the `event` rows that tell a parcel's story. */
@@ -31,9 +32,20 @@ export type ParcelEvent =
   | { type: 'parcel.edited'; fields: ParcelEditField[] }
   | { type: 'parcel.status'; from: ParcelStatus; to: ParcelStatus }
   | { type: 'parcel.deleted' }
-  | { type: 'parcel.imported'; flags: ImportFlag[] };
+  | { type: 'parcel.imported'; flags: ImportFlag[] }
+  | {
+      type: 'parcel.damaged';
+      reason: DamageReason;
+      note: string | null;
+      notifyRecipient: boolean;
+      carrierReserve: boolean;
+      /** Photos taken on the iPhone that reported it; they stay there (D8). */
+      photos: number;
+    }
+  | { type: 'parcel.damage_lifted'; reason: DamageReason };
 
 const status = z.enum(PARCEL_STATUSES);
+const reason = z.enum(DAMAGE_REASONS);
 
 const details = {
   'parcel.edited': z.object({
@@ -52,6 +64,17 @@ const details = {
         IMPORT_FLAGS.filter((flag) => flags.includes(flag)),
       ),
   }),
+  'parcel.damaged': z.object({
+    reason,
+    note: z
+      .string()
+      .nullish()
+      .transform((note) => note ?? null),
+    notifyRecipient: z.boolean().catch(false),
+    carrierReserve: z.boolean().catch(false),
+    photos: z.number().int().nonnegative().catch(0),
+  }),
+  'parcel.damage_lifted': z.object({ reason }),
 } as const;
 
 /** The `type` and `detail` columns of an event row. */
@@ -68,6 +91,12 @@ export function eventColumns(event: ParcelEvent): {
       return { type: event.type, detail: null };
     case 'parcel.imported':
       return { type: event.type, detail: { flags: event.flags } };
+    case 'parcel.damaged': {
+      const { type, ...detail } = event;
+      return { type, detail };
+    }
+    case 'parcel.damage_lifted':
+      return { type: event.type, detail: { reason: event.reason } };
   }
 }
 
@@ -96,6 +125,14 @@ export function readParcelEvent(
     case 'parcel.imported': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, flags: read.data.flags } : undefined;
+    }
+    case 'parcel.damaged': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.damage_lifted': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, reason: read.data.reason } : undefined;
     }
     default:
       return undefined;

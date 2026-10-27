@@ -3,6 +3,7 @@ import {
   Button,
   EmptyState,
   FicheColisScreen,
+  type FicheColisDamage,
   type FicheColisPhoto,
   PhotoViewer,
   Screen,
@@ -11,6 +12,8 @@ import {
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
+import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
 import {
   type PhotoUrl,
@@ -21,6 +24,7 @@ import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import {
   describeRecord,
   type RecordAction,
+  type RecordDamage,
   stepBackLabel,
 } from '#/features/parcels/record';
 import { changeParcelStatus, deleteParcel } from '#/features/parcels/status';
@@ -29,7 +33,7 @@ import { useSync } from '#/features/sync/use-sync';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-type Confirm = 'delete' | Extract<RecordAction, { kind: 'stepBack' }>;
+type Confirm = 'delete' | 'lift' | Extract<RecordAction, { kind: 'stepBack' }>;
 
 function photoOf(url: PhotoUrl, onOpen: () => void): FicheColisPhoto {
   switch (url.state) {
@@ -40,6 +44,32 @@ function photoOf(url: PhotoUrl, onOpen: () => void): FicheColisPhoto {
     case 'ready':
       return { src: url.url, alt: t('record.photo.alt'), onOpen };
   }
+}
+
+/** The reserve card: its photos when this iPhone has them, else where they are. */
+function damageCardOf(
+  damage: RecordDamage,
+  urls: { id: string; url: string }[] | undefined,
+  onOpen: (url: string) => void,
+  onLift: () => void,
+): FicheColisDamage {
+  const here = urls ?? [];
+  return {
+    title: damage.title,
+    description: damage.description,
+    photos: here.map(({ url }, index) => ({
+      src: url,
+      alt: t('record.damage.photo.alt', { n: index + 1 }),
+      onOpen: () => onOpen(url),
+    })),
+    photosAbsent:
+      urls && here.length === 0 && damage.photos > 0
+        ? damage.photos === 1
+          ? t('record.damage.photos.absent.one')
+          : t('record.damage.photos.absent.other', { count: damage.photos })
+        : undefined,
+    onLift,
+  };
 }
 
 const UNDO_DESCRIPTION: Record<'notifie' | 'retourne', string> = {
@@ -61,6 +91,9 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const record = useParcelRecord(parcelId);
   const [viewing, setViewing] = useState(false);
   const photoUrl = useLabelPhotoUrl(parcelId);
+  const [viewingDamage, setViewingDamage] = useState<string | null>(null);
+  const damagedAt = record?.parcel.damagedAt ?? null;
+  const damageUrls = useDamagePhotoUrls(parcelId, damagedAt);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -122,7 +155,34 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
 
   const sheet =
     confirm &&
-    (confirm === 'delete' ? (
+    (confirm === 'lift' ? (
+      <Sheet
+        fixed
+        title={t('record.lift.title')}
+        description={
+          failed ? t('record.error.write') : t('record.lift.description')
+        }
+        className="pb-[calc(var(--safe-bottom)+16px)]"
+        onDismiss={() => setConfirm(null)}
+      >
+        <Button
+          block
+          disabled={busy}
+          className="mt-6"
+          onClick={() => void run(() => liftDamage(db, parcelId, options))}
+        >
+          {t('record.lift.confirm')}
+        </Button>
+        <Button
+          variant="secondary"
+          block
+          className="mt-3"
+          onClick={() => setConfirm(null)}
+        >
+          {t('record.cancel')}
+        </Button>
+      </Sheet>
+    ) : confirm === 'delete' ? (
       <Sheet
         fixed
         title={t('record.delete.title')}
@@ -185,11 +245,21 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       </Sheet>
     ));
 
-  const action = view.action;
+  const { action, damage, ...shown } = view;
   return (
     <FicheColisScreen
-      {...view}
+      {...shown}
       photo={photo}
+      damage={
+        damage &&
+        damageCardOf(damage, damageUrls, setViewingDamage, () => {
+          setFailed(false);
+          setConfirm('lift');
+        })
+      }
+      onReportDamage={() =>
+        void navigate({ to: '/colis/$parcelId/dommage', params: { parcelId } })
+      }
       primaryAction={
         action?.kind === 'complete' ? t('record.action.complete') : undefined
       }
@@ -220,6 +290,18 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               alt={t('record.photo.alt')}
               closeLabel={t('record.photo.close')}
               onClose={() => setViewing(false)}
+            />
+          )}
+          {viewingDamage && (
+            <PhotoViewer
+              src={viewingDamage}
+              alt={t('record.damage.photo.alt', {
+                n:
+                  (damageUrls?.findIndex(({ url }) => url === viewingDamage) ??
+                    0) + 1,
+              })}
+              closeLabel={t('record.photo.close')}
+              onClose={() => setViewingDamage(null)}
             />
           )}
         </>
