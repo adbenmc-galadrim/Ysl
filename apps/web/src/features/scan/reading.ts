@@ -348,7 +348,8 @@ export function checkFields(
       ? levelField(
           carrierLabel,
           draft.carrier,
-          extraction.carrier &&
+          !draft.trackingConfirmed &&
+            extraction.carrier &&
             carrierName(extraction.carrier.value, t) === draft.carrier
             ? extraction.carrier.level
             : 'sure',

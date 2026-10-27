@@ -221,6 +221,8 @@ export type DraftParcel = {
   durations?: DraftDurations;
   /** The reserve on the parcel's state; absent on drafts stored before YSL-53. */
   damage?: DraftDamage | null;
+  /** « Passer » in the batch review: saved « À compléter » as it stands (YSL-58). */
+  reviewSkipped?: boolean;
 };
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };

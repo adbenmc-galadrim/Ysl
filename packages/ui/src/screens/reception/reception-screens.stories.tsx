@@ -12,7 +12,9 @@ import { LotEnregistreScreen } from '#screens/reception/lot-enregistre-screen';
 import { RevueLotScreen } from '#screens/reception/revue-lot-screen';
 import {
   type RecipientOption,
+  VerifierChampScreen,
   VerifierColisScreen,
+  VerifierSuiviScreen,
 } from '#screens/reception/verifier-colis-screen';
 
 /**
@@ -82,8 +84,7 @@ export const VerifierUnColis: Story = {
 export const ChoisirLeDestinataire: Story = {
   name: 'Choisir le destinataire',
   parameters: {
-    reference:
-      '04-reception/reception-scan-en-rafale--choisir-le-destinataire',
+    reference: '04-reception/reception-scan-en-rafale--choisir-le-destinataire',
   },
   render: () => (
     <ChoisirDestinataireScreen
@@ -118,45 +119,92 @@ export const VerifierPersonneInconnue: Story = {
   ),
 };
 
-/**
- * §4.4 on the parcel check: a DHL Express number no check digit vouches
- * for is « à vérifier »; a number of unknown shape stays empty, its
- * reading offered as a chip to pick.
- */
-export const VerifierNiveaux: Story = {
-  name: 'Vérifier un colis, suivi incertain',
+/** A parcel passed waits « À compléter », between the doubts and the ready ones. */
+export const RevueDuLotPasse: Story = {
+  name: 'Revue du lot, colis passé',
   render: () => (
-    <VerifierColisScreen
+    <RevueLotScreen
+      count={RECEPTION_BATCH.count}
+      summary="12 colis lus. Un demande votre avis, un reste à compléter, les autres sont prêts."
+      toCheck={RECEPTION_BATCH.toCheck.slice(1)}
+      toComplete={RECEPTION_BATCH.toCheck.slice(0, 1)}
+      ready={RECEPTION_BATCH.ready}
+      readyCount={RECEPTION_BATCH.readyCount}
+    />
+  ),
+};
+
+const SETTLED_FIELDS = [
+  { label: 'Transporteur', value: 'DHL Express' },
+  { label: 'Destinataire', value: DIRECTORY.lea.name },
+];
+
+/**
+ * §4.4, one field at a time: a DHL Express number no check digit vouches
+ * for comes chosen, confirmed in one tap against the photo.
+ */
+export const VerifierSuivi: Story = {
+  name: 'Vérifier un colis, suivi à vérifier',
+  render: () => (
+    <VerifierSuiviScreen
       step={{ index: 1, total: 2 }}
       label={{
-        heading: UNCERTAIN_LABEL.heading,
-        name: UNCERTAIN_LABEL.name,
+        heading: 'WAYBILL',
+        name: '54 1333 7112',
         address: UNCERTAIN_LABEL.address,
-        glare: { left: 106, width: 90 },
       }}
-      readName={UNCERTAIN_LABEL.name}
-      candidates={[DIRECTORY.lea, DIRECTORY.lise, DIRECTORY.louis].map(option)}
-      selectedId={DIRECTORY.lea.id}
+      level="to-verify"
+      choices={[{ value: '5413337112', carrier: 'DHL Express' }]}
+      selected="5413337112"
+      fields={SETTLED_FIELDS}
+    />
+  ),
+};
+
+/** Below 0,60 nothing is chosen: the best readings wait for a tap. */
+export const VerifierSuiviIncertain: Story = {
+  name: 'Vérifier un colis, suivi sous 0,60',
+  render: () => (
+    <VerifierSuiviScreen
+      step={{ index: 2, total: 2 }}
+      label={{
+        heading: 'WAYBILL',
+        name: '54 1333 711?',
+        address: UNCERTAIN_LABEL.address,
+        glare: { left: 150, width: 60 },
+      }}
+      level="none"
+      choices={[
+        { value: '5413337112', carrier: 'DHL Express' },
+        { value: '5413337117', carrier: 'DHL Express' },
+      ]}
+      fields={[{ label: 'Destinataire', value: DIRECTORY.lea.name }]}
+      submitLabel="Valider"
+    />
+  ),
+};
+
+/** An annex field « à vérifier », after the number and the recipient. */
+export const VerifierChamp: Story = {
+  name: 'Vérifier un colis, poids à vérifier',
+  render: () => (
+    <VerifierChampScreen
+      step={{ index: 1, total: 1 }}
+      label={{
+        heading: 'Destinataire :',
+        name: 'LÉA FONTAINE',
+        address: ['WEIGHT 2.4 KG', '75007 PARIS'],
+      }}
+      question="Le poids est-il juste ?"
+      fieldLabel="Poids"
+      read="2,4 kg"
+      value="2,4"
+      unit="kg"
+      inputMode="decimal"
+      submitLabel="Garder"
       fields={[
-        { label: 'Transporteur', value: 'DHL Express ?', status: 'warning' },
-        {
-          label: 'Suivi',
-          value: '',
-          mono: true,
-          status: 'error',
-          suggestions: [
-            {
-              label: '5413337112',
-              onPick: () => {},
-              pickLabel: 'Choisir 5413337112',
-            },
-            {
-              label: '5413337117',
-              onPick: () => {},
-              pickLabel: 'Choisir 5413337117',
-            },
-          ],
-        },
+        ...SETTLED_FIELDS,
+        { label: 'Suivi', value: '5413337112', mono: true },
       ]}
     />
   ),

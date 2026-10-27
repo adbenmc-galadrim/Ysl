@@ -14,7 +14,11 @@ import {
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
-import type { CourrierDatabase, DraftParcel } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  DraftParcel,
+  DraftRecipient,
+} from '#/features/db/schema';
 import {
   NOW,
   openTestDatabase,
@@ -22,6 +26,13 @@ import {
   senderRow,
 } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
+
+const CAMILLE: DraftRecipient = {
+  kind: 'person',
+  id: 'p-camille',
+  name: 'Camille Morel',
+  source: 'agent',
+};
 
 const photo = () => ({
   blob: new Blob(['etiquette'], { type: 'image/jpeg' }),
@@ -186,8 +197,13 @@ const UPS = '1ZE6344W0499230622';
 const DHL = '5413337112';
 
 describe('promotedStatus', () => {
-  it('needs a carrier, a number and a name to count as received', () => {
-    const full = { carrier: 'UPS', tracking: UPS, readName: 'Camille Morel' };
+  it('needs a carrier, a number and someone to tell to count as received', () => {
+    const full = {
+      carrier: 'UPS',
+      tracking: UPS,
+      readName: 'Camille Morel',
+      recipient: CAMILLE,
+    };
     expect(promotedStatus(draft(full))).toBe('recu');
     expect(promotedStatus(draft({ ...full, tracking: null }))).toBe(
       'a_completer',
@@ -195,9 +211,17 @@ describe('promotedStatus', () => {
     expect(promotedStatus(draft({ ...full, carrier: null }))).toBe(
       'a_completer',
     );
-    expect(promotedStatus(draft({ ...full, readName: null }))).toBe(
+    expect(promotedStatus(draft({ ...full, recipient: null }))).toBe(
       'a_completer',
     );
+  });
+
+  it('does not notify a name a code prints with no card settled', () => {
+    expect(
+      promotedStatus(
+        draft({ carrier: 'UPS', tracking: UPS, readName: 'SAINT LAURENT' }),
+      ),
+    ).toBe('a_completer');
   });
 
   it('does not trust the name the OCR guessed', () => {
@@ -214,6 +238,7 @@ describe('promotedStatus', () => {
       tracking: DHL,
       trackingNorm: DHL,
       readName: 'Camille Morel',
+      recipient: CAMILLE,
       symbols: [{ format: 'Code128', text: DHL }],
     };
     expect(promotedStatus(draft(read))).toBe('a_completer');
@@ -343,6 +368,7 @@ describe('finishBatch', () => {
       tracking: '1ZE6344W0499230622',
       trackingNorm: '1ZE6344W0499230622',
       readName: 'Camille Morel',
+      recipient: CAMILLE,
     });
     const unnamed = await addDraft(db, files, batch.id, photo(), later(1));
     await updateDraft(db, unnamed.id, {

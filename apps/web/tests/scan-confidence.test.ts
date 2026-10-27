@@ -1,12 +1,7 @@
 import { EOT, GS, RS } from '@repo/contract/codes';
 import { describe, expect, it } from 'vitest';
 import type { DraftParcel } from '#/features/db/schema';
-import {
-  confirmsTracking,
-  draftFields,
-  notifiable,
-  trackingToCheck,
-} from '#/features/scan/confidence';
+import { draftFields, notifiable } from '#/features/scan/confidence';
 
 const UPS = '1ZE6344W0499230622';
 
@@ -72,35 +67,18 @@ describe('draftFields', () => {
       flags: ['conflict'],
     });
     expect(notifiable(read)).toBe(false);
-    expect(notifiable({ ...read, ocrName: null, ocrLines: [] })).toBe(true);
-  });
-});
-
-describe('trackingToCheck and confirmsTracking', () => {
-  const DHL = '5413337112';
-  const unsure = draft({
-    carrier: 'DHL Express',
-    tracking: DHL,
-    trackingNorm: DHL,
-    symbols: [{ format: 'Code128', text: DHL }],
-  });
-
-  it('asks the agent about a number below « sûr », not about a keyed one', () => {
-    expect(trackingToCheck(unsure)).toBe(true);
-    expect(trackingToCheck(draft({}))).toBe(false);
-    expect(trackingToCheck({ ...unsure, trackingConfirmed: true })).toBe(false);
-  });
-
-  it('confirms on « Valider » only a number shown « à vérifier »', () => {
-    expect(confirmsTracking(unsure)).toBe(true);
     expect(
-      confirmsTracking(
-        draft({
-          tracking: 'AB1234567',
-          trackingNorm: 'AB1234567',
-          symbols: [{ format: 'Code128', text: 'AB1234567' }],
-        }),
-      ),
-    ).toBe(false);
+      notifiable({
+        ...read,
+        ocrName: null,
+        ocrLines: [],
+        recipient: {
+          kind: 'person',
+          id: 'p',
+          name: 'Marie Curie',
+          source: 'code',
+        },
+      }),
+    ).toBe(true);
   });
 });

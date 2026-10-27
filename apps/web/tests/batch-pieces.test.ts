@@ -17,11 +17,18 @@ import {
   undoLast,
   updateDraft,
 } from '#/features/batch/store';
-import type { CourrierDatabase } from '#/features/db/schema';
+import type { CourrierDatabase, DraftRecipient } from '#/features/db/schema';
 import { NOW, openTestDatabase } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 /** A UPS MaxiCode: pieces and shipment id where the carrier prints them. */
+const CAMILLE: DraftRecipient = {
+  kind: 'person',
+  id: 'p-camille',
+  name: 'Camille Morel',
+  source: 'agent',
+};
+
 const maxicode = (pieces: string, shipmentId = '') =>
   `[)>${RS}01${GS}9675007${GS}250${GS}004${GS}1Z99230623${GS}UPSN${GS}E6344W${GS}296${GS}${shipmentId}${GS}${pieces}${GS}3${GS}N${GS}${GS}PARIS${RS}${EOT}`;
 
@@ -180,6 +187,7 @@ describe('the pieces follow their parcel', () => {
       tracking: '1ZE6344W0499230622',
       trackingNorm: '1ZE6344W0499230622',
       readName: 'Camille Morel',
+      recipient: CAMILLE,
       pieces: firstPiece({ index: 1, total: 3, key: 'ups:SHIP42' }),
     });
     const piece = await addDraft(db, files, batch.id, photo(), later(5));

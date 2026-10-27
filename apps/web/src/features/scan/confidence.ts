@@ -120,31 +120,12 @@ export function draftFields(
 
 /**
  * F26: a parcel is notified only when its tracking and its recipient are
- * sure (≥ 0,90) or confirmed by the agent; otherwise it waits, « À compléter ».
+ * sure (≥ 0,90) or confirmed by the agent, and someone is there to tell: a
+ * card of the directory or a contact settled. A name a code prints alone
+ * may be a company's; otherwise it waits, « À compléter ».
  */
 export function notifiable(draft: Readable & Pick<DraftParcel, 'carrier'>) {
-  if (!draft.carrier) return false;
+  if (!draft.carrier || !draft.recipient) return false;
   const { tracking, recipient } = draftFields(draft);
   return tracking?.level === 'sure' && recipient?.level === 'sure';
-}
-
-/**
- * A number the agent has to look at before the parcel can be notified: kept
- * on the draft, but below « sûr » and not yet confirmed (§4.4, F26).
- */
-export function trackingToCheck(draft: Readable): boolean {
-  const { tracking } = draftFields(draft);
-  return (
-    (draft.trackingNorm ?? draft.tracking) !== null &&
-    tracking !== null &&
-    tracking.level !== 'sure'
-  );
-}
-
-/**
- * « Valider » on « Vérifier un colis » confirms the number shown « à
- * vérifier » beside the photo; a number left empty waits for a pick.
- */
-export function confirmsTracking(draft: Readable): boolean {
-  return draftFields(draft).tracking?.level === 'to-verify';
 }

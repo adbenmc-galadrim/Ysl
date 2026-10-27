@@ -88,17 +88,28 @@ export const RECEPTION_BATCH = {
   /** Parcels the scanner flagged, with what it could read. */
   toCheck: [
     {
-      parcel: PARCELS.unknown,
+      id: PARCELS.unknown.id,
+      name: null,
       issue: 'Destinataire incertain',
       lines: ['Colissimo ···7505', 'Lu : « L. FONTAIN »'],
     },
     {
-      parcel: PARCELS.camille,
+      id: PARCELS.camille.id,
+      name: PARCELS.camille.recipient,
       issue: 'Numéro de suivi incomplet',
       lines: ['UPS 1Z E63 44W 04 99…'],
     },
   ],
   /** The first ready ones; the screen shows four of the ten. */
-  ready: [PARCELS.hugo, PARCELS.nora, PAUL_DPD, PARCELS.ines],
+  ready: ([PARCELS.hugo, PARCELS.nora, PAUL_DPD, PARCELS.ines] as Parcel[]).map(
+    (parcel) => ({
+      id: parcel.id,
+      name: parcel.recipient,
+      lines: [
+        parcel.detail ??
+          `${parcel.department}, ${parcel.carrier} ···${parcel.last4}`,
+      ],
+    }),
+  ),
   readyCount: 10,
 };

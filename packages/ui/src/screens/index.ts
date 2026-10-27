@@ -12,6 +12,7 @@ export * from '#screens/demarrage/offline-prep-screen';
 export * from '#screens/pilotage/donnees-screen';
 export * from '#screens/pilotage/export-screen';
 export * from '#screens/reception/choisir-destinataire-screen';
+export * from '#screens/reception/revue-lot-screen';
 export * from '#screens/reception/scan-screen';
 export * from '#screens/reception/verifier-colis-screen';
 export * from '#screens/reception-zones/colis-abime-screen';
