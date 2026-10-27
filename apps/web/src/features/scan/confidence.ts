@@ -142,11 +142,3 @@ export function trackingToCheck(draft: Readable): boolean {
     tracking.level !== 'sure'
   );
 }
-
-/**
- * « Valider » on « Vérifier un colis » confirms the number shown « à
- * vérifier » beside the photo; a number left empty waits for a pick.
- */
-export function confirmsTracking(draft: Readable): boolean {
-  return draftFields(draft).tracking?.level === 'to-verify';
-}

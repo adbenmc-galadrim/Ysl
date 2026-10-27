@@ -714,9 +714,8 @@ function ScanPage() {
   };
 
   /**
-   * "Terminer": once every reading has landed, the parcels whose recipient
-   * the scanner could not settle go through « Vérifier un colis » (F18),
-   * which promotes the batch after the last one.
+   * "Terminer": once every reading has landed, the batch goes to its review
+   * (F25), which saves it.
    */
   const onDone = async () => {
     if (finishing.current) return;
@@ -724,7 +723,7 @@ function ScanPage() {
     dropHeldDraft();
     try {
       await settled();
-      if (view?.batch) await navigate({ to: '/verifier' });
+      if (view?.batch) await navigate({ to: '/revue' });
       else close();
     } finally {
       finishing.current = false;

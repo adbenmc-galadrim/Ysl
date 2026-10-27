@@ -2,7 +2,6 @@ import { EOT, GS, RS } from '@repo/contract/codes';
 import { describe, expect, it } from 'vitest';
 import type { DraftParcel } from '#/features/db/schema';
 import {
-  confirmsTracking,
   draftFields,
   notifiable,
   trackingToCheck,
@@ -88,7 +87,7 @@ describe('draftFields', () => {
   });
 });
 
-describe('trackingToCheck and confirmsTracking', () => {
+describe('trackingToCheck', () => {
   const DHL = '5413337112';
   const unsure = draft({
     carrier: 'DHL Express',
@@ -101,18 +100,5 @@ describe('trackingToCheck and confirmsTracking', () => {
     expect(trackingToCheck(unsure)).toBe(true);
     expect(trackingToCheck(draft({}))).toBe(false);
     expect(trackingToCheck({ ...unsure, trackingConfirmed: true })).toBe(false);
-  });
-
-  it('confirms on « Valider » only a number shown « à vérifier »', () => {
-    expect(confirmsTracking(unsure)).toBe(true);
-    expect(
-      confirmsTracking(
-        draft({
-          tracking: 'AB1234567',
-          trackingNorm: 'AB1234567',
-          symbols: [{ format: 'Code128', text: 'AB1234567' }],
-        }),
-      ),
-    ).toBe(false);
   });
 });

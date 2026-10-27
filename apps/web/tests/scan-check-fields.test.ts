@@ -56,6 +56,20 @@ describe('checkFields — « Vérifier un colis »', () => {
     });
   });
 
+  it('takes the carrier as sure once the agent confirmed the number', () => {
+    const fields = checkFields(
+      draft({
+        carrier: 'DHL Express',
+        tracking: DHL,
+        trackingNorm: DHL,
+        symbols: [{ format: 'Code128', text: DHL }],
+        trackingConfirmed: true,
+      }),
+      t,
+    );
+    expect(fields[0]).toEqual({ label: 'Transporteur', value: 'DHL Express' });
+  });
+
   it('keeps a carrier the codes did not vote for plain', () => {
     const fields = checkFields(
       draft({
