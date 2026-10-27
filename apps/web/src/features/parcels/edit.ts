@@ -346,11 +346,12 @@ export async function saveParcelEdit(
         : { personId: null, contactId: null };
   const tracking = normalizeTracking(edit.tracking) || null;
   const senderName = text(edit.sender);
-  const learned =
+  const renamed =
     senderName !== null &&
-    normalizeName(senderName) !== normalizeName(parcel.senderName ?? '')
-      ? await correctedSender(db, parcelId, senderName, now)
-      : null;
+    normalizeName(senderName) !== normalizeName(parcel.senderName ?? '');
+  const learned = renamed
+    ? await correctedSender(db, parcelId, senderName, now)
+    : null;
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
@@ -359,9 +360,11 @@ export async function saveParcelEdit(
     carrier: text(edit.carrier),
     senderName,
     senderId:
-      senderName === parcel.senderName
-        ? parcel.senderId
-        : (learned?.senderId ?? null),
+      senderName === null
+        ? null
+        : renamed
+          ? (learned?.senderId ?? null)
+          : parcel.senderId,
     ...pieces(parcel, edit),
     notes: text(edit.notes),
     notificationEmail: normalizeEmail(edit.notificationEmail) || null,

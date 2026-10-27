@@ -331,3 +331,26 @@ describe('a sender corrected on the parcel’s sheet', () => {
     });
   });
 });
+
+describe('a sender respelled on the parcel’s sheet', () => {
+  it('keeps its row and teaches nothing for a change of case or accents', async () => {
+    const known = senderRow({ displayName: 'Amazon', nameNorm: 'amazon' });
+    await db.sender.add(known);
+    const parcel = parcelRow({ senderName: 'Amazon', senderId: known.id });
+    await db.parcel.put(parcel);
+
+    await saveParcelEdit(
+      db,
+      parcel.id,
+      { ...editOf(parcel), sender: 'AMAZON' },
+      { agentId: 'agent-1', now: NOW },
+    );
+
+    expect(await db.parcel.get(parcel.id)).toMatchObject({
+      senderName: 'AMAZON',
+      senderId: known.id,
+    });
+    expect(await db.sender.get(known.id)).toMatchObject({ seenCount: 1 });
+    expect(await db.sender.count()).toBe(1);
+  });
+});
