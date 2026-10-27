@@ -17,7 +17,8 @@
     "PUBLIC_APP_NAME",
     "PUBLIC_SERVER_URL",
     "PUBLIC_APP_URL",
-    "LOG_LEVEL"
+    "LOG_LEVEL",
+    "PURGE_INTERVAL_MINUTES"
   ],
   "globalPassThroughEnv": ["GITHUB_STEP_SUMMARY", "LAYOUT_BROWSER"],
   "tasks": {

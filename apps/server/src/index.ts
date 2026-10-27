@@ -1,9 +1,9 @@
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { trpcServer } from '@hono/trpc-server';
-import { appRouter, createTRPCContext } from '@repo/api';
+import { appRouter, createTRPCContext, runPurge } from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
-import { closeDb, pingDb } from '@repo/db';
+import { closeDb, pingDb, withConnection } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
@@ -11,6 +11,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { clientIp } from '#client-ip';
+import { startPurgeJob } from '#purge-job';
 import { requestLog } from '#request-log';
 
 const app = new Hono();
@@ -111,9 +112,15 @@ const server = serve({ fetch: app.fetch, port: env.SERVER_PORT }, (info) => {
   logger.info({ port: info.port }, 'server listening');
 });
 
+const stopPurge = startPurgeJob({
+  intervalMinutes: env.PURGE_INTERVAL_MINUTES,
+  run: () => withConnection((conn) => runPurge(conn, { trigger: 'auto' })),
+});
+
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     logger.info({ signal }, 'shutting down');
+    stopPurge();
 
     server.close((error) => {
       if (error) logger.error({ err: error }, 'server did not close cleanly');
