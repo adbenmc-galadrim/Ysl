@@ -614,6 +614,162 @@ describe('sync.push', () => {
     });
   });
 
+  describe('e-mail templates and notifications', () => {
+    const colleague = { ...writer, userId: 'agent-3' } as const;
+
+    beforeAll(async () => {
+      await db
+        .insert(schema.user)
+        .values({
+          id: 'agent-3',
+          name: 'Collègue',
+          email: 'collegue@example.test',
+        });
+      await db
+        .insert(schema.organizationMember)
+        .values({ userId: 'agent-3', organizationId: ORGANIZATION_ID });
+    });
+    const template = (overrides: Record<string, unknown> = {}) => ({
+      id: newId(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      type: 'avis',
+      name: 'Mon modèle',
+      subject: 'Colis',
+      body: 'Bonjour {prénom}',
+      isDefault: false,
+      ownerId: AGENT_ID,
+      ...overrides,
+    });
+
+    it('lets only its owner write a template', async () => {
+      const mine = op('email_template', template());
+      const forged = op('email_template', template({ ownerId: 'agent-3' }));
+      await push(sync, writer, { ops: [mine] });
+
+      const { results } = await push(sync, colleague, {
+        ops: [
+          op('email_template', {
+            ...mine.patch,
+            id: mine.entityId,
+            ownerId: 'agent-3',
+          }),
+          op('email_template', { id: mine.entityId }, 'delete'),
+        ],
+      });
+      const { results: own } = await push(sync, writer, { ops: [forged] });
+
+      expect(results.map((result) => result.status)).toEqual([403, 403]);
+      expect(results[0]?.message).toBe(
+        'Ce modèle d’e-mail appartient à un autre agent.',
+      );
+      expect(own[0]?.status).toBe(403);
+      const [row] = await db
+        .select()
+        .from(schema.emailTemplate)
+        .where(eq(schema.emailTemplate.id, mine.entityId));
+      expect(row).toMatchObject({ ownerId: AGENT_ID, deletedAt: null });
+    });
+
+    it('restores the default template but never deletes it', async () => {
+      const preset = op('email_template', template({ isDefault: true }));
+      await push(sync, writer, { ops: [preset] });
+
+      const { results } = await push(sync, writer, {
+        ops: [
+          op('email_template', { id: preset.entityId }, 'delete'),
+          op('email_template', {
+            ...preset.patch,
+            id: preset.entityId,
+            deletedAt: NOW,
+          }),
+          op('email_template', {
+            ...preset.patch,
+            id: preset.entityId,
+            body: 'Rétabli',
+          }),
+        ],
+      });
+
+      expect(results.map((result) => result.status)).toEqual([409, 409, 200]);
+      expect(results[0]?.message).toBe(
+        'Le modèle par défaut ne se supprime pas ; il se rétablit.',
+      );
+    });
+
+    const prepared = (
+      parcelId: string,
+      overrides: Record<string, unknown> = {},
+    ) => ({
+      id: newId(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      type: 'avis',
+      personId: null,
+      contactId: null,
+      recipients: ['nora.haddad@example.com'],
+      cc: [],
+      parcelIds: [parcelId],
+      templateId: null,
+      status: 'prepared',
+      target: 'mailto',
+      preparedAt: NOW,
+      preparedBy: AGENT_ID,
+      openedAt: null,
+      sentAt: null,
+      failedReason: null,
+      ...overrides,
+    });
+
+    it('takes a mail declared sent by its author only', async () => {
+      const { results: parcels } = await push(sync, writer, {
+        ops: [op('parcel', localParcel())],
+      });
+      expect(parcels[0]?.status).toBe(200);
+      const [{ id: parcelId } = { id: '' }] = await db
+        .select({ id: schema.parcel.id })
+        .from(schema.parcel)
+        .limit(1);
+      const mail = op('notification', prepared(parcelId));
+      await push(sync, writer, { ops: [mail] });
+
+      const { results: stranger } = await push(sync, colleague, {
+        ops: [
+          op('notification', {
+            ...mail.patch,
+            id: mail.entityId,
+            status: 'sent',
+            sentAt: NOW,
+          }),
+        ],
+      });
+      const { results: author } = await push(sync, writer, {
+        ops: [
+          op('notification', {
+            ...mail.patch,
+            id: mail.entityId,
+            status: 'sent',
+            sentAt: NOW,
+          }),
+          op('notification', prepared(parcelId, { status: 'shipped' })),
+        ],
+      });
+
+      expect(stranger[0]).toMatchObject({
+        status: 403,
+        message: 'Cet e-mail a été préparé par un autre agent.',
+      });
+      expect(author.map((result) => result.status)).toEqual([200, 400]);
+      const [row] = await db
+        .select()
+        .from(schema.notification)
+        .where(eq(schema.notification.id, mail.entityId));
+      expect(row).toMatchObject({ status: 'sent', sentAt: NOW });
+    });
+  });
+
   it('stops the batch when the server could not take an operation', async () => {
     const failing = {
       transaction: () =>

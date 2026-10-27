@@ -20,6 +20,10 @@ export const fr = {
   'sync.op.recipient':
     'Un destinataire est requis pour notifier ou remettre un colis.',
   'sync.op.directoryEmail': 'Cette adresse e-mail est déjà dans l’annuaire.',
+  'sync.op.templateOwner': 'Ce modèle d’e-mail appartient à un autre agent.',
+  'sync.op.defaultTemplate':
+    'Le modèle par défaut ne se supprime pas ; il se rétablit.',
+  'sync.op.notificationOwner': 'Cet e-mail a été préparé par un autre agent.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
