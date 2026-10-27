@@ -1,6 +1,7 @@
 import { newId } from '@repo/shared/id';
 import type { Upsert } from '#/features/db/commit';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
+import { sha256Hex } from '#/features/photos/sha256';
 
 /** Four digits, as the mockups and the Remise keypad say ("Code à 4 chiffres"). */
 export const PICKUP_PIN_LENGTH = 4;
@@ -10,24 +11,13 @@ const PIN_SPACE = 10 ** PICKUP_PIN_LENGTH;
 /** A code lives a month; the reminder of a later mail issues the next one. */
 export const PICKUP_CODE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-const hex = (buffer: ArrayBuffer) =>
-  Array.from(new Uint8Array(buffer), (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('');
-
-async function sha256(text: string): Promise<string> {
-  return hex(
-    await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)),
-  );
-}
-
 /**
  * What every iPhone keeps of a PIN (F41: checked offline at the desk). Four
  * digits hide nothing from whoever holds the hash; it only keeps the code
  * out of plain sight in the database and the exports.
  */
 export function pinHash(pin: string): Promise<string> {
-  return sha256(`pickup:${pin}`);
+  return sha256Hex(new Blob([`pickup:${pin}`]));
 }
 
 /** A whole number below `bound`, without the modulo's bias. */
@@ -103,9 +93,7 @@ export async function pickupCodeWrites(
     deletedAt: null,
     personId,
     contactId: personId ? null : contactId,
-    tokenHash: hex(
-      await crypto.subtle.digest('SHA-256', token.buffer),
-    ),
+    tokenHash: await sha256Hex(new Blob([token])),
     pinHash: await pinHash(pin),
     expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
     usedAt: null,

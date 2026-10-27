@@ -87,9 +87,9 @@ export function groupByRecipient(
           personId: null,
           contactId: parcel.contactId,
           name: contact?.name ?? '',
-          // A contact has one name, often a company's: "Bonjour Atelier
-          // Rive gauche" reads better than its first word alone.
-          firstName: contact?.name ?? null,
+          // A contact has one name: its first word greets ("Bonjour
+          // Marc"), the whole of it stands for {nom}.
+          firstName: contact?.name.trim().split(/\s+/)[0] ?? null,
           lastName: contact?.name ?? null,
         };
     mails.set(key, {

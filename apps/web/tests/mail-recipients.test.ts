@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { DEFAULT_TEMPLATES, renderMail } from '@repo/contract/mail';
 import { damageColumns } from '@repo/contract/parcel-damage';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
+import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
@@ -122,6 +123,10 @@ describe('one e-mail per recipient', () => {
       ['Atelier', null, 1],
       ['Marc Petit', null, 2],
     ]);
+    expect(mails[1]).toMatchObject({
+      firstName: 'Marc',
+      lastName: 'Marc Petit',
+    });
   });
 });
 
@@ -202,7 +207,7 @@ describe('the e-mail of one recipient', () => {
 describe('the pickup code', () => {
   it('draws PINs no live code uses, all different', async () => {
     await db.pickupCode.put({
-      id: crypto.randomUUID(),
+      id: newId(),
       createdAt: NOW,
       updatedAt: NOW,
       deletedAt: null,
