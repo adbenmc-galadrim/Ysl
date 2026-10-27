@@ -18,6 +18,11 @@ export type ParcelSectionProps = {
    * ("En file"). Returning nothing keeps the chevron.
    */
   rowAction?: (parcel: Parcel) => ReactNode;
+  /**
+   * A button on the right of a row that opens something else than the
+   * row (« Choisir » the recipient); returning nothing keeps `rowAction`.
+   */
+  rowControl?: (parcel: Parcel) => ReactNode;
   /** Selection mode: ids of the ticked parcels; rows then show a checkbox. */
   selectedIds?: readonly string[];
   onSelectedChange?: (parcel: Parcel, selected: boolean) => void;
@@ -40,13 +45,21 @@ export function SectionParcelRow({
   parcel,
   separator,
 }: SectionParcelRowProps) {
-  const { rowAction, selectedIds, onSelectedChange, onParcelClick } = section;
+  const {
+    rowAction,
+    rowControl,
+    selectedIds,
+    onSelectedChange,
+    onParcelClick,
+  } = section;
+  const control = rowControl?.(parcel);
   return (
     <ParcelRow
       parcel={parcel}
       // In selection mode a tap ticks the row instead of opening it,
       // so the chevron would promise a screen that never comes.
       trailing={rowAction?.(parcel) ?? (selectedIds ? null : 'chevron')}
+      control={control || undefined}
       selected={selectedIds?.includes(parcel.id)}
       onSelectedChange={(selected) => onSelectedChange?.(parcel, selected)}
       separator={separator}

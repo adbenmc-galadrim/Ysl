@@ -262,14 +262,60 @@ export type VerifierSuiviScreenProps = Pick<
 > & {
   /**
    * `to-verify`: the number read, offered first and chosen, so one tap
-   * confirms it; `none`: nothing sure enough, the agent picks.
+   * confirms it; `none`: nothing sure enough, the agent picks; `carrier`:
+   * the number holds but its format names no carrier, the agent says which.
    */
-  level: 'to-verify' | 'none';
+  level: 'to-verify' | 'none' | 'carrier';
   choices: TrackingChoice[];
   selected?: string;
   submitLabel?: string;
   onSelect?: (value: string) => void;
+  /** « Saisir le numéro »: the agent types the number printed. */
+  onType?: () => void;
+  /** « Sans suivi »: a courier, an envelope handed in; the app numbers it. */
+  onUntracked?: () => void;
 };
+
+const SUIVI_QUESTION: Record<VerifierSuiviScreenProps['level'], string> = {
+  'to-verify': 'Ce numéro de suivi est-il le bon ?',
+  none: 'Quel est le numéro de suivi ?',
+  carrier: 'Quel est le transporteur ?',
+};
+
+function suiviHint(
+  level: VerifierSuiviScreenProps['level'],
+  choices: readonly TrackingChoice[],
+) {
+  if (level === 'to-verify')
+    return 'Lu sur l’étiquette, à comparer avec la photo';
+  if (level === 'carrier')
+    return 'Le format du numéro ne nomme aucun transporteur';
+  return choices.length > 0
+    ? 'Aucune lecture sûre : choisissez le numéro imprimé'
+    : 'Aucun numéro lu sur l’étiquette';
+}
+
+/** A blue link under the question, as « Chercher dans l’annuaire ». */
+function StepLink({
+  icon,
+  children,
+  onClick,
+}: {
+  icon: 'keyboard' | 'package';
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex cursor-pointer items-center gap-2.5 pl-1.5 text-16 font-semibold text-blue outline-none focus-visible:ring-2 focus-visible:ring-blue"
+    >
+      <Icon name={icon} size={20} />
+      {children}
+    </button>
+  );
+}
 
 /**
  * The tracking step (§4.4): a number « à vérifier » comes chosen, checked
@@ -282,23 +328,15 @@ export function VerifierSuiviScreen({
   selected,
   submitLabel = 'Valider et suivant',
   onSelect,
+  onType,
+  onUntracked,
   ...frame
 }: VerifierSuiviScreenProps) {
   return (
     <VerifyFrame
       {...frame}
-      question={
-        level === 'to-verify'
-          ? 'Ce numéro de suivi est-il le bon ?'
-          : 'Quel est le numéro de suivi ?'
-      }
-      hint={
-        level === 'to-verify'
-          ? 'Lu sur l’étiquette, à comparer avec la photo'
-          : choices.length > 0
-            ? 'Aucune lecture sûre : choisissez le numéro imprimé'
-            : 'Aucun numéro lu sur l’étiquette'
-      }
+      question={SUIVI_QUESTION[level]}
+      hint={suiviHint(level, choices)}
       submitLabel={submitLabel}
       submitDisabled={selected === undefined}
     >
@@ -337,6 +375,20 @@ export function VerifierSuiviScreen({
               </button>
             );
           })}
+        </div>
+      )}
+      {(onType || onUntracked) && (
+        <div className="mt-[26px] flex flex-wrap items-center gap-x-6 gap-y-3">
+          {onType && (
+            <StepLink icon="keyboard" onClick={onType}>
+              Saisir le numéro
+            </StepLink>
+          )}
+          {onUntracked && (
+            <StepLink icon="package" onClick={onUntracked}>
+              Sans suivi
+            </StepLink>
+          )}
         </div>
       )}
     </VerifyFrame>

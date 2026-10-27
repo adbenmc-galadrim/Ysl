@@ -38,6 +38,8 @@ export type ParcelRowProps = {
   onSelectedChange?: (selected: boolean) => void;
   /** `'chevron'` (the default) or any node; see `ListRow`. */
   trailing?: ReactNode;
+  /** A button beside the row's own, e.g. « Choisir »; see `ListRow`. */
+  control?: ReactNode;
   separator?: boolean;
   onClick?: () => void;
   className?: string;
@@ -49,6 +51,7 @@ export function ParcelRow({
   selected,
   onSelectedChange,
   trailing,
+  control,
   separator,
   onClick,
   className,
@@ -93,6 +96,7 @@ export function ParcelRow({
       titleTone={parcel.state === 'incomplete' ? 'red' : 'ink'}
       lines={lines}
       trailing={trailing}
+      control={control}
       separator={separator}
       separatorInset={selecting ? 92 : undefined}
       onClick={onClick}

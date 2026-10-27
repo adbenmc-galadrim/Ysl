@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { FilterChip, FilterChips } from '#components/filter-chip';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
 import { ParcelList, type ParcelListSection } from '#components/parcel-list';
@@ -11,10 +12,20 @@ import { SYNC_PILL, StatusPill } from '#components/status-pill';
 
 export type ColisSection = ParcelListSection;
 
+/** A counter over the list (F32): « À compléter 1 », a tap keeps only those. */
+export type ColisCounter = {
+  label: string;
+  count: number;
+  selected?: boolean;
+  onClick?: () => void;
+};
+
 export type ColisScreenProps = {
   sync: keyof typeof SYNC_PILL;
   summary: string;
   sections: ColisSection[];
+  /** Under the title, what the day leaves to do, each one a filter. */
+  counters?: ColisCounter[];
   /** A banner between the title and the list, e.g. changes left to send. */
   notice?: ReactNode;
   /** The sections still on their way are drawn as a placeholder section. */
@@ -53,6 +64,7 @@ export function ColisScreen({
   sync,
   summary,
   sections,
+  counters,
   notice,
   loading = false,
   toast,
@@ -103,6 +115,24 @@ export function ColisScreen({
         <IconButton icon="menu" label="Menu" onClick={onMenu} />
       </div>
       <LargeTitle title="Colis" subtitle={summary} className="mt-0.5" />
+      {counters && counters.length > 0 && (
+        <FilterChips
+          aria-label="Compteurs"
+          className="-mx-5 mt-[15px] px-5 [scrollbar-width:none]"
+        >
+          {counters.map((counter) => (
+            <FilterChip
+              key={counter.label}
+              label={counter.label}
+              count={counter.count}
+              selected={counter.selected}
+              onClick={counter.onClick}
+              // Three counters fit the smallest iPhone side by side.
+              className="px-3.5 text-14"
+            />
+          ))}
+        </FilterChips>
+      )}
       {notice && <div className="mt-[15px]">{notice}</div>}
       {children ?? (
         <ParcelList

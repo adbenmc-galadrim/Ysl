@@ -38,6 +38,12 @@ export type ListRowProps = {
    * anything else — a small button, a check, a time — is drawn as given.
    */
   trailing?: ReactNode;
+  /**
+   * A control in the trailing place (« Choisir »), drawn beside the row's
+   * button rather than inside it, so a tap on it is its own and screen
+   * readers find it.
+   */
+  control?: ReactNode;
   /** Hairline under the row, inset to the text column. */
   separator?: boolean;
   /**
@@ -66,6 +72,7 @@ export function ListRow({
   titleTone = 'ink',
   lines = [],
   trailing = 'chevron',
+  control,
   separator = false,
   separatorInset,
   align = 'top',
@@ -74,69 +81,80 @@ export function ListRow({
 }: ListRowProps) {
   const Root = onClick ? 'button' : 'div';
   const centered = align === 'center';
-  return (
-    <div className={className}>
-      <Root
-        type={onClick ? 'button' : undefined}
-        onClick={onClick}
+  const row = (
+    <Root
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={cn(
+        'flex w-full min-w-0 gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue',
+        centered ? 'min-h-[61px] items-center' : 'items-start',
+      )}
+    >
+      {leading && (
+        <span className={cn('flex shrink-0', !centered && 'mt-[7px]')}>
+          {leading}
+        </span>
+      )}
+      <span
         className={cn(
-          'flex w-full gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue',
-          centered ? 'min-h-[61px] items-center' : 'items-start',
+          'flex min-w-0 flex-1 flex-col',
+          centered && 'self-start pt-[11px] pb-[7px]',
         )}
       >
-        {leading && (
-          <span className={cn('flex shrink-0', !centered && 'mt-[7px]')}>
-            {leading}
-          </span>
-        )}
         <span
           className={cn(
-            'flex min-w-0 flex-1 flex-col',
-            centered && 'self-start pt-[11px] pb-[7px]',
+            'truncate text-17 font-semibold',
+            titleTone === 'red' && 'text-red',
+            titleTone === 'orange' && 'text-orange',
           )}
         >
+          {title}
+        </span>
+        {lines.map((line, i) => (
           <span
+            key={i}
             className={cn(
-              'truncate text-17 font-semibold',
-              titleTone === 'red' && 'text-red',
-              titleTone === 'orange' && 'text-orange',
+              lineVariants({ tone: line.tone }),
+              i ? 'mt-0.5' : 'mt-[3px]',
+              line.nowrap && 'whitespace-nowrap',
             )}
           >
-            {title}
+            {line.text}
           </span>
-          {lines.map((line, i) => (
-            <span
-              key={i}
-              className={cn(
-                lineVariants({ tone: line.tone }),
-                i ? 'mt-0.5' : 'mt-[3px]',
-                line.nowrap && 'whitespace-nowrap',
-              )}
-            >
-              {line.text}
-            </span>
-          ))}
-        </span>
-        {trailing === 'chevron' ? (
-          <Icon
-            name="chevron"
-            size={18}
-            strokeWidth={2.2}
-            className={cn(
-              'mr-[3px] shrink-0 text-faint',
-              !centered && 'mt-[18px]',
-            )}
-          />
-        ) : (
-          trailing && (
-            <span
-              className={cn('flex shrink-0', !centered && 'mt-[11px] -ml-1')}
-            >
-              {trailing}
-            </span>
-          )
-        )}
-      </Root>
+        ))}
+      </span>
+      {control ? null : trailing === 'chevron' ? (
+        <Icon
+          name="chevron"
+          size={18}
+          strokeWidth={2.2}
+          className={cn(
+            'mr-[3px] shrink-0 text-faint',
+            !centered && 'mt-[18px]',
+          )}
+        />
+      ) : (
+        trailing && (
+          <span className={cn('flex shrink-0', !centered && 'mt-[11px] -ml-1')}>
+            {trailing}
+          </span>
+        )
+      )}
+    </Root>
+  );
+  return (
+    <div className={className}>
+      {control ? (
+        <div className={cn('flex', centered ? 'items-center' : 'items-start')}>
+          {row}
+          {/* The trailing place of the row: 8 px off the text column. */}
+          <span className={cn('ml-2 flex shrink-0', !centered && 'mt-[11px]')}>
+            {control}
+          </span>
+        </div>
+      ) : (
+        row
+      )}
       {separator && (
         <div
           className={cn(
