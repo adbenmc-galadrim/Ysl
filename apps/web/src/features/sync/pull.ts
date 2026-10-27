@@ -101,9 +101,15 @@ export async function applyChanges(
   );
 }
 
+/** Every row with an operation in the outbox, queued or refused: its only copy may be here. */
+async function outboxKeys(db: CourrierDatabase): Promise<Set<string>> {
+  const ops = await db.outbox.toArray();
+  return new Set(ops.map((op) => keyOf(op.entity, op.entityId)));
+}
+
 /**
  * After a reset, the rows the server no longer has: whatever the full read
- * did not bring back, except a row this device still has to send.
+ * did not bring back, except a row with an operation still in the outbox.
  */
 async function sweepUnseen(
   db: CourrierDatabase,
@@ -114,7 +120,7 @@ async function sweepUnseen(
     'rw',
     [...tables, db.outbox, db.event, db.extraction],
     async () => {
-      const pending = await pendingKeys(db);
+      const pending = await outboxKeys(db);
       for (const entity of SYNCED_TABLE_NAMES) {
         const ids = await db.synced(entity).toCollection().primaryKeys();
         const unseen = ids.filter(
@@ -128,37 +134,91 @@ async function sweepUnseen(
   );
 }
 
+type Read = {
+  generation: string;
+  reset: boolean;
+  rows: number;
+  bound: number;
+  /** Every row the read brought, since it last started from zero. */
+  seen: Set<string>;
+};
+
+/**
+ * One read from `cursor` to the bound of its first page. A later page may
+ * say `reset` too, when a purge erased a mark of the range meanwhile: the
+ * read has started over from zero, so what was seen before no longer counts.
+ */
+async function readFrom(
+  db: CourrierDatabase,
+  client: PullClient,
+  cursor: SyncCursor | null,
+  limit: number,
+  progress: (rows: number) => void,
+): Promise<Read> {
+  let output = await client({ cursor, page: null, limit });
+  const { generation } = output;
+  let reset = output.reset;
+  const seen = new Set<string>();
+  let rows = 0;
+  for (;;) {
+    if (output.reset) {
+      reset = true;
+      seen.clear();
+    }
+    for (const { entity, row } of output.rows) seen.add(keyOf(entity, row.id));
+    rows += await applyChanges(db, output.rows);
+    progress(rows);
+    if (!output.next) break;
+    output = await client({ cursor: null, page: output.next, limit });
+  }
+  return { generation, reset, rows, bound: output.cursor, seen };
+}
+
 /**
  * Pulls everything the server wrote since the cursor, page after page, and
  * moves the cursor only once the last page is in: a pull cut short starts
- * again from the same place, and a row that comes twice is put twice. A
- * reset reads everything again, then drops what did not come back: rows the
- * server erased while this device was too far behind to see them go.
+ * again from the same place, and a row that comes twice is put twice.
+ *
+ * A reset reads everything again, then drops what did not come back: rows
+ * the server erased while this device was too far behind to see them go.
+ * A row rewritten while the full read ran is above its bound and missing
+ * from it, so a second read from that bound comes first: only what neither
+ * brought back is dropped.
  */
 export async function pullChanges(
   db: CourrierDatabase,
   client: PullClient,
   { limit = PULL_PAGE_DEFAULT, onProgress }: PullOptions = {},
 ): Promise<PullOutcome> {
-  const cursor = await readCursor(db);
-  let output = await client({ cursor, page: null, limit });
-  const { generation, reset } = output;
-  const seen = new Set<string>();
-  const note = (changes: PullChange[]) => {
-    if (!reset) return;
-    for (const { entity, row } of changes) seen.add(keyOf(entity, row.id));
-  };
-  note(output.rows);
-  let rows = await applyChanges(db, output.rows);
-  onProgress?.(rows);
-  while (output.next) {
-    output = await client({ cursor: null, page: output.next, limit });
-    note(output.rows);
-    rows += await applyChanges(db, output.rows);
-    onProgress?.(rows);
+  let done = 0;
+  const progress = (rows: number) => onProgress?.(done + rows);
+  const first = await readFrom(
+    db,
+    client,
+    await readCursor(db),
+    limit,
+    progress,
+  );
+  const { generation, reset } = first;
+  let rows = first.rows;
+  let bound = first.bound;
+  if (reset) {
+    done = rows;
+    const again = await readFrom(
+      db,
+      client,
+      { generation, xid: bound },
+      limit,
+      progress,
+    );
+    rows += again.rows;
+    bound = again.bound;
+    const seen = again.reset
+      ? again.seen
+      : new Set([...first.seen, ...again.seen]);
+    await sweepUnseen(db, seen);
   }
-  if (reset) await sweepUnseen(db, seen);
-  const next: SyncCursor = { generation, xid: output.cursor };
+  const next: SyncCursor = { generation, xid: bound };
   await db.syncState.put({ key: SYNC_STATE_KEYS.cursor, value: next });
   return { rows, reset, cursor: next };
 }

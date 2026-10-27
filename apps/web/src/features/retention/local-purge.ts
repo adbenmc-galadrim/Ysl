@@ -71,13 +71,24 @@ export async function purgeLocal(
   now = new Date(),
 ): Promise<LocalPurgeReport> {
   const extractionCut = cutoff(now, RETENTION.extraction);
-  const parcelIds = new Set(await db.parcel.toCollection().primaryKeys());
-  const extractions = await db.extraction
-    .filter(
-      (row) => row.createdAt < extractionCut || !parcelIds.has(row.parcelId),
-    )
-    .primaryKeys();
-  await db.extraction.bulkDelete(extractions);
+  // One transaction: a batch finished meanwhile writes its parcels and their
+  // readings together, never a reading this purge would take for an orphan.
+  const extractions = await db.transaction(
+    'rw',
+    db.parcel,
+    db.extraction,
+    async () => {
+      const parcelIds = new Set(await db.parcel.toCollection().primaryKeys());
+      const expired = await db.extraction
+        .filter(
+          (row) =>
+            row.createdAt < extractionCut || !parcelIds.has(row.parcelId),
+        )
+        .primaryKeys();
+      await db.extraction.bulkDelete(expired);
+      return expired;
+    },
+  );
 
   let photos = 0;
   if (files) {
