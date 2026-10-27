@@ -1,9 +1,10 @@
 import type { Session } from '@repo/auth/client';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   forgetSession,
   resolveSession,
   SESSION_KEY,
+  settleSession,
 } from '#/features/auth/session-cache';
 
 const session = {
@@ -53,5 +54,34 @@ describe('resolveSession', () => {
         memoryStore({ [SESSION_KEY]: '{' }),
       ),
     ).toBeNull();
+  });
+});
+
+describe('settleSession', () => {
+  const kept = () => memoryStore({ [SESSION_KEY]: JSON.stringify(session) });
+
+  it('empties a device whose kept session was ended elsewhere', async () => {
+    const store = kept();
+    const wipe = vi.fn(() => {
+      store.removeItem(SESSION_KEY);
+      return Promise.resolve();
+    });
+
+    await expect(settleSession({ kind: 'none' }, store, wipe)).resolves.toBe(
+      null,
+    );
+    expect(wipe).toHaveBeenCalledOnce();
+    expect(store.data.has(SESSION_KEY)).toBe(false);
+  });
+
+  it('leaves the device alone offline, signed in, or never signed in', async () => {
+    const wipe = vi.fn(() => Promise.resolve());
+
+    await expect(
+      settleSession({ kind: 'unreachable' }, kept(), wipe),
+    ).resolves.toEqual(session);
+    await settleSession({ kind: 'session', session }, kept(), wipe);
+    await settleSession({ kind: 'none' }, memoryStore(), wipe);
+    expect(wipe).not.toHaveBeenCalled();
   });
 });

@@ -56,6 +56,24 @@ export function resolveSession(
   }
 }
 
+/**
+ * A device that kept a session and is now told there is none was signed out
+ * from elsewhere: revoked by an admin, account deactivated, password reset,
+ * or expired. It empties itself as "Effacer les données de cet iPhone" does
+ * (§9.1) before showing sign-in. Signing out here forgets the session first,
+ * so it never comes this way; unreachable, nothing happens.
+ */
+export async function settleSession(
+  lookup: SessionLookup,
+  store: SessionStore,
+  wipe: () => Promise<void>,
+): Promise<Session | null> {
+  if (lookup.kind === 'none' && store.getItem(SESSION_KEY) !== null) {
+    await wipe();
+  }
+  return resolveSession(lookup, store);
+}
+
 /** Signing out forgets the kept session at once, before the server confirms. */
 export function forgetSession(store: SessionStore): void {
   store.removeItem(SESSION_KEY);
