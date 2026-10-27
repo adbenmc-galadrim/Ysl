@@ -17,9 +17,10 @@ describe('CourrierDatabase', () => {
         'sync_state',
         'draft_batch',
         'draft_parcel',
+        'extraction',
       ].sort(),
     );
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     for (const entity of SYNCED_ENTITIES) {
       expect(db.synced(entity).schema.primKey.name).toBe('id');
     }
@@ -73,7 +74,7 @@ describe('CourrierDatabase upgrade to version 3', () => {
     await db.open();
     const [op] = await db.outbox.toArray();
 
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(op?.state).toBe('queued');
     expect(await db.outbox.where('state').equals('queued').count()).toBe(1);
     db.close();

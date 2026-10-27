@@ -118,6 +118,50 @@ export const VerifierPersonneInconnue: Story = {
   ),
 };
 
+/**
+ * §4.4 on the parcel check: a DHL Express number no check digit vouches
+ * for is « à vérifier »; a number of unknown shape stays empty, its
+ * reading offered as a chip to pick.
+ */
+export const VerifierNiveaux: Story = {
+  name: 'Vérifier un colis, suivi incertain',
+  render: () => (
+    <VerifierColisScreen
+      step={{ index: 1, total: 2 }}
+      label={{
+        heading: UNCERTAIN_LABEL.heading,
+        name: UNCERTAIN_LABEL.name,
+        address: UNCERTAIN_LABEL.address,
+        glare: { left: 106, width: 90 },
+      }}
+      readName={UNCERTAIN_LABEL.name}
+      candidates={[DIRECTORY.lea, DIRECTORY.lise, DIRECTORY.louis].map(option)}
+      selectedId={DIRECTORY.lea.id}
+      fields={[
+        { label: 'Transporteur', value: 'DHL Express ?', status: 'warning' },
+        {
+          label: 'Suivi',
+          value: '',
+          mono: true,
+          status: 'error',
+          suggestions: [
+            {
+              label: '5413337112',
+              onPick: () => {},
+              pickLabel: 'Choisir 5413337112',
+            },
+            {
+              label: '5413337117',
+              onPick: () => {},
+              pickLabel: 'Choisir 5413337117',
+            },
+          ],
+        },
+      ]}
+    />
+  ),
+};
+
 /** Before any search, the scanner's three guesses head the picker. */
 export const ChoisirSuggestions: Story = {
   name: 'Choisir le destinataire, suggestions',

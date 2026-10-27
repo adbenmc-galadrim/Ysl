@@ -79,6 +79,7 @@ export async function resolveSender(
     name: sender.value,
     id: senderId,
     level: sender.level,
+    confidence: sender.confidence,
     source,
     account: probe.accounts[0] ?? null,
   };

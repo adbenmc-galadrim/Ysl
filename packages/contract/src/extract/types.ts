@@ -2,11 +2,17 @@ import type { CarrierService, CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
 import type { AccountRead, SenderKnowledge } from './sender';
 
-export type SourceKind = '2d' | '1d' | 'ocr' | 'learned';
+/** Where a value comes from; `agent` is a value typed, chosen or confirmed (§4.3 rank 9). */
+export type SourceKind = '2d' | '1d' | 'ocr' | 'learned' | 'agent';
 
 export type ConfidenceLevel = 'sure' | 'to-verify' | 'none';
 
-export type FieldFlag = 'conflict' | 'tie';
+/**
+ * Why a field is less sure than its sources: two of them disagree, the
+ * carrier vote is tied, no check digit vouches for the tracking (O1), the
+ * recipient's address is not the mailroom's (« réexpédition ? »).
+ */
+export type FieldFlag = 'conflict' | 'tie' | 'unkeyed' | 'forward';
 
 export type FieldSource = {
   kind: SourceKind;
@@ -31,16 +37,24 @@ export type Field<T> = {
 };
 
 /**
- * What the OCR read: the printed text, its lines joined by newlines (§4.3
- * ranks 6 and 7), and the sender its `FROM` block names, when one does.
+ * What the OCR read: the printed text, its lines joined by newlines, for the
+ * numbers and annex fields it prints (§4.3 ranks 5 to 7), and the sender
+ * and the recipient its anchored blocks name, when they do.
  */
-export type OcrInput = { text: string; senderName?: string | null };
+export type OcrInput = {
+  text: string;
+  senderName?: string | null;
+  /** The recipient the anchored block names (`SHIP TO`, `DESTINATAIRE`…). */
+  recipientName?: string | null;
+};
 
 export type ExtractInput = {
   symbols: readonly CodeSymbol[];
   ocr?: OcrInput | null;
   /** The account dictionary and the senders already seen (§4.8). */
   senders?: SenderKnowledge | null;
+  /** Full names of the directory cards the recipient may be (§4.3 bonus). */
+  directory?: readonly string[] | null;
 };
 
 export type Extraction = {

@@ -2,9 +2,13 @@ import type { CarrierService, Pieces } from '../codes';
 import { weightKg } from '../codes/fields';
 import { REGISTERED } from '../codes/services';
 import type { TrackingContext } from '../tracking/rules';
+import { validateTracking } from '../tracking/validate';
 import { CONFIDENCE } from './confidence';
 import type { Observation } from './fields';
 import type { FieldSource } from './types';
+
+/** A number the text prints, and whether its check digit vouches for it. */
+export type OcrTracking = Observation<string> & { keyed: boolean };
 
 export type OcrObservations = {
   pieces: Observation<Pieces>[];
@@ -147,6 +151,63 @@ const SERVICES: readonly ServiceName[] = [
   { pattern: /LETTRE SUIVIE/, label: 'Lettre suivie', carriers: ['la-poste'] },
   { pattern: /RECOMMANDE|REGISTERED|EINSCHREIBEN/, label: REGISTERED },
 ];
+
+/** Printed trackings span 9 to 34 characters once their spaces are gone (§4.6). */
+const MIN_TRACKING = 9;
+const MAX_TRACKING = 34;
+
+const RUN = /[A-Z0-9]+(?: [A-Z0-9]+)*/g;
+
+/** Every span of whole words of a run, as « 1Z E63 44W 04 9923 0622 » is printed. */
+function* spans(run: string): Generator<string> {
+  const words = run.split(' ');
+  for (let start = 0; start < words.length; start += 1) {
+    let joined = '';
+    for (let end = start; end < words.length; end += 1) {
+      joined += words[end];
+      if (joined.length > MAX_TRACKING) break;
+      if (joined.length >= MIN_TRACKING) yield joined;
+    }
+  }
+}
+
+/**
+ * §4.3 ranks 5 and 6: a number printed on the label, kept when its format
+ * is known — 0,85 with a valid check digit, 0,65 without one. A shape no
+ * rule knows, or a key that fails, is no number at all (§4.1).
+ */
+export const ocrTrackings = (
+  text: string,
+  carrier: TrackingContext | null = null,
+): OcrTracking[] => {
+  const found = new Map<string, OcrTracking>();
+  for (const line of plain(text).split('\n')) {
+    for (const [run] of line.matchAll(RUN)) {
+      for (const span of spans(run)) {
+        const verdict = validateTracking(span, {
+          context: carrier ?? undefined,
+        });
+        const keyed = verdict.reason === 'valid-key';
+        const formatted =
+          verdict.reason === 'needs-context' ||
+          verdict.reason === 'format-and-context';
+        if (!keyed && !formatted) continue;
+        const known = found.get(verdict.value);
+        if (known?.keyed || (known && !keyed)) continue;
+        found.set(verdict.value, {
+          key: verdict.value,
+          value: verdict.value,
+          keyed,
+          source: ocrSource(
+            keyed ? CONFIDENCE.ocrKeyed : CONFIDENCE.ocrFormat,
+            span,
+          ),
+        });
+      }
+    }
+  }
+  return [...found.values()];
+};
 
 const piecesOf = (index: number, total: number): Pieces | null =>
   index >= 1 && total >= 1 && index <= total ? { index, total } : null;

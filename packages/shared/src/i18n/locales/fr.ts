@@ -494,6 +494,7 @@ export const fr = {
   'scan.field.service': 'Service',
   'scan.field.unknown': 'Inconnu',
   'scan.field.missing': 'Non lu',
+  'scan.field.pick': 'Choisir {{value}}',
   'carrier.colissimo': 'Colissimo',
   'carrier.chronopost': 'Chronopost',
   'carrier.la-poste': 'La Poste',

@@ -1486,6 +1486,7 @@
     "file": "web-usps-first-class-pkg-intl-usa-d-with-customs-declaratio-lettre.jpg",
     "carrier": "other",
     "tracking": "LZ647929979US",
+    "otherTrackings": ["RN030764355DE"],
     "recipient": null,
     "sender": "SWAGBOT",
     "pieces": null,

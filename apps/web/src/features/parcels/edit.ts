@@ -113,6 +113,17 @@ export function isComplete(
 }
 
 /**
+ * A parcel left « À compléter » may hold a number or a name the reader was
+ * not sure of (F26): only the agent setting the carrier, the number or the
+ * recipient vouches for them; a note or a weight changes nothing to that.
+ */
+const confirmsIdentity = (fields: readonly ParcelEditField[]) =>
+  fields.some(
+    (field) =>
+      field === 'recipient' || field === 'tracking' || field === 'carrier',
+  );
+
+/**
  * The contact a hand-typed name stands for: the one this mailroom already
  * typed with that e-mail, or with that name and no e-mail yet, counted once
  * more; a new one otherwise. Typing the same temp twice keeps one card.
@@ -293,7 +304,7 @@ export async function saveParcelEdit(
 
   const complete = isComplete(edited);
   const to =
-    parcel.status === 'a_completer' && complete
+    parcel.status === 'a_completer' && complete && confirmsIdentity(fields)
       ? 'recu'
       : parcel.status === 'recu' && !complete && isComplete(parcel)
         ? 'a_completer'

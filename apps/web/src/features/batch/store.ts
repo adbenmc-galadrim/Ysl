@@ -1,4 +1,5 @@
 import { newId } from '@repo/shared/id';
+import { extractionOf } from '#/features/batch/extraction';
 import { learnSenders, promotedSender } from '#/features/batch/senders';
 import { commitLocal } from '#/features/db/commit';
 import type {
@@ -11,6 +12,7 @@ import type {
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { serviceText } from '#/features/scan/annex';
+import { notifiable } from '#/features/scan/confidence';
 
 export type DraftPhoto = { blob: Blob; width: number; height: number };
 
@@ -30,6 +32,8 @@ export type DraftPatch = Partial<
     | 'sender'
     | 'annex'
     | 'recipient'
+    | 'trackingConfirmed'
+    | 'durations'
   >
 >;
 
@@ -226,14 +230,12 @@ export async function discardBatch(
 export type FinishOptions = { batchId: string; agentId: string; now?: Date };
 
 /**
- * Received when the mailroom can notify it: a carrier, a number and someone
- * to tell. A structured code names someone surely enough, and so does the
- * agent choosing a card; a name the OCR guessed leaves the draft to a hand.
+ * Received when the mailroom can notify it (F26): a carrier, a number and
+ * someone to tell, the number and the person sure (≥ 0,90) or confirmed by
+ * the agent. Anything less is saved « À compléter », without a notification.
  */
 export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
-  return draft.carrier && draft.tracking && (draft.readName || draft.recipient)
-    ? 'recu'
-    : 'a_completer';
+  return notifiable(draft) ? 'recu' : 'a_completer';
 }
 
 function toParcel(
@@ -283,7 +285,8 @@ function toParcel(
 /**
  * "Terminer": the batch and its parcels become server rows in one write
  * (queued for `sync.push`), with what the sure senders teach the dictionary
- * ahead of them (§4.8), the photos point at their parcel, the drafts go.
+ * ahead of them (§4.8), the photos point at their parcel, what the reader
+ * made of each label stays on this device (`extraction`), the drafts go.
  * An empty batch leaves nothing behind. Returns the parcel ids, in order.
  */
 export function finishBatch(
@@ -301,6 +304,7 @@ export function finishBatch(
       db.sender,
       db.senderAccount,
       db.outbox,
+      db.extraction,
     ],
     async () => {
       const open = await db.draftBatch.get(batchId);
@@ -334,6 +338,9 @@ export function finishBatch(
           ],
         },
         { now },
+      );
+      await db.extraction.bulkPut(
+        drafts.map((draft) => extractionOf(draft, now)),
       );
       for (const draft of drafts) {
         for (const photoId of photoIdsOf(draft)) {

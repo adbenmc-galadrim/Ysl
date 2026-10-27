@@ -11,14 +11,17 @@ import type { TrackingContext } from '../tracking/rules';
 import { type TrackingVerdict, validateTracking } from '../tracking/validate';
 import { VOTE, type Vote, voteCarrier } from './carrier';
 import { CONFIDENCE } from './confidence';
-import { canonical, mergeField, type Observation } from './fields';
+import { capUnkeyed, mergeField, type Observation } from './fields';
 import { type AccountRead, accountsOf, extractSender } from './sender';
-import { observeOcr, plausibleWeight, weightKey } from './ocr';
-import type { Extraction, ExtractInput, FieldSource } from './types';
+import { observeOcr, ocrTrackings, plausibleWeight, weightKey } from './ocr';
+import { extractRecipient, type RecipientRead } from './recipient';
+import type { Extraction, ExtractInput, Field, FieldSource } from './types';
 
 export { CONFIDENCE, combine, levelOf } from './confidence';
+export { elsewhere, extractRecipient, MAILROOM } from './recipient';
+export type { RecipientRead } from './recipient';
 export { VOTE } from './carrier';
-export { canonical } from './fields';
+export { adjust, canonical, capUnkeyed } from './fields';
 export {
   ACCOUNT_CONFIRMED,
   accountKey,
@@ -34,7 +37,7 @@ export type {
   SenderInput,
   SenderKnowledge,
 } from './sender';
-export { observeOcr } from './ocr';
+export { observeOcr, ocrTrackings } from './ocr';
 export type {
   Candidate,
   ConfidenceLevel,
@@ -125,10 +128,37 @@ const hintOf = (reads: readonly Read[]): TrackingContext | undefined => {
   return carriers.size === 1 ? [...carriers][0] : undefined;
 };
 
+/**
+ * A number on its own, typed or kept without the code that gave it: scored
+ * by its format and key alone, as a 1D code would be (O1 included).
+ */
+export const scoreTrackingValue = (
+  value: string,
+  format = 'value',
+): Field<string> => {
+  const verdict = validateTracking(value);
+  const confidence =
+    verdict.status === 'rejected'
+      ? CONFIDENCE.unvalidated
+      : trackingConfidence(verdict);
+  const keyed = new Set(verdict.reason === 'valid-key' ? [verdict.value] : []);
+  return capUnkeyed(
+    mergeField([
+      {
+        key: verdict.value,
+        value: verdict.value,
+        source: source('1d', format, confidence, verdict.value),
+      },
+    ]),
+    keyed,
+  )!;
+};
+
 export const extractFields = ({
   symbols,
   ocr,
   senders,
+  directory,
 }: ExtractInput): Extraction => {
   const reads: Read[] = symbols.map((symbol) => ({
     symbol,
@@ -138,7 +168,8 @@ export const extractFields = ({
 
   const trackings: Observation<string>[] = [];
   const votes: Vote[] = [];
-  const recipients: Observation<string>[] = [];
+  const keyed = new Set<string>();
+  const recipients: RecipientRead[] = [];
   const named: { name: string; source: FieldSource }[] = [];
   const accounts: AccountRead[] = [];
   const pieces: Observation<{ index: number; total: number }>[] = [];
@@ -184,6 +215,7 @@ export const extractFields = ({
       accounts.push(...accountsOf(parsed, best?.verdict ?? null));
       if (best !== null) {
         const { value, carrier } = best.verdict;
+        if (best.verdict.status === 'sure') keyed.add(value);
         trackings.push({
           key: value,
           value,
@@ -208,9 +240,9 @@ export const extractFields = ({
       const recipient = partyName(parsed.recipient);
       if (recipient) {
         recipients.push({
-          key: canonical(recipient),
-          value: recipient,
+          name: recipient,
           source: source(kind, format, CONFIDENCE.structured2d, recipient),
+          party: parsed.recipient,
         });
       }
       const sender = partyName(parsed.sender);
@@ -262,6 +294,7 @@ export const extractFields = ({
     if (best === null) continue;
     accounts.push(...accountsOf(null, best.verdict));
     const { value, carrier } = best.verdict;
+    if (best.verdict.reason === 'valid-key') keyed.add(value);
     trackings.push({
       key: value,
       value,
@@ -290,8 +323,24 @@ export const extractFields = ({
     knowledge: senders,
   });
   const carrier = voteCarrier(votes);
+  if (ocr?.recipientName) {
+    recipients.push({
+      name: ocr.recipientName,
+      source: source('ocr', 'block', CONFIDENCE.ocrFormat, ocr.recipientName),
+    });
+  }
   if (ocr?.text) {
     const read = observeOcr(ocr.text, carrier?.value ?? null);
+    const context = carrier?.level === 'sure' ? carrier.value : null;
+    const printed = ocrTrackings(ocr.text, context);
+    const coded = new Set(trackings.map((t) => t.key));
+    for (const { keyed: isKeyed, ...found } of printed) {
+      const kept =
+        coded.size > 0 ? coded.has(found.key) : isKeyed || context !== null;
+      if (!kept) continue;
+      if (isKeyed) keyed.add(found.value);
+      trackings.push(found);
+    }
     pieces.push(...read.pieces);
     weights.push(...read.weights);
     services.push(...read.services);
@@ -299,9 +348,9 @@ export const extractFields = ({
   }
 
   return {
-    tracking: mergeField(trackings),
+    tracking: capUnkeyed(mergeField(trackings), keyed),
     carrier,
-    recipient: mergeField(recipients),
+    recipient: extractRecipient(recipients, directory ?? []),
     sender: sender.field,
     senderId: sender.senderId,
     accounts,

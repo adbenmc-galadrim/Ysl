@@ -133,8 +133,10 @@ async function read(
   ocr: TextReader,
   held?: DraftParcel,
 ): Promise<ReadText> {
+  const started = performance.now();
   try {
     const result: OcrResult = await ocr.recognize(blob);
+    const ocrMs = Math.round(performance.now() - started);
     const ocrName = recipientFromLines(result.lines);
     const sender = await senderWithText(db, draftId, result.lines);
     const draft = held ?? (await db.draftParcel.get(draftId));
@@ -150,6 +152,7 @@ async function read(
           ...(sender === undefined ? {} : { sender }),
           ...(annex === null ? {} : { annex }),
           ...(piece === null ? {} : { pieces: firstPiece(piece) }),
+          durations: { ...draft?.durations, ocrMs },
         });
     return {
       draftId,
