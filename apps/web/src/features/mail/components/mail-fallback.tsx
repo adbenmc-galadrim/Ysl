@@ -1,0 +1,151 @@
+import type { MailMessage, MailTarget } from '@repo/contract/mail';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { MailFallbackSheet } from '@repo/ui';
+import { useRef, useState } from 'react';
+import {
+  copyText,
+  mailText,
+  notOpenedReason,
+  otherTargets,
+  shareMail,
+} from '#/features/mail/fallback';
+import { MAILERS } from '#/features/mail/mailer';
+import type { SentResult } from '#/features/mail/notifications';
+import { useNotifications } from '#/features/mail/use-notifications';
+
+const t = createTranslator(DEFAULT_LOCALE);
+
+/** Why `target` may have stayed shut, in the words of S5. */
+export function notOpenedHint(target: MailTarget): string {
+  if (target === 'mailto') return t('mail.fallback.hint.mailto');
+  const app = t(`mail.target.${target}`);
+  const hint = t('mail.fallback.hint.app', { app });
+  return target === 'gmail'
+    ? `${hint} ${t('mail.fallback.hint.slow', { app })}`
+    : hint;
+}
+
+export type MailFallbackProps = {
+  message: MailMessage;
+  /** The mail app that did not open. */
+  target: MailTarget;
+  /** The mail on record, if any: without it (a test) the sheet only closes. */
+  notificationId?: string;
+  /** Another app took over: the caller asks whether it left, as after "Envoyer". */
+  onOpened?: (target: MailTarget) => void;
+  onSent?: (result: SentResult) => void;
+  onAbandoned?: () => void;
+  onClose?: () => void;
+};
+
+/**
+ * The sheet after a tap that left the page in front. Each other app is a
+ * real link, opened by the tap; the text goes to the clipboard or the share
+ * sheet for any other app. The log keeps the last app tried and, given up,
+ * why.
+ */
+export function MailFallback({
+  message,
+  target,
+  notificationId,
+  onOpened,
+  onSent,
+  onAbandoned,
+  onClose,
+}: MailFallbackProps) {
+  const outbox = useNotifications();
+  const [failed, setFailed] = useState(target);
+  const [status, setStatus] = useState<string>();
+  const busy = useRef(false);
+  const app = (name: MailTarget) => t(`mail.target.${name}`);
+  const canShare =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+
+  const guard = async (action: () => Promise<void>) => {
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      await action();
+    } catch {
+      setStatus(t('mail.fallback.error'));
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  const retry = otherTargets(failed).map((other) => {
+    const prepared = MAILERS[other].prepare(message);
+    return {
+      label: app(other),
+      href: prepared.url,
+      onClick: () => {
+        const opening = MAILERS[other].open(prepared);
+        void guard(async () => {
+          if (notificationId) await outbox.retarget(notificationId, other);
+          if ((await opening) === 'opened') {
+            if (notificationId) await outbox.markOpened(notificationId);
+            onOpened?.(other);
+            return;
+          }
+          setFailed(other);
+          setStatus(t('mail.fallback.stayed', { app: app(other) }));
+        });
+      },
+    };
+  });
+
+  const copy = (text: string, done: string) =>
+    void guard(async () => {
+      setStatus((await copyText(text)) ? done : t('mail.fallback.copyFailed'));
+    });
+
+  const share = () => {
+    const sharing = shareMail(message);
+    void guard(async () => {
+      const outcome = await sharing;
+      setStatus(
+        outcome === 'shared'
+          ? t('mail.fallback.shared')
+          : outcome === 'cancelled'
+            ? t('mail.fallback.shareCancelled')
+            : t('mail.fallback.shareUnavailable'),
+      );
+    });
+  };
+
+  const address = message.to.join(', ');
+
+  return (
+    <MailFallbackSheet
+      description={notOpenedHint(failed)}
+      retry={retry}
+      onCopyText={() => copy(mailText(message), t('mail.fallback.copied'))}
+      address={address || undefined}
+      onCopyAddress={() => copy(address, t('mail.fallback.addressCopied'))}
+      onShare={canShare ? share : undefined}
+      status={status}
+      onMarkSent={
+        notificationId
+          ? () =>
+              void guard(async () => {
+                onSent?.(await outbox.markSent(notificationId));
+              })
+          : undefined
+      }
+      onAbandon={
+        notificationId
+          ? () =>
+              void guard(async () => {
+                await outbox.markFailed(
+                  notificationId,
+                  notOpenedReason(failed, t),
+                );
+                onAbandoned?.();
+              })
+          : undefined
+      }
+      onClose={notificationId ? undefined : onClose}
+      onDismiss={notificationId ? undefined : onClose}
+    />
+  );
+}

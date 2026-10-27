@@ -28,6 +28,7 @@ import { Route as AuthenticatedReglagesDonneesRouteImport } from './routes/_auth
 import { Route as AuthenticatedReglagesExportRouteImport } from './routes/_authenticated/reglages/export'
 import { Route as AuthenticatedReglagesImportV1RouteImport } from './routes/_authenticated/reglages/import-v1'
 import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './routes/_authenticated/reglages/lieu-et-horaires'
+import { Route as AuthenticatedReglagesMessagerieRouteImport } from './routes/_authenticated/reglages/messagerie'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
 import { Route as AuthenticatedColisParcelIdDommageRouteImport } from './routes/_authenticated/colis/$parcelId/dommage'
@@ -140,6 +141,12 @@ const AuthenticatedReglagesLieuEtHorairesRoute =
     path: '/reglages/lieu-et-horaires',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesMessagerieRoute =
+  AuthenticatedReglagesMessagerieRouteImport.update({
+    id: '/reglages/messagerie',
+    path: '/reglages/messagerie',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesSynchronisationRoute =
   AuthenticatedReglagesSynchronisationRouteImport.update({
     id: '/reglages/synchronisation',
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
+  '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -228,6 +236,7 @@ export interface FileRoutesByTo {
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
+  '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -257,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/_authenticated/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/_authenticated/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
+  '/_authenticated/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/_authenticated/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/reglages/export'
     | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
+    | '/reglages/messagerie'
     | '/reglages/synchronisation'
     | '/reglages/'
     | '/colis/$parcelId/dommage'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/reglages/export'
     | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
+    | '/reglages/messagerie'
     | '/reglages/synchronisation'
     | '/reglages'
     | '/colis/$parcelId/dommage'
@@ -341,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/export'
     | '/_authenticated/reglages/import-v1'
     | '/_authenticated/reglages/lieu-et-horaires'
+    | '/_authenticated/reglages/messagerie'
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/reglages/'
     | '/_authenticated/colis/$parcelId/dommage'
@@ -492,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesLieuEtHorairesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/messagerie': {
+      id: '/_authenticated/reglages/messagerie'
+      path: '/reglages/messagerie'
+      fullPath: '/reglages/messagerie'
+      preLoaderRoute: typeof AuthenticatedReglagesMessagerieRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/synchronisation': {
       id: '/_authenticated/reglages/synchronisation'
       path: '/reglages/synchronisation'
@@ -560,6 +580,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesExportRoute: typeof AuthenticatedReglagesExportRoute
   AuthenticatedReglagesImportV1Route: typeof AuthenticatedReglagesImportV1Route
   AuthenticatedReglagesLieuEtHorairesRoute: typeof AuthenticatedReglagesLieuEtHorairesRoute
+  AuthenticatedReglagesMessagerieRoute: typeof AuthenticatedReglagesMessagerieRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
   AuthenticatedColisParcelIdDommageRoute: typeof AuthenticatedColisParcelIdDommageRoute
@@ -587,6 +608,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesImportV1Route: AuthenticatedReglagesImportV1Route,
   AuthenticatedReglagesLieuEtHorairesRoute:
     AuthenticatedReglagesLieuEtHorairesRoute,
+  AuthenticatedReglagesMessagerieRoute: AuthenticatedReglagesMessagerieRoute,
   AuthenticatedReglagesSynchronisationRoute:
     AuthenticatedReglagesSynchronisationRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,

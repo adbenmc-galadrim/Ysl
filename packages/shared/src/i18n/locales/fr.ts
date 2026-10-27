@@ -508,6 +508,32 @@ export const fr = {
   'mail.target.outlook': 'Outlook',
   'mail.target.gmail': 'Gmail',
   'mail.fallback.reason': '{{app}} ne s’est pas ouvert, e-mail abandonné',
+  'mail.fallback.hint.mailto':
+    'Aucune app Mail n’est configurée sur cet iPhone, ou iOS a refusé le lien. Essayez une autre messagerie, ou emportez le texte.',
+  'mail.fallback.hint.app':
+    'Si iOS a affiché « l’adresse n’est pas valide », {{app}} n’est pas installé, a été déchargé par l’iPhone ou n’a jamais été ouvert. Ouvrez-le une fois depuis l’écran d’accueil, puis réessayez.',
+  'mail.fallback.hint.slow':
+    '{{app}} s’ouvre parfois lentement : s’il vient de s’ouvrir, l’e-mail y est prêt.',
+  'mail.fallback.copied': 'Texte copié : collez-le dans votre messagerie.',
+  'mail.fallback.addressCopied': 'Adresse copiée : collez-la dans « À ».',
+  'mail.fallback.copyFailed':
+    'L’iPhone a refusé la copie. Réessayez, ou partagez le texte.',
+  'mail.fallback.shared':
+    'Texte partagé. Une fois l’e-mail parti, marquez-le comme envoyé.',
+  'mail.fallback.shareCancelled': 'Partage annulé.',
+  'mail.fallback.shareUnavailable':
+    'Partage indisponible ici : copiez le texte.',
+  'mail.fallback.stayed': '{{app}} ne s’est pas ouvert non plus.',
+  'mail.fallback.error': 'E-mail non enregistré sur l’iPhone, réessayez.',
+  'settings.mailApp': 'Messagerie',
+  'settings.mailApp.mailto': 'Recommandé : l’app de messagerie de l’iPhone',
+  'settings.mailApp.other': 'À ouvrir une fois avant le premier envoi',
+  'settings.mailApp.footer':
+    '« Envoyer » ouvre l’e-mail prérempli dans cette app. Le choix vaut pour cet iPhone.',
+  'settings.mailApp.opened': '{{app}} s’est ouvert',
+  'settings.mailApp.opened.description':
+    'Revenez ici et supprimez le brouillon vide.',
+  'settings.mailApp.stayed': '{{app}} ne s’est pas ouvert',
   'mail.variable.prénom': 'Prénom du destinataire',
   'mail.variable.nom': 'Nom du destinataire',
   'mail.variable.code': 'Code de retrait',
