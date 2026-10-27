@@ -131,7 +131,7 @@ export function ReglagesHome() {
       },
       {
         icon: 'send',
-        color: 'blue',
+        color: 'sky',
         label: t('settings.mailApp'),
         value: t(`mail.target.${mailTarget}`),
         onPress: () => void navigate({ to: '/reglages/messagerie' }),
