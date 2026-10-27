@@ -146,12 +146,13 @@ export function markOpened(
 
 /**
  * The agent tries another mail app for the same mail: the log keeps the
- * last one tried, the one that opened or the one given up on.
+ * last one tried, the one that opened or the one given up on. `null` when
+ * the text left by copy or share, through an app the log cannot name.
  */
 export async function retargetNotification(
   db: CourrierDatabase,
   id: string,
-  target: MailTarget,
+  target: MailTarget | null,
   { now = new Date() }: { now?: Date } = {},
 ): Promise<LocalNotification> {
   const row = await liveNotification(db, id);

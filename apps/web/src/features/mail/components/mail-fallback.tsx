@@ -47,6 +47,7 @@ export function MailFallback({
   const outbox = useNotifications();
   const [failed, setFailed] = useState(target);
   const [status, setStatus] = useState<string>();
+  const carried = useRef(false);
   const busy = useRef(false);
   const app = (name: MailTarget) => t(`mail.target.${name}`);
   const canShare =
@@ -91,13 +92,16 @@ export function MailFallback({
 
   const copy = (text: string, done: string) =>
     void guard(async () => {
-      setStatus((await copyText(text)) ? done : t('mail.fallback.copyFailed'));
+      const copied = await copyText(text);
+      if (copied) carried.current = true;
+      setStatus(copied ? done : t('mail.fallback.copyFailed'));
     });
 
   const share = () => {
     const sharing = shareMail(message);
     void guard(async () => {
       const outcome = await sharing;
+      if (outcome === 'shared') carried.current = true;
       setStatus(
         outcome === 'shared'
           ? t('mail.fallback.shared')
@@ -125,6 +129,9 @@ export function MailFallback({
         notificationId
           ? () =>
               void guard(async () => {
+                if (carried.current) {
+                  await outbox.retarget(notificationId, null);
+                }
                 onSent?.(await outbox.markSent(notificationId));
               })
           : undefined

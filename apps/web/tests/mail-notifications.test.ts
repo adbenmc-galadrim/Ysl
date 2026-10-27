@@ -165,6 +165,13 @@ describe('the outbox of e-mails', () => {
     });
   });
 
+  it('names no mail app once the text left by copy or share', async () => {
+    const mail = await prepared([parcelRow().id]);
+    await retargetNotification(db, mail.id, null, { now: NOW });
+    const { notification } = await markSent(db, mail.id, options);
+    expect(notification).toMatchObject({ status: 'sent', target: null });
+  });
+
   it('leaves the mail app of a sent mail as it was', async () => {
     const mail = await prepared([parcelRow().id]);
     await markSent(db, mail.id, options);
