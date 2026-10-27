@@ -245,6 +245,8 @@ export type DraftParcel = {
   learnedRecipient?: KnownRecipientAlias | null;
   /** The department typed with someone outside the directory (F27); absent before YSL-64. */
   department?: string | null;
+  /** « Sans suivi » chosen in the review: an internal number, no carrier; absent before YSL-64. */
+  type?: 'colis' | 'sans_suivi';
 };
 
 export type DraftDurations = { codesMs?: number; ocrMs?: number };

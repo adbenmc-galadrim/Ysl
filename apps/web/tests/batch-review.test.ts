@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { isInternalTracking } from '@repo/contract/parcel-completion';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -10,7 +11,14 @@ import {
 } from '#/features/batch/store';
 import { CourrierDatabase } from '#/features/db/schema';
 import type { DraftParcel, DraftRecipient } from '#/features/db/schema';
-import { parseAnnex, settleAnnex, skipDraft } from '#/features/review/actions';
+import {
+  parseAnnex,
+  setDraftCarrier,
+  settleAnnex,
+  skipDraft,
+  typeDraftTracking,
+  untrackDraft,
+} from '#/features/review/actions';
 import { reviewBatch, reviewOf, reviewSummary } from '#/features/review/model';
 import { pickTracking } from '#/features/scan/confirm';
 import { NOW } from './helpers/local-rows';
@@ -170,15 +178,77 @@ describe('the batch saved from the review', () => {
     });
   });
 
-  it('leaves a number picked with no carrier « À compléter »', async () => {
+  it('asks the carrier of a number its format does not name', async () => {
     const { odd } = await batchOfFour();
 
     await pickTracking(odd, ODD, db);
 
     expect(reviewOf((await db.draftParcel.get(odd))!)).toMatchObject({
-      group: 'toComplete',
-      steps: [],
+      group: 'toCheck',
+      steps: [{ field: 'tracking', level: 'carrier' }],
     });
+  });
+
+  it('keeps the carrier the agent chose, up to the parcel', async () => {
+    const { batch, odd } = await batchOfFour();
+
+    await pickTracking(odd, ODD, db);
+    await setDraftCarrier(db, odd, 'DPD');
+
+    expect(reviewOf((await db.draftParcel.get(odd))!).group).toBe('ready');
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+    expect(await db.parcel.get(odd)).toMatchObject({
+      status: 'recu',
+      carrier: 'DPD',
+      trackingNorm: ODD,
+    });
+  });
+
+  it('takes a number typed for a label unread', async () => {
+    const batch = await openBatch(db, NOW);
+    const draft = await addDraft(db, files, batch.id, null, NOW);
+    await updateDraft(db, draft.id, { recipient: card });
+    expect(reviewOf((await db.draftParcel.get(draft.id))!).steps).toEqual([
+      { field: 'tracking', level: 'none' },
+    ]);
+
+    await typeDraftTracking(db, draft.id, {
+      tracking: '4815 1623 42',
+      carrier: 'Coursier Paris',
+    });
+
+    expect(reviewOf((await db.draftParcel.get(draft.id))!).group).toBe('ready');
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+    expect(await db.parcel.get(draft.id)).toMatchObject({
+      status: 'recu',
+      type: 'colis',
+      tracking: '4815162342',
+      carrier: 'Coursier Paris',
+    });
+  });
+
+  it('numbers a parcel « Sans suivi » and asks only its recipient', async () => {
+    const batch = await openBatch(db, NOW);
+    const handed = await addDraft(db, files, batch.id, null, NOW);
+    const addressed = await addDraft(db, files, batch.id, null, later(1));
+    await updateDraft(db, addressed.id, { recipient: card });
+
+    await untrackDraft(db, handed.id);
+    await untrackDraft(db, addressed.id);
+
+    const review = reviewBatch(await listDrafts(db, batch.id));
+    expect(review.toCheck.map((item) => item.steps)).toEqual([
+      [{ field: 'recipient' }],
+    ]);
+    expect(ids(review.ready)).toEqual([addressed.id]);
+    await finishBatch(db, { batchId: batch.id, agentId: 'agent-1' });
+    const saved = await db.parcel.bulkGet([handed.id, addressed.id]);
+    expect(saved).toMatchObject([
+      { type: 'sans_suivi', status: 'a_completer', carrier: null },
+      { type: 'sans_suivi', status: 'recu', carrier: null },
+    ]);
+    expect(saved.every((p) => isInternalTracking(p?.trackingNorm))).toBe(true);
+    expect(saved[0]!.trackingNorm).not.toBe(saved[1]!.trackingNorm);
   });
 
   it('keeps a parcel passed « À compléter », listed apart', async () => {

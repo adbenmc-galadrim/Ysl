@@ -1,4 +1,5 @@
 import { extractFields } from '@repo/contract/extract';
+import { isParcelComplete } from '@repo/contract/parcel-completion';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
@@ -99,21 +100,22 @@ export function editOf(parcel: LocalParcel): ParcelEdit {
 }
 
 /**
- * Received once the mailroom can notify it — a carrier and a number, unless
- * the parcel has none, and someone to tell — as `promotedStatus` decides at
- * the end of a batch.
+ * Received once the mailroom can notify it (F26, `@repo/contract/parcel-completion`):
+ * a carrier and a number, unless the parcel has none, and someone to tell —
+ * a card or a contact, a name read on the label is not enough.
  */
 export function isComplete(
   parcel: Pick<
     LocalParcel,
-    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId' | 'readName'
+    'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
   >,
 ): boolean {
-  const traced =
-    parcel.type === 'sans_suivi' || Boolean(parcel.carrier && parcel.tracking);
-  return (
-    traced && Boolean(parcel.personId || parcel.contactId || parcel.readName)
-  );
+  return isParcelComplete({
+    type: parcel.type,
+    carrier: parcel.carrier,
+    tracking: parcel.tracking,
+    recipient: Boolean(parcel.personId || parcel.contactId),
+  });
 }
 
 /**

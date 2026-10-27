@@ -1,3 +1,4 @@
+import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
@@ -59,6 +60,38 @@ export function homeState(
     case 'retourne':
       return undefined;
   }
+}
+
+const GAP_KEYS = {
+  recipient: 'parcel.missing.recipient',
+  tracking: 'parcel.missing.tracking',
+  carrier: 'parcel.missing.carrier',
+} as const satisfies Record<ParcelGap, string>;
+
+/**
+ * Why a parcel waits « À compléter » (F26): « Destinataire inconnu »,
+ * « Numéro non lu », « Transporteur inconnu »; « Numéro à vérifier » when
+ * nothing is missing but the number was never vouched for. Empty for a
+ * parcel past that status.
+ */
+export function missingOf(
+  parcel: Pick<
+    LocalParcel,
+    'status' | 'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
+  >,
+  t: TranslateFn,
+): string {
+  if (parcel.status !== 'a_completer') return '';
+  const gaps = parcelGaps({
+    type: parcel.type,
+    carrier: parcel.carrier,
+    tracking: parcel.tracking,
+    recipient: Boolean(parcel.personId || parcel.contactId),
+  });
+  if (gaps.length === 0) {
+    return parcel.type === 'sans_suivi' ? '' : t('parcel.missing.doubt');
+  }
+  return gaps.map((gap) => t(GAP_KEYS[gap])).join(' · ');
 }
 
 /** "10 h 42", as the desk says it. */

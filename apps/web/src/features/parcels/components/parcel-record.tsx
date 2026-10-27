@@ -23,6 +23,7 @@ import {
 import { lastMailLine } from '#/features/mail/tracking';
 import { useLatestMail } from '#/features/mail/use-sent-mails';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
+import { CompleteParcel } from '#/features/parcels/components/complete-parcel';
 import {
   describeRecord,
   type RecordAction,
@@ -98,6 +99,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const damageUrls = useDamagePhotoUrls(parcelId, damagedAt);
   const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const [completing, setCompleting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -306,7 +308,9 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
         action?.kind === 'notify'
           ? () =>
               void navigate({ to: '/notifier', search: { colis: parcelId } })
-          : edit
+          : action?.kind === 'complete'
+            ? () => setCompleting(true)
+            : edit
       }
       secondaryAction={
         action?.kind === 'stepBack'
@@ -328,6 +332,16 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       overlay={
         <>
           {sheet}
+          {completing && (
+            <CompleteParcel
+              parcel={record.parcel}
+              onEdit={() => {
+                setCompleting(false);
+                edit();
+              }}
+              onClose={() => setCompleting(false)}
+            />
+          )}
           {viewing && photoUrl.state === 'ready' && (
             <PhotoViewer
               src={photoUrl.url}

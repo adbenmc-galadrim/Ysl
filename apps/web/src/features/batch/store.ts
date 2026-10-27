@@ -45,6 +45,7 @@ export type DraftPatch = Partial<
     | 'reviewSkipped'
     | 'learnedRecipient'
     | 'department'
+    | 'type'
   >
 >;
 
@@ -266,7 +267,7 @@ function toParcel(
     updatedAt: now,
     deletedAt: null,
     batchId,
-    type: 'colis',
+    type: draft.type ?? 'colis',
     status: promotedStatus(draft),
     statusSeq: 0,
     carrier: draft.carrier,

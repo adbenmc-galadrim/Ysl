@@ -119,7 +119,7 @@ describe('saveParcelEdit', () => {
   });
 
   it('moves a parcel back to complete when its carrier goes', async () => {
-    const row = parcelRow({ status: 'recu', readName: 'C. MOREL' });
+    const row = parcelRow({ status: 'recu', personId: 'p-1' });
     await db.parcel.put(row);
 
     await saveParcelEdit(db, row.id, { ...editOf(row), carrier: '' }, options);

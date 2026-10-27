@@ -51,6 +51,7 @@ const issueOf = (step: ReviewStep, draft: DraftParcel) => {
     if (!(draft.trackingNorm ?? draft.tracking)) {
       return t('review.issue.tracking.missing');
     }
+    if (step.level === 'carrier') return t('review.issue.carrier');
     return step.level === 'to-verify'
       ? t('review.issue.tracking.toVerify')
       : t('review.issue.tracking.none');
