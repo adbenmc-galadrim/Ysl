@@ -15,13 +15,12 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import type { LocalNotification, LocalParcel } from '#/features/db/schema';
-import { normalizeEmail } from '#/features/directory/people';
 import {
   cardOf,
   fixAddress,
   type AddressCard,
 } from '#/features/mail/fix-address';
-import { useAddressEntry } from '#/features/mail/components/address-entry';
+import { useAddressEntry } from '#/features/mail/use-address-entry';
 import { MAILERS } from '#/features/mail/mailer';
 import { drawPins } from '#/features/mail/pickup-code';
 import { parcelName, recipientValues } from '#/features/mail/recipients';
@@ -117,6 +116,8 @@ function FixSheet({
   const session = useSession();
   const userId = session.user.id;
   const outbox = useNotifications();
+  // Frozen at the tap on "Corriger": the live log moves under the sheet
+  // (this very mail is replaced on resend) and must not redraw the code.
   const [notification] = useState(tracked.notification);
   const mail = mailOf(notification, sent.parcels, sent.context);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -165,33 +166,33 @@ function FixSheet({
     busy.current = true;
     setFailed(false);
     const opening = MAILERS.mailto.open(prepared);
+    // Recorded from the tap, as Notifier does: the new code's hash and the
+    // mail to confirm exist even if iOS ends the app while Mail is open.
+    const parcelIds = mail.parcels.map(({ id }) => id);
+    const preparing = outbox.prepare({
+      type: notification.type,
+      personId: notification.personId,
+      contactId: notification.contactId,
+      recipients: [address],
+      parcelIds,
+      templateId: draft.template.stored ? draft.template.id : null,
+      target: 'mailto',
+      pickupPin: draft.pin ?? undefined,
+    });
+    const fixing = fixAddress(
+      db,
+      { card: draft.card, parcelIds, address, onCard },
+      { agentId: userId },
+    );
     void (async () => {
       try {
-        if (address !== normalizeEmail(mail.address ?? '') || !onCard) {
-          await fixAddress(
-            db,
-            {
-              card: draft.card,
-              parcelIds: mail.parcels.map(({ id }) => id),
-              address,
-              onCard,
-            },
-            { agentId: userId },
-          );
-        }
-        const row = await outbox.prepare({
-          type: notification.type,
-          personId: notification.personId,
-          contactId: notification.contactId,
-          recipients: [address],
-          parcelIds: mail.parcels.map(({ id }) => id),
-          templateId: draft.template.stored ? draft.template.id : null,
-          target: 'mailto',
-          pickupPin: draft.pin ?? undefined,
-        });
+        const row = await preparing;
         if ((await opening) === 'opened') await outbox.markOpened(row.id);
         await whenVisible();
+        // The mail left the app: ask about it even if the card was not
+        // written, which the sheet then says.
         onAsk(row.id);
+        await fixing;
       } catch {
         setFailed(true);
       } finally {

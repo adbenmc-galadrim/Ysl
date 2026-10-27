@@ -170,4 +170,58 @@ describe('fixing an address', () => {
       'ines@example.com',
     );
   });
+
+  it('writes on the parcels only when the box is unticked', async () => {
+    const marc = contactRow({ name: 'Marc Petit', email: 'marc@old.example' });
+    const parcel = parcelRow({ contactId: marc.id });
+    await db.contact.put(marc);
+    await db.parcel.put(parcel);
+    const card = await cardOf(db, { personId: null, contactId: marc.id });
+
+    const fixed = await fixAddress(
+      db,
+      {
+        card,
+        parcelIds: [parcel.id],
+        address: 'marc@new.example',
+        onCard: false,
+      },
+      options,
+    );
+
+    expect(fixed).toMatchObject({ wrote: 'parcels' });
+    expect((await db.contact.get(marc.id))?.email).toBe('marc@old.example');
+    expect((await db.parcel.get(parcel.id))?.notificationEmail).toBe(
+      'marc@new.example',
+    );
+  });
+
+  it('refuses a person the address of a contact', async () => {
+    const paul = personRow({ firstName: 'Paul', lastName: 'Mercier' });
+    const atelier = contactRow({
+      name: 'Atelier',
+      email: 'atelier@example.com',
+    });
+    await db.directoryPerson.put(paul);
+    await db.contact.put(atelier);
+    const card = await cardOf(db, { personId: paul.id, contactId: null });
+
+    expect(await checkAddress(db, card, 'Atelier@example.com', true)).toEqual({
+      kind: 'duplicate',
+      name: 'Atelier',
+    });
+  });
+
+  it('sends again to the address a person already shares with a contact', async () => {
+    const nora = personRow({ email: 'nora@example.com' });
+    const alias = contactRow({ name: 'N. Haddad', email: 'Nora@example.com' });
+    await db.directoryPerson.put(nora);
+    await db.contact.put(alias);
+    const card = await cardOf(db, { personId: nora.id, contactId: null });
+
+    expect(await checkAddress(db, card, 'nora@example.com', true)).toEqual({
+      kind: 'ok',
+      address: 'nora@example.com',
+    });
+  });
 });

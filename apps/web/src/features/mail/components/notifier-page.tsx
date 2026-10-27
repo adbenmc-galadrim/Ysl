@@ -22,7 +22,7 @@ import { Dexie } from 'dexie';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
-import { useAddressEntry } from '#/features/mail/components/address-entry';
+import { useAddressEntry } from '#/features/mail/use-address-entry';
 import {
   cardOf,
   fixAddress,

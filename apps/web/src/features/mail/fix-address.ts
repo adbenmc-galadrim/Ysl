@@ -56,9 +56,9 @@ export type AddressCheck =
 
 /**
  * Whether `typed` can become the card's address. The directory never holds
- * two cards with one e-mail (F50, `directory_person_email_idx`), and a
- * contact never takes the address of someone else, person or contact: the
- * agent picks that card on the parcel instead. Written on the parcels
+ * two cards with one e-mail (F50, `directory_person_email_idx`), and no
+ * card takes the address of another, person or contact: the agent picks
+ * that card on the parcel instead. Written on the parcels
  * only, any well-formed address goes.
  */
 export async function checkAddress(
@@ -70,22 +70,31 @@ export async function checkAddress(
   const address = normalizeEmail(typed);
   if (!isEmail(address)) return { kind: 'invalid' };
   if (!onCard || !cardEditable(card)) return { kind: 'ok', address };
+  // The card's own address goes again as it is: a person and a contact may
+  // already share it (one human, one mail, YSL-61).
+  const current =
+    card.kind === 'person'
+      ? card.person.email
+      : card.kind === 'contact'
+        ? card.contact.email
+        : null;
+  if (normalizeEmail(current ?? '') === address) return { kind: 'ok', address };
   const person = await findByEmail(
     db,
     address,
     card.kind === 'person' ? card.person.id : undefined,
   );
   if (person) return { kind: 'duplicate', name: fullName(person) };
-  if (card.kind === 'contact') {
-    const contacts = await db.contact
-      .where('email')
-      .equalsIgnoreCase(address)
-      .toArray();
-    const other = contacts.find(
-      (row) => row.id !== card.contact.id && !row.deletedAt,
-    );
-    if (other) return { kind: 'duplicate', name: other.name };
-  }
+  const contacts = await db.contact
+    .where('email')
+    .equalsIgnoreCase(address)
+    .toArray();
+  const other = contacts.find(
+    (row) =>
+      !row.deletedAt &&
+      !(card.kind === 'contact' && row.id === card.contact.id),
+  );
+  if (other) return { kind: 'duplicate', name: other.name };
   return { kind: 'ok', address };
 }
 
@@ -126,12 +135,20 @@ export async function fixAddress(
   );
   const options = { agentId, now };
   const upserts: Upsert[] = [];
-  if (wrote === 'card' && card.kind === 'person')
+  if (
+    wrote === 'card' &&
+    card.kind === 'person' &&
+    card.person.email !== address
+  )
     upserts.push({
       entity: 'directory_person',
       row: { ...card.person, email: address, updatedAt: now },
     });
-  if (wrote === 'card' && card.kind === 'contact')
+  if (
+    wrote === 'card' &&
+    card.kind === 'contact' &&
+    card.contact.email !== address
+  )
     upserts.push({
       entity: 'contact',
       row: { ...card.contact, email: address, updatedAt: now },
