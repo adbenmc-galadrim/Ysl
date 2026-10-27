@@ -6,8 +6,10 @@ import {
   type SyncCursor,
   type SyncedEntity,
 } from '@repo/contract/sync';
+import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import {
   SYNC_STATE_KEYS,
+  SYNCED_TABLE_NAMES,
   type CourrierDatabase,
   type SyncedRows,
 } from '#/features/db/schema';
@@ -50,8 +52,23 @@ function byEntity(
 }
 
 /**
+ * What a removed parcel leaves behind on this device: its events and what
+ * the reader made of its label. Its photos go with the local purge.
+ */
+async function dropParcelTraces(db: CourrierDatabase, ids: string[]) {
+  if (ids.length === 0) return;
+  await db.event
+    .where('[entity+entityId]')
+    .anyOf(ids.map((id) => [PARCEL_EVENT_ENTITY, id]))
+    .delete();
+  await db.extraction.bulkDelete(ids);
+}
+
+/**
  * Writes one page into the local tables. A row with a queued change of this
- * device is left alone: its push will carry the newer version.
+ * device is left alone: its push will carry the newer version. A row the
+ * server marked deleted leaves the device: no tombstone is kept here, so a
+ * purge on the server (§9.2) purges the phone too.
  */
 export async function applyChanges(
   db: CourrierDatabase,
@@ -60,24 +77,63 @@ export async function applyChanges(
   if (changes.length === 0) return 0;
   const groups = byEntity(changes);
   const tables = [...groups.keys()].map((entity) => db.synced(entity));
-  return db.transaction('rw', [...tables, db.outbox], async () => {
-    const pending = await pendingKeys(db);
-    let written = 0;
-    for (const [entity, rows] of groups) {
-      const kept = rows.filter(
-        (row) => !pending.has(keyOf(entity, row.id as string)),
-      );
-      await db.synced(entity).bulkPut(kept as SyncedRows[typeof entity][]);
-      written += kept.length;
-    }
-    return written;
-  });
+  return db.transaction(
+    'rw',
+    [...tables, db.outbox, db.event, db.extraction],
+    async () => {
+      const pending = await pendingKeys(db);
+      let written = 0;
+      for (const [entity, rows] of groups) {
+        const kept = rows.filter(
+          (row) => !pending.has(keyOf(entity, row.id as string)),
+        );
+        const gone = kept
+          .filter((row) => row.deletedAt != null)
+          .map((row) => row.id as string);
+        const live = kept.filter((row) => row.deletedAt == null);
+        await db.synced(entity).bulkPut(live as SyncedRows[typeof entity][]);
+        await db.synced(entity).bulkDelete(gone);
+        if (entity === 'parcel') await dropParcelTraces(db, gone);
+        written += kept.length;
+      }
+      return written;
+    },
+  );
+}
+
+/**
+ * After a reset, the rows the server no longer has: whatever the full read
+ * did not bring back, except a row this device still has to send.
+ */
+async function sweepUnseen(
+  db: CourrierDatabase,
+  seen: Set<string>,
+): Promise<void> {
+  const tables = SYNCED_TABLE_NAMES.map((entity) => db.synced(entity));
+  await db.transaction(
+    'rw',
+    [...tables, db.outbox, db.event, db.extraction],
+    async () => {
+      const pending = await pendingKeys(db);
+      for (const entity of SYNCED_TABLE_NAMES) {
+        const ids = await db.synced(entity).toCollection().primaryKeys();
+        const unseen = ids.filter(
+          (id) =>
+            !seen.has(keyOf(entity, id)) && !pending.has(keyOf(entity, id)),
+        );
+        await db.synced(entity).bulkDelete(unseen);
+        if (entity === 'parcel') await dropParcelTraces(db, unseen);
+      }
+    },
+  );
 }
 
 /**
  * Pulls everything the server wrote since the cursor, page after page, and
  * moves the cursor only once the last page is in: a pull cut short starts
- * again from the same place, and a row that comes twice is put twice.
+ * again from the same place, and a row that comes twice is put twice. A
+ * reset reads everything again, then drops what did not come back: rows the
+ * server erased while this device was too far behind to see them go.
  */
 export async function pullChanges(
   db: CourrierDatabase,
@@ -87,13 +143,21 @@ export async function pullChanges(
   const cursor = await readCursor(db);
   let output = await client({ cursor, page: null, limit });
   const { generation, reset } = output;
+  const seen = new Set<string>();
+  const note = (changes: PullChange[]) => {
+    if (!reset) return;
+    for (const { entity, row } of changes) seen.add(keyOf(entity, row.id));
+  };
+  note(output.rows);
   let rows = await applyChanges(db, output.rows);
   onProgress?.(rows);
   while (output.next) {
     output = await client({ cursor: null, page: output.next, limit });
+    note(output.rows);
     rows += await applyChanges(db, output.rows);
     onProgress?.(rows);
   }
+  if (reset) await sweepUnseen(db, seen);
   const next: SyncCursor = { generation, xid: output.cursor };
   await db.syncState.put({ key: SYNC_STATE_KEYS.cursor, value: next });
   return { rows, reset, cursor: next };
