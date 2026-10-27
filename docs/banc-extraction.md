@@ -26,6 +26,8 @@ destinataire, expéditeur, n/N, poids. Deux politiques de lecture :
 | Tracking 1D au format reconnu, clé valide                                                                      | 0,95      |
 | Transporteur déduit d'un code (SCAC, préfixe 1Z)                                                               | 0,93      |
 | Tracking 1D au format reconnu, sans clé ; transporteur déduit d'une forme partagée par plusieurs transporteurs | 0,85      |
+| Tracking imprimé lu par l'OCR, format et clé valides                                                           | 0,85      |
+| Tracking imprimé lu par l'OCR, format reconnu sans clé ; destinataire du bloc ancré (`SHIP TO`, `À`…)          | 0,65      |
 | Code 1D de forme inconnue (routage, code postal)                                                               | 0,40      |
 
 Deux sources indépendantes concordent : `1 − (1 − c₁)(1 − c₂)`, plafonné à 0,99. Deux
@@ -36,10 +38,20 @@ entre le logo OCR et la mise en page), égalité = `tie`, jamais « sûr ». Un 
 structuré dont le numéro n'a aucune forme connue (rang 1 : « cohérent avec la structure
 attendue ») descend à 0,85. Les seuils d'affichage du §4.4
 donnent les niveaux : **sûr** ≥ 0,90, **à vérifier** de 0,60 à 0,90, vide en dessous.
-L'entrée `ocr` du type `ExtractInput` est réservée aux rangs 5 à 7 (YSL-26) : aucune règle
-OCR n'est encore branchée.
 
-**La comparaison.** Tracking normalisé (espaces, tirets, casse) ; transporteur à
+**Règle dure O1 (YSL-52).** Un tracking n'est « sûr » que si une clé de contrôle le valide
+(verdict `valid-key`) ou qu'un code 2D structuré le donne. Sinon (format reconnu sans clé,
+Chronopost lu en 1D au format et au contexte, DHL Express sans contexte, OCR sans clé) il est
+plafonné à 0,89 avec le drapeau `unkeyed`, même lu par deux sources qui concordent. Un
+nombre imprimé n'entre qu'en concordance avec un code, ou seul s'il porte une clé valide :
+il ne contredit jamais un code. **Cohérence métier** : destinataire d'un code adressé hors
+75007 / FR, malus 0,15 et drapeau `forward` (« réexpédition ? ») ; nom de l'annuaire à
+Jaro-Winkler ≥ 0,92, bonus 0,10 ; nom OCR à ≥ 0,92 du nom d'un code, même lecture
+(concordance) ; poids hors 0,01 à 70 kg et n > N écartés.
+
+**La comparaison.** Tracking normalisé (espaces, tirets, casse ; un SSCC écrit avec son
+identifiant d'application `00` est le même numéro ; une annotation peut citer d'autres
+numéros valides imprimés sur l'étiquette, `otherTrackings`) ; transporteur à
 l'identique ; noms aux mêmes mots quel que soit l'ordre, accents et ponctuation ignorés,
 ou l'un contenu dans l'autre ; n/N à l'identique ; poids à ± 0,25 kg (le MaxiCode UPS
 porte des livres entières). Un **faux « sûr »** est une valeur à ≥ 0,90 différente de
@@ -144,6 +156,38 @@ encore (ses formats attendus vivent dans `apps/web`).
   destinataire : le choix personne / société revient à la revue de lot) ; `11Z` du
   PDF417 FedEx lu comme expéditeur contredit par l'étiquette DJI, où c'est la société
   destinataire (TODO YSL-25).
+
+## Score de confiance (YSL-52, 27/10/2026)
+
+Mêmes corpus et base du critère (110 étiquettes). Seuils inchangés (sûr ≥ 0,90, à vérifier
+≥ 0,60) : O1 tombe à zéro par le plafond sans clé et la relecture de deux annotations,
+sans recaler les confiances de base.
+
+| Objectif                                 |                     `first` |             `thorough` | Cible                           | Atteint                        |
+| ---------------------------------------- | --------------------------: | ---------------------: | ------------------------------- | ------------------------------ |
+| O1 · faux « sûrs » sur le tracking       |                           0 |                      0 | 0                               | **oui**                        |
+| O2 · tracking prérempli et juste         |                      63,6 % |                 65,5 % | ≥ 95 %                          | non                            |
+| O3 · destinataire juste ou dans le top 3 |              8,3 % (2 / 24) |                  8,3 % | ≥ 95 %                          | non : le banc ne lit pas l'OCR |
+| O4 · expéditeur juste ou proposé         |                0 % (0 / 56) |                    0 % | ≥ 70 %                          | non                            |
+| O5 · délai entre deux captures           |                           — |                      — | ≤ 1 s                           | non mesuré ici                 |
+| O6 · temps par photo, Mac                |        p50 23 ms, p95 76 ms | p50 180 ms, p95 822 ms | p50 ≤ 3 s, p95 ≤ 5 s sur iPhone | oui                            |
+| Faux « sûrs » sur les autres champs      | destinataire 4,2 % (1 / 24) |      idem, poids 2,0 % | ≤ 2 %                           | non sur le destinataire        |
+
+Ce qui a bougé depuis le 24/10 :
+
+- `guide-usps-priority-mail-smart-locker` et `guide-usps-bulk-parcel-return-service` :
+  numéro au format USPS sans clé, désormais « à vérifier » (plafond O1) ;
+- `web-paketaufkleber-dhl-europack-national-deutschland-2016` : le SSCC lu avec son `00`
+  est le numéro annoté ; la comparaison les confond ;
+- `web-usps-first-class-pkg-intl-…-lettre` : l'enveloppe porte deux S10 valides
+  (USPS `LZ…US` et recommandé Deutsche Post `RN…DE`, photo vérifiée) ; l'annotation
+  accepte les deux (`otherTrackings`) ;
+- destinataire : un nom de code 2D adressé hors 75007 passe « à vérifier » (`forward`) ;
+  le faux « sûr » restant (Colissimo réelle, nom de société contre nom de personne) relève
+  du choix personne / société de la revue du lot (YSL-58).
+
+Photos réelles (5) : tracking 3 sûrs et justes, 2 à vérifier et justes (DHL Express sans
+contexte, Chronopost par l'Aztec), aucun faux sûr.
 
 ## Rapprochement destinataire (YSL-46, 26/10/2026)
 
