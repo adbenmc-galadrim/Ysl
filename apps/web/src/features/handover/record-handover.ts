@@ -42,8 +42,8 @@ export type HandoverInput = RemiseColisSearch & {
 
 export type HandoverOptions = {
   agentId: string;
-  /** Kept on the handover: the journal names the agent on every iPhone. */
-  agentName: string;
+  /** Kept on the handover: the journal names the agent on every iPhone; absent, the journal says « Vous » / « Un agent ». */
+  agentName?: string | null;
   now?: Date;
 };
 
@@ -123,7 +123,7 @@ export async function recordHandover(
     delegateName: null,
     method: input.via,
     agentId,
-    agentName: agentName.trim() || null,
+    agentName: agentName?.trim() || null,
     at: now,
     cancelledAt: null,
   };
