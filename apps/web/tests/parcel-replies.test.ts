@@ -213,7 +213,7 @@ describe('« Un collègue passe le prendre »', () => {
   });
 });
 
-describe('« Absent jusqu’au … »', () => {
+describe('« Absence jusqu’au … »', () => {
   it('holds the reminders back until the working day after', async () => {
     const parcel = notified();
     await db.parcel.put(parcel);
@@ -233,12 +233,28 @@ describe('« Absent jusqu’au … »', () => {
     expect(reminderOf(away, back)).toMatchObject({ due: true, late: false });
     const shown = await history(parcel.id);
     expect(shown.history?.[0]?.title).toBe(
-      'A répondu : absent jusqu’au 30 oct.',
+      'A répondu : absence jusqu’au 30 oct.',
     );
     expect(shown.details).toContainEqual({
-      label: 'Absent jusqu’au',
+      label: 'Absence jusqu’au',
       value: '30 oct.',
     });
+  });
+
+  it('keeps saying the absence once a colleague is named after it', async () => {
+    const parcel = notified();
+    await db.parcel.put(parcel);
+    await replyAbsent(db, [parcel.id], new Date(2026, 9, 30), options);
+    await replyColleague(db, [parcel.id], 'Paul Mercier', options);
+
+    const shown = await history(parcel.id);
+    expect(shown.details).toEqual(
+      expect.arrayContaining([
+        { label: 'Retrait prévu par', value: 'Paul Mercier' },
+        { label: 'Absence jusqu’au', value: '30 oct.' },
+      ]),
+    );
+    expect(reminderOf((await db.parcel.get(parcel.id))!, NOW)?.due).toBe(false);
   });
 
   it('refuses a day already gone, and writes nothing for the same day twice', async () => {
@@ -309,7 +325,7 @@ describe('the answer on the lists', () => {
 
     expect(toParcelRow(saved, context(), NOW, t)?.reply).toEqual({
       kind: 'absent',
-      text: 'Absent jusqu’au 30 oct.',
+      text: 'Absence jusqu’au 30 oct.',
     });
     expect(
       toParcelRow(saved, context(), new Date(2026, 10, 2, 9), t)?.reply,

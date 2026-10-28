@@ -1,7 +1,8 @@
 import { isTrackingFlag } from '@repo/contract/imports';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
-import { fromDayKey, standingReply } from '@repo/contract/parcel-reply';
+import { fromDayKey } from '@repo/contract/parcel-reply';
+import { resumeOf } from '@repo/contract/reminders';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -300,25 +301,25 @@ function details(
   ];
 }
 
-/** « Retrait prévu par Paul Mercier », « Absent jusqu'au 3 nov. »: what the recipient answered, while it holds. */
+/** « Retrait prévu par Paul Mercier », « Absence jusqu'au 3 nov. »: what the recipient answered, while it holds. */
 function replyDetails(
   parcel: LocalParcel,
   now: Date,
   t: TranslateFn,
 ): DetailsItem[] {
-  const reply = standingReply(parcel, now);
-  if (reply?.kind === 'colleague') {
-    return [{ label: t('record.detail.delegate'), value: reply.delegate }];
-  }
-  if (reply?.kind === 'absent') {
-    return [
-      { label: t('record.detail.away'), value: shortDate(reply.until, now) },
-    ];
-  }
-  return [];
+  if (parcel.deletedAt || parcel.status !== 'notifie') return [];
+  // Both may hold at once: a colleague comes while the recipient is away.
+  const until = parcel.remindersPausedUntil;
+  const away = until && now < resumeOf(until) ? shortDate(until, now) : null;
+  return [
+    ...(parcel.expectedDelegate
+      ? [{ label: t('record.detail.delegate'), value: parcel.expectedDelegate }]
+      : []),
+    ...(away ? [{ label: t('record.detail.away'), value: away }] : []),
+  ];
 }
 
-function eventTitle(event: ParcelEvent, t: TranslateFn): string {
+function eventTitle(event: ParcelEvent, now: Date, t: TranslateFn): string {
   switch (event.type) {
     case 'parcel.edited':
       return t('history.edited', {
@@ -363,16 +364,11 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
         ? t('history.reply.colleague', { name: event.delegate })
         : event.reply === 'absent'
           ? t('history.reply.absent', {
-              date: DAY_MONTH.format(fromDayKey(event.until)),
+              date: shortDate(fromDayKey(event.until), now),
             })
           : t('history.reply.not_mine');
   }
 }
-
-const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'short',
-});
 
 type Dated = HistoryEntry & { at: Date };
 
@@ -410,7 +406,7 @@ function history(
     entries.push({
       id: row.id,
       at: row.at,
-      title: eventTitle(event, t),
+      title: eventTitle(event, now, t),
       ...(rejected
         ? {
             detail: t('history.rejected', {

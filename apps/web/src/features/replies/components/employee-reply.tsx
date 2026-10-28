@@ -141,17 +141,18 @@ export function EmployeeReply({
         <RecipientChooser
           readName={step.parcel.readName}
           onClose={onClose}
-          onPick={async (pick) => {
-            await assignRecipient(
-              db,
-              step.parcel.id,
-              pick.kind === 'card'
-                ? { kind: pick.choice.kind, id: pick.choice.id }
-                : { ...pick, kind: 'typed' },
-              options,
-            );
-            onClose();
-          }}
+          onPick={(pick) =>
+            write(() =>
+              assignRecipient(
+                db,
+                step.parcel.id,
+                pick.kind === 'card'
+                  ? { kind: pick.choice.kind, id: pick.choice.id }
+                  : { ...pick, kind: 'typed' },
+                options,
+              ),
+            )
+          }
         />
       );
     case 'colleague':

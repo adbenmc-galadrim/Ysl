@@ -196,8 +196,8 @@ export function parcelCount(count: number): string | undefined {
 /**
  * The two quick answers of the pickup e-mail (YSL-70): a `mailto:` back to
  * the agent with only a subject, the agent's inbox telling them apart at a
- * glance. Plain ASCII, so the link Mail shows stays readable: `%20` for the
- * spaces and nothing else encoded.
+ * glance. A plain apostrophe and hyphen rather than ’ and –, so the link
+ * Mail shows stays readable: little more than `%20` for the spaces.
  */
 export const REPLY_NOT_MINE = "Ce n'est pas pour moi";
 

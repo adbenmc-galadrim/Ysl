@@ -44,7 +44,7 @@ export type ReminderHistory = {
   /** The reminders confirmed sent after it, in any order. */
   reminders: readonly Date[];
   /**
-   * « Absent jusqu'au … » (YSL-70): the last day the recipient is away.
+   * « Absence jusqu'au … » (YSL-70): the last day the recipient is away.
    * Nothing is due nor late until the working day after it.
    */
   pausedUntil?: Date | null;
@@ -104,7 +104,7 @@ export function reminderState(
   if (resumeAt) {
     if (dueAt && dueAt < resumeAt) dueAt = resumeAt;
     const alertAt = addWorkingDays(resumeAt, LATE_AFTER_LAST_REMINDER_DAYS);
-    if (lateAt <= resumeAt) lateAt = alertAt;
+    if (lateAt < alertAt) lateAt = alertAt;
   }
   return {
     sent,

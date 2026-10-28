@@ -17,7 +17,7 @@ import * as schema from '#schema/index';
 
 const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url));
 
-/** The migrations as the server had them before 0006. */
+/** The migrations as the server had them before `tag`. */
 function foldersBefore(tag: string): string {
   const folder = mkdtempSync(join(tmpdir(), 'ysl-migrations-'));
   cpSync(migrationsFolder, folder, { recursive: true });
