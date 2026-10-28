@@ -52,6 +52,8 @@ export const contact = pgTable(
     createdBy: text('created_by'),
     usageCount: integer('usage_count').default(0).notNull(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    // Who was told for them last time (`person:<id>` or `contact:<id>`), offered first next time.
+    notifyVia: text('notify_via'),
   },
   (table) => [
     ...syncConstraints('contact', table, { referenced: true }),

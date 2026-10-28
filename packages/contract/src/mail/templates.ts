@@ -87,6 +87,63 @@ export const DEFAULT_TEMPLATES = {
 export type DefaultTemplateType = keyof typeof DEFAULT_TEMPLATES;
 
 /**
+ * The mail to a colleague or an assistant when the recipient has no address
+ * (F25, « Prévenir un contact »): who the parcels are for in `{prénom}` (the
+ * full name), the code still the recipient's, who collects it or sends
+ * someone. No quick answers: the reader is not the one they are about.
+ * Fixed, not an agent's template.
+ */
+export const RELAY_TEMPLATES = {
+  avis: {
+    name: 'Avis via un contact',
+    subject: '{nombre_colis} pour {prénom} – Service Courrier',
+    body: [
+      'Bonjour,',
+      '',
+      '{prénom} n’a pas d’adresse e-mail chez nous : pouvez-vous le lui transmettre ?',
+      '',
+      'Nous avons reçu pour {prénom} :',
+      '{colis}',
+      '{reserve}',
+      '',
+      'Son code de retrait : {code}',
+      '',
+      'Où : {lieu}',
+      'Quand : {horaires}',
+      '{consignes}',
+      '',
+      '{prénom}, ou la personne qui vient à sa place, donne ce code au comptoir du service courrier.',
+      '',
+      '{agent}',
+      'Service Courrier',
+    ].join('\n'),
+  },
+  relance: {
+    name: 'Relance via un contact',
+    subject: 'Rappel pour {prénom} : colis en attente – Service Courrier',
+    body: [
+      'Bonjour,',
+      '',
+      'Petit rappel pour {prénom}, qui n’a pas d’adresse e-mail chez nous : ces colis l’attendent toujours.',
+      '',
+      '{colis}',
+      '{reserve}',
+      '',
+      'Son code de retrait : {code}',
+      '',
+      'Où : {lieu}',
+      'Quand : {horaires}',
+      '{consignes}',
+      '',
+      '{prénom}, ou la personne qui vient à sa place, donne ce code au comptoir du service courrier.',
+      '',
+      '{agent}',
+      'Service Courrier',
+    ].join('\n'),
+  },
+} as const satisfies Record<DefaultTemplateType, TemplateText>;
+
+/**
  * The id of the template an agent starts with, the same on every iPhone and
  * on the server: two iPhones that each save it write the same row, never a
  * second one, and the server knows it to keep it from being deleted. Shaped

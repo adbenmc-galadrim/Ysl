@@ -34,6 +34,7 @@ export {
   MAIL_BODY_TESTED_MAX,
   NOTIFICATION_TYPES,
   presetTemplateId,
+  RELAY_TEMPLATES,
   SAMPLE_MAIL,
   SAMPLE_PICKUP_VALUES,
   TEMPLATE_BODY_MAX,
@@ -50,6 +51,7 @@ export {
   FAILED_REASON_MAX,
   NOTIFICATION_STATUSES,
   notificationRow,
+  RELAY_NAME_MAX,
   notifyParcel,
 } from './notification';
 export type {

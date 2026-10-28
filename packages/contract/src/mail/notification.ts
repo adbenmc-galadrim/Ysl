@@ -38,6 +38,7 @@ export function canMoveNotification(
 }
 
 export const FAILED_REASON_MAX = 200;
+export const RELAY_NAME_MAX = 200;
 
 /** The `notification` row as the app writes it (`sync.push` takes the same shape). */
 export const notificationRow = z.object({
@@ -56,6 +57,8 @@ export const notificationRow = z.object({
   openedAt: z.date().nullable(),
   sentAt: z.date().nullable(),
   failedReason: z.string().max(FAILED_REASON_MAX).nullable(),
+  /** Told through this colleague or assistant, at `recipients` (F25). */
+  relayName: z.string().trim().min(1).max(RELAY_NAME_MAX).nullish(),
 });
 
 export type NotificationRow = z.infer<typeof notificationRow>;

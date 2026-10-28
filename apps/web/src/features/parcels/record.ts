@@ -166,13 +166,14 @@ function syncOf(ops: readonly OutboxOp[]): RecordSync {
   return ops.length ? 'unsent' : 'synced';
 }
 
-/** The reminders the record's history dates: every mail sent after the notice. */
+/** The reminders the record's history dates: every mail sent, or word given, after the notice. */
 function reminderDates(record: ParcelRecord): Map<string, Date[]> {
-  const dates = record.events.flatMap((row) =>
-    readParcelEvent(row.type, row.detail)?.type === 'parcel.notified'
+  const dates = record.events.flatMap((row) => {
+    const type = readParcelEvent(row.type, row.detail)?.type;
+    return type === 'parcel.notified' || type === 'parcel.informed'
       ? [row.at]
-      : [],
-  );
+      : [];
+  });
   return new Map([[record.parcel.id, dates]]);
 }
 
@@ -382,6 +383,12 @@ function eventTitle(
       return t(
         event.kind === 'relance' ? 'history.reminded' : 'history.notified',
       );
+    case 'parcel.informed':
+      return t(
+        event.kind === 'relance'
+          ? 'history.informed.reminder'
+          : 'history.informed',
+      );
     case 'parcel.imported':
       if (event.flags.some(isTrackingFlag)) {
         return t('history.imported.flagged');
@@ -441,7 +448,8 @@ function history(
       continue;
     }
     if (event.type === 'parcel.status') reached.add(event.to);
-    if (event.type === 'parcel.notified') reached.add('notifie');
+    if (event.type === 'parcel.notified' || event.type === 'parcel.informed')
+      reached.add('notifie');
     if (event.type === 'parcel.delivered') reached.add('remis');
     const own = opsOf(row.id);
     const when = formatWhen(row.at, now, t);

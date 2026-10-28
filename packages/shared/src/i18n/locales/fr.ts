@@ -413,6 +413,8 @@ export const fr = {
   'history.damageLifted': 'Réserve levée : {{reason}}',
   'history.notified': 'Notifié par e-mail',
   'history.reminded': 'Relance envoyée',
+  'history.informed': 'Prévenu de vive voix',
+  'history.informed.reminder': 'Relancé de vive voix',
   'history.reply.not_mine': 'A répondu : ce n’est pas pour moi',
   'history.reply.colleague': 'A répondu : {{name}} passera le prendre',
   'history.reply.absent': 'A répondu : absence jusqu’au {{date}}',

@@ -53,6 +53,11 @@ export type ParcelEvent =
       kind: NotificationType;
     }
   | {
+      /** Told in person or on the phone (F25): no mail, a pickup code given. */
+      type: 'parcel.informed';
+      kind: NotificationType;
+    }
+  | {
       /** Handed over: the `handover` row holds who collected it and how. */
       type: 'parcel.delivered';
       handoverId: string;
@@ -91,6 +96,7 @@ const details = {
     notificationId: z.string(),
     kind: z.enum(NOTIFICATION_TYPES),
   }),
+  'parcel.informed': z.object({ kind: z.enum(NOTIFICATION_TYPES) }),
   'parcel.imported': z.object({
     flags: z
       .array(z.string())
@@ -158,6 +164,8 @@ export function eventColumns(event: ParcelEvent): {
         type: event.type,
         detail: { notificationId: event.notificationId, kind: event.kind },
       };
+    case 'parcel.informed':
+      return { type: event.type, detail: { kind: event.kind } };
     case 'parcel.delivered':
       return {
         type: event.type,
@@ -207,6 +215,10 @@ export function readParcelEvent(
     case 'parcel.notified': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.informed': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, kind: read.data.kind } : undefined;
     }
     case 'parcel.delivered': {
       const read = details[type].safeParse(detail);

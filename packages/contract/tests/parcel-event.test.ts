@@ -28,6 +28,8 @@ describe('parcel events', () => {
       },
       { type: 'parcel.damage_lifted', reason: 'mouille' },
       { type: 'parcel.delivered', handoverId: 'h-1', method: 'pin' },
+      { type: 'parcel.informed', kind: 'avis' },
+      { type: 'parcel.informed', kind: 'relance' },
       {
         type: 'parcel.reply',
         reply: 'not_mine',
@@ -58,6 +60,7 @@ describe('parcel events', () => {
     expect(
       readParcelEvent('parcel.reply', { reply: 'en_conges' }),
     ).toBeUndefined();
+    expect(readParcelEvent('parcel.informed', { kind: 'sms' })).toBeUndefined();
     expect(
       readParcelEvent('parcel.reply', { reply: 'absent', until: '3 nov.' }),
     ).toBeUndefined();
