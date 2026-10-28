@@ -315,6 +315,11 @@ describe('the answer on the lists', () => {
     expect(toRemiseParcel(saved, NOW, t).received).toMatch(
       /^Retrait prévu par Paul Mercier · reçu /,
     );
+    // An absence said afterwards: the colleague still comes.
+    await replyAbsent(db, [parcel.id], new Date(2026, 9, 30), options);
+    expect(
+      toRemiseParcel((await db.parcel.get(parcel.id))!, NOW, t).received,
+    ).toMatch(/^Retrait prévu par Paul Mercier · /);
   });
 
   it('leaves a parcel in distress in its section, said as such', async () => {

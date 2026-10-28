@@ -102,6 +102,8 @@ export type ReplyParcel = { id: string; title: string; detail: string };
 export type ColisPasPourMoiSheetProps = SheetFrame & {
   recipient: string;
   parcels: ReplyParcel[];
+  /** In red under the parcels: the answer could not be written. */
+  error?: string;
   onPick?: (parcel: ReplyParcel) => void;
 };
 
@@ -109,6 +111,7 @@ export type ColisPasPourMoiSheetProps = SheetFrame & {
 export function ColisPasPourMoiSheet({
   recipient,
   parcels,
+  error,
   onPick,
   onDismiss,
   fixed,
@@ -136,6 +139,7 @@ export function ColisPasPourMoiSheet({
           />
         ))}
       </div>
+      {error && <p className="mt-3 text-13 text-red">{error}</p>}
       <Button variant="secondary" block className="mt-4" onClick={onDismiss}>
         Annuler
       </Button>

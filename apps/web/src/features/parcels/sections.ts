@@ -26,7 +26,6 @@ const SECTIONS: {
       'incomplete',
       'toNotify',
       'notified',
-      'late',
       'handedOver',
       'returned',
     ],

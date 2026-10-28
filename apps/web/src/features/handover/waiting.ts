@@ -1,5 +1,4 @@
 import { damageOf } from '@repo/contract/parcel-damage';
-import { standingReply } from '@repo/contract/parcel-reply';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { RemiseParcel } from '@repo/ui';
@@ -81,12 +80,11 @@ export function receivedLine(date: Date, now: Date, t: TranslateFn): string {
 /** « Retrait prévu par Paul Mercier »: the recipient said who comes (YSL-70; YSL-77 will offer the name). */
 export function delegateLine(
   parcel: LocalParcel,
-  now: Date,
   t: TranslateFn,
 ): string | undefined {
-  const reply = standingReply(parcel, now);
-  return reply?.kind === 'colleague'
-    ? t('handover.delegate', { name: reply.delegate })
+  // Read on its own: an absence said after it does not send the colleague away.
+  return parcel.status === 'notifie' && parcel.expectedDelegate
+    ? t('handover.delegate', { name: parcel.expectedDelegate })
     : undefined;
 }
 
@@ -115,7 +113,7 @@ export function toRemiseParcel(
         : '',
     received: withDelegate(
       receivedLine(parcel.receivedAt, now, t),
-      delegateLine(parcel, now, t),
+      delegateLine(parcel, t),
     ),
     ...(parcel.senderName ? { sender: parcel.senderName } : {}),
     registered: parcel.type === 'recommande',

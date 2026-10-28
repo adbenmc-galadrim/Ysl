@@ -85,11 +85,16 @@ export function EmployeeReply({
     }
   };
 
-  const notMine = (parcel: LocalParcel) =>
+  // A parcel handed over meanwhile (another iPhone) is not reopened.
+  const notMine = (parcel: LocalParcel) => {
+    let reopened = false;
     void write(
-      () => replyNotMine(db, parcel.id, options),
-      () => setStep({ kind: 'reassign', parcel }),
+      async () => {
+        reopened = (await replyNotMine(db, parcel.id, options)) === 'recorded';
+      },
+      () => (reopened ? setStep({ kind: 'reassign', parcel }) : onClose()),
     );
+  };
   const ids = parcels.map(({ id }) => id);
   const error = failed ? t('record.error.write') : undefined;
 
@@ -119,6 +124,7 @@ export function EmployeeReply({
         <ColisPasPourMoiSheet
           fixed
           recipient={recipient}
+          error={error}
           parcels={parcels.map((parcel) => ({
             id: parcel.id,
             title: parcelName(parcel, t),
