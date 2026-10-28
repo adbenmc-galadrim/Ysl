@@ -12,6 +12,7 @@ import {
   listTemplates,
   restoreDefault,
   saveTemplate,
+  setDefaultTemplate,
 } from '#/features/mail/templates';
 import { NOW, openTestDatabase } from './helpers/local-rows';
 
@@ -103,5 +104,56 @@ describe('e-mail templates', () => {
       type: 'delete',
       entityId: relance.id,
     });
+  });
+
+  it('makes another template the default, the former one written first and kept', async () => {
+    const relance = await createTemplate(db, 'Relance', options);
+
+    const chosen = await setDefaultTemplate(db, relance, options);
+
+    expect(chosen).toMatchObject({ id: relance.id, isDefault: true });
+    const templates = await listTemplates(db, 'agent-1');
+    expect(
+      templates.map((row) => [row.name, row.isDefault, row.preset]),
+    ).toEqual([
+      ['Relance', true, false],
+      ['Avis de retrait', false, true],
+    ]);
+    const ops = (await db.outbox.toArray()).slice(-2);
+    expect(ops.map((op) => [op.entityId, op.patch.isDefault])).toEqual([
+      [await presetTemplateId('agent-1', 'avis'), false],
+      [relance.id, true],
+    ]);
+  });
+
+  it('never deletes the default one nor the preset, which comes back as default', async () => {
+    const relance = await createTemplate(db, 'Relance', options);
+    const chosen = await setDefaultTemplate(db, relance, options);
+    const preset = (await listTemplates(db, 'agent-1')).find(
+      (row) => row.preset,
+    )!;
+
+    await expect(deleteTemplate(db, chosen)).rejects.toBeInstanceOf(
+      DefaultTemplateError,
+    );
+    await expect(deleteTemplate(db, preset)).rejects.toBeInstanceOf(
+      DefaultTemplateError,
+    );
+    await setDefaultTemplate(db, preset, options);
+    await deleteTemplate(db, { ...chosen, isDefault: false });
+
+    expect(await listTemplates(db, 'agent-1')).toEqual([
+      expect.objectContaining({ preset: true, isDefault: true }),
+    ]);
+  });
+
+  it('restores only the preset', async () => {
+    const relance = await createTemplate(db, 'Relance', options);
+    const restored = await restoreDefault(
+      db,
+      { ...relance, body: 'Changé' },
+      options,
+    );
+    expect(restored.body).toBe('Changé');
   });
 });

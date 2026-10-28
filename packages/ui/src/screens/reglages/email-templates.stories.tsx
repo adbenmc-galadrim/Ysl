@@ -124,6 +124,8 @@ function Editor({
       previewNote="Sur un colis d’exemple, avec le lieu et les horaires de Réglages."
       tryHref="mailto:karim.daoud@example.com"
       onDuplicate={() => {}}
+      isDefault={isDefault}
+      onMakeDefault={isDefault ? undefined : () => {}}
       onRestore={isDefault ? () => {} : undefined}
       onDelete={isDefault ? undefined : () => {}}
       onBack={() => {}}
