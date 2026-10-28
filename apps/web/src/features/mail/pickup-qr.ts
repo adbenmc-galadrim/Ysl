@@ -1,4 +1,4 @@
-import { encode } from 'uqr';
+import { encodeQr } from '@repo/ui';
 
 /** White modules around the code, as the QR standard asks for a reader to lock on. */
 const QUIET_ZONE = 4;
@@ -7,12 +7,23 @@ const QUIET_ZONE = 4;
 const MODULE_PX = 12;
 
 /**
- * The modules of the pickup QR, rows top to bottom, true for dark. Level M:
- * no logo over it, and the token stays a small code (version 3) a phone
- * camera reads off another phone's screen at the desk.
+ * The modules of the pickup QR with its quiet zone, rows top to bottom, true
+ * for dark. Level M: no logo over it, and the token stays a small code
+ * (version 3) a phone camera reads off another phone's screen at the desk.
  */
 export function pickupQrModules(token: string): boolean[][] {
-  return encode(token, { ecc: 'M', border: QUIET_ZONE }).data;
+  const rows = encodeQr(token, 'M');
+  const size = rows.length + 2 * QUIET_ZONE;
+  const blank = () => Array.from({ length: size }, () => false);
+  return [
+    ...Array.from({ length: QUIET_ZONE }, blank),
+    ...rows.map((row) => [
+      ...Array.from({ length: QUIET_ZONE }, () => false),
+      ...[...row].map((cell) => cell === '#'),
+      ...Array.from({ length: QUIET_ZONE }, () => false),
+    ]),
+    ...Array.from({ length: QUIET_ZONE }, blank),
+  ];
 }
 
 /**

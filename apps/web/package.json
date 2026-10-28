@@ -37,8 +37,7 @@
     "react": "catalog:",
     "react-dom": "catalog:",
     "superjson": "catalog:",
-    "tailwindcss": "catalog:",
-    "uqr": "^0.1.3"
+    "tailwindcss": "catalog:"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

@@ -9,8 +9,8 @@ export const QR_LOGO = 0.2;
 /**
  * The modules of a QR code for `value`, rows top to bottom, `#` for dark and
  * `.` for light, without quiet zone. Error correction is level H by
- * default, the only one that still reads with a logo over the centre; the
- * pickup QR, without a logo, takes M (`pickup-qr.ts` of the app).
+ * default, the only one that still reads with a logo over the centre; a
+ * code without a logo (the pickup QR) can take M and stay smaller.
  */
 export function encodeQr(
   value: string,
