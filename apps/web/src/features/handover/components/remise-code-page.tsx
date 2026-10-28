@@ -5,9 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
 import { lookupPickupPin } from '#/features/handover/pickup-lookup';
 import {
-  NO_ATTEMPTS,
-  pinFailed,
   pinLockLeft,
+  pinOutcome,
   readPinAttempts,
   writePinAttempts,
 } from '#/features/handover/pin-attempts';
@@ -53,13 +52,10 @@ export function RemiseCodePage({ onFound, onBack }: RemiseCodePageProps) {
     checking.current = true;
     try {
       const match = await lookupPickupPin(db, pin);
+      record(pinOutcome(attempts, match.status, Date.now()));
       if (match.status === 'active') {
-        record(NO_ATTEMPTS);
         onFound(searchForCode(match.code, 'pin', Date.now()));
         return;
-      }
-      if (match.status !== 'ambiguous') {
-        record(pinFailed(readPinAttempts(), Date.now()));
       }
       setError(t(`handover.pin.${match.status}`));
       setCode('');

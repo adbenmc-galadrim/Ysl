@@ -16,24 +16,8 @@ import {
   lookupPickupText,
 } from '#/features/handover/pickup-lookup';
 import { pickupQrModules } from '#/features/mail/pickup-qr';
+import { qrRaster } from './helpers/qr-raster';
 import { NOW, openTestDatabase } from './helpers/local-rows';
-
-/** The modules as an RGBA raster, 6 px each, as the PNG of the mail draws them. */
-function raster(modules: boolean[][], scale = 6) {
-  const width = modules.length * scale;
-  const data = new Uint8ClampedArray(width * width * 4).fill(255);
-  modules.forEach((row, y) =>
-    row.forEach((dark, x) => {
-      if (!dark) return;
-      for (let dy = 0; dy < scale; dy += 1)
-        for (let dx = 0; dx < scale; dx += 1) {
-          const at = ((y * scale + dy) * width + x * scale + dx) * 4;
-          data.fill(0, at, at + 3);
-        }
-    }),
-  );
-  return { data, width, height: width };
-}
 
 async function codeRow(
   { token = newPickupToken(), pin = '4821' } = {},
@@ -72,7 +56,7 @@ describe('the pickup QR at the desk', () => {
     const code = await codeRow({ token });
     await db.pickupCode.put(code);
 
-    const [symbol] = await readSymbols(raster(pickupQrModules(token)));
+    const [symbol] = await readSymbols(qrRaster(pickupQrModules(token)));
     const match = await lookupPickupText(db, symbol?.text ?? '', LATER);
 
     expect(match).toEqual({ status: 'active', code });

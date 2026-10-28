@@ -115,14 +115,14 @@ export function RemiseScanPage({
       if (text === undefined) lastText = '';
       else if (!stopped && text !== lastText) {
         lastText = text;
-        const match = await lookupPickupText(db, text);
+        const match = await lookupPickupText(db, text).catch(() => null);
         if (stopped) return;
-        if (match.status === 'active') {
+        if (!match) lastText = '';
+        else if (match.status === 'active') {
           found.current = true;
           onFound(searchForCode(match.code, 'qr', Date.now()));
           return;
-        }
-        setRefusal(match.status);
+        } else setRefusal(match.status);
       }
       if (!stopped) timer = setTimeout(() => void look(), QR_SCAN_INTERVAL_MS);
     };

@@ -1,9 +1,11 @@
+import type { PickupMatch } from '#/features/handover/pickup-lookup';
+
 /** Wrong PINs in a row before the pad waits: four digits are guessed fast (§8.7). */
 export const PIN_MAX_FAILURES = 5;
 
 export const PIN_LOCK_MS = 30 * 1000;
 
-export const PIN_ATTEMPTS_KEY = 'courrier.remise.essais';
+export const PIN_ATTEMPTS_KEY = 'courrier.handover.pinAttempts';
 
 /** Wrong PINs since the last good one, and the end of the wait if any. */
 export type PinAttempts = { failures: number; lockedUntil: number | null };
@@ -16,6 +18,20 @@ export function pinFailed(state: PinAttempts, now: number): PinAttempts {
   return failures >= PIN_MAX_FAILURES
     ? { failures: 0, lockedUntil: now + PIN_LOCK_MS }
     : { failures, lockedUntil: null };
+}
+
+/**
+ * The count after a PIN checked at the desk: a good one clears it, a PIN
+ * two people share is not a guess and leaves it, any other one counts.
+ */
+export function pinOutcome(
+  state: PinAttempts,
+  status: PickupMatch['status'],
+  now: number,
+): PinAttempts {
+  if (status === 'active') return NO_ATTEMPTS;
+  if (status === 'ambiguous') return state;
+  return pinFailed(state, now);
 }
 
 /** Milliseconds left to wait, 0 when the pad may be used. */

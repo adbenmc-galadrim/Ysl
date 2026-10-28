@@ -30,10 +30,10 @@ export function isActiveCode(row: LocalPickupCode, now: Date): boolean {
   );
 }
 
-function whyNot(row: LocalPickupCode): PickupRefusal {
+function whyNot(row: LocalPickupCode, now: Date): PickupRefusal {
   if (row.usedAt) return 'used';
   if (row.deletedAt) return 'replaced';
-  return 'expired';
+  return row.expiresAt <= now ? 'expired' : 'unknown';
 }
 
 /**
@@ -59,7 +59,7 @@ export async function findActivePickupCode(
   const latest = rows.sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   )[0];
-  return { status: latest ? whyNot(latest) : 'unknown' };
+  return { status: latest ? whyNot(latest, now) : 'unknown' };
 }
 
 /** A scanned text: `notPickup` for any QR but a pickup one (a parcel label). */
