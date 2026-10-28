@@ -8,7 +8,12 @@ import type {
   LocalDirectoryPerson,
   LocalPickupCode,
 } from '#/features/db/schema';
-import { isEmail, listed, normalizeEmail } from '#/features/directory/people';
+import {
+  fullName,
+  isEmail,
+  listed,
+  normalizeEmail,
+} from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { initialsOf } from '#/features/settings/initials';
 
@@ -48,11 +53,7 @@ function relayNames(
 ): Map<string, string> {
   return new Map([
     ...people.map(
-      (person) =>
-        [
-          `person:${person.id}`,
-          `${person.firstName} ${person.lastName}`,
-        ] as const,
+      (person) => [`person:${person.id}`, fullName(person)] as const,
     ),
     ...contacts.map(
       (contact) => [`contact:${contact.id}`, contact.name] as const,

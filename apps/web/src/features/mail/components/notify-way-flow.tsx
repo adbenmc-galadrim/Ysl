@@ -3,6 +3,7 @@ import { NotifyWaySheet, type ContactWay } from '@repo/ui';
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { firstNameOf } from '#/features/handover/recipient';
 import {
   cardOf,
   fixAddress,
@@ -20,8 +21,6 @@ import { saveOutsideContact } from '#/features/recipient/contacts';
 import type { Choice } from '#/features/recipient/options';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-const firstNameOf = (name: string) => name.split(/\s+/)[0] ?? name;
 
 export type NotifyWayFlowProps = {
   mail: RecipientMail;
