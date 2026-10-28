@@ -45,6 +45,29 @@ export const fr = {
   'handover.verified.manuel': 'Choisi par le nom',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
   'handover.soon': 'La remise arrive bientôt dans l’app.',
+  'handover.qr.notPickup': 'Ce n’est pas un QR de retrait',
+  'handover.qr.notPickup.detail':
+    'Visez le QR de l’e-mail « Colis en attente de retrait ».',
+  'handover.qr.unknown': 'QR inconnu sur cet iPhone',
+  'handover.qr.unknown.detail':
+    'Il n’est peut-être pas encore synchronisé. Tapez le code ou cherchez le nom.',
+  'handover.qr.expired': 'Ce QR a expiré',
+  'handover.qr.expired.detail':
+    'Il date de plus de 30 jours. Cherchez le nom du salarié.',
+  'handover.qr.used': 'Ce QR a déjà servi',
+  'handover.qr.used.detail':
+    'Ses colis ont été remis. Cherchez le nom s’il en reste.',
+  'handover.qr.replaced': 'Ce QR a été remplacé',
+  'handover.qr.replaced.detail':
+    'Un e-mail plus récent porte le bon code. Demandez-le, ou cherchez le nom.',
+  'handover.qr.ambiguous': 'QR en double',
+  'handover.qr.ambiguous.detail': 'Cherchez le nom du salarié.',
+  'handover.qr.denied': 'Caméra bloquée',
+  'handover.qr.denied.detail':
+    'Réglages › Safari › Caméra › Autoriser, ou tapez le code.',
+  'handover.qr.blocked': 'Caméra indisponible',
+  'handover.qr.blocked.detail': 'Tapez le code ou cherchez le nom.',
+  'handover.qr.typeCode': 'Taper le code à la place',
   'handover.pin.unknown': 'Code inconnu. Vérifiez-le avec le salarié.',
   'handover.pin.expired': 'Ce code a expiré. Cherchez plutôt le nom.',
   'handover.pin.used': 'Ce code a déjà servi. Cherchez plutôt le nom.',
