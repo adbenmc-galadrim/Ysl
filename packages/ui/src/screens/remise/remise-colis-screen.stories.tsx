@@ -34,3 +34,29 @@ export const QrVerifie: Story = {
 export const Partielle: Story = {
   args: { ...QrVerifie.args, excluded: ['p-4472'] },
 };
+
+/** As the app shows it until the handover is recorded: read only, the button waits. */
+export const ChoisiParLeNom: Story = {
+  name: 'Choisi par le nom',
+  args: {
+    recipient: PEOPLE.nora,
+    verified: 'Choisi par le nom',
+    verifiedBy: 'name',
+    parcels: NORA_HANDOVER,
+    extras: false,
+    confirmNote: 'La remise arrive bientôt dans l’app.',
+  },
+};
+
+/** The code was right, but nothing waits for them any more. */
+export const AucunColis: Story = {
+  name: 'Aucun colis',
+  args: {
+    recipient: PEOPLE.nora,
+    verified: 'Code vérifié à 11 h 20',
+    parcels: [],
+    empty: 'Rien n’attend Nora au comptoir.',
+    extras: false,
+    confirmNote: 'La remise arrive bientôt dans l’app.',
+  },
+};

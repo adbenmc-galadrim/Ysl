@@ -24,3 +24,22 @@ export const TroisChiffres: Story = {
 };
 
 export const Vide: Story = { args: { code: '' } };
+
+/** A wrong code: the boxes are cleared and turn red until the next digit. */
+export const CodeDejaServi: Story = {
+  name: 'Code déjà servi',
+  args: {
+    code: '',
+    error: 'Ce code a déjà servi. Cherchez plutôt le nom.',
+    onSearchName: () => {},
+  },
+};
+
+/** Five wrong codes in a row: the pad waits before the next try. */
+export const Bloque: Story = {
+  name: 'Trop d’essais',
+  args: {
+    code: '',
+    locked: 'Trop d’essais. Réessayez dans 30 s, ou cherchez le nom.',
+  },
+};

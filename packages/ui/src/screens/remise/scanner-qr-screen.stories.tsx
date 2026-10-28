@@ -27,3 +27,16 @@ export const TelephoneDuSalarie: Story = {
 
 /** Nothing in front of the camera yet. */
 export const Vide: Story = {};
+
+/** A QR read, but its code was replaced by a later mail: the two ways around it stay below. */
+export const QrRemplace: Story = {
+  name: 'QR remplacé',
+  args: {
+    subject: <EmployeePhone code="4821" qr={QR_4821_PHONE} />,
+    notice: {
+      title: 'Ce QR a été remplacé',
+      description:
+        'Un e-mail plus récent porte le bon code. Demandez-le, ou cherchez le nom.',
+    },
+  },
+};

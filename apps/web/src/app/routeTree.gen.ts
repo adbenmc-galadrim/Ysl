@@ -16,7 +16,6 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
-import { Route as AuthenticatedRemiseRouteImport } from './routes/_authenticated/remise'
 import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/revue'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
@@ -33,6 +32,10 @@ import { Route as AuthenticatedReglagesImportV1RouteImport } from './routes/_aut
 import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './routes/_authenticated/reglages/lieu-et-horaires'
 import { Route as AuthenticatedReglagesMessagerieRouteImport } from './routes/_authenticated/reglages/messagerie'
 import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './routes/_authenticated/reglages/synchronisation'
+import { Route as AuthenticatedRemiseIndexRouteImport } from './routes/_authenticated/remise/index'
+import { Route as AuthenticatedRemiseCodeRouteImport } from './routes/_authenticated/remise/code'
+import { Route as AuthenticatedRemiseColisRouteImport } from './routes/_authenticated/remise/colis'
+import { Route as AuthenticatedRemiseNomRouteImport } from './routes/_authenticated/remise/nom'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
 import { Route as AuthenticatedColisParcelIdDommageRouteImport } from './routes/_authenticated/colis/$parcelId/dommage'
 import { Route as AuthenticatedColisParcelIdLectureRouteImport } from './routes/_authenticated/colis/$parcelId/lecture'
@@ -73,11 +76,6 @@ const AuthenticatedPreparationRoute =
 const AuthenticatedRechercheRoute = AuthenticatedRechercheRouteImport.update({
   id: '/recherche',
   path: '/recherche',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedRemiseRoute = AuthenticatedRemiseRouteImport.update({
-  id: '/remise',
-  path: '/remise',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRevueRoute = AuthenticatedRevueRouteImport.update({
@@ -173,6 +171,28 @@ const AuthenticatedReglagesSynchronisationRoute =
     path: '/reglages/synchronisation',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRemiseIndexRoute =
+  AuthenticatedRemiseIndexRouteImport.update({
+    id: '/remise/',
+    path: '/remise/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRemiseCodeRoute = AuthenticatedRemiseCodeRouteImport.update({
+  id: '/remise/code',
+  path: '/remise/code',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRemiseColisRoute =
+  AuthenticatedRemiseColisRouteImport.update({
+    id: '/remise/colis',
+    path: '/remise/colis',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedRemiseNomRoute = AuthenticatedRemiseNomRouteImport.update({
+  id: '/remise/nom',
+  path: '/remise/nom',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedColisParcelIdIndexRoute =
   AuthenticatedColisParcelIdIndexRouteImport.update({
     id: '/colis/$parcelId/',
@@ -217,7 +237,6 @@ export interface FileRoutesByFullPath {
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
-  '/remise': typeof AuthenticatedRemiseRoute
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -233,7 +252,11 @@ export interface FileRoutesByFullPath {
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
+  '/remise/code': typeof AuthenticatedRemiseCodeRoute
+  '/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/remise/': typeof AuthenticatedRemiseIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -247,7 +270,6 @@ export interface FileRoutesByTo {
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
-  '/remise': typeof AuthenticatedRemiseRoute
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
@@ -264,7 +286,11 @@ export interface FileRoutesByTo {
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
+  '/remise/code': typeof AuthenticatedRemiseCodeRoute
+  '/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
+  '/remise': typeof AuthenticatedRemiseIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -280,7 +306,6 @@ export interface FileRoutesById {
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
-  '/_authenticated/remise': typeof AuthenticatedRemiseRoute
   '/_authenticated/revue': typeof AuthenticatedRevueRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -297,7 +322,11 @@ export interface FileRoutesById {
   '/_authenticated/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/_authenticated/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
+  '/_authenticated/remise/code': typeof AuthenticatedRemiseCodeRoute
+  '/_authenticated/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/_authenticated/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
+  '/_authenticated/remise/': typeof AuthenticatedRemiseIndexRoute
   '/_authenticated/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/_authenticated/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/_authenticated/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -314,7 +343,6 @@ export interface FileRouteTypes {
     | '/notifier'
     | '/preparation'
     | '/recherche'
-    | '/remise'
     | '/revue'
     | '/scan'
     | '/lot/$batchId'
@@ -330,7 +358,11 @@ export interface FileRouteTypes {
     | '/reglages/lieu-et-horaires'
     | '/reglages/messagerie'
     | '/reglages/synchronisation'
+    | '/remise/code'
+    | '/remise/colis'
+    | '/remise/nom'
     | '/reglages/'
+    | '/remise/'
     | '/colis/$parcelId/dommage'
     | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
@@ -344,7 +376,6 @@ export interface FileRouteTypes {
     | '/notifier'
     | '/preparation'
     | '/recherche'
-    | '/remise'
     | '/revue'
     | '/scan'
     | '/'
@@ -361,7 +392,11 @@ export interface FileRouteTypes {
     | '/reglages/lieu-et-horaires'
     | '/reglages/messagerie'
     | '/reglages/synchronisation'
+    | '/remise/code'
+    | '/remise/colis'
+    | '/remise/nom'
     | '/reglages'
+    | '/remise'
     | '/colis/$parcelId/dommage'
     | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
@@ -376,7 +411,6 @@ export interface FileRouteTypes {
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
     | '/_authenticated/recherche'
-    | '/_authenticated/remise'
     | '/_authenticated/revue'
     | '/_authenticated/scan'
     | '/_authenticated/'
@@ -393,7 +427,11 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/lieu-et-horaires'
     | '/_authenticated/reglages/messagerie'
     | '/_authenticated/reglages/synchronisation'
+    | '/_authenticated/remise/code'
+    | '/_authenticated/remise/colis'
+    | '/_authenticated/remise/nom'
     | '/_authenticated/reglages/'
+    | '/_authenticated/remise/'
     | '/_authenticated/colis/$parcelId/dommage'
     | '/_authenticated/colis/$parcelId/lecture'
     | '/_authenticated/colis/$parcelId/modifier'
@@ -457,13 +495,6 @@ declare module '@tanstack/react-router' {
       path: '/recherche'
       fullPath: '/recherche'
       preLoaderRoute: typeof AuthenticatedRechercheRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/remise': {
-      id: '/_authenticated/remise'
-      path: '/remise'
-      fullPath: '/remise'
-      preLoaderRoute: typeof AuthenticatedRemiseRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/revue': {
@@ -578,6 +609,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesSynchronisationRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/remise/': {
+      id: '/_authenticated/remise/'
+      path: '/remise'
+      fullPath: '/remise/'
+      preLoaderRoute: typeof AuthenticatedRemiseIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/remise/code': {
+      id: '/_authenticated/remise/code'
+      path: '/remise/code'
+      fullPath: '/remise/code'
+      preLoaderRoute: typeof AuthenticatedRemiseCodeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/remise/colis': {
+      id: '/_authenticated/remise/colis'
+      path: '/remise/colis'
+      fullPath: '/remise/colis'
+      preLoaderRoute: typeof AuthenticatedRemiseColisRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/remise/nom': {
+      id: '/_authenticated/remise/nom'
+      path: '/remise/nom'
+      fullPath: '/remise/nom'
+      preLoaderRoute: typeof AuthenticatedRemiseNomRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/colis/$parcelId/': {
       id: '/_authenticated/colis/$parcelId/'
       path: '/colis/$parcelId'
@@ -627,7 +686,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
-  AuthenticatedRemiseRoute: typeof AuthenticatedRemiseRoute
   AuthenticatedRevueRoute: typeof AuthenticatedRevueRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -644,7 +702,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesLieuEtHorairesRoute: typeof AuthenticatedReglagesLieuEtHorairesRoute
   AuthenticatedReglagesMessagerieRoute: typeof AuthenticatedReglagesMessagerieRoute
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
+  AuthenticatedRemiseCodeRoute: typeof AuthenticatedRemiseCodeRoute
+  AuthenticatedRemiseColisRoute: typeof AuthenticatedRemiseColisRoute
+  AuthenticatedRemiseNomRoute: typeof AuthenticatedRemiseNomRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
+  AuthenticatedRemiseIndexRoute: typeof AuthenticatedRemiseIndexRoute
   AuthenticatedColisParcelIdDommageRoute: typeof AuthenticatedColisParcelIdDommageRoute
   AuthenticatedColisParcelIdLectureRoute: typeof AuthenticatedColisParcelIdLectureRoute
   AuthenticatedColisParcelIdModifierRoute: typeof AuthenticatedColisParcelIdModifierRoute
@@ -657,7 +719,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
-  AuthenticatedRemiseRoute: AuthenticatedRemiseRoute,
   AuthenticatedRevueRoute: AuthenticatedRevueRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
@@ -676,7 +737,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesMessagerieRoute: AuthenticatedReglagesMessagerieRoute,
   AuthenticatedReglagesSynchronisationRoute:
     AuthenticatedReglagesSynchronisationRoute,
+  AuthenticatedRemiseCodeRoute: AuthenticatedRemiseCodeRoute,
+  AuthenticatedRemiseColisRoute: AuthenticatedRemiseColisRoute,
+  AuthenticatedRemiseNomRoute: AuthenticatedRemiseNomRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
+  AuthenticatedRemiseIndexRoute: AuthenticatedRemiseIndexRoute,
   AuthenticatedColisParcelIdDommageRoute:
     AuthenticatedColisParcelIdDommageRoute,
   AuthenticatedColisParcelIdLectureRoute:

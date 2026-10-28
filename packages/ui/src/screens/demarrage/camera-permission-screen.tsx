@@ -11,6 +11,8 @@ import { Screen } from '#components/screen';
 export type CameraPermissionScreenProps = {
   onAllow?: () => void;
   onImport?: () => void;
+  /** The link under the button, when the way around is not an import (the code at the handover). */
+  importLabel?: string;
 };
 
 /**
@@ -21,6 +23,7 @@ export type CameraPermissionScreenProps = {
 export function CameraPermissionScreen({
   onAllow,
   onImport,
+  importLabel = 'Importer une photo à la place',
 }: CameraPermissionScreenProps) {
   return (
     <Screen
@@ -36,7 +39,7 @@ export function CameraPermissionScreen({
             className="mt-[18px] mb-[15px] self-center text-16 font-semibold"
             onClick={onImport}
           >
-            Importer une photo à la place
+            {importLabel}
           </Button>
         </BottomBar>
       }
