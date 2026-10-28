@@ -8,7 +8,11 @@ import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
-import { pickupCodeWrites, recallSecrets } from '#/features/mail/pickup-code';
+import {
+  pickupCodeWrites,
+  pickupToWrite,
+  recallSecrets,
+} from '#/features/mail/pickup-code';
 import {
   describeReminder,
   dueCount,
@@ -103,6 +107,21 @@ describe('the code a reminder quotes', () => {
         },
       },
     ]);
+  });
+});
+
+describe('the code a mail writes', () => {
+  const fresh = { pin: '1234', token: newPickupToken() };
+  const open = { ...fresh, codeId: newId() };
+
+  it('writes nothing for a reminder quoting the open code as text', () => {
+    expect(pickupToWrite(open, { withQr: false })).toBeUndefined();
+  });
+
+  it('writes the open code with the QR shared, and any new code', () => {
+    expect(pickupToWrite(open, { withQr: true })).toBe(open);
+    expect(pickupToWrite(fresh, { withQr: false })).toBe(fresh);
+    expect(pickupToWrite(fresh, { withQr: true })).toBe(fresh);
   });
 });
 

@@ -38,6 +38,7 @@ import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import {
   drawSecrets,
+  pickupToWrite,
   recallSecrets,
   type PickupSecret,
 } from '#/features/mail/pickup-code';
@@ -345,9 +346,7 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
       target: mailTarget,
-      // A reminder quoting the open code leaves it as it is: same PIN, and
-      // the QR of the first mail still opens.
-      pickup: secret?.codeId ? undefined : secret,
+      pickup: pickupToWrite(secret, { withQr: false }),
     });
     renewToken();
     void (async () => {
@@ -392,7 +391,7 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
       target: null,
-      pickup: secret,
+      pickup: pickupToWrite(secret, { withQr: true }),
     });
     renewToken();
     const key = mail.key;

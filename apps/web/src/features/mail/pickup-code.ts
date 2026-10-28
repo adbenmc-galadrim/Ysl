@@ -68,6 +68,18 @@ export async function drawSecrets(
   return pins.map((pin) => ({ pin, token: newPickupToken() }));
 }
 
+/**
+ * The code a mail writes with it. A reminder quoting the open code (F37)
+ * sent as text writes nothing: same PIN, and the QR of the first mail still
+ * opens. Shared with its QR, the open code takes the new token.
+ */
+export function pickupToWrite(
+  secret: PickupSecret | undefined,
+  { withQr }: { withQr: boolean },
+): PickupSecret | undefined {
+  return secret?.codeId && !withQr ? undefined : secret;
+}
+
 export type PickupRecipient = {
   personId: string | null;
   contactId: string | null;
