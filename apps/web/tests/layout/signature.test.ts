@@ -18,6 +18,7 @@ beforeAll(async () => {
   server = await createServer({
     configFile: false,
     root: fileURLToPath(new URL('../..', import.meta.url)),
+    cacheDir: 'node_modules/.vite-layout-signature',
     logLevel: 'error',
     plugins: [tailwindcss(), viteReact()],
     resolve: { tsconfigPaths: true },
