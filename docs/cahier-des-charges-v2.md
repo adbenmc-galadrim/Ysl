@@ -835,7 +835,7 @@ stateDiagram-v2
 - **Modèles** : par agent, synchronisés ; création, renommage, modification, copie, choix du modèle par défaut, suppression (sauf le modèle par défaut et le modèle livré, qui se rétablit) ; liste fermée de variables affichée sous l'éditeur, aperçu rempli.
 - **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le QR porte un jeton long `YSL:RETRAIT:<32 caractères base32>` (`@repo/contract/pickup`, 160 bits) ; le PIN a 4 chiffres. L'iPhone qui prépare l'e-mail tire les deux et n'écrit que leurs empreintes (`tokenHash`, `pinHash`), synchronisées vers les appareils pour vérifier un code hors ligne (F40, F41). Le jeton vit dans l'image partagée ; un e-mail envoyé par « Envoyer à … » n'a que le PIN.
 - **QR** : « Partager avec le QR » sur l'écran Notifier ouvre la feuille de partage avec le texte et le QR en PNG (inséré en pied dans Mail, en pièce jointe dans Outlook, S5) ; l'adresse se saisit dans la messagerie. L'image est dessinée en mémoire, jamais conservée.
-- **Limite connue** : un PIN de 4 à 6 chiffres se devine si l'on a la base locale entre les mains. C'est acceptable sur un appareil d'agent verrouillé ; le QR (jeton long) reste la voie principale.
+- **Limite connue** : un PIN de 4 chiffres se devine si l'on a la base locale entre les mains. C'est acceptable sur un appareil d'agent verrouillé. L'e-mail part d'abord par « Envoyer à … », avec le PIN seul ; le QR (jeton long, non devinable) part quand l'agent choisit « Partager avec le QR ».
 
 ---
 
