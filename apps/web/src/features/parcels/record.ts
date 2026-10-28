@@ -55,6 +55,8 @@ export type ParcelRecord = {
   ops: readonly OutboxOp[];
   /** Who it was handed to and how, while it is `remis`. */
   handover?: LocalHandover;
+  /** Handovers of this iPhone another one beat to the parcel: not its story. */
+  lostHandovers?: ReadonlySet<string>;
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -360,6 +362,12 @@ function history(
   for (const row of events) {
     const event = readParcelEvent(row.type, row.detail);
     if (!event) continue;
+    if (
+      event.type === 'parcel.delivered' &&
+      record.lostHandovers?.has(event.handoverId)
+    ) {
+      continue;
+    }
     if (event.type === 'parcel.status') reached.add(event.to);
     if (event.type === 'parcel.notified') reached.add('notifie');
     if (event.type === 'parcel.delivered') reached.add('remis');

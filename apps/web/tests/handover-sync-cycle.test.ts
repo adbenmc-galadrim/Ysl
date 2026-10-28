@@ -1,11 +1,6 @@
 import 'fake-indexeddb/auto';
 import type { Session } from '@repo/auth';
-import {
-  newPickupToken,
-  PICKUP_CODE_TTL_MS,
-  pickupPinHash,
-  pickupTokenHash,
-} from '@repo/contract/pickup';
+import { newPickupToken } from '@repo/contract/pickup';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
@@ -38,8 +33,12 @@ const { lookupPickupText } = await import('#/features/handover/pickup-lookup');
 const { recordHandover } = await import('#/features/handover/record-handover');
 const { searchForCode } = await import('#/features/handover/route');
 const { listHomeParcels } = await import('#/features/parcels/api/use-parcels');
+const { loadParcelRecord } =
+  await import('#/features/parcels/api/parcel-record');
+const { describeRecord } = await import('#/features/parcels/record');
+const { createTranslator, DEFAULT_LOCALE } = await import('@repo/shared/i18n');
 const { createSyncEngine } = await import('#/features/sync/engine');
-const { openTestDatabase, parcelRow, personRow } =
+const { openTestDatabase, parcelRow, personRow, pickupCodeRow } =
   await import('./helpers/local-rows');
 
 type Db = Awaited<ReturnType<typeof openTestDatabase>>;
@@ -143,23 +142,14 @@ const serverParcel = async (id: string) =>
 describe('a handover between two iPhones', () => {
   it('goes from the desk to the server, then to the other iPhone', async () => {
     const token = newPickupToken();
-    const now = new Date();
     await commitLocal(first, {
       upserts: [
         {
           entity: 'pickup_code',
-          row: {
-            id: newId(),
-            createdAt: now,
-            updatedAt: now,
-            deletedAt: null,
-            personId: nora.id,
-            contactId: null,
-            tokenHash: await pickupTokenHash(token),
-            pinHash: await pickupPinHash('4821'),
-            expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
-            usedAt: null,
-          },
+          row: await pickupCodeRow(
+            { personId: nora.id },
+            { token, now: new Date() },
+          ),
         },
       ],
     });
@@ -253,5 +243,54 @@ describe('a handover between two iPhones', () => {
     expect(cancelled?.cancelledAt).not.toBeNull();
     expect(await second.outbox.count()).toBe(0);
     expect((await serverParcel(parcels[1]!.id))?.deliveredBy).toBe(KARIM);
+  });
+
+  it('keeps a handover that lost one parcel of two, and tells each parcel’s own', async () => {
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+    const [beaten, kept] = parcels.map((parcel) => parcel.id) as [
+      string,
+      string,
+    ];
+    const handOver = (db: Db, agentId: string, parcelIds: string[]) =>
+      recordHandover(
+        db,
+        {
+          kind: 'person',
+          id: nora.id,
+          via: 'manuel',
+          at: Date.now(),
+          parcelIds,
+        },
+        { agentId },
+      );
+
+    await handOver(first, KARIM, [beaten]);
+    await desk.syncNow({ force: true });
+    const partial = await handOver(second, LINA, [beaten, kept]);
+    await other.syncNow({ force: true });
+
+    expect(conflicts).toEqual([
+      { recipientName: 'Nora Haddad', byMe: false, count: 1 },
+    ]);
+    expect(
+      (await second.handover.get(partial.handoverId))?.cancelledAt,
+    ).toBeNull();
+    expect((await serverParcel(kept))?.deliveredBy).toBe(LINA);
+    const t = createTranslator(DEFAULT_LOCALE);
+    const record = await loadParcelRecord(second, beaten);
+    expect(record?.handover?.agentId).toBe(KARIM);
+    const titles = describeRecord(record!, {
+      now: new Date(),
+      t,
+      showUnsent: true,
+    }).history?.map((entry) => entry.title);
+    expect(
+      titles?.filter(
+        (title) => typeof title === 'string' && title.startsWith('Remis'),
+      ),
+    ).toEqual(['Remis sans vérification']);
   });
 });

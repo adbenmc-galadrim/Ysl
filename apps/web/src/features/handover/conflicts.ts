@@ -1,4 +1,4 @@
-import { commitLocal } from '#/features/db/commit';
+import { commitLocal, type Upsert } from '#/features/db/commit';
 import type { CourrierDatabase, LocalHandover } from '#/features/db/schema';
 import { standing } from '#/features/handover/delivered';
 
@@ -26,11 +26,38 @@ async function handoversListing(
 }
 
 /**
+ * Whether none of the parcels of this handover is handed over by it any
+ * more, refused ones settled now or in an earlier run alike: each is `remis`
+ * by another handover, with nothing of this iPhone still queued for it.
+ */
+async function lostEverything(
+  db: CourrierDatabase,
+  mine: LocalHandover,
+  settling: readonly number[],
+): Promise<boolean> {
+  const [parcels, pending] = await Promise.all([
+    db.parcel.bulkGet(mine.parcelIds),
+    db.outbox
+      .where('[entity+entityId]')
+      .anyOf(mine.parcelIds.map((parcelId) => ['parcel', parcelId]))
+      .filter((op) => !settling.includes(op.seq))
+      .count(),
+  ]);
+  return (
+    pending === 0 &&
+    parcels.every(
+      (parcel) =>
+        parcel?.status === 'remis' && !sameTime(mine.at, parcel.deliveredAt),
+    )
+  );
+}
+
+/**
  * After a pull: a parcel this iPhone handed over that the server refused
  * (409, another iPhone recorded its handover first) is back as the server
  * holds it, `remis` to someone else. The refused change is settled and
- * leaves the outbox; this iPhone's handover is cancelled once none of its
- * parcels is its own, so it never stands for a parcel it did not hand over
+ * leaves the outbox in the same transaction as the cancellation of this
+ * iPhone's handover, once none of its parcels is its own, so it never stands for a parcel it did not hand over
  * (and never blocks the cancellation of the right one). A handover that kept
  * some of its parcels stays as is.
  */
@@ -67,16 +94,19 @@ export async function settleDeliveryConflicts(
   }
   if (!settled.length) return [];
 
-  const cancelled = [...lost.values()]
-    .filter(({ mine, parcels }) =>
-      mine.parcelIds.every((parcelId) => parcels.has(parcelId)),
-    )
-    .map(({ mine }) => ({
-      entity: 'handover' as const,
-      row: { ...mine, cancelledAt: now },
-    }));
-  await db.outbox.bulkDelete(settled);
-  await commitLocal(db, { upserts: cancelled }, { now });
+  const cancelled: Upsert[] = [];
+  for (const { mine } of lost.values()) {
+    if (await lostEverything(db, mine, settled)) {
+      cancelled.push({
+        entity: 'handover',
+        row: { ...mine, cancelledAt: now },
+      });
+    }
+  }
+  await db.transaction('rw', [db.outbox, db.handover], async () => {
+    await db.outbox.bulkDelete(settled);
+    await commitLocal(db, { upserts: cancelled }, { now });
+  });
   return [...lost.values()].map(({ mine, winner, parcels }) => ({
     recipientName: winner?.recipientName ?? null,
     byMe: winner?.agentId === mine.agentId,

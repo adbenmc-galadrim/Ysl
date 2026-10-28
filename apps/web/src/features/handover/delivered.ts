@@ -11,9 +11,11 @@ export const standing = (handover: LocalHandover) =>
   !handover.cancelledAt && !handover.deletedAt;
 
 /**
- * The standing handover of each parcel handed over, by parcel id; the
- * latest when a cancelled one was redone. Read through the recipients'
- * handovers: the parcel ids are not indexed on this iPhone.
+ * The standing handover of each parcel handed over, by parcel id: the one
+ * that wrote its `deliveredAt`, so a handover that lost the parcel to another
+ * iPhone (kept for the parcels it did hand over) never names it; the latest
+ * otherwise. Read through the recipients' handovers: the parcel ids are not
+ * indexed on this iPhone.
  */
 export async function handoversOf(
   db: CourrierDatabase,
@@ -36,14 +38,47 @@ export async function handoversOf(
     .flat()
     .filter(standing)
     .sort((a, b) => a.at.getTime() - b.at.getTime());
-  const wanted = new Set(delivered.map((parcel) => parcel.id));
+  const deliveredAt = new Map(
+    delivered.map((parcel) => [parcel.id, parcel.deliveredAt?.getTime()]),
+  );
   const byParcel = new Map<string, LocalHandover>();
   for (const handover of handovers) {
     for (const parcelId of handover.parcelIds) {
-      if (wanted.has(parcelId)) byParcel.set(parcelId, handover);
+      if (!deliveredAt.has(parcelId)) continue;
+      const held = byParcel.get(parcelId);
+      const wrote = handover.at.getTime() === deliveredAt.get(parcelId);
+      if (!held || wrote || held.at.getTime() !== deliveredAt.get(parcelId)) {
+        byParcel.set(parcelId, handover);
+      }
     }
   }
   return byParcel;
+}
+
+/**
+ * The handovers that list a parcel `remis` by another one: those that lost
+ * it to another iPhone, cancelled by the synchronisation or kept for the
+ * parcels they did hand over. Their `parcel.delivered` events for it tell a
+ * handover that never happened.
+ */
+export async function lostHandoverIds(
+  db: CourrierDatabase,
+  parcel: LocalParcel,
+): Promise<Set<string>> {
+  if (parcel.status !== 'remis' || !parcel.deliveredAt) return new Set();
+  const field = parcel.personId ? 'personId' : 'contactId';
+  const id = parcel.personId ?? parcel.contactId;
+  if (!id) return new Set();
+  const at = parcel.deliveredAt.getTime();
+  const lost = await db.handover
+    .where(field)
+    .equals(id)
+    .filter(
+      (handover) =>
+        handover.parcelIds.includes(parcel.id) && handover.at.getTime() !== at,
+    )
+    .toArray();
+  return new Set(lost.map((handover) => handover.id));
 }
 
 /** « QR vérifié », « code vérifié », « sans vérification ». */
