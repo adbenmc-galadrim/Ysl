@@ -185,7 +185,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | --- | --- | --- | --- | --- |
 | F33 | ~~Envoi par le serveur via une file d'attente (outbox), avec reprises~~ **Périmé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail part de l'adresse de l'agent, ouvert prérempli dans la messagerie de l'iPhone (`mailto:`, Outlook ou Gmail en option) depuis ses propres modèles ; suivi déclaratif de chaque e-mail (préparé, messagerie ouverte, envoyé confirmé par l'agent, échec) | Nouveau (remplace l'envoi manuel) | M | L2 |
 | F34 | Un e-mail par destinataire, regroupant ses colis ; « par service » devient un résumé optionnel | Amélioré (F17) | M | L2 |
-| F35 | E-mail ~~en HTML et en texte~~ en texte brut (D2 révisée, S5), accents corrects ; lieu et horaires de retrait ; ~~QR et~~ code de retrait écrit en clair (le QR ne passe pas par `mailto:`) | Amélioré | M | L2 |
+| F35 | E-mail ~~en HTML et en texte~~ en texte brut (D2 révisée, S5), accents corrects ; lieu et horaires de retrait ; code de retrait écrit en clair ; QR de retrait joint en image par « Partager avec le QR » (feuille de partage de l'iPhone), le `mailto:` ne portant pas d'image (YSL-66) | Amélioré | M | L2 |
 | F36 | ~~Repli `mailto:` manuel si l'envoi serveur est indisponible~~ **Périmé (D2 révisée) :** `mailto:` devient la voie principale, il n'y a plus d'envoi serveur ; Outlook, Gmail et « copier le texte » restent en option | Repris (voie principale) | S | L2 |
 | F37 | Relances automatiques, puis alerte « En souffrance » à l'agent | Nouveau | S | L2 |
 | F38 | Copie à un délégué ou à des collègues, par e-mail | Amélioré (F18) | C | L3 |
@@ -827,12 +827,14 @@ stateDiagram-v2
 
 ### 8.7 E-mail et retrait
 
-> **Périmé en partie (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail est en texte brut, envoyé depuis la messagerie de l'agent à partir de ses modèles ; pas de version HTML ni de QR dans le mail, le code de retrait s'écrit en clair en tête du message.
+> **Révisé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md), YSL-66) :** l'e-mail est en texte brut, envoyé depuis la messagerie de l'agent à partir de ses modèles ; pas de version HTML, le code de retrait s'écrit en clair en tête du message. Le QR ne passe pas par `mailto:` : il part en image par la feuille de partage.
 
-- **Objet** : « Colis en attente de retrait – Service Courrier » (« N colis… » s'il y en a plusieurs).
-- **Corps** : une ligne par colis (transporteur, tracking, expéditeur, n/N, heure de réception), lieu et horaires de retrait (paramétrables), QR de retrait et PIN.
-- **Signature** : « Service Courrier – Saint Laurent ». Accents corrects, version texte et version HTML.
-- **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le serveur génère le jeton et ne stocke que des empreintes. Les empreintes des codes actifs sont synchronisées vers les appareils, ce qui permet de vérifier un code hors ligne.
+- **Objet** (modèle par défaut) : « Colis en attente de retrait – Service Courrier », « N colis en attente… » s'il y en a plusieurs (variable `{nombre_colis}`).
+- **Corps** : code de retrait en tête ; une ligne par colis (transporteur, fin du numéro, expéditeur, pièces « 2 pièces sur 3 », heure ou jour de réception) ; réserve ; lieu, horaires et consignes de retrait, ceux des Réglages (D13 : choisis par le service, rien d'imposé par le client), ligne retirée quand la valeur est vide ; « répondez à ce mail » pour « pas à moi » ou « un collègue passera ».
+- **Signature** : le nom de l'agent, puis « Service Courrier » (D14 : pas de marque). Chaque agent la change dans son modèle.
+- **Modèles** : par agent, synchronisés ; création, renommage, modification, copie, choix du modèle par défaut, suppression (sauf le modèle par défaut et le modèle livré, qui se rétablit) ; liste fermée de variables affichée sous l'éditeur, aperçu rempli.
+- **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le QR porte un jeton long `YSL:RETRAIT:<32 caractères base32>` (`@repo/contract/pickup`, 160 bits) ; le PIN a 4 chiffres. L'iPhone qui prépare l'e-mail tire les deux et n'écrit que leurs empreintes (`tokenHash`, `pinHash`), synchronisées vers les appareils pour vérifier un code hors ligne (F40, F41). Le jeton vit dans l'image partagée ; un e-mail envoyé par « Envoyer à … » n'a que le PIN.
+- **QR** : « Partager avec le QR » sur l'écran Notifier ouvre la feuille de partage avec le texte et le QR en PNG (inséré en pied dans Mail, en pièce jointe dans Outlook, S5) ; l'adresse se saisit dans la messagerie. L'image est dessinée en mémoire, jamais conservée.
 - **Limite connue** : un PIN de 4 à 6 chiffres se devine si l'on a la base locale entre les mains. C'est acceptable sur un appareil d'agent verrouillé ; le QR (jeton long) reste la voie principale.
 
 ---
