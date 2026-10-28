@@ -1,6 +1,10 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { Button, EmptyState, SelectionScreen } from '@repo/ui';
-import { useMemo, useState } from 'react';
+import { Button, EmptyState, SelectionScreen, Toast } from '@repo/ui';
+import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useMemo, useState } from 'react';
+import { db } from '#/features/db/database';
+import type { LocalParcel } from '#/features/db/schema';
+import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import type { HomeParcel } from '#/features/parcels/model';
 import {
   type CounterId,
@@ -11,7 +15,9 @@ import {
 import {
   allTicked,
   matchesQuery,
+  planMails,
   type Selection,
+  skipsLine,
   tickedIn,
   toggled,
   toggledAll,
@@ -41,8 +47,15 @@ export function ColisSelection({
   initial,
   onDone,
 }: ColisSelectionProps) {
+  const navigate = useNavigate();
   const [selection, setSelection] = useState<Selection>(initial);
   const [query, setQuery] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
   const visible = useMemo(
     () => filterRows(rows, counter).filter((row) => matchesQuery(row, query)),
     [rows, counter, query],
@@ -74,6 +87,45 @@ export function ColisSelection({
     [visible, selection],
   );
 
+  const tickedRows = rows.filter((row) => selection.has(row.id));
+  // A notice is due as soon as one ticked parcel was never notified.
+  const notices = tickedRows.some((row) => row.state === 'toNotify');
+
+  const loadTicked = async (): Promise<LocalParcel[]> =>
+    (await db.parcel.bulkGet(ticked)).filter((parcel) => parcel !== undefined);
+
+  const remind = async () => {
+    const parcels = await loadTicked();
+    const plan = planMails(parcels, await loadRecipientContext(db, parcels));
+    const skipped = {
+      ...(plan.skipped.recipient && {
+        sansDestinataire: plan.skipped.recipient,
+      }),
+      ...(plan.skipped.address && { sansEmail: plan.skipped.address }),
+    };
+    if (plan.notice.length) {
+      void navigate({
+        to: '/notifier',
+        search: {
+          selection: plan.notice,
+          ...(plan.reminder.length && { ensuite: plan.reminder }),
+          ...skipped,
+        },
+      });
+    } else if (plan.reminder.length) {
+      void navigate({
+        to: '/notifier',
+        search: { selection: plan.reminder, relance: true, ...skipped },
+      });
+    } else {
+      setToast(
+        [t('selection.mail.none'), skipsLine(plan.skipped, t)]
+          .filter(Boolean)
+          .join(' · '),
+      );
+    }
+  };
+
   return (
     <SelectionScreen
       sections={sections}
@@ -92,6 +144,9 @@ export function ColisSelection({
       }))}
       query={query}
       onQueryChange={setQuery}
+      remindLabel={t(notices ? 'selection.notify' : 'selection.remind')}
+      onRemind={() => void remind()}
+      toast={toast ? <Toast message={toast} /> : undefined}
     >
       {visible.length === 0 ? (
         <EmptyState

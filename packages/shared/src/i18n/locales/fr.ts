@@ -225,6 +225,13 @@ export const fr = {
   'selection.empty.title': 'Aucun colis',
   'selection.empty.description':
     'Aucun colis ne correspond à ce filtre ou à cette recherche.',
+  'selection.notify': 'Notifier',
+  'selection.remind': 'Relancer',
+  'selection.skipped.one': '1 colis ignoré : {{reasons}}',
+  'selection.skipped.many': '{{count}} colis ignorés : {{reasons}}',
+  'selection.skipped.recipient': '{{count}} sans destinataire',
+  'selection.skipped.address': '{{count}} sans e-mail',
+  'selection.mail.none': 'Aucun e-mail à préparer',
   'search.filter.all': 'Tout',
   'search.filter.waiting': 'En attente',
   'search.filter.delivered': 'Remis',

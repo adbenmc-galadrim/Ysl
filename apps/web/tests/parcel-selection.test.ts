@@ -1,13 +1,26 @@
+import 'fake-indexeddb/auto';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import type { Parcel, ParcelState } from '@repo/ui';
 import { describe, expect, it } from 'vitest';
+import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { filterRows } from '#/features/parcels/sections';
 import {
   allTicked,
   matchesQuery,
+  planMails,
+  skipsLine,
   tickedIn,
   toggled,
   toggledAll,
 } from '#/features/parcels/selection';
+import {
+  NOW,
+  openTestDatabase,
+  parcelRow,
+  personRow,
+} from './helpers/local-rows';
+
+const t = createTranslator(DEFAULT_LOCALE);
 
 const row = (
   id: string,
@@ -60,5 +73,45 @@ describe('selection', () => {
     expect(matchesQuery(rows[1]!, 'ups 0002')).toBe(true);
     expect(matchesQuery(rows[1]!, 'hugo dhl')).toBe(false);
     expect(matchesQuery(rows[1]!, '  ')).toBe(true);
+  });
+});
+
+describe('planMails', () => {
+  it('writes once per person: a notice when one is due, else a reminder, and counts what it leaves out', async () => {
+    const db = await openTestDatabase();
+    const nora = personRow({ firstName: 'Nora', email: 'nora@example.com' });
+    const hugo = personRow({ firstName: 'Hugo', email: 'hugo@example.com' });
+    const marc = personRow({ firstName: 'Marc', email: '' });
+    await db.directoryPerson.bulkPut([nora, hugo, marc]);
+    const noraNew = parcelRow({ personId: nora.id });
+    const noraOld = parcelRow({
+      personId: nora.id,
+      status: 'notifie',
+      notifiedAt: NOW,
+    });
+    const hugoOld = parcelRow({
+      personId: hugo.id,
+      status: 'notifie',
+      notifiedAt: NOW,
+    });
+    const parcels = [
+      noraNew,
+      noraOld,
+      hugoOld,
+      parcelRow({ personId: marc.id }),
+      parcelRow({ status: 'a_completer', readName: 'J. Doe' }),
+      parcelRow({ readName: 'Sans fiche' }),
+      parcelRow({ personId: hugo.id, status: 'remis', deliveredAt: NOW }),
+    ];
+
+    const plan = planMails(parcels, await loadRecipientContext(db, parcels));
+
+    expect(plan.notice.sort()).toEqual([noraNew.id, noraOld.id].sort());
+    expect(plan.reminder).toEqual([hugoOld.id]);
+    expect(plan.skipped).toEqual({ recipient: 2, address: 1 });
+    expect(skipsLine(plan.skipped, t)).toBe(
+      '3 colis ignorés : 2 sans destinataire, 1 sans e-mail',
+    );
+    expect(skipsLine({ recipient: 0, address: 0 }, t)).toBeUndefined();
   });
 });

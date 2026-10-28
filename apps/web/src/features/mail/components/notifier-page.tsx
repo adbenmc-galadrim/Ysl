@@ -45,6 +45,7 @@ import {
 import { pickupQrFile } from '#/features/mail/pickup-qr';
 import {
   mailsAbout,
+  groupByRecipient,
   mailsOfBatch,
   recipientValues,
   type RecipientMail,
@@ -60,6 +61,8 @@ import { useNotifications } from '#/features/mail/use-notifications';
 import { whenVisible } from '#/features/mail/visibility';
 import { templateWarnings } from '#/features/mail/warnings';
 import { initialsOf } from '#/features/settings/initials';
+import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
+import { type MailSkips, skipsLine } from '#/features/parcels/selection';
 import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -75,6 +78,14 @@ export type NotifierScope = {
   reminder?: boolean;
   /** Opens on the first recipient without an address, on « Comment le prévenir ? ». */
   otherWay?: boolean;
+  /**
+   * Parcels ticked on Colis (F31): only those, one mail per person; the
+   * notices first, then `then`, the reminders of those notified only.
+   */
+  selection?: readonly string[];
+  then?: readonly string[];
+  /** What the selection left out, said on the first page. */
+  skipped?: MailSkips;
 };
 
 type Session = {
@@ -98,9 +109,41 @@ const addressedFirst = (mails: RecipientMail[]) => [
  */
 async function openSession(
   userId: string,
-  { parcelId, batchId, reminder }: NotifierScope,
+  { parcelId, batchId, reminder, selection }: NotifierScope,
 ): Promise<Session> {
   const now = new Date();
+  if (selection) {
+    const parcels = (await db.parcel.bulkGet([...selection])).filter(
+      (parcel) => parcel !== undefined,
+    );
+    const context = await loadRecipientContext(db, parcels);
+    const mails = addressedFirst(
+      groupByRecipient(
+        parcels,
+        context,
+        (parcel) =>
+          !parcel.deletedAt &&
+          (parcel.personId !== null || parcel.contactId !== null) &&
+          (parcel.status === 'notifie' ||
+            (!reminder && parcel.status === 'recu')),
+      ),
+    );
+    const type = reminder ? 'relance' : 'avis';
+    const [secrets, templates, pickup] = await Promise.all([
+      reminder
+        ? recallSecrets(db, mails, { now })
+        : drawSecrets(db, mails.length, { now }),
+      listTemplates(db, userId),
+      readPickup(db),
+    ]);
+    return {
+      mails,
+      secrets,
+      templates: templates.filter((template) => template.type === type),
+      pickup,
+      now,
+    };
+  }
   if (reminder) {
     const all = await loadReminderMails(db, now);
     // « Relancer les N » sends: those without an address are told apart.
@@ -166,6 +209,9 @@ export function NotifierPage({
   batchId,
   reminder,
   otherWay,
+  selection,
+  then,
+  skipped,
 }: NotifierScope) {
   const navigate = useNavigate();
   const router = useRouter();
@@ -204,7 +250,12 @@ export function NotifierPage({
 
   useEffect(() => {
     let live = true;
-    void openSession(userId, { parcelId, batchId, reminder }).then((value) => {
+    void openSession(userId, {
+      parcelId,
+      batchId,
+      reminder,
+      selection,
+    }).then((value) => {
       if (!live) return;
       setOpened(value);
       const first = value.mails.findIndex((mail) => !mail.address);
@@ -216,7 +267,7 @@ export function NotifierPage({
     return () => {
       live = false;
     };
-  }, [userId, parcelId, batchId, reminder, otherWay]);
+  }, [userId, parcelId, batchId, reminder, otherWay, selection]);
 
   useEffect(() => {
     if (!token) return;
@@ -488,6 +539,8 @@ export function NotifierPage({
     }
   };
 
+  const skippedLine =
+    index === 0 && skipped ? skipsLine(skipped, t) : undefined;
   const notice = failed
     ? { title: t('notify.error') }
     : sent?.code !== undefined
@@ -531,7 +584,19 @@ export function NotifierPage({
                 title: t('notify.notSent.title'),
                 description: sent?.reason ?? t('notify.notSent.description'),
               }
-            : undefined;
+            : skippedLine
+              ? { title: skippedLine }
+              : undefined;
+
+  // The notices of a selection sent, its reminders follow (one per person).
+  const finish = () =>
+    void (then?.length
+      ? navigate({
+          to: '/notifier',
+          search: { selection: [...then], relance: true },
+          replace: true,
+        })
+      : navigate({ to: '/' }));
 
   return (
     <NotifierScreen
@@ -583,7 +648,7 @@ export function NotifierPage({
       onComplete={() => setWaying(true)}
       notice={notice}
       nextLabel={last ? t('notify.finish') : t('notify.next')}
-      onNext={() => (last ? void navigate({ to: '/' }) : setIndex(index + 1))}
+      onNext={() => (last ? finish() : setIndex(index + 1))}
       onBack={back}
       sheet={
         stayed ? (
