@@ -29,10 +29,15 @@ import {
   type AddressCard,
 } from '#/features/mail/fix-address';
 import { MailFallback } from '#/features/mail/components/mail-fallback';
-import { needsFallback } from '#/features/mail/fallback';
+import {
+  canShareFiles,
+  needsFallback,
+  shareMailWithFiles,
+} from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
+import { pickupQrFile } from '#/features/mail/pickup-qr';
 import {
   mailsAbout,
   mailsOfBatch,
@@ -162,7 +167,7 @@ function AddAddressSheet({
   );
 }
 
-type Sent = { state: NotifierMailState; count?: number };
+type Sent = { state: NotifierMailState; count?: number; reason?: string };
 
 /**
  * One mail per recipient of the "À notifier" parcels (F34), of one
@@ -201,6 +206,10 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     target: MailTarget;
   } | null>(null);
   const busy = useRef(false);
+  // The page's QR, drawn before the tap: the share sheet opens only from
+  // the tap itself, with nothing awaited before it.
+  const [qr, setQr] = useState<{ token: string; file: File } | null>(null);
+  const token = opened?.secrets[index]?.token;
 
   useEffect(() => {
     let live = true;
@@ -211,6 +220,19 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       live = false;
     };
   }, [userId, parcelId, batchId]);
+
+  useEffect(() => {
+    if (!token) return;
+    let live = true;
+    void pickupQrFile(token)
+      .then((file) => {
+        if (live && canShareFiles([file])) setQr({ token, file });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [token]);
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
@@ -317,6 +339,56 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     })();
   };
 
+  const shareFile = qr && qr.token === secret?.token ? qr.file : null;
+
+  // The share sheet takes the text and the QR, never the address: the agent
+  // types it in the mail app (S5). The mail is recorded as for "Envoyer",
+  // without a mail app; a closed sheet gives it up, as the fallback does.
+  const share = () => {
+    if (!message || !shareFile || !mail.address || busy.current) return;
+    busy.current = true;
+    setFailed(false);
+    const sharing = shareMailWithFiles(message, [shareFile]);
+    const preparing = outbox.prepare({
+      type: template.type,
+      personId: mail.personId,
+      contactId: mail.contactId,
+      recipients: [mail.address],
+      parcelIds: mail.parcels.map(({ id }) => id),
+      templateId: template.stored ? template.id : null,
+      target: null,
+      pickup: secret,
+    });
+    renewToken();
+    const key = mail.key;
+    void (async () => {
+      try {
+        const row = await preparing;
+        const outcome = await sharing;
+        if (outcome === 'shared') {
+          await whenVisible();
+          setAsking({ key, id: row.id });
+          return;
+        }
+        await outbox.markFailed(row.id, t('notify.share.reason'));
+        setDone((all) => ({
+          ...all,
+          [key]: {
+            state: 'failed',
+            reason:
+              outcome === 'blocked'
+                ? t('mail.fallback.shareBlocked')
+                : t('mail.fallback.shareCancelled'),
+          },
+        }));
+      } catch {
+        setFailed(true);
+      } finally {
+        busy.current = false;
+      }
+    })();
+  };
+
   const confirmSent = (key: string, changes: NotifyChange[]) => {
     const count = changes.filter((change) => !('skip' in change)).length;
     setDone((all) => ({ ...all, [key]: { state: 'sent', count } }));
@@ -361,7 +433,7 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
         : state === 'failed'
           ? {
               title: t('notify.notSent.title'),
-              description: t('notify.notSent.description'),
+              description: sent?.reason ?? t('notify.notSent.description'),
             }
           : undefined;
 
@@ -396,6 +468,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       }
       sendHref={prepared?.url}
       onSend={send}
+      shareLabel={t('notify.share')}
+      shareHint={t('notify.share.hint')}
+      onShare={shareFile && mail.address ? share : undefined}
       completeLabel={t('mails.fix.add')}
       onComplete={() => setAdding(true)}
       notice={notice}

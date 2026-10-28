@@ -45,20 +45,15 @@ export async function copyText(
 export type MailShareOutcome =
   'shared' | 'cancelled' | 'blocked' | 'unavailable';
 
-type ShareHost = Partial<Pick<Navigator, 'share'>>;
+type ShareHost = Partial<Pick<Navigator, 'share' | 'canShare'>>;
 
-/**
- * The iOS share sheet, with the subject as title and the whole text: the
- * agent picks any app, and types the address there (S5). Closing the sheet
- * is a choice, not a failure.
- */
-export async function shareMail(
-  message: MailMessage,
-  host: ShareHost | undefined = globalThis.navigator,
+async function share(
+  data: ShareData,
+  host: ShareHost | undefined,
 ): Promise<MailShareOutcome> {
   if (!host?.share) return 'unavailable';
   try {
-    await host.share({ title: message.subject, text: mailText(message) });
+    await host.share(data);
     return 'shared';
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
@@ -69,6 +64,43 @@ export async function shareMail(
     }
     return 'unavailable';
   }
+}
+
+/**
+ * The iOS share sheet, with the subject as title and the whole text: the
+ * agent picks any app, and types the address there (S5). Closing the sheet
+ * is a choice, not a failure.
+ */
+export function shareMail(
+  message: MailMessage,
+  host: ShareHost | undefined = globalThis.navigator,
+): Promise<MailShareOutcome> {
+  return share({ title: message.subject, text: mailText(message) }, host);
+}
+
+/** Whether this browser's share sheet takes these files (iOS does, S5). */
+export function canShareFiles(
+  files: File[],
+  host: ShareHost | undefined = globalThis.navigator,
+): boolean {
+  return !!host?.share && !!host.canShare?.({ files });
+}
+
+/**
+ * The same sheet with files: the pickup QR goes into the mail as an image
+ * (inserted at the foot in Mail, attached in Outlook, S5), the only way a
+ * picture reaches it. Called in the tap, before anything awaited.
+ */
+export function shareMailWithFiles(
+  message: MailMessage,
+  files: File[],
+  host: ShareHost | undefined = globalThis.navigator,
+): Promise<MailShareOutcome> {
+  if (!canShareFiles(files, host)) return Promise.resolve('unavailable');
+  return share(
+    { title: message.subject, text: mailText(message), files },
+    host,
+  );
 }
 
 /** Why `target` may have stayed shut, in the words of S5. */

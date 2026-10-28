@@ -12,6 +12,7 @@ import { GroupedRow, GroupedSection } from '#components/grouped-list';
 import { NavBar } from '#components/nav-bar';
 import { Screen } from '#components/screen';
 import { Sheet } from '#components/sheet';
+import { Icon } from '#icons';
 import type { TemplateWarning } from '#screens/reglages/email-template-screen';
 
 /**
@@ -38,6 +39,13 @@ export type NotifierScreenProps = {
   sendHref?: string;
   /** Called with the tap: `preventDefault` keeps a second tap from opening Mail again. */
   onSend?: (event: MouseEvent<HTMLAnchorElement>) => void;
+  /**
+   * "Partager avec le QR": the share sheet with the pickup QR as an image,
+   * the address typed in the mail app (S5). Offered while the mail is to send.
+   */
+  shareLabel?: string;
+  shareHint?: string;
+  onShare?: () => void;
   /** Where the address is typed when there is none. */
   completeLabel?: string;
   onComplete?: () => void;
@@ -69,6 +77,9 @@ export function NotifierScreen({
   sendLabel,
   sendHref,
   onSend,
+  shareLabel,
+  shareHint,
+  onShare,
   completeLabel,
   onComplete,
   notice,
@@ -138,6 +149,24 @@ export function NotifierScreen({
           />
         ))}
         <EmailText {...preview} className="mt-3.5" />
+        {onShare && (state === 'ready' || state === 'failed') && (
+          <>
+            <Button
+              variant="secondary"
+              block
+              className="mt-3.5 gap-2"
+              onClick={onShare}
+            >
+              <Icon name="qr" size={20} />
+              {shareLabel}
+            </Button>
+            {shareHint && (
+              <p className="mt-2 px-4 text-13 leading-[1.4] text-muted">
+                {shareHint}
+              </p>
+            )}
+          </>
+        )}
         {onEditTemplate && (
           <Button
             variant="link"

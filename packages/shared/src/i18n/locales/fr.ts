@@ -592,6 +592,10 @@ export const fr = {
   'mail.parcel.piece': '{{n}} pièce sur {{total}}',
   'mail.parcel.pieces': '{{n}} pièces sur {{total}}',
   'notify.title': 'Notifier',
+  'notify.share': 'Partager avec le QR',
+  'notify.share.hint':
+    'Le texte et le QR de retrait partent par la feuille de partage ; saisissez l’adresse dans la messagerie.',
+  'notify.share.reason': 'Partage avec le QR annulé, e-mail abandonné',
   'notify.empty.title': 'Aucun e-mail à préparer',
   'notify.empty.description':
     'Les colis « À notifier » sans destinataire réglé attendent leur fiche.',

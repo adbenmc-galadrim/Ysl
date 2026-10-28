@@ -55,6 +55,10 @@ const meta = {
     },
     sendLabel: 'Envoyer à Nora',
     sendHref: 'mailto:nora.haddad@example.com',
+    shareLabel: 'Partager avec le QR',
+    shareHint:
+      'Le texte et le QR de retrait partent par la feuille de partage ; saisissez l’adresse dans la messagerie.',
+    onShare: () => {},
     nextLabel: 'Suivant',
   },
 } satisfies Meta<typeof NotifierScreen>;
