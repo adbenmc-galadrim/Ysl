@@ -22,34 +22,34 @@ export const MAIL_BODY_TESTED_MAX = 100_000;
 export type TemplateText = { name: string; subject: string; body: string };
 
 /**
- * The template every agent starts with (maquette « E-mail reçu par le
+ * The template every agent starts with (§8.7, maquette « E-mail reçu par le
  * salarié », 06 · Notification) as plain text, S5 having shown that a
- * `mailto:` carries nothing else: the pickup code first and in clear, no QR,
- * the parcels as bullets, and a plain "reply to this mail" rather than links
- * Mail shows encoded.
+ * `mailto:` carries nothing else: the pickup code first and in clear, one
+ * bullet per parcel, where and when, and a plain "reply to this mail" rather
+ * than links Mail shows encoded. Signed by the agent for the mailroom,
+ * without the house's name (D14); the QR goes with the share sheet.
  */
 export const DEFAULT_TEMPLATES = {
   avis: {
     name: 'Avis de retrait',
-    subject: 'Des colis vous attendent au service courrier',
+    subject: '{nombre_colis} en attente de retrait – Service Courrier',
     body: [
       'Bonjour {prénom},',
       '',
       'Votre code de retrait : {code}',
       '',
-      'Des colis sont arrivés pour vous. Donnez ce code au comptoir du service courrier.',
-      '',
+      'Nous avons reçu pour vous :',
       '{colis}',
       '{reserve}',
       '',
       'Où : {lieu}',
-      'Quand :',
-      '{horaires}',
+      'Quand : {horaires}',
       '{consignes}',
       '',
-      'Ce colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+      'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
       '',
       '{agent}',
+      'Service Courrier',
     ].join('\n'),
   },
 } as const satisfies Partial<Record<NotificationType, TemplateText>>;

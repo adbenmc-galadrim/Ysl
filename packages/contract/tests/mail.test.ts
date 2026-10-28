@@ -90,6 +90,24 @@ describe('template rendering', () => {
     ).toBe('Où : Hall\nFin');
   });
 
+  it('drops a line whose variables are all empty, with its words', () => {
+    const rendered = renderText(
+      'Où : {lieu}\nQuand : {horaires} ({lieu})\nFin',
+      {
+        lieu: '',
+        horaires: '',
+      },
+    );
+    expect(rendered.text).toBe('Fin');
+    expect(rendered.empty).toEqual(['lieu', 'horaires']);
+  });
+
+  it('keeps a line where one variable has a value', () => {
+    expect(
+      renderText('{lieu}, {horaires}', { lieu: '', horaires: '9 h' }).text,
+    ).toBe(', 9 h');
+  });
+
   it('renders the default template from what the app knows, parcels as bullets', () => {
     const values = mailValues({
       firstName: 'Nora',
@@ -115,11 +133,28 @@ describe('template rendering', () => {
     expect(rendered.body).toContain(
       '• Amazon ···4471, reçu à 10 h 15\n• UPS ···0622, reçu à 11 h',
     );
+    expect(rendered.subject).toBe(
+      '2 colis en attente de retrait – Service Courrier',
+    );
     expect(rendered.body).toContain(
-      'Quand :\nLun. au mer. : 9 h à 18 h\nVen. : 9 h à 12 h\n\nCe colis',
+      'Où : Hall B\nQuand : Lun. au mer. : 9 h à 18 h\nVen. : 9 h à 12 h\n\nDonnez',
     );
     expect(rendered.body.indexOf('4821')).toBeLessThan(
       rendered.body.indexOf('•'),
+    );
+    expect(rendered.body.endsWith('\n\nKarim Daoud\nService Courrier')).toBe(
+      true,
+    );
+    expect(`${rendered.subject}${rendered.body}`).not.toMatch(/Saint Laurent/i);
+  });
+
+  it('names a single parcel without a number in the subject', () => {
+    const rendered = renderMail(
+      DEFAULT_TEMPLATES.avis,
+      mailValues({ parcels: ['UPS ···0622'] }),
+    );
+    expect(rendered.subject).toBe(
+      'Colis en attente de retrait – Service Courrier',
     );
   });
 
@@ -141,10 +176,16 @@ describe('template rendering', () => {
     expect(body({})).toContain('• UPS ···0622\n\nOù');
   });
 
-  it('points out a mailroom whose place and hours are not set yet', () => {
+  it('leaves out where and when while the mailroom has not set them', () => {
     const values = mailValues({ parcels: ['x'], pickup: EMPTY_PICKUP });
-    expect(renderMail(DEFAULT_TEMPLATES.avis, values).missing).toEqual(
-      expect.arrayContaining(['lieu', 'horaires', 'code', 'prénom', 'agent']),
+    const rendered = renderMail(DEFAULT_TEMPLATES.avis, values);
+    expect(rendered.body).not.toMatch(/Où|Quand|\{lieu\}|\{horaires\}/);
+    expect(rendered.body).toContain('• x\n\nDonnez');
+    expect(rendered.empty).toEqual(
+      expect.arrayContaining(['lieu', 'horaires', 'consignes']),
+    );
+    expect(rendered.missing).toEqual(
+      expect.arrayContaining(['code', 'prénom', 'agent']),
     );
   });
 

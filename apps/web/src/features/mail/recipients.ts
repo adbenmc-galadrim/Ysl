@@ -170,19 +170,35 @@ export function parcelName(parcel: LocalParcel, t: TranslateFn): string {
     : carrier;
 }
 
-/** "UPS ···0622, reçu à 10 h 15" today, "…, reçu le 14 oct." before. */
+/**
+ * One parcel as the mail lists it (§8.7): carrier and number, sender and
+ * pieces when known, then when it came — "UPS ···0622, de Zalando, 2 pièces
+ * sur 3, reçu à 10 h 15" today, "…, reçu le 14 oct." before.
+ */
 export function parcelLine(
   parcel: LocalParcel,
   now: Date,
   t: TranslateFn,
 ): string {
-  const name = parcelName(parcel, t);
-  return parcel.receivedAt >= startOfDay(now)
-    ? t('mail.parcel.today', { name, time: formatTime(parcel.receivedAt) })
-    : t('mail.parcel.before', {
-        name,
-        date: shortDate(parcel.receivedAt, now),
-      });
+  const sender = parcel.senderName?.trim();
+  const { pieceN, pieceTotal } = parcel;
+  return [
+    parcelName(parcel, t),
+    sender && t('mail.parcel.sender', { sender }),
+    pieceN && pieceTotal && pieceTotal > 1
+      ? t(pieceN === 1 ? 'mail.parcel.piece' : 'mail.parcel.pieces', {
+          n: pieceN,
+          total: pieceTotal,
+        })
+      : undefined,
+    parcel.receivedAt >= startOfDay(now)
+      ? t('mail.parcel.today', { time: formatTime(parcel.receivedAt) })
+      : t('mail.parcel.before', {
+          date: shortDate(parcel.receivedAt, now),
+        }),
+  ]
+    .filter(Boolean)
+    .join(', ');
 }
 
 export type MailContext = {

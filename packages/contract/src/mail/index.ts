@@ -12,6 +12,7 @@ export {
   MAIL_VARIABLES,
   mailValues,
   parcelBullets,
+  parcelCount,
   pickupValues,
   renderMail,
   renderText,

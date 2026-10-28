@@ -180,6 +180,9 @@ describe('the e-mail of one recipient', () => {
         parcelRow({
           carrier: 'Amazon',
           tracking: 'TBA0000004471',
+          senderName: 'Zalando',
+          pieceN: 2,
+          pieceTotal: 3,
           receivedAt: new Date(2026, 9, 24, 10, 15),
         }),
         parcelRow({
@@ -220,11 +223,14 @@ describe('the e-mail of one recipient', () => {
     );
 
     expect(rendered.missing).toEqual([]);
+    expect(rendered.subject).toBe(
+      '3 colis en attente de retrait – Service Courrier',
+    );
     expect(rendered.body).toContain('Bonjour Nora,');
     expect(rendered.body).toContain('Votre code de retrait : 0427');
     expect(rendered.body).toContain(
       [
-        '• Amazon ···4471, reçu à 10 h 15',
+        '• Amazon ···4471, de Zalando, 2 pièces sur 3, reçu à 10 h 15',
         '• UPS ···0622, reçu le 14 oct.',
         '• DHL ···7890, reçu à 10 h 42',
         'Arrivé abîmé : UPS ···0622, mouillé (coin)',
