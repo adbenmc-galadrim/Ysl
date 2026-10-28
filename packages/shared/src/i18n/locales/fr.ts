@@ -689,6 +689,13 @@ export const fr = {
   'notify.notSent.reason': 'Non envoyé, d’après l’agent',
   'notify.error': 'E-mail non préparé sur l’iPhone, réessayez.',
   'notify.template.title': 'Modèle d’e-mail',
+  'remind.empty.title': 'Aucune relance à faire',
+  'remind.empty.description':
+    'Les colis notifiés sont relancés à J+2 et J+5 jours ouvrés. Rien n’est dû pour le moment.',
+  'remind.sent.one': 'Relance notée sur 1 colis.',
+  'remind.sent.many': 'Relance notée sur {{count}} colis.',
+  'remind.question':
+    'Si le message à {{name}} est dans vos envoyés, la relance est notée sur ses colis.',
   'lot.span': 'Lot de {{start}} à {{end}}',
   'lot.span.single': 'Lot de {{start}}',
   'lot.send.one': 'Envoyer 1 e-mail',

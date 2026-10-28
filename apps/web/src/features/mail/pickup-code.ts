@@ -51,8 +51,12 @@ export async function drawPins(
   return pins;
 }
 
-/** What the mail hands the employee: the PIN it quotes, the token its QR carries. */
-export type PickupSecret = { pin: string; token: string };
+/**
+ * What the mail hands the employee: the PIN it quotes, the token its QR
+ * carries. `codeId`: the recipient's code still open, quoted again by a
+ * reminder; the PIN stays theirs.
+ */
+export type PickupSecret = { pin: string; token: string; codeId?: string };
 
 /** `drawPins`, each with a token for its QR, kept in memory until the mail is written. */
 export async function drawSecrets(
@@ -69,25 +73,100 @@ export type PickupRecipient = {
   contactId: string | null;
 };
 
+function codesOf(
+  db: CourrierDatabase,
+  { personId, contactId }: PickupRecipient,
+): Promise<LocalPickupCode[]> {
+  return personId
+    ? db.pickupCode.where('personId').equals(personId).toArray()
+    : contactId
+      ? db.pickupCode.where('contactId').equals(contactId).toArray()
+      : Promise.resolve([]);
+}
+
+let pinsByHash: Promise<Map<string, string>> | undefined;
+
+/**
+ * Every PIN by its hash: four digits are 10 000 hashes, worked out once.
+ * Only the hash is kept (§8.7), yet a reminder must quote the code the
+ * employee already holds (F37).
+ */
+function pinTable(): Promise<Map<string, string>> {
+  pinsByHash ??= Promise.all(
+    Array.from({ length: PIN_SPACE }, async (_, value) => {
+      const pin = String(value).padStart(PICKUP_PIN_LENGTH, '0');
+      return [await pickupPinHash(pin), pin] as const;
+    }),
+  ).then((pairs) => new Map(pairs));
+  return pinsByHash;
+}
+
+/**
+ * The secrets of a round of reminders: each recipient's open code (not
+ * withdrawn, used nor expired), its PIN found again from its hash, so the
+ * employee keeps the code of the first mail; a new PIN for whoever has none.
+ * The token of the QR cannot be found again: each gets a new one.
+ */
+export async function recallSecrets(
+  db: CourrierDatabase,
+  recipients: readonly PickupRecipient[],
+  options: { random?: RandomBelow; now?: Date } = {},
+): Promise<PickupSecret[]> {
+  const now = options.now ?? new Date();
+  const pins = await pinTable();
+  const open = await Promise.all(
+    recipients.map(async (recipient) => {
+      const latest = (await codesOf(db, recipient))
+        .filter((row) => isLive(row) && row.expiresAt > now)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+      const pin = latest && pins.get(latest.pinHash);
+      return latest && pin ? { pin, codeId: latest.id } : undefined;
+    }),
+  );
+  const drawn = await drawPins(
+    db,
+    open.filter((code) => !code).length,
+    options,
+  );
+  return open.map((code) =>
+    code
+      ? { ...code, token: newPickupToken() }
+      : { pin: drawn.shift()!, token: newPickupToken() },
+  );
+}
+
 /**
  * The writes that make this PIN and token the recipient's code: the codes
  * still open for them go first, since the server allows one open code per
  * person (`pickup_code_active_person_idx`), then the new one. The last mail
  * sent holds the valid code. Only the hashes are written: the token lives
  * in the QR shared with the mail, or nowhere when the mail went as text.
+ * A reminder that quotes the open code (`codeId`) keeps it, with the QR's
+ * new token: the PIN does not change, the former QR no longer opens.
  */
 export async function pickupCodeWrites(
   db: CourrierDatabase,
   recipient: PickupRecipient,
-  { pin, token }: PickupSecret,
+  secret: PickupSecret,
   { now = new Date() }: { now?: Date } = {},
 ): Promise<Upsert[]> {
   const { personId, contactId } = recipient;
-  const mine = personId
-    ? await db.pickupCode.where('personId').equals(personId).toArray()
-    : contactId
-      ? await db.pickupCode.where('contactId').equals(contactId).toArray()
-      : [];
+  const mine = await codesOf(db, recipient);
+  const kept = secret.codeId
+    ? mine.find((row) => row.id === secret.codeId && isLive(row))
+    : undefined;
+  if (kept)
+    return [
+      {
+        entity: 'pickup_code',
+        row: {
+          ...kept,
+          updatedAt: now,
+          tokenHash: await pickupTokenHash(secret.token),
+        },
+      },
+    ];
+  const { pin, token } = secret;
   const code: LocalPickupCode = {
     id: newId(),
     createdAt: now,

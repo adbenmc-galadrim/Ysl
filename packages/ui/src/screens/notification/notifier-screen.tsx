@@ -185,6 +185,8 @@ export function NotifierScreen({
 
 export type MailSentSheetProps = {
   recipient: string;
+  /** What a "yes" does, when it is not notifying the parcels: a reminder noted. */
+  description?: string;
   onSent?: () => void;
   onNotSent?: () => void;
   onDismiss?: () => void;
@@ -198,6 +200,7 @@ export type MailSentSheetProps = {
  */
 export function MailSentSheet({
   recipient,
+  description,
   onSent,
   onNotSent,
   onDismiss,
@@ -207,7 +210,10 @@ export function MailSentSheet({
     <Sheet
       fixed
       title="L’e-mail est-il parti ?"
-      description={`Si le message à ${recipient} est dans vos envoyés, ses colis passent « Notifié ».`}
+      description={
+        description ??
+        `Si le message à ${recipient} est dans vos envoyés, ses colis passent « Notifié ».`
+      }
       className="pb-[calc(var(--safe-bottom)+16px)]"
       onDismiss={onDismiss}
     >

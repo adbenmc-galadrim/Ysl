@@ -36,7 +36,11 @@ import {
 } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
+import {
+  drawSecrets,
+  recallSecrets,
+  type PickupSecret,
+} from '#/features/mail/pickup-code';
 import { pickupQrFile } from '#/features/mail/pickup-qr';
 import {
   mailsAbout,
@@ -49,6 +53,7 @@ import {
   type EmailTemplateView,
 } from '#/features/mail/templates';
 import { loadPendingMails } from '#/features/mail/pending-mails';
+import { loadReminderMails } from '#/features/mail/reminder-mails';
 import { pageAfter, pickTemplate } from '#/features/mail/round';
 import { useNotifications } from '#/features/mail/use-notifications';
 import { whenVisible } from '#/features/mail/visibility';
@@ -58,8 +63,16 @@ import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-/** Every mail to send, one recipient's (from a record), or one batch's. */
-export type NotifierScope = { parcelId?: string; batchId?: string };
+/**
+ * Every mail to send, one recipient's (from a record), or one batch's.
+ * `reminder`: the reminders due instead of the notices (F37), or one
+ * recipient's with `parcelId`.
+ */
+export type NotifierScope = {
+  parcelId?: string;
+  batchId?: string;
+  reminder?: boolean;
+};
 
 type Session = {
   mails: RecipientMail[];
@@ -76,9 +89,27 @@ type Session = {
  */
 async function openSession(
   userId: string,
-  { parcelId, batchId }: NotifierScope,
+  { parcelId, batchId, reminder }: NotifierScope,
 ): Promise<Session> {
   const now = new Date();
+  if (reminder) {
+    const all = await loadReminderMails(db, now);
+    const mails = parcelId
+      ? mailsAbout(all, parcelId)
+      : all.filter((mail) => mail.due);
+    const [secrets, templates, pickup] = await Promise.all([
+      recallSecrets(db, mails, { now }),
+      listTemplates(db, userId),
+      readPickup(db),
+    ]);
+    return {
+      mails,
+      secrets,
+      templates: templates.filter((template) => template.type === 'relance'),
+      pickup,
+      now,
+    };
+  }
   const all = await loadPendingMails(db);
   const mails = parcelId
     ? mailsAbout(all, parcelId)
@@ -178,7 +209,7 @@ type Sent = { state: NotifierMailState; count?: number; reason?: string };
  * follow-up). When the page stays in front, the fallback sheet offers the
  * other apps, the text to copy or share, and how it ended.
  */
-export function NotifierPage({ parcelId, batchId }: NotifierScope) {
+export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
   const navigate = useNavigate();
   const router = useRouter();
   const session = useSession();
@@ -213,13 +244,13 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
 
   useEffect(() => {
     let live = true;
-    void openSession(userId, { parcelId, batchId }).then((value) => {
+    void openSession(userId, { parcelId, batchId, reminder }).then((value) => {
       if (live) setOpened(value);
     });
     return () => {
       live = false;
     };
-  }, [userId, parcelId, batchId]);
+  }, [userId, parcelId, batchId, reminder]);
 
   useEffect(() => {
     if (!token) return;
@@ -248,8 +279,10 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
         <NavBar title={t('notify.title')} onBack={back} />
         <EmptyState
           icon="mail"
-          title={t('notify.empty.title')}
-          description={t('notify.empty.description')}
+          title={t(reminder ? 'remind.empty.title' : 'notify.empty.title')}
+          description={t(
+            reminder ? 'remind.empty.description' : 'notify.empty.description',
+          )}
           className="mt-[129px]"
         />
       </Screen>
@@ -312,7 +345,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
       target: mailTarget,
-      pickup: secret,
+      // A reminder quoting the open code leaves it as it is: same PIN, and
+      // the QR of the first mail still opens.
+      pickup: secret?.codeId ? undefined : secret,
     });
     renewToken();
     void (async () => {
@@ -435,7 +470,13 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
         ? {
             title: t('notify.sent.title'),
             description: t(
-              sent?.count === 1 ? 'notify.sent.one' : 'notify.sent.many',
+              reminder
+                ? sent?.count === 1
+                  ? 'remind.sent.one'
+                  : 'remind.sent.many'
+                : sent?.count === 1
+                  ? 'notify.sent.one'
+                  : 'notify.sent.many',
               { count: sent?.count ?? 0 },
             ),
           }
@@ -515,6 +556,15 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
           <MailSentSheet
             recipient={
               mails.find((other) => other.key === asking.key)?.name ?? mail.name
+            }
+            description={
+              reminder
+                ? t('remind.question', {
+                    name:
+                      mails.find((other) => other.key === asking.key)?.name ??
+                      mail.name,
+                  })
+                : undefined
             }
             onSent={() => void answer(true)}
             onNotSent={() => void answer(false)}
