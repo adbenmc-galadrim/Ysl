@@ -218,6 +218,13 @@ export const fr = {
   'colis.remind.one': '1 personne à relancer',
   'colis.remind.many': '{{count}} personnes à relancer',
   'colis.remind.description': 'Relancer : les e-mails sont prêts.',
+  'selection.section.all': 'Tout',
+  'selection.section.none': 'Aucun',
+  'selection.section.allOf': 'Tout sélectionner dans {{section}}',
+  'selection.section.noneOf': 'Tout désélectionner dans {{section}}',
+  'selection.empty.title': 'Aucun colis',
+  'selection.empty.description':
+    'Aucun colis ne correspond à ce filtre ou à cette recherche.',
   'search.filter.all': 'Tout',
   'search.filter.waiting': 'En attente',
   'search.filter.delivered': 'Remis',
