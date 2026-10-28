@@ -116,8 +116,8 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 4. Le colis passe à **Remis**, avec l'heure, l'agent et la méthode. Toast « Annuler ». Tout cela fonctionne hors ligne.
 
 **P5. Relance**
-1. Un colis notifié et non retiré appelle une relance à J+2 puis à J+5 jours ouvrés (D12, lundi à vendredi, jours fériés non connus). Aucun envoi automatique (D2 révisée) : l'app calcule qui relancer, prépare un e-mail par personne avec le modèle de relance et le même code de retrait, et le signale par un bandeau « N personnes à relancer » sur Colis et le compteur « À relancer ». L'agent envoie chaque relance d'un toucher depuis l'écran « Colis en souffrance » (« Relancer », « Relancer les N »).
-2. Deux jours ouvrés après la seconde relance (ou dès J+5 sans relance), le colis est « En souffrance » (compteur cliquable). L'agent décide : relancer encore à la main, appeler, ou retourner à l'expéditeur (L3).
+1. Un colis notifié et non retiré appelle une relance à J+2 puis à J+5 jours ouvrés (D12, lundi à vendredi ; les jours fériés ne sont pas connus et comptent comme ouvrés). Aucun envoi automatique (D2 révisée) : l'app calcule qui relancer, prépare un e-mail par personne avec le modèle de relance et le même code de retrait, et le signale par un bandeau « N personnes à relancer » sur Colis et le compteur « À relancer ». L'agent envoie chaque relance d'un toucher depuis l'écran « Colis en souffrance » (« Relancer », « Relancer les N »).
+2. Deux jours ouvrés après la seconde relance (ou dès J+5 si les deux relances ne sont pas parties), le colis est « En souffrance » (compteur cliquable). L'agent décide : relancer encore à la main, appeler, ou retourner à l'expéditeur (L3).
 
 **P6. Recherche**
 1. Onglet **Colis** : barre de recherche instantanée, insensible aux accents, sur le tracking, le nom, le service, l'expéditeur et le transporteur, avec résultats à chaque frappe.
@@ -970,7 +970,7 @@ Chaque décision est accompagnée d'une recommandation.
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |
-| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte à l'agent ; le rythme reste à la main de l'agent : l'app propose, rien ne part seul (YSL-67, jours fériés non comptés) |
+| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte à l'agent ; le rythme reste à la main de l'agent : l'app propose, rien ne part seul (YSL-67, jours fériés comptés comme ouvrés) |
 | D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | À fournir par le service |
 | D14 | Usage du nom et de l'identité visuelle Saint Laurent | Entreprise | Demander l'accord ; en attendant, interface sobre sans logo |
 | D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | Export CSV (nom, prénom, e-mail, service, site) fourni par les RH ou la DSI ; Entra en cible |
