@@ -26,11 +26,12 @@ export const TroisChiffres: Story = {
 export const Vide: Story = { args: { code: '' } };
 
 /** A wrong code: the boxes are cleared and turn red until the next digit. */
-export const CodeInconnu: Story = {
-  name: 'Code inconnu',
+export const CodeDejaServi: Story = {
+  name: 'Code déjà servi',
   args: {
     code: '',
-    error: 'Code inconnu. Vérifiez-le avec le salarié.',
+    error: 'Ce code a déjà servi. Cherchez plutôt le nom.',
+    onSearchName: () => {},
   },
 };
 

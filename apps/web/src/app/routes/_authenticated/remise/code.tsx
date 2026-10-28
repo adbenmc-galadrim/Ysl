@@ -11,6 +11,7 @@ function RemiseCodeRoute() {
     <RemiseCodePage
       onFound={(search) => void navigate({ to: '/remise/colis', search })}
       onBack={() => void navigate({ to: '/remise' })}
+      onSearchName={() => void navigate({ to: '/remise/nom' })}
     />
   );
 }

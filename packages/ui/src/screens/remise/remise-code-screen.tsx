@@ -1,3 +1,4 @@
+import { Button } from '#components/button';
 import { CodeInput } from '#components/code-input';
 import { Keypad } from '#components/keypad';
 import { NavBar } from '#components/nav-bar';
@@ -17,6 +18,8 @@ export type RemiseCodeScreenProps = {
   onDigit?: (digit: string) => void;
   onDelete?: () => void;
   onBack?: () => void;
+  /** Shown under a refusal: the way round a code that opens nothing. */
+  onSearchName?: () => void;
 };
 
 /**
@@ -31,6 +34,7 @@ export function RemiseCodeScreen({
   onDigit,
   onDelete,
   onBack,
+  onSearchName,
 }: RemiseCodeScreenProps) {
   const alert = locked ?? error;
   return (
@@ -56,9 +60,21 @@ export function RemiseCodeScreen({
         className="mt-[25px]"
       />
       {alert ? (
-        <p role="alert" className="mt-[26px] text-center text-14 text-red">
-          {alert}
-        </p>
+        <>
+          <p role="alert" className="mt-[26px] text-center text-14 text-red">
+            {alert}
+          </p>
+          {onSearchName && (
+            <Button
+              variant="link"
+              icon="search"
+              onClick={onSearchName}
+              className="mt-3 self-center text-16 font-semibold"
+            >
+              Chercher un nom
+            </Button>
+          )}
+        </>
       ) : (
         <p className="mt-[26px] text-center text-14 text-muted">
           Le colis s’affichera dès le dernier chiffre.

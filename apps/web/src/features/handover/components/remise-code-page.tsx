@@ -20,6 +20,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 export type RemiseCodePageProps = {
   onFound: (search: RemiseColisSearch) => void;
   onBack: () => void;
+  onSearchName: () => void;
 };
 
 /**
@@ -27,7 +28,11 @@ export type RemiseCodePageProps = {
  * last digit. Five wrong ones in a row and the pad waits 30 s: four
  * digits are guessed fast (§8.7).
  */
-export function RemiseCodePage({ onFound, onBack }: RemiseCodePageProps) {
+export function RemiseCodePage({
+  onFound,
+  onBack,
+  onSearchName,
+}: RemiseCodePageProps) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string>();
   const [attempts, setAttempts] = useState(readPinAttempts);
@@ -90,6 +95,7 @@ export function RemiseCodePage({ onFound, onBack }: RemiseCodePageProps) {
         setCode((typed) => typed.slice(0, -1));
       }}
       onBack={onBack}
+      onSearchName={onSearchName}
     />
   );
 }
