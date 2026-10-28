@@ -817,7 +817,7 @@ stateDiagram-v2
 | `directory.importCsv`, `directory.list` | tRPC (admin) | Annuaire |
 | `notifications.preview` | tRPC | Aperçu des e-mails avant validation du lot |
 | `notifications.retry`, `notifications.sendNow` | tRPC | Actions sur la file |
-| `pickup.verify` | tRPC | Vérification en ligne (la vérification hors ligne se fait sur les empreintes synchronisées) |
+| `pickup.verify` | tRPC | Vérification en ligne d'une empreinte (QR ou PIN) : état du code et destinataire, sans rien consommer ; appelée par le viseur seulement quand le réseau est là (la vérification hors ligne se fait sur les empreintes synchronisées, §8.7) |
 | `exports.parcelsCsv`, `imports.v1Csv` | tRPC | Export CSV, import de l'historique v1 |
 | `reports.summary` | tRPC (admin) | Rapports (L3) |
 | `tracking.lookup` | tRPC | Suivi transporteur (L4, optionnel) |
@@ -835,6 +835,10 @@ stateDiagram-v2
 - **Modèles** : par agent, synchronisés ; création, renommage, modification, copie, choix du modèle par défaut, suppression (sauf le modèle par défaut et le modèle livré, qui se rétablit) ; liste fermée de variables affichée sous l'éditeur, aperçu rempli.
 - **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le QR porte un jeton long `YSL:RETRAIT:<32 caractères base32>` (`@repo/contract/pickup`, 160 bits) ; le PIN a 4 chiffres. L'iPhone qui prépare l'e-mail tire les deux et n'écrit que leurs empreintes (`tokenHash`, `pinHash`), synchronisées vers les appareils pour vérifier un code hors ligne (F40, F41). Le jeton vit dans l'image partagée ; un e-mail envoyé par « Envoyer à … » n'a que le PIN.
 - **QR** : « Partager avec le QR » sur l'écran Notifier ouvre la feuille de partage avec le texte et le QR en PNG (inséré en pied dans Mail, en pièce jointe dans Outlook, S5) ; l'adresse se saisit dans la messagerie. L'image est dessinée en mémoire, jamais conservée.
+- **Vérification hors ligne (F41, YSL-73)** : la remise vérifie le QR et le PIN sur les empreintes de l'iPhone, sans réseau. Tous les codes du service arrivent au pull, sans horizon : actifs, utilisés, expirés et remplacés, jusqu'à la purge (§9), pour dire hors ligne « déjà servi », « expiré » ou « remplacé ». Un code émis sur un iPhone part au serveur 0,5 s après l'écriture et arrive sur les autres à leur synchro suivante : au plus 60 s app ouverte, au retour au premier plan ou du réseau (§5.3). Réseau présent, le viseur demande aussi `pickup.verify` (1,5 s au plus) : un code inconnu ici mais actif au serveur est tiré tout de suite, un code déjà utilisé sur un autre iPhone est refusé ; hors ligne, lent ou en erreur, l'iPhone décide seul.
+- **Code utilisé** : la remise qui couvre tous les colis en attente consomme le code (`usedAt`). Deux iPhone hors ligne peuvent remettre sur le même code : au retour du réseau la remise arrivée la seconde est refusée (409, colis déjà remis) et annulée sur son iPhone, et le serveur garde le premier `usedAt` reçu (un `usedAt` posé ne change plus, une relance ne rouvre pas un code utilisé).
+- **Relance et rattachement** : une relance avec le QR garde le PIN et l'échéance mais pose un nouveau code (nouveau jeton) et retire l'ancien : l'ancien QR dit « remplacé ». Au rattachement d'un contact à une personne, le code ouvert le plus récent des deux passe sur la personne, l'autre est retiré.
+- **Horloge** : l'expiration est jugée à l'horloge de l'iPhone, sans tolérance ; sur une validité de 30 jours un décalage de quelques minutes ne change rien. En ligne, `pickup.verify` juge à l'horloge du serveur.
 - **Limite connue** : un PIN de 4 chiffres se devine si l'on a la base locale entre les mains. C'est acceptable sur un appareil d'agent verrouillé. L'e-mail part d'abord par « Envoyer à … », avec le PIN seul ; le QR (jeton long, non devinable) part quand l'agent choisit « Partager avec le QR ».
 
 ---
