@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
 import { assignRecipient } from '#/features/parcels/complete';
-import { homeState, reminderOf } from '#/features/parcels/model';
+import { toRemiseParcel } from '#/features/handover/waiting';
+import { homeState, reminderOf, toParcelRow } from '#/features/parcels/model';
 import { describeRecord } from '#/features/parcels/record';
 import {
   answeredWith,
@@ -252,5 +253,66 @@ describe('« Absent jusqu’au … »', () => {
       await replyAbsent(db, [parcel.id], new Date(2026, 9, 30, 15), options),
     ).toBe('unchanged');
     expect(await db.outbox.count()).toBe(before);
+  });
+});
+
+describe('the answer on the lists', () => {
+  const context = () => ({
+    people: new Map([[hugo.id, hugo]]),
+    contacts: new Map(),
+  });
+
+  it('heads a disowned parcel with the name read and says when', async () => {
+    const parcel = notified();
+    await db.parcel.put(parcel);
+    await replyNotMine(db, parcel.id, options);
+    const later = new Date(NOW.getTime() + 10 * 60_000);
+
+    const row = toParcelRow(
+      (await db.parcel.get(parcel.id))!,
+      context(),
+      later,
+      t,
+    );
+
+    expect(row).toMatchObject({
+      recipient: 'H. LEFEVRE',
+      state: 'incomplete',
+      note: undefined,
+      reply: {
+        kind: 'notMine',
+        text: '« Ce n’est pas pour moi », il y a 10 min',
+      },
+    });
+  });
+
+  it('says who comes on the row and at the handover', async () => {
+    const parcel = notified();
+    await db.parcel.put(parcel);
+    await replyColleague(db, [parcel.id], 'Paul Mercier', options);
+    const saved = (await db.parcel.get(parcel.id))!;
+
+    expect(toParcelRow(saved, context(), NOW, t)?.reply).toEqual({
+      kind: 'delegated',
+      text: 'Paul Mercier passera à sa place',
+    });
+    expect(toRemiseParcel(saved, NOW, t).received).toMatch(
+      /^Retrait prévu par Paul Mercier · reçu /,
+    );
+  });
+
+  it('says until when the recipient is away, then nothing once back', async () => {
+    const parcel = notified();
+    await db.parcel.put(parcel);
+    await replyAbsent(db, [parcel.id], new Date(2026, 9, 30), options);
+    const saved = (await db.parcel.get(parcel.id))!;
+
+    expect(toParcelRow(saved, context(), NOW, t)?.reply).toEqual({
+      kind: 'absent',
+      text: 'Absent jusqu’au 30 oct.',
+    });
+    expect(
+      toParcelRow(saved, context(), new Date(2026, 10, 2, 9), t)?.reply,
+    ).toBeUndefined();
   });
 });

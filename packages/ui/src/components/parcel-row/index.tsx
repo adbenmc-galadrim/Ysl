@@ -24,6 +24,7 @@ const LOOK: Record<ParcelState, Look> = {
 const REPLY_LOOK: Record<NonNullable<Parcel['reply']>['kind'], Look> = {
   notMine: { tile: { icon: 'alert', tone: 'red' }, line: 'red' },
   delegated: { tile: { icon: 'users', tone: 'blue' }, line: 'blue' },
+  absent: { tile: { icon: 'calendar', tone: 'orange' }, line: 'orange' },
 };
 
 export type ParcelRowProps = {
@@ -93,7 +94,7 @@ export function ParcelRow({
         ))
       }
       title={parcel.recipient}
-      titleTone={parcel.state === 'incomplete' ? 'red' : 'ink'}
+      titleTone={parcel.state === 'incomplete' && !parcel.reply ? 'red' : 'ink'}
       lines={lines}
       trailing={trailing}
       control={control}

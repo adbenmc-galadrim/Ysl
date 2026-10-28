@@ -1,4 +1,5 @@
 import { damageOf } from '@repo/contract/parcel-damage';
+import { standingReply } from '@repo/contract/parcel-reply';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { RemiseParcel } from '@repo/ui';
@@ -77,6 +78,25 @@ export function receivedLine(date: Date, now: Date, t: TranslateFn): string {
   return t('handover.received.on', { date: shortDate(date, now) });
 }
 
+/** « Retrait prévu par Paul Mercier »: the recipient said who comes (YSL-70; YSL-77 will offer the name). */
+export function delegateLine(
+  parcel: LocalParcel,
+  now: Date,
+  t: TranslateFn,
+): string | undefined {
+  const reply = standingReply(parcel, now);
+  return reply?.kind === 'colleague'
+    ? t('handover.delegate', { name: reply.delegate })
+    : undefined;
+}
+
+/** The colleague first: the line is cut short on a narrow screen, the day of reception matters less. */
+function withDelegate(received: string, delegate: string | undefined): string {
+  return delegate
+    ? `${delegate} · ${received.charAt(0).toLowerCase()}${received.slice(1)}`
+    : received;
+}
+
 /**
  * A parcel as the handover lists it, with what to check on the shelf: who
  * sent it, a reserve on its state; a registered one will ask for a signature.
@@ -93,7 +113,10 @@ export function toRemiseParcel(
       parcel.tracking && parcel.type !== 'sans_suivi'
         ? parcel.tracking.slice(-4)
         : '',
-    received: receivedLine(parcel.receivedAt, now, t),
+    received: withDelegate(
+      receivedLine(parcel.receivedAt, now, t),
+      delegateLine(parcel, now, t),
+    ),
     ...(parcel.senderName ? { sender: parcel.senderName } : {}),
     registered: parcel.type === 'recommande',
     damaged: damageOf(parcel) !== null,
