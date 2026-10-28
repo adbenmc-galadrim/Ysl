@@ -13,8 +13,6 @@ import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export { HANDOVER_METHODS } from '@repo/contract/handover';
-
 export const handover = pgTable(
   'handover',
   {

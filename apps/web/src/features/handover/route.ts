@@ -1,9 +1,10 @@
+import type { HandoverMethod } from '@repo/contract/handover';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { LocalPickupCode } from '#/features/db/schema';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 
 /** How the person was identified: the `handover.method` the handover will record. */
-export type HandoverVia = 'qr' | 'pin' | 'manuel';
+export type HandoverVia = Extract<HandoverMethod, 'qr' | 'pin' | 'manuel'>;
 
 /** What `/remise/colis` is opened with: who, how, when, and the code checked. */
 export type RemiseColisSearch = {
