@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * What an employee shows at the desk to collect their parcels (§8.7, F40,
  * F41): a QR carrying a long token, or a 4-digit PIN said aloud. Every
@@ -88,3 +90,95 @@ export function pickupTokenHash(token: string): Promise<string> {
 export function pickupPinHash(pin: string): Promise<string> {
   return sha256Hex(`pickup:${pin}`);
 }
+
+/** What the desk holds of a code: the hash of the QR's token, or of the PIN. */
+export const PICKUP_HASH_KINDS = ['token', 'pin'] as const;
+
+export type PickupHashKind = (typeof PICKUP_HASH_KINDS)[number];
+
+/**
+ * Why a QR or a PIN opens nothing: `replaced` by a later mail, `used` for
+ * a handover, `expired` after 30 days, `ambiguous` when two iPhones drew
+ * the same PIN (the name settles it), `unknown` to whoever checked.
+ */
+export const PICKUP_REFUSALS = [
+  'ambiguous',
+  'expired',
+  'used',
+  'replaced',
+  'unknown',
+] as const;
+
+export type PickupRefusal = (typeof PICKUP_REFUSALS)[number];
+
+/** What of a code tells whether it still opens, on the iPhone or the server. */
+export type PickupCodeState = {
+  createdAt: Date;
+  deletedAt: Date | null;
+  usedAt: Date | null;
+  expiresAt: Date;
+  personId: string | null;
+  contactId: string | null;
+};
+
+/** Open, in date and pointing at someone: the code a handover may rest on. */
+export function isActiveCode(row: PickupCodeState, now: Date): boolean {
+  return (
+    !row.deletedAt &&
+    !row.usedAt &&
+    row.expiresAt > now &&
+    Boolean(row.personId || row.contactId)
+  );
+}
+
+function whyNot(row: PickupCodeState, now: Date): PickupRefusal {
+  if (row.usedAt) return 'used';
+  if (row.deletedAt) return 'replaced';
+  return row.expiresAt <= now ? 'expired' : 'unknown';
+}
+
+/**
+ * The verdict on the codes of one hash (F41), the same on the iPhone and
+ * on the server: an active code wins over older ones of the same hash,
+ * which a 4-digit PIN will meet; with none active, the latest says why.
+ * The expiry is judged by the clock of whoever checks.
+ */
+export function pickupVerdict<Row extends PickupCodeState>(
+  rows: readonly Row[],
+  now: Date,
+): { status: 'active'; code: Row } | { status: PickupRefusal } {
+  const active = rows.filter((row) => isActiveCode(row, now));
+  if (active.length === 1) return { status: 'active', code: active[0]! };
+  if (active.length > 1) return { status: 'ambiguous' };
+  const latest = [...rows].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  )[0];
+  return { status: latest ? whyNot(latest, now) : 'unknown' };
+}
+
+/** `pickup.verify`: a hash, never the token or the PIN themselves. */
+export const pickupVerifyInput = z.object({
+  kind: z.enum(PICKUP_HASH_KINDS),
+  hash: z.string().regex(/^[0-9a-f]{64}$/),
+});
+
+export type PickupVerifyInput = z.infer<typeof pickupVerifyInput>;
+
+/**
+ * The server's verdict on a hash: whose code, and whether it still opens.
+ * `codeId` and `recipient` only for a code that names someone: the active
+ * one, or the latest when none is.
+ */
+export const pickupVerifyOutput = z.object({
+  status: z.enum(['active', ...PICKUP_REFUSALS]),
+  codeId: z.string().nullable(),
+  recipient: z
+    .object({
+      kind: z.enum(['person', 'contact']),
+      id: z.string(),
+      name: z.string(),
+    })
+    .nullable(),
+});
+
+export type PickupVerifyOutput = z.infer<typeof pickupVerifyOutput>;
