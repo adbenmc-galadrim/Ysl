@@ -5,10 +5,12 @@ import { Button } from '#components/button';
 import { FilterChip, FilterChips } from '#components/filter-chip';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
+import { NavBarAction } from '#components/nav-bar';
 import { ParcelList, type ParcelListSection } from '#components/parcel-list';
 import { Screen } from '#components/screen';
 import { SearchTrigger } from '#components/search-field';
 import { SYNC_PILL, StatusPill } from '#components/status-pill';
+import { cn } from '#lib/tv';
 
 export type ColisSection = ParcelListSection;
 
@@ -51,6 +53,8 @@ export type ColisScreenProps = {
   /** Replaces the sections, e.g. with an empty state. */
   children?: ReactNode;
   onMenu?: () => void;
+  /** Shows « Sélectionner » beside the menu: the list turns into checkboxes. */
+  onSelect?: () => void;
   onSearch?: () => void;
   onScan?: () => void;
 };
@@ -74,6 +78,7 @@ export function ColisScreen({
   onToggleSection,
   children,
   onMenu,
+  onSelect,
   onSearch,
   onScan,
 }: ColisScreenProps) {
@@ -112,26 +117,22 @@ export function ColisScreen({
     >
       <div className="flex h-10 items-center justify-between">
         <StatusPill {...SYNC_PILL[sync]} />
-        <IconButton icon="menu" label="Menu" onClick={onMenu} />
+        <div className="flex items-center gap-1">
+          {onSelect && (
+            <NavBarAction
+              tone="blue"
+              className="font-normal"
+              onClick={onSelect}
+            >
+              Sélectionner
+            </NavBarAction>
+          )}
+          <IconButton icon="menu" label="Menu" onClick={onMenu} />
+        </div>
       </div>
       <LargeTitle title="Colis" subtitle={summary} className="mt-0.5" />
       {counters && counters.length > 0 && (
-        <FilterChips
-          aria-label="Compteurs"
-          className="-mx-5 mt-[15px] px-5 [scrollbar-width:none]"
-        >
-          {counters.map((counter) => (
-            <FilterChip
-              key={counter.label}
-              label={counter.label}
-              count={counter.count}
-              selected={counter.selected}
-              onClick={counter.onClick}
-              // Three counters fit the smallest iPhone side by side.
-              className="px-3.5 text-14"
-            />
-          ))}
-        </FilterChips>
+        <ColisCounters counters={counters} className="mt-[15px]" />
       )}
       {notice && <div className="mt-[15px]">{notice}</div>}
       {children ?? (
@@ -145,6 +146,34 @@ export function ColisScreen({
         />
       )}
     </Screen>
+  );
+}
+
+/** The counters as a row of chips, scrolling sideways when they overflow. */
+export function ColisCounters({
+  counters,
+  className,
+}: {
+  counters: ColisCounter[];
+  className?: string;
+}) {
+  return (
+    <FilterChips
+      aria-label="Compteurs"
+      className={cn('-mx-5 px-5 [scrollbar-width:none]', className)}
+    >
+      {counters.map((counter) => (
+        <FilterChip
+          key={counter.label}
+          label={counter.label}
+          count={counter.count}
+          selected={counter.selected}
+          onClick={counter.onClick}
+          // Three counters fit the smallest iPhone side by side.
+          className="px-3.5 text-14"
+        />
+      ))}
+    </FilterChips>
   );
 }
 

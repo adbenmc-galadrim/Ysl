@@ -128,3 +128,15 @@ export const SigneeEtPhoto: Story = {
     parcels: APP_PARCELS.slice(0, 1),
   },
 };
+
+/** A selection handed over person by person: the next one is a tap away. */
+export const FileDeRemises: Story = {
+  name: 'File de remises',
+  args: {
+    ...SansVerification.args,
+    title: '2 colis remis',
+    description: 'à Hugo Lefèvre, à 9 h 05',
+    parcels: APP_PARCELS.slice(0, 2),
+    next: { label: 'Suivant : Nora Haddad, 2 colis', onClick: () => {} },
+  },
+};

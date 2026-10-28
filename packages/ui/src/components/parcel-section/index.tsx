@@ -27,6 +27,8 @@ export type ParcelSectionProps = {
   selectedIds?: readonly string[];
   onSelectedChange?: (parcel: Parcel, selected: boolean) => void;
   onParcelClick?: (parcel: Parcel) => void;
+  /** A finger resting on a row: the home list enters selection mode. */
+  onParcelLongPress?: (parcel: Parcel) => void;
   className?: string;
 };
 
@@ -51,6 +53,7 @@ export function SectionParcelRow({
     selectedIds,
     onSelectedChange,
     onParcelClick,
+    onParcelLongPress,
   } = section;
   const control = rowControl?.(parcel);
   return (
@@ -64,6 +67,7 @@ export function SectionParcelRow({
       onSelectedChange={(selected) => onSelectedChange?.(parcel, selected)}
       separator={separator}
       onClick={onParcelClick && (() => onParcelClick(parcel))}
+      onLongPress={onParcelLongPress && (() => onParcelLongPress(parcel))}
     />
   );
 }

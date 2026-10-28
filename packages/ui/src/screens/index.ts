@@ -8,6 +8,7 @@ export * from '#screens/colis/fiche-colis-screen';
 export * from '#screens/colis/lecture-screen';
 export * from '#screens/colis/modifier-colis-screen';
 export * from '#screens/colis/recherche-screen';
+export * from '#screens/colis/selection-screen';
 export * from '#screens/demarrage/camera-permission-screen';
 export * from '#screens/demarrage/offline-prep-screen';
 export * from '#screens/notification/fix-address-sheet';
