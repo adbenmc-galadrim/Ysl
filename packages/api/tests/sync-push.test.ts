@@ -372,6 +372,56 @@ describe('sync.push', () => {
     expect(stored?.notes).toBe('en retard');
   });
 
+  it('keeps the first use of a pickup code, whoever comes after', async () => {
+    const personId = newId();
+    await db.insert(schema.directoryPerson).values({
+      id: personId,
+      organizationId: ORGANIZATION_ID,
+      lastName: 'Haddad',
+      firstName: 'Nora',
+      nameNorm: 'nora haddad',
+      email: `nora.${personId}@example.test`,
+    });
+    const code = {
+      id: newId(),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      personId,
+      contactId: null,
+      tokenHash: `token-${newId()}`,
+      pinHash: 'pin',
+      expiresAt: new Date('2026-11-23T09:30:00Z'),
+      usedAt: null,
+    };
+    const first = new Date('2026-10-24T10:00:00Z');
+    const second = new Date('2026-10-24T10:05:00Z');
+    await push(sync, writer, { ops: [op('pickup_code', code)] });
+    const used = op('pickup_code', { ...code, usedAt: first });
+
+    const results = [
+      ...(await push(sync, writer, { ops: [used] })).results,
+      ...(await push(sync, writer, { ops: [used] })).results,
+      ...(
+        await push(sync, writer, {
+          ops: [op('pickup_code', { ...code, usedAt: second })],
+        })
+      ).results,
+      ...(
+        await push(sync, writer, {
+          ops: [op('pickup_code', { ...code, tokenHash: `token-${newId()}` })],
+        })
+      ).results,
+    ];
+    const [stored] = await db
+      .select()
+      .from(schema.pickupCode)
+      .where(eq(schema.pickupCode.id, code.id));
+
+    expect(results.map((r) => r.status)).toEqual([200, 200, 200, 200]);
+    expect(stored?.usedAt).toEqual(first);
+  });
+
   it('takes an event again without touching the log', async () => {
     const event = {
       id: newId(),

@@ -230,6 +230,55 @@ describe('sync.pull', () => {
     expect(output.generation).not.toBe(before!.generation);
     expect(output.reset).toBe(true);
   });
+  it('carries every pickup code from zero, used, expired and replaced ones too', async () => {
+    const now = new Date('2026-10-24T10:00:00Z');
+    const hour = 60 * 60 * 1000;
+    const people = Array.from({ length: 4 }, (_, n) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      lastName: `Haddad ${n}`,
+      firstName: 'Nora',
+      nameNorm: `nora haddad ${n}`,
+      email: `nora.${n}.${newId()}@example.test`,
+    }));
+    await db.insert(schema.directoryPerson).values(people);
+    const code = (
+      personId: string,
+      overrides: Partial<typeof schema.pickupCode.$inferInsert>,
+    ) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      personId,
+      tokenHash: `token-${newId()}`,
+      pinHash: 'pin',
+      expiresAt: new Date(now.getTime() + 30 * 24 * hour),
+      ...overrides,
+    });
+    const [open, used, expired, replaced] = people.map((row) => row.id) as [
+      string,
+      string,
+      string,
+      string,
+    ];
+    const codes = [
+      code(open, {}),
+      code(used, { usedAt: new Date(now.getTime() - 2 * hour) }),
+      code(expired, { expiresAt: new Date(now.getTime() - 2 * hour) }),
+      code(replaced, { deletedAt: new Date(now.getTime() - 2 * hour) }),
+    ];
+    await db.insert(schema.pickupCode).values(codes);
+
+    const pulled = (await fullPull(null))
+      .flatMap((page) => page.rows)
+      .filter((change) => change.entity === 'pickup_code')
+      .map((change) => change.row.id);
+
+    await db.delete(schema.pickupCode);
+    await db.delete(schema.directoryPerson);
+
+    expect(pulled).toEqual(expect.arrayContaining(codes.map((row) => row.id)));
+  });
+
   it('skips the old events on a pull from zero, never on a pull from a cursor', async () => {
     await clearParcels();
     await db.delete(schema.event);
