@@ -13,6 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import {
@@ -62,6 +63,10 @@ export function ColisHome() {
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
   const pending = usePendingParcels();
   const mails = useMailNotes();
+  // F37: the reminders due, counted per person; the app proposes, the
+  // agent sends (D2). Read again as the app comes back to the front.
+  const reminders = useReminderMails();
+  const toRemind = reminders ? dueCount(reminders) : 0;
   // « Choisir » (maquette 05): the parcels « À compléter » nobody is set
   // for, with the name read on their label, open the picker in place.
   const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
@@ -86,6 +91,22 @@ export function ColisHome() {
             </Button>
           ),
         }),
+        // « À relancer » on: one tap prepares every reminder due (F37).
+        ...(sectionId(section.title) === 'waiting' &&
+          counter === 'remind' && {
+            action: (
+              <Button
+                size="xs"
+                variant="warning"
+                className="w-[84px]"
+                onClick={() =>
+                  void navigate({ to: '/notifier', search: { relance: true } })
+                }
+              >
+                {t('colis.section.remind')}
+              </Button>
+            ),
+          }),
         onParcelClick: (parcel: { id: string }) =>
           void navigate({
             to: '/colis/$parcelId',
@@ -163,6 +184,22 @@ export function ColisHome() {
                   search: { filtre: 'toConfirm' },
                 })
               }
+              classNames={{
+                root: 'h-16 py-[11px]',
+                description: 'mt-[3px] leading-4',
+              }}
+            />
+          ) : !banner && toRemind > 0 ? (
+            <Banner
+              tone="orange"
+              icon="clock"
+              title={
+                toRemind === 1
+                  ? t('colis.remind.one')
+                  : t('colis.remind.many', { count: toRemind })
+              }
+              description={t('colis.remind.description')}
+              onClick={() => void navigate({ to: '/relances' })}
               classNames={{
                 root: 'h-16 py-[11px]',
                 description: 'mt-[3px] leading-4',

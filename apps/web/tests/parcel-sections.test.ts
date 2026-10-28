@@ -74,15 +74,16 @@ describe('section titles', () => {
 describe('counters', () => {
   const rows = [
     parcel('a', 'incomplete'),
-    parcel('b', 'notified'),
-    parcel('c', 'late'),
+    { ...parcel('b', 'notified'), remindDue: true },
+    { ...parcel('c', 'late'), remindDue: false },
     parcel('d', 'toNotify'),
   ];
 
-  it('counts what is left to complete, to hand over, to chase', () => {
+  it('counts what is left to complete, to hand over, to remind, to chase', () => {
     expect(counters(rows, null)).toEqual([
       { id: 'incomplete', label: 'À compléter', count: 1 },
       { id: 'waiting', label: 'À retirer', count: 2 },
+      { id: 'remind', label: 'À relancer', count: 1 },
       { id: 'late', label: 'En souffrance', count: 1 },
     ]);
   });
@@ -90,6 +91,7 @@ describe('counters', () => {
   it('keeps only the rows of the counter on', () => {
     expect(filterRows(rows, 'incomplete').map((p) => p.id)).toEqual(['a']);
     expect(filterRows(rows, 'waiting').map((p) => p.id)).toEqual(['b', 'c']);
+    expect(filterRows(rows, 'remind').map((p) => p.id)).toEqual(['b']);
     expect(filterRows(rows, null)).toHaveLength(4);
   });
 

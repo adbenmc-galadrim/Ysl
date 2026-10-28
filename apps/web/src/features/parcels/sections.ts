@@ -64,35 +64,40 @@ export function summarize(parcels: readonly Parcel[]) {
   return t('colis.summary', { count: parcels.length, todo });
 }
 
-/** The counters over the list (F32), each a filter: what is left to complete, to hand over, to chase. */
-export const COUNTER_IDS = ['incomplete', 'waiting', 'late'] as const;
+/**
+ * The counters over the list (F32, F37), each a filter: what is left to
+ * complete, to hand over, to remind, to chase.
+ */
+export const COUNTER_IDS = ['incomplete', 'waiting', 'remind', 'late'] as const;
 
 export type CounterId = (typeof COUNTER_IDS)[number];
 
-const COUNTER_STATES: Record<CounterId, readonly ParcelState[]> = {
-  incomplete: ['incomplete'],
-  waiting: ['notified', 'late'],
-  late: ['late'],
+/** A home row, and whether a reminder is due for its parcel (`HomeParcel`). */
+type CountedRow = Parcel & { remindDue?: boolean };
+
+const COUNTER_ROWS: Record<CounterId, (row: CountedRow) => boolean> = {
+  incomplete: (row) => row.state === 'incomplete',
+  waiting: (row) => row.state === 'notified' || row.state === 'late',
+  remind: (row) => row.remindDue === true,
+  late: (row) => row.state === 'late',
 };
 
 /** The rows a counter keeps; all of them with none on. */
-export function filterRows(
-  parcels: readonly Parcel[],
+export function filterRows<Row extends CountedRow>(
+  parcels: readonly Row[],
   counter: CounterId | null,
-): Parcel[] {
+): Row[] {
   if (!counter) return [...parcels];
-  return parcels.filter((parcel) =>
-    COUNTER_STATES[counter].includes(parcel.state),
-  );
+  return parcels.filter(COUNTER_ROWS[counter]);
 }
 
 /**
- * « À compléter 1 », « À retirer 3 », « En souffrance 1 »: the counters
+ * « À compléter 1 », « À retirer 3 », « À relancer 2 », « En souffrance 1 »: the counters
  * worth a tap, those above zero, and the one on even when it fell to zero
  * so the agent can turn it off.
  */
 export function counters(
-  parcels: readonly Parcel[],
+  parcels: readonly CountedRow[],
   on: CounterId | null,
 ): { id: CounterId; label: string; count: number }[] {
   return COUNTER_IDS.flatMap((id) => {
