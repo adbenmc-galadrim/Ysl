@@ -56,7 +56,7 @@ async function optionOfKey(
 }
 
 /**
- * Who was told for this recipient last time, offered first (F25): the
+ * Who was told for this recipient last time, offered first (YSL-72): the
  * contact's `notifyVia`, else the address of the last mail sent through
  * someone, found again among the cards and contacts.
  */
@@ -140,7 +140,7 @@ export type InformResult = {
 };
 
 /**
- * « De vive voix » (F25): the agent told the recipient in person or on the
+ * « De vive voix » (YSL-72): the agent told the recipient in person or on the
  * phone. Their parcels become notified as a confirmed mail would make them,
  * each with its history line, and the PIN the agent reads out becomes the
  * recipient's code, so the desk can hand over by code. A notice tells only

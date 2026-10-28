@@ -202,7 +202,7 @@ describe('describeRecord', () => {
     });
   });
 
-  it('says who was told for a recipient without an address: through a contact, or in person (F25)', async () => {
+  it('says who was told for a recipient without an address: through a contact, or in person (YSL-72)', async () => {
     const marc = contactRow({ name: 'Marc Petit', nameNorm: 'marc petit' });
     await db.contact.put(marc);
     const relayed = parcelRow({

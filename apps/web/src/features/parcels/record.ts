@@ -71,7 +71,7 @@ export type ParcelRecord = {
   lostHandovers?: ReadonlySet<string>;
   /** The proofs of the handover shown that this iPhone holds. */
   handoverProofs?: readonly HandoverProofKind[];
-  /** The mails of its history sent through a contact (F25): who, by mail id. */
+  /** The mails of its history sent through a contact (YSL-72): who, by mail id. */
   relays?: ReadonlyMap<string, string>;
 };
 
@@ -322,7 +322,7 @@ function details(
 
 /**
  * « Prévenu via Sophie Martin », « De vive voix, hier à 15 h 10 »: how the
- * recipient without an address was last told (F25), while the parcel waits.
+ * recipient without an address was last told (YSL-72), while the parcel waits.
  */
 function toldDetails(
   record: ParcelRecord,

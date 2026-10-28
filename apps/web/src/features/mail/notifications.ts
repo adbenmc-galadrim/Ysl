@@ -32,7 +32,7 @@ export type PrepareNotification = {
   target: MailTarget | null;
   /** The pickup code the mail quotes, made the recipient's in the same write. */
   pickup?: PickupSecret;
-  /** Sent to this colleague or assistant for the recipient, who has no address (F25). */
+  /** Sent to this colleague or assistant for the recipient, who has no address (YSL-72). */
   relayName?: string | null;
 };
 

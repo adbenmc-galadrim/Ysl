@@ -62,7 +62,7 @@ export const notification = pgTable(
     target: text('target', { enum: MAIL_TARGETS }),
     openedAt: timestamp('opened_at', { withTimezone: true }),
     failedReason: text('failed_reason'),
-    // Told through someone else (F25): the recipient has no address, the mail
+    // Told through someone else (YSL-72): the recipient has no address, the mail
     // went to `recipients`, a colleague or an assistant, named here.
     relayName: text('relay_name'),
   },

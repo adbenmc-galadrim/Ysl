@@ -240,7 +240,7 @@ export function carrierLabel(
 /** A row of the home list, and whether a reminder is due for its parcel (F37). */
 export type HomeParcel = ParcelRow & {
   remindDue: boolean;
-  /** To notify, and nobody to write to: « Prévenir » instead (F25). */
+  /** To notify, and nobody to write to: « Prévenir » instead (YSL-72). */
   noAddress: boolean;
 };
 
@@ -290,7 +290,7 @@ export function damageLine(
 /**
  * A recipient with no address, a contact outside the directory or a card
  * left without one, and none typed on the parcel (« Destinataire sans
- * e-mail », F25): nobody can be told by mail yet.
+ * e-mail », YSL-72): nobody can be told by mail yet.
  */
 export function addressMissing({
   parcel,

@@ -52,7 +52,7 @@ export type NotifyWaySheetProps = {
 };
 
 /**
- * Telling someone the directory has no e-mail for (F25). Rather than block
+ * Telling someone the directory has no e-mail for (YSL-72). Rather than block
  * the round, the agent picks another way on the spot: typing an address is
  * first because it also serves the next parcel; a colleague or an
  * assistant can pass the word on; or the agent tells them and gives the

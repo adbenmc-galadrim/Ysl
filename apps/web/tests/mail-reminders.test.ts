@@ -255,7 +255,7 @@ describe('a person on the screen of the reminders', () => {
 });
 
 describe('the recipients without an address', () => {
-  it('are apart, « Prévenir », whether their reminder is due or both went (F25)', async () => {
+  it('are apart, « Prévenir », whether their reminder is due or both went (YSL-72)', async () => {
     const nora = personRow({ firstName: 'Nora', email: 'nora@example.com' });
     const marc = contactRow({ name: 'Marc Petit', nameNorm: 'marc petit' });
     await db.directoryPerson.put(nora);

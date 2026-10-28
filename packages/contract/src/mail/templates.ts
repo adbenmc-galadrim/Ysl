@@ -88,7 +88,7 @@ export type DefaultTemplateType = keyof typeof DEFAULT_TEMPLATES;
 
 /**
  * The mail to a colleague or an assistant when the recipient has no address
- * (F25, « Prévenir un contact »): who the parcels are for in `{prénom}` (the
+ * (YSL-72, « Prévenir un contact »): who the parcels are for in `{prénom}` (the
  * full name), the code still the recipient's, who collects it or sends
  * someone. No quick answers: the reader is not the one they are about.
  * Fixed, not an agent's template.

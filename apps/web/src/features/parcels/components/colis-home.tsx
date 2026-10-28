@@ -147,7 +147,7 @@ export function ColisHome() {
         rowControl: (parcel: { id: string }) =>
           withoutAddress.has(parcel.id) &&
           sectionId(section.title) === 'toNotify' ? (
-            // « Destinataire sans e-mail » (F25): no mail to prepare, the
+            // « Destinataire sans e-mail » (YSL-72): no mail to prepare, the
             // ways to tell them instead.
             <Button
               variant="warning"

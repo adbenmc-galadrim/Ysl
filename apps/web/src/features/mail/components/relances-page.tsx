@@ -13,7 +13,7 @@ const t = createTranslator(DEFAULT_LOCALE);
  * « Colis en souffrance » (F37, P5): who a reminder is due for, and who
  * both went to. « Relancer » opens Notifier on that person with the
  * reminder template; « Relancer les N » on every reminder due. Those
- * without an address are apart (F25): « Prévenir » opens the ways to tell
+ * without an address are apart (YSL-72): « Prévenir » opens the ways to tell
  * them, never part of « Relancer les N ».
  */
 export function RelancesPage() {

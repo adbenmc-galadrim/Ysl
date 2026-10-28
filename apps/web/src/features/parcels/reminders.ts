@@ -4,7 +4,7 @@ import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 /**
  * When each notified parcel was reminded: the mails confirmed sent after
  * its first notice, from every agent (all the mails are on the iPhone),
- * and the reminders given in person (F25). The notice itself is the
+ * and the reminders given in person (YSL-72). The notice itself is the
  * parcel's `notifiedAt`, left out.
  */
 export async function loadReminderDates(

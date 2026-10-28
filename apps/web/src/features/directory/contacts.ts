@@ -23,7 +23,7 @@ const live = (contact: LocalContact) => contact.deletedAt === null;
 
 /**
  * A contact as the Annuaire lists it: its department, else its e-mail;
- * « Sans e-mail » said either way, with who was told for them last (F25).
+ * « Sans e-mail » said either way, with who was told for them last (YSL-72).
  */
 export function contactEntry(
   contact: LocalContact,

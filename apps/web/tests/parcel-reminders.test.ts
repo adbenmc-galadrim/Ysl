@@ -64,7 +64,7 @@ describe('loadReminderDates', () => {
     expect(dates.has(other.id)).toBe(false);
   });
 
-  it('counts a reminder given in person, in order with the mails (F25)', async () => {
+  it('counts a reminder given in person, in order with the mails (YSL-72)', async () => {
     const parcel = parcelRow({
       contactId: 'c-1',
       status: 'notifie',

@@ -53,7 +53,7 @@ describe('contactEntries', () => {
   });
 });
 
-describe('a contact told through someone (F25)', () => {
+describe('a contact told through someone (YSL-72)', () => {
   it('says who was told for them last, instead of « Sans e-mail »', () => {
     const sophie = personRow({ firstName: 'Sophie', lastName: 'Martin' });
     const nina = contactRow({

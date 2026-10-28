@@ -938,7 +938,7 @@ describe('sync.push', () => {
       ...overrides,
     });
 
-    it('keeps the name of the contact a mail went through (F25)', async () => {
+    it('keeps the name of the contact a mail went through (YSL-72)', async () => {
       const { results: parcels } = await push(sync, writer, {
         ops: [op('parcel', localParcel())],
       });

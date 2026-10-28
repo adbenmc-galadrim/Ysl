@@ -53,7 +53,7 @@ export type ParcelEvent =
       kind: NotificationType;
     }
   | {
-      /** Told in person or on the phone (F25): no mail, a pickup code given. */
+      /** Told in person or on the phone (YSL-72): no mail, a pickup code given. */
       type: 'parcel.informed';
       kind: NotificationType;
     }

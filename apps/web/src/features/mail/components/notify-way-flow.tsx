@@ -36,7 +36,7 @@ export type NotifyWayFlowProps = {
 };
 
 /**
- * « Comment le prévenir ? » (F25, maquette 09 « Destinataire sans e-mail »)
+ * « Comment le prévenir ? » (YSL-72, maquette 09 « Destinataire sans e-mail »)
  * for a recipient without an address: type it, write to a colleague or an
  * assistant instead (whoever was told last time offered first), or tell
  * them in person and give the code.

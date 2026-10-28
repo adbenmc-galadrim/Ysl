@@ -126,7 +126,7 @@ export type ReminderSection = {
 
 /**
  * The screen's sections: a reminder due, both sent and still waiting, then
- * whoever has no address, whatever their rhythm (F25): « Prévenir » there,
+ * whoever has no address, whatever their rhythm (YSL-72): « Prévenir » there,
  * never part of « Relancer les N ».
  */
 export function reminderSections(

@@ -57,7 +57,7 @@ export const notificationRow = z.object({
   openedAt: z.date().nullable(),
   sentAt: z.date().nullable(),
   failedReason: z.string().max(FAILED_REASON_MAX).nullable(),
-  /** Told through this colleague or assistant, at `recipients` (F25). */
+  /** Told through this colleague or assistant, at `recipients` (YSL-72). */
   relayName: z.string().trim().min(1).max(RELAY_NAME_MAX).nullish(),
 });
 
