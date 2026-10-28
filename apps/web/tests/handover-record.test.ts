@@ -1,10 +1,4 @@
 import 'fake-indexeddb/auto';
-import {
-  newPickupToken,
-  PICKUP_CODE_TTL_MS,
-  pickupPinHash,
-  pickupTokenHash,
-} from '@repo/contract/pickup';
 import { readParcelEvent } from '@repo/contract/parcel-event';
 import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -29,28 +23,11 @@ import {
   openTestDatabase,
   parcelRow,
   personRow,
+  pickupCodeRow,
 } from './helpers/local-rows';
 
 const LATER = new Date(NOW.getTime() + 5 * 60 * 1000);
 const AGENT = 'agent-1';
-
-async function codeRow(
-  overrides: Partial<LocalPickupCode> = {},
-): Promise<LocalPickupCode> {
-  return {
-    id: newId(),
-    createdAt: NOW,
-    updatedAt: NOW,
-    deletedAt: null,
-    personId: null,
-    contactId: null,
-    tokenHash: await pickupTokenHash(newPickupToken()),
-    pinHash: await pickupPinHash('4821'),
-    expiresAt: new Date(NOW.getTime() + PICKUP_CODE_TTL_MS),
-    usedAt: null,
-    ...overrides,
-  };
-}
 
 let db: CourrierDatabase;
 let nora: LocalDirectoryPerson;
@@ -65,7 +42,7 @@ beforeEach(async () => {
     parcelRow({ personId: nora.id }),
     parcelRow({ personId: nora.id }),
   ];
-  code = await codeRow({ personId: nora.id });
+  code = await pickupCodeRow({ personId: nora.id });
   await db.directoryPerson.put(nora);
   await db.parcel.bulkPut(parcels);
   await db.pickupCode.put(code);
@@ -226,7 +203,7 @@ describe('recordHandover', () => {
   );
 
   it('refuses a QR or a code the URL does not name, or names for someone else', async () => {
-    const other = await codeRow({ personId: newId() });
+    const other = await pickupCodeRow({ personId: newId() });
     await db.pickupCode.put(other);
     const options = { agentId: AGENT, now: LATER };
 

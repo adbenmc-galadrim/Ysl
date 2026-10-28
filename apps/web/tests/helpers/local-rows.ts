@@ -1,10 +1,17 @@
 import { damageColumns } from '@repo/contract/parcel-damage';
+import {
+  newPickupToken,
+  PICKUP_CODE_TTL_MS,
+  pickupPinHash,
+  pickupTokenHash,
+} from '@repo/contract/pickup';
 import { newId } from '@repo/shared/id';
 import {
   CourrierDatabase,
   type LocalContact,
   type LocalDirectoryPerson,
   type LocalParcel,
+  type LocalPickupCode,
   type LocalSender,
   type LocalSenderAccount,
 } from '#/features/db/schema';
@@ -123,6 +130,26 @@ export function senderAccountRow(
     accountNumber: 'E6344W',
     senderId: newId(),
     confirmations: 1,
+    ...overrides,
+  };
+}
+
+/** An open pickup code, for nobody until `personId` or `contactId` is set. */
+export async function pickupCodeRow(
+  overrides: Partial<LocalPickupCode> = {},
+  { token = newPickupToken(), pin = '4821', now = NOW } = {},
+): Promise<LocalPickupCode> {
+  return {
+    id: newId(),
+    createdAt: now,
+    updatedAt: now,
+    deletedAt: null,
+    personId: null,
+    contactId: null,
+    tokenHash: await pickupTokenHash(token),
+    pinHash: await pickupPinHash(pin),
+    expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
+    usedAt: null,
     ...overrides,
   };
 }
