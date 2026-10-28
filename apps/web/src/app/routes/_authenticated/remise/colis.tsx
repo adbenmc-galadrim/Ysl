@@ -11,7 +11,13 @@ export const Route = createFileRoute('/_authenticated/remise/colis')({
 function RemiseColisRoute() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const back = useCallback(() => void navigate({ to: '/remise' }), [navigate]);
+  const back = useCallback(
+    () =>
+      void navigate({
+        to: search.via === 'manuel' ? '/remise/nom' : '/remise',
+      }),
+    [navigate, search.via],
+  );
   return (
     <RemiseColisPage
       key={`${search.kind}:${search.id}`}

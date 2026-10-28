@@ -35,6 +35,7 @@ import { Route as AuthenticatedReglagesSynchronisationRouteImport } from './rout
 import { Route as AuthenticatedRemiseIndexRouteImport } from './routes/_authenticated/remise/index'
 import { Route as AuthenticatedRemiseCodeRouteImport } from './routes/_authenticated/remise/code'
 import { Route as AuthenticatedRemiseColisRouteImport } from './routes/_authenticated/remise/colis'
+import { Route as AuthenticatedRemiseNomRouteImport } from './routes/_authenticated/remise/nom'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
 import { Route as AuthenticatedColisParcelIdDommageRouteImport } from './routes/_authenticated/colis/$parcelId/dommage'
 import { Route as AuthenticatedColisParcelIdLectureRouteImport } from './routes/_authenticated/colis/$parcelId/lecture'
@@ -187,6 +188,11 @@ const AuthenticatedRemiseColisRoute =
     path: '/remise/colis',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRemiseNomRoute = AuthenticatedRemiseNomRouteImport.update({
+  id: '/remise/nom',
+  path: '/remise/nom',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedColisParcelIdIndexRoute =
   AuthenticatedColisParcelIdIndexRouteImport.update({
     id: '/colis/$parcelId/',
@@ -248,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/remise/code': typeof AuthenticatedRemiseCodeRoute
   '/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/remise/': typeof AuthenticatedRemiseIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/remise/code': typeof AuthenticatedRemiseCodeRoute
   '/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
   '/remise': typeof AuthenticatedRemiseIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -316,6 +324,7 @@ export interface FileRoutesById {
   '/_authenticated/reglages/synchronisation': typeof AuthenticatedReglagesSynchronisationRoute
   '/_authenticated/remise/code': typeof AuthenticatedRemiseCodeRoute
   '/_authenticated/remise/colis': typeof AuthenticatedRemiseColisRoute
+  '/_authenticated/remise/nom': typeof AuthenticatedRemiseNomRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/_authenticated/remise/': typeof AuthenticatedRemiseIndexRoute
   '/_authenticated/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/reglages/synchronisation'
     | '/remise/code'
     | '/remise/colis'
+    | '/remise/nom'
     | '/reglages/'
     | '/remise/'
     | '/colis/$parcelId/dommage'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/reglages/synchronisation'
     | '/remise/code'
     | '/remise/colis'
+    | '/remise/nom'
     | '/reglages'
     | '/remise'
     | '/colis/$parcelId/dommage'
@@ -418,6 +429,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/synchronisation'
     | '/_authenticated/remise/code'
     | '/_authenticated/remise/colis'
+    | '/_authenticated/remise/nom'
     | '/_authenticated/reglages/'
     | '/_authenticated/remise/'
     | '/_authenticated/colis/$parcelId/dommage'
@@ -618,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRemiseColisRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/remise/nom': {
+      id: '/_authenticated/remise/nom'
+      path: '/remise/nom'
+      fullPath: '/remise/nom'
+      preLoaderRoute: typeof AuthenticatedRemiseNomRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/colis/$parcelId/': {
       id: '/_authenticated/colis/$parcelId/'
       path: '/colis/$parcelId'
@@ -685,6 +704,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesSynchronisationRoute: typeof AuthenticatedReglagesSynchronisationRoute
   AuthenticatedRemiseCodeRoute: typeof AuthenticatedRemiseCodeRoute
   AuthenticatedRemiseColisRoute: typeof AuthenticatedRemiseColisRoute
+  AuthenticatedRemiseNomRoute: typeof AuthenticatedRemiseNomRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
   AuthenticatedRemiseIndexRoute: typeof AuthenticatedRemiseIndexRoute
   AuthenticatedColisParcelIdDommageRoute: typeof AuthenticatedColisParcelIdDommageRoute
@@ -719,6 +739,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedReglagesSynchronisationRoute,
   AuthenticatedRemiseCodeRoute: AuthenticatedRemiseCodeRoute,
   AuthenticatedRemiseColisRoute: AuthenticatedRemiseColisRoute,
+  AuthenticatedRemiseNomRoute: AuthenticatedRemiseNomRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
   AuthenticatedRemiseIndexRoute: AuthenticatedRemiseIndexRoute,
   AuthenticatedColisParcelIdDommageRoute:
