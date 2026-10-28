@@ -938,6 +938,41 @@ describe('sync.push', () => {
       ...overrides,
     });
 
+    it('keeps the name of the contact a mail went through (F25)', async () => {
+      const { results: parcels } = await push(sync, writer, {
+        ops: [op('parcel', localParcel())],
+      });
+      expect(parcels[0]?.status).toBe(200);
+      const [{ id: parcelId } = { id: '' }] = await db
+        .select({ id: schema.parcel.id })
+        .from(schema.parcel)
+        .limit(1);
+      const relayed = op(
+        'notification',
+        prepared(parcelId, {
+          recipients: ['sophie.martin@example.com'],
+          relayName: 'Sophie Martin',
+        }),
+      );
+
+      const { results } = await push(sync, writer, {
+        ops: [
+          relayed,
+          op('notification', prepared(parcelId, { relayName: '' })),
+        ],
+      });
+
+      expect(results.map((result) => result.status)).toEqual([200, 400]);
+      const [row] = await db
+        .select()
+        .from(schema.notification)
+        .where(eq(schema.notification.id, relayed.entityId));
+      expect(row).toMatchObject({
+        recipients: ['sophie.martin@example.com'],
+        relayName: 'Sophie Martin',
+      });
+    });
+
     it('takes a mail declared sent by its author only', async () => {
       const { results: parcels } = await push(sync, writer, {
         ops: [op('parcel', localParcel())],

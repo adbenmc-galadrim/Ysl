@@ -1,4 +1,5 @@
 import {
+  RELAY_TEMPLATES,
   renderMail,
   type MailMessage,
   type MailTarget,
@@ -10,7 +11,6 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Button,
   EmptyState,
-  FixAddressSheet,
   MailSentSheet,
   NavBar,
   NotifierScreen,
@@ -22,13 +22,8 @@ import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
-import { useAddressEntry } from '#/features/mail/use-address-entry';
-import {
-  cardOf,
-  fixAddress,
-  type AddressCard,
-} from '#/features/mail/fix-address';
 import { MailFallback } from '#/features/mail/components/mail-fallback';
+import { NotifyWayFlow } from '#/features/mail/components/notify-way-flow';
 import {
   canShareFiles,
   needsFallback,
@@ -36,6 +31,11 @@ import {
 } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
+import {
+  informOrally,
+  recordRelay,
+  type Relay,
+} from '#/features/mail/notify-ways';
 import {
   drawSecrets,
   pickupToWrite,
@@ -73,6 +73,8 @@ export type NotifierScope = {
   parcelId?: string;
   batchId?: string;
   reminder?: boolean;
+  /** Opens on the first recipient without an address, on « Comment le prévenir ? ». */
+  otherWay?: boolean;
 };
 
 type Session = {
@@ -82,6 +84,12 @@ type Session = {
   pickup: PickupSetting;
   now: Date;
 };
+
+/** The mails that can be sent first, those without an address after (F25). */
+const addressedFirst = (mails: RecipientMail[]) => [
+  ...mails.filter((mail) => mail.address),
+  ...mails.filter((mail) => !mail.address),
+];
 
 /**
  * The mails as they stood when the screen opened: a mail confirmed makes
@@ -95,9 +103,9 @@ async function openSession(
   const now = new Date();
   if (reminder) {
     const all = await loadReminderMails(db, now);
-    const mails = parcelId
-      ? mailsAbout(all, parcelId)
-      : all.filter((mail) => mail.due);
+    const mails = addressedFirst(
+      parcelId ? mailsAbout(all, parcelId) : all.filter((mail) => mail.due),
+    );
     const [secrets, templates, pickup] = await Promise.all([
       recallSecrets(db, mails, { now }),
       listTemplates(db, userId),
@@ -112,11 +120,13 @@ async function openSession(
     };
   }
   const all = await loadPendingMails(db);
-  const mails = parcelId
-    ? mailsAbout(all, parcelId)
-    : batchId
-      ? mailsOfBatch(all, batchId)
-      : all;
+  const mails = addressedFirst(
+    parcelId
+      ? mailsAbout(all, parcelId)
+      : batchId
+        ? mailsOfBatch(all, batchId)
+        : all,
+  );
   const [secrets, templates, pickup] = await Promise.all([
     drawSecrets(db, mails.length, { now }),
     listTemplates(db, userId),
@@ -131,75 +141,13 @@ async function openSession(
   };
 }
 
-/**
- * A recipient without an address (D-zone « Destinataire sans e-mail »):
- * the agent types it, on the card by default so the next parcel has it,
- * and the page then offers to send.
- */
-function AddAddressSheet({
-  mail,
-  onAdded,
-  onDismiss,
-}: {
-  mail: RecipientMail;
-  onAdded: (address: string) => void;
-  onDismiss: () => void;
-}) {
-  const userId = useSession().user.id;
-  const [card, setCard] = useState<AddressCard | null>(null);
-  const [failed, setFailed] = useState(false);
-  const entry = useAddressEntry(card, '');
-  const busy = useRef(false);
-
-  useEffect(() => {
-    let live = true;
-    void cardOf(db, mail).then((next) => {
-      if (live) setCard(next);
-    });
-    return () => {
-      live = false;
-    };
-  }, [mail]);
-
-  const save = async () => {
-    const { address, onCard } = entry;
-    if (!card || !address || busy.current) return;
-    busy.current = true;
-    setFailed(false);
-    try {
-      await fixAddress(
-        db,
-        {
-          card,
-          parcelIds: mail.parcels.map(({ id }) => id),
-          address,
-          onCard,
-        },
-        { agentId: userId },
-      );
-      onAdded(address);
-    } catch {
-      setFailed(true);
-    } finally {
-      busy.current = false;
-    }
-  };
-
-  return (
-    <FixAddressSheet
-      fixed
-      recipient={mail.name}
-      title={t('mails.fix.add')}
-      description={t('mails.fix.missing', { name: mail.name })}
-      {...entry.fields(failed)}
-      resendLabel={t('mails.fix.save')}
-      onResend={() => void save()}
-      onDismiss={onDismiss}
-    />
-  );
-}
-
-type Sent = { state: NotifierMailState; count?: number; reason?: string };
+type Sent = {
+  state: NotifierMailState;
+  count?: number;
+  reason?: string;
+  /** Told in person: the PIN to give them, shown until the page is left. */
+  code?: string;
+};
 
 /**
  * One mail per recipient of the "À notifier" parcels (F34), of one
@@ -210,7 +158,12 @@ type Sent = { state: NotifierMailState; count?: number; reason?: string };
  * follow-up). When the page stays in front, the fallback sheet offers the
  * other apps, the text to copy or share, and how it ended.
  */
-export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
+export function NotifierPage({
+  parcelId,
+  batchId,
+  reminder,
+  otherWay,
+}: NotifierScope) {
   const navigate = useNavigate();
   const router = useRouter();
   const session = useSession();
@@ -220,7 +173,10 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
   const [index, setIndex] = useState(0);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [choosing, setChoosing] = useState(false);
-  const [adding, setAdding] = useState(false);
+  const [waying, setWaying] = useState(false);
+  const [relays, setRelays] = useState<
+    Record<string, Relay & { collects: boolean }>
+  >({});
   const [asking, setAsking] = useState<{ key: string; id: string } | null>(
     null,
   );
@@ -246,12 +202,18 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
   useEffect(() => {
     let live = true;
     void openSession(userId, { parcelId, batchId, reminder }).then((value) => {
-      if (live) setOpened(value);
+      if (!live) return;
+      setOpened(value);
+      const first = value.mails.findIndex((mail) => !mail.address);
+      if (otherWay && first >= 0) {
+        setIndex(first);
+        setWaying(true);
+      }
     });
     return () => {
       live = false;
     };
-  }, [userId, parcelId, batchId, reminder]);
+  }, [userId, parcelId, batchId, reminder, otherWay]);
 
   useEffect(() => {
     if (!token) return;
@@ -291,28 +253,42 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
   }
 
   const template = pickTemplate(templates, templateId)!;
+  const relay = relays[mail.key];
+  const address = relay?.address ?? mail.address;
   const secret = secrets[index];
   const code = secret?.pin ?? null;
-  const rendered = renderMail(
-    template,
-    recipientValues(mail, {
-      pickup,
-      agent: session.user.name,
-      replyTo: session.user.email,
-      code,
-      now,
-      t,
-    }),
-  );
-  const message: MailMessage | undefined = mail.address
-    ? { to: [mail.address], subject: rendered.subject, body: rendered.body }
+  const values = recipientValues(mail, {
+    pickup,
+    agent: session.user.name,
+    replyTo: session.user.email,
+    code,
+    now,
+    t,
+  });
+  // Through a contact: the fixed text that says whose parcels, `{prénom}`
+  // being the recipient's whole name.
+  const rendered = relay
+    ? renderMail(RELAY_TEMPLATES[reminder ? 'relance' : 'avis'], {
+        ...values,
+        prénom: mail.name,
+      })
+    : renderMail(template, values);
+  const message: MailMessage | undefined = address
+    ? { to: [address], subject: rendered.subject, body: rendered.body }
     : undefined;
   const prepared = message && MAILERS[mailTarget].prepare(message);
   const sent = done[mail.key];
-  const state: NotifierMailState = !mail.address
-    ? 'missing'
-    : (sent?.state ?? 'ready');
-  const firstName = (mail.firstName ?? mail.name).split(/\s+/)[0] ?? '';
+  const state: NotifierMailState =
+    sent?.code !== undefined
+      ? 'sent'
+      : !address
+        ? 'missing'
+        : (sent?.state ?? 'ready');
+  const missingCount = mails.filter(
+    (other) => !other.address && !relays[other.key] && !done[other.key]?.code,
+  ).length;
+  const firstName =
+    (relay ? relay.name : (mail.firstName ?? mail.name)).split(/\s+/)[0] ?? '';
   const record = () =>
     void navigate({
       to: '/colis/$parcelId',
@@ -331,7 +307,7 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
     });
 
   const send = (event: MouseEvent) => {
-    if (!prepared || !message || !mail.address || busy.current) {
+    if (!prepared || !message || !address || busy.current) {
       event.preventDefault();
       return;
     }
@@ -342,11 +318,12 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
       type: template.type,
       personId: mail.personId,
       contactId: mail.contactId,
-      recipients: [mail.address],
+      recipients: [address],
       parcelIds: mail.parcels.map(({ id }) => id),
-      templateId: template.stored ? template.id : null,
+      templateId: !relay && template.stored ? template.id : null,
       target: mailTarget,
       pickup: pickupToWrite(secret, { withQr: false }),
+      relayName: relay?.name ?? null,
     });
     renewToken();
     void (async () => {
@@ -379,7 +356,7 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
   // types it in the mail app (S5). The mail is recorded as for "Envoyer",
   // without a mail app; a closed sheet gives it up, as the fallback does.
   const share = () => {
-    if (!message || !shareFile || !mail.address || busy.current) return;
+    if (!message || !shareFile || !address || busy.current) return;
     busy.current = true;
     setFailed(false);
     const sharing = shareMailWithFiles(message, [shareFile]);
@@ -387,11 +364,12 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
       type: template.type,
       personId: mail.personId,
       contactId: mail.contactId,
-      recipients: [mail.address],
+      recipients: [address],
       parcelIds: mail.parcels.map(({ id }) => id),
-      templateId: template.stored ? template.id : null,
+      templateId: !relay && template.stored ? template.id : null,
       target: null,
       pickup: pickupToWrite(secret, { withQr: true }),
+      relayName: relay?.name ?? null,
     });
     renewToken();
     const key = mail.key;
@@ -436,6 +414,31 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
     const count = changes.filter((change) => !('skip' in change)).length;
     setDone((all) => ({ ...all, [key]: { state: 'sent', count } }));
     setIndex(pageAfter(index, mails.length, 'sent'));
+    const through = relays[key];
+    const about = mails.find((other) => other.key === key);
+    if (through && about) {
+      void recordRelay(db, {
+        mail: about,
+        relay: through,
+        collects: through.collects,
+      }).catch(() => {});
+    }
+  };
+
+  // Told in person: the parcels notified and the code given, nothing to send.
+  const informed = async () => {
+    if (!secret) throw new Error('no pickup code');
+    const { changes } = await informOrally(
+      db,
+      { mail, secret, reminder: !!reminder },
+      { userId },
+    );
+    const count = changes.filter((change) => !('skip' in change)).length;
+    setDone((all) => ({
+      ...all,
+      [mail.key]: { state: 'sent', count, code: secret.pin },
+    }));
+    setWaying(false);
   };
 
   const answer = async (left: boolean) => {
@@ -460,31 +463,48 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
 
   const notice = failed
     ? { title: t('notify.error') }
-    : state === 'missing'
+    : sent?.code !== undefined
       ? {
-          title: t('notify.missing.title'),
-          description: t('notify.missing.description'),
+          title: t('notify.voice.code', { code: sent.code }),
+          description: t(
+            reminder
+              ? sent.count === 1
+                ? 'notify.voice.reminder.one'
+                : 'notify.voice.reminder.many'
+              : sent.count === 1
+                ? 'notify.voice.one'
+                : 'notify.voice.many',
+            { count: sent.count ?? 0 },
+          ),
         }
-      : state === 'sent'
+      : state === 'missing'
         ? {
-            title: t('notify.sent.title'),
-            description: t(
-              reminder
-                ? sent?.count === 1
-                  ? 'remind.sent.one'
-                  : 'remind.sent.many'
-                : sent?.count === 1
-                  ? 'notify.sent.one'
-                  : 'notify.sent.many',
-              { count: sent?.count ?? 0 },
+            title: t(
+              missingCount > 1 ? 'notify.missing.many' : 'notify.missing.one',
+              { count: missingCount },
             ),
+            description: t('notify.missing.description'),
           }
-        : state === 'failed'
+        : state === 'sent'
           ? {
-              title: t('notify.notSent.title'),
-              description: sent?.reason ?? t('notify.notSent.description'),
+              title: t('notify.sent.title'),
+              description: t(
+                reminder
+                  ? sent?.count === 1
+                    ? 'remind.sent.one'
+                    : 'remind.sent.many'
+                  : sent?.count === 1
+                    ? 'notify.sent.one'
+                    : 'notify.sent.many',
+                { count: sent?.count ?? 0 },
+              ),
             }
-          : undefined;
+          : state === 'failed'
+            ? {
+                title: t('notify.notSent.title'),
+                description: sent?.reason ?? t('notify.notSent.description'),
+              }
+            : undefined;
 
   return (
     <NotifierScreen
@@ -493,35 +513,47 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
       recipient={{
         name: mail.name,
         initials: initialsOf(mail.name),
-        email: mail.address ?? undefined,
-        missing: mail.address ? undefined : t('notify.missing'),
+        email: relay
+          ? t('notify.relay.via', { name: relay.name, address: relay.address })
+          : (mail.address ?? undefined),
+        missing: address ? undefined : t('notify.missing'),
         onClick: record,
       }}
       state={state}
-      template={{
-        name: template.name,
-        onClick: templates.length > 1 ? () => setChoosing(true) : undefined,
-      }}
-      onEditTemplate={() =>
-        void navigate({
-          to: '/reglages/modeles-email/$templateId',
-          params: { templateId: template.id },
-        })
+      template={
+        relay
+          ? { name: RELAY_TEMPLATES[reminder ? 'relance' : 'avis'].name }
+          : {
+              name: template.name,
+              onClick:
+                templates.length > 1 ? () => setChoosing(true) : undefined,
+            }
+      }
+      onEditTemplate={
+        relay
+          ? undefined
+          : () =>
+              void navigate({
+                to: '/reglages/modeles-email/$templateId',
+                params: { templateId: template.id },
+              })
       }
       preview={rendered}
       warnings={templateWarnings(rendered, t)}
       sendLabel={
-        state === 'sent'
-          ? t('notify.sent.title')
-          : t('notify.send', { name: firstName })
+        sent?.code !== undefined
+          ? t('notify.voice.done')
+          : state === 'sent'
+            ? t('notify.sent.title')
+            : t('notify.send', { name: firstName })
       }
       sendHref={prepared?.url}
       onSend={send}
       shareLabel={t('notify.share')}
       shareHint={t('notify.share.hint')}
-      onShare={shareFile && mail.address ? share : undefined}
-      completeLabel={t('mails.fix.add')}
-      onComplete={() => setAdding(true)}
+      onShare={shareFile && address ? share : undefined}
+      completeLabel={t('notify.way.open')}
+      onComplete={() => setWaying(true)}
       notice={notice}
       nextLabel={last ? t('notify.finish') : t('notify.next')}
       onNext={() => (last ? void navigate({ to: '/' }) : setIndex(index + 1))}
@@ -568,19 +600,29 @@ export function NotifierPage({ parcelId, batchId, reminder }: NotifierScope) {
             onSent={() => void answer(true)}
             onNotSent={() => void answer(false)}
           />
-        ) : adding ? (
-          <AddAddressSheet
+        ) : waying ? (
+          <NotifyWayFlow
+            key={mail.key}
             mail={mail}
-            onAdded={(address) => {
+            reminder={reminder}
+            onAddress={(typed) => {
               setOpened({
                 ...opened,
                 mails: mails.map((other) =>
-                  other.key === mail.key ? { ...other, address } : other,
+                  other.key === mail.key ? { ...other, address: typed } : other,
                 ),
               });
-              setAdding(false);
+              setWaying(false);
             }}
-            onDismiss={() => setAdding(false)}
+            onRelay={(chosen, collects) => {
+              setRelays((all) => ({
+                ...all,
+                [mail.key]: { ...chosen, collects },
+              }));
+              setWaying(false);
+            }}
+            onVoice={informed}
+            onDismiss={() => setWaying(false)}
           />
         ) : choosing ? (
           <Sheet

@@ -32,6 +32,8 @@ export type PrepareNotification = {
   target: MailTarget | null;
   /** The pickup code the mail quotes, made the recipient's in the same write. */
   pickup?: PickupSecret;
+  /** Sent to this colleague or assistant for the recipient, who has no address (F25). */
+  relayName?: string | null;
 };
 
 export type NotificationOptions = { userId: string; now?: Date };
@@ -91,6 +93,7 @@ export async function prepareNotification(
     openedAt: null,
     sentAt: null,
     failedReason: null,
+    relayName: input.relayName ?? null,
   };
   const codes = input.pickup
     ? await pickupCodeWrites(

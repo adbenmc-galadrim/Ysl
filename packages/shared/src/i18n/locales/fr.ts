@@ -764,7 +764,32 @@ export const fr = {
   'notify.missing': 'Adresse manquante',
   'notify.missing.title': 'Pas d’adresse e-mail',
   'notify.missing.description':
-    'Ajoutez-la pour lui écrire : elle restera sur sa fiche.',
+    'Ajoutez son adresse, passez par un contact ou prévenez-le de vive voix.',
+  'notify.missing.one': '1 destinataire sans e-mail',
+  'notify.missing.many': '{{count}} destinataires sans e-mail',
+  'notify.way.open': 'Comment le prévenir ?',
+  'notify.way.description':
+    '{{name}} n’a pas d’adresse e-mail dans l’annuaire.',
+  'notify.way.relay.choose': 'Choisir le contact',
+  'notify.way.relay.noEmail':
+    'Pas d’adresse e-mail : choisissez quelqu’un d’autre',
+  'notify.way.relay.collects': 'Il ou elle viendra le chercher',
+  'notify.way.relay.prepare': 'Préparer l’e-mail à {{name}}',
+  'notify.way.voice.note':
+    'Donnez-lui son code de retrait, affiché à l’étape suivante : ses colis passent « Notifié ».',
+  'notify.way.voice.note.reminder':
+    'Rappelez-lui son code de retrait, affiché à l’étape suivante : la relance est notée.',
+  'notify.way.voice.confirm': 'C’est fait, afficher le code',
+  'notify.relay.via': 'Via {{name}}, {{address}}',
+  'notify.voice.code': 'Code à transmettre : {{code}}',
+  'notify.voice.one': 'Prévenu de vive voix : 1 colis passe « Notifié ».',
+  'notify.voice.many':
+    'Prévenu de vive voix : {{count}} colis passent « Notifié ».',
+  'notify.voice.done': 'Prévenu de vive voix',
+  'notify.voice.reminder.one':
+    'Relancé de vive voix : relance notée sur 1 colis.',
+  'notify.voice.reminder.many':
+    'Relancé de vive voix : relance notée sur {{count}} colis.',
   'notify.sent.title': 'E-mail envoyé',
   'notify.sent.one': '1 colis passe « Notifié ».',
   'notify.sent.many': '{{count}} colis passent « Notifié ».',
