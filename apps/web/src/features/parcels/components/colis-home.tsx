@@ -48,10 +48,7 @@ import { useDelayedPending } from '#/lib/use-delayed-pending';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-function conflictMessage({
-  firstName,
-  byMe,
-}: Extract<HandoverToast, { kind: 'conflict' }>): string {
+function conflictMessage({ firstName, byMe }: HandoverToast): string {
   const by = byMe ? 'mine' : 'colleague';
   return firstName
     ? t(`handover.conflict.${by}`, { name: firstName })
@@ -246,16 +243,7 @@ export function ColisHome() {
         }
         loading={loading}
         toast={
-          handed?.kind === 'done' ? (
-            <Toast
-              message={t('handover.done', {
-                count: handed.count,
-                name: handed.firstName,
-              })}
-              actionLabel={t('handover.done.undo')}
-              actionDisabled
-            />
-          ) : handed?.kind === 'conflict' ? (
+          handed ? (
             <Toast message={conflictMessage(handed)} />
           ) : update.offered ? (
             <Toast

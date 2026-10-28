@@ -8,6 +8,11 @@ export type CheckListItem = {
   label: ReactNode;
   /** A green tick when done; nothing while the step is pending. */
   done?: boolean;
+  /**
+   * A step the app cannot take yet, said on the right ("bientôt"): the line
+   * is greyed, nothing to tap.
+   */
+  soon?: string;
 };
 
 export type CheckListProps = {
@@ -31,7 +36,14 @@ export function CheckList({ items, className }: CheckListProps) {
       {items.map((item, i) => (
         <li key={i} className="flex items-center gap-[11px] text-15">
           <Icon name={item.icon} size={18} className="shrink-0 text-ink-2" />
-          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+          <span
+            className={cn('min-w-0 flex-1 truncate', item.soon && 'text-muted')}
+          >
+            {item.label}
+          </span>
+          {item.soon && (
+            <span className="shrink-0 text-13 text-muted">{item.soon}</span>
+          )}
           {item.done && (
             <Icon
               name="tick"

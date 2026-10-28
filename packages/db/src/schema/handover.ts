@@ -24,6 +24,8 @@ export const handover = pgTable(
     delegateName: text('delegate_name'),
     method: text('method', { enum: HANDOVER_METHODS }).notNull(),
     agentId: text('agent_id').notNull(),
+    /** The agent's name as the iPhone knew it: the journal names them offline. */
+    agentName: text('agent_name'),
     at: timestamp('at', { withTimezone: true }).notNull(),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
   },

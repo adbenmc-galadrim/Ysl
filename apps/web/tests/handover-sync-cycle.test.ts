@@ -46,6 +46,10 @@ type Db = Awaited<ReturnType<typeof openTestDatabase>>;
 const ORGANIZATION_ID = newId();
 const KARIM = 'agent-karim';
 const LINA = 'agent-lina';
+const NAMES: Record<string, string> = {
+  [KARIM]: 'Karim Benali',
+  [LINA]: 'Lina Morel',
+};
 
 await server
   .insert(schema.organization)
@@ -166,7 +170,7 @@ describe('a handover between two iPhones', () => {
         ...searchForCode(match.code, 'qr', Date.now()),
         parcelIds: parcels.map((parcel) => parcel.id),
       },
-      { agentId: KARIM },
+      { agentId: KARIM, agentName: 'Karim Benali' },
     );
     const run = await desk.syncNow({ force: true });
 
@@ -184,10 +188,14 @@ describe('a handover between two iPhones', () => {
       method: 'qr',
       personId: nora.id,
       recipientName: 'Nora Haddad',
+      agentName: 'Karim Benali',
       cancelledAt: null,
     });
 
     await other.syncNow({ force: true });
+    expect((await second.handover.get(done.handoverId))?.agentName).toBe(
+      'Karim Benali',
+    );
     expect((await second.parcel.get(parcels[1]!.id))?.status).toBe('remis');
     expect((await second.pickupCode.get(match.code.id))?.usedAt).not.toBeNull();
     const rows = await listHomeParcels(second);
@@ -212,7 +220,7 @@ describe('a handover between two iPhones', () => {
           at: Date.now(),
           parcelIds: parcels.map((parcel) => parcel.id),
         },
-        { agentId },
+        { agentId, agentName: NAMES[agentId]! },
       );
 
     await handOver(first, KARIM);
@@ -264,7 +272,7 @@ describe('a handover between two iPhones', () => {
           at: Date.now(),
           parcelIds,
         },
-        { agentId },
+        { agentId, agentName: NAMES[agentId]! },
       );
 
     await handOver(first, KARIM, [beaten]);
@@ -291,6 +299,6 @@ describe('a handover between two iPhones', () => {
       titles?.filter(
         (title) => typeof title === 'string' && title.startsWith('Remis'),
       ),
-    ).toEqual(['Remis sans vérification']);
+    ).toEqual(['Remis à Nora Haddad par Karim (sans vérification)']);
   });
 });

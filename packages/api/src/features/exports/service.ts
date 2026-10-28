@@ -6,7 +6,7 @@ import {
 } from '@repo/contract/exports';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
-import { contact, directoryPerson, parcel } from '@repo/db/schema';
+import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { textCell, toCsv, type CsvCell } from '#features/exports/csv';
@@ -36,6 +36,11 @@ export const PARCELS_CSV_HEADER = [
   'date_notification',
   'derniere_notification',
   'reserve',
+  'remis_le',
+  'remis_a',
+  'remis_par',
+  'methode_remise',
+  'remise_annulee',
 ] as const;
 
 /** The v1 vocabulary, so an export still reads as one to the v1 import. */
@@ -104,7 +109,80 @@ async function readParcels(db: AnyDb, organizationId: string) {
 
 type ExportedParcel = Awaited<ReturnType<typeof readParcels>>[number];
 
-function toCells({ parcel: p, person, contact: c }: ExportedParcel): CsvCell[] {
+async function readHandovers(db: AnyDb, organizationId: string) {
+  return db
+    .select({
+      id: handover.id,
+      parcelIds: handover.parcelIds,
+      recipientName: handover.recipientName,
+      delegateName: handover.delegateName,
+      method: handover.method,
+      agentName: handover.agentName,
+      at: handover.at,
+      cancelledAt: handover.cancelledAt,
+    })
+    .from(handover)
+    .where(
+      and(
+        eq(handover.organizationId, organizationId),
+        isNull(handover.deletedAt),
+      ),
+    )
+    .orderBy(asc(handover.at), asc(handover.id));
+}
+
+type ExportedHandover = Awaited<ReturnType<typeof readHandovers>>[number];
+
+/**
+ * The handover each parcel's line tells (F43): the standing one that wrote
+ * its `delivered_at`, else the latest standing one, else the latest
+ * cancelled one — a parcel handed back after a cancellation says so.
+ */
+function handoverByParcel(
+  rows: ExportedParcel[],
+  handovers: ExportedHandover[],
+): Map<string, ExportedHandover> {
+  const deliveredAt = new Map(
+    rows.map(({ parcel: p }) => [p.id, p.deliveredAt?.getTime()]),
+  );
+  const rank = (row: ExportedHandover, parcelId: string) =>
+    row.cancelledAt
+      ? 0
+      : row.at.getTime() === deliveredAt.get(parcelId)
+        ? 2
+        : 1;
+  const byParcel = new Map<string, ExportedHandover>();
+  for (const row of handovers) {
+    for (const parcelId of row.parcelIds) {
+      const held = byParcel.get(parcelId);
+      if (!held || rank(row, parcelId) >= rank(held, parcelId)) {
+        byParcel.set(parcelId, row);
+      }
+    }
+  }
+  return byParcel;
+}
+
+function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
+  if (!row) return ['', '', '', '', ''];
+  return [
+    formatExportDate(row.at),
+    row.delegateName
+      ? translate('export.handover.delegate', {
+          name: row.recipientName,
+          delegate: row.delegateName,
+        })
+      : row.recipientName,
+    row.agentName,
+    translate(`handover.method.${row.method}`),
+    formatExportDate(row.cancelledAt),
+  ];
+}
+
+function toCells(
+  { parcel: p, person, contact: c }: ExportedParcel,
+  handed: ExportedHandover | undefined,
+): CsvCell[] {
   const recipient = person
     ? `${person.firstName} ${person.lastName}`.trim()
     : (c?.name ?? p.readName);
@@ -131,6 +209,7 @@ function toCells({ parcel: p, person, contact: c }: ExportedParcel): CsvCell[] {
     formatExportDate(p.notifiedAt),
     formatExportDate(p.lastNotifiedAt),
     reserveCell(p),
+    ...handoverCells(handed),
   ];
 }
 
@@ -148,10 +227,17 @@ export async function exportParcelsCsv(
   organizationId: string,
   now = new Date(),
 ): Promise<ParcelsCsvOutput> {
-  const rows = await readParcels(db, organizationId);
+  const [rows, handovers] = await Promise.all([
+    readParcels(db, organizationId),
+    readHandovers(db, organizationId),
+  ]);
+  const handed = handoverByParcel(rows, handovers);
   return {
     filename: parcelsCsvFilename(now),
-    csv: toCsv(PARCELS_CSV_HEADER, rows.map(toCells)),
+    csv: toCsv(
+      PARCELS_CSV_HEADER,
+      rows.map((row) => toCells(row, handed.get(row.parcel.id))),
+    ),
     count: rows.length,
   };
 }

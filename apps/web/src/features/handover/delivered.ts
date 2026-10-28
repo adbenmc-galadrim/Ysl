@@ -81,6 +81,30 @@ export async function lostHandoverIds(
   return new Set(lost.map((handover) => handover.id));
 }
 
+/**
+ * The last cancelled handover that listed a parcel: what its record says
+ * once no handover stands for it any more.
+ */
+export async function cancelledHandoverOf(
+  db: CourrierDatabase,
+  parcel: LocalParcel,
+): Promise<LocalHandover | undefined> {
+  const field = parcel.personId ? 'personId' : 'contactId';
+  const id = parcel.personId ?? parcel.contactId;
+  if (!id) return undefined;
+  const cancelled = await db.handover
+    .where(field)
+    .equals(id)
+    .filter(
+      (handover) =>
+        !!handover.cancelledAt &&
+        !handover.deletedAt &&
+        handover.parcelIds.includes(parcel.id),
+    )
+    .sortBy('at');
+  return cancelled.at(-1);
+}
+
 /** « QR vérifié », « code vérifié », « sans vérification ». */
 export function proofLabel(method: HandoverMethod, t: TranslateFn): string {
   return t(`handover.how.${method}`);

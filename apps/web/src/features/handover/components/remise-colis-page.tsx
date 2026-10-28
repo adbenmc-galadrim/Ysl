@@ -23,6 +23,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 export type RemiseColisPageProps = {
   search: RemiseColisSearch;
   agentId: string;
+  agentName: string;
   onBack: () => void;
   /** The card or contact is no longer on this iPhone. */
   onGone: () => void;
@@ -39,6 +40,7 @@ export type RemiseColisPageProps = {
 export function RemiseColisPage({
   search,
   agentId,
+  agentName,
   onBack,
   onGone,
   onRefused,
@@ -83,7 +85,11 @@ export function RemiseColisPage({
     setBusy(true);
     try {
       onDone(
-        await recordHandover(db, { ...search, parcelIds: ticked }, { agentId }),
+        await recordHandover(
+          db,
+          { ...search, parcelIds: ticked },
+          { agentId, agentName },
+        ),
       );
     } catch (error) {
       setBusy(false);

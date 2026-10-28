@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
-import { contact, directoryPerson, parcel } from '@repo/db/schema';
+import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -103,6 +103,43 @@ beforeAll(async () => {
     },
     { ...parcelRow(OTHER_ORGANIZATION_ID) },
   ]);
+  const handed = {
+    organizationId: ORGANIZATION_ID,
+    recipientName: 'Hélène Durand',
+    personId,
+    agentId: AGENT_ID,
+  };
+  await db.insert(handover).values([
+    {
+      ...handed,
+      id: newId(),
+      parcelIds: [ids.person],
+      method: 'manuel',
+      agentName: 'Lina Morel',
+      at: new Date('2026-10-25T14:00:00Z'),
+      cancelledAt: new Date('2026-10-25T14:01:00Z'),
+    },
+    {
+      ...handed,
+      id: newId(),
+      parcelIds: [ids.person],
+      delegateName: 'Paul Roy',
+      method: 'qr',
+      agentName: 'Karim Benali',
+      at: new Date('2026-10-25T14:32:00Z'),
+    },
+    {
+      ...handed,
+      id: newId(),
+      parcelIds: [ids.contact],
+      personId: null,
+      contactId,
+      recipientName: 'Atelier Ménard',
+      method: 'pin',
+      at: new Date('2026-10-24T09:20:00Z'),
+      cancelledAt: new Date('2026-10-24T09:25:00Z'),
+    },
+  ]);
 });
 
 afterAll(async () => {
@@ -186,6 +223,11 @@ describe('exportParcelsCsv', () => {
       date_notification: '24/10/2026 10:30',
       derniere_notification: '25/10/2026 08:00',
       reserve: 'Carton abîmé : coin enfoncé',
+      remis_le: '25/10/2026 15:32',
+      remis_a: 'Hélène Durand (retiré par Paul Roy)',
+      remis_par: 'Karim Benali',
+      methode_remise: 'QR code vérifié',
+      remise_annulee: '',
     });
   });
 
@@ -203,6 +245,28 @@ describe('exportParcelsCsv', () => {
     expect(third![column('statut_v2')]).toBe('À compléter');
     expect(third![column('nb_colis')]).toBe('1');
     expect(third![column('date_remise')]).toBe('');
+  });
+
+  it('tells a cancelled handover, and nothing for a parcel never handed over', async () => {
+    const { csv } = await exportParcelsCsv(db, ORGANIZATION_ID, now);
+    const [header, , second, third] = parseCsv(csv);
+    const cells = (row: string[]) =>
+      header!.slice(-5).map((_, i) => row[header!.length - 5 + i]);
+    expect(header!.slice(-5)).toEqual([
+      'remis_le',
+      'remis_a',
+      'remis_par',
+      'methode_remise',
+      'remise_annulee',
+    ]);
+    expect(cells(second!)).toEqual([
+      '24/10/2026 11:20',
+      'Atelier Ménard',
+      '',
+      'Code vérifié',
+      '24/10/2026 11:25',
+    ]);
+    expect(cells(third!)).toEqual(['', '', '', '', '']);
   });
 
   it('writes a winter date in Paris winter time', () => {
