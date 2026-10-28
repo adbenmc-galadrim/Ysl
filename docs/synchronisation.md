@@ -85,6 +85,15 @@ dans `last_notified_at`) et un événement `parcel.notified` par colis dans le m
 `commitLocal`. Le texte de l'e-mail n'est pas stocké. Le pull ramène les modèles de toute
 l'organisation ; l'app n'affiche que ceux de l'agent connecté.
 
+Destinataire sans adresse (YSL-72, migration `0014_prevenir_autrement`) : un e-mail
+écrit à un collègue ou à une assistante garde le destinataire dans `person_id` /
+`contact_id`, l'adresse du tiers dans `recipients` et son nom dans `relay_name` ; le contact
+retient le dernier tiers dans `contact.notify_via` (`person:<id>` ou `contact:<id>`).
+Prévenu de vive voix, il n'y a pas de notification : le même `commitLocal` écrit le code
+de retrait (`pickup_code`), les colis passés à `notifie` (ou leur relance datée) et un
+événement `parcel.informed` (`{ kind: 'avis' | 'relance' }`) par colis, compté comme
+une relance par les règles de F37.
+
 ## Garde-fous des statuts et de la remise
 
 Tickets YSL-34 et YSL-43 (§8.3, §8.4, F30). Des triggers de `packages/db` (migrations
