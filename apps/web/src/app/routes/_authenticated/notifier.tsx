@@ -26,7 +26,7 @@ function NotifierRoute() {
   const { colis, lot, relance, prevenir } = Route.useSearch();
   return (
     <NotifierPage
-      key={`${colis ?? ''}:${lot ?? ''}:${relance ? 'relance' : ''}`}
+      key={`${colis ?? ''}:${lot ?? ''}:${relance ? 'relance' : ''}:${prevenir ? 'prevenir' : ''}`}
       parcelId={colis}
       batchId={lot}
       reminder={relance}

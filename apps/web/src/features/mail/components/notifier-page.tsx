@@ -431,11 +431,21 @@ export function NotifierPage({
   // Told in person: the parcels notified and the code given, nothing to send.
   const informed = async () => {
     if (!secret) throw new Error('no pickup code');
-    const { changes } = await informOrally(
+    const { changes, written } = await informOrally(
       db,
       { mail, secret, reminder: !!reminder },
       { userId },
     );
+    // Told or handed over from elsewhere since the page opened: no code was
+    // written, none to read out.
+    if (!written) {
+      setDone((all) => ({
+        ...all,
+        [mail.key]: { state: 'failed', reason: t('notify.voice.none') },
+      }));
+      setWaying(false);
+      return;
+    }
     const count = changes.filter((change) => !('skip' in change)).length;
     setDone((all) => ({
       ...all,
