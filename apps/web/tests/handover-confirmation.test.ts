@@ -84,7 +84,7 @@ describe('describeConfirmation', () => {
     );
 
     expect(`${view.title} ${view.description}`).toBe(
-      '2 colis remis à Nora Haddad, retirés par Paul Mercier, à 12 h 00',
+      '2 colis remis à Nora Haddad, retirés par Paul Mercier, à 12\u00a0h\u00a000',
     );
   });
 

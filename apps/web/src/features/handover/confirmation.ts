@@ -116,7 +116,8 @@ export function describeConfirmation(
           {
             name: handover.recipientName,
             delegate: handover.delegateName,
-            time: formatTime(handover.at),
+            // The longer sentence wraps: never inside « 11 h 20 ».
+            time: formatTime(handover.at).replace(/ /g, '\u00a0'),
           },
         )
       : t('handover.confirm.to', {
