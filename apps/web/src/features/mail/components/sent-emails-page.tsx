@@ -4,6 +4,7 @@ import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Banner,
+  Button,
   FixAddressSheet,
   MailParcelsSheet,
   MailSentSheet,
@@ -50,6 +51,7 @@ import {
 import { useNotifications } from '#/features/mail/use-notifications';
 import { useSentMails, type SentMails } from '#/features/mail/use-sent-mails';
 import { whenVisible } from '#/features/mail/visibility';
+import { EmployeeReply } from '#/features/replies/components/employee-reply';
 import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -68,7 +70,10 @@ const EMPTY: Record<MailFilter, string> = {
   sent: t('mails.empty.sent'),
 };
 
-type Open = { kind: 'confirm' | 'fix' | 'parcels'; id: string };
+type Open =
+  | { kind: 'confirm' | 'fix' | 'parcels'; id: string }
+  /** Frozen at the tap: an answer takes parcels out of « notifié ». */
+  | { kind: 'reply'; id: string; parcels: LocalParcel[] };
 
 /** What a resend needs besides the address: read once the sheet opens. */
 type Draft = {
@@ -330,6 +335,13 @@ export function SentEmailsPage({
   };
 
   const current = open && byId.get(open.id);
+  // What the recipient may answer for: the parcels of the mail still
+  // waiting as notified (YSL-70).
+  const answerable = (mail: TrackedMail) =>
+    mail.notification.parcelIds.flatMap((id) => {
+      const row = sent.parcels.get(id);
+      return row && !row.deletedAt && row.status === 'notifie' ? [row] : [];
+    });
   const showParcels = () => open && setOpen({ kind: 'parcels', id: open.id });
   const sheet = !current ? undefined : open.kind === 'confirm' ? (
     <MailSentSheet
@@ -347,6 +359,12 @@ export function SentEmailsPage({
       onShowParcels={showParcels}
       onDismiss={() => setOpen(null)}
       onAsk={(id) => setOpen({ kind: 'confirm', id })}
+    />
+  ) : open.kind === 'reply' ? (
+    <EmployeeReply
+      parcels={open.parcels}
+      recipient={nameOf(current)}
+      onClose={() => setOpen(null)}
     />
   ) : (
     <MailParcelsSheet
@@ -368,7 +386,26 @@ export function SentEmailsPage({
         })
       }
       onDismiss={() => setOpen(null)}
-    />
+    >
+      {current.state === 'sent' && answerable(current).length > 0 && (
+        <Button
+          variant="secondary"
+          icon="mail"
+          iconSize={20}
+          block
+          className="mt-4 text-16"
+          onClick={() =>
+            setOpen({
+              kind: 'reply',
+              id: current.notification.id,
+              parcels: answerable(current),
+            })
+          }
+        >
+          {t('record.action.reply')}
+        </Button>
+      )}
+    </MailParcelsSheet>
   );
 
   const parcel = parcelId ? sent.parcels.get(parcelId) : undefined;

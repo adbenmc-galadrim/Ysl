@@ -75,6 +75,8 @@ export type FicheColisScreenProps = {
   onPrimaryAction?: () => void;
   /** A grey action in its place, e.g. taking a step back. */
   secondaryAction?: FicheColisAction;
+  /** « Le salarié a répondu », for a parcel the recipient was told about (YSL-70). */
+  replyAction?: FicheColisAction;
   onDelete?: () => void;
   onBack?: () => void;
   onEdit?: () => void;
@@ -189,6 +191,7 @@ export function FicheColisScreen({
   primaryAction,
   onPrimaryAction,
   secondaryAction,
+  replyAction,
   onDelete,
   onBack,
   onEdit,
@@ -283,6 +286,18 @@ export function FicheColisScreen({
             <Icon name="scan" size={20} />
             Voir ce qui a été lu
           </button>
+        )}
+        {replyAction && (
+          <Button
+            variant="secondary"
+            icon="mail"
+            iconSize={20}
+            block
+            onClick={replyAction.onClick}
+            className="mt-5 text-16"
+          >
+            {replyAction.label}
+          </Button>
         )}
         <DetailsList title="Détails" items={details} className="mt-5" />
         {!damage && onReportDamage && (

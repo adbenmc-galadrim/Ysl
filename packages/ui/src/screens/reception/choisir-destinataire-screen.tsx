@@ -81,6 +81,11 @@ export type ChoisirDestinataireScreenProps = {
   onOutside?: () => void;
   /** Under the list, e.g. taking away the recipient chosen so far. */
   footer?: ReactNode;
+  /** The bar's title: « Destinataire », or who comes for the parcel. */
+  title?: string;
+  /** The dashed card's two lines, for a name typed rather than a card. */
+  outsideTitle?: string;
+  outsideDescription?: string;
 };
 
 const rows = (
@@ -119,12 +124,15 @@ export function ChoisirDestinataireScreen({
   onPick,
   onOutside,
   footer,
+  title = 'Destinataire',
+  outsideTitle = 'Personne hors annuaire',
+  outsideDescription = 'Saisir un nom et, si possible, un e-mail',
 }: ChoisirDestinataireScreenProps) {
   const searching = query.trim() !== '';
   return (
     <Screen>
       <NavBar
-        title="Destinataire"
+        title={title}
         leading={
           <IconButton
             icon="x"
@@ -174,11 +182,9 @@ export function ChoisirDestinataireScreen({
       >
         <Icon name="user" size={22} className="shrink-0" />
         <span className="flex min-w-0 flex-col">
-          <span className="truncate text-16 font-semibold">
-            Personne hors annuaire
-          </span>
+          <span className="truncate text-16 font-semibold">{outsideTitle}</span>
           <span className="mt-[3px] truncate text-13 text-muted">
-            Saisir un nom et, si possible, un e-mail
+            {outsideDescription}
           </span>
         </span>
       </button>
