@@ -177,6 +177,8 @@ export function handoverRow(
     agentName: 'Karim Benali',
     at: NOW,
     cancelledAt: null,
+    hasSignature: false,
+    hasPhoto: false,
     ...overrides,
   };
 }

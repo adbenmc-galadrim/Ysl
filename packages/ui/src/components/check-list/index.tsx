@@ -13,6 +13,8 @@ export type CheckListItem = {
    * is greyed, nothing to tap.
    */
   soon?: string;
+  /** A step the agent can still take here: the line opens it. */
+  onClick?: () => void;
 };
 
 export type CheckListProps = {
@@ -22,8 +24,10 @@ export type CheckListProps = {
 
 /**
  * What a flow has secured, one line per proof: "QR code vérifié",
- * "Signature enregistrée", "Envoyé au serveur". The ticks sit in a column on
- * the right so a missing one stands out without reading the labels.
+ * "Signature enregistrée", "Envoyé au serveur" — and what may still be
+ * added, a blue line that opens it ("Ajouter une photo"). The ticks sit in
+ * a column on the right so a missing one stands out without reading the
+ * labels.
  */
 export function CheckList({ items, className }: CheckListProps) {
   return (
@@ -33,28 +37,57 @@ export function CheckList({ items, className }: CheckListProps) {
         className,
       )}
     >
-      {items.map((item, i) => (
-        <li key={i} className="flex items-center gap-[11px] text-15">
-          <Icon name={item.icon} size={18} className="shrink-0 text-ink-2" />
-          <span
-            className={cn('min-w-0 flex-1 truncate', item.soon && 'text-muted')}
-          >
-            {item.label}
-          </span>
-          {item.soon && (
-            <span className="shrink-0 text-13 text-muted">{item.soon}</span>
-          )}
-          {item.done && (
-            <Icon
-              name="tick"
-              size={16}
-              strokeWidth={2.6}
-              aria-label="Fait"
-              className="shrink-0 text-green"
-            />
-          )}
-        </li>
-      ))}
+      {items.map((item, i) => {
+        const content = (
+          <>
+            <Icon name={item.icon} size={18} className="shrink-0 text-ink-2" />
+            <span
+              className={cn(
+                'min-w-0 flex-1 truncate',
+                item.soon && 'text-muted',
+                item.onClick && 'text-blue',
+              )}
+            >
+              {item.label}
+            </span>
+            {item.soon && (
+              <span className="shrink-0 text-13 text-muted">{item.soon}</span>
+            )}
+            {item.done && (
+              <Icon
+                name="tick"
+                size={16}
+                strokeWidth={2.6}
+                aria-label="Fait"
+                className="shrink-0 text-green"
+              />
+            )}
+            {item.onClick && (
+              <Icon
+                name="chevron"
+                size={16}
+                strokeWidth={2.2}
+                className="shrink-0 text-faint"
+              />
+            )}
+          </>
+        );
+        return (
+          <li key={i} className="flex items-center gap-[11px] text-15">
+            {item.onClick ? (
+              <button
+                type="button"
+                onClick={item.onClick}
+                className="-my-2 flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-[11px] text-left outline-none focus-visible:underline"
+              >
+                {content}
+              </button>
+            ) : (
+              content
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }

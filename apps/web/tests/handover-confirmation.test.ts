@@ -35,8 +35,15 @@ beforeEach(async () => {
   await db.parcel.bulkPut(parcels);
 });
 
-const handedOver = async (method: 'qr' | 'pin' | 'manuel') => {
-  const row = handoverRow({ parcelIds: parcels.map((p) => p.id), method });
+const handedOver = async (
+  method: 'qr' | 'pin' | 'manuel' | 'signature',
+  proofs: { hasSignature?: boolean; hasPhoto?: boolean } = {},
+) => {
+  const row = handoverRow({
+    parcelIds: parcels.map((p) => p.id),
+    method,
+    ...proofs,
+  });
   await db.handover.put(row);
   return (await loadHandoverEntry(db, row.id))!;
 };
@@ -58,18 +65,67 @@ describe('describeConfirmation', () => {
     ['qr', 'QR code vérifié', true],
     ['pin', 'Code vérifié', true],
     ['manuel', 'Sans vérification', false],
+    ['signature', 'Signée', true],
   ] as const)('words the %s proof', async (method, label, done) => {
     const view = describeConfirmation(await handedOver(method), true, t);
 
     expect(view.proofs[0]).toMatchObject({ label, done });
   });
 
-  it('offers the signature and the photo as coming soon', async () => {
-    const view = describeConfirmation(await handedOver('pin'), true, t);
+  it('offers the signature and the photo, each one tap away', async () => {
+    const onSign = () => {};
+    const onPhoto = () => {};
+    const view = describeConfirmation(await handedOver('pin'), true, t, {
+      onSign,
+      onPhoto,
+    });
 
     expect(view.proofs.slice(1, 3)).toEqual([
-      { icon: 'sign', label: 'Ajouter une signature', soon: 'bientôt' },
-      { icon: 'camera', label: 'Ajouter une photo', soon: 'bientôt' },
+      { icon: 'sign', label: 'Ajouter une signature', onClick: onSign },
+      { icon: 'camera', label: 'Ajouter une photo', onClick: onPhoto },
+    ]);
+  });
+
+  it('ticks the signature and the photo once kept, with nothing left to add', async () => {
+    const view = describeConfirmation(
+      await handedOver('qr', { hasSignature: true, hasPhoto: true }),
+      true,
+      t,
+      { onSign: () => {}, onPhoto: () => {} },
+    );
+
+    expect(view.proofs.slice(0, 3)).toEqual([
+      { icon: 'qr', label: 'QR code vérifié', done: true },
+      { icon: 'sign', label: 'Signature enregistrée', done: true },
+      { icon: 'camera', label: 'Photo enregistrée', done: true },
+    ]);
+  });
+
+  it('says a signature that could not be kept, the signature still to add', async () => {
+    const view = describeConfirmation(await handedOver('manuel'), true, t, {
+      failed: 'signature',
+    });
+
+    expect(view.proofs.map((proof) => proof.label)).toEqual([
+      'Sans vérification',
+      'Ajouter une signature',
+      'Ajouter une photo',
+      'Signature : Non enregistrée sur cet iPhone',
+      'Envoyée au serveur',
+    ]);
+  });
+
+  it('says « Signée » once for a handover picked by the name and signed', async () => {
+    const view = describeConfirmation(
+      await handedOver('signature', { hasSignature: true }),
+      true,
+      t,
+    );
+
+    expect(view.proofs.map((proof) => proof.label)).toEqual([
+      'Signée',
+      'Ajouter une photo',
+      'Envoyée au serveur',
     ]);
   });
 

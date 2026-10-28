@@ -197,7 +197,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | --- | --- | --- | --- | --- |
 | F40 | Onglet Remise : scan du QR, saisie du PIN, ou recherche par nom → colis en attente → « Remettre tout » | Nouveau | M | L2 |
 | F41 | Vérification hors ligne du QR et du PIN (empreintes synchronisées à l'avance) | Nouveau | M | L2 |
-| F42 | Signature tactile en secours ; obligatoire pour les recommandés | Nouveau | S | L2 |
+| F42 | Signature tactile et photo de remise facultatives, en secours (D6 : jamais obligatoires, recommandés compris) ; gardées sur l'iPhone (D8) | Nouveau | S | L2 |
 | F43 | Journal de remise : qui, quand, quel agent, quelle méthode | Nouveau | M | L2 |
 | F44 | Annulation d'une remise par erreur (avec trace) | Nouveau | S | L2 |
 
@@ -216,7 +216,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F53 | Purge automatique selon les durées de conservation | Nouveau (point ouvert v1) | M | L2 |
 | F54 | Emplacement de stockage du colis (étagère, casier) | Nouveau | S | L3 |
 | F55 | Étiquette interne imprimable (nom, service, emplacement, code-barres) | Nouveau | C | L3 |
-| F56 | Lettres recommandées : type dédié, n° d'AR, signature obligatoire | Nouveau | S | L3 |
+| F56 | Lettres recommandées : type dédié, n° d'AR, signature facultative (D6) | Nouveau | S | L3 |
 | F57 | Vues ordinateur : tableau des colis, revue, annuaire, rapports (délai de retrait, volumes par transporteur et par jour) | Nouveau | S | L3 |
 | F58 | Synchronisation de l'annuaire depuis Entra ID (Graph delta), CSV conservé en secours | Nouveau | S | L4 |
 | F59 | Envoi depuis la boîte partagée « Service Courrier » via Microsoft Graph | Nouveau | S | L4 |
@@ -528,7 +528,7 @@ Navigation par 4 onglets en bas. L'app s'ouvre sur **Scanner**, à l'état « pr
 | --- | --- | --- |
 | **Scanner** | Prêt → Lot en cours → Revue du lot → Récapitulatif | Viseur plein écran, obturateur, lampe, import photothèque, saisie manuelle, bandeau du lot ; revue triée par confiance ; récapitulatif avec les e-mails prêts |
 | **Colis** | Liste → Fiche colis | Compteurs cliquables (À compléter, À retirer, En souffrance, Aujourd'hui), recherche, puces de filtre, groupement par destinataire ou par date, sélection multiple ; fiche avec photo, champs, historique, synchronisation, actions |
-| **Remise** | Identifier → Panier de remise → Preuve → Confirmation | Scanner le QR, pavé PIN, recherche par nom ; colis en attente de la personne ; signature si nécessaire |
+| **Remise** | Identifier → Panier de remise → Preuve → Confirmation | Scanner le QR, pavé PIN, recherche par nom ; colis en attente de la personne ; signature et photo facultatives (D6) |
 | **Réglages** | Sections | Synchronisation et file d'attente, diagnostic du stockage, version et « Forcer la mise à jour », sons, thème, aide à l'installation, annuaire (admin), lieu et horaires de retrait (admin), compte |
 
 Éléments communs à tous les écrans :
@@ -752,12 +752,12 @@ Clés primaires : UUID v7 générés par le client. Chaque table synchronisée p
 | `batch` | id, agent_id, started_at, ended_at, nb_colis | Lot de réception |
 | `parcel` | id, batch_id, type (`colis`, `recommande`, `sans_suivi`), statut, transporteur, tracking, tracking_norm, destinataire (`person_id` ou `contact_id`), nom_lu, email_notification, service, sender_id, sender_libre, piece_n, piece_total, poids_kg, service_transporteur, reference, emplacement, notes, received_at, received_by, validated_at, delivered_at, delivered_by | `tracking_norm` est indexé (doublons) |
 | `extraction` | parcel_id, version (modèles et règles), champs (valeur, source, confiance) en JSON, codes décodés (texte brut), texte OCR, durées par étape, rotation, provenance (`device`, `cloud`) | Diagnostic et corpus ; purge courte |
-| `photo` | id, parcel_id, type (`etiquette`, `signature`), chemin OPFS, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
+| `photo` | id, parcel_id, type (`etiquette`, `dommage`), chemin OPFS, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
 | `sender` | id, nom_affiche, nom_norm, adresse?, nb_vues, last_seen | Expéditeurs déjà vus |
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
 | `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, statut (`prepared`, `opened`, `sent`, `failed`), messagerie (`mailto`, `outlook`, `gmail`), prepared_at/by, opened_at, sent_at, failed_reason | Suivi déclaratif (D2 révisée, S5) : l'app sait qu'elle a ouvert la messagerie, l'agent confirme l'envoi ; le texte de l'e-mail n'est pas stocké |
 | `pickup_code` | id, person_id ou contact_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne, qui couvre tous ses colis en attente |
-| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), signature_photo_id?, agent_id, at, annulé_at? | Preuve de remise |
+| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
 | `setting` | clé, valeur | Lieu et horaires de retrait, relances, conservation |
 
@@ -806,7 +806,7 @@ stateDiagram-v2
 - **Sur l'appareil** : la photo est écrite dans OPFS dès la capture. Une vignette ≤ 200 px est gardée pour l'affichage. La photo est ré-encodée en JPEG ~1 600 px, qualité 0,8, ce qui supprime les métadonnées EXIF et GPS.
 - **Pas d'envoi** : les photos restent sur l'iPhone et ne partent jamais au serveur (D8) ; le serveur n'a donc pas de stockage objet.
 - **Volume** : 20 à 100 photos par jour à 250-400 Ko **[estimation]**, soit 5 à 40 Mo par jour avant purge.
-- **Signatures** : même circuit, avec une durée de conservation propre (§9).
+- **Signatures et photos de remise** (YSL-75) : même circuit, table locale `handover_proof` (remise, nature, chemin OPFS), signature en PNG de l'encre seule ; durée propre pour la signature (12 mois, §9.2), 7 jours après la remise pour la photo. Ajoutées après coup, elles ne créent pas d'événement : la remise porte les drapeaux et sa date de mise à jour, l'événement `parcel.delivered` garde la méthode du moment de la remise.
 
 ### 8.6 API
 
@@ -879,6 +879,7 @@ Durées validées par le client (décision D7, YSL-55). Les photos ne quittent p
 | --- | --- | --- |
 | Photo locale | 7 jours après l'envoi confirmé | Réduire l'exposition en cas de perte de l'appareil |
 | Signature | 12 mois | Haut de la fourchette du rapport 05 (3 à 12 mois) |
+| Photo de remise (YSL-75) | 7 jours après la remise, une fois la remise reçue par le serveur | Même règle que la photo locale |
 | Données d'extraction (texte OCR, codes bruts) | 30 jours, sauf échantillons versés au corpus avec accord | Diagnostic |
 | Ligne de colis et journal de remise | 12 mois après la remise | Proposition ; plafond légal de prescription de 5 ans (art. 2224 du Code civil), qui n'est pas un objectif |
 | Annuaire | Tant que la personne est active ; supprimée à son départ (CSV ou Entra delta) | Minimisation |
@@ -928,7 +929,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | **L0 Fondations** | Monorepo (stack §7), CI, déploiement UE, PWA installable (manifest, icônes, `apple-touch-icon`, SW en mode prompt, `/version.json`), auth agent/admin, jetons de design, Dexie + `sync.push` / `sync.pull` + outbox, pastille de synchronisation (F01, F45, F46, F48, F49) | App installée sur l'iPhone ; relance en mode avion → l'app s'ouvre ; une écriture faite hors ligne arrive sur l'ordinateur au retour du réseau ; mise à jour proposée sans réinstallation ; aucune donnée personnelle dans le dépôt |
 | **L1 Réception** (MVP, partie 1) | Mode rafale, chaîne d'extraction complète (§4), revue de lot, À compléter, journal et fiche, annuaire CSV, contacts, doublons, apprentissage, diagnostic, export CSV, import v1, mode sombre (F02 à F14, F16 à F23, F25 à F30, F47, F50 à F52, F63) | Corpus : objectifs O1 à O4 et O6 atteints ; 50 colis en rafale sans plantage ; tous les cas de non-régression du §4.6 passent en CI ; l'import v1 signale les trackings invalides, dont `7185713569` ; parcours P1, P2 et P6 faits par l'agent sur un vrai lot |
 | **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | E-mail prérempli dans la messagerie du téléphone (D2 révisée) et suivi déclaratif, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge (F31 à F37, F40 à F44, F53) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 faits par l'agent → **mise en production pilote** |
-| **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, vues ordinateur et rapports, statut Retourné (F06, F15, F38, F39, F54 à F57) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé ne peut pas être remis sans signature ; rapports exacts sur un jeu de test |
+| **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, vues ordinateur et rapports, statut Retourné (F06, F15, F38, F39, F54 à F57) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) ; rapports exacts sur un jeu de test |
 | **L4 Cible avec DSI** | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
 
 Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ordre que permettent les réponses de la DSI. Aucune durée n'est donnée ici : elle sera estimée après les spikes.
@@ -968,7 +969,7 @@ Chaque décision est accompagnée d'une recommandation.
 | D3 | Base hors ligne | Utilisateur | Dexie + outbox (§7.2) ; PowerSync seulement en cas de multi-sites ou de forte concurrence |
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
-| D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou PIN par défaut, signature en secours et obligatoire pour les recommandés ; pas de photo du salarié |
+| D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou code par défaut ; signature et photo des colis facultatives, en secours, jamais obligatoires, même pour les recommandés (réponse du client, appliqué par YSL-75) ; pas de photo du salarié |
 | D7 | Durées de conservation | DPO | Validé : le tableau du §9.2 tel quel, signatures à 12 mois (réponse du client, appliqué par YSL-55) |
 | D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone, jamais envoyées au serveur (réponse du client du 22/10/2026) |
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |

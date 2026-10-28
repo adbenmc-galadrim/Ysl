@@ -3,13 +3,14 @@ import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitLocal } from '#/features/db/commit';
 import type { CourrierDatabase, LocalExtraction } from '#/features/db/schema';
+import { addHandoverProof } from '#/features/handover/proofs';
 import { savePhoto } from '#/features/photos/store';
 import { LOCAL_PURGE_KEY, purgeLocal } from '#/features/retention/local-purge';
 import {
   AFTER_SYNC_EVERY_MS,
   createLocalPurgeScheduler,
 } from '#/features/retention/schedule';
-import { openTestDatabase, parcelRow } from './helpers/local-rows';
+import { handoverRow, openTestDatabase, parcelRow } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 const NOW = new Date('2026-10-27T09:00:00Z');
@@ -151,6 +152,82 @@ describe('purgeLocal', () => {
       other.id,
     ]);
     expect((await db.syncState.get(LOCAL_PURGE_KEY))?.value).toEqual(report);
+  });
+});
+
+describe('purgeLocal, handover proofs', () => {
+  const proof = (kind: 'signature' | 'photo') => ({
+    kind,
+    blob: new Blob([kind], {
+      type: kind === 'photo' ? 'image/jpeg' : 'image/png',
+    }),
+    width: 10,
+    height: 10,
+  });
+  const keep = async (
+    handoverId: string,
+    kind: 'signature' | 'photo',
+    at: Date,
+  ) => addHandoverProof(db, files, handoverId, proof(kind), { now: at });
+
+  it('keeps a signature 12 months after it was drawn, a photo 7 days after the handover', async () => {
+    const old = handoverRow({ at: daysAgo(370) });
+    const week = handoverRow({ at: daysAgo(8) });
+    const recent = handoverRow({ at: daysAgo(6) });
+    await db.handover.bulkPut([old, week, recent]);
+    const oldSignature = await keep(old.id, 'signature', daysAgo(370));
+    const weekSignature = await keep(week.id, 'signature', daysAgo(8));
+    const weekPhoto = await keep(week.id, 'photo', daysAgo(8));
+    const recentPhoto = await keep(recent.id, 'photo', daysAgo(6));
+    await db.outbox.clear();
+
+    const report = await purgeLocal(db, files, NOW);
+
+    expect(report.proofs).toBe(2);
+    const left = (await db.handoverProof.toArray()).map((row) => row.id);
+    expect(left.sort()).toEqual([weekSignature.id, recentPhoto.id].sort());
+    expect(files.files.has(`${oldSignature.id}.png`)).toBe(false);
+    expect(files.files.has(`${weekPhoto.id}.jpg`)).toBe(false);
+  });
+
+  it('keeps the photo while the server has not taken the handover yet', async () => {
+    const handover = handoverRow({ at: daysAgo(10) });
+    await db.handover.put(handover);
+    const photo = await keep(handover.id, 'photo', daysAgo(10));
+
+    await purgeLocal(db, files, NOW);
+
+    expect(await db.handoverProof.get(photo.id)).toBeDefined();
+  });
+
+  it('keeps a proof without its handover yet, for the time the handover is written', async () => {
+    const signature = await files.save('x.png', new Blob(['x'])).then(() =>
+      db.handoverProof.put({
+        id: 'young',
+        handoverId: 'being-written',
+        kind: 'signature',
+        path: 'photos/young.png',
+        width: 1,
+        height: 1,
+        bytes: 1,
+        createdAt: new Date(NOW.getTime() - 10 * 60 * 1000),
+      }),
+    );
+
+    await purgeLocal(db, files, NOW);
+
+    expect(await db.handoverProof.get(signature)).toBeDefined();
+  });
+
+  it('removes a proof whose handover left the iPhone, after the grace', async () => {
+    const handover = handoverRow({ at: daysAgo(1) });
+    await db.handover.put(handover);
+    const signature = await keep(handover.id, 'signature', daysAgo(1));
+    await db.handover.delete(handover.id);
+
+    await purgeLocal(db, files, NOW);
+
+    expect(await db.handoverProof.get(signature.id)).toBeUndefined();
   });
 });
 

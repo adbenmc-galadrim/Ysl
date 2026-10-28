@@ -2,6 +2,7 @@ import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CheckList, type CheckListItem } from '#components/check-list';
 import { DetailsList } from '#components/details-list';
+import { ProofMedia, type ProofMediaProps } from '#components/proof-media';
 import { ResultHero } from '#components/result-hero';
 import { Screen } from '#components/screen';
 import { SYNC_PILL, StatusPill } from '#components/status-pill';
@@ -20,6 +21,8 @@ export type RemiseConfirmeeScreenProps = {
   /** "à Nora Haddad, à 11 h 21". */
   description: string;
   proofs: CheckListItem[];
+  /** The signature and the photo, under the proofs, once taken. */
+  media?: ProofMediaProps;
   /** The parcels the handover lists, under the proofs. */
   parcels?: RemiseConfirmeeParcel[];
   /** The iPhone is offline: the handover waits on it, said at the top. */
@@ -44,6 +47,7 @@ export function RemiseConfirmeeScreen({
   title,
   description,
   proofs,
+  media,
   parcels,
   offline = false,
   undoable = true,
@@ -101,6 +105,7 @@ export function RemiseConfirmeeScreen({
         }
       />
       <CheckList items={proofs} className="mt-[34px]" />
+      {media && <ProofMedia {...media} className="mt-3 px-1" />}
       {parcels && parcels.length > 0 && (
         <DetailsList
           title="Colis remis"

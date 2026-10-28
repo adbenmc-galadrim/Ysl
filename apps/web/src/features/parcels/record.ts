@@ -3,6 +3,7 @@ import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import { fromDayKey } from '@repo/contract/parcel-reply';
 import { resumeOf } from '@repo/contract/reminders';
+import { cutoff, RETENTION } from '@repo/contract/retention';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -22,6 +23,7 @@ import type {
 } from '@repo/ui';
 import { awaitsNotice } from '#/features/mail/recipients';
 import type {
+  HandoverProofKind,
   LocalContact,
   LocalDirectoryPerson,
   LocalEvent,
@@ -67,6 +69,8 @@ export type ParcelRecord = {
   cancelledHandover?: LocalHandover;
   /** Handovers of this iPhone another one beat to the parcel: not its story. */
   lostHandovers?: ReadonlySet<string>;
+  /** The proofs of the handover shown that this iPhone holds. */
+  handoverProofs?: readonly HandoverProofKind[];
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -504,8 +508,31 @@ function handoverCard(
     ),
   );
   return {
-    items: handoverItems(handover, sync, { now, t, me }, { recipient: true }),
+    items: handoverItems(
+      handover,
+      sync,
+      { now, t, me },
+      { recipient: true, here: record.handoverProofs },
+    ),
   };
+}
+
+/**
+ * Where a proof of the handover is: shown below, on the agent's iPhone (D8),
+ * or gone once past its time (§9.2) — the flag stays on the handover, the
+ * file does not, on any iPhone.
+ */
+function proofPlace(
+  handover: LocalHandover,
+  kind: HandoverProofKind,
+  here: readonly HandoverProofKind[],
+  { now, t }: Pick<DescribeOptions, 'now' | 't'>,
+): string {
+  if (here.includes(kind)) return t('record.handover.proofHere');
+  const kept = kind === 'photo' ? RETENTION.photo : RETENTION.signature;
+  return handover.at < cutoff(now, kept)
+    ? t('record.handover.proofPurged')
+    : t('record.handover.proofElsewhere');
 }
 
 /**
@@ -518,7 +545,16 @@ export function handoverItems(
   handover: LocalHandover,
   sync: RecordSync,
   { now, t, me }: Pick<DescribeOptions, 'now' | 't' | 'me'>,
-  { recipient = false, cancelled = true } = {},
+  {
+    recipient = false,
+    cancelled = true,
+    here = [],
+  }: {
+    recipient?: boolean;
+    cancelled?: boolean;
+    /** The proofs this iPhone holds; the others stayed where they were taken. */
+    here?: readonly HandoverProofKind[];
+  } = {},
 ): DetailsItem[] {
   const row = (label: string, value: string): DetailsItem[] => [
     { label, value },
@@ -531,6 +567,18 @@ export function handoverItems(
     ...row(t('record.handover.when'), formatWhen(handover.at, now, t)),
     ...row(t('record.handover.agent'), agentNameOf(handover, t, me)),
     ...row(t('record.handover.method'), methodLabel(handover.method, t)),
+    ...(handover.hasSignature
+      ? row(
+          t('record.handover.signature'),
+          proofPlace(handover, 'signature', here, { now, t }),
+        )
+      : []),
+    ...(handover.hasPhoto
+      ? row(
+          t('record.handover.photo'),
+          proofPlace(handover, 'photo', here, { now, t }),
+        )
+      : []),
     ...row(t('record.detail.sync'), t(`record.sync.${sync}`)),
     ...(cancelled && handover.cancelledAt
       ? row(

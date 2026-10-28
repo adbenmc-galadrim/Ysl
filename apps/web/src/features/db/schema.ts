@@ -67,7 +67,14 @@ export type LocalParcel = Omit<
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
 export type LocalNotification = LocalRow<typeof notification.$inferSelect>;
 export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;
-export type LocalHandover = LocalRow<typeof handover.$inferSelect>;
+/** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */
+export type LocalHandover = Omit<
+  LocalRow<typeof handover.$inferSelect>,
+  'hasSignature' | 'hasPhoto'
+> & {
+  hasSignature?: boolean;
+  hasPhoto?: boolean;
+};
 export type LocalEvent = LocalRow<typeof event.$inferSelect>;
 export type LocalSetting = LocalRow<typeof setting.$inferSelect>;
 
@@ -117,6 +124,25 @@ export type LocalPhoto = {
   kind: PhotoKind;
   path: string;
   sha256: string;
+  width: number;
+  height: number;
+  bytes: number;
+  createdAt: Date;
+};
+
+export const HANDOVER_PROOF_KINDS = ['signature', 'photo'] as const;
+export type HandoverProofKind = (typeof HANDOVER_PROOF_KINDS)[number];
+
+/**
+ * The signature or the photo of a handover (YSL-75), kept on this iPhone
+ * only (D8): the file lives in OPFS beside the photos, the handover row
+ * only says it exists.
+ */
+export type LocalHandoverProof = {
+  id: string;
+  handoverId: string;
+  kind: HandoverProofKind;
+  path: string;
   width: number;
   height: number;
   bytes: number;
@@ -348,6 +374,9 @@ const ALIAS_STORES = {
   recipient_alias: 'id, nameNorm, personId, contactId',
 };
 
+/** Version 7 (YSL-75): the signatures and photos of the handovers. */
+const PROOF_STORES = { handover_proof: 'id, handoverId, kind, createdAt' };
+
 const SYNCED_STORES: Record<SyncedEntity, string> = {
   ...FIRST_SYNCED_STORES,
   ...ALIAS_STORES,
@@ -381,6 +410,7 @@ export class CourrierDatabase extends Dexie {
   draftBatch!: Table<DraftBatch, string>;
   draftParcel!: Table<DraftParcel, string>;
   extraction!: Table<LocalExtraction, string>;
+  handoverProof!: Table<LocalHandoverProof, string>;
 
   constructor(name = DATABASE_NAME) {
     super(name);
@@ -399,6 +429,7 @@ export class CourrierDatabase extends Dexie {
     this.version(4).stores(EXTRACTION_STORES);
     this.version(5).stores(NOTIFICATION_V5);
     this.version(6).stores(ALIAS_STORES);
+    this.version(7).stores(PROOF_STORES);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -419,6 +450,7 @@ export class CourrierDatabase extends Dexie {
     this.draftBatch = this.table('draft_batch');
     this.draftParcel = this.table('draft_parcel');
     this.extraction = this.table('extraction');
+    this.handoverProof = this.table('handover_proof');
   }
 
   /** The Dexie table of a synced entity, by its server name. */

@@ -65,8 +65,13 @@ Code : `apps/web/src/features/photos/`.
   L'écriture passe par un Web Worker et un `createSyncAccessHandle` (`truncate`, `write`,
   `flush`), la seule écriture OPFS dont le spike a vérifié la tenue sur iPhone.
 - La table `photo` ne contient que la description : chemin, SHA-256, dimensions, octets,
-  colis, nature (`etiquette`, `signature`, `dommage`). **Le blob n'est jamais dans IndexedDB** et
+  colis, nature (`etiquette`, `dommage` ; `signature` n'est plus écrit). **Le blob n'est jamais dans IndexedDB** et
   aucune opération d'outbox n'est créée : la photo reste sur l'appareil.
+- Les **preuves de remise** (YSL-75) ont leur table, `handover_proof` (version 7 de la
+  base : remise, nature `signature` ou `photo`, chemin, dimensions, octets), et leurs
+  fichiers dans le même répertoire `photos/` (`<id>.png` pour la signature, `<id>.jpg`
+  pour la photo). Même ordre d'écriture, une seule preuve de chaque nature par remise ;
+  la remise synchronisée ne porte que `hasSignature` et `hasPhoto`.
 - **Ordre d'écriture** (S4) : le fichier d'abord, la ligne ensuite. Une ligne sans fichier
   serait une perte ; un fichier sans ligne est une orpheline que le **balayage au
   lancement** (`sweepOrphanPhotos`) retire une fois vieille d'une heure, délai qui laisse

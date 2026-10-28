@@ -46,6 +46,7 @@ export const retentionGroup: SettingsGroup = {
       icon: 'sign',
       color: 'purple',
       label: t('privacy.retention.signature'),
+      subtitle: t('privacy.retention.signature.detail'),
       value: formatDuration(RETENTION.signature),
       chevron: false,
     },

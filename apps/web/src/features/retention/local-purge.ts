@@ -1,9 +1,12 @@
 import { cutoff, RETENTION } from '@repo/contract/retention';
 import type {
   CourrierDatabase,
+  LocalHandover,
+  LocalHandoverProof,
   LocalParcel,
   LocalPhoto,
 } from '#/features/db/schema';
+import { deleteProof } from '#/features/handover/proofs';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { deletePhoto, ORPHAN_GRACE_MS } from '#/features/photos/store';
 
@@ -11,6 +14,8 @@ export type LocalPurgeReport = {
   at: Date;
   photos: number;
   extractions: number;
+  /** Signatures and photos of handovers; absent on a report before YSL-75. */
+  proofs?: number;
 };
 
 /** `sync_state` key of the last local purge (`LocalPurgeReport`). */
@@ -33,8 +38,10 @@ type PhotoContext = {
 /**
  * Whether a photo is past its time (§9.2). A label or damage photo goes 7
  * days after its parcel left the counter, once the server holds the parcel
- * (no change of it still queued). A signature goes after 12 months. A photo
- * whose parcel is gone from this iPhone, purged or deleted, goes once it is
+ * (no change of it still queued). A `signature` photo row goes after 12
+ * months; none is written since the handover's signatures moved to
+ * `handover_proof` (YSL-75, `proofExpired`), the rule stays for any row an
+ * older build might hold. A photo whose parcel is gone from this iPhone, purged or deleted, goes once it is
  * older than the orphan grace; one still waiting in a batch is kept.
  */
 export function photoExpired(
@@ -58,9 +65,71 @@ export function photoExpired(
   );
 }
 
+type ProofContext = {
+  handovers: Map<string, LocalHandover>;
+  pending: Set<string>;
+  now: Date;
+};
+
 /**
- * The purge of this iPhone (§9.2): photos past their time, and what the
- * reader made of labels after 30 days or once their parcel is gone. Rows
+ * Whether a handover's proof is past its time (§9.2): a signature 12 months
+ * after it was drawn, a photo 7 days after the handover once the server
+ * holds it. A proof whose handover is gone from this iPhone, purged or
+ * deleted, goes once older than the orphan grace (it may belong to a
+ * handover being written).
+ */
+export function proofExpired(
+  proof: LocalHandoverProof,
+  { handovers, pending, now }: ProofContext,
+): boolean {
+  const handover = handovers.get(proof.handoverId);
+  if (!handover || handover.deletedAt) {
+    return now.getTime() - proof.createdAt.getTime() >= ORPHAN_GRACE_MS;
+  }
+  if (proof.kind === 'signature') {
+    return proof.createdAt < cutoff(now, RETENTION.signature);
+  }
+  return (
+    handover.at < cutoff(now, RETENTION.photo) && !pending.has(handover.id)
+  );
+}
+
+async function purgeProofs(
+  db: CourrierDatabase,
+  files: PhotoFiles,
+  now: Date,
+): Promise<number> {
+  const proofs = await db.handoverProof.toArray();
+  if (!proofs.length) return 0;
+  const found = await db.handover.bulkGet([
+    ...new Set(proofs.map((proof) => proof.handoverId)),
+  ]);
+  const handovers = new Map(
+    found.flatMap((row) => (row ? [[row.id, row]] : [])),
+  );
+  const queued = await db.outbox
+    .where('state')
+    .equals('queued')
+    .filter((op) => op.entity === 'handover')
+    .toArray();
+  const context = {
+    handovers,
+    pending: new Set(queued.map((op) => op.entityId)),
+    now,
+  };
+  let removed = 0;
+  for (const proof of proofs) {
+    if (!proofExpired(proof, context)) continue;
+    await deleteProof(db, files, proof);
+    removed += 1;
+  }
+  return removed;
+}
+
+/**
+ * The purge of this iPhone (§9.2): photos and handover proofs past their
+ * time, and what the reader made of labels after 30 days or once their
+ * parcel is gone. Rows
  * the server purged leave with the pull; this covers what never goes to
  * the server. Photos go one by one, row then file: a crash in between
  * leaves an orphan file, which the launch sweep removes.
@@ -91,7 +160,9 @@ export async function purgeLocal(
   );
 
   let photos = 0;
+  let proofs = 0;
   if (files) {
+    proofs = await purgeProofs(db, files, now);
     const stored = await db.photo
       .filter((row) => row.parcelId !== null)
       .toArray();
@@ -115,7 +186,12 @@ export async function purgeLocal(
     }
   }
 
-  const report = { at: now, photos, extractions: extractions.length };
+  const report = {
+    at: now,
+    photos,
+    extractions: extractions.length,
+    proofs,
+  };
   await db.syncState.put({ key: LOCAL_PURGE_KEY, value: report });
   return report;
 }

@@ -28,10 +28,13 @@ function RemiseColisRoute() {
     [navigate],
   );
   const done = useCallback(
-    ({ handoverId }: HandoverDone) =>
+    ({ handoverId, signatureLost }: HandoverDone) =>
       void navigate({
         to: '/remise/confirmee',
-        search: { handover: handoverId },
+        search: {
+          handover: handoverId,
+          ...(signatureLost ? { signature: 'lost' as const } : {}),
+        },
         replace: true,
       }),
     [navigate],

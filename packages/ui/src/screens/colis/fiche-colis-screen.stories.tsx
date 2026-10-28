@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PhotoViewer } from '#components/photo-viewer';
 import { LABEL_PHOTO_URL } from '#fixtures/label-photo';
 import { PARCELS } from '#fixtures/parcels';
+import { SIGNATURES, signatureImageUrl } from '#fixtures/signatures';
 import { FicheColisScreen } from '#screens/colis/fiche-colis-screen';
 
 const meta = {
@@ -248,5 +249,48 @@ export const Remis: Story = {
       },
       { id: 'e1', title: 'Reçu', detail: 'Hier à 9 h 12' },
     ],
+  },
+};
+
+/**
+ * Picked by the name and signed: the signature is shown when this iPhone
+ * took it, a photo too; another iPhone only reads that it exists.
+ */
+export const RemisSigne: Story = {
+  name: 'Remis, signé',
+  args: {
+    ...Remis.args,
+    state: {
+      icon: 'check',
+      title: 'Remis à 11 h 20',
+      description: 'À Nora Haddad, signé',
+    },
+    handover: {
+      items: [
+        { label: 'Remis à', value: 'Nora Haddad' },
+        { label: 'Quand', value: 'Aujourd’hui à 11 h 20' },
+        { label: 'Agent', value: 'Karim Benali' },
+        { label: 'Méthode', value: 'Signée' },
+        { label: 'Signature', value: 'Sur cet iPhone' },
+        { label: 'Photo', value: 'Sur cet iPhone' },
+        { label: 'Synchronisation', value: 'À jour' },
+      ],
+      media: {
+        items: [
+          {
+            kind: 'signature',
+            src: signatureImageUrl(SIGNATURES.nora),
+            alt: 'Signature',
+          },
+          {
+            kind: 'photo',
+            src: LABEL_PHOTO_URL,
+            alt: 'Photo de la remise',
+            onOpen: () => {},
+          },
+        ],
+      },
+      onOpen: () => {},
+    },
   },
 };

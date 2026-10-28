@@ -14,6 +14,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
+import { proofLabels } from '#/features/handover/confirmation';
+import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
@@ -103,6 +105,10 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const [viewingDamage, setViewingDamage] = useState<string | null>(null);
   const damagedAt = record?.parcel.damagedAt ?? null;
   const damageUrls = useDamagePhotoUrls(parcelId, damagedAt);
+  const proofUrls = useProofUrls(
+    (record?.handover ?? record?.cancelledHandover)?.id ?? '',
+  );
+  const [viewingProof, setViewingProof] = useState<string | null>(null);
   const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [completing, setCompleting] = useState(false);
@@ -320,6 +326,13 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
         shown.handover && handoverId !== undefined
           ? {
               ...shown.handover,
+              media: {
+                items: proofMediaItems(
+                  proofUrls,
+                  proofLabels(t),
+                  setViewingProof,
+                ),
+              },
               onOpen: () =>
                 void navigate({
                   to: '/reglages/remises/$handoverId',
@@ -429,6 +442,14 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               })}
               closeLabel={t('record.photo.close')}
               onClose={() => setViewingDamage(null)}
+            />
+          )}
+          {viewingProof && (
+            <PhotoViewer
+              src={viewingProof}
+              alt={t('handover.proof.photo')}
+              closeLabel={t('record.photo.close')}
+              onClose={() => setViewingProof(null)}
             />
           )}
         </>

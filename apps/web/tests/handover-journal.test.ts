@@ -185,4 +185,63 @@ describe('the handover journal', () => {
       'Recommandé',
     ]);
   });
+
+  it('says where the signature and the photo are: here, or on the agent’s iPhone', async () => {
+    const parcel = parcelRow({ status: 'remis' });
+    await db.parcel.put(parcel);
+    const row = handoverRow({
+      parcelIds: [parcel.id],
+      method: 'signature',
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    await db.handover.put(row);
+    await db.handoverProof.put({
+      id: 'proof-1',
+      handoverId: row.id,
+      kind: 'photo',
+      path: 'photos/proof-1.jpg',
+      width: 1600,
+      height: 1200,
+      bytes: 9,
+      createdAt: NOW,
+    });
+
+    const entry = (await loadHandoverEntry(db, row.id))!;
+    const view = describeHandoverDetail(entry, NOW, t);
+
+    expect(entry.proofs).toEqual(['photo']);
+    expect(view.items.slice(2, 5)).toEqual([
+      { label: 'Méthode', value: 'Signée' },
+      { label: 'Signature', value: 'Sur l’iPhone de l’agent' },
+      { label: 'Photo', value: 'Sur cet iPhone' },
+    ]);
+  });
+
+  it('says a photo past its 7 days is gone, not on another iPhone', async () => {
+    const parcel = parcelRow({ status: 'remis' });
+    await db.parcel.put(parcel);
+    const row = handoverRow({
+      parcelIds: [parcel.id],
+      at: new Date(NOW.getTime() - 8 * 24 * 60 * 60 * 1000),
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    await db.handover.put(row);
+
+    const view = describeHandoverDetail(
+      (await loadHandoverEntry(db, row.id))!,
+      NOW,
+      t,
+    );
+
+    expect(view.items).toContainEqual({
+      label: 'Photo',
+      value: 'Effacée (durée de conservation)',
+    });
+    expect(view.items).toContainEqual({
+      label: 'Signature',
+      value: 'Sur l’iPhone de l’agent',
+    });
+  });
 });

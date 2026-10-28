@@ -45,3 +45,4 @@ export * from '#screens/remise/remise-colis-screen';
 export * from '#screens/remise/remise-confirmee-screen';
 export * from '#screens/remise/remise-detail-screen';
 export * from '#screens/remise/scanner-qr-screen';
+export * from '#screens/remise/signature-screen';

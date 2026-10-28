@@ -1,10 +1,16 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { JournalRemisesScreen, RemiseDetailScreen } from '@repo/ui';
+import {
+  JournalRemisesScreen,
+  PhotoViewer,
+  RemiseDetailScreen,
+} from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { loadHandoverEntry } from '#/features/handover/entry';
+import { proofLabels } from '#/features/handover/confirmation';
+import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import {
   describeHandoverDetail,
   journalSections,
@@ -64,15 +70,30 @@ export function RemiseDetailPage({
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
   );
+  const urls = useProofUrls(handoverId);
+  const [viewing, setViewing] = useState<string | null>(null);
   useEffect(() => {
     if (entry === null) onBack();
   }, [entry, onBack]);
   if (!entry) return null;
   return (
-    <RemiseDetailScreen
-      {...describeHandoverDetail(entry, now, t, session.user.id)}
-      onBack={onBack}
-      onParcel={(parcel) => onParcel(parcel.id)}
-    />
+    <>
+      <RemiseDetailScreen
+        {...describeHandoverDetail(entry, now, t, session.user.id)}
+        media={{
+          items: proofMediaItems(urls, proofLabels(t), setViewing),
+        }}
+        onBack={onBack}
+        onParcel={(parcel) => onParcel(parcel.id)}
+      />
+      {viewing && (
+        <PhotoViewer
+          src={viewing}
+          alt={t('handover.proof.photo')}
+          closeLabel={t('record.photo.close')}
+          onClose={() => setViewing(null)}
+        />
+      )}
+    </>
   );
 }

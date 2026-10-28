@@ -3,15 +3,18 @@ import { useCallback } from 'react';
 import { RemiseConfirmeePage } from '#/features/handover/components/remise-confirmee-page';
 
 export const Route = createFileRoute('/_authenticated/remise/confirmee')({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { handover: string; signature?: 'lost' } => ({
     handover: typeof search.handover === 'string' ? search.handover : '',
+    ...(search.signature === 'lost' ? { signature: 'lost' as const } : {}),
   }),
   component: RemiseConfirmeeRoute,
 });
 
 function RemiseConfirmeeRoute() {
   const navigate = useNavigate();
-  const { handover } = Route.useSearch();
+  const { handover, signature } = Route.useSearch();
   const done = useCallback(
     () => void navigate({ to: '/', replace: true }),
     [navigate],
@@ -24,6 +27,7 @@ function RemiseConfirmeeRoute() {
     <RemiseConfirmeePage
       key={handover}
       handoverId={handover}
+      signatureLost={signature === 'lost'}
       onDone={done}
       onAnother={another}
     />

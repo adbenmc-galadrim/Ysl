@@ -74,8 +74,9 @@ export async function deletePhoto(
 }
 
 /**
- * Launch check (S4): removes the files no row points to, once they are old
- * enough not to be a photo whose row is still on its way.
+ * Launch check (S4): removes the files no row points to — a photo or a
+ * handover's proof — once they are old enough not to be one whose row is
+ * still on its way.
  */
 export async function sweepOrphanPhotos(
   db: CourrierDatabase,
@@ -85,7 +86,11 @@ export async function sweepOrphanPhotos(
 ): Promise<string[]> {
   const stored = await files.list();
   if (!stored.length) return [];
-  const known = new Set((await db.photo.toArray()).map((photo) => photo.path));
+  const [photos, proofs] = await Promise.all([
+    db.photo.toArray(),
+    db.handoverProof.toArray(),
+  ]);
+  const known = new Set([...photos, ...proofs].map((row) => row.path));
   const removed: string[] = [];
   for (const file of stored) {
     if (known.has(pathOf(file.name))) continue;
