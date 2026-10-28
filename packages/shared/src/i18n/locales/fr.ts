@@ -45,6 +45,15 @@ export const fr = {
   'handover.verified.manuel': 'Choisi par le nom',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
   'handover.soon': 'La remise arrive bientôt dans l’app.',
+  'handover.pin.unknown': 'Code inconnu. Vérifiez-le avec le salarié.',
+  'handover.pin.expired': 'Ce code a expiré. Cherchez plutôt le nom.',
+  'handover.pin.used': 'Ce code a déjà servi. Cherchez plutôt le nom.',
+  'handover.pin.replaced':
+    'Ce code a été remplacé par un e-mail plus récent : demandez le dernier.',
+  'handover.pin.ambiguous':
+    'Ce code correspond à deux personnes : cherchez plutôt le nom.',
+  'handover.pin.locked':
+    'Trop d’essais. Réessayez dans {{seconds}} s, ou cherchez le nom.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
   'handover.received.yesterday': 'Reçu hier',
   'handover.received.on': 'Reçu le {{date}}',

@@ -1,4 +1,5 @@
 import type { RecipientKind } from '@repo/contract/recipient';
+import type { LocalPickupCode } from '#/features/db/schema';
 
 /** How the person was identified: the `handover.method` the handover will record. */
 export type HandoverVia = 'qr' | 'pin' | 'manuel';
@@ -31,4 +32,15 @@ export function parseRemiseColisSearch(
       ? { code: search.code }
       : {}),
   };
+}
+
+/** Where a checked QR or code leads: its recipient's parcels. */
+export function searchForCode(
+  code: LocalPickupCode,
+  via: 'qr' | 'pin',
+  at: number,
+): RemiseColisSearch {
+  return code.personId
+    ? { kind: 'person', id: code.personId, via, at, code: code.id }
+    : { kind: 'contact', id: code.contactId ?? '', via, at, code: code.id };
 }
