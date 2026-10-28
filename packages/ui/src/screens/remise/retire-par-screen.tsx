@@ -5,26 +5,38 @@ import { ChoiceCard } from '#components/choice-card';
 import { ChoiceTileGrid } from '#components/choice-tile';
 import { NavBar } from '#components/nav-bar';
 import { PageIntro } from '#components/page-intro';
-import { PersonOption } from '#components/person-option';
+import { PersonOption, PersonOptionGroup } from '#components/person-option';
 import { Screen } from '#components/screen';
 import type { Person } from '#fixtures/people';
 
 export type RetireParProof = 'signature' | 'badge';
 
+/** Who the screen offers: the colleague, or the recipient after all. */
+export type RetireParChoice = 'collector' | 'recipient';
+
 export type RetireParScreenProps = {
   /** Whose parcels these are. */
-  recipient: Person;
+  recipient: Pick<Person, 'name' | 'initials'> & { department?: string };
   /** Who is at the desk. */
-  collector: Person;
+  collector: Pick<Person, 'name' | 'initials'> & { department?: string };
   /** How the recipient named the colleague: "Réponse à l’e-mail, ce matin à 11 h 02". */
   announcement?: string;
-  proof: RetireParProof;
+  /** The proof to choose; without it, the QR or the code already stands for the recipient. */
+  proof?: RetireParProof;
   onProofChange?: (proof: RetireParProof) => void;
+  /** Offers the recipient too, under the colleague: they may come after all. */
+  recipientOption?: string;
+  selected?: RetireParChoice;
+  onSelect?: (choice: RetireParChoice) => void;
+  /** In place of the e-mail the recipient gets: a reminder for the agent. */
+  note?: string;
+  continueLabel?: string;
   onOtherPerson?: () => void;
   onContinue?: () => void;
+  onBack?: () => void;
 };
 
-const firstName = (person: Person) => person.name.split(' ')[0];
+const firstName = (person: Pick<Person, 'name'>) => person.name.split(' ')[0];
 
 /**
  * A colleague collects for someone. When the recipient announced them by
@@ -38,22 +50,29 @@ export function RetireParScreen({
   announcement,
   proof,
   onProofChange,
+  recipientOption,
+  selected = 'collector',
+  onSelect,
+  note,
+  continueLabel,
   onOtherPerson,
   onContinue,
+  onBack,
 }: RetireParScreenProps) {
   return (
     <Screen
       bottom={
         <BottomBar surface="line">
           <Button block onClick={onContinue}>
-            {proof === 'signature'
-              ? 'Continuer vers la signature'
-              : 'Continuer vers la photo'}
+            {continueLabel ??
+              (proof === 'badge'
+                ? 'Continuer vers la photo'
+                : 'Continuer vers la signature')}
           </Button>
         </BottomBar>
       }
     >
-      <NavBar title="Retiré par" />
+      <NavBar title="Retiré par" onBack={onBack} />
       <PageIntro
         size="sm"
         title={`Qui retire pour ${recipient.name} ?`}
@@ -75,13 +94,34 @@ export function RetireParScreen({
           className="mt-[18px]"
         />
       )}
-      <PersonOption
-        selected
-        initials={collector.initials}
-        name={collector.name}
-        detail={collector.department}
-        className="mt-4 h-[72px]"
-      />
+      {recipientOption ? (
+        <PersonOptionGroup label="Qui retire" className="mt-4">
+          <PersonOption
+            selected={selected === 'collector'}
+            initials={collector.initials}
+            name={collector.name}
+            detail={collector.department}
+            onClick={() => onSelect?.('collector')}
+            className="h-[72px]"
+          />
+          <PersonOption
+            selected={selected === 'recipient'}
+            initials={recipient.initials}
+            name={recipient.name}
+            detail={recipientOption}
+            onClick={() => onSelect?.('recipient')}
+            className="h-[72px]"
+          />
+        </PersonOptionGroup>
+      ) : (
+        <PersonOption
+          selected
+          initials={collector.initials}
+          name={collector.name}
+          detail={collector.department}
+          className="mt-4 h-[72px]"
+        />
+      )}
       <Button
         variant="link"
         size="sm"
@@ -90,33 +130,51 @@ export function RetireParScreen({
       >
         Autre personne
       </Button>
-      <p className="mt-8 text-13 font-medium text-muted">Preuve</p>
-      <ChoiceTileGrid label="Preuve" className="mt-2">
-        <ChoiceCard
-          icon="sign"
-          label={`Signature de ${firstName(collector)}`}
-          selected={proof === 'signature'}
-          onClick={() => onProofChange?.('signature')}
-        />
-        <ChoiceCard
-          icon="camera"
-          label="Photo du badge"
-          selected={proof === 'badge'}
-          onClick={() => onProofChange?.('badge')}
-        />
-      </ChoiceTileGrid>
-      <Banner
-        tone="grey"
-        icon="mail"
-        title={`${recipient.name} sera prévenue`}
-        description={`Un e-mail lui confirme que ${collector.name} a retiré ses colis.`}
-        classNames={{
-          root: 'h-[72px] items-start pb-0 text-ink-2',
-          icon: 'mt-3',
-          description: 'leading-[18px] text-ink-2',
-        }}
-        className="mt-5"
-      />
+      {proof ? (
+        <>
+          <p className="mt-8 text-13 font-medium text-muted">Preuve</p>
+          <ChoiceTileGrid label="Preuve" className="mt-2">
+            <ChoiceCard
+              icon="sign"
+              label={`Signature de ${firstName(collector)}`}
+              selected={proof === 'signature'}
+              onClick={() => onProofChange?.('signature')}
+            />
+            <ChoiceCard
+              icon="camera"
+              label="Photo du badge"
+              selected={proof === 'badge'}
+              onClick={() => onProofChange?.('badge')}
+            />
+          </ChoiceTileGrid>
+          <Banner
+            tone="grey"
+            icon="mail"
+            title={`${recipient.name} sera prévenue`}
+            description={`Un e-mail lui confirme que ${collector.name} a retiré ses colis.`}
+            classNames={{
+              root: 'h-[72px] items-start pb-0 text-ink-2',
+              icon: 'mt-3',
+              description: 'leading-[18px] text-ink-2',
+            }}
+            className="mt-5"
+          />
+        </>
+      ) : (
+        note && (
+          <Banner
+            tone="grey"
+            icon="info"
+            title={note}
+            classNames={{
+              root: 'items-start pt-3.5 pb-3',
+              icon: 'mt-0.5',
+              title: 'text-14 font-normal',
+            }}
+            className="mt-8"
+          />
+        )
+      )}
     </Screen>
   );
 }

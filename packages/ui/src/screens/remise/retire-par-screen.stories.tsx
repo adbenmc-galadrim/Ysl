@@ -33,3 +33,18 @@ export const PhotoDuBadge: Story = {
   name: 'Photo du badge',
   args: { ...Annonce.args, announcement: undefined, proof: 'badge' },
 };
+
+/**
+ * In the app (D6): the QR or the code stands for the recipient, so no proof
+ * to choose and no e-mail yet; the recipient may still come after all.
+ */
+export const DansLApp: Story = {
+  name: 'Dans l’app',
+  args: {
+    ...Annonce.args,
+    proof: undefined,
+    recipientOption: 'Retire ses colis',
+    note: 'Le QR ou le code présenté vaut preuve pour Nora Haddad ; notez qui retire.',
+    continueLabel: 'Continuer',
+  },
+};

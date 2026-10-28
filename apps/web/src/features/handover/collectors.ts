@@ -15,7 +15,7 @@ import {
 /** At most this many names « Sans colis en attente »: the rest is a typo away. */
 export const OTHERS_LIMIT = 20;
 
-const toCollectee = (choice: Choice): Collectee => ({
+export const toCollectee = (choice: Choice): Collectee => ({
   id: recipientKey(choice),
   name: choice.name,
   initials: choice.initials,

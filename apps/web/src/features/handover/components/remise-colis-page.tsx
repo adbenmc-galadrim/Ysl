@@ -1,8 +1,22 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { RemiseColisScreen, SignatureScreen } from '@repo/ui';
+import {
+  QuiRetireScreen,
+  RemiseColisScreen,
+  RetireParScreen,
+  SignatureScreen,
+} from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
+import {
+  announcedCollector,
+  type CollectorCard,
+  choiceCard,
+  collectorCard,
+  collectorChoices,
+  collectorName,
+  sameName,
+} from '#/features/handover/collector';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 import {
   type HandoverDone,
@@ -19,7 +33,10 @@ import {
 } from '#/features/handover/waiting';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import { formatTime } from '#/features/parcels/model';
+import { loadRecipientBook } from '#/features/parcels/recipients';
+import { formatWhen } from '#/features/parcels/record';
 import { photoFiles } from '#/features/photos/opfs';
+import { initialsOf } from '#/features/settings/initials';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -56,6 +73,12 @@ export function RemiseColisPage({
   /** The strokes on the pad while it is open, and those validated. */
   const [draft, setDraft] = useState<string[] | null>(null);
   const [signed, setSigned] = useState<string[]>([]);
+  /** Who collects when not the recipient, and the step of choosing them. */
+  const [collector, setCollector] = useState<CollectorCard | null>(null);
+  const [choosing, setChoosing] = useState<'choice' | 'search' | null>(null);
+  const [choice, setChoice] = useState<'collector' | 'recipient'>('collector');
+  const [query, setQuery] = useState('');
+  const book = useLiveQuery(() => loadRecipientBook(db), []);
   const loaded = useLiveQuery(async () => {
     const [person, parcels] = await Promise.all([
       loadHandoverPerson(db, { kind, id }),
@@ -105,7 +128,7 @@ export function RemiseColisPage({
           : undefined;
       const done = await recordHandover(
         db,
-        { ...search, parcelIds: ticked },
+        { ...search, parcelIds: ticked, delegateName: collector?.name },
         { agentId, agentName, signature: signature ?? undefined },
       );
       onDone(signature === null ? { ...done, signatureLost: true } : done);
@@ -126,6 +149,80 @@ export function RemiseColisPage({
       }
     }
   };
+
+  const announced = announcedCollector(parcels);
+  const people = book?.people ?? [];
+  const contacts = book?.contacts ?? [];
+  const candidate =
+    collector ??
+    (announced ? collectorCard(announced.name, people, contacts) : null);
+  const pick = (card: CollectorCard) => {
+    setCollector(collectorName(card.name, person.name) ? card : null);
+    setChoosing(null);
+    setQuery('');
+  };
+  const openCollector = () => {
+    setChoice('collector');
+    setChoosing(candidate ? 'choice' : 'search');
+  };
+
+  if (choosing === 'search') {
+    const { choices, listed } = collectorChoices(people, contacts, query);
+    const typed = collectorName(query, '');
+    return (
+      <QuiRetireScreen
+        title={t('handover.collector.title', { name: person.name })}
+        navTitle={t('record.handover.delegate')}
+        query={query}
+        onQueryChange={setQuery}
+        waiting={[]}
+        others={listed}
+        othersTitle={t('handover.collector.results')}
+        onPickOther={(row) => {
+          const found = choices[listed.indexOf(row)];
+          if (found) pick(choiceCard(found));
+        }}
+        typed={typed ?? undefined}
+        onUseTyped={() =>
+          typed && pick({ name: typed, initials: initialsOf(typed) })
+        }
+        note={
+          via === 'manuel'
+            ? t('handover.collector.signNote')
+            : t('handover.collector.proofNote', { name: person.name })
+        }
+        onClose={() => setChoosing(candidate ? 'choice' : null)}
+      />
+    );
+  }
+
+  if (choosing === 'choice' && candidate) {
+    return (
+      <RetireParScreen
+        recipient={person}
+        collector={candidate}
+        announcement={
+          announced?.at && sameName(candidate.name, announced.name)
+            ? t('handover.collector.announcement', {
+                when: lowerFirst(formatWhen(announced.at, now, t)),
+              })
+            : undefined
+        }
+        recipientOption={t('handover.collector.self')}
+        selected={choice}
+        onSelect={setChoice}
+        note={
+          via === 'manuel'
+            ? t('handover.collector.signNote')
+            : t('handover.collector.proofNote', { name: person.name })
+        }
+        continueLabel={t('handover.collector.continue')}
+        onOtherPerson={() => setChoosing('search')}
+        onContinue={() => pick(choice === 'collector' ? candidate : person)}
+        onBack={() => setChoosing(null)}
+      />
+    );
+  }
 
   if (draft) {
     return (
@@ -158,6 +255,13 @@ export function RemiseColisPage({
             : t('handover.verified.manuel')
       }
       verifiedBy={via === 'manuel' ? 'name' : 'proof'}
+      collector={collector?.name}
+      announced={
+        announced
+          ? t('handover.collector.announced', { name: announced.name })
+          : undefined
+      }
+      onCollector={openCollector}
       signed={signed.length > 0}
       registeredNote={t('handover.registered')}
       onSignature={() => setDraft(signed)}
@@ -173,3 +277,6 @@ export function RemiseColisPage({
     />
   );
 }
+
+const lowerFirst = (text: string) =>
+  text.charAt(0).toLocaleLowerCase('fr') + text.slice(1);

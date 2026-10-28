@@ -111,6 +111,16 @@ export const fr = {
   'handover.pin.locked':
     'Trop d’essais. Réessayez dans {{seconds}} s, ou cherchez le nom.',
   'handover.delegate': 'Retrait prévu par {{name}}',
+  'handover.collector.announced': '{{name}}, annoncé par e-mail',
+  'handover.collector.announcement': 'Réponse à l’e-mail, {{when}}',
+  'handover.collector.self': 'Retire ses colis',
+  'handover.collector.title': 'Qui retire pour {{name}} ?',
+  'handover.collector.results': 'Annuaire et contacts',
+  'handover.collector.continue': 'Continuer',
+  'handover.collector.proofNote':
+    'Le QR ou le code présenté vaut preuve pour {{name}} ; notez qui retire.',
+  'handover.collector.signNote':
+    'Sans QR ni code, vous pouvez faire signer la personne qui retire.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
   'handover.received.yesterday': 'Reçu hier',
   'handover.received.on': 'Reçu le {{date}}',

@@ -31,3 +31,20 @@ export const Recherche: Story = {
 };
 
 export const Vide: Story = { args: { query: '', waiting: [], others: [] } };
+
+/** Choosing who collects for Nora: anyone of the directory or a contact, or the name as typed. */
+export const CollegueQuiRetire: Story = {
+  name: 'Collègue qui retire',
+  args: {
+    title: 'Qui retire pour Nora Haddad ?',
+    navTitle: 'Retiré par',
+    query: 'paul m',
+    waiting: [],
+    others: [PEOPLE.paul],
+    othersTitle: 'Annuaire et contacts',
+    onPickOther: () => {},
+    typed: 'Paul M',
+    onUseTyped: () => {},
+    note: 'Le QR ou le code présenté vaut preuve pour Nora Haddad ; notez qui retire.',
+  },
+};
