@@ -30,7 +30,7 @@ export const CodeInconnu: Story = {
   name: 'Code inconnu',
   args: {
     code: '',
-    error: 'Aucun code actif ne correspond. Vérifiez-le, ou cherchez le nom.',
+    error: 'Code inconnu. Vérifiez-le avec le salarié.',
   },
 };
 

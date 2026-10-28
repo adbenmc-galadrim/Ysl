@@ -154,8 +154,8 @@ export function RemiseColisScreen({
       {extras && parcels.length > 0 && (
         <>
           {/* Dashed: an optional check, not a step every handover goes through.
-          An SVG stroke rather than `border-dashed`, whose dashes are too
-          short next to Penpot's 10 px ones. */}
+              An SVG stroke rather than `border-dashed`, whose dashes are too
+              short next to Penpot's 10 px ones. */}
           <Button
             variant="outline"
             block

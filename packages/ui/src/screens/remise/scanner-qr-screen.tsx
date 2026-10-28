@@ -5,7 +5,7 @@ import { CameraTopBar } from '#components/camera-controls';
 import { CameraViewport } from '#components/camera-viewport';
 import { Icon } from '#icons';
 
-/** Why the last QR opened nothing: an unknown, expired or used code. */
+/** Why nothing opens: a QR unknown, expired or used, or a camera refused. */
 export type ScannerQrNotice = { title: string; description?: string };
 
 export type ScannerQrScreenProps = {

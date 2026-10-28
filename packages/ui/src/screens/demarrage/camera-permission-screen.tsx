@@ -97,7 +97,8 @@ export function CameraDeniedScreen({
     <Screen
       bottomInset={144}
       bottom={
-        <BottomBar className="pb-[calc(var(--safe-bottom)+22px)]">
+        <BottomBar className="pb-[calc(var(--safe-bottom)+22px)]"
+        >
           <Button block onClick={onRetry}>
             J’ai réautorisé, réessayer
           </Button>
