@@ -15,6 +15,7 @@ import { useSession } from '#/features/auth/api/use-session';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
 import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
+import { ContactSheet } from '#/features/directory/components/contact-sheet';
 import {
   type PhotoUrl,
   useLabelPhotoUrl,
@@ -24,6 +25,7 @@ import { lastMailLine } from '#/features/mail/tracking';
 import { useLatestMail } from '#/features/mail/use-sent-mails';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import { CompleteParcel } from '#/features/parcels/components/complete-parcel';
+import { addressMissing } from '#/features/parcels/model';
 import {
   describeRecord,
   type RecordAction,
@@ -100,6 +102,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [addingEmail, setAddingEmail] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -251,12 +254,32 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     ));
 
   const { action, damage, ...shown } = view;
+  // « Sans e-mail »: the address goes on the contact, for this parcel and
+  // the next ones, and the record shows it at once.
+  const withAddress = addressMissing(record)
+    ? shown.details.map((item) =>
+        item.label === t('record.detail.email')
+          ? {
+              ...item,
+              value: (
+                <button
+                  type="button"
+                  className="text-blue"
+                  onClick={() => setAddingEmail(true)}
+                >
+                  {t('record.email.add')}
+                </button>
+              ),
+            }
+          : item,
+      )
+    : shown.details;
   // The last mail about the parcel, a tap from the sending log.
   // Only the agent who wrote the mail can act on it from the log; a
   // colleague's mail is said, not linked.
   const details = lastMail
     ? [
-        ...shown.details,
+        ...withAddress,
         {
           label: t('record.mail'),
           value:
@@ -278,7 +301,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
             ),
         },
       ]
-    : shown.details;
+    : withAddress;
   return (
     <FicheColisScreen
       {...shown}
@@ -332,6 +355,14 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       overlay={
         <>
           {sheet}
+          {addingEmail && record.contact && (
+            <ContactSheet
+              contact={record.contact}
+              addingEmail
+              onDone={() => setAddingEmail(false)}
+              onDismiss={() => setAddingEmail(false)}
+            />
+          )}
           {completing && (
             <CompleteParcel
               parcel={record.parcel}

@@ -113,7 +113,7 @@ describe('toParcelRow', () => {
     expect(partial?.detail).toBe('Studio, 1 sur 3 colis UPS');
   });
 
-  it('falls back to the contact, then to the name read on the label', () => {
+  it('falls back to the contact, said « Sans e-mail » without an address, then to the name read on the label', () => {
     const contact = toParcelRow(
       parcel({ contactId: livreur.id, readName: 'ATELIER RG' }),
       context,
@@ -124,7 +124,16 @@ describe('toParcelRow', () => {
       recipient: 'Atelier Rive gauche',
       department: '',
     });
-    expect(contact?.note).toBeUndefined();
+    expect(contact?.note).toBe('Sans e-mail');
+    const gone = { ...livreur, deletedAt: NOW };
+    expect(
+      toParcelRow(
+        parcel({ contactId: livreur.id }),
+        { ...context, contacts: new Map([[livreur.id, gone]]) },
+        NOW,
+        t,
+      )?.note,
+    ).toBeUndefined();
 
     const unknown = toParcelRow(
       parcel({

@@ -233,6 +233,31 @@ export function damageLine(
     : undefined;
 }
 
+/**
+ * A contact outside the directory with no address, and none typed on the
+ * parcel (« Destinataire sans e-mail »): nobody can be told by mail yet.
+ */
+export function addressMissing({
+  parcel,
+  person,
+  contact,
+}: {
+  parcel: Pick<LocalParcel, 'status' | 'notificationEmail'>;
+  person?: LocalDirectoryPerson;
+  contact?: LocalContact;
+}): boolean {
+  return (
+    (parcel.status === 'a_completer' ||
+      parcel.status === 'recu' ||
+      parcel.status === 'notifie') &&
+    !person &&
+    contact !== undefined &&
+    !contact.deletedAt &&
+    !contact.email &&
+    !parcel.notificationEmail
+  );
+}
+
 /** The list row of a parcel drawn in `state`, wherever it is listed. */
 export function describeParcel(
   parcel: LocalParcel,
@@ -269,7 +294,9 @@ export function describeParcel(
   const note =
     !person && !contact && parcel.readName
       ? t('parcel.readName', { name: parcel.readName })
-      : undefined;
+      : addressMissing({ parcel, person, contact })
+        ? t('contact.noEmail')
+        : undefined;
 
   return {
     id: parcel.id,

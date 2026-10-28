@@ -29,6 +29,7 @@ import type {
 import { fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
+  addressMissing,
   carrierLabel,
   DAY_MS,
   formatAgo,
@@ -38,6 +39,7 @@ import {
   shortDate,
   startOfDay,
 } from '#/features/parcels/model';
+import { outsideDetail } from '#/features/recipient/options';
 import { groupTyped } from '#/features/scan/typed';
 
 /** A parcel's record as the local database holds it. */
@@ -238,7 +240,10 @@ function details(
     ...optional(t('record.detail.service'), parcel.carrierService),
     ...optional(t('record.detail.reference'), parcel.reference),
     ...optional(t('record.detail.location'), parcel.location),
-    ...optional(t('record.detail.email'), email),
+    ...optional(
+      t('record.detail.email'),
+      addressMissing(record) ? t('contact.noEmail') : email,
+    ),
     {
       label: t('record.detail.note'),
       value: parcel.notes ?? t('record.value.none'),
@@ -428,12 +433,16 @@ export function describeRecord(
   const recipient = person
     ? fullName(person)
     : (contact?.name ?? t('parcel.recipient.unknown'));
-  const place =
-    person?.department ??
-    parcel.department ??
-    (!person && !contact && parcel.readName
-      ? t('parcel.readName', { name: parcel.readName })
-      : '');
+  const place = person
+    ? (person.department ?? parcel.department ?? '')
+    : contact
+      ? outsideDetail({
+          department: parcel.department ?? contact.department ?? null,
+        })
+      : (parcel.department ??
+        (parcel.readName
+          ? t('parcel.readName', { name: parcel.readName })
+          : ''));
   return {
     recipient,
     place,

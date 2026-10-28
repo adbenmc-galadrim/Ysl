@@ -501,6 +501,7 @@ export const fr = {
   'recipient.outside': 'Hors annuaire',
   'recipient.outside.in': 'Hors annuaire, {{department}}',
   'contact.noEmail': 'Sans e-mail',
+  'record.email.add': 'Sans e-mail · Ajouter',
   'contact.edit.title': 'Modifier le contact',
   'contact.edit.description':
     'Proposé à la réception de ses colis, sur tous les iPhone.',
