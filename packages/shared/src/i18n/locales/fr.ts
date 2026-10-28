@@ -454,6 +454,7 @@ export const fr = {
   'settings.group.steering': 'Pilotage',
   'settings.export': 'Rapports et export',
   'settings.handovers': 'Journal des remises',
+  'export.handover.delegate': '{{name}} (retiré par {{delegate}})',
   'journal.today': 'Aujourd’hui',
   'journal.yesterday': 'Hier',
   'journal.summary': '{{count}} colis · {{method}}',
