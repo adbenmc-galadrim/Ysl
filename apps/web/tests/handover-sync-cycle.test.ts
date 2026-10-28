@@ -39,7 +39,8 @@ const { loadParcelRecord } =
 const { describeRecord } = await import('#/features/parcels/record');
 const { createTranslator, DEFAULT_LOCALE } = await import('@repo/shared/i18n');
 const { createSyncEngine } = await import('#/features/sync/engine');
-const { openTestDatabase, parcelRow, personRow, pickupCodeRow } =
+const { mergeContact } = await import('#/features/directory/contacts');
+const { contactRow, openTestDatabase, parcelRow, personRow, pickupCodeRow } =
   await import('./helpers/local-rows');
 
 type Db = Awaited<ReturnType<typeof openTestDatabase>>;
@@ -376,5 +377,40 @@ describe('a pickup code between two iPhones (F41)', () => {
     expect(conflicts).toEqual([
       { recipientName: 'Nora Haddad', byMe: false, count: 2 },
     ]);
+  });
+
+  it('moves a merged contact’s code to the person on the server, one open code left', async () => {
+    const desk = iphone(first, KARIM);
+    const outside = contactRow({ name: 'Nora H.', nameNorm: 'nora h' });
+    const token = newPickupToken();
+    const older = await pickupCodeRow(
+      { personId: nora.id },
+      { pin: '1111', now: new Date(Date.now() - 60_000) },
+    );
+    const latest = await pickupCodeRow(
+      { contactId: outside.id },
+      { token, pin: '2222', now: new Date() },
+    );
+    await commitLocal(first, {
+      upserts: [
+        { entity: 'contact', row: outside },
+        { entity: 'pickup_code', row: older },
+        { entity: 'pickup_code', row: latest },
+      ],
+    });
+    await desk.syncNow({ force: true });
+
+    await mergeContact(first, outside.id, nora.id, { agentId: KARIM });
+    const run = await desk.syncNow({ force: true });
+    const open = (
+      await server
+        .select()
+        .from(schema.pickupCode)
+        .where(eq(schema.pickupCode.personId, nora.id))
+    ).filter((row) => !row.deletedAt && !row.usedAt);
+
+    expect(run).toMatchObject({ status: 'idle', rejected: 0 });
+    expect(open.map((row) => row.id)).toEqual([latest.id]);
+    expect((await lookupPickupText(first, token)).status).toBe('active');
   });
 });
