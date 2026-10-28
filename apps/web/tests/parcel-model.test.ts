@@ -1,10 +1,8 @@
 import { createTranslator } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
 import {
-  DAY_MS,
   formatAgo,
   homeState,
-  LATE_AFTER_MS,
   toParcelRow,
   type RecipientContext,
 } from '#/features/parcels/model';
@@ -12,6 +10,8 @@ import { contactRow, NOW, parcelRow, personRow } from './helpers/local-rows';
 
 const t = createTranslator('fr');
 const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3600_000);
+/** A day of October 2026, at 10 a.m.: NOW is Saturday the 24th. */
+const day = (date: number) => new Date(2026, 9, date, 10);
 const parcel = parcelRow;
 const camille = personRow();
 const livreur = contactRow();
@@ -30,9 +30,6 @@ describe('homeState', () => {
     expect(
       homeState(parcel({ status: 'notifie', notifiedAt: hoursAgo(47) }), NOW),
     ).toBe('notified');
-    expect(
-      homeState(parcel({ status: 'notifie', notifiedAt: hoursAgo(49) }), NOW),
-    ).toBe('late');
     expect(
       homeState(
         parcel({ status: 'remis', deliveredAt: hoursAgo(2), deliveredBy: 'a' }),
@@ -53,24 +50,72 @@ describe('homeState', () => {
     expect(homeState(parcel({ deletedAt: NOW }), NOW)).toBeUndefined();
   });
 
-  it('counts the wait from the last notification, the days from the first', () => {
+  it('calls a reminder due on the second working day, not 48 hours later', () => {
+    // NOW is Saturday 24 October: a notice of Thursday is due on Monday.
+    const thursday = parcel({ status: 'notifie', notifiedAt: day(22) });
+    expect(homeState(thursday, NOW)).toBe('notified');
+    expect(toParcelRow(thursday, context, NOW, t)).toMatchObject({
+      remindDue: false,
+      status: 'Notifié il y a 2 jours',
+    });
+    const wednesday = parcel({ status: 'notifie', notifiedAt: day(21) });
+    expect(toParcelRow(wednesday, context, NOW, t)).toMatchObject({
+      state: 'notified',
+      remindDue: true,
+      status: 'Notifié il y a 3 jours, à relancer',
+    });
+  });
+
+  it('is « en souffrance » from the fifth working day without reminders', () => {
+    expect(
+      homeState(parcel({ status: 'notifie', notifiedAt: day(19) }), NOW),
+    ).toBe('notified');
+    const friday = parcel({ status: 'notifie', notifiedAt: day(16) });
+    expect(toParcelRow(friday, context, NOW, t)).toMatchObject({
+      state: 'late',
+      remindDue: true,
+      status: 'En attente depuis 8 jours',
+    });
+  });
+
+  it('counts the reminders from the sent mails, two working days after the last', () => {
     const reminded = parcel({
       status: 'notifie',
-      notifiedAt: new Date(NOW.getTime() - LATE_AFTER_MS - DAY_MS),
-      lastNotifiedAt: hoursAgo(20),
+      notifiedAt: day(16),
+      lastNotifiedAt: day(22),
     });
-    expect(homeState(reminded, NOW)).toBe('notified');
-    expect(toParcelRow(reminded, context, NOW, t)?.status).toBe('Notifié hier');
+    const recent = new Map([[reminded.id, [day(20), day(22)]]]);
+    expect(toParcelRow(reminded, context, NOW, t, recent)).toMatchObject({
+      state: 'notified',
+      remindDue: false,
+      status: 'Relancé il y a 2 jours',
+    });
+    const older = new Map([[reminded.id, [day(19), day(20)]]]);
+    expect(
+      toParcelRow(
+        { ...reminded, lastNotifiedAt: day(20) },
+        context,
+        NOW,
+        t,
+        older,
+      ),
+    ).toMatchObject({
+      state: 'late',
+      remindDue: false,
+      status: 'En attente depuis 8 jours, relancé 2 fois',
+    });
+  });
 
-    const stillLate = parcel({
+  it('counts a later notification as one reminder without the mails', () => {
+    const reminded = parcel({
       status: 'notifie',
-      notifiedAt: new Date(NOW.getTime() - 5 * DAY_MS),
-      lastNotifiedAt: new Date(NOW.getTime() - 3 * DAY_MS),
+      notifiedAt: day(16),
+      lastNotifiedAt: day(20),
     });
-    expect(homeState(stillLate, NOW)).toBe('late');
-    expect(toParcelRow(stillLate, context, NOW, t)?.status).toBe(
-      'En attente depuis 5 jours, relancé il y a 3 jours',
-    );
+    expect(toParcelRow(reminded, context, NOW, t)).toMatchObject({
+      state: 'late',
+      status: 'En attente depuis 8 jours, relancé 1 fois',
+    });
   });
 });
 

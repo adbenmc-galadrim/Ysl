@@ -9,6 +9,7 @@ import {
   homeState,
   type RecipientContext,
   recipientOf,
+  type ReminderDates,
   shortDate,
   startOfDay,
 } from '#/features/parcels/model';
@@ -48,11 +49,12 @@ export type SearchEntry = {
 export function searchState(
   parcel: LocalParcel,
   now: Date,
+  dates?: ReminderDates,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   if (parcel.status === 'remis') return 'handedOver';
   if (parcel.status === 'retourne') return 'returned';
-  return homeState(parcel, now);
+  return homeState(parcel, now, dates);
 }
 
 /**
@@ -91,10 +93,11 @@ export function toSearchEntry(
   context: RecipientContext,
   now: Date,
   t: TranslateFn,
+  dates?: ReminderDates,
 ): SearchEntry | undefined {
-  const state = searchState(parcel, now);
+  const state = searchState(parcel, now, dates);
   if (!state) return undefined;
-  const described = describeParcel(parcel, state, context, now, t);
+  const described = describeParcel(parcel, state, context, now, t, dates);
   const status = datedStatus(parcel, state, now, t);
   const row = status ? { ...described, status } : described;
   const { person, contact } = recipientOf(parcel, context);

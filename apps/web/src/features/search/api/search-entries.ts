@@ -1,6 +1,7 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
+import { loadReminderDates } from '#/features/parcels/reminders';
 import {
   type SearchEntry,
   toSearchEntry,
@@ -17,8 +18,11 @@ export async function listSearchEntries(
   now = new Date(),
 ): Promise<SearchEntry[]> {
   const parcels = await database.parcel.toArray();
-  const context = await loadRecipientContext(database, parcels);
+  const [context, dates] = await Promise.all([
+    loadRecipientContext(database, parcels),
+    loadReminderDates(database, parcels),
+  ]);
   return parcels.flatMap(
-    (parcel) => toSearchEntry(parcel, context, now, t) ?? [],
+    (parcel) => toSearchEntry(parcel, context, now, t, dates) ?? [],
   );
 }

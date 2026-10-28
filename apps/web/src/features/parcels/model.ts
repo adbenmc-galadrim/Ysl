@@ -1,5 +1,6 @@
 import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
+import { reminderState, type ReminderState } from '@repo/contract/reminders';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
 import type {
@@ -11,13 +12,6 @@ import type {
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
 export const DAY_MS = 24 * HOUR_MS;
-
-/**
- * A notified parcel nobody came for in two days needs chasing (D12: first
- * reminder at J+2). Counted from the last notification, as the server's
- * overdue index does. A mailroom setting may replace this constant later.
- */
-export const LATE_AFTER_MS = 2 * DAY_MS;
 
 export type RecipientContext = {
   people: ReadonlyMap<string, LocalDirectoryPerson>;
@@ -38,10 +32,36 @@ function lastNotification(parcel: LocalParcel): Date {
   return parcel.lastNotifiedAt ?? firstNotification(parcel);
 }
 
+/** The reminders each parcel had, from the sent mails on the iPhone (`loadReminderDates`). */
+export type ReminderDates = ReadonlyMap<string, readonly Date[]>;
+
+/**
+ * Where a notified parcel stands with its reminders (F37, D12), by the
+ * rule of `@repo/contract/reminders`. The sent mails on the iPhone date
+ * the reminders; without them, a reminder later than the notice still
+ * counts once (`lastNotifiedAt`).
+ */
+export function reminderOf(
+  parcel: LocalParcel,
+  now: Date,
+  dates?: ReminderDates,
+): ReminderState | undefined {
+  if (parcel.deletedAt || parcel.status !== 'notifie') return undefined;
+  const notifiedAt = firstNotification(parcel);
+  const known = (dates?.get(parcel.id) ?? []).filter((at) => at > notifiedAt);
+  const last = parcel.lastNotifiedAt;
+  const reminders =
+    last && last > notifiedAt && !known.some((at) => at >= last)
+      ? [...known, last]
+      : known;
+  return reminderState({ notifiedAt, reminders }, now);
+}
+
 /** Where the parcel sits on the home list; nothing when it is not shown. */
 export function homeState(
   parcel: LocalParcel,
   now: Date,
+  dates?: ReminderDates,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   switch (parcel.status) {
@@ -50,9 +70,7 @@ export function homeState(
     case 'recu':
       return 'toNotify';
     case 'notifie':
-      return now.getTime() - lastNotification(parcel).getTime() >= LATE_AFTER_MS
-        ? 'late'
-        : 'notified';
+      return reminderOf(parcel, now, dates)?.late ? 'late' : 'notified';
     case 'remis':
       return parcel.deliveredAt && parcel.deliveredAt >= startOfDay(now)
         ? 'handedOver'
@@ -155,6 +173,7 @@ function statusLine(
   state: ParcelState,
   now: Date,
   t: TranslateFn,
+  dates?: ReminderDates,
 ): string {
   switch (state) {
     case 'incomplete':
@@ -164,19 +183,21 @@ function statusLine(
         time: formatTime(parcel.receivedAt),
       });
     case 'notified':
-      return t('parcel.status.notified', {
-        ago: formatAgo(lastNotification(parcel), now, t),
-      });
     case 'late': {
-      const first = firstNotification(parcel);
-      const last = lastNotification(parcel);
-      const days = Math.floor((now.getTime() - first.getTime()) / DAY_MS);
-      return last > first
-        ? t('parcel.status.lateReminded', {
-            days,
-            ago: formatAgo(last, now, t),
-          })
-        : t('parcel.status.late', { days });
+      const reminder = reminderOf(parcel, now, dates);
+      const days = Math.floor(
+        (now.getTime() - firstNotification(parcel).getTime()) / DAY_MS,
+      );
+      if (state === 'late') {
+        return reminder?.sent
+          ? t('parcel.status.lateReminded', { days, count: reminder.sent })
+          : t('parcel.status.late', { days });
+      }
+      const ago = formatAgo(lastNotification(parcel), now, t);
+      if (reminder?.due) return t('parcel.status.remindDue', { ago });
+      return reminder?.sent
+        ? t('parcel.status.reminded', { ago })
+        : t('parcel.status.notified', { ago });
     }
     case 'handedOver':
       return t('parcel.status.delivered', {
@@ -198,15 +219,23 @@ export function carrierLabel(
     : t('parcel.carrier.unknown');
 }
 
+/** A row of the home list, and whether a reminder is due for its parcel (F37). */
+export type HomeParcel = ParcelRow & { remindDue: boolean };
+
 /** The list row of a local parcel; nothing when the home list leaves it out. */
 export function toParcelRow(
   parcel: LocalParcel,
   context: RecipientContext,
   now: Date,
   t: TranslateFn,
-): ParcelRow | undefined {
-  const state = homeState(parcel, now);
-  return state && describeParcel(parcel, state, context, now, t);
+  dates?: ReminderDates,
+): HomeParcel | undefined {
+  const state = homeState(parcel, now, dates);
+  if (!state) return undefined;
+  return {
+    ...describeParcel(parcel, state, context, now, t, dates),
+    remindDue: reminderOf(parcel, now, dates)?.due ?? false,
+  };
 }
 
 /** Who the parcel is for, as the rows name them. */
@@ -265,6 +294,7 @@ export function describeParcel(
   context: RecipientContext,
   now: Date,
   t: TranslateFn,
+  dates?: ReminderDates,
 ): ParcelRow {
   const { person, contact } = recipientOf(parcel, context);
   const recipient = person
@@ -305,7 +335,7 @@ export function describeParcel(
     carrier,
     last4,
     state,
-    status: statusLine(parcel, state, now, t),
+    status: statusLine(parcel, state, now, t, dates),
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,
     damage: damageLine(parcel, t),
