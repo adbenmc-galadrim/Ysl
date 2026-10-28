@@ -11,6 +11,12 @@ import {
   isActiveCode,
   type PickupRefusal,
 } from '#/features/handover/pickup-lookup';
+import {
+  deleteProof,
+  type ProofInput,
+  saveProof,
+  signedMethod,
+} from '#/features/handover/proofs';
 import { loadHandoverPerson } from '#/features/handover/recipient';
 import type { RemiseColisSearch } from '#/features/handover/route';
 import {
@@ -18,6 +24,7 @@ import {
   listWaitingParcels,
 } from '#/features/handover/waiting';
 import { parcelEvent } from '#/features/parcels/events';
+import type { PhotoFiles } from '#/features/photos/opfs';
 
 /**
  * Why a handover was not written: the code no longer opens (a `PickupRefusal`,
@@ -45,12 +52,20 @@ export type HandoverOptions = {
   /** Kept on the handover: the journal names the agent on every iPhone; absent, the journal says « Vous » / « Un agent ». */
   agentName?: string | null;
   now?: Date;
+  /**
+   * The signature drawn before « Remettre », kept on this iPhone only. A
+   * signature that cannot be kept (no OPFS, a full disk) never stops the
+   * handover: it goes without one.
+   */
+  signature?: { proof: ProofInput; files: PhotoFiles };
 };
 
 export type HandoverDone = {
   handoverId: string;
   count: number;
   firstName: string;
+  /** The signature asked for could not be kept: the handover went without. */
+  signatureLost?: boolean;
 };
 
 const holds = (code: LocalPickupCode, { kind, id }: HandoverRecipient) =>
@@ -97,7 +112,7 @@ async function openCodeOf(
 export async function recordHandover(
   db: CourrierDatabase,
   input: HandoverInput,
-  { agentId, agentName, now = new Date() }: HandoverOptions,
+  { agentId, agentName, now = new Date(), signature }: HandoverOptions,
 ): Promise<HandoverDone> {
   const recipient: HandoverRecipient = { kind: input.kind, id: input.id };
   const person = await loadHandoverPerson(db, recipient);
@@ -111,8 +126,22 @@ export async function recordHandover(
   const parcels = waiting.filter((parcel) => ticked.has(parcel.id));
   if (parcels.length !== ticked.size) throw new HandoverRefusedError('stale');
 
+  const handoverId = newId();
+  const signed = signature
+    ? await saveProof(
+        db,
+        signature.files,
+        handoverId,
+        signature.proof,
+        now,
+      ).catch((error: unknown) => {
+        console.warn('Signature not kept', error);
+        return undefined;
+      })
+    : undefined;
+
   const handover: LocalHandover = {
-    id: newId(),
+    id: handoverId,
     createdAt: now,
     updatedAt: now,
     deletedAt: null,
@@ -121,11 +150,13 @@ export async function recordHandover(
     contactId: recipient.kind === 'contact' ? recipient.id : null,
     recipientName: person.name,
     delegateName: null,
-    method: input.via,
+    method: signed ? signedMethod(input.via) : input.via,
     agentId,
     agentName: agentName?.trim() || null,
     at: now,
     cancelledAt: null,
+    hasSignature: !!signed,
+    hasPhoto: false,
   };
   const closed =
     parcels.length === waiting.length
@@ -153,10 +184,16 @@ export async function recordHandover(
       ? [{ entity: 'pickup_code', row: { ...closed, usedAt: now } } as const]
       : []),
   ];
-  await commitLocal(db, { upserts }, { now });
+  try {
+    await commitLocal(db, { upserts }, { now });
+  } catch (error) {
+    if (signed && signature) await deleteProof(db, signature.files, signed);
+    throw error;
+  }
   return {
     handoverId: handover.id,
     count: parcels.length,
     firstName: person.firstName,
+    ...(signature && !signed ? { signatureLost: true } : {}),
   };
 }

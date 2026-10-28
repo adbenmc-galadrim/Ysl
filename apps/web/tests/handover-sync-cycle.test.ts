@@ -32,6 +32,8 @@ const { settleDeliveryConflicts } =
 const { lookupPickupPin, lookupPickupText } =
   await import('#/features/handover/pickup-lookup');
 const { recordHandover } = await import('#/features/handover/record-handover');
+const { addHandoverProof } = await import('#/features/handover/proofs');
+const { MemoryFiles } = await import('./helpers/memory-files');
 const { searchForCode } = await import('#/features/handover/route');
 const { listHomeParcels } = await import('#/features/parcels/api/use-parcels');
 const { loadParcelRecord } =
@@ -209,6 +211,112 @@ describe('a handover between two iPhones', () => {
       expect.stringMatching(/^Remis à .*, QR vérifié$/),
       expect.stringMatching(/^Remis à .*, QR vérifié$/),
     ]);
+  });
+
+  it('carries the signature and photo flags to the other iPhone, never the files', async () => {
+    const files = new MemoryFiles();
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+
+    const done = await recordHandover(
+      first,
+      {
+        kind: 'person',
+        id: nora.id,
+        via: 'manuel',
+        at: Date.now(),
+        parcelIds: parcels.map((parcel) => parcel.id),
+      },
+      {
+        agentId: KARIM,
+        agentName: 'Karim Benali',
+        signature: {
+          proof: {
+            kind: 'signature',
+            blob: new Blob(['png']),
+            width: 9,
+            height: 9,
+          },
+          files,
+        },
+      },
+    );
+    await desk.syncNow({ force: true });
+    await addHandoverProof(first, files, done.handoverId, {
+      kind: 'photo',
+      blob: new Blob(['jpg']),
+      width: 9,
+      height: 9,
+    });
+    const run = await desk.syncNow({ force: true });
+
+    expect(run).toMatchObject({ status: 'idle', rejected: 0 });
+    const [handover] = await server
+      .select()
+      .from(schema.handover)
+      .where(eq(schema.handover.id, done.handoverId));
+    expect(handover).toMatchObject({
+      method: 'signature',
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    await other.syncNow({ force: true });
+    expect(await second.handover.get(done.handoverId)).toMatchObject({
+      method: 'signature',
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    expect(await second.handoverProof.count()).toBe(0);
+  });
+
+  it('settles a signed handover that another iPhone beat, its signature kept here', async () => {
+    const files = new MemoryFiles();
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+    const search = () => ({
+      kind: 'person' as const,
+      id: nora.id,
+      via: 'manuel' as const,
+      at: Date.now(),
+      parcelIds: parcels.map((parcel) => parcel.id),
+    });
+
+    await recordHandover(first, search(), {
+      agentId: KARIM,
+      agentName: 'Karim Benali',
+    });
+    await desk.syncNow({ force: true });
+    const lost = await recordHandover(second, search(), {
+      agentId: LINA,
+      agentName: NAMES[LINA]!,
+      signature: {
+        proof: {
+          kind: 'signature',
+          blob: new Blob(['png']),
+          width: 9,
+          height: 9,
+        },
+        files,
+      },
+    });
+    const run = await other.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 2 });
+    const settled = await second.handover.get(lost.handoverId);
+    expect(settled).toMatchObject({ method: 'signature', hasSignature: true });
+    expect(settled?.cancelledAt).toBeInstanceOf(Date);
+    await expect(
+      addHandoverProof(second, files, lost.handoverId, {
+        kind: 'photo',
+        blob: new Blob(['jpg']),
+        width: 9,
+        height: 9,
+      }),
+    ).rejects.toMatchObject({ reason: 'cancelled' });
   });
 
   it('settles a parcel another iPhone handed over first', async () => {
