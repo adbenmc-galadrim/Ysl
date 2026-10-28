@@ -27,7 +27,9 @@ export type TemplateText = { name: string; subject: string; body: string };
  * `mailto:` carries nothing else: the pickup code first and in clear, one
  * bullet per parcel, where and when, and a plain "reply to this mail" rather
  * than links Mail shows encoded. Signed by the agent for the mailroom,
- * without the house's name (D14); the QR goes with the share sheet.
+ * without the house's name (D14); the QR goes with the share sheet. The
+ * reminder (F37) says the same code again, the parcels still waiting and
+ * since when.
  */
 export const DEFAULT_TEMPLATES = {
   avis: {
@@ -47,6 +49,28 @@ export const DEFAULT_TEMPLATES = {
       '{consignes}',
       '',
       'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+      '',
+      '{agent}',
+      'Service Courrier',
+    ].join('\n'),
+  },
+  relance: {
+    name: 'Relance',
+    subject: 'Rappel : colis en attente de retrait – Service Courrier',
+    body: [
+      'Bonjour {prénom},',
+      '',
+      'Petit rappel : votre code de retrait reste {code}.',
+      '',
+      'Ces colis vous attendent toujours :',
+      '{colis}',
+      '{reserve}',
+      '',
+      'Où : {lieu}',
+      'Quand : {horaires}',
+      '{consignes}',
+      '',
+      'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous ? Répondez simplement à ce mail.',
       '',
       '{agent}',
       'Service Courrier',

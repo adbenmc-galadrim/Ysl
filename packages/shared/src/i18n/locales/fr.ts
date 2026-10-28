@@ -571,6 +571,15 @@ export const fr = {
   'settings.group.mail': 'E-mails',
   'settings.mailTemplates': 'Modèles d’e-mail',
   'mail.template.newName': 'Nouveau modèle',
+  'mail.template.type.avis': 'Avis de retrait',
+  'mail.template.type.relance': 'Relances',
+  'mail.template.type.resume_service': 'Résumés par service',
+  'mail.template.type.avis.note':
+    'Avis : il sert au premier e-mail, quand les colis arrivent.',
+  'mail.template.type.relance.note':
+    'Relance : il sert aux rappels des colis qui attendent leur retrait.',
+  'mail.template.type.resume_service.note':
+    'Résumé : il sert au récapitulatif envoyé à un service.',
   'mail.template.copyName': '{{name}} (copie)',
   'mail.template.untitled': 'Sans nom',
   'mail.template.previewNote':

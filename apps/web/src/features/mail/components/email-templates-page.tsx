@@ -25,7 +25,10 @@ export function EmailTemplatesPage() {
 
   return (
     <EmailTemplatesScreen
-      templates={templates}
+      templates={templates.map((template) => ({
+        ...template,
+        group: t(`mail.template.type.${template.type}`),
+      }))}
       onOpen={open}
       onCreate={() =>
         void createTemplate(db, t('mail.template.newName'), { userId })

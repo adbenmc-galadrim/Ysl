@@ -186,6 +186,42 @@ describe('template rendering', () => {
     );
   });
 
+  it('renders the reminder: the same code, the parcels and since when, signed neutral', () => {
+    const rendered = renderMail(DEFAULT_TEMPLATES.relance, {
+      ...mailValues({
+        firstName: 'Inès',
+        code: '4821',
+        parcels: ['FedEx ···3338, reçu le 19 oct.'],
+        agent: 'Karim Daoud',
+      }),
+      ...SAMPLE_PICKUP_VALUES,
+    });
+    expect(rendered.unknown).toEqual([]);
+    expect(rendered.missing).toEqual([]);
+    expect(rendered.subject).toBe(
+      'Rappel : colis en attente de retrait – Service Courrier',
+    );
+    expect(rendered.body).toBe(
+      [
+        'Bonjour Inès,',
+        '',
+        'Petit rappel : votre code de retrait reste 4821.',
+        '',
+        'Ces colis vous attendent toujours :',
+        '• FedEx ···3338, reçu le 19 oct.',
+        '',
+        'Où : Rez-de-chaussée, comptoir courrier',
+        'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
+        '',
+        'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous ? Répondez simplement à ce mail.',
+        '',
+        'Karim Daoud',
+        'Service Courrier',
+      ].join('\n'),
+    );
+    expect(`${rendered.subject}${rendered.body}`).not.toMatch(/Saint Laurent/i);
+  });
+
   it('names a single parcel without a number in the subject', () => {
     const rendered = renderMail(
       DEFAULT_TEMPLATES.avis,
