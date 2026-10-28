@@ -1,6 +1,7 @@
 import { HANDOVER_METHODS } from '@repo/contract/handover';
 import { relations, sql } from 'drizzle-orm';
 import {
+  boolean,
   check,
   index,
   pgTable,
@@ -28,6 +29,12 @@ export const handover = pgTable(
     agentName: text('agent_name'),
     at: timestamp('at', { withTimezone: true }).notNull(),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    /**
+     * A signature or a photo was taken at the handover. The files stay on the
+     * iPhone that took them (D8): the server only knows they exist.
+     */
+    hasSignature: boolean('has_signature').notNull().default(false),
+    hasPhoto: boolean('has_photo').notNull().default(false),
   },
   (table) => [
     ...syncConstraints('handover', table),

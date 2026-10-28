@@ -67,7 +67,14 @@ export type LocalParcel = Omit<
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
 export type LocalNotification = LocalRow<typeof notification.$inferSelect>;
 export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;
-export type LocalHandover = LocalRow<typeof handover.$inferSelect>;
+/** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */
+export type LocalHandover = Omit<
+  LocalRow<typeof handover.$inferSelect>,
+  'hasSignature' | 'hasPhoto'
+> & {
+  hasSignature?: boolean;
+  hasPhoto?: boolean;
+};
 export type LocalEvent = LocalRow<typeof event.$inferSelect>;
 export type LocalSetting = LocalRow<typeof setting.$inferSelect>;
 
