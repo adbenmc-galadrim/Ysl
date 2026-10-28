@@ -23,7 +23,8 @@ const PICKUP: readonly MailVariable[] = ['lieu', 'horaires'];
 
 /**
  * What the agent should know before the mail leaves: names outside the
- * list, the pickup not set in Réglages, a body longer than S5 tried.
+ * list, the pickup not set in Réglages (its lines left out), a body longer
+ * than S5 tried.
  */
 export function templateWarnings(
   rendered: RenderedMail,
@@ -47,7 +48,11 @@ export function templateWarnings(
         : t('mail.template.unknown.description'),
     });
   }
-  if (rendered.missing.some((name) => PICKUP.includes(name))) {
+  if (
+    [...rendered.missing, ...rendered.empty].some((name) =>
+      PICKUP.includes(name),
+    )
+  ) {
     warnings.push({
       title: t('mail.template.pickupMissing'),
       description: t('mail.template.pickupMissing.description'),

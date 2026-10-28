@@ -544,7 +544,7 @@ export const fr = {
     'Elle restera telle quelle dans l’e-mail. Vouliez-vous dire {{name}} ?',
   'mail.template.pickupMissing': 'Lieu ou horaires de retrait non renseignés',
   'mail.template.pickupMissing.description':
-    'Ils restent entre accolades dans l’e-mail tant qu’un administrateur ne les a pas saisis dans Réglages › Lieu et horaires de retrait.',
+    'Leurs lignes sont retirées de l’e-mail tant qu’un administrateur ne les a pas saisis dans Réglages › Lieu et horaires de retrait. Vous pouvez aussi les écrire dans le modèle.',
   'mail.template.tooLong': 'Message très long',
   'mail.template.tooLong.description':
     'Plus de {{max}} caractères : la messagerie de l’iPhone n’a pas été essayée au-delà.',
@@ -592,8 +592,10 @@ export const fr = {
   'mail.variable.nom': 'Nom du destinataire',
   'mail.variable.code': 'Code de retrait',
   'mail.variable.colis': 'Les colis, une puce par colis',
-  'mail.variable.lieu': 'Lieu de retrait (Réglages)',
-  'mail.variable.horaires': 'Horaires de retrait (Réglages)',
+  'mail.variable.nombre_colis': '« Colis » ou « 2 colis », pour l’objet',
+  'mail.variable.lieu': 'Lieu de retrait (Réglages), ligne retirée si vide',
+  'mail.variable.horaires':
+    'Horaires de retrait (Réglages), ligne retirée si vides',
   'mail.variable.consignes': 'Consignes (Réglages), ligne retirée si vide',
   'mail.variable.reserve':
     'Colis arrivés abîmés à signaler, ligne retirée s’il n’y en a pas',
@@ -602,9 +604,18 @@ export const fr = {
     'Lien « Ce n’est pas à moi » vers votre adresse',
   'mail.variable.lien_collegue':
     'Lien « Un collègue passera » vers votre adresse',
-  'mail.parcel.today': '{{name}}, reçu à {{time}}',
-  'mail.parcel.before': '{{name}}, reçu le {{date}}',
+  'mail.parcel.today': 'reçu à {{time}}',
+  'mail.parcel.before': 'reçu le {{date}}',
+  'mail.parcel.sender': 'de {{sender}}',
+  'mail.parcel.piece': '{{n}} pièce sur {{total}}',
+  'mail.parcel.pieces': '{{n}} pièces sur {{total}}',
   'notify.title': 'Notifier',
+  'notify.share': 'Partager avec le QR',
+  'notify.share.hint':
+    'Le texte et le QR de retrait partent par la feuille de partage ; saisissez l’adresse dans la messagerie.',
+  'notify.share.reason': 'Partage avec le QR annulé, e-mail abandonné',
+  'notify.share.refused':
+    'Partage avec le QR refusé par l’iPhone, e-mail abandonné',
   'notify.empty.title': 'Aucun e-mail à préparer',
   'notify.empty.description':
     'Les colis « À notifier » sans destinataire réglé attendent leur fiche.',

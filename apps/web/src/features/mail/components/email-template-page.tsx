@@ -20,12 +20,14 @@ import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import {
+  canDelete,
   deleteTemplate,
   duplicateTemplate,
   getTemplate,
   isPreset,
   restoreDefault,
   saveTemplate,
+  setDefaultTemplate,
   type EmailTemplateView,
 } from '#/features/mail/templates';
 import { templateWarnings } from '#/features/mail/warnings';
@@ -234,12 +236,22 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
             () => {},
           )
         }
+        isDefault={template.isDefault}
+        onMakeDefault={
+          template.isDefault
+            ? undefined
+            : () =>
+                void run(
+                  async () => setDefaultTemplate(db, await save(), options),
+                  () => setDraft(null),
+                )
+        }
         onRestore={
-          template.isDefault && !(isPreset(template) && !draft)
+          template.preset && !(isPreset(template) && !draft)
             ? () => setConfirm('restore')
             : undefined
         }
-        onDelete={template.isDefault ? undefined : () => setConfirm('delete')}
+        onDelete={canDelete(template) ? () => setConfirm('delete') : undefined}
         error={failed ? t('mail.template.saveFailed') : undefined}
         nameMaxLength={TEMPLATE_NAME_MAX}
         subjectMaxLength={TEMPLATE_SUBJECT_MAX}

@@ -18,6 +18,7 @@
     "./parcel-damage": "./src/parcel-damage.ts",
     "./parcel-event": "./src/parcel-event.ts",
     "./parcel-status": "./src/parcel-status.ts",
+    "./pickup": "./src/pickup.ts",
     "./recipient": "./src/recipient/index.ts",
     "./retention": "./src/retention.ts",
     "./settings": "./src/settings.ts",

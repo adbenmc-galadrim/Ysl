@@ -93,3 +93,4 @@ export * from '#icons';
 export * from '#screens';
 export { cn, cx, tv, type VariantProps } from '#lib/tv';
 export { usePageLock } from '#lib/page-lock';
+export { encodeQr } from '#lib/qr';

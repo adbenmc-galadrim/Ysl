@@ -14,7 +14,10 @@ import {
   type Upsert,
 } from '#/features/db/commit';
 import type { CourrierDatabase, LocalNotification } from '#/features/db/schema';
-import { pickupCodeWrites } from '#/features/mail/pickup-code';
+import {
+  pickupCodeWrites,
+  type PickupSecret,
+} from '#/features/mail/pickup-code';
 import { parcelEvent } from '#/features/parcels/events';
 
 export type PrepareNotification = {
@@ -25,9 +28,10 @@ export type PrepareNotification = {
   cc?: readonly string[];
   parcelIds: readonly string[];
   templateId: string | null;
-  target: MailTarget;
+  /** Null when the mail leaves by the share sheet: no app is chosen. */
+  target: MailTarget | null;
   /** The pickup code the mail quotes, made the recipient's in the same write. */
-  pickupPin?: string;
+  pickup?: PickupSecret;
 };
 
 export type NotificationOptions = { userId: string; now?: Date };
@@ -88,11 +92,11 @@ export async function prepareNotification(
     sentAt: null,
     failedReason: null,
   };
-  const codes = input.pickupPin
+  const codes = input.pickup
     ? await pickupCodeWrites(
         db,
         { personId: row.personId, contactId: row.contactId },
-        input.pickupPin,
+        input.pickup,
         { now },
       )
     : [];

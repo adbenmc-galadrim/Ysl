@@ -4,6 +4,7 @@ import {
   type MailTarget,
   type NotifyChange,
 } from '@repo/contract/mail';
+import { newPickupToken } from '@repo/contract/pickup';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -28,10 +29,15 @@ import {
   type AddressCard,
 } from '#/features/mail/fix-address';
 import { MailFallback } from '#/features/mail/components/mail-fallback';
-import { needsFallback } from '#/features/mail/fallback';
+import {
+  canShareFiles,
+  needsFallback,
+  shareMailWithFiles,
+} from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawPins } from '#/features/mail/pickup-code';
+import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
+import { pickupQrFile } from '#/features/mail/pickup-qr';
 import {
   mailsAbout,
   mailsOfBatch,
@@ -57,7 +63,7 @@ export type NotifierScope = { parcelId?: string; batchId?: string };
 
 type Session = {
   mails: RecipientMail[];
-  pins: string[];
+  secrets: PickupSecret[];
   templates: EmailTemplateView[];
   pickup: PickupSetting;
   now: Date;
@@ -79,14 +85,14 @@ async function openSession(
     : batchId
       ? mailsOfBatch(all, batchId)
       : all;
-  const [pins, templates, pickup] = await Promise.all([
-    drawPins(db, mails.length, { now }),
+  const [secrets, templates, pickup] = await Promise.all([
+    drawSecrets(db, mails.length, { now }),
     listTemplates(db, userId),
     readPickup(db),
   ]);
   return {
     mails,
-    pins,
+    secrets,
     templates: templates.filter((template) => template.type === 'avis'),
     pickup,
     now,
@@ -161,7 +167,7 @@ function AddAddressSheet({
   );
 }
 
-type Sent = { state: NotifierMailState; count?: number };
+type Sent = { state: NotifierMailState; count?: number; reason?: string };
 
 /**
  * One mail per recipient of the "À notifier" parcels (F34), of one
@@ -200,6 +206,10 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     target: MailTarget;
   } | null>(null);
   const busy = useRef(false);
+  // The page's QR, drawn before the tap: the share sheet opens only from
+  // the tap itself, with nothing awaited before it.
+  const [qr, setQr] = useState<{ token: string; file: File } | null>(null);
+  const token = opened?.secrets[index]?.token;
 
   useEffect(() => {
     let live = true;
@@ -211,13 +221,26 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     };
   }, [userId, parcelId, batchId]);
 
+  useEffect(() => {
+    if (!token) return;
+    let live = true;
+    void pickupQrFile(token)
+      .then((file) => {
+        if (live && canShareFiles([file])) setQr({ token, file });
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [token]);
+
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
     else void navigate({ to: '/' });
   };
 
   if (!opened) return null;
-  const { mails, pins, templates, pickup, now } = opened;
+  const { mails, secrets, templates, pickup, now } = opened;
   const mail = mails[index];
   if (!mail) {
     return (
@@ -234,7 +257,8 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
   }
 
   const template = pickTemplate(templates, templateId)!;
-  const code = pins[index] ?? null;
+  const secret = secrets[index];
+  const code = secret?.pin ?? null;
   const rendered = renderMail(
     template,
     recipientValues(mail, {
@@ -262,6 +286,16 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     });
   const last = index === mails.length - 1;
 
+  // A token is written once (`pickup_code_token_hash_idx`): a second try on
+  // this page, after a "no", quotes the same PIN with a new token.
+  const renewToken = () =>
+    setOpened({
+      ...opened,
+      secrets: secrets.map((other, at) =>
+        at === index ? { ...other, token: newPickupToken() } : other,
+      ),
+    });
+
   const send = (event: MouseEvent) => {
     if (!prepared || !message || !mail.address || busy.current) {
       event.preventDefault();
@@ -278,8 +312,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
       target: mailTarget,
-      pickupPin: code ?? undefined,
+      pickup: secret,
     });
+    renewToken();
     void (async () => {
       try {
         const row = await preparing;
@@ -296,6 +331,65 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
         await outbox.markOpened(row.id);
         await whenVisible();
         setAsking({ key: mail.key, id: row.id });
+      } catch {
+        setFailed(true);
+      } finally {
+        busy.current = false;
+      }
+    })();
+  };
+
+  const shareFile = qr && qr.token === secret?.token ? qr.file : null;
+
+  // The share sheet takes the text and the QR, never the address: the agent
+  // types it in the mail app (S5). The mail is recorded as for "Envoyer",
+  // without a mail app; a closed sheet gives it up, as the fallback does.
+  const share = () => {
+    if (!message || !shareFile || !mail.address || busy.current) return;
+    busy.current = true;
+    setFailed(false);
+    const sharing = shareMailWithFiles(message, [shareFile]);
+    const preparing = outbox.prepare({
+      type: template.type,
+      personId: mail.personId,
+      contactId: mail.contactId,
+      recipients: [mail.address],
+      parcelIds: mail.parcels.map(({ id }) => id),
+      templateId: template.stored ? template.id : null,
+      target: null,
+      pickup: secret,
+    });
+    renewToken();
+    const key = mail.key;
+    void (async () => {
+      try {
+        const row = await preparing;
+        const outcome = await sharing;
+        if (outcome === 'shared') {
+          await whenVisible();
+          setAsking({ key, id: row.id });
+          return;
+        }
+        await outbox.markFailed(
+          row.id,
+          t(
+            outcome === 'cancelled'
+              ? 'notify.share.reason'
+              : 'notify.share.refused',
+          ),
+        );
+        setDone((all) => ({
+          ...all,
+          [key]: {
+            state: 'failed',
+            reason:
+              outcome === 'blocked'
+                ? t('mail.fallback.shareBlocked')
+                : outcome === 'cancelled'
+                  ? t('mail.fallback.shareCancelled')
+                  : t('mail.fallback.shareUnavailable'),
+          },
+        }));
       } catch {
         setFailed(true);
       } finally {
@@ -348,7 +442,7 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
         : state === 'failed'
           ? {
               title: t('notify.notSent.title'),
-              description: t('notify.notSent.description'),
+              description: sent?.reason ?? t('notify.notSent.description'),
             }
           : undefined;
 
@@ -383,6 +477,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       }
       sendHref={prepared?.url}
       onSend={send}
+      shareLabel={t('notify.share')}
+      shareHint={t('notify.share.hint')}
+      onShare={shareFile && mail.address ? share : undefined}
       completeLabel={t('mails.fix.add')}
       onComplete={() => setAdding(true)}
       notice={notice}

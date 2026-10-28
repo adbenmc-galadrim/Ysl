@@ -1,6 +1,7 @@
 import type { AnyDb } from '@repo/db';
 import type { PGlite } from '@electric-sql/pglite';
 import { type SyncOp } from '@repo/contract/sync';
+import { presetTemplateId } from '@repo/contract/mail';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
@@ -772,6 +773,38 @@ describe('sync.push', () => {
       expect(results[0]?.message).toBe(
         'Le modèle par défaut ne se supprime pas ; il se rétablit.',
       );
+    });
+
+    it('keeps the template the app ships with, even once another is the default', async () => {
+      await db.update(schema.emailTemplate).set({ isDefault: false });
+      const id = await presetTemplateId(AGENT_ID, 'avis');
+      const preset = op('email_template', template({ id, isDefault: true }));
+      const chosen = op('email_template', template());
+      await push(sync, writer, { ops: [preset, chosen] });
+
+      const { results } = await push(sync, writer, {
+        ops: [
+          op('email_template', { ...preset.patch, id, isDefault: false }),
+          op('email_template', {
+            ...chosen.patch,
+            id: chosen.entityId,
+            isDefault: true,
+          }),
+          op('email_template', { id }, 'delete'),
+          op('email_template', { ...preset.patch, id, deletedAt: NOW }),
+          op('email_template', { id: chosen.entityId }, 'delete'),
+          op('email_template', {
+            ...chosen.patch,
+            id: chosen.entityId,
+            isDefault: false,
+          }),
+          op('email_template', { id: chosen.entityId }, 'delete'),
+        ],
+      });
+
+      expect(results.map((result) => result.status)).toEqual([
+        200, 200, 409, 409, 409, 200, 200,
+      ]);
     });
 
     const prepared = (

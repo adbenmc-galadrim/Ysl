@@ -65,12 +65,14 @@ reste acquise, une copie en retard ne la défait pas.
 ## Modèles et e-mails
 
 Les modèles d'e-mail (`email_template`) appartiennent à leur agent (D2) et les e-mails
-(`notification`) à qui les a préparés ; `sync.push` le vérifie avant d'écrire :
+(`notification`) à qui les a préparés. `sync.pull` ne renvoie à chaque agent que ses propres
+modèles ; `sync.push` vérifie avant d'écrire :
 
 | Cas                                                                                          | Statut | Message                        |
 | -------------------------------------------------------------------------------------------- | ------ | ------------------------------ |
 | modèle dont `owner_id` (envoyé ou en base) n'est pas l'agent qui pousse                      | 403    | `sync.op.templateOwner`        |
 | suppression du modèle par défaut (`delete`, ou `deleted_at` posé sur une ligne `is_default`) | 409    | `sync.op.defaultTemplate`      |
+| suppression du modèle livré (id `presetTemplateId`), même quand un autre est par défaut       | 409    | `sync.op.defaultTemplate`      |
 | second modèle par défaut du même agent et du même type (`email_template_default_idx`)        | 409    | `sync.op.defaultTemplateTwice` |
 | notification qui ne suit pas le contrat `notificationRow` (`@repo/contract/mail`)            | 400    | message générique              |
 | notification dont `prepared_by` n'est pas l'agent qui pousse                                 | 403    | `sync.op.notificationOwner`    |

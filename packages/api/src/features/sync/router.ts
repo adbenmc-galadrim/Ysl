@@ -13,7 +13,13 @@ export const syncRouter = router({
   pull: memberProcedure
     .input(pullInput)
     .output(pullOutput)
-    .query(({ ctx, input }) => pull(db, ctx.organizationId, input)),
+    .query(({ ctx, input }) =>
+      pull(
+        db,
+        { organizationId: ctx.organizationId, userId: ctx.session.user.id },
+        input,
+      ),
+    ),
   push: memberProcedure
     .input(pushInput)
     .output(pushOutput)

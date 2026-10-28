@@ -1,4 +1,5 @@
 import { renderMail, type MailMessage } from '@repo/contract/mail';
+import { newPickupToken } from '@repo/contract/pickup';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -183,7 +184,11 @@ function FixSheet({
       parcelIds,
       templateId: draft.template.stored ? draft.template.id : null,
       target,
-      pickupPin: draft.pin ?? undefined,
+      // A fresh token per try: a token is written once
+      // (`pickup_code_token_hash_idx`), and this mail carries no QR.
+      pickup: draft.pin
+        ? { pin: draft.pin, token: newPickupToken() }
+        : undefined,
     });
     const fixing = fixAddress(
       db,

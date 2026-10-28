@@ -1,5 +1,6 @@
 import {
   DEFAULT_TEMPLATES,
+  presetTemplateId,
   type DefaultTemplateType,
   type NotificationType,
   type TemplateText,
@@ -12,13 +13,16 @@ import type {
 } from '#/features/db/schema';
 
 /**
- * A template as the screens show it. The default one exists before anyone
- * saves it (`stored: false`): it is written the first time it changes.
+ * A template as the screens show it. The one the app ships (`preset`)
+ * exists before anyone saves it (`stored: false`): it is written the first
+ * time it changes. `isDefault`: the one every mail starts from, the preset
+ * until the agent picks another.
  */
 export type EmailTemplateView = TemplateText & {
   id: string;
   type: NotificationType;
   isDefault: boolean;
+  preset: boolean;
   stored: boolean;
 };
 
@@ -26,47 +30,22 @@ export type TemplateOptions = { userId: string; now?: Date };
 
 export class DefaultTemplateError extends Error {
   constructor(id: string) {
-    super(`Template ${id} is the default one: restore it, never delete it`);
+    super(`Template ${id} is the default or the shipped one: never deleted`);
     this.name = 'DefaultTemplateError';
   }
 }
 
-/**
- * The id of an agent's default template, the same on every iPhone: two
- * iPhones that each save it write the same row, never a second default
- * (`email_template_default_idx`). Shaped as a UUID v7, as every id is.
- */
-export async function defaultTemplateId(
-  ownerId: string,
-  type: NotificationType,
-): Promise<string> {
-  const digest = new Uint8Array(
-    await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(`email_template:default:${ownerId}:${type}`),
-    ),
-  ).slice(0, 16);
-  digest[6] = (digest[6]! & 0x0f) | 0x70;
-  digest[8] = (digest[8]! & 0x3f) | 0x80;
-  const hex = [...digest].map((byte) => byte.toString(16).padStart(2, '0'));
-  return [
-    hex.slice(0, 4),
-    hex.slice(4, 6),
-    hex.slice(6, 8),
-    hex.slice(8, 10),
-    hex.slice(10, 16),
-  ]
-    .map((part) => part.join(''))
-    .join('-');
-}
-
-const view = (row: LocalEmailTemplate): EmailTemplateView => ({
+const view = (
+  row: LocalEmailTemplate,
+  presetIds: ReadonlySet<string>,
+): EmailTemplateView => ({
   id: row.id,
   type: row.type,
   name: row.name,
   subject: row.subject,
   body: row.body,
   isDefault: row.isDefault,
+  preset: presetIds.has(row.id),
   stored: true,
 });
 
@@ -74,10 +53,11 @@ async function presets(ownerId: string): Promise<EmailTemplateView[]> {
   const types = Object.keys(DEFAULT_TEMPLATES) as DefaultTemplateType[];
   return Promise.all(
     types.map(async (type) => ({
-      id: await defaultTemplateId(ownerId, type),
+      id: await presetTemplateId(ownerId, type),
       type,
       ...DEFAULT_TEMPLATES[type],
       isDefault: true,
+      preset: true,
       stored: false,
     })),
   );
@@ -85,24 +65,34 @@ async function presets(ownerId: string): Promise<EmailTemplateView[]> {
 
 /**
  * The agent's templates, the default one first, then by name. Templates
- * belong to whoever wrote them (D2): a colleague's, pulled with the rest of
- * the mailroom, are not shown.
+ * belong to whoever wrote them (D2): a colleague's, pulled before the server
+ * kept them back, are not shown. A type left without a default (its default
+ * deleted from another iPhone) falls back on the preset.
  */
 export async function listTemplates(
   db: CourrierDatabase,
   ownerId: string,
 ): Promise<EmailTemplateView[]> {
+  const shipped = await presets(ownerId);
+  const presetIds = new Set(shipped.map(({ id }) => id));
   const rows = (await db.emailTemplate.toArray()).filter(
     (row) => row.ownerId === ownerId && !row.deletedAt,
   );
-  const stored = rows.map(view);
-  const missing = (await presets(ownerId)).filter(
-    (preset) =>
-      !stored.some((row) => row.isDefault && row.type === preset.type),
-  );
-  return [...missing, ...stored].sort(
+  const stored = rows.map((row) => view(row, presetIds));
+  const hasDefault = (type: NotificationType) =>
+    stored.some((row) => row.isDefault && row.type === type);
+  const all = [
+    ...shipped
+      .filter((preset) => !stored.some(({ id }) => id === preset.id))
+      .map((preset) => ({ ...preset, isDefault: !hasDefault(preset.type) })),
+    ...stored.map((row) =>
+      row.preset && !hasDefault(row.type) ? { ...row, isDefault: true } : row,
+    ),
+  ];
+  return all.sort(
     (a, b) =>
       Number(b.isDefault) - Number(a.isDefault) ||
+      Number(b.preset) - Number(a.preset) ||
       a.name.localeCompare(b.name, 'fr'),
   );
 }
@@ -127,15 +117,16 @@ export async function defaultTemplate(
   return found;
 }
 
-async function write(
+async function rowOf(
   db: CourrierDatabase,
   template: EmailTemplateView,
-  { userId, now = new Date() }: TemplateOptions,
-): Promise<EmailTemplateView> {
+  userId: string,
+  now: Date,
+): Promise<LocalEmailTemplate> {
   const existing = template.stored
     ? await db.emailTemplate.get(template.id)
     : undefined;
-  const row: LocalEmailTemplate = {
+  return {
     ...(existing ?? { createdAt: now, deletedAt: null }),
     id: template.id,
     type: template.type,
@@ -146,22 +137,39 @@ async function write(
     ownerId: userId,
     updatedAt: now,
   };
-  await commitLocal(
-    db,
-    { upserts: [{ entity: 'email_template', row }] },
-    { now },
-  );
-  return view(row);
 }
 
-/** Saves what the editor holds; the default one is written the first time. */
+/** Rows written in this order, in one commit: the order the server applies them. */
+async function write(
+  db: CourrierDatabase,
+  templates: readonly EmailTemplateView[],
+  { userId, now = new Date() }: TemplateOptions,
+): Promise<EmailTemplateView[]> {
+  const rows = await Promise.all(
+    templates.map((template) => rowOf(db, template, userId, now)),
+  );
+  await commitLocal(
+    db,
+    { upserts: rows.map((row) => ({ entity: 'email_template', row })) },
+    { now },
+  );
+  return templates.map((template) => ({ ...template, stored: true }));
+}
+
+const writeOne = async (
+  db: CourrierDatabase,
+  template: EmailTemplateView,
+  options: TemplateOptions,
+) => (await write(db, [template], options))[0]!;
+
+/** Saves what the editor holds; the preset is written the first time. */
 export async function saveTemplate(
   db: CourrierDatabase,
   template: EmailTemplateView,
   text: TemplateText,
   options: TemplateOptions,
 ): Promise<EmailTemplateView> {
-  return write(db, { ...template, ...text }, options);
+  return writeOne(db, { ...template, ...text }, options);
 }
 
 /** A new template, empty but for its name. */
@@ -170,7 +178,7 @@ export async function createTemplate(
   name: string,
   options: TemplateOptions,
 ): Promise<EmailTemplateView> {
-  return write(
+  return writeOne(
     db,
     {
       id: newId(),
@@ -179,6 +187,7 @@ export async function createTemplate(
       subject: '',
       body: '',
       isDefault: false,
+      preset: false,
       stored: false,
     },
     options,
@@ -192,11 +201,44 @@ export async function duplicateTemplate(
   name: string,
   options: TemplateOptions,
 ): Promise<EmailTemplateView> {
-  return write(
+  return writeOne(
     db,
-    { ...template, id: newId(), name, isDefault: false, stored: false },
+    {
+      ...template,
+      id: newId(),
+      name,
+      isDefault: false,
+      preset: false,
+      stored: false,
+    },
     options,
   );
+}
+
+/**
+ * Makes `template` the one every mail of its type starts from. The former
+ * default is written first, no longer default: the server holds one default
+ * per agent and type (`email_template_default_idx`). A preset never saved is
+ * written then, so it stays in the list to come back to.
+ */
+export async function setDefaultTemplate(
+  db: CourrierDatabase,
+  template: EmailTemplateView,
+  options: TemplateOptions,
+): Promise<EmailTemplateView> {
+  if (template.isDefault) return template;
+  const former = (await listTemplates(db, options.userId)).filter(
+    (row) => row.isDefault && row.type === template.type,
+  );
+  const written = await write(
+    db,
+    [
+      ...former.map((row) => ({ ...row, isDefault: false })),
+      { ...template, isDefault: true },
+    ],
+    options,
+  );
+  return written.at(-1)!;
 }
 
 /** Back to the text the app ships with; nothing else of the agent's changes. */
@@ -205,9 +247,14 @@ export async function restoreDefault(
   template: EmailTemplateView,
   options: TemplateOptions,
 ): Promise<EmailTemplateView> {
-  if (!template.isDefault) return template;
+  if (!template.preset) return template;
   const preset = DEFAULT_TEMPLATES[template.type as DefaultTemplateType];
-  return write(db, { ...template, ...preset }, options);
+  return writeOne(db, { ...template, ...preset }, options);
+}
+
+/** Any template but the default one and the preset, which the server keeps. */
+export function canDelete(template: EmailTemplateView): boolean {
+  return !template.isDefault && !template.preset;
 }
 
 export async function deleteTemplate(
@@ -215,7 +262,7 @@ export async function deleteTemplate(
   template: EmailTemplateView,
   { now = new Date() }: { now?: Date } = {},
 ): Promise<void> {
-  if (template.isDefault) throw new DefaultTemplateError(template.id);
+  if (!canDelete(template)) throw new DefaultTemplateError(template.id);
   await commitLocal(
     db,
     { deletes: [{ entity: 'email_template', id: template.id }] },
@@ -223,12 +270,12 @@ export async function deleteTemplate(
   );
 }
 
-/** Whether the default template still reads as the app ships it. */
+/** Whether the preset still reads as the app ships it. */
 export function isPreset(template: EmailTemplateView): boolean {
   const preset = DEFAULT_TEMPLATES[template.type as DefaultTemplateType];
   return (
     !!preset &&
-    template.isDefault &&
+    template.preset &&
     template.subject === preset.subject &&
     template.body === preset.body &&
     template.name === preset.name

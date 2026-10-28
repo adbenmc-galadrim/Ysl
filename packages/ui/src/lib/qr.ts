@@ -8,11 +8,15 @@ export const QR_LOGO = 0.2;
 
 /**
  * The modules of a QR code for `value`, rows top to bottom, `#` for dark and
- * `.` for light, without quiet zone. Error correction is level H, the only
- * one that still reads with a logo over the centre.
+ * `.` for light, without quiet zone. Error correction is level H by
+ * default, the only one that still reads with a logo over the centre; a
+ * code without a logo (the pickup QR) can take M and stay smaller.
  */
-export function encodeQr(value: string): string[] {
-  const { data } = encode(value, { ecc: 'H', border: 0 });
+export function encodeQr(
+  value: string,
+  ecc: 'L' | 'M' | 'Q' | 'H' = 'H',
+): string[] {
+  const { data } = encode(value, { ecc, border: 0 });
   return data.map((row) => row.map((dark) => (dark ? '#' : '.')).join(''));
 }
 

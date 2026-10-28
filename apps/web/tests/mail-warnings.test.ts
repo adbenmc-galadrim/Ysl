@@ -9,6 +9,7 @@ const rendered = {
   body: 'Bonjour',
   unknown: [],
   missing: [],
+  empty: [],
 };
 
 describe('templateWarnings', () => {
@@ -29,9 +30,14 @@ describe('templateWarnings', () => {
   });
 
   it('points out the pickup missing from Réglages, not another empty value', () => {
-    expect(templateWarnings({ ...rendered, missing: ['code'] }, t)).toEqual([]);
     expect(
-      templateWarnings({ ...rendered, missing: ['horaires'] }, t)[0]?.title,
+      templateWarnings(
+        { ...rendered, missing: ['code'], empty: ['reserve'] },
+        t,
+      ),
+    ).toEqual([]);
+    expect(
+      templateWarnings({ ...rendered, empty: ['horaires'] }, t)[0]?.title,
     ).toBe('Lieu ou horaires de retrait non renseignés');
   });
 

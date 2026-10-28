@@ -13,6 +13,8 @@ import {
   type TestDb,
 } from './helpers/pglite';
 
+const READER = { organizationId: ORGANIZATION_ID, userId: AGENT_ID };
+
 let client: PGlite;
 let db: TestDb;
 let sync: AnyDb;
@@ -48,14 +50,14 @@ function op(entity: SyncOp['entity'], patch: { id: string }): SyncOp {
 
 async function pullAll(): Promise<PullOutput['rows']> {
   const rows: PullOutput['rows'] = [];
-  let page = await pull(sync, ORGANIZATION_ID, {
+  let page = await pull(sync, READER, {
     cursor: null,
     page: null,
     limit: 100,
   });
   rows.push(...page.rows);
   while (page.next) {
-    page = await pull(sync, ORGANIZATION_ID, {
+    page = await pull(sync, READER, {
       cursor: null,
       page: page.next,
       limit: 100,

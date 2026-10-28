@@ -8,6 +8,7 @@ import {
   GroupedSection,
 } from '#components/grouped-list';
 import { NavBarAction } from '#components/nav-bar';
+import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 import { SettingsScreen } from '#screens/reglages/settings-screen';
 
@@ -33,9 +34,12 @@ export type EmailTemplateScreenProps = {
   tryHref?: string;
   onTry?: () => void;
   onDuplicate?: () => void;
-  /** Default template only: back to the text the app ships with. */
+  /** The template every mail starts from: said, and offered for any other. */
+  isDefault?: boolean;
+  onMakeDefault?: () => void;
+  /** The template the app ships with: back to its text. */
   onRestore?: () => void;
-  /** Any other template. */
+  /** Neither the default one nor the shipped one. */
   onDelete?: () => void;
   error?: string;
   nameMaxLength?: number;
@@ -69,6 +73,8 @@ export function EmailTemplateScreen({
   tryHref,
   onTry,
   onDuplicate,
+  isDefault,
+  onMakeDefault,
   onRestore,
   onDelete,
   error,
@@ -207,6 +213,32 @@ export function EmailTemplateScreen({
         >
           M’envoyer un essai
         </a>
+      )}
+      {(isDefault || onMakeDefault) && (
+        <GroupedSection
+          footer={
+            isDefault
+              ? 'Chaque e-mail part de ce modèle ; vous pouvez en choisir un autre au moment d’envoyer.'
+              : undefined
+          }
+        >
+          {isDefault ? (
+            <GroupedRow
+              title="Modèle par défaut"
+              selected
+              accessory={
+                <Icon
+                  name="tick"
+                  size={20}
+                  strokeWidth={2.4}
+                  className="text-blue"
+                />
+              }
+            />
+          ) : (
+            <GroupedRow title="Utiliser par défaut" onClick={onMakeDefault} />
+          )}
+        </GroupedSection>
       )}
       {(onDuplicate || onRestore || onDelete) && (
         <GroupedSection>

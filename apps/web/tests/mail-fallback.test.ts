@@ -7,6 +7,7 @@ import {
   notOpenedReason,
   otherTargets,
   shareMail,
+  shareMailWithFiles,
 } from '#/features/mail/fallback';
 import {
   DEFAULT_MAIL_TARGET,
@@ -135,6 +136,27 @@ describe('the fallback when the mail app did not open', () => {
     const refused = () =>
       Promise.reject(new DOMException('no gesture', 'NotAllowedError'));
     expect(await shareMail(message, { share: refused })).toBe('blocked');
+  });
+
+  it('shares the QR with the text when the sheet takes files, never otherwise', async () => {
+    const qr = new File(['png'], 'code-de-retrait.png', { type: 'image/png' });
+    const share = vi.fn<(data: ShareData) => Promise<void>>(() =>
+      Promise.resolve(),
+    );
+    const canShare = (data?: ShareData) => !!data?.files?.length;
+
+    expect(await shareMailWithFiles(message, [qr], { share, canShare })).toBe(
+      'shared',
+    );
+    expect(share).toHaveBeenCalledWith({
+      title: 'Des colis vous attendent',
+      text: 'Des colis vous attendent\n\nBonjour Nora,\n\n• Amazon ···4471',
+      files: [qr],
+    });
+    expect(
+      await shareMailWithFiles(message, [qr], { share, canShare: () => false }),
+    ).toBe('unavailable');
+    expect(share).toHaveBeenCalledTimes(1);
   });
 
   it('gives up with the name of the mail app that did not open', () => {

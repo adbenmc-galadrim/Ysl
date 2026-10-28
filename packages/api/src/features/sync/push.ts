@@ -2,6 +2,7 @@ import type { UserRole } from '@repo/contract/auth';
 import {
   canMoveNotification,
   notificationRow,
+  presetTemplateId,
   type NotificationStatus,
 } from '@repo/contract/mail';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
@@ -120,8 +121,10 @@ function checkSetting(op: SyncOp, { role }: Writer): void {
 }
 
 /**
- * Templates are each agent's own (D2): written by their owner only, and the
- * default one, which every mail falls back on, is restored, never deleted.
+ * Templates are each agent's own (D2): written by their owner only. The
+ * default one, which every mail falls back on, is not deleted while it is
+ * the default; the one the app ships with (`presetTemplateId`) is restored,
+ * never deleted, even once another took its place.
  */
 async function checkTemplate(
   tx: AnyDb,
@@ -132,6 +135,7 @@ async function checkTemplate(
     .select({
       ownerId: emailTemplate.ownerId,
       isDefault: emailTemplate.isDefault,
+      type: emailTemplate.type,
     })
     .from(emailTemplate)
     .where(
@@ -151,12 +155,18 @@ async function checkTemplate(
       'sync.op.templateOwner',
     );
   }
+  const deleting =
+    op.type === 'delete' || (op.patch.deletedAt ?? null) !== null;
+  if (!deleting) return;
+  const types = [op.type === 'upsert' ? op.patch.type : undefined, row?.type];
   const isDefault =
     row?.isDefault === true ||
     (op.type === 'upsert' && op.patch.isDefault === true);
-  const deleting =
-    op.type === 'delete' || (op.patch.deletedAt ?? null) !== null;
-  if (isDefault && deleting) {
+  let isPreset = false;
+  for (const type of types)
+    if (typeof type === 'string')
+      isPreset ||= op.entityId === (await presetTemplateId(userId, type));
+  if (isDefault || isPreset) {
     throw new SyncRejected(
       SYNC_STATUS.conflict,
       `email_template ${op.entityId} is a default template`,

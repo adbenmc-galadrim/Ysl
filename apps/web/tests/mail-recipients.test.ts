@@ -3,6 +3,11 @@ import { DEFAULT_TEMPLATES, renderMail } from '@repo/contract/mail';
 import { damageColumns } from '@repo/contract/parcel-damage';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
 import { newId } from '@repo/shared/id';
+import {
+  newPickupToken,
+  pickupPinHash,
+  pickupTokenHash,
+} from '@repo/contract/pickup';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
@@ -12,7 +17,7 @@ import {
   markSent,
   prepareNotification,
 } from '#/features/mail/notifications';
-import { drawPins, pinHash } from '#/features/mail/pickup-code';
+import { drawPins } from '#/features/mail/pickup-code';
 import {
   groupByRecipient,
   mailsAbout,
@@ -175,6 +180,9 @@ describe('the e-mail of one recipient', () => {
         parcelRow({
           carrier: 'Amazon',
           tracking: 'TBA0000004471',
+          senderName: 'Zalando',
+          pieceN: 2,
+          pieceTotal: 3,
           receivedAt: new Date(2026, 9, 24, 10, 15),
         }),
         parcelRow({
@@ -215,11 +223,14 @@ describe('the e-mail of one recipient', () => {
     );
 
     expect(rendered.missing).toEqual([]);
+    expect(rendered.subject).toBe(
+      '3 colis en attente de retrait – Service Courrier',
+    );
     expect(rendered.body).toContain('Bonjour Nora,');
     expect(rendered.body).toContain('Votre code de retrait : 0427');
     expect(rendered.body).toContain(
       [
-        '• Amazon ···4471, reçu à 10 h 15',
+        '• Amazon ···4471, de Zalando, 2 pièces sur 3, reçu à 10 h 15',
         '• UPS ···0622, reçu le 14 oct.',
         '• DHL ···7890, reçu à 10 h 42',
         'Arrivé abîmé : UPS ···0622, mouillé (coin)',
@@ -239,7 +250,7 @@ describe('the pickup code', () => {
       personId: nora.id,
       contactId: null,
       tokenHash: 'token',
-      pinHash: await pinHash('0001'),
+      pinHash: await pickupPinHash('0001'),
       expiresAt: new Date(NOW.getTime() + 1000),
       usedAt: null,
     });
@@ -265,7 +276,7 @@ describe('a mail from the tap to the confirmation', () => {
         parcelIds,
         templateId: null,
         target: 'mailto',
-        pickupPin: pin,
+        pickup: { pin, token: newPickupToken() },
       },
       { userId: 'agent-1', now: NOW },
     );
@@ -285,8 +296,9 @@ describe('a mail from the tap to the confirmation', () => {
       .toArray();
     const open = codes.filter((code) => !code.deletedAt);
     expect(open).toHaveLength(1);
-    expect(open[0]?.pinHash).toBe(await pinHash('4821'));
+    expect(open[0]?.pinHash).toBe(await pickupPinHash('4821'));
     expect(JSON.stringify(codes)).not.toContain('4821');
+    expect(JSON.stringify(codes)).not.toContain('YSL:RETRAIT:');
     const ops = (await db.outbox.toArray()).slice(before);
     expect(
       ops.map((op) => [op.entity, op.patch.deletedAt ? 'retired' : 'live']),
@@ -295,6 +307,30 @@ describe('a mail from the tap to the confirmation', () => {
       ['pickup_code', 'live'],
       ['notification', 'live'],
     ]);
+  });
+
+  it('keeps only the hash of the token the QR carries', async () => {
+    const parcel = parcelRow({ personId: nora.id });
+    await db.parcel.put(parcel);
+    const token = newPickupToken();
+
+    await prepareNotification(
+      db,
+      {
+        type: 'avis',
+        personId: nora.id,
+        recipients: [nora.email],
+        parcelIds: [parcel.id],
+        templateId: null,
+        target: null,
+        pickup: { pin: '4821', token },
+      },
+      { userId: 'agent-1', now: NOW },
+    );
+
+    const [code] = await db.pickupCode.toArray();
+    expect(code?.tokenHash).toBe(await pickupTokenHash(token));
+    expect(JSON.stringify(await db.outbox.toArray())).not.toContain(token);
   });
 
   it('notifies every parcel once the agent says the mail left', async () => {

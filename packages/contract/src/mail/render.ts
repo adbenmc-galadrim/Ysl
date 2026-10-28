@@ -10,6 +10,7 @@ export const MAIL_VARIABLES = [
   'nom',
   'code',
   'colis',
+  'nombre_colis',
   'lieu',
   'horaires',
   'consignes',
@@ -27,12 +28,13 @@ export type MailValues = Partial<Record<MailVariable, string>>;
 /**
  * `unknown`: names outside the list; `missing`: known names with nothing to
  * put in. Both stay in the text as typed, so a mail never leaves with a
- * silent hole.
+ * silent hole. `empty`: known names left empty on purpose, their line gone.
  */
 export type RenderedText = {
   text: string;
   unknown: string[];
   missing: MailVariable[];
+  empty: MailVariable[];
 };
 
 const PLACEHOLDER = /\{([\p{L}\p{N}_-]+)\}/gu;
@@ -41,22 +43,41 @@ export function isMailVariable(name: string): name is MailVariable {
   return (MAIL_VARIABLES as readonly string[]).includes(name);
 }
 
-const ALONE = /^\s*\{([\p{L}\p{N}_-]+)\}\s*$/u;
-
-/** A line that holds only a variable left empty on purpose (no instructions) goes. */
-function dropsLine(line: string, values: MailValues): boolean {
-  const name = ALONE.exec(line)?.[1];
-  return name !== undefined && isMailVariable(name) && values[name] === '';
+/**
+ * A line whose every variable is left empty on purpose goes, with the words
+ * around them: no "Où :" without a place, no blank line for no instructions.
+ */
+function emptyVariables(line: string, values: MailValues): MailVariable[] {
+  const names = [...line.matchAll(PLACEHOLDER)].map(([, name]) => name!);
+  return names.length > 0 &&
+    names.every((name) => isMailVariable(name) && values[name] === '')
+    ? (names as MailVariable[])
+    : [];
 }
 
 /** One pass: a value that holds braces is never read again. */
 export function renderText(text: string, values: MailValues): RenderedText {
   const unknown = new Set<string>();
   const missing = new Set<MailVariable>();
-  const kept = text
-    .split(/\r?\n/)
-    .filter((line) => !dropsLine(line, values))
-    .join('\n');
+  const empty = new Set<MailVariable>();
+  const lines: string[] = [];
+  let dropping = false;
+  for (const line of text.split(/\r?\n/)) {
+    const dropped = emptyVariables(line, values);
+    dropped.forEach((name) => empty.add(name));
+    if (dropped.length > 0) {
+      dropping = true;
+      continue;
+    }
+    // A block gone whole leaves one blank line between its neighbours, not
+    // two, and none at the very start.
+    if (dropping && !line.trim() && (!lines.length || !lines.at(-1)!.trim()))
+      continue;
+    dropping = false;
+    lines.push(line);
+  }
+  if (dropping) while (lines.length && !lines.at(-1)!.trim()) lines.pop();
+  const kept = lines.join('\n');
   const rendered = kept.replace(PLACEHOLDER, (match, name: string) => {
     if (!isMailVariable(name)) {
       unknown.add(name);
@@ -69,7 +90,12 @@ export function renderText(text: string, values: MailValues): RenderedText {
     }
     return value;
   });
-  return { text: rendered, unknown: [...unknown], missing: [...missing] };
+  return {
+    text: rendered,
+    unknown: [...unknown],
+    missing: [...missing],
+    empty: [...empty],
+  };
 }
 
 export type RenderedMail = {
@@ -77,6 +103,7 @@ export type RenderedMail = {
   body: string;
   unknown: string[];
   missing: MailVariable[];
+  empty: MailVariable[];
 };
 
 const union = <T>(a: readonly T[], b: readonly T[]) => [
@@ -94,6 +121,7 @@ export function renderMail(
     body: body.text,
     unknown: union(subject.unknown, body.unknown),
     missing: union(subject.missing, body.missing),
+    empty: union(subject.empty, body.empty),
   };
 }
 
@@ -148,14 +176,21 @@ const orNothing = (value: string | null | undefined) => {
 
 /**
  * `{lieu}`, `{horaires}`, `{consignes}`: what Réglages › Lieu et horaires says
- * (D13). No place or no hours is a gap to point out; no instructions is fine.
+ * (D13). Left empty there, their line leaves the mail: the agent may write
+ * them in the template itself, and the editor points the gap out.
  */
 export function pickupValues(pickup: PickupSetting): MailValues {
   return {
-    lieu: orNothing(pickup.place),
-    horaires: orNothing(formatPickupHours(pickup.hours)),
+    lieu: pickup.place.trim(),
+    horaires: formatPickupHours(pickup.hours),
     consignes: pickup.instructions.trim(),
   };
+}
+
+/** `{nombre_colis}`, the subject's first words: « Colis », « 2 colis ». */
+export function parcelCount(count: number): string | undefined {
+  if (count < 1) return undefined;
+  return count === 1 ? 'Colis' : `${count} colis`;
 }
 
 export const REPLY_NOT_MINE = {
@@ -217,6 +252,9 @@ export function mailValues(fields: MailFields): MailValues {
     nom: orNothing(fields.lastName),
     code,
     colis: orNothing(parcelBullets(fields.parcels)),
+    nombre_colis: parcelCount(
+      fields.parcels.filter((line) => line.trim()).length,
+    ),
     reserve: (fields.damages ?? []).join('\n'),
     ...(fields.pickup ? pickupValues(fields.pickup) : {}),
     agent: orNothing(fields.agent),
