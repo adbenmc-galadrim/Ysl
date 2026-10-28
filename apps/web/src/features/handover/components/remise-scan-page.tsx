@@ -52,6 +52,8 @@ export type RemiseScanPageProps = {
   onTypeCode: () => void;
   onSearchName: () => void;
   onClose: () => void;
+  /** The code of a handover no longer opened when it was written: why. */
+  refused?: Refusal;
 };
 
 /**
@@ -64,6 +66,7 @@ export function RemiseScanPage({
   onTypeCode,
   onSearchName,
   onClose,
+  refused,
 }: RemiseScanPageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const camera = useCameraState();
@@ -71,7 +74,7 @@ export function RemiseScanPage({
   const [opening, setOpening] = useState<'pending' | 'explain' | 'scan'>(() =>
     wasExplained() ? 'scan' : 'pending',
   );
-  const [refusal, setRefusal] = useState<Refusal>();
+  const [refusal, setRefusal] = useState<Refusal | undefined>(refused);
   const found = useRef(false);
 
   useEffect(() => {

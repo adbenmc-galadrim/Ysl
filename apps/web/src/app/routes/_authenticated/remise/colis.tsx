@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback } from 'react';
+import { useSession } from '#/features/auth/api/use-session';
 import { RemiseColisPage } from '#/features/handover/components/remise-colis-page';
+import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 import { parseRemiseColisSearch } from '#/features/handover/route';
 
 export const Route = createFileRoute('/_authenticated/remise/colis')({
@@ -10,6 +12,7 @@ export const Route = createFileRoute('/_authenticated/remise/colis')({
 
 function RemiseColisRoute() {
   const navigate = useNavigate();
+  const session = useSession();
   const search = Route.useSearch();
   const back = useCallback(
     () =>
@@ -18,12 +21,21 @@ function RemiseColisRoute() {
       }),
     [navigate, search.via],
   );
+  const refused = useCallback(
+    (refus: PickupRefusal) =>
+      void navigate({ to: '/remise', search: { refus } }),
+    [navigate],
+  );
+  const done = useCallback(() => void navigate({ to: '/' }), [navigate]);
   return (
     <RemiseColisPage
       key={`${search.kind}:${search.id}`}
       search={search}
+      agentId={session.user.id}
       onBack={back}
       onGone={back}
+      onRefused={refused}
+      onDone={done}
     />
   );
 }

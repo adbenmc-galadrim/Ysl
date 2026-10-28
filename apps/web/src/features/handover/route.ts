@@ -1,5 +1,6 @@
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { LocalPickupCode } from '#/features/db/schema';
+import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 
 /** How the person was identified: the `handover.method` the handover will record. */
 export type HandoverVia = 'qr' | 'pin' | 'manuel';
@@ -43,4 +44,22 @@ export function searchForCode(
   return code.personId
     ? { kind: 'person', id: code.personId, via, at, code: code.id }
     : { kind: 'contact', id: code.contactId ?? '', via, at, code: code.id };
+}
+
+/** Why the viewfinder was reopened: the code checked again no longer opens. */
+export type RemiseScanSearch = { refus?: PickupRefusal };
+
+const REFUSALS: readonly PickupRefusal[] = [
+  'ambiguous',
+  'expired',
+  'used',
+  'replaced',
+  'unknown',
+];
+
+export function parseRemiseScanSearch(
+  search: Record<string, unknown>,
+): RemiseScanSearch {
+  const refus = REFUSALS.find((r) => r === search.refus);
+  return refus ? { refus } : {};
 }

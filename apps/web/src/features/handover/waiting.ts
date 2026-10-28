@@ -1,3 +1,4 @@
+import { damageOf } from '@repo/contract/parcel-damage';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { RemiseParcel } from '@repo/ui';
@@ -76,7 +77,10 @@ export function receivedLine(date: Date, now: Date, t: TranslateFn): string {
   return t('handover.received.on', { date: shortDate(date, now) });
 }
 
-/** A parcel as the handover lists it; a registered one will ask for a signature. */
+/**
+ * A parcel as the handover lists it, with what to check on the shelf: who
+ * sent it, a reserve on its state; a registered one will ask for a signature.
+ */
 export function toRemiseParcel(
   parcel: LocalParcel,
   now: Date,
@@ -90,6 +94,8 @@ export function toRemiseParcel(
         ? parcel.tracking.slice(-4)
         : '',
     received: receivedLine(parcel.receivedAt, now, t),
+    ...(parcel.senderName ? { sender: parcel.senderName } : {}),
     registered: parcel.type === 'recommande',
+    damaged: damageOf(parcel) !== null,
   };
 }

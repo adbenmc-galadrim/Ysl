@@ -42,9 +42,9 @@ export const fr = {
     'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',
   'handover.verified.qr': 'QR code vérifié à {{time}}',
   'handover.verified.pin': 'Code vérifié à {{time}}',
-  'handover.verified.manuel': 'Choisi par le nom',
+  'handover.verified.manuel': 'Sans vérification',
+  'handover.signature.soon': 'bientôt',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
-  'handover.soon': 'La remise arrive bientôt dans l’app.',
   'handover.qr.notPickup': 'Ce n’est pas un QR de retrait',
   'handover.qr.notPickup.detail':
     'Visez le QR de l’e-mail « Colis en attente de retrait ».',
