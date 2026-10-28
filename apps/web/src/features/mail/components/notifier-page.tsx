@@ -85,7 +85,7 @@ type Session = {
   now: Date;
 };
 
-/** The mails that can be sent first, those without an address after (F25). */
+/** The mails that can be sent first, those without an address after (YSL-72). */
 const addressedFirst = (mails: RecipientMail[]) => [
   ...mails.filter((mail) => mail.address),
   ...mails.filter((mail) => !mail.address),
@@ -285,7 +285,9 @@ export function NotifierPage({
     sent?.code !== undefined
       ? 'sent'
       : !address
-        ? 'missing'
+        ? sent?.state === 'failed'
+          ? 'failed'
+          : 'missing'
         : (sent?.state ?? 'ready');
   const missingCount = mails.filter(
     (other) => !other.address && !relays[other.key] && !done[other.key]?.code,
@@ -332,6 +334,12 @@ export function NotifierPage({
     void (async () => {
       try {
         const row = await preparing;
+        // Whoever was chosen is offered first next time, even if the
+        // mail is confirmed later, from the sending log.
+        if (relay)
+          void recordRelay(db, { mail, relay, collects: false }).catch(
+            () => {},
+          );
         const outcome = await opening;
         if (needsFallback(outcome)) {
           setStayed({
@@ -379,6 +387,12 @@ export function NotifierPage({
     void (async () => {
       try {
         const row = await preparing;
+        // Whoever was chosen is offered first next time, even if the
+        // mail is confirmed later, from the sending log.
+        if (relay)
+          void recordRelay(db, { mail, relay, collects: false }).catch(
+            () => {},
+          );
         const outcome = await sharing;
         if (outcome === 'shared') {
           await whenVisible();

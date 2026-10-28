@@ -794,7 +794,7 @@ export const fr = {
     'Prévenu de vive voix : {{count}} colis passent « Notifié ».',
   'notify.voice.done': 'Prévenu de vive voix',
   'notify.voice.none':
-    'Ses colis ont déjà été prévenus ou remis depuis un autre iPhone : aucun code à transmettre.',
+    'Ses colis ont été prévenus ou remis entre-temps : aucun code à transmettre.',
   'notify.voice.reminder.one':
     'Relancé de vive voix : relance notée sur 1 colis.',
   'notify.voice.reminder.many':

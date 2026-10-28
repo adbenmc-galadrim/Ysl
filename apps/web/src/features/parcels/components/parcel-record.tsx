@@ -273,7 +273,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const handoverId = (record.handover ?? record.cancelledHandover)?.id;
   // « Sans e-mail »: the address goes on the contact, for this parcel and
   // the next ones, and the record shows it at once. A directory card left
-  // without one is only said: Notifier offers its ways (F25).
+  // without one is only said: Notifier offers its ways (YSL-72).
   const withAddress =
     addressMissing(record) && record.contact
       ? shown.details.map((item) =>
@@ -368,7 +368,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       onPrimaryAction={
         action?.kind === 'notify'
           ? () =>
-              void navigate({ to: '/notifier', search: { colis: parcelId } })
+              void navigate({
+                to: '/notifier',
+                search: addressMissing(record)
+                  ? { colis: parcelId, prevenir: true }
+                  : { colis: parcelId },
+              })
           : action?.kind === 'complete'
             ? () => setCompleting(true)
             : edit
