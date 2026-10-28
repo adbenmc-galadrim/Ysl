@@ -1,9 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import {
-  JournalRemisesScreen,
-  RemiseDetailScreen,
-} from '#screens/remise/journal-remises-screen';
+import { JournalRemisesScreen } from '#screens/remise/journal-remises-screen';
+import { RemiseDetailScreen } from '#screens/remise/remise-detail-screen';
 
 const meta = {
   title: 'Écrans/07 Remise/Journal des remises',

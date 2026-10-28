@@ -504,39 +504,41 @@ function handoverCard(
     ),
   );
   return {
-    items: [
-      { label: t('record.handover.to'), value: handover.recipientName },
-      ...(handover.delegateName
-        ? [
-            {
-              label: t('record.handover.delegate'),
-              value: handover.delegateName,
-            },
-          ]
-        : []),
-      {
-        label: t('record.handover.when'),
-        value: formatWhen(handover.at, now, t),
-      },
-      {
-        label: t('record.handover.agent'),
-        value: agentNameOf(handover, t, me),
-      },
-      {
-        label: t('record.handover.method'),
-        value: methodLabel(handover.method, t),
-      },
-      { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
-      ...(handover.cancelledAt
-        ? [
-            {
-              label: t('record.handover.cancelled'),
-              value: formatWhen(handover.cancelledAt, now, t),
-            },
-          ]
-        : []),
-    ],
+    items: handoverItems(handover, sync, { now, t, me }, { recipient: true }),
   };
+}
+
+/**
+ * The rows a handover is told in, on a parcel's record and in the journal:
+ * the recipient where the screen does not already name them, then who
+ * collected for them, when, which agent, how, where it stands with the
+ * server, and when it was cancelled where no banner says so.
+ */
+export function handoverItems(
+  handover: LocalHandover,
+  sync: RecordSync,
+  { now, t, me }: Pick<DescribeOptions, 'now' | 't' | 'me'>,
+  { recipient = false, cancelled = true } = {},
+): DetailsItem[] {
+  const row = (label: string, value: string): DetailsItem[] => [
+    { label, value },
+  ];
+  return [
+    ...(recipient ? row(t('record.handover.to'), handover.recipientName) : []),
+    ...(handover.delegateName
+      ? row(t('record.handover.delegate'), handover.delegateName)
+      : []),
+    ...row(t('record.handover.when'), formatWhen(handover.at, now, t)),
+    ...row(t('record.handover.agent'), agentNameOf(handover, t, me)),
+    ...row(t('record.handover.method'), methodLabel(handover.method, t)),
+    ...row(t('record.detail.sync'), t(`record.sync.${sync}`)),
+    ...(cancelled && handover.cancelledAt
+      ? row(
+          t('record.handover.cancelled'),
+          formatWhen(handover.cancelledAt, now, t),
+        )
+      : []),
+  ];
 }
 
 function action(parcel: LocalParcel): RecordAction | undefined {

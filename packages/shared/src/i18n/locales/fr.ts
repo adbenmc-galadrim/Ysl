@@ -460,6 +460,7 @@ export const fr = {
   'journal.delegate': '{{summary}}, retiré par {{name}}',
   'journal.detail': '{{time}} · {{agent}}',
   'journal.cancelled': 'Annulée à {{time}}',
+  'journal.cancelledLater': 'Annulée {{when}}',
   'journal.rejected': 'Refusée par le serveur',
   'journal.unsent': 'Pas encore envoyée au serveur',
   'journal.to': 'à {{name}}',

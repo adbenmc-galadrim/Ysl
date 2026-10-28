@@ -110,6 +110,17 @@ describe('the handover journal', () => {
     ]);
   });
 
+  it('dates a cancellation made another day', async () => {
+    await db.handover.put(
+      handoverRow({ at: day(23, 17, 40), cancelledAt: day(24, 9, 5) }),
+    );
+
+    const [entry] = journalSections(await loadJournal(db), '', NOW, t)[0]!
+      .entries;
+
+    expect(entry?.status).toBe('Annulée aujourd’hui à 9 h 05');
+  });
+
   it('says « Vous » to the agent of a handover kept without a name', async () => {
     await db.handover.put(handoverRow({ agentName: null, agentId: 'me' }));
     const items = await loadJournal(db);

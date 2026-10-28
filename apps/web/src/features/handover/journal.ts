@@ -1,7 +1,6 @@
 import { normalizeName } from '@repo/shared/text';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type {
-  DetailsItem,
   JournalRemise,
   JournalRemisesSection,
   RemiseDetailScreenProps,
@@ -22,7 +21,7 @@ import {
   methodLabel,
 } from '#/features/handover/entry';
 import { formatTime, startOfDay } from '#/features/parcels/model';
-import { formatWhen } from '#/features/parcels/record';
+import { formatWhen, handoverItems } from '#/features/parcels/record';
 import { dayTitle } from '#/features/search/search-index';
 
 /**
@@ -84,13 +83,20 @@ function summaryOf({ handover, count }: JournalItem, t: TranslateFn): string {
     : summary;
 }
 
-function stateOf({ handover, sync }: JournalItem, t: TranslateFn) {
+const lowerFirst = (text: string) =>
+  text.charAt(0).toLowerCase() + text.slice(1);
+
+function stateOf({ handover, sync }: JournalItem, now: Date, t: TranslateFn) {
   if (handover.cancelledAt) {
     return {
       state: 'cancelled' as const,
-      status: t('journal.cancelled', {
-        time: formatTime(handover.cancelledAt),
-      }),
+      status:
+        startOfDay(handover.cancelledAt).getTime() ===
+        startOfDay(handover.at).getTime()
+          ? t('journal.cancelled', { time: formatTime(handover.cancelledAt) })
+          : t('journal.cancelledLater', {
+              when: lowerFirst(formatWhen(handover.cancelledAt, now, t)),
+            }),
     };
   }
   if (sync === 'rejected') {
@@ -104,6 +110,7 @@ function stateOf({ handover, sync }: JournalItem, t: TranslateFn) {
 
 export function journalRow(
   item: JournalItem,
+  now: Date,
   t: TranslateFn,
   me?: string,
 ): JournalRemise {
@@ -117,7 +124,7 @@ export function journalRow(
       time: formatTime(handover.at),
       agent: agentNameOf(handover, t, me),
     }),
-    ...stateOf(item, t),
+    ...stateOf(item, now, t),
   };
 }
 
@@ -136,7 +143,7 @@ export function journalSections(
   for (const item of items) {
     if (!matchesQuery(item.handover, query)) continue;
     const title = dayTitle(startOfDay(item.handover.at), now, t);
-    const row = journalRow(item, t, me);
+    const row = journalRow(item, now, t, me);
     const last = sections.at(-1);
     if (last?.title === title) last.entries.push(row);
     else sections.push({ title, entries: [row] });
@@ -150,31 +157,20 @@ export function describeHandoverDetail(
   now: Date,
   t: TranslateFn,
   me?: string,
-): Omit<RemiseDetailScreenProps, 'onBack' | 'onParcel' | 'children'> {
-  const items: DetailsItem[] = [
-    ...(handover.delegateName
-      ? [{ label: t('record.handover.delegate'), value: handover.delegateName }]
-      : []),
-    {
-      label: t('record.handover.when'),
-      value: formatWhen(handover.at, now, t),
-    },
-    { label: t('record.handover.agent'), value: agentNameOf(handover, t, me) },
-    {
-      label: t('record.handover.method'),
-      value: methodLabel(handover.method, t),
-    },
-    { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
-  ];
+): Omit<RemiseDetailScreenProps, 'onBack' | 'onParcel'> {
+  const items = handoverItems(
+    handover,
+    sync,
+    { now, t, me },
+    { cancelled: false },
+  );
   const when = handover.cancelledAt && formatWhen(handover.cancelledAt, now, t);
   return {
     title: t('handover.confirm.title', { count: parcels.length }),
     subtitle: t('journal.to', { name: handover.recipientName }),
     ...(when
       ? {
-          cancelled: t('journal.cancelledOn', {
-            when: when.charAt(0).toLowerCase() + when.slice(1),
-          }),
+          cancelled: t('journal.cancelledOn', { when: lowerFirst(when) }),
         }
       : {}),
     items,

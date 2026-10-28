@@ -105,6 +105,19 @@ describe('describeConfirmation', () => {
     );
   });
 
+  it('says when the server refused the handover', async () => {
+    const view = describeConfirmation(
+      { ...(await handedOver('pin')), sync: 'rejected' },
+      true,
+      t,
+    );
+
+    expect(view.proofs.at(-1)).toEqual({
+      icon: 'alert',
+      label: 'Refusée par le serveur',
+    });
+  });
+
   it('leaves for Colis once the handover is gone or cancelled under it', async () => {
     const entry = await handedOver('pin');
 

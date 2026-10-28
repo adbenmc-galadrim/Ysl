@@ -1,17 +1,11 @@
-import type { ReactNode } from 'react';
-
-import { Banner } from '#components/banner';
-import { DetailsList, type DetailsItem } from '#components/details-list';
 import { EmptyState } from '#components/empty-state';
 import { IconTile, type IconTileProps } from '#components/icon-tile';
-import { LargeTitle } from '#components/large-title';
 import { ListRow, type ListRowLine } from '#components/list-row';
 import { NavBar } from '#components/nav-bar';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
 import type { IconName } from '#icons';
-import type { RemiseConfirmeeParcel } from '#screens/remise/remise-confirmee-screen';
 
 /**
  * Where a handover stands: kept, still on the iPhone, refused by the
@@ -131,74 +125,6 @@ export function JournalRemisesScreen({
           </div>
         </section>
       ))}
-    </Screen>
-  );
-}
-
-/** A parcel of the handover: "Zalando", "DPD ···4471". */
-export type RemiseDetailParcel = RemiseConfirmeeParcel;
-
-export type RemiseDetailScreenProps = {
-  /** "3 colis remis". */
-  title: string;
-  /** "à Nora Haddad". */
-  subtitle: string;
-  /** "Remise annulée aujourd’hui à 11 h 25". */
-  cancelled?: string;
-  items: DetailsItem[];
-  parcels: RemiseDetailParcel[];
-  onBack?: () => void;
-  onParcel?: (parcel: RemiseDetailParcel) => void;
-  children?: ReactNode;
-};
-
-/** One handover of the journal: its proof, then each parcel it lists. */
-export function RemiseDetailScreen({
-  title,
-  subtitle,
-  cancelled,
-  items,
-  parcels,
-  onBack,
-  onParcel,
-  children,
-}: RemiseDetailScreenProps) {
-  return (
-    <Screen>
-      <NavBar title="Remise" onBack={onBack} />
-      <LargeTitle
-        size="md"
-        title={title}
-        subtitle={subtitle}
-        className="mt-3.5"
-      />
-      {cancelled && (
-        <Banner
-          tone="grey"
-          icon="undo"
-          title={cancelled}
-          className="mt-[15px] rounded-control"
-        />
-      )}
-      <DetailsList title="Remise" items={items} className="mt-5" />
-      {parcels.length > 0 && (
-        <section className="mt-7">
-          <SectionHeader title="Colis" count={parcels.length} />
-          <div className="mt-4">
-            {parcels.map((parcel, i) => (
-              <ListRow
-                key={parcel.id}
-                leading={<IconTile icon="package" tone="fill" />}
-                title={parcel.title}
-                lines={[{ text: parcel.detail }]}
-                separator={i < parcels.length - 1}
-                onClick={onParcel && (() => onParcel(parcel))}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-      {children}
     </Screen>
   );
 }
