@@ -1,4 +1,3 @@
-import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
 /** A signature or a photo of a handover, as this iPhone keeps it. */
@@ -11,19 +10,17 @@ export type ProofMediaItem = {
 
 export type ProofMediaProps = {
   items?: ProofMediaItem[];
-  /** The proofs were taken on another iPhone: « Signée sur l'iPhone de l'agent ». */
-  absent?: string;
   className?: string;
 };
 
 /**
  * The proofs of a handover, shown: the signature on its white card, ink on
  * paper in either theme, and the photo as a thumbnail that opens full
- * screen. Taken on another iPhone, they never reach this one (D8): a line
- * says where they are.
+ * screen. Taken on another iPhone, they never reach this one (D8): the
+ * screen's details say where they are.
  */
-export function ProofMedia({ items = [], absent, className }: ProofMediaProps) {
-  if (!items.length && !absent) return null;
+export function ProofMedia({ items = [], className }: ProofMediaProps) {
+  if (!items.length) return null;
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       {items.length > 0 && (
@@ -64,12 +61,6 @@ export function ProofMedia({ items = [], absent, className }: ProofMediaProps) {
             ),
           )}
         </div>
-      )}
-      {absent && (
-        <p className="flex items-center gap-2 text-13 text-muted">
-          <Icon name="image" size={16} className="shrink-0" />
-          <span className="min-w-0">{absent}</span>
-        </p>
       )}
     </div>
   );
