@@ -15,7 +15,7 @@ export type HandoverSync = 'synced' | 'unsent' | 'rejected';
 /** A handover with the parcels it lists and its place in the outbox. */
 export type HandoverEntry = {
   handover: LocalHandover;
-  /** The parcels still on this iPhone, in the handover's order. */
+  /** The parcels it handed over still on this iPhone, in its order. */
   parcels: LocalParcel[];
   sync: HandoverSync;
 };
@@ -23,6 +23,25 @@ export type HandoverEntry = {
 export function handoverSyncOf(ops: readonly OutboxOp[]): HandoverSync {
   if (ops.some((op) => op.state === 'rejected')) return 'rejected';
   return ops.length ? 'unsent' : 'synced';
+}
+
+/**
+ * The parcels a handover did hand over: all it lists once cancelled, else
+ * those whose `deliveredAt` it wrote — a handover kept after losing one of
+ * its parcels to another iPhone does not count that one.
+ */
+export function handedOf(
+  handover: LocalHandover,
+  parcels: readonly (LocalParcel | undefined)[],
+): LocalParcel[] {
+  return parcels.filter(
+    (parcel): parcel is LocalParcel =>
+      !!parcel &&
+      !parcel.deletedAt &&
+      (!!handover.cancelledAt ||
+        (parcel.status === 'remis' &&
+          parcel.deliveredAt?.getTime() === handover.at.getTime())),
+  );
 }
 
 /** The handover, or null once it is not (or no longer) on this iPhone. */
@@ -41,16 +60,24 @@ export async function loadHandoverEntry(
   ]);
   return {
     handover,
-    parcels: parcels.filter(
-      (parcel): parcel is LocalParcel => !!parcel && !parcel.deletedAt,
-    ),
+    parcels: handedOf(handover, parcels),
     sync: handoverSyncOf(ops),
   };
 }
 
-/** « Karim Benali », or « Un agent » for a handover written before the name was kept. */
-export function agentNameOf(handover: LocalHandover, t: TranslateFn): string {
-  return handover.agentName ?? t('handover.agent.unknown');
+/**
+ * « Karim Benali »; a handover written before the name was kept says
+ * « Vous » to its agent (`me`, the signed-in user) and « Un agent » to others.
+ */
+export function agentNameOf(
+  handover: LocalHandover,
+  t: TranslateFn,
+  me?: string,
+): string {
+  if (handover.agentName) return handover.agentName;
+  return handover.agentId === me
+    ? t('handover.agent.me')
+    : t('handover.agent.unknown');
 }
 
 /** « QR code vérifié », « Code vérifié », « Sans vérification ». */

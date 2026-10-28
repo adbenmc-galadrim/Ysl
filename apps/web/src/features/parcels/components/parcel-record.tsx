@@ -143,6 +143,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   }
 
   const view = describeRecord(record, {
+    me: session.user.id,
     now,
     t,
     showUnsent: showsPendingBanner(sync, now),

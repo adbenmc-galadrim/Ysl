@@ -109,6 +109,8 @@ export type DescribeOptions = {
   t: TranslateFn;
   /** Offline or late: say which changes wait, as the home list does. */
   showUnsent: boolean;
+  /** The signed-in agent: « Vous » for their handovers kept without a name. */
+  me?: string;
 };
 
 export type WhenKeys = {
@@ -492,8 +494,7 @@ function history(
  */
 function handoverCard(
   record: ParcelRecord,
-  now: Date,
-  t: TranslateFn,
+  { now, t, me }: DescribeOptions,
 ): RecordView['handover'] {
   const handover = record.handover ?? record.cancelledHandover;
   if (!handover) return undefined;
@@ -517,7 +518,10 @@ function handoverCard(
         label: t('record.handover.when'),
         value: formatWhen(handover.at, now, t),
       },
-      { label: t('record.handover.agent'), value: agentNameOf(handover, t) },
+      {
+        label: t('record.handover.agent'),
+        value: agentNameOf(handover, t, me),
+      },
       {
         label: t('record.handover.method'),
         value: methodLabel(handover.method, t),
@@ -643,6 +647,6 @@ export function describeRecord(
     sync,
     action: action(parcel),
     damage: damageCard(record, now, t),
-    handover: handoverCard(record, now, t),
+    handover: handoverCard(record, options),
   };
 }

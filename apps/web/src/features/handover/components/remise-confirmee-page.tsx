@@ -3,7 +3,10 @@ import { RemiseConfirmeeScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect } from 'react';
 import { db } from '#/features/db/database';
-import { describeConfirmation } from '#/features/handover/confirmation';
+import {
+  confirmationGone,
+  describeConfirmation,
+} from '#/features/handover/confirmation';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { useOnline } from '#/lib/use-online';
 
@@ -31,8 +34,7 @@ export function RemiseConfirmeePage({
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
   );
-  const missing =
-    entry === null || (entry !== undefined && !!entry.handover.cancelledAt);
+  const missing = confirmationGone(entry);
   useEffect(() => {
     if (missing) onDone();
   }, [missing, onDone]);

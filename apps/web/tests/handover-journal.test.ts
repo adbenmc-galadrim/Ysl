@@ -51,12 +51,17 @@ describe('the handover journal', () => {
   });
 
   it('tells how many, how, when and by which agent', async () => {
+    const at = day(24, 11, 20);
+    const parcels = [1, 2, 3].map(() =>
+      parcelRow({ status: 'remis', deliveredAt: at }),
+    );
+    await db.parcel.bulkPut(parcels);
     await db.handover.put(
       handoverRow({
-        parcelIds: ['a', 'b', 'c'],
+        parcelIds: parcels.map((parcel) => parcel.id),
         method: 'qr',
         delegateName: 'Lucas Martin',
-        at: day(24, 11, 20),
+        at,
       }),
     );
 
@@ -70,6 +75,21 @@ describe('the handover journal', () => {
       detail: '11 h 20 · Karim Benali',
       state: 'done',
     });
+  });
+
+  it('does not count a parcel another iPhone handed over first', async () => {
+    const at = day(24, 11, 20);
+    const kept = parcelRow({ status: 'remis', deliveredAt: at });
+    const lost = parcelRow({ status: 'remis', deliveredAt: day(24, 11, 18) });
+    await db.parcel.bulkPut([kept, lost]);
+    await db.handover.put(
+      handoverRow({ parcelIds: [kept.id, lost.id], method: 'manuel', at }),
+    );
+
+    const [entry] = journalSections(await loadJournal(db), '', NOW, t)[0]!
+      .entries;
+
+    expect(entry?.summary).toBe('1 colis · Sans vérification');
   });
 
   it('marks what waits on this iPhone and what was cancelled', async () => {
@@ -88,6 +108,16 @@ describe('the handover journal', () => {
       ['unsent', 'Pas encore envoyée au serveur', '11 h 00 · Un agent'],
       ['cancelled', 'Annulée à 10 h 04', '10 h 00 · Karim Benali'],
     ]);
+  });
+
+  it('says « Vous » to the agent of a handover kept without a name', async () => {
+    await db.handover.put(handoverRow({ agentName: null, agentId: 'me' }));
+    const items = await loadJournal(db);
+    const detail = (me: string) =>
+      journalSections(items, '', NOW, t, me)[0]!.entries[0]!.detail;
+
+    expect(detail('me')).toBe('12 h 00 · Vous');
+    expect(detail('other')).toBe('12 h 00 · Un agent');
   });
 
   it('finds a handover by the employee, the colleague or the agent, accents aside', async () => {

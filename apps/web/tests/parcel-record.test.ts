@@ -296,6 +296,10 @@ describe('describeRecord', () => {
     const items = describeRecord(await record(row.id), options).handover?.items;
 
     expect(items).toContainEqual({ label: 'Agent', value: 'Un agent' });
+    expect(
+      describeRecord(await record(row.id), { ...options, me: 'agent-1' })
+        .handover?.items,
+    ).toContainEqual({ label: 'Agent', value: 'Vous' });
     expect(items).toContainEqual({
       label: 'Méthode',
       value: 'Sans vérification',

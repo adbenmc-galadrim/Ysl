@@ -2,6 +2,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { JournalRemisesScreen, RemiseDetailScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
+import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import {
@@ -24,6 +25,7 @@ export function JournalRemisesPage({
   onOpen,
 }: JournalRemisesPageProps) {
   const now = useMinuteClock();
+  const session = useSession();
   const [query, setQuery] = useState('');
   const items = useLiveQuery(() => loadJournal(db), []);
   if (!items) return null;
@@ -31,7 +33,7 @@ export function JournalRemisesPage({
     <JournalRemisesScreen
       query={query}
       onQueryChange={setQuery}
-      sections={journalSections(items, query, now, t)}
+      sections={journalSections(items, query, now, t, session.user.id)}
       empty={{
         title: t('journal.empty.title'),
         description: query.trim()
@@ -57,6 +59,7 @@ export function RemiseDetailPage({
   onParcel,
 }: RemiseDetailPageProps) {
   const now = useMinuteClock();
+  const session = useSession();
   const entry = useLiveQuery(
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
@@ -67,7 +70,7 @@ export function RemiseDetailPage({
   if (!entry) return null;
   return (
     <RemiseDetailScreen
-      {...describeHandoverDetail(entry, now, t)}
+      {...describeHandoverDetail(entry, now, t, session.user.id)}
       onBack={onBack}
       onParcel={(parcel) => onParcel(parcel.id)}
     />

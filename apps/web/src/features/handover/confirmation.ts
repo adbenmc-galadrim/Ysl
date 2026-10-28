@@ -8,6 +8,16 @@ import {
 } from '#/features/handover/entry';
 import { formatTime } from '#/features/parcels/model';
 
+/**
+ * The screen has nothing to show: the handover is not on this iPhone, or it
+ * was cancelled under it (it lost all its parcels to another iPhone).
+ */
+export function confirmationGone(
+  entry: HandoverEntry | null | undefined,
+): boolean {
+  return entry === null || !!entry?.handover.cancelledAt;
+}
+
 export type ConfirmationView = Pick<
   RemiseConfirmeeScreenProps,
   'title' | 'description' | 'proofs' | 'parcels' | 'offline'
@@ -45,7 +55,7 @@ export function describeConfirmation(
   const { handover, parcels } = entry;
   const soon = t('handover.signature.soon');
   return {
-    title: t('handover.confirm.title', { count: handover.parcelIds.length }),
+    title: t('handover.confirm.title', { count: parcels.length }),
     description: t('handover.confirm.to', {
       name: handover.recipientName,
       time: formatTime(handover.at),

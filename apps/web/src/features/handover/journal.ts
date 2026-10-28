@@ -13,6 +13,7 @@ import type {
 } from '#/features/db/schema';
 import {
   agentNameOf,
+  handedOf,
   handedParcel,
   type HandoverEntry,
   type HandoverSync,
@@ -20,11 +21,19 @@ import {
   METHOD_ICON,
   methodLabel,
 } from '#/features/handover/entry';
-import { DAY_MS, formatTime, startOfDay } from '#/features/parcels/model';
+import { formatTime, startOfDay } from '#/features/parcels/model';
 import { formatWhen } from '#/features/parcels/record';
+import { dayTitle } from '#/features/search/search-index';
 
-/** A handover of the journal, with where it stands with the server. */
-export type JournalItem = { handover: LocalHandover; sync: HandoverSync };
+/**
+ * A handover of the journal: how many parcels it did hand over, and where
+ * it stands with the server.
+ */
+export type JournalItem = {
+  handover: LocalHandover;
+  count: number;
+  sync: HandoverSync;
+};
 
 /** Every handover on this iPhone, from every agent (§8.4), newest first. */
 export async function loadJournal(
@@ -34,6 +43,12 @@ export async function loadJournal(
     db.handover.filter((handover) => !handover.deletedAt).toArray(),
     db.outbox.filter((op) => op.entity === 'handover').toArray(),
   ]);
+  const listed = await db.parcel.bulkGet([
+    ...new Set(handovers.flatMap((handover) => handover.parcelIds)),
+  ]);
+  const parcels = new Map(
+    listed.flatMap((parcel) => (parcel ? [[parcel.id, parcel]] : [])),
+  );
   const opsOf = new Map<string, OutboxOp[]>();
   for (const op of ops) {
     opsOf.set(op.entityId, [...(opsOf.get(op.entityId) ?? []), op]);
@@ -42,6 +57,10 @@ export async function loadJournal(
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .map((handover) => ({
       handover,
+      count: handedOf(
+        handover,
+        handover.parcelIds.map((id) => parcels.get(id)),
+      ).length,
       sync: handoverSyncOf(opsOf.get(handover.id) ?? []),
     }));
 }
@@ -55,33 +74,9 @@ export function matchesQuery(handover: LocalHandover, query: string): boolean {
     .some((name) => name.includes(wanted));
 }
 
-const dayFormat = new Intl.DateTimeFormat('fr-FR', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-});
-
-const yearFormat = new Intl.DateTimeFormat('fr-FR', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-
-/** « Aujourd’hui », « Hier », « Lundi 26 octobre », « 3 mars 2025 ». */
-export function dayTitle(date: Date, now: Date, t: TranslateFn): string {
-  const today = startOfDay(now);
-  if (date >= today) return t('journal.today');
-  if (date.getTime() >= today.getTime() - DAY_MS) return t('journal.yesterday');
-  const text =
-    date.getFullYear() === now.getFullYear()
-      ? dayFormat.format(date)
-      : yearFormat.format(date);
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-function summaryOf(handover: LocalHandover, t: TranslateFn): string {
+function summaryOf({ handover, count }: JournalItem, t: TranslateFn): string {
   const summary = t('journal.summary', {
-    count: handover.parcelIds.length,
+    count,
     method: methodLabel(handover.method, t),
   });
   return handover.delegateName
@@ -107,16 +102,20 @@ function stateOf({ handover, sync }: JournalItem, t: TranslateFn) {
   return { state: 'done' as const };
 }
 
-export function journalRow(item: JournalItem, t: TranslateFn): JournalRemise {
+export function journalRow(
+  item: JournalItem,
+  t: TranslateFn,
+  me?: string,
+): JournalRemise {
   const { handover } = item;
   return {
     id: handover.id,
     recipient: handover.recipientName,
     icon: METHOD_ICON[handover.method],
-    summary: summaryOf(handover, t),
+    summary: summaryOf(item, t),
     detail: t('journal.detail', {
       time: formatTime(handover.at),
-      agent: agentNameOf(handover, t),
+      agent: agentNameOf(handover, t, me),
     }),
     ...stateOf(item, t),
   };
@@ -131,14 +130,16 @@ export function journalSections(
   query: string,
   now: Date,
   t: TranslateFn,
+  me?: string,
 ): JournalRemisesSection[] {
   const sections: JournalRemisesSection[] = [];
   for (const item of items) {
     if (!matchesQuery(item.handover, query)) continue;
-    const title = dayTitle(item.handover.at, now, t);
+    const title = dayTitle(startOfDay(item.handover.at), now, t);
+    const row = journalRow(item, t, me);
     const last = sections.at(-1);
-    if (last?.title === title) last.entries.push(journalRow(item, t));
-    else sections.push({ title, entries: [journalRow(item, t)] });
+    if (last?.title === title) last.entries.push(row);
+    else sections.push({ title, entries: [row] });
   }
   return sections;
 }
@@ -148,6 +149,7 @@ export function describeHandoverDetail(
   { handover, parcels, sync }: HandoverEntry,
   now: Date,
   t: TranslateFn,
+  me?: string,
 ): Omit<RemiseDetailScreenProps, 'onBack' | 'onParcel' | 'children'> {
   const items: DetailsItem[] = [
     ...(handover.delegateName
@@ -157,7 +159,7 @@ export function describeHandoverDetail(
       label: t('record.handover.when'),
       value: formatWhen(handover.at, now, t),
     },
-    { label: t('record.handover.agent'), value: agentNameOf(handover, t) },
+    { label: t('record.handover.agent'), value: agentNameOf(handover, t, me) },
     {
       label: t('record.handover.method'),
       value: methodLabel(handover.method, t),
@@ -166,7 +168,7 @@ export function describeHandoverDetail(
   ];
   const when = handover.cancelledAt && formatWhen(handover.cancelledAt, now, t);
   return {
-    title: t('handover.confirm.title', { count: handover.parcelIds.length }),
+    title: t('handover.confirm.title', { count: parcels.length }),
     subtitle: t('journal.to', { name: handover.recipientName }),
     ...(when
       ? {

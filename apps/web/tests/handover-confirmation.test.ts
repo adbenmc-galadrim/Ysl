@@ -3,7 +3,10 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { commitLocal } from '#/features/db/commit';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
-import { describeConfirmation } from '#/features/handover/confirmation';
+import {
+  confirmationGone,
+  describeConfirmation,
+} from '#/features/handover/confirmation';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import {
   handoverRow,
@@ -25,8 +28,9 @@ beforeEach(async () => {
       tracking: '09445566774471',
       senderName: 'Zalando',
       status: 'remis',
+      deliveredAt: NOW,
     }),
-    parcelRow({ type: 'recommande', status: 'remis' }),
+    parcelRow({ type: 'recommande', status: 'remis', deliveredAt: NOW }),
   ];
   await db.parcel.bulkPut(parcels);
 });
@@ -101,7 +105,26 @@ describe('describeConfirmation', () => {
     );
   });
 
-  it('finds nothing for a handover that is not on this iPhone', async () => {
+  it('leaves for Colis once the handover is gone or cancelled under it', async () => {
+    const entry = await handedOver('pin');
+
+    expect(confirmationGone(undefined)).toBe(false);
+    expect(confirmationGone(entry)).toBe(false);
     expect(await loadHandoverEntry(db, 'nope')).toBeNull();
+    expect(confirmationGone(null)).toBe(true);
+    await db.handover.update(entry.handover.id, { cancelledAt: NOW });
+    expect(
+      confirmationGone(await loadHandoverEntry(db, entry.handover.id)),
+    ).toBe(true);
+  });
+
+  it('leaves out a parcel another iPhone handed over first', async () => {
+    await db.parcel.update(parcels[1]!.id, {
+      deliveredAt: new Date(NOW.getTime() - 60_000),
+    });
+    const view = describeConfirmation(await handedOver('pin'), true, t);
+
+    expect(view.title).toBe('1 colis remis');
+    expect(view.parcels?.map((parcel) => parcel.id)).toEqual([parcels[0]!.id]);
   });
 });
