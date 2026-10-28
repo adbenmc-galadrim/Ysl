@@ -40,6 +40,11 @@ export const fr = {
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
   'devices.error.current':
     'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',
+  'handover.verified.qr': 'QR code vérifié à {{time}}',
+  'handover.verified.pin': 'Code vérifié à {{time}}',
+  'handover.verified.manuel': 'Choisi par le nom',
+  'handover.empty': 'Rien n’attend {{name}} au comptoir.',
+  'handover.soon': 'La remise arrive bientôt dans l’app.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
   'handover.received.yesterday': 'Reçu hier',
   'handover.received.on': 'Reçu le {{date}}',
