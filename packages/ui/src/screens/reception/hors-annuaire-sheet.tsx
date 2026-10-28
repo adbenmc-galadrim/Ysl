@@ -12,7 +12,18 @@ export type OutsideContactDraft = {
   department: string;
 };
 
+/** A directory card the contact may be merged into: same e-mail, or same name. */
+export type HorsAnnuaireMerge = ContactDuplicate & {
+  /** « Rattacher à Marc Petit ». */
+  label: string;
+  onMerge: () => void;
+};
+
 export type HorsAnnuaireSheetProps = {
+  /** « Modifier le contact » when an existing one is edited. */
+  title?: string;
+  description?: string;
+  submitLabel?: string;
   value: OutsideContactDraft;
   onChange: (value: OutsideContactDraft) => void;
   /** Under the e-mail, in red: « Adresse e-mail invalide ». */
@@ -21,6 +32,12 @@ export type HorsAnnuaireSheetProps = {
   duplicate?: ContactDuplicate | null;
   /** « Utiliser cette fiche »: takes the one already there. */
   onUseDuplicate?: () => void;
+  /** Offered without blocking the save: the directory now lists this person. */
+  merge?: HorsAnnuaireMerge | null;
+  /** Opens the sheet on the e-mail, e.g. from « Sans e-mail ». */
+  focusEmail?: boolean;
+  /** « Supprimer le contact », under the save. */
+  onDelete?: () => void;
   saving?: boolean;
   onSubmit: () => void;
   onDismiss?: () => void;
@@ -34,11 +51,17 @@ export type HorsAnnuaireSheetProps = {
  * tell them, and is the key: the same address never makes a second contact.
  */
 export function HorsAnnuaireSheet({
+  title = 'Personne hors annuaire',
+  description = 'Gardée comme contact, elle sera proposée ensuite.',
+  submitLabel = 'Utiliser ce nom',
   value,
   onChange,
   emailError,
   duplicate,
   onUseDuplicate,
+  merge,
+  focusEmail = false,
+  onDelete,
   saving = false,
   onSubmit,
   onDismiss,
@@ -56,8 +79,8 @@ export function HorsAnnuaireSheet({
 
   return (
     <Sheet
-      title="Personne hors annuaire"
-      description="Gardée comme contact, elle sera proposée ensuite."
+      title={title}
+      description={description}
       fixed={fixed}
       behind={behind}
       onDismiss={onDismiss}
@@ -92,6 +115,7 @@ export function HorsAnnuaireSheet({
               autoCorrect="off"
               spellCheck={false}
               aria-invalid={emailError || duplicate ? true : undefined}
+              autoFocus={focusEmail}
             />
           )}
         </Field>
@@ -132,14 +156,50 @@ export function HorsAnnuaireSheet({
             />
           )}
         </Field>
+        {merge && (
+          <div
+            role="status"
+            className="mt-4 flex flex-col gap-3 rounded-control border border-border p-3"
+          >
+            <p className="text-13 font-medium text-muted">
+              Cette personne est maintenant dans l’annuaire
+            </p>
+            <ContactRow
+              name={merge.name}
+              initials={merge.initials}
+              detail={merge.detail}
+              trailing={null}
+            />
+            <Button
+              variant="outline"
+              size="md"
+              block
+              disabled={saving}
+              onClick={merge.onMerge}
+            >
+              {merge.label}
+            </Button>
+          </div>
+        )}
         <Button
           type="submit"
           block
           className="mt-6"
           disabled={saving || !value.name.trim() || Boolean(duplicate)}
         >
-          Utiliser ce nom
+          {submitLabel}
         </Button>
+        {onDelete && (
+          <Button
+            variant="danger"
+            block
+            className="mt-3"
+            disabled={saving}
+            onClick={onDelete}
+          >
+            Supprimer le contact
+          </Button>
+        )}
       </form>
     </Sheet>
   );

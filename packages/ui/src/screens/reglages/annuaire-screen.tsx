@@ -21,6 +21,9 @@ export type DirectoryEntry = {
 export type AnnuaireScreenProps = {
   /** The people to show, already filtered and in order. */
   people: DirectoryEntry[];
+  /** The contacts outside the directory (F27), already filtered, under the people. */
+  contacts?: DirectoryEntry[];
+  onSelectContact?: (id: string) => void;
   /** Letters of the rail; by default, the initials of `people`. */
   letters?: string[];
   /** "312 personnes, ajoutées à l’usage". */
@@ -60,6 +63,8 @@ function byLetter(people: DirectoryEntry[]) {
  */
 export function AnnuaireScreen({
   people,
+  contacts = [],
+  onSelectContact,
   letters,
   bannerTitle,
   bannerDetail,
@@ -105,7 +110,7 @@ export function AnnuaireScreen({
           }}
         />
       )}
-      {people.length === 0 ? (
+      {people.length === 0 && contacts.length === 0 ? (
         searching ? (
           <EmptyState
             icon="search"
@@ -151,9 +156,37 @@ export function AnnuaireScreen({
               </div>
             </section>
           ))}
+          {contacts.length > 0 && (
+            <section
+              aria-label="Contacts hors annuaire"
+              className={people.length ? 'mt-[29px]' : 'mt-6'}
+            >
+              <SectionHeader title="Hors annuaire" count={contacts.length} />
+              <p className="mt-1 text-13 text-muted">
+                Intérimaires et visiteurs, gardés à la réception d’un colis.
+              </p>
+              <div className="mt-[13px]">
+                {contacts.map((contact, i) => (
+                  <ContactRow
+                    key={contact.id}
+                    name={contact.name}
+                    initials={contact.initials}
+                    detail={contact.detail}
+                    separator={i < contacts.length - 1}
+                    onClick={
+                      onSelectContact
+                        ? () => onSelectContact(contact.id)
+                        : undefined
+                    }
+                    textClassName="translate-y-px pt-0"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
           {/* The rail sits in the right gutter, over the list, like iOS, and
               stays in view while the list scrolls under it. */}
-          {!searching && (
+          {!searching && people.length > 0 && (
             <div className="pointer-events-none absolute inset-y-0 -right-[18px] pt-[46px]">
               <AlphabetIndex
                 letters={rail}

@@ -305,6 +305,48 @@ export const PersonneHorsAnnuaire: Story = {
   ),
 };
 
+/** Réglages › Annuaire › a contact: its card, and the directory card it can now join. */
+export const ModifierContact: Story = {
+  name: 'Modifier un contact hors annuaire',
+  render: () => (
+    <HorsAnnuaireSheet
+      title="Modifier le contact"
+      description="Proposé à la réception de ses colis, sur tous les iPhone."
+      submitLabel="Enregistrer"
+      value={{
+        name: 'Marc Petit',
+        email: 'marc.petit@prestataire.fr',
+        department: 'Prestataire, 4e étage',
+      }}
+      onChange={() => {}}
+      onSubmit={() => {}}
+      onDelete={() => {}}
+      merge={{
+        name: 'Marc Petit',
+        initials: 'MP',
+        detail: 'Studio, 2e étage',
+        label: 'Rattacher à Marc Petit',
+        onMerge: () => {},
+      }}
+    />
+  ),
+};
+
+/** From « Sans e-mail » on the parcel's record: the same sheet, on the address. */
+export const AjouterEmailContact: Story = {
+  name: 'Ajouter l’e-mail d’un contact',
+  render: () => (
+    <HorsAnnuaireSheet
+      title="Ajouter son e-mail"
+      description="Gardée sur le contact, l’adresse servira aux prochains colis."
+      submitLabel="Enregistrer"
+      value={{ name: 'Nina Roux', email: '', department: 'Intérim' }}
+      onChange={() => {}}
+      onSubmit={() => {}}
+    />
+  ),
+};
+
 /** An annex field « à vérifier », after the number and the recipient. */
 export const VerifierChamp: Story = {
   name: 'Vérifier un colis, poids à vérifier',
