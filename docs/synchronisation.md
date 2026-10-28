@@ -284,7 +284,10 @@ demande, `maintenance.status` rend le dernier passage.
 synchronisation (au plus tous les quarts d'heure), au repos du fil principal :
 photos d'étiquette et de dommage 7 jours après la sortie du colis (remise ou retour)
 une fois sa ligne confirmée par le serveur, signatures après 12 mois, photos d'un
-colis disparu de l'iPhone, `extraction` après 30 jours ou sans son colis.
+colis disparu de l'iPhone, `extraction` après 30 jours ou sans son colis ; preuves de
+remise (`handover_proof`, YSL-75) : signature 12 mois après la prise, photo 7 jours
+après la remise une fois la remise confirmée par le serveur, preuve sans remise après
+une heure. Le balayage des orphelines au lancement connaît aussi leurs fichiers.
 Réglages › Données et confidentialité (admin) montre les durées, le dernier passage,
 « Purger maintenant » et « Effacer les données de cet iPhone » (synchro, puis
 déconnexion et vidage de Dexie et d'OPFS ; les changements non envoyés sont comptés
