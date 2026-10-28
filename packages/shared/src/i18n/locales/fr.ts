@@ -44,6 +44,8 @@ export const fr = {
   'handover.verified.pin': 'Code vérifié à {{time}}',
   'handover.verified.manuel': 'Sans vérification',
   'handover.signature.soon': 'bientôt',
+  'handover.done': '{{count}} colis remis à {{name}}',
+  'handover.done.undo': 'Annuler · bientôt',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
   'handover.qr.notPickup': 'Ce n’est pas un QR de retrait',
   'handover.qr.notPickup.detail':

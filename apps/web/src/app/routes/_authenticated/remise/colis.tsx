@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { RemiseColisPage } from '#/features/handover/components/remise-colis-page';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
+import type { HandoverDone } from '#/features/handover/record-handover';
 import { parseRemiseColisSearch } from '#/features/handover/route';
 
 export const Route = createFileRoute('/_authenticated/remise/colis')({
@@ -26,7 +27,15 @@ function RemiseColisRoute() {
       void navigate({ to: '/remise', search: { refus } }),
     [navigate],
   );
-  const done = useCallback(() => void navigate({ to: '/' }), [navigate]);
+  const done = useCallback(
+    ({ handoverId }: HandoverDone) =>
+      void navigate({
+        to: '/remise/confirmee',
+        search: { handover: handoverId },
+        replace: true,
+      }),
+    [navigate],
+  );
   return (
     <RemiseColisPage
       key={`${search.kind}:${search.id}`}

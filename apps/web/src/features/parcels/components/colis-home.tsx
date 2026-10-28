@@ -13,6 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { useHandoverToast } from '#/features/handover/done-toast';
 import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
@@ -51,6 +52,7 @@ export function ColisHome() {
   const session = useSession();
   const sync = useSync();
   const update = useUpdate();
+  const handed = useHandoverToast();
   const parcels = useHomeParcels();
   const [folded, toggleFolded] = useFoldedSections();
   // The rows already on the iPhone show at once; only what the server may
@@ -223,7 +225,16 @@ export function ColisHome() {
         }
         loading={loading}
         toast={
-          update.offered ? (
+          handed ? (
+            <Toast
+              message={t('handover.done', {
+                count: handed.count,
+                name: handed.firstName,
+              })}
+              actionLabel={t('handover.done.undo')}
+              actionDisabled
+            />
+          ) : update.offered ? (
             <Toast
               message={t('update.available')}
               actionLabel={t('update.apply')}
