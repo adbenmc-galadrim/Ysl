@@ -18,6 +18,7 @@
     "./parcel-completion": "./src/parcel-completion.ts",
     "./parcel-damage": "./src/parcel-damage.ts",
     "./parcel-event": "./src/parcel-event.ts",
+    "./parcel-reply": "./src/parcel-reply.ts",
     "./parcel-status": "./src/parcel-status.ts",
     "./pickup": "./src/pickup.ts",
     "./recipient": "./src/recipient/index.ts",

@@ -1,4 +1,5 @@
 import { DAMAGE_REASONS } from '@repo/contract/parcel-damage';
+import { REPLY_KINDS } from '@repo/contract/parcel-reply';
 import { PARCEL_STATUSES } from '@repo/contract/parcel-status';
 import { relations, sql } from 'drizzle-orm';
 import {
@@ -80,6 +81,15 @@ export const parcel = pgTable(
       .default(false)
       .notNull(),
     damagedAt: timestamp('damaged_at', { withTimezone: true }),
+    /** The recipient's last answer to the e-mail as the agent reported it (YSL-70), see `@repo/contract/parcel-reply`. */
+    reply: text('reply', { enum: REPLY_KINDS }),
+    repliedAt: timestamp('replied_at', { withTimezone: true }),
+    /** « Un collègue passe le prendre »: the name the handover will offer (YSL-77). */
+    expectedDelegate: text('expected_delegate'),
+    /** « Absent jusqu'au … »: the last day away, no reminder before the next working day. */
+    remindersPausedUntil: timestamp('reminders_paused_until', {
+      withTimezone: true,
+    }),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
     receivedBy: text('received_by').notNull(),
     validatedAt: timestamp('validated_at', { withTimezone: true }),
@@ -112,6 +122,10 @@ export const parcel = pgTable(
     check(
       'parcel_damage_check',
       sql`(${table.damage} is null or ${table.damage} in (${sql.raw(DAMAGE_REASONS.map((reason) => `'${reason}'`).join(', '))})) and (${table.damage} is null) = (${table.damagedAt} is null)`,
+    ),
+    check(
+      'parcel_reply_check',
+      sql`(${table.reply} is null or ${table.reply} in (${sql.raw(REPLY_KINDS.map((kind) => `'${kind}'`).join(', '))})) and (${table.reply} is null) = (${table.repliedAt} is null)`,
     ),
     check(
       'parcel_weight_check',

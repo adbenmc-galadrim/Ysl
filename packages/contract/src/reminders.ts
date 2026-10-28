@@ -43,7 +43,17 @@ export type ReminderHistory = {
   notifiedAt: Date;
   /** The reminders confirmed sent after it, in any order. */
   reminders: readonly Date[];
+  /**
+   * « Absent jusqu'au … » (YSL-70): the last day the recipient is away.
+   * Nothing is due nor late until the working day after it.
+   */
+  pausedUntil?: Date | null;
 };
+
+/** The working day the recipient is back: the one after the last day away. */
+export function resumeOf(pausedUntil: Date): Date {
+  return addWorkingDays(pausedUntil, 1);
+}
 
 export type ReminderState = {
   /** Reminders already sent. */
@@ -57,16 +67,20 @@ export type ReminderState = {
   /** When the parcel is « en souffrance ». */
   lateAt: Date;
   late: boolean;
+  /** Away until then (`pausedUntil`): no reminder, no alert before it. */
+  pausedUntil: Date | null;
 };
 
 /**
  * Where a notified parcel stands. The first reminder is due two working
  * days after the notice, the second five, never on the day the first went.
  * Both sent, the parcel is « en souffrance » two working days after the
- * last; short of them, from the fifth working day.
+ * last; short of them, from the fifth working day. A recipient away
+ * holds both back: what fell due meanwhile is due the day they are back,
+ * and the alert waits two more working days.
  */
 export function reminderState(
-  { notifiedAt, reminders }: ReminderHistory,
+  { notifiedAt, reminders, pausedUntil = null }: ReminderHistory,
   now: Date,
 ): ReminderState {
   const sent = reminders.length;
@@ -81,10 +95,17 @@ export function reminderState(
     const afterLast = sent > 0 ? addWorkingDays(last, 1) : planned;
     dueAt = afterLast > planned ? afterLast : planned;
   }
-  const lateAt =
+  let lateAt =
     sent >= REMINDER_DAYS.length
       ? addWorkingDays(last, LATE_AFTER_LAST_REMINDER_DAYS)
       : addWorkingDays(notifiedAt, REMINDER_DAYS.at(-1)!);
+  const resumeAt = pausedUntil && resumeOf(pausedUntil);
+  const paused = resumeAt !== null && now < resumeAt;
+  if (resumeAt) {
+    if (dueAt && dueAt < resumeAt) dueAt = resumeAt;
+    const alertAt = addWorkingDays(resumeAt, LATE_AFTER_LAST_REMINDER_DAYS);
+    if (lateAt <= resumeAt) lateAt = alertAt;
+  }
   return {
     sent,
     last,
@@ -92,5 +113,6 @@ export function reminderState(
     due: dueAt !== null && now >= dueAt,
     lateAt,
     late: now >= lateAt,
+    pausedUntil: paused ? pausedUntil : null,
   };
 }

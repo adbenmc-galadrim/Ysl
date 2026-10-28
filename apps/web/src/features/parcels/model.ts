@@ -43,7 +43,7 @@ export type ReminderDates = ReadonlyMap<string, readonly Date[]>;
  * Where a notified parcel stands with its reminders (F37, D12), by the
  * rule of `@repo/contract/reminders`. The sent mails on the iPhone date
  * the reminders; without them, a reminder later than the notice still
- * counts once (`lastNotifiedAt`).
+ * counts once (`lastNotifiedAt`). A recipient away (YSL-70) holds them back.
  */
 export function reminderOf(
   parcel: LocalParcel,
@@ -58,7 +58,14 @@ export function reminderOf(
     last && last > notifiedAt && !known.some((at) => at >= last)
       ? [...known, last]
       : known;
-  return reminderState({ notifiedAt, reminders }, now);
+  return reminderState(
+    {
+      notifiedAt,
+      reminders,
+      pausedUntil: parcel.remindersPausedUntil ?? null,
+    },
+    now,
+  );
 }
 
 /** Where the parcel sits on the home list; nothing when it is not shown. */

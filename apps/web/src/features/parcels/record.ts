@@ -1,6 +1,7 @@
 import { isTrackingFlag } from '@repo/contract/imports';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
+import { fromDayKey, standingReply } from '@repo/contract/parcel-reply';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -294,8 +295,27 @@ function details(
       t('record.detail.delivered'),
       parcel.deliveredAt && formatWhen(parcel.deliveredAt, now, t),
     ),
+    ...replyDetails(parcel, now, t),
     { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
   ];
+}
+
+/** « Retrait prévu par Paul Mercier », « Absent jusqu'au 3 nov. »: what the recipient answered, while it holds. */
+function replyDetails(
+  parcel: LocalParcel,
+  now: Date,
+  t: TranslateFn,
+): DetailsItem[] {
+  const reply = standingReply(parcel, now);
+  if (reply?.kind === 'colleague') {
+    return [{ label: t('record.detail.delegate'), value: reply.delegate }];
+  }
+  if (reply?.kind === 'absent') {
+    return [
+      { label: t('record.detail.away'), value: shortDate(reply.until, now) },
+    ];
+  }
+  return [];
 }
 
 function eventTitle(event: ParcelEvent, t: TranslateFn): string {
@@ -338,8 +358,21 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
       });
     case 'parcel.delivered':
       return t(`history.delivered.${event.method}`);
+    case 'parcel.reply':
+      return event.reply === 'colleague'
+        ? t('history.reply.colleague', { name: event.delegate })
+        : event.reply === 'absent'
+          ? t('history.reply.absent', {
+              date: DAY_MONTH.format(fromDayKey(event.until)),
+            })
+          : t('history.reply.not_mine');
   }
 }
+
+const DAY_MONTH = new Intl.DateTimeFormat('fr-FR', {
+  day: 'numeric',
+  month: 'short',
+});
 
 type Dated = HistoryEntry & { at: Date };
 
@@ -407,8 +440,15 @@ function history(
     title: t('history.received'),
     detail: formatWhen(parcel.receivedAt, now, t),
   });
+  // Events written in one go share their time: the last written first,
+  // by their ids (UUID v7, in the order they were drawn).
+  const written = (entry: Dated) => !entry.id.startsWith('row:');
   return entries
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .sort(
+      (a, b) =>
+        b.at.getTime() - a.at.getTime() ||
+        (written(a) && written(b) ? b.id.localeCompare(a.id) : 0),
+    )
     .map(({ id, title, detail, tone }) => ({ id, title, detail, tone }));
 }
 

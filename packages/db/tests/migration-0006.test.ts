@@ -69,7 +69,8 @@ describe('0006_reserve_colis', () => {
 
     await migrate(db, { migrationsFolder });
 
-    expect(await row()).toEqual({
+    // Later migrations add their own columns: only these are checked here.
+    expect(await row()).toMatchObject({
       ...old,
       damage: null,
       damage_note: null,

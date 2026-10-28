@@ -530,6 +530,62 @@ describe('sync.push', () => {
       });
     });
 
+    it('takes « pas pour moi » as two steps back in one batch, the reply kept', async () => {
+      const row = localParcel({ personId, status: 'notifie', notifiedAt: NOW });
+      await push(sync, writer, { ops: [op('parcel', row)] });
+      const received = {
+        ...row,
+        status: 'recu',
+        statusSeq: 1,
+        notifiedAt: null,
+      };
+      const reopened = {
+        ...received,
+        status: 'a_completer',
+        statusSeq: 2,
+        personId: null,
+        reply: 'not_mine',
+        repliedAt: NOW,
+      };
+
+      const { results } = await push(sync, writer, {
+        ops: [op('parcel', received), op('parcel', reopened)],
+      });
+
+      expect(results.map(({ status }) => status)).toEqual([200, 200]);
+      expect(await parcel(row.id)).toMatchObject({
+        status: 'a_completer',
+        statusSeq: 2,
+        personId: null,
+        reply: 'not_mine',
+        repliedAt: NOW,
+      });
+    });
+
+    it('keeps the colleague and the absence of a notified parcel', async () => {
+      const row = localParcel({ personId, status: 'notifie', notifiedAt: NOW });
+      const until = new Date('2026-10-30T00:00:00Z');
+      await push(sync, writer, {
+        ops: [
+          op('parcel', row),
+          op('parcel', {
+            ...row,
+            reply: 'absent',
+            repliedAt: NOW,
+            expectedDelegate: 'Paul Mercier',
+            remindersPausedUntil: until,
+          }),
+        ],
+      });
+
+      expect(await parcel(row.id)).toMatchObject({
+        status: 'notifie',
+        reply: 'absent',
+        expectedDelegate: 'Paul Mercier',
+        remindersPausedUntil: until,
+      });
+    });
+
     it('undoes a delivery only after its handover is cancelled', async () => {
       const row = delivered();
       const handover = handoverRow(row.id);
