@@ -10,18 +10,17 @@ const BODY = [
   '',
   'Votre code de retrait : 4821',
   '',
-  'Des colis sont arrivés pour vous. Donnez ce code au comptoir du service courrier.',
-  '',
+  'Nous avons reçu pour vous :',
   '• Amazon ···4471, reçu à 10 h 15',
   '• Amazon ···4472, reçu à 10 h 15',
   '',
   'Où : Rez-de-chaussée, comptoir courrier',
-  'Quand :',
-  'Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
+  'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
   '',
-  'Ce colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+  'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
   '',
   'Karim Daoud',
+  'Service Courrier',
 ].join('\n');
 
 /**
@@ -50,7 +49,7 @@ const meta = {
     template: { name: 'Avis de retrait', onClick: () => {} },
     onEditTemplate: () => {},
     preview: {
-      subject: 'Des colis vous attendent au service courrier',
+      subject: '2 colis en attente de retrait – Service Courrier',
       body: BODY,
     },
     sendLabel: 'Envoyer à Nora',
@@ -116,7 +115,7 @@ export const AdresseManquante: Story = {
       description: 'Saisissez-la sur la fiche du colis pour lui écrire.',
     },
     preview: {
-      subject: 'Des colis vous attendent au service courrier',
+      subject: '2 colis en attente de retrait – Service Courrier',
       body: BODY.replace('Nora', 'Marc Petit'),
     },
   },

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { EmailPreview } from '#components/email-preview';
 import { PickupCode } from '#components/pickup-code';
-import { PICKUP_EMAIL } from '#fixtures/emails';
+import { PICKUP_EMAIL, QR_4821 } from '#fixtures/emails';
 
 const meta = {
   title: 'Composants/EmailPreview',
@@ -28,13 +28,8 @@ export const Retrait: Story = {
     meta: `À : ${PICKUP_EMAIL.to}, ${PICKUP_EMAIL.sentAt}`,
     children: (
       <>
-        <p className="text-15">{PICKUP_EMAIL.greeting}</p>
-        <p className="mt-1.5 text-15 leading-[1.4]">{PICKUP_EMAIL.body}</p>
-        <PickupCode
-          code={PICKUP_EMAIL.code}
-          qr={PICKUP_EMAIL.qr}
-          className="mt-3.5"
-        />
+        <p className="text-15">Bonjour Nora,</p>
+        <PickupCode code="4821" qr={QR_4821} className="mt-3.5" />
       </>
     ),
   },
@@ -50,6 +45,8 @@ export const SansAvatarParDefaut: Story = {
         SC
       </span>
     ),
-    children: <p className="text-15">Bonjour Hugo, votre colis DHL a été remis.</p>,
+    children: (
+      <p className="text-15">Bonjour Hugo, votre colis DHL a été remis.</p>
+    ),
   },
 };

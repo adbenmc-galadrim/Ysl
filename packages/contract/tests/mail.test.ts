@@ -9,6 +9,8 @@ import {
   notifyParcel,
   renderMail,
   renderText,
+  SAMPLE_MAIL,
+  SAMPLE_PICKUP_VALUES,
   type MailFields,
   type NotifiableParcel,
 } from '@repo/contract/mail';
@@ -146,6 +148,35 @@ describe('template rendering', () => {
       true,
     );
     expect(`${rendered.subject}${rendered.body}`).not.toMatch(/Saint Laurent/i);
+  });
+
+  it('renders the sample of the previews as the stories show it', () => {
+    const rendered = renderMail(DEFAULT_TEMPLATES.avis, {
+      ...mailValues({ ...SAMPLE_MAIL, agent: 'Karim Daoud' }),
+      ...SAMPLE_PICKUP_VALUES,
+    });
+    expect(rendered.subject).toBe(
+      '2 colis en attente de retrait – Service Courrier',
+    );
+    expect(rendered.body).toBe(
+      [
+        'Bonjour Nora,',
+        '',
+        'Votre code de retrait : 4821',
+        '',
+        'Nous avons reçu pour vous :',
+        '• Amazon ···4471, reçu à 10 h 15',
+        '• Amazon ···4472, reçu à 10 h 15',
+        '',
+        'Où : Rez-de-chaussée, comptoir courrier',
+        'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
+        '',
+        'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+        '',
+        'Karim Daoud',
+        'Service Courrier',
+      ].join('\n'),
+    );
   });
 
   it('names a single parcel without a number in the subject', () => {

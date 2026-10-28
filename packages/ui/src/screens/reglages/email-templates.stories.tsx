@@ -23,40 +23,38 @@ const BODY = [
   '',
   'Votre code de retrait : {code}',
   '',
-  'Des colis sont arrivés pour vous. Donnez ce code au comptoir du service courrier.',
-  '',
+  'Nous avons reçu pour vous :',
   '{colis}',
   '{reserve}',
   '',
   'Où : {lieu}',
-  'Quand :',
-  '{horaires}',
+  'Quand : {horaires}',
   '{consignes}',
   '',
-  'Ce colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+  'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
   '',
   '{agent}',
+  'Service Courrier',
 ].join('\n');
 
 const PREVIEW = {
-  subject: 'Des colis vous attendent au service courrier',
+  subject: '2 colis en attente de retrait – Service Courrier',
   body: [
     'Bonjour Nora,',
     '',
     'Votre code de retrait : 4821',
     '',
-    'Des colis sont arrivés pour vous. Donnez ce code au comptoir du service courrier.',
-    '',
+    'Nous avons reçu pour vous :',
     '• Amazon ···4471, reçu à 10 h 15',
     '• Amazon ···4472, reçu à 10 h 15',
     '',
     'Où : Rez-de-chaussée, comptoir courrier',
-    'Quand :',
-    'Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
+    'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
     '',
-    'Ce colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+    'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
     '',
     'Karim Daoud',
+    'Service Courrier',
   ].join('\n'),
 };
 
@@ -65,6 +63,7 @@ const VARIABLES = [
   ['nom', 'Nom du destinataire'],
   ['code', 'Code de retrait'],
   ['colis', 'Les colis, une puce par colis'],
+  ['nombre_colis', '« Colis » ou « 2 colis », pour l’objet'],
   ['lieu', 'Lieu de retrait (Réglages)'],
   ['horaires', 'Horaires de retrait (Réglages)'],
   ['consignes', 'Consignes (Réglages)'],
@@ -81,7 +80,7 @@ export const Liste: Story = {
         {
           id: '1',
           name: 'Avis de retrait',
-          subject: 'Des colis vous attendent au service courrier',
+          subject: '{nombre_colis} en attente de retrait – Service Courrier',
           isDefault: true,
         },
         {
@@ -141,7 +140,7 @@ export const ModeleParDefaut: Story = {
       isDefault
       initial={{
         name: 'Avis de retrait',
-        subject: 'Des colis vous attendent au service courrier',
+        subject: '{nombre_colis} en attente de retrait – Service Courrier',
         body: BODY,
       }}
     />

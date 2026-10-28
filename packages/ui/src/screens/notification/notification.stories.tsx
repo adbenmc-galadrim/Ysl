@@ -26,6 +26,11 @@ const meta = {
 
 export default meta;
 
+/**
+ * The default template as the employee receives it: plain text from the
+ * agent's mailbox (D2), the QR at the foot when the agent shared it. The
+ * Penpot frame drew an HTML mail; its reference is now this capture.
+ */
 export const EMailRecuParLeSalarie: StoryObj<typeof PickupEmailScreen> = {
   name: 'E-mail reçu par le salarié',
   parameters: {
@@ -34,6 +39,13 @@ export const EMailRecuParLeSalarie: StoryObj<typeof PickupEmailScreen> = {
   // The employee's Mail, not the app: light whatever the theme.
   globals: { theme: 'clair' },
   args: { email: PICKUP_EMAIL },
+  render: (args) => <PickupEmailScreen {...args} />,
+};
+
+export const EMailSansQr: StoryObj<typeof PickupEmailScreen> = {
+  name: 'E-mail reçu, envoyé sans QR',
+  globals: { theme: 'clair' },
+  args: { email: { ...PICKUP_EMAIL, qr: undefined } },
   render: (args) => <PickupEmailScreen {...args} />,
 };
 
