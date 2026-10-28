@@ -166,8 +166,8 @@ export type PickupVerifyInput = z.infer<typeof pickupVerifyInput>;
 
 /**
  * The server's verdict on a hash: whose code, and whether it still opens.
- * `codeId` and `recipient` only for a code that names someone: the active
- * one, or the latest when none is.
+ * `codeId` is the active code, or the latest of the hash when none is, and
+ * `recipient` whom it names; both null when no code or two active ones.
  */
 export const pickupVerifyOutput = z.object({
   status: z.enum(['active', ...PICKUP_REFUSALS]),

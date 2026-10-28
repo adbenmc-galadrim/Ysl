@@ -105,6 +105,9 @@ describe('the server at the desk', () => {
     expect(
       (await lookupPickupPin(db, '4821', LATER, failing.check)).status,
     ).toBe('active');
+    expect((await lookupPickupPin(db, '4821', LATER, slow.check)).status).toBe(
+      'active',
+    );
     expect((await lookupPickupPin(db, '9999', LATER, slow.check)).status).toBe(
       'unknown',
     );

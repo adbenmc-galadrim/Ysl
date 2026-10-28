@@ -74,7 +74,8 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
  * a code `unknown` here may have just been issued on a colleague's iPhone
  * (its rows are pulled, then checked here again), one `active` here may
  * have been used on another since the last pull (the server's refusal
- * wins, for that very code). Offline, slow or failing, the server is not
+ * wins, for that very code, and the pull runs behind it: the desk shows
+ * the refusal at once). Offline, slow or failing, the server is not
  * asked or not waited for: the hashes of this iPhone decide (F41). Any
  * other refusal is final here, the server is not asked.
  */

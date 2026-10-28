@@ -71,7 +71,8 @@ export async function drawSecrets(
 /**
  * The code a mail writes with it. A reminder quoting the open code (F37)
  * sent as text writes nothing: same PIN, and the QR of the first mail still
- * opens. Shared with its QR, the open code takes the new token.
+ * opens. Shared with its QR, it is written again: same PIN and date, a new
+ * code for the new token (`pickupCodeWrites`).
  */
 export function pickupToWrite(
   secret: PickupSecret | undefined,
