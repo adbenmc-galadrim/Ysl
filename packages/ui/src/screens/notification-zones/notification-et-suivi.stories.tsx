@@ -7,7 +7,7 @@ import { FicheColisScreen } from '#screens/colis/fiche-colis-screen';
 import { ColisEnSouffranceScreen } from '#screens/notification-zones/colis-en-souffrance-screen';
 import { DestinataireSansEmailScreen } from '#screens/notification-zones/destinataire-sans-email-screen';
 import {
-  AbsentJusquauSheet,
+  AbsenceJusquauSheet,
   ColisPasPourMoiSheet,
   ReponseSalarieSheet,
 } from '#screens/notification-zones/reponse-salarie-sheet';
@@ -189,10 +189,10 @@ export const UnCollegueVient: Story = {
   ),
 };
 
-export const AbsentJusquau: Story = {
+export const AbsenceJusquau: Story = {
   name: 'Absence jusqu’au',
   render: () => (
-    <AbsentJusquauSheet
+    <AbsenceJusquauSheet
       recipient="Hugo Lefèvre"
       value="2026-11-03"
       min="2026-10-28"

@@ -2,7 +2,7 @@ import { dayKey, fromDayKey } from '@repo/contract/parcel-reply';
 import { resumeOf } from '@repo/contract/reminders';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
-  AbsentJusquauSheet,
+  AbsenceJusquauSheet,
   ChoisirDestinataireScreen,
   ColisPasPourMoiSheet,
   ReponseSalarieSheet,
@@ -236,7 +236,7 @@ function AbsentSheet({
   const valid = value !== '' && value >= today;
   const resume = valid ? resumeOf(fromDayKey(value)) : null;
   return (
-    <AbsentJusquauSheet
+    <AbsenceJusquauSheet
       fixed
       recipient={recipient}
       value={value}

@@ -143,7 +143,7 @@ export function ColisPasPourMoiSheet({
   );
 }
 
-export type AbsentJusquauSheetProps = SheetFrame & {
+export type AbsenceJusquauSheetProps = SheetFrame & {
   recipient: string;
   /** The last day away, `YYYY-MM-DD` as a date input holds it. */
   value: string;
@@ -158,7 +158,7 @@ export type AbsentJusquauSheetProps = SheetFrame & {
 };
 
 /** « Absence jusqu'au … »: the last day away, picked on the iPhone's wheel. */
-export function AbsentJusquauSheet({
+export function AbsenceJusquauSheet({
   recipient,
   value,
   min,
@@ -170,7 +170,7 @@ export function AbsentJusquauSheet({
   onDismiss,
   fixed,
   behind,
-}: AbsentJusquauSheetProps) {
+}: AbsenceJusquauSheetProps) {
   return (
     <Sheet
       fixed={fixed}
