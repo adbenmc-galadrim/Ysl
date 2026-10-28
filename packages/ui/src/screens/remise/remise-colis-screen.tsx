@@ -44,10 +44,15 @@ export type RemiseColisScreenProps = {
   /** Ids of the parcels unticked by the agent; all are handed over by default. */
   excluded?: string[];
   /**
-   * Picked by the name, nothing proves who collects: what the agent may do
-   * instead, a signature, and why it is greyed out when it is not there yet.
+   * Picked by the name, nothing proves who collects: the agent may have the
+   * recipient sign (`onSignature`), never required. A note greys the line
+   * out and says why when the signature is not there yet.
    */
   signatureNote?: string;
+  /** The recipient signed: the line says so and opens the signature again. */
+  signed?: boolean;
+  /** The banner of a registered parcel among those listed. */
+  registeredNote?: string;
   /** The handover is being written: the button waits. */
   busy?: boolean;
   onToggle?: (id: string) => void;
@@ -88,6 +93,8 @@ export function RemiseColisScreen({
   extras = true,
   excluded = [],
   signatureNote,
+  signed = false,
+  registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,
   onToggleAll,
@@ -141,20 +148,36 @@ export function RemiseColisScreen({
         classNames={{ root: 'h-[52px] items-start rounded-control pt-4 pb-0' }}
         className="mt-5"
       />
-      {verifiedBy === 'name' && signatureNote !== undefined && (
-        <LinkCard
-          icon="sign"
-          label={
-            <>
-              Faire signer
-              <span className="ml-2 text-muted">{signatureNote}</span>
-            </>
-          }
-          disabled={!onSignature}
-          onClick={onSignature}
-          className="mt-3 disabled:cursor-default disabled:opacity-60"
-        />
-      )}
+      {verifiedBy === 'name' &&
+        (signatureNote !== undefined || onSignature) && (
+          <LinkCard
+            icon="sign"
+            label={
+              signed ? (
+                <span className="flex items-center gap-2">
+                  Signature ajoutée
+                  <Icon
+                    name="tick"
+                    size={16}
+                    strokeWidth={2.6}
+                    aria-label="Fait"
+                    className="text-green"
+                  />
+                </span>
+              ) : (
+                <>
+                  Faire signer
+                  {signatureNote && (
+                    <span className="ml-2 text-muted">{signatureNote}</span>
+                  )}
+                </>
+              )
+            }
+            disabled={!onSignature}
+            onClick={onSignature}
+            className="mt-3 disabled:cursor-default disabled:opacity-60"
+          />
+        )}
       {parcels.length === 0 ? (
         <EmptyState
           icon="inbox"
@@ -242,7 +265,7 @@ export function RemiseColisScreen({
         <Banner
           tone="orange"
           icon="info"
-          title="Un recommandé : la signature sera demandée."
+          title={registeredNote}
           classNames={{
             root: 'h-[52px] items-start rounded-control pt-4 pb-0',
             title: 'text-14 font-normal',

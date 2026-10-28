@@ -51,20 +51,30 @@ export const ExpediteurEtReserve: Story = {
   },
 };
 
-/** Picked by the name: nothing was checked, the signature is still to come (YSL-75). */
+/**
+ * Picked by the name: nothing was checked, the agent may have the recipient
+ * sign before handing over — or hand over without it.
+ */
 export const ChoisiParLeNom: Story = {
   name: 'Choisi par le nom',
   args: {
     recipient: PEOPLE.nora,
     verified: 'Sans vérification',
     verifiedBy: 'name',
-    signatureNote: 'bientôt',
     parcels: NORA_HANDOVER,
     extras: false,
+    registeredNote: 'Un recommandé : la signature est facultative.',
+    onSignature: () => {},
     onToggle: () => {},
     onToggleAll: () => {},
     onConfirm: () => {},
   },
+};
+
+/** Signed before « Remettre »: the line opens the signature again. */
+export const SigneParLeNom: Story = {
+  name: 'Signé, choisi par le nom',
+  args: { ...ChoisiParLeNom.args, signed: true },
 };
 
 /** The code was right, but nothing waits for them any more. */

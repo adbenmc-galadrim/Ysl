@@ -1,5 +1,5 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import { RemiseColisScreen } from '@repo/ui';
+import { RemiseColisScreen, SignatureScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
@@ -10,6 +10,8 @@ import {
   recordHandover,
 } from '#/features/handover/record-handover';
 import { loadHandoverPerson } from '#/features/handover/recipient';
+import { strokesToPng } from '#/features/handover/signature-png';
+import { signatureHeading } from '#/features/handover/signing';
 import type { RemiseColisSearch } from '#/features/handover/route';
 import {
   listWaitingParcels,
@@ -17,6 +19,7 @@ import {
 } from '#/features/handover/waiting';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import { formatTime } from '#/features/parcels/model';
+import { photoFiles } from '#/features/photos/opfs';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -50,6 +53,9 @@ export function RemiseColisPage({
   const { kind, id, via, at } = search;
   const [excluded, setExcluded] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  /** The strokes on the pad while it is open, and those validated. */
+  const [draft, setDraft] = useState<string[] | null>(null);
+  const [signed, setSigned] = useState<string[]>([]);
   const loaded = useLiveQuery(async () => {
     const [person, parcels] = await Promise.all([
       loadHandoverPerson(db, { kind, id }),
@@ -84,11 +90,21 @@ export function RemiseColisPage({
     if (busy) return;
     setBusy(true);
     try {
+      const signature =
+        signed.length > 0
+          ? await strokesToPng(signed).then(
+              (image) => ({
+                proof: { kind: 'signature' as const, ...image },
+                files: photoFiles,
+              }),
+              () => undefined,
+            )
+          : undefined;
       onDone(
         await recordHandover(
           db,
           { ...search, parcelIds: ticked },
-          { agentId, agentName },
+          { agentId, agentName, signature },
         ),
       );
     } catch (error) {
@@ -109,6 +125,26 @@ export function RemiseColisPage({
     }
   };
 
+  if (draft) {
+    return (
+      <SignatureScreen
+        {...signatureHeading(
+          person.name,
+          parcels.filter((parcel) => ticked.includes(parcel.id)),
+          t,
+        )}
+        strokes={draft}
+        onChange={setDraft}
+        onClear={() => setDraft([])}
+        onClose={() => setDraft(null)}
+        onConfirm={() => {
+          setSigned(draft);
+          setDraft(null);
+        }}
+      />
+    );
+  }
+
   return (
     <RemiseColisScreen
       recipient={person}
@@ -120,7 +156,9 @@ export function RemiseColisPage({
             : t('handover.verified.manuel')
       }
       verifiedBy={via === 'manuel' ? 'name' : 'proof'}
-      signatureNote={t('handover.signature.soon')}
+      signed={signed.length > 0}
+      registeredNote={t('handover.registered')}
+      onSignature={() => setDraft(signed)}
       parcels={parcels.map((parcel) => toRemiseParcel(parcel, now, t))}
       excluded={excluded}
       empty={t('handover.empty', { name: person.firstName })}
