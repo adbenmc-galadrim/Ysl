@@ -307,8 +307,8 @@ La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le rest
   un contact (`parcel_recipient_check`). Le numéro de suivi n'est jamais bloquant ;
   il est revalidé contre le transporteur choisi (`validateTracking`).
 - **Retour arrière** depuis la fiche : « Annuler la notification » et « Annuler le
-  retour » (`changeParcelStatus`). « Annuler la remise » attend l'écran de remise :
-  il faut annuler la `handover` avec son motif dans le même commit.
+  retour » (`changeParcelStatus`). « Annuler la remise » attend l'annulation de la
+  remise : il faut annuler la `handover` avec son motif dans le même commit.
 - **Remise** (`recordHandover`) : en un seul commit, la `handover` (méthode de la voie :
   `qr`, `pin`, ou `manuel` pour un nom choisi sans preuve), chaque colis coché `remis`
   (`delivered_at`, `delivered_by`, `status_seq` + 1), un `parcel.delivered` par colis
