@@ -24,8 +24,10 @@ export type CheckListProps = {
 
 /**
  * What a flow has secured, one line per proof: "QR code vérifié",
- * "Signature enregistrée", "Envoyé au serveur". The ticks sit in a column on
- * the right so a missing one stands out without reading the labels.
+ * "Signature enregistrée", "Envoyé au serveur" — and what may still be
+ * added, a blue line that opens it ("Ajouter une photo"). The ticks sit in
+ * a column on the right so a missing one stands out without reading the
+ * labels.
  */
 export function CheckList({ items, className }: CheckListProps) {
   return (

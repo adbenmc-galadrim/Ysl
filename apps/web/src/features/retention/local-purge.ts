@@ -38,8 +38,10 @@ type PhotoContext = {
 /**
  * Whether a photo is past its time (§9.2). A label or damage photo goes 7
  * days after its parcel left the counter, once the server holds the parcel
- * (no change of it still queued). A signature goes after 12 months. A photo
- * whose parcel is gone from this iPhone, purged or deleted, goes once it is
+ * (no change of it still queued). A `signature` photo row goes after 12
+ * months; none is written since the handover's signatures moved to
+ * `handover_proof` (YSL-75, `proofExpired`), the rule stays for any row an
+ * older build might hold. A photo whose parcel is gone from this iPhone, purged or deleted, goes once it is
  * older than the orphan grace; one still waiting in a batch is kept.
  */
 export function photoExpired(
@@ -125,8 +127,9 @@ async function purgeProofs(
 }
 
 /**
- * The purge of this iPhone (§9.2): photos past their time, and what the
- * reader made of labels after 30 days or once their parcel is gone. Rows
+ * The purge of this iPhone (§9.2): photos and handover proofs past their
+ * time, and what the reader made of labels after 30 days or once their
+ * parcel is gone. Rows
  * the server purged leave with the pull; this covers what never goes to
  * the server. Photos go one by one, row then file: a crash in between
  * leaves an orphan file, which the launch sweep removes.

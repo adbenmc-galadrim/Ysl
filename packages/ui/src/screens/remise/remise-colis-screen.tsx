@@ -45,8 +45,8 @@ export type RemiseColisScreenProps = {
   excluded?: string[];
   /**
    * Picked by the name, nothing proves who collects: the agent may have the
-   * recipient sign (`onSignature`), never required. A note greys the line
-   * out and says why when the signature is not there yet.
+   * recipient sign (`onSignature`), never required. A note says something
+   * beside « Faire signer »; without `onSignature` the line is greyed out.
    */
   signatureNote?: string;
   /** The recipient signed: the line says so and opens the signature again. */
@@ -94,6 +94,8 @@ export function RemiseColisScreen({
   excluded = [],
   signatureNote,
   signed = false,
+  // The mockup's wording, kept so its reference holds; the app says the
+  // signature is optional (D6).
   registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,

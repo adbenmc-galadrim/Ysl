@@ -200,6 +200,25 @@ describe('purgeLocal, handover proofs', () => {
     expect(await db.handoverProof.get(photo.id)).toBeDefined();
   });
 
+  it('keeps a proof without its handover yet, for the time the handover is written', async () => {
+    const signature = await files.save('x.png', new Blob(['x'])).then(() =>
+      db.handoverProof.put({
+        id: 'young',
+        handoverId: 'being-written',
+        kind: 'signature',
+        path: 'photos/young.png',
+        width: 1,
+        height: 1,
+        bytes: 1,
+        createdAt: new Date(NOW.getTime() - 10 * 60 * 1000),
+      }),
+    );
+
+    await purgeLocal(db, files, NOW);
+
+    expect(await db.handoverProof.get(signature)).toBeDefined();
+  });
+
   it('removes a proof whose handover left the iPhone, after the grace', async () => {
     const handover = handoverRow({ at: daysAgo(1) });
     await db.handover.put(handover);
