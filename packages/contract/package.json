@@ -20,6 +20,7 @@
     "./parcel-status": "./src/parcel-status.ts",
     "./pickup": "./src/pickup.ts",
     "./recipient": "./src/recipient/index.ts",
+    "./reminders": "./src/reminders.ts",
     "./retention": "./src/retention.ts",
     "./settings": "./src/settings.ts",
     "./sync": "./src/sync.ts",
