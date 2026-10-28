@@ -193,27 +193,49 @@ export function parcelCount(count: number): string | undefined {
   return count === 1 ? 'Colis' : `${count} colis`;
 }
 
-export const REPLY_NOT_MINE = {
-  subject: 'Ce n’est pas à moi',
-  body: 'Bonjour,\n\nCe colis ne m’est pas destiné.\n\nMerci',
-};
+/**
+ * The two quick answers of the pickup e-mail (YSL-70): a `mailto:` back to
+ * the agent with only a subject, the agent's inbox telling them apart at a
+ * glance. Plain ASCII, so the link Mail shows stays readable: `%20` for the
+ * spaces and nothing else encoded.
+ */
+export const REPLY_NOT_MINE = "Ce n'est pas pour moi";
 
-export const REPLY_COLLEAGUE = {
-  subject: 'Un collègue passera',
-  body: 'Bonjour,\n\nUn collègue viendra retirer le colis à ma place :\n\nMerci',
-};
+export const REPLY_COLLEAGUE = 'Un collègue viendra le chercher';
 
-/** A `mailto:` back to the agent; readable in no mail app as text (S5), offered for who wants it. */
+/** « Ce n'est pas pour moi - 7112 »: which parcel, or whose parcels, the answer is about. */
+export function replySubject(reply: string, reference?: string | null): string {
+  const about = reference?.trim();
+  return about ? `${reply} - ${about}` : reply;
+}
+
+/** A `mailto:` back to the agent, the subject filled in. */
 export function replyLink(
   replyTo: string,
-  reply: { subject: string; body: string },
-  code?: string,
+  reply: string,
+  reference?: string | null,
 ): string {
   return buildMailUrl('mailto', {
     to: [replyTo],
-    subject: code ? `${reply.subject} · code ${code}` : reply.subject,
-    body: reply.body,
+    subject: replySubject(reply, reference),
+    body: '',
   });
+}
+
+/**
+ * What a reply's subject quotes: the end of the number of a single parcel,
+ * as the desk reads it out; the recipient's name for several, or for a
+ * parcel without a number of its own.
+ */
+export function replyReference({
+  trackings,
+  name,
+}: {
+  trackings: readonly (string | null | undefined)[];
+  name?: string | null;
+}): string | undefined {
+  const only = trackings.length === 1 ? trackings[0]?.trim() : undefined;
+  return only ? only.slice(-4) : orNothing(name);
 }
 
 /**
@@ -242,6 +264,8 @@ export type MailFields = {
   agent?: string | null;
   /** Where the reply links go: the agent's own address. */
   replyTo?: string | null;
+  /** What the replies' subject quotes (`replyReference`). */
+  replyReference?: string | null;
 };
 
 export function mailValues(fields: MailFields): MailValues {
@@ -258,7 +282,12 @@ export function mailValues(fields: MailFields): MailValues {
     reserve: (fields.damages ?? []).join('\n'),
     ...(fields.pickup ? pickupValues(fields.pickup) : {}),
     agent: orNothing(fields.agent),
-    lien_pas_moi: replyTo && replyLink(replyTo, REPLY_NOT_MINE, code),
-    lien_collegue: replyTo && replyLink(replyTo, REPLY_COLLEAGUE, code),
+    // No address to answer to: the lines of the links leave the mail.
+    lien_pas_moi: replyTo
+      ? replyLink(replyTo, REPLY_NOT_MINE, fields.replyReference)
+      : '',
+    lien_collegue: replyTo
+      ? replyLink(replyTo, REPLY_COLLEAGUE, fields.replyReference)
+      : '',
   };
 }

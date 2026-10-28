@@ -9,6 +9,9 @@ import {
   notifyParcel,
   renderMail,
   renderText,
+  REPLY_NOT_MINE,
+  replyReference,
+  replySubject,
   SAMPLE_MAIL,
   SAMPLE_PICKUP_VALUES,
   type MailFields,
@@ -178,7 +181,10 @@ describe('template rendering', () => {
         'Où : Rez-de-chaussée, comptoir courrier',
         'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
         '',
-        'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+        'Donnez votre code au comptoir du service courrier.',
+        '',
+        "Ce n’est pas pour vous ? mailto:karim.daoud@example.com?subject=Ce%20n'est%20pas%20pour%20moi%20-%20Nora%20Haddad",
+        'Un collègue viendra le chercher ? mailto:karim.daoud@example.com?subject=Un%20coll%C3%A8gue%20viendra%20le%20chercher%20-%20Nora%20Haddad',
         '',
         'Karim Daoud',
         'Service Courrier',
@@ -213,7 +219,7 @@ describe('template rendering', () => {
         'Où : Rez-de-chaussée, comptoir courrier',
         'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
         '',
-        'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous ? Répondez simplement à ce mail.',
+        'Donnez votre code au comptoir du service courrier.',
         '',
         'Karim Daoud',
         'Service Courrier',
@@ -264,10 +270,61 @@ describe('template rendering', () => {
   });
 
   it('writes the reply links only with an address to answer to', () => {
-    expect(mailValues({ parcels: [] }).lien_pas_moi).toBeUndefined();
+    const without = renderMail(
+      DEFAULT_TEMPLATES.avis,
+      mailValues({ parcels: ['x'], agent: 'Karim Daoud' }),
+    );
+    expect(without.body).not.toMatch(/mailto|pas pour vous|collègue/);
+    expect(without.body).toContain('comptoir du service courrier.\n\nKarim');
+    expect(without.empty).toEqual(
+      expect.arrayContaining(['lien_pas_moi', 'lien_collegue']),
+    );
+  });
+
+  it('fills in a subject the agent tells apart, spaces as %20', () => {
+    const values = mailValues({
+      parcels: ['DHL ···7112'],
+      replyTo: 'k.daoud@b.fr',
+      replyReference: '7112',
+      code: '4821',
+    });
+    expect(values.lien_pas_moi).toBe(
+      "mailto:k.daoud@b.fr?subject=Ce%20n'est%20pas%20pour%20moi%20-%207112",
+    );
+    expect(values.lien_collegue).toBe(
+      'mailto:k.daoud@b.fr?subject=Un%20coll%C3%A8gue%20viendra%20le%20chercher%20-%207112',
+    );
+    expect(decodeURIComponent(values.lien_pas_moi!.split('subject=')[1]!)).toBe(
+      "Ce n'est pas pour moi - 7112",
+    );
+    expect(`${values.lien_pas_moi}${values.lien_collegue}`).not.toMatch(
+      /[+&]|body=|4821/,
+    );
+  });
+
+  it('quotes the end of the number for one parcel, the name for several', () => {
+    expect(replyReference({ trackings: ['1Z999AA10123457112'] })).toBe('7112');
     expect(
-      mailValues({ parcels: [], replyTo: 'k@b.fr', code: '1' }).lien_pas_moi,
-    ).toMatch(/^mailto:k@b\.fr\?subject=Ce%20n/);
+      replyReference({ trackings: ['A1', 'B2'], name: 'Nora Haddad' }),
+    ).toBe('Nora Haddad');
+    expect(replyReference({ trackings: [null], name: ' Marc Petit ' })).toBe(
+      'Marc Petit',
+    );
+    expect(replySubject(REPLY_NOT_MINE, undefined)).toBe(
+      "Ce n'est pas pour moi",
+    );
+  });
+
+  it('keeps the reply links as Mail opens them inside the pickup mail', () => {
+    const body = renderMail(
+      DEFAULT_TEMPLATES.avis,
+      mailValues({ parcels: ['x'], replyTo: 'k@b.fr', replyReference: '7112' }),
+    ).body;
+    const url = buildMailUrl('mailto', { to: ['n@b.fr'], subject: 's', body });
+    const carried = decodeURIComponent(url.split('body=')[1]!);
+    expect(carried).toContain(
+      "Ce n’est pas pour vous ? mailto:k@b.fr?subject=Ce%20n'est%20pas%20pour%20moi%20-%207112",
+    );
   });
 
   it('joins two days in a row with "et"', () => {

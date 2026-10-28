@@ -19,6 +19,8 @@ export {
   REPLY_COLLEAGUE,
   REPLY_NOT_MINE,
   replyLink,
+  replyReference,
+  replySubject,
 } from './render';
 export type {
   MailFields,

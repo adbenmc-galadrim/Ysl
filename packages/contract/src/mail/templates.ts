@@ -25,11 +25,11 @@ export type TemplateText = { name: string; subject: string; body: string };
  * The template every agent starts with (§8.7, maquette « E-mail reçu par le
  * salarié », 06 · Notification) as plain text, S5 having shown that a
  * `mailto:` carries nothing else: the pickup code first and in clear, one
- * bullet per parcel, where and when, and a plain "reply to this mail" rather
- * than links Mail shows encoded. Signed by the agent for the mailroom,
- * without the house's name (D14); the QR goes with the share sheet. The
- * reminder (F37) says the same code again, the parcels still waiting and
- * since when.
+ * bullet per parcel, where and when, then the two quick answers (YSL-70):
+ * a `mailto:` back to the agent each, the subject filled in. Signed by the
+ * agent for the mailroom, without the house's name (D14); the QR goes with
+ * the share sheet. The reminder (F37) says the same code again, the parcels
+ * still waiting and since when.
  */
 export const DEFAULT_TEMPLATES = {
   avis: {
@@ -48,7 +48,10 @@ export const DEFAULT_TEMPLATES = {
       'Quand : {horaires}',
       '{consignes}',
       '',
-      'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous, ou un collègue passera à votre place ? Répondez simplement à ce mail.',
+      'Donnez votre code au comptoir du service courrier.',
+      '',
+      'Ce n’est pas pour vous ? {lien_pas_moi}',
+      'Un collègue viendra le chercher ? {lien_collegue}',
       '',
       '{agent}',
       'Service Courrier',
@@ -70,7 +73,10 @@ export const DEFAULT_TEMPLATES = {
       'Quand : {horaires}',
       '{consignes}',
       '',
-      'Donnez votre code au comptoir du service courrier. Un colis n’est pas pour vous ? Répondez simplement à ce mail.',
+      'Donnez votre code au comptoir du service courrier.',
+      '',
+      'Ce n’est pas pour vous ? {lien_pas_moi}',
+      'Un collègue viendra le chercher ? {lien_collegue}',
       '',
       '{agent}',
       'Service Courrier',
@@ -114,6 +120,8 @@ export async function presetTemplateId(
 /** The parcel and person every preview renders: the ones of the maquette. */
 export const SAMPLE_MAIL = {
   firstName: 'Nora',
+  replyTo: 'karim.daoud@example.com',
+  replyReference: 'Nora Haddad',
   lastName: 'Haddad',
   code: '4821',
   parcels: [

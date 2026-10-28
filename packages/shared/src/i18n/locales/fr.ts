@@ -676,9 +676,9 @@ export const fr = {
     'Colis arrivés abîmés à signaler, ligne retirée s’il n’y en a pas',
   'mail.variable.agent': 'Votre nom',
   'mail.variable.lien_pas_moi':
-    'Lien « Ce n’est pas à moi » vers votre adresse',
+    'Lien « Ce n’est pas pour moi » vers votre adresse, ligne retirée sans adresse',
   'mail.variable.lien_collegue':
-    'Lien « Un collègue passera » vers votre adresse',
+    'Lien « Un collègue viendra le chercher » vers votre adresse, ligne retirée sans adresse',
   'mail.parcel.today': 'reçu à {{time}}',
   'mail.parcel.before': 'reçu le {{date}}',
   'mail.parcel.sender': 'de {{sender}}',
