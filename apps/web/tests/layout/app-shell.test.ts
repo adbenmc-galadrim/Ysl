@@ -55,11 +55,26 @@ async function open(
 ): Promise<Page> {
   const page = await browser.newPage({ viewport: VIEWPORT, ...options });
   await page.goto(`${base}?${query}`);
-  await page.addStyleTag({
-    content: `:root{--safe-top:${SAFE.top}px;--safe-bottom:${SAFE.bottom}px}`,
-  });
   await page.locator('[data-shell]').first().waitFor();
+  await addSafeAreas(page);
   return page;
+}
+
+/**
+ * The dev server may reload the page once more after the first paint (a
+ * dependency optimised late): the style tag then lands in a destroyed
+ * context. Wait for the shell again and try once more.
+ */
+async function addSafeAreas(page: Page, attempt = 0): Promise<void> {
+  try {
+    await page.addStyleTag({
+      content: `:root{--safe-top:${SAFE.top}px;--safe-bottom:${SAFE.bottom}px}`,
+    });
+  } catch (error) {
+    if (attempt >= 2) throw error;
+    await page.locator('[data-shell]').first().waitFor();
+    await addSafeAreas(page, attempt + 1);
+  }
 }
 
 /** Bottom edge of the area a thumb can reach: above the home indicator. */
