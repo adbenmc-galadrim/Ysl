@@ -65,6 +65,7 @@ export * from '#components/piece-dots';
 export * from '#components/plane';
 export * from '#components/progress-bar';
 export * from '#components/progress-row';
+export * from '#components/proof-media';
 export * from '#components/qr-code';
 export * from '#components/result-hero';
 export * from '#components/scan-fields';

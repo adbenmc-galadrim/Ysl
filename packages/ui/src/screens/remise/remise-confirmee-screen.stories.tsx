@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { LABEL_PHOTO_URL } from '#fixtures/label-photo';
+import { SIGNATURES, signatureImageUrl } from '#fixtures/signatures';
 import { RemiseConfirmeeScreen } from '#screens/remise/remise-confirmee-screen';
 
 const meta = {
@@ -37,14 +39,14 @@ const APP_PARCELS = [
   { id: 'p3', title: 'Recommandé', detail: 'La Poste ···2290' },
 ];
 
-const SOON = [
-  { icon: 'sign', label: 'Ajouter une signature', soon: 'bientôt' },
-  { icon: 'camera', label: 'Ajouter une photo', soon: 'bientôt' },
+const ADD = [
+  { icon: 'sign', label: 'Ajouter une signature', onClick: () => {} },
+  { icon: 'camera', label: 'Ajouter une photo', onClick: () => {} },
 ] as const;
 
 /**
- * As the app draws it until the signature and the undo arrive (YSL-75,
- * YSL-78): the parcels listed, another handover one tap away.
+ * As the app draws it until the undo arrives (YSL-78): the parcels listed,
+ * a signature or a photo still possible, another handover one tap away.
  */
 export const DansLApp: Story = {
   name: 'Dans l’app',
@@ -53,7 +55,7 @@ export const DansLApp: Story = {
     description: 'à Nora Haddad, à 11 h 21',
     proofs: [
       { icon: 'hash', label: 'Code vérifié', done: true },
-      ...SOON,
+      ...ADD,
       { icon: 'cloud', label: 'Envoyée au serveur', done: true },
     ],
     parcels: APP_PARCELS,
@@ -72,7 +74,7 @@ export const SansVerification: Story = {
     description: 'à Noé Bertin, à 9 h 05',
     proofs: [
       { icon: 'user', label: 'Sans vérification' },
-      ...SOON,
+      ...ADD,
       { icon: 'cloud', label: 'Envoyée au serveur', done: true },
     ],
     parcels: APP_PARCELS.slice(0, 1),
@@ -87,8 +89,42 @@ export const HorsLigne: Story = {
     offline: true,
     proofs: [
       { icon: 'qr', label: 'QR code vérifié', done: true },
-      ...SOON,
+      ...ADD,
       { icon: 'cloud', label: 'Sera synchronisée au retour du réseau' },
     ],
+  },
+};
+
+/**
+ * Picked by the name, then signed, and a photo taken of the parcels handed
+ * over: both shown under the proofs, kept on this iPhone only.
+ */
+export const SigneeEtPhoto: Story = {
+  name: 'Signée, avec photo',
+  args: {
+    ...DansLApp.args,
+    title: '1 colis remis',
+    description: 'à Noé Bertin, à 9 h 05',
+    proofs: [
+      { icon: 'sign', label: 'Signée', done: true },
+      { icon: 'camera', label: 'Photo enregistrée', done: true },
+      { icon: 'cloud', label: 'Envoyée au serveur', done: true },
+    ],
+    media: {
+      items: [
+        {
+          kind: 'signature',
+          src: signatureImageUrl(SIGNATURES.nora),
+          alt: 'Signature',
+        },
+        {
+          kind: 'photo',
+          src: LABEL_PHOTO_URL,
+          alt: 'Photo de la remise',
+          onOpen: () => {},
+        },
+      ],
+    },
+    parcels: APP_PARCELS.slice(0, 1),
   },
 };

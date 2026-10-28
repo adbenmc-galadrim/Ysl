@@ -9,3 +9,13 @@ export const SIGNATURES = {
     'M106,-134C146,-140,206,-142,276,-146',
   ],
 } satisfies Record<string, string[]>;
+
+/**
+ * A signature as the app keeps it, ink only and cropped, for the stories
+ * that show one: an SVG image of the strokes, in place of the PNG.
+ */
+export function signatureImageUrl(strokes: readonly string[]): string {
+  const paths = strokes.map((d) => `<path d="${d}"/>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="44 -230 242 106" fill="none" stroke="black" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}

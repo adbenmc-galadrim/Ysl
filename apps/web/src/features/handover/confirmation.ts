@@ -42,18 +42,51 @@ function syncProof(
   };
 }
 
+/** What the agent can still add to the handover from this screen. */
+export type ConfirmationActions = {
+  onSign?: () => void;
+  onPhoto?: () => void;
+};
+
+/**
+ * The signature and the photo, kept or still to take: a handover picked by
+ * the name and signed already says « Signée » on its method line.
+ */
+function evidenceProofs(
+  { handover }: HandoverEntry,
+  { onSign, onPhoto }: ConfirmationActions,
+  t: TranslateFn,
+): CheckListItem[] {
+  const signature: CheckListItem[] =
+    handover.method === 'signature'
+      ? []
+      : handover.hasSignature
+        ? [{ icon: 'sign', label: t('handover.confirm.signed'), done: true }]
+        : [
+            {
+              icon: 'sign',
+              label: t('handover.confirm.signature'),
+              onClick: onSign,
+            },
+          ];
+  const photo: CheckListItem = handover.hasPhoto
+    ? { icon: 'camera', label: t('handover.confirm.photographed'), done: true }
+    : { icon: 'camera', label: t('handover.confirm.photo'), onClick: onPhoto };
+  return [...signature, photo];
+}
+
 /**
  * P4 step 4, the screen the agent turns to the recipient: how many parcels,
- * to whom and when, how they proved it, whether the server has it. The
- * signature and the photo are offered once they exist (YSL-75).
+ * to whom and when, how they proved it, whether the server has it. A
+ * signature or a photo may still be added, never required (D6).
  */
 export function describeConfirmation(
   entry: HandoverEntry,
   online: boolean,
   t: TranslateFn,
+  actions: ConfirmationActions = {},
 ): ConfirmationView {
   const { handover, parcels } = entry;
-  const soon = t('handover.signature.soon');
   return {
     title: t('handover.confirm.title', { count: parcels.length }),
     description: t('handover.confirm.to', {
@@ -66,8 +99,7 @@ export function describeConfirmation(
         label: methodLabel(handover.method, t),
         done: handover.method !== 'manuel',
       },
-      { icon: 'sign', label: t('handover.confirm.signature'), soon },
-      { icon: 'camera', label: t('handover.confirm.photo'), soon },
+      ...evidenceProofs(entry, actions, t),
       syncProof(entry, online, t),
     ],
     parcels: parcels.map((parcel) => handedParcel(parcel, t)),
