@@ -177,6 +177,7 @@ describe('a handover between two iPhones', () => {
       {
         ...searchForCode(match.code, 'qr', Date.now()),
         parcelIds: parcels.map((parcel) => parcel.id),
+        delegateName: 'Paul Mercier',
       },
       { agentId: KARIM, agentName: 'Karim Benali' },
     );
@@ -196,14 +197,16 @@ describe('a handover between two iPhones', () => {
       method: 'qr',
       personId: nora.id,
       recipientName: 'Nora Haddad',
+      delegateName: 'Paul Mercier',
       agentName: 'Karim Benali',
       cancelledAt: null,
     });
 
     await other.syncNow({ force: true });
-    expect((await second.handover.get(done.handoverId))?.agentName).toBe(
-      'Karim Benali',
-    );
+    expect(await second.handover.get(done.handoverId)).toMatchObject({
+      agentName: 'Karim Benali',
+      delegateName: 'Paul Mercier',
+    });
     expect((await second.parcel.get(parcels[1]!.id))?.status).toBe('remis');
     expect((await second.pickupCode.get(match.code.id))?.usedAt).not.toBeNull();
     const rows = await listHomeParcels(second);

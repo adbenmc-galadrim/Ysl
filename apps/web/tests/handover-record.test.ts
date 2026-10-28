@@ -152,6 +152,31 @@ describe('recordHandover', () => {
     expect((await db.pickupCode.get(code.id))?.usedAt).toEqual(LATER);
   });
 
+  it('notes who collected for the recipient, the method left as checked', async () => {
+    const done = await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: '  Paul   Mercier ' },
+      { agentId: AGENT, now: LATER },
+    );
+
+    expect(await db.handover.get(done.handoverId)).toMatchObject({
+      recipientName: 'Nora Haddad',
+      delegateName: 'Paul Mercier',
+      method: 'pin',
+    });
+    expect((await db.pickupCode.get(code.id))?.usedAt).toEqual(LATER);
+  });
+
+  it('notes nobody when the recipient collects themselves', async () => {
+    const done = await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: 'nora HADDAD' },
+      { agentId: AGENT, now: LATER },
+    );
+
+    expect((await db.handover.get(done.handoverId))?.delegateName).toBeNull();
+  });
+
   it('hands a contact’s parcels over by their name', async () => {
     const contact = contactRow({ name: 'Marc Petit' });
     const parcel = parcelRow({ contactId: contact.id });
