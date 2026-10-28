@@ -9,6 +9,11 @@ import type { HandoverRecipient } from '#/features/handover/waiting';
 import { outsideDetail } from '#/features/recipient/options';
 import { initialsOf } from '#/features/settings/initials';
 
+/** « Marc » for « Marc Petit »: how the screens speak of a contact or a recorded name. */
+export function firstNameOf(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
 /** The person as the handover names them, with the first name the screen speaks of. */
 export type HandoverPerson = RemiseRecipient & { firstName: string };
 
@@ -30,7 +35,7 @@ export function describeRecipient(
   const { contact } = row;
   return {
     name: contact.name,
-    firstName: contact.name.trim().split(/\s+/)[0] ?? contact.name,
+    firstName: firstNameOf(contact.name),
     initials: initialsOf(contact.name),
     department: outsideDetail(contact),
   };

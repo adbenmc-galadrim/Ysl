@@ -90,4 +90,19 @@ describe('a parcel as the handover lists it', () => {
       ),
     ).toMatchObject({ last4: '', registered: false });
   });
+
+  it('tells who sent it and a reserve on its state, to check on the shelf', () => {
+    const damaged = parcelRow({
+      senderName: 'Zalando',
+      damage: 'mouille',
+      damagedAt: NOW,
+    });
+
+    expect(toRemiseParcel(damaged, NOW, t)).toMatchObject({
+      sender: 'Zalando',
+      damaged: true,
+    });
+    expect(toRemiseParcel(parcelRow(), NOW, t)).not.toHaveProperty('sender');
+    expect(toRemiseParcel(parcelRow(), NOW, t).damaged).toBe(false);
+  });
 });

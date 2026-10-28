@@ -4,6 +4,7 @@ import { Dexie } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
+import { handoversOf } from '#/features/handover/delivered';
 import type {
   CourrierDatabase,
   LocalContact,
@@ -34,13 +35,15 @@ export async function loadRecipientContext(
   const contactIds = [
     ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
   ];
-  const [people, contacts] = await Promise.all([
+  const [people, contacts, handovers] = await Promise.all([
     database.directoryPerson.bulkGet(personIds),
     database.contact.bulkGet(contactIds),
+    handoversOf(database, parcels),
   ]);
   return {
     people: byId<LocalDirectoryPerson>(people),
     contacts: byId<LocalContact>(contacts),
+    handovers,
   };
 }
 

@@ -27,24 +27,43 @@ export const QrVerifie: Story = {
     location: '3e étage',
     verified: 'QR code vérifié à 11 h 20',
     parcels: NORA_HANDOVER,
+    onToggle: () => {},
+    onToggleAll: () => {},
+    onConfirm: () => {},
   },
 };
 
-/** One parcel left on the shelf: the button counts two. */
+/** One parcel left on the shelf: the button counts two, the header offers to tick all again. */
 export const Partielle: Story = {
   args: { ...QrVerifie.args, excluded: ['p-4472'] },
 };
 
-/** As the app shows it until the handover is recorded: read only, the button waits. */
+/** The label told the sender, and one parcel came damaged: shown before it is handed. */
+export const ExpediteurEtReserve: Story = {
+  name: 'Expéditeur et réserve',
+  args: {
+    ...QrVerifie.args,
+    parcels: [
+      { ...NORA_HANDOVER[0]!, sender: 'Zalando' },
+      { ...NORA_HANDOVER[1]!, sender: 'Fnac', damaged: true },
+      NORA_HANDOVER[2]!,
+    ],
+  },
+};
+
+/** Picked by the name: nothing was checked, the signature is still to come (YSL-75). */
 export const ChoisiParLeNom: Story = {
   name: 'Choisi par le nom',
   args: {
     recipient: PEOPLE.nora,
-    verified: 'Choisi par le nom',
+    verified: 'Sans vérification',
     verifiedBy: 'name',
+    signatureNote: 'bientôt',
     parcels: NORA_HANDOVER,
     extras: false,
-    confirmNote: 'La remise arrive bientôt dans l’app.',
+    onToggle: () => {},
+    onToggleAll: () => {},
+    onConfirm: () => {},
   },
 };
 
@@ -57,6 +76,5 @@ export const AucunColis: Story = {
     parcels: [],
     empty: 'Rien n’attend Nora au comptoir.',
     extras: false,
-    confirmNote: 'La remise arrive bientôt dans l’app.',
   },
 };

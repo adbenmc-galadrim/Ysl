@@ -5,6 +5,7 @@ import { db } from '#/features/db/database';
 import type { CourrierDatabase, LocalPhoto } from '#/features/db/schema';
 import { photoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
+import { handoversOf, lostHandoverIds } from '#/features/handover/delivered';
 import type { ParcelRecord } from '#/features/parcels/record';
 
 /**
@@ -32,7 +33,19 @@ export async function loadParcelRecord(
       ...events.map((event) => ['event', event.id]),
     ])
     .toArray();
-  return { parcel, person, contact, events, ops };
+  const [handovers, lostHandovers] = await Promise.all([
+    handoversOf(database, [parcel]),
+    lostHandoverIds(database, parcel),
+  ]);
+  return {
+    parcel,
+    person,
+    contact,
+    events,
+    ops,
+    handover: handovers.get(parcelId),
+    lostHandovers,
+  };
 }
 
 /** `undefined` while it is read, `null` once known to be missing. */

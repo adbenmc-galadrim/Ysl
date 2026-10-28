@@ -6,8 +6,10 @@ import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
 import type {
   LocalContact,
   LocalDirectoryPerson,
+  LocalHandover,
   LocalParcel,
 } from '#/features/db/schema';
+import { proofLabel } from '#/features/handover/delivered';
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -16,6 +18,8 @@ export const DAY_MS = 24 * HOUR_MS;
 export type RecipientContext = {
   people: ReadonlyMap<string, LocalDirectoryPerson>;
   contacts: ReadonlyMap<string, LocalContact>;
+  /** The standing handover of the parcels handed over, by parcel id. */
+  handovers?: ReadonlyMap<string, LocalHandover>;
 };
 
 export function startOfDay(now: Date): Date {
@@ -174,6 +178,7 @@ function statusLine(
   now: Date,
   t: TranslateFn,
   dates?: ReminderDates,
+  handover?: LocalHandover,
 ): string {
   switch (state) {
     case 'incomplete':
@@ -199,10 +204,15 @@ function statusLine(
         ? t('parcel.status.reminded', { ago })
         : t('parcel.status.notified', { ago });
     }
-    case 'handedOver':
-      return t('parcel.status.delivered', {
-        time: formatTime(parcel.deliveredAt ?? parcel.receivedAt),
-      });
+    case 'handedOver': {
+      const time = formatTime(parcel.deliveredAt ?? parcel.receivedAt);
+      return handover
+        ? t('parcel.status.deliveredHow', {
+            time,
+            how: proofLabel(handover.method, t),
+          })
+        : t('parcel.status.delivered', { time });
+    }
     case 'returned':
       return t('parcel.status.returned');
   }
@@ -335,7 +345,14 @@ export function describeParcel(
     carrier,
     last4,
     state,
-    status: statusLine(parcel, state, now, t, dates),
+    status: statusLine(
+      parcel,
+      state,
+      now,
+      t,
+      dates,
+      context.handovers?.get(parcel.id),
+    ),
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,
     damage: damageLine(parcel, t),

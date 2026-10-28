@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { HANDOVER_METHODS, type HandoverMethod } from './handover';
 import { IMPORT_FLAGS, type ImportFlag } from './imports';
 import { DAMAGE_REASONS, type DamageReason } from './parcel-damage';
 import { NOTIFICATION_TYPES, type NotificationType } from './mail/templates';
@@ -48,6 +49,12 @@ export type ParcelEvent =
       type: 'parcel.notified';
       notificationId: string;
       kind: NotificationType;
+    }
+  | {
+      /** Handed over: the `handover` row holds who collected it and how. */
+      type: 'parcel.delivered';
+      handoverId: string;
+      method: HandoverMethod;
     };
 
 const status = z.enum(PARCEL_STATUSES);
@@ -85,6 +92,10 @@ const details = {
     photos: z.number().int().nonnegative().catch(0),
   }),
   'parcel.damage_lifted': z.object({ reason }),
+  'parcel.delivered': z.object({
+    handoverId: z.string(),
+    method: z.enum(HANDOVER_METHODS),
+  }),
 } as const;
 
 /** The `type` and `detail` columns of an event row. */
@@ -111,6 +122,11 @@ export function eventColumns(event: ParcelEvent): {
       return {
         type: event.type,
         detail: { notificationId: event.notificationId, kind: event.kind },
+      };
+    case 'parcel.delivered':
+      return {
+        type: event.type,
+        detail: { handoverId: event.handoverId, method: event.method },
       };
   }
 }
@@ -150,6 +166,10 @@ export function readParcelEvent(
       return read.success ? { type, reason: read.data.reason } : undefined;
     }
     case 'parcel.notified': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.delivered': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
     }

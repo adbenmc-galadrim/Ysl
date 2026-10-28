@@ -24,8 +24,12 @@ export type HandoverParcel = {
   carrier: string;
   last4: string;
   received: string;
+  /** Who sent it, when the label told: « Zalando ». */
+  sender?: string;
   /** Registered mail: the handover asks for a signature. */
   registered?: boolean;
+  /** A reserve on its state: the agent shows the parcel before handing it. */
+  damaged?: boolean;
 };
 
 export const NORA_HANDOVER: HandoverParcel[] = [

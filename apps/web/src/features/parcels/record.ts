@@ -23,9 +23,11 @@ import type {
   LocalContact,
   LocalDirectoryPerson,
   LocalEvent,
+  LocalHandover,
   LocalParcel,
   OutboxOp,
 } from '#/features/db/schema';
+import { proofLabel } from '#/features/handover/delivered';
 import { fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
@@ -51,6 +53,10 @@ export type ParcelRecord = {
   events: readonly LocalEvent[];
   /** The outbox ops of the parcel and of its events. */
   ops: readonly OutboxOp[];
+  /** Who it was handed to and how, while it is `remis`. */
+  handover?: LocalHandover;
+  /** Handovers of this iPhone another one beat to the parcel: not its story. */
+  lostHandovers?: ReadonlySet<string>;
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -214,7 +220,12 @@ function stateCard(
         title: parcel.deliveredAt
           ? at('delivered', parcel.deliveredAt)
           : t('parcel.state.remis'),
-        description,
+        description: record.handover
+          ? t('handover.to', {
+              name: record.handover.recipientName,
+              how: proofLabel(record.handover.method, t),
+            })
+          : description,
       };
     case 'retourne':
       return {
@@ -325,6 +336,8 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
       return t('history.damageLifted', {
         reason: DAMAGE_LABEL[event.reason].toLowerCase(),
       });
+    case 'parcel.delivered':
+      return t(`history.delivered.${event.method}`);
   }
 }
 
@@ -349,8 +362,15 @@ function history(
   for (const row of events) {
     const event = readParcelEvent(row.type, row.detail);
     if (!event) continue;
+    if (
+      event.type === 'parcel.delivered' &&
+      record.lostHandovers?.has(event.handoverId)
+    ) {
+      continue;
+    }
     if (event.type === 'parcel.status') reached.add(event.to);
     if (event.type === 'parcel.notified') reached.add('notifie');
+    if (event.type === 'parcel.delivered') reached.add('remis');
     const own = opsOf(row.id);
     const when = formatWhen(row.at, now, t);
     const rejected = own.find((op) => op.state === 'rejected');

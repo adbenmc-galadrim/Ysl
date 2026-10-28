@@ -27,6 +27,8 @@ export type SyncEngineOptions = {
   now?: () => Date;
   /** Called when the server answered 401: the session is gone. */
   onUnauthorized?: () => void;
+  /** Settles what the pull resolved of the refused changes (a handover lost to another iPhone). */
+  afterPull?: () => Promise<void>;
 };
 
 export type SyncNowOptions = {
@@ -74,6 +76,7 @@ export function createSyncEngine({
   online = () => navigator.onLine,
   now = () => new Date(),
   onUnauthorized,
+  afterPull,
 }: SyncEngineOptions) {
   let snapshot = INITIAL_SYNC_SNAPSHOT;
   const listeners = new Set<() => void>();
@@ -113,6 +116,7 @@ export function createSyncEngine({
       const pulled = await pullChanges(db, pull, {
         onProgress: (rows) => set({ pulled: rows }),
       });
+      await afterPull?.();
       const at = now();
       await db.syncState.put({ key: SYNC_STATE_KEYS.lastSyncAt, value: at });
       if (pushed.stopped === 'retry') {

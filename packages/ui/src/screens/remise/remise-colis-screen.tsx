@@ -43,12 +43,34 @@ export type RemiseColisScreenProps = {
   extras?: boolean;
   /** Ids of the parcels unticked by the agent; all are handed over by default. */
   excluded?: string[];
+  /**
+   * Picked by the name, nothing proves who collects: what the agent may do
+   * instead, a signature, and why it is greyed out when it is not there yet.
+   */
+  signatureNote?: string;
+  /** The handover is being written: the button waits. */
+  busy?: boolean;
   onToggle?: (id: string) => void;
+  /** « Tout décocher » while all are ticked, « Tout cocher » otherwise. */
+  onToggleAll?: () => void;
+  onSignature?: () => void;
   onScan?: () => void;
   onSomeoneElse?: () => void;
   onConfirm?: () => void;
   onBack?: () => void;
 };
+
+/** « Reçu hier · Zalando, recommandé, abîmé »: what to check on the shelf. */
+function detailOf(parcel: RemiseParcel): string {
+  const flags = [
+    parcel.registered && 'recommandé',
+    parcel.damaged && 'abîmé',
+  ].filter(Boolean);
+  const head = parcel.sender
+    ? `${parcel.received} · ${parcel.sender}`
+    : parcel.received;
+  return [head, ...flags].join(', ');
+}
 
 /**
  * The recipient is identified; this lists everything waiting for them so
@@ -65,7 +87,11 @@ export function RemiseColisScreen({
   confirmNote,
   extras = true,
   excluded = [],
+  signatureNote,
+  busy = false,
   onToggle,
+  onToggleAll,
+  onSignature,
   onScan,
   onSomeoneElse,
   onConfirm,
@@ -73,6 +99,7 @@ export function RemiseColisScreen({
 }: RemiseColisScreenProps) {
   const count = parcels.filter((p) => !excluded.includes(p.id)).length;
   const registered = parcels.some((p) => p.registered);
+  const allTicked = count === parcels.length;
   return (
     <Screen
       bottom={
@@ -85,7 +112,7 @@ export function RemiseColisScreen({
           )}
           <Button
             block
-            disabled={!count || confirmNote !== undefined}
+            disabled={!count || busy || confirmNote !== undefined}
             onClick={onConfirm}
           >
             Remettre {count} colis
@@ -114,6 +141,20 @@ export function RemiseColisScreen({
         classNames={{ root: 'h-[52px] items-start rounded-control pt-4 pb-0' }}
         className="mt-5"
       />
+      {verifiedBy === 'name' && signatureNote !== undefined && (
+        <LinkCard
+          icon="sign"
+          label={
+            <>
+              Faire signer
+              <span className="ml-2 text-muted">{signatureNote}</span>
+            </>
+          }
+          disabled={!onSignature}
+          onClick={onSignature}
+          className="mt-3 disabled:cursor-default disabled:opacity-60"
+        />
+      )}
       {parcels.length === 0 ? (
         <EmptyState
           icon="inbox"
@@ -126,6 +167,18 @@ export function RemiseColisScreen({
           <SectionHeader
             title="Ses colis"
             count={parcels.length}
+            action={
+              onToggleAll &&
+              parcels.length > 1 && (
+                <Button
+                  variant="link"
+                  onClick={onToggleAll}
+                  className="h-auto text-15 font-semibold"
+                >
+                  {allTicked ? 'Tout décocher' : 'Tout cocher'}
+                </Button>
+              )
+            }
             className="mt-[26px]"
           />
           <div className="mt-[21px]">
@@ -137,12 +190,10 @@ export function RemiseColisScreen({
                     ? `${parcel.carrier} ···${parcel.last4}`
                     : parcel.carrier
                 }
-                detail={
-                  parcel.registered
-                    ? `${parcel.received}, recommandé`
-                    : parcel.received
+                detail={detailOf(parcel)}
+                detailTone={
+                  parcel.registered || parcel.damaged ? 'orange' : 'muted'
                 }
-                detailTone={parcel.registered ? 'orange' : 'muted'}
                 checked={!excluded.includes(parcel.id)}
                 onToggle={() => onToggle?.(parcel.id)}
                 separator={i < parcels.length - 1}

@@ -27,6 +27,7 @@ describe('parcel events', () => {
         photos: 2,
       },
       { type: 'parcel.damage_lifted', reason: 'mouille' },
+      { type: 'parcel.delivered', handoverId: 'h-1', method: 'pin' },
     ];
     for (const event of events) expect(roundTrip(event)).toEqual(event);
   });
@@ -39,6 +40,12 @@ describe('parcel events', () => {
     expect(readParcelEvent('parcel.edited', 'poids')).toBeUndefined();
     expect(
       readParcelEvent('parcel.damage_lifted', { reason: 'perce' }),
+    ).toBeUndefined();
+    expect(
+      readParcelEvent('parcel.delivered', {
+        handoverId: 'h-1',
+        method: 'face',
+      }),
     ).toBeUndefined();
   });
 
