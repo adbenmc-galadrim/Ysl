@@ -13,7 +13,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
-import { useHandoverToast } from '#/features/handover/done-toast';
+import {
+  type HandoverToast,
+  useHandoverToast,
+} from '#/features/handover/done-toast';
 import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
@@ -44,6 +47,16 @@ import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
 
 const t = createTranslator(DEFAULT_LOCALE);
+
+function conflictMessage({
+  firstName,
+  byMe,
+}: Extract<HandoverToast, { kind: 'conflict' }>): string {
+  const by = byMe ? 'mine' : 'colleague';
+  return firstName
+    ? t(`handover.conflict.${by}`, { name: firstName })
+    : t(`handover.conflict.${by}.unnamed`);
+}
 
 const NOBODY: ReadonlyMap<string, string | null> = new Map();
 
@@ -225,7 +238,7 @@ export function ColisHome() {
         }
         loading={loading}
         toast={
-          handed ? (
+          handed?.kind === 'done' ? (
             <Toast
               message={t('handover.done', {
                 count: handed.count,
@@ -234,6 +247,8 @@ export function ColisHome() {
               actionLabel={t('handover.done.undo')}
               actionDisabled
             />
+          ) : handed?.kind === 'conflict' ? (
+            <Toast message={conflictMessage(handed)} />
           ) : update.offered ? (
             <Toast
               message={t('update.available')}

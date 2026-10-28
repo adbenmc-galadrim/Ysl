@@ -1,5 +1,7 @@
 import { onLocalCommit } from '#/features/db/commit';
 import { db } from '#/features/db/database';
+import { settleDeliveryConflicts } from '#/features/handover/conflicts';
+import { announceHandover } from '#/features/handover/done-toast';
 import { createSyncEngine } from '#/features/sync/engine';
 import { queryClient } from '#/lib/query-client';
 import { trpcClient } from '#/lib/trpc';
@@ -14,6 +16,15 @@ export const syncEngine = createSyncEngine({
   pull: (input) => trpcClient.sync.pull.query(input),
   onUnauthorized: () => {
     void queryClient.invalidateQueries({ queryKey: ['session'] });
+  },
+  afterPull: async () => {
+    for (const conflict of await settleDeliveryConflicts(db)) {
+      announceHandover({
+        kind: 'conflict',
+        firstName: conflict.recipientName?.trim().split(/\s+/)[0] ?? null,
+        byMe: conflict.byMe,
+      });
+    }
   },
 });
 

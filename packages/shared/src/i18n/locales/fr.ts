@@ -51,6 +51,11 @@ export const fr = {
   'handover.how.manuel': 'sans vérification',
   'handover.to': 'À {{name}}, {{how}}',
   'handover.done.undo': 'Annuler · bientôt',
+  'handover.conflict.mine':
+    'Déjà remis à {{name}} par vous, sur un autre iPhone',
+  'handover.conflict.mine.unnamed': 'Déjà remis par vous, sur un autre iPhone',
+  'handover.conflict.colleague': 'Déjà remis à {{name}} par un collègue',
+  'handover.conflict.colleague.unnamed': 'Déjà remis par un collègue',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
   'handover.qr.notPickup': 'Ce n’est pas un QR de retrait',
   'handover.qr.notPickup.detail':

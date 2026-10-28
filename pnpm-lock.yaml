@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@electric-sql/pglite':
+      specifier: ^0.5.11
+      version: 0.5.11
     '@fontsource/inter-tight':
       specifier: ^5.2.7
       version: 5.3.0
@@ -15,12 +18,18 @@ catalogs:
     '@trpc/client':
       specifier: 11.18.0
       version: 11.18.0
+    '@trpc/server':
+      specifier: 11.18.0
+      version: 11.18.0
     '@trpc/tanstack-react-query':
       specifier: 11.18.0
       version: 11.18.0
     '@types/node':
       specifier: ^22.15.3
       version: 22.20.5
+    '@types/pg':
+      specifier: ^8.21.0
+      version: 8.23.1
     '@types/react':
       specifier: ^19.2.2
       version: 19.3.0
@@ -30,12 +39,36 @@ catalogs:
     '@vitejs/plugin-react':
       specifier: ^6.0.1
       version: 6.1.2
+    better-auth:
+      specifier: ^1.6.26
+      version: 1.7.12
+    dotenv:
+      specifier: ^17.2.2
+      version: 17.4.2
+    drizzle-orm:
+      specifier: ^0.45.2
+      version: 0.45.4
     eslint:
       specifier: ^9.39.1
       version: 9.39.5
+    onnxruntime-web:
+      specifier: 1.30.0
+      version: 1.30.0
+    pg:
+      specifier: ^8.22.0
+      version: 8.23.1
+    pino:
+      specifier: ^10.3.1
+      version: 10.4.0
+    pino-pretty:
+      specifier: ^13.1.3
+      version: 13.2.0
     playwright:
       specifier: 1.62.1
       version: 1.62.1
+    ppu-paddle-ocr:
+      specifier: 6.6.1
+      version: 6.6.1
     react:
       specifier: ^19.2.0
       version: 19.3.1
@@ -48,9 +81,21 @@ catalogs:
     superjson:
       specifier: ^2.2.6
       version: 2.2.6
+    tailwind-merge:
+      specifier: ^3.6.0
+      version: 3.7.0
+    tailwind-variants:
+      specifier: ^3.3.1
+      version: 3.3.1
     tailwindcss:
       specifier: ^4.3.3
       version: 4.3.3
+    tesseract.js:
+      specifier: 7.0.0
+      version: 7.0.0
+    tesseract.js-core:
+      specifier: 7.0.0
+      version: 7.0.0
     tsx:
       specifier: ^4.23.11
       version: 4.23.15
@@ -69,6 +114,9 @@ catalogs:
     workbox-window:
       specifier: ^7.4.1
       version: 7.4.1
+    zod:
+      specifier: 4.4.3
+      version: 4.4.3
 
 importers:
 
@@ -444,6 +492,9 @@ importers:
         specifier: 'catalog:'
         version: 4.3.3
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: 'catalog:'
+        version: 0.5.11
       '@repo/eslint-config':
         specifier: workspace:*
         version: link:../../packages/eslint-config
@@ -468,6 +519,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.1.2(vite@8.3.4(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15))
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.4(@electric-sql/pglite@0.5.11)(@prisma/client@5.22.0)(@types/pg@8.23.1)(better-sqlite3@12.11.1)(kysely@0.29.7)(pg@8.23.1)
       eslint:
         specifier: 'catalog:'
         version: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)

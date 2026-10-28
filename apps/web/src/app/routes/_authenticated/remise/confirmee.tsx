@@ -23,6 +23,7 @@ export const Route = createFileRoute('/_authenticated/remise/confirmee')({
           : { kind: 'contact', id: handover.contactId ?? '' },
       );
       announceHandover({
+        kind: 'done',
         count: handover.parcelIds.length,
         firstName:
           person?.firstName ??
