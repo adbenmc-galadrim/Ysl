@@ -53,7 +53,7 @@ describe('searchOptions', () => {
 });
 
 describe('Personne hors annuaire', () => {
-  it('keeps one contact per e-mail, whatever the name typed', async () => {
+  it('keeps one contact per e-mail, whatever the name typed, with its last department', async () => {
     const first = await saveOutsideContact(
       db,
       { name: 'Marc Petit', email: 'Marc@Interim.fr ', department: '' },
@@ -67,7 +67,12 @@ describe('Personne hors annuaire', () => {
 
     expect(again.id).toBe(first.id);
     expect(await db.contact.toArray()).toMatchObject([
-      { name: 'Marc Petit', email: 'marc@interim.fr', usageCount: 2 },
+      {
+        name: 'Marc Petit',
+        email: 'marc@interim.fr',
+        department: 'Intérim',
+        usageCount: 2,
+      },
     ]);
     const ops = await db.outbox.toArray();
     expect(new Set(ops.map((op) => `${op.entity}:${op.entityId}`))).toEqual(

@@ -88,6 +88,7 @@ export function contactRow(
     name: 'Atelier Rive gauche',
     nameNorm: 'atelier rive gauche',
     email: null,
+    department: null,
     createdBy: null,
     usageCount: 0,
     lastUsedAt: null,

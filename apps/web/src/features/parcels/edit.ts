@@ -327,6 +327,7 @@ export async function saveParcelEdit(
           edit.recipient.name,
           edit.recipient.email,
           options,
+          edit.recipient.department,
         )
       : edit.recipient.kind === 'contact' &&
           edit.recipient.id !== parcel.contactId
@@ -373,14 +374,14 @@ export async function saveParcelEdit(
     weightKg: parseWeight(edit.weightKg) ?? null,
     location: text(edit.location),
   };
-  // The department typed with someone outside the directory goes with them:
-  // another recipient chosen takes it away.
+  // A contact brings its department to the parcel; another recipient
+  // chosen takes it away.
   edited.department =
     edit.recipient.kind === 'typed'
-      ? edit.recipient.department?.trim() || null
+      ? (contact?.department ?? null)
       : edited.personId !== parcel.personId ||
           edited.contactId !== parcel.contactId
-        ? null
+        ? (contact?.department ?? null)
         : parcel.department;
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };

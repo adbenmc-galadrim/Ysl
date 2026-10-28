@@ -71,6 +71,13 @@
       "when": 1793133363694,
       "tag": "0009_alias_appris",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793214999830,
+      "tag": "0010_service_contact",
+      "breakpoints": true
     }
   ]
 }

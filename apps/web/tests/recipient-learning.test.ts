@@ -178,11 +178,15 @@ describe('a recipient nobody corrected', () => {
 });
 
 describe('a contact addressed', () => {
-  it('counts as used, which keeps it from the purge', async () => {
-    const temp = contactRow({ usageCount: 2, lastUsedAt: null });
+  it('counts as used, which keeps it from the purge, and brings its department', async () => {
+    const temp = contactRow({
+      usageCount: 2,
+      lastUsedAt: null,
+      department: 'Intérim',
+    });
     await db.contact.add(temp);
 
-    await scanOnce(
+    const parcelId = await scanOnce(
       temp.name,
       choose({ kind: 'contact', id: temp.id, name: temp.name }),
     );
@@ -190,6 +194,10 @@ describe('a contact addressed', () => {
     expect(await db.contact.get(temp.id)).toMatchObject({
       usageCount: 3,
       lastUsedAt: NOW,
+    });
+    expect(await db.parcel.get(parcelId)).toMatchObject({
+      contactId: temp.id,
+      department: 'Intérim',
     });
   });
 });
@@ -280,8 +288,12 @@ describe('one name learned apart on two iPhones', () => {
 });
 
 describe('a contact chosen on the parcel’s sheet', () => {
-  it('counts as used', async () => {
-    const temp = contactRow({ usageCount: 1, lastUsedAt: null });
+  it('counts as used and brings its department', async () => {
+    const temp = contactRow({
+      usageCount: 1,
+      lastUsedAt: null,
+      department: 'Intérim',
+    });
     await db.contact.add(temp);
     const parcel = parcelRow({ personId: null, contactId: null });
     await db.parcel.put(parcel);
@@ -297,5 +309,6 @@ describe('a contact chosen on the parcel’s sheet', () => {
       usageCount: 2,
       lastUsedAt: NOW,
     });
+    expect((await db.parcel.get(parcel.id))?.department).toBe('Intérim');
   });
 });

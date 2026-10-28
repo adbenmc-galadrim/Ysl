@@ -48,6 +48,7 @@ export const contact = pgTable(
     name: text('name').notNull(),
     nameNorm: text('name_norm').notNull(),
     email: text('email'),
+    department: text('department'),
     createdBy: text('created_by'),
     usageCount: integer('usage_count').default(0).notNull(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),

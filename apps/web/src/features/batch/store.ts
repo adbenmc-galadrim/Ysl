@@ -257,6 +257,7 @@ function toParcel(
   draft: DraftParcel,
   { batchId, agentId, now }: Required<FinishOptions>,
   learnedSenderId?: string | null,
+  contactDepartment: string | null = null,
 ): LocalParcel {
   const sender = promotedSender(draft);
   const senderId =
@@ -277,7 +278,9 @@ function toParcel(
     contactId: draft.recipient?.kind === 'contact' ? draft.recipient.id : null,
     readName: draft.readName,
     notificationEmail: null,
-    department: draft.department ?? null,
+    department:
+      draft.department ??
+      (draft.recipient?.kind === 'contact' ? contactDepartment : null),
     senderId,
     senderName: sender?.name ?? null,
     pieceN: draft.pieces ? draft.pieces.read.length : null,
@@ -371,8 +374,21 @@ export function finishBatch(
       };
       const learned = await learnSenders(db, drafts, now);
       const recipients = await learnRecipients(db, drafts, now);
+      // A contact's department follows it onto each parcel it receives.
+      const departments = new Map(
+        recipients.flatMap((upsert) =>
+          upsert.entity === 'contact'
+            ? [[upsert.row.id, upsert.row.department ?? null] as const]
+            : [],
+        ),
+      );
       const parcels = drafts.map((draft) =>
-        toParcel(draft, options, learned.senderIds.get(draft.id)),
+        toParcel(
+          draft,
+          options,
+          learned.senderIds.get(draft.id),
+          draft.recipient ? departments.get(draft.recipient.id) : null,
+        ),
       );
       await commitLocal(
         db,
