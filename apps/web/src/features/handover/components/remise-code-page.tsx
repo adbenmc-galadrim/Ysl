@@ -14,6 +14,7 @@ import {
   type RemiseColisSearch,
   searchForCode,
 } from '#/features/handover/route';
+import { serverCheck } from '#/features/handover/server-check';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -56,7 +57,7 @@ export function RemiseCodePage({
   const check = async (pin: string) => {
     checking.current = true;
     try {
-      const match = await lookupPickupPin(db, pin);
+      const match = await lookupPickupPin(db, pin, new Date(), serverCheck);
       record(pinOutcome(attempts, match.status, Date.now()));
       if (match.status === 'active') {
         onFound(searchForCode(match.code, 'pin', Date.now()));

@@ -28,6 +28,7 @@ import {
   type RemiseColisSearch,
   searchForCode,
 } from '#/features/handover/route';
+import { serverCheck } from '#/features/handover/server-check';
 import { decodeQueue } from '#/features/scan/decoder';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -118,7 +119,12 @@ export function RemiseScanPage({
       if (text === undefined) lastText = '';
       else if (!stopped && text !== lastText) {
         lastText = text;
-        const match = await lookupPickupText(db, text).catch(() => null);
+        const match = await lookupPickupText(
+          db,
+          text,
+          new Date(),
+          serverCheck,
+        ).catch(() => null);
         if (stopped) return;
         if (!match) lastText = '';
         else if (match.status === 'active') {
