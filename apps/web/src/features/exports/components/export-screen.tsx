@@ -23,7 +23,8 @@ function doneNote(count: number, at: Date) {
     : t('export.done.one', values);
 }
 
-export function ExportScreen() {
+/** `parcelIds`: the parcels ticked on Colis (F31), the export holds only them. */
+export function ExportScreen({ parcelIds }: { parcelIds?: string[] }) {
   const navigate = useNavigate();
   const online = useOnline();
   const [progress, setProgress] = useState<Progress>({ state: 'idle' });
@@ -47,7 +48,9 @@ export function ExportScreen() {
         return;
       }
       setProgress({ state: 'running' });
-      const result = await trpcClient.exports.parcelsCsv.query();
+      const result = await trpcClient.exports.parcelsCsv.query(
+        parcelIds?.length ? { parcelIds } : undefined,
+      );
       await share(csvFile(result), result.count);
     } catch (error) {
       console.error('Parcels export failed', error);
@@ -66,7 +69,9 @@ export function ExportScreen() {
           ? t('export.ready')
           : progress.state === 'done'
             ? doneNote(progress.count, progress.at)
-            : t('export.note');
+            : parcelIds?.length
+              ? t('selection.export.note', { count: parcelIds.length })
+              : t('export.note');
 
   return (
     <ExportView
@@ -78,7 +83,7 @@ export function ExportScreen() {
       }
       note={note}
       onExport={() => void run()}
-      onBack={() => void navigate({ to: '/reglages' })}
+      onBack={() => void navigate({ to: parcelIds ? '/' : '/reglages' })}
     />
   );
 }

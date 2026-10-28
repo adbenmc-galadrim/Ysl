@@ -233,6 +233,25 @@ export const fr = {
   'selection.skipped.address': '{{count}} sans e-mail',
   'selection.mail.none': 'Aucun e-mail à préparer',
   'selection.next': 'Suivant : {{name}}, {{count}} colis',
+  'selection.more.title': '{{count}} colis sélectionnés',
+  'selection.more.export': 'Exporter en CSV',
+  'selection.more.delete': 'Supprimer',
+  'selection.cancel': 'Annuler',
+  'selection.delete.title': 'Supprimer {{count}} colis ?',
+  'selection.delete.description':
+    'Ils quittent la liste, ici et sur le serveur ; leur historique est gardé.',
+  'selection.delete.kept.one':
+    '1 colis déjà notifié ou remis reste en place.',
+  'selection.delete.kept.many':
+    '{{count}} colis déjà notifiés ou remis restent en place.',
+  'selection.delete.none':
+    'Seuls les colis à compléter ou à notifier se suppriment.',
+  'selection.delete.confirm': 'Supprimer',
+  'selection.deleted.one': '1 colis supprimé',
+  'selection.deleted.many': '{{count}} colis supprimés',
+  'selection.error': 'L’écriture a échoué. Réessayez.',
+  'selection.export.note':
+    'Les {{count}} colis sélectionnés, remis compris, préparés par le serveur.',
   'selection.handover.none': 'Aucun colis à remettre',
   'selection.handover.skipped.one': '1 colis sans destinataire laissé de côté',
   'selection.handover.skipped.many':

@@ -65,6 +65,45 @@ export async function stepBackParcel(
   return changeParcelStatus(db, parcelId, to, options);
 }
 
+/** What « Supprimer » may take from a selection: a parcel nobody was told about yet. */
+export const DELETABLE_STATUSES: readonly ParcelStatus[] = [
+  'a_completer',
+  'recu',
+];
+
+/**
+ * « Supprimer » on a selection (F31): every deletable parcel of it in one
+ * write, each with its `parcel.deleted`; the others are left as they are.
+ * Returns the ids deleted.
+ */
+export async function deleteParcels(
+  db: CourrierDatabase,
+  parcelIds: readonly string[],
+  { agentId, now = new Date() }: StatusChangeOptions,
+): Promise<string[]> {
+  const parcels = await db.parcel.bulkGet([...parcelIds]);
+  const ids = parcels
+    .filter(
+      (parcel) =>
+        parcel !== undefined &&
+        !parcel.deletedAt &&
+        DELETABLE_STATUSES.includes(parcel.status),
+    )
+    .map((parcel) => parcel!.id);
+  if (!ids.length) return [];
+  await commitLocal(
+    db,
+    {
+      upserts: ids.map((id) =>
+        parcelEvent(id, { type: 'parcel.deleted' }, { agentId, now }),
+      ),
+      deletes: ids.map((id) => ({ entity: 'parcel' as const, id })),
+    },
+    { now },
+  );
+  return ids;
+}
+
 /**
  * "Supprimer": the parcel goes from every list, here and on the server, but
  * stays in the base with its history (deletes are logical, §8.4).

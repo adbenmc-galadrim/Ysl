@@ -163,6 +163,18 @@ describe('exports.parcelsCsv', () => {
       /^courrier-historique-\d{4}-\d{2}-\d{2}\.csv$/,
     );
   });
+
+  it('holds only the parcels ticked on Colis, never another mailroom’s', async () => {
+    const result = await callerFor(memberSession(AGENT_ID)).exports.parcelsCsv({
+      parcelIds: [ids.contact, newId()],
+    });
+    expect(result.count).toBe(1);
+    expect(
+      parseCsv(result.csv)
+        .slice(1)
+        .map((row) => row[0]),
+    ).toEqual([ids.contact]);
+  });
 });
 
 describe('exportParcelsCsv', () => {

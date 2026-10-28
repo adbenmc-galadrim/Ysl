@@ -3,6 +3,11 @@ import { z } from 'zod';
 /** The mailroom's clock: every date of an export reads in Paris time. */
 export const EXPORT_TIME_ZONE = 'Europe/Paris';
 
+/** The parcels ticked on Colis (F31); without them, every parcel of the service. */
+export const parcelsCsvInput = z
+  .object({ parcelIds: z.array(z.uuid()).min(1).max(5000).optional() })
+  .optional();
+
 export const parcelsCsvOutput = z.object({
   filename: z.string(),
   csv: z.string(),
