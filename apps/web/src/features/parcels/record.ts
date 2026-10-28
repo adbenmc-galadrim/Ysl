@@ -640,13 +640,16 @@ export function handoverItems(
   const row = (label: string, value: string): DetailsItem[] => [
     { label, value },
   ];
-  const collected = handover.delegateName ?? handover.recipientName;
-  const unlike = !!announced && !sameName(announced, collected);
+  // Nobody named means nobody declared: the announcement is told alone,
+  // never as if the recipient had come in person.
+  const unlike =
+    !!announced &&
+    !sameName(announced, handover.delegateName ?? handover.recipientName);
   return [
     ...(recipient ? row(t('record.handover.to'), handover.recipientName) : []),
     ...(unlike ? row(t('record.handover.announced'), announced) : []),
-    ...(handover.delegateName || unlike
-      ? row(t('record.handover.delegate'), collected)
+    ...(handover.delegateName
+      ? row(t('record.handover.delegate'), handover.delegateName)
       : []),
     ...row(t('record.handover.when'), formatWhen(handover.at, now, t)),
     ...row(t('record.handover.agent'), agentNameOf(handover, t, me)),

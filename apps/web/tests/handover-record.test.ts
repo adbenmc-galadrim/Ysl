@@ -375,6 +375,26 @@ describe('a parcel handed over', () => {
     );
   });
 
+  it('tells the announcement alone when nobody was named at the desk', async () => {
+    await db.parcel.put({ ...parcels[0]!, expectedDelegate: 'Paul Mercier' });
+    await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all() },
+      { agentId: AGENT, now: LATER },
+    );
+
+    const view = describeRecord((await loadParcelRecord(db, all()[0]!))!, {
+      now: LATER,
+      t,
+      showUnsent: true,
+    });
+    expect(view.handover?.items.slice(0, 3)).toEqual([
+      { label: 'Remis à', value: 'Nora Haddad' },
+      { label: 'Annoncé', value: 'Paul Mercier' },
+      expect.objectContaining({ label: 'Quand' }),
+    ]);
+  });
+
   it('says a pick by the name went unchecked', async () => {
     await recordHandover(
       db,
