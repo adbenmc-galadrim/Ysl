@@ -5,10 +5,15 @@ import {
   pickupTokenHash,
 } from '@repo/contract/pickup';
 import { newId } from '@repo/shared/id';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
 import { pickupCodeWrites, recallSecrets } from '#/features/mail/pickup-code';
-import { dueCount, loadReminderMails } from '#/features/mail/reminder-mails';
+import {
+  describeReminder,
+  dueCount,
+  loadReminderMails,
+} from '#/features/mail/reminder-mails';
 import {
   contactRow,
   NOW,
@@ -163,5 +168,45 @@ describe('the reminders to send', () => {
       late: true,
     });
     expect(dueCount(mails)).toBe(1);
+  });
+});
+
+describe('a person on the screen of the reminders', () => {
+  it('says their parcels, since when, and the reminders already sent', async () => {
+    const t = createTranslator(DEFAULT_LOCALE);
+    const nora = personRow({ firstName: 'Nora', email: 'nora@example.com' });
+    await db.directoryPerson.put(nora);
+    const first = parcelRow({
+      personId: nora.id,
+      status: 'notifie',
+      notifiedAt: day(16),
+      lastNotifiedAt: day(21),
+    });
+    const second = parcelRow({
+      personId: nora.id,
+      status: 'notifie',
+      notifiedAt: day(19),
+      carrier: 'DHL',
+      tracking: '1234567112',
+    });
+    await db.parcel.bulkPut([first, second]);
+
+    const [mail] = await loadReminderMails(db, NOW);
+
+    expect(describeReminder(mail!, NOW, t)).toEqual({
+      id: mail!.key,
+      name: 'Nora Morel',
+      parcels: '2 colis · UPS ···0622, DHL ···7112',
+      status: 'En attente depuis 8 jours · relancé 1 fois, le 21 oct.',
+      due: true,
+    });
+    const never = await loadReminderMails(db, NOW);
+    expect(
+      describeReminder(
+        { ...never[0]!, reminders: new Map(), parcels: [second] },
+        NOW,
+        t,
+      ).status,
+    ).toBe('Notifié il y a 5 jours, jamais relancé');
   });
 });
