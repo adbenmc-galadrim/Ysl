@@ -43,6 +43,11 @@ export function LotEnregistrePage({ batchId }: { batchId: string }) {
     void navigate({ to: '/notifier', search: { lot: batchId } });
   const open = (target: OutcomeTarget) => {
     if (target.to === 'mails') notify();
+    else if (target.to === 'otherWay')
+      void navigate({
+        to: '/notifier',
+        search: { lot: batchId, prevenir: true },
+      });
     else if (target.to === 'record')
       void navigate({
         to: '/colis/$parcelId',

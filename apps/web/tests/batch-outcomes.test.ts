@@ -22,7 +22,7 @@ function mail(address: string | null, parcels = 1): RecipientMail {
 const NOTHING = { mails: [], toComplete: [], damaged: 0, pieces: 0 };
 
 describe('the card of « Lot enregistré »', () => {
-  it('counts the mails ready apart from the addresses to type', () => {
+  it('counts the mails ready apart from the recipients without an e-mail', () => {
     const { rows, ready } = lotOutcomes(
       {
         ...NOTHING,
@@ -34,9 +34,12 @@ describe('the card of « Lot enregistré »', () => {
     expect(ready).toBe(2);
     expect(rows.map((row) => [row.title, row.detail])).toEqual([
       ['2 e-mails prêts', '3 colis pour 2 personnes'],
-      ['1 adresse manquante', 'À saisir dans l’aperçu de l’e-mail'],
+      [
+        '1 destinataire sans e-mail',
+        'Ajouter l’adresse, prévenir un contact ou de vive voix',
+      ],
     ]);
-    expect(rows.every((row) => row.target?.to === 'mails')).toBe(true);
+    expect(rows.map((row) => row.target?.to)).toEqual(['mails', 'otherWay']);
   });
 
   it('opens the record of a lone parcel to complete, and Colis for several', () => {
