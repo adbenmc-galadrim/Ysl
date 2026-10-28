@@ -87,7 +87,8 @@ export function RemiseConfirmeeScreen({
         <StatusPill {...SYNC_PILL.offline} className="mt-3 self-center" />
       )}
       {/* 162 px down on the mockup's phone; on a shorter one the hero rises
-          so the proofs stay clear of the toast. */}
+          so the proofs stay clear of the toast. The parcel list (about
+          100 px) and the offline pill (44 px) take their room from it. */}
       <ResultHero
         title={title}
         description={description}

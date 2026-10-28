@@ -11,6 +11,7 @@ import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
 import type { IconName } from '#icons';
+import type { RemiseConfirmeeParcel } from '#screens/remise/remise-confirmee-screen';
 
 /**
  * Where a handover stands: kept, still on the iPhone, refused by the
@@ -134,12 +135,8 @@ export function JournalRemisesScreen({
   );
 }
 
-/** A parcel of the handover: "Zalando", "DPD ···4471 · Remis". */
-export type RemiseDetailParcel = {
-  id: string;
-  title: string;
-  detail: string;
-};
+/** A parcel of the handover: "Zalando", "DPD ···4471". */
+export type RemiseDetailParcel = RemiseConfirmeeParcel;
 
 export type RemiseDetailScreenProps = {
   /** "3 colis remis". */
