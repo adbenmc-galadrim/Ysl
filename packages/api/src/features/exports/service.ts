@@ -41,6 +41,8 @@ export const PARCELS_CSV_HEADER = [
   'remis_par',
   'methode_remise',
   'remise_annulee',
+  'signature',
+  'photo_remise',
 ] as const;
 
 /** The v1 vocabulary, so an export still reads as one to the v1 import. */
@@ -120,6 +122,8 @@ async function readHandovers(db: AnyDb, organizationId: string) {
       agentName: handover.agentName,
       at: handover.at,
       cancelledAt: handover.cancelledAt,
+      hasSignature: handover.hasSignature,
+      hasPhoto: handover.hasPhoto,
     })
     .from(handover)
     .where(
@@ -163,8 +167,11 @@ function handoverByParcel(
   return byParcel;
 }
 
+/** « oui » or « non »: the file says a proof exists, the proof stays on the iPhone (D8). */
+const yesNo = (value: boolean) => translate(value ? 'export.yes' : 'export.no');
+
 function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
-  if (!row) return ['', '', '', '', ''];
+  if (!row) return ['', '', '', '', '', '', ''];
   return [
     formatExportDate(row.at),
     row.delegateName
@@ -176,6 +183,8 @@ function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
     row.agentName,
     translate(`handover.method.${row.method}`),
     formatExportDate(row.cancelledAt),
+    yesNo(row.hasSignature),
+    yesNo(row.hasPhoto),
   ];
 }
 

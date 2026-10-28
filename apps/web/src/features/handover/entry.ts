@@ -3,6 +3,7 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import type { IconName } from '@repo/ui';
 import type {
   CourrierDatabase,
+  HandoverProofKind,
   LocalHandover,
   LocalParcel,
   OutboxOp,
@@ -18,7 +19,21 @@ export type HandoverEntry = {
   /** The parcels it handed over still on this iPhone, in its order. */
   parcels: LocalParcel[];
   sync: HandoverSync;
+  /** The signature and the photo this iPhone holds (D8: they stay where taken). */
+  proofs: HandoverProofKind[];
 };
+
+/** The kinds of proof of a handover this iPhone holds. */
+export async function proofKindsOf(
+  db: CourrierDatabase,
+  handoverId: string,
+): Promise<HandoverProofKind[]> {
+  const rows = await db.handoverProof
+    .where('handoverId')
+    .equals(handoverId)
+    .toArray();
+  return [...new Set(rows.map((row) => row.kind))].sort();
+}
 
 export function handoverSyncOf(ops: readonly OutboxOp[]): HandoverSync {
   if (ops.some((op) => op.state === 'rejected')) return 'rejected';
@@ -51,17 +66,19 @@ export async function loadHandoverEntry(
 ): Promise<HandoverEntry | null> {
   const handover = await db.handover.get(handoverId);
   if (!handover || handover.deletedAt) return null;
-  const [parcels, ops] = await Promise.all([
+  const [parcels, ops, proofs] = await Promise.all([
     db.parcel.bulkGet(handover.parcelIds),
     db.outbox
       .where('[entity+entityId]')
       .equals(['handover', handover.id])
       .toArray(),
+    proofKindsOf(db, handover.id),
   ]);
   return {
     handover,
     parcels: handedOf(handover, parcels),
     sync: handoverSyncOf(ops),
+    proofs,
   };
 }
 

@@ -9,6 +9,7 @@ import { IconButton } from '#components/icon-button';
 import { LabelPhoto } from '#components/label-photo';
 import { LargeTitle } from '#components/large-title';
 import { NavBar } from '#components/nav-bar';
+import { ProofMedia, type ProofMediaProps } from '#components/proof-media';
 import { Screen } from '#components/screen';
 import { StatusTimeline, type TimelineStep } from '#components/status-timeline';
 import { Icon, type IconName } from '#icons';
@@ -32,6 +33,8 @@ export type FicheColisAction = { label: string; onClick?: () => void };
  */
 export type FicheColisHandover = {
   items: DetailsItem[];
+  /** The signature and the photo, when this iPhone holds them (D8). */
+  media?: ProofMediaProps;
   /** Opens the whole handover: its other parcels. */
   onOpen?: () => void;
 };
@@ -318,6 +321,9 @@ export function FicheColisScreen({
               items={handover.items}
               className="mt-5"
             />
+            {handover.media && (
+              <ProofMedia {...handover.media} className="mt-3" />
+            )}
             {handover.onOpen && (
               <button
                 type="button"

@@ -185,4 +185,36 @@ describe('the handover journal', () => {
       'Recommandé',
     ]);
   });
+
+  it('says where the signature and the photo are: here, or on the agent’s iPhone', async () => {
+    const parcel = parcelRow({ status: 'remis' });
+    await db.parcel.put(parcel);
+    const row = handoverRow({
+      parcelIds: [parcel.id],
+      method: 'signature',
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    await db.handover.put(row);
+    await db.handoverProof.put({
+      id: 'proof-1',
+      handoverId: row.id,
+      kind: 'photo',
+      path: 'photos/proof-1.jpg',
+      width: 1600,
+      height: 1200,
+      bytes: 9,
+      createdAt: NOW,
+    });
+
+    const entry = (await loadHandoverEntry(db, row.id))!;
+    const view = describeHandoverDetail(entry, NOW, t);
+
+    expect(entry.proofs).toEqual(['photo']);
+    expect(view.items.slice(2, 5)).toEqual([
+      { label: 'Méthode', value: 'Signée' },
+      { label: 'Signature', value: 'Sur l’iPhone de l’agent' },
+      { label: 'Photo', value: 'Sur cet iPhone' },
+    ]);
+  });
 });

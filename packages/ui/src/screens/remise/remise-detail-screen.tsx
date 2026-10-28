@@ -4,6 +4,7 @@ import { IconTile } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
 import { ListRow } from '#components/list-row';
 import { NavBar } from '#components/nav-bar';
+import { ProofMedia, type ProofMediaProps } from '#components/proof-media';
 import { Screen } from '#components/screen';
 import { SectionHeader } from '#components/section-header';
 import type { RemiseConfirmeeParcel } from '#screens/remise/remise-confirmee-screen';
@@ -19,6 +20,8 @@ export type RemiseDetailScreenProps = {
   /** "Remise annulée aujourd’hui à 11 h 25". */
   cancelled?: string;
   items: DetailsItem[];
+  /** The signature and the photo, when this iPhone holds them (D8). */
+  media?: ProofMediaProps;
   parcels: RemiseDetailParcel[];
   onBack?: () => void;
   onParcel?: (parcel: RemiseDetailParcel) => void;
@@ -30,6 +33,7 @@ export function RemiseDetailScreen({
   subtitle,
   cancelled,
   items,
+  media,
   parcels,
   onBack,
   onParcel,
@@ -52,6 +56,7 @@ export function RemiseDetailScreen({
         />
       )}
       <DetailsList title="Remise" items={items} className="mt-5" />
+      {media && <ProofMedia {...media} className="mt-3" />}
       {parcels.length > 0 && (
         <section className="mt-7">
           <SectionHeader title="Colis" count={parcels.length} />

@@ -126,6 +126,7 @@ beforeAll(async () => {
       delegateName: 'Paul Roy',
       method: 'qr',
       agentName: 'Karim Benali',
+      hasSignature: true,
       at: new Date('2026-10-25T14:32:00Z'),
     },
     {
@@ -228,6 +229,8 @@ describe('exportParcelsCsv', () => {
       remis_par: 'Karim Benali',
       methode_remise: 'QR code vérifié',
       remise_annulee: '',
+      signature: 'oui',
+      photo_remise: 'non',
     });
   });
 
@@ -251,13 +254,15 @@ describe('exportParcelsCsv', () => {
     const { csv } = await exportParcelsCsv(db, ORGANIZATION_ID, now);
     const [header, , second, third] = parseCsv(csv);
     const cells = (row: string[]) =>
-      header!.slice(-5).map((_, i) => row[header!.length - 5 + i]);
-    expect(header!.slice(-5)).toEqual([
+      header!.slice(-7).map((_, i) => row[header!.length - 7 + i]);
+    expect(header!.slice(-7)).toEqual([
       'remis_le',
       'remis_a',
       'remis_par',
       'methode_remise',
       'remise_annulee',
+      'signature',
+      'photo_remise',
     ]);
     expect(cells(second!)).toEqual([
       '24/10/2026 11:20',
@@ -265,8 +270,10 @@ describe('exportParcelsCsv', () => {
       '',
       'Code vérifié',
       '24/10/2026 11:25',
+      'non',
+      'non',
     ]);
-    expect(cells(third!)).toEqual(['', '', '', '', '']);
+    expect(cells(third!)).toEqual(['', '', '', '', '', '', '']);
   });
 
   it('writes a winter date in Paris winter time', () => {

@@ -269,6 +269,40 @@ describe('describeRecord', () => {
     );
   });
 
+  it('tells a signed handover on another iPhone: signed, the signature on the agent’s iPhone', async () => {
+    const nora = personRow({ firstName: 'Nora', lastName: 'Haddad' });
+    await db.directoryPerson.put(nora);
+    const row = parcelRow({
+      personId: nora.id,
+      status: 'remis',
+      deliveredAt: NOW,
+      deliveredBy: 'agent-2',
+    });
+    const handover = handoverRow({
+      parcelIds: [row.id],
+      personId: nora.id,
+      method: 'signature',
+      agentId: 'agent-2',
+      hasSignature: true,
+    });
+    await db.parcel.put(row);
+    await db.handover.put(handover);
+
+    const view = describeRecord(await record(row.id), options);
+
+    expect(view.handover?.items).toContainEqual({
+      label: 'Méthode',
+      value: 'Signée',
+    });
+    expect(view.handover?.items).toContainEqual({
+      label: 'Signature',
+      value: 'Sur l’iPhone de l’agent',
+    });
+    expect(view.handover?.items.map((item) => item.label)).not.toContain(
+      'Photo',
+    );
+  });
+
   it('says « Un agent » without a name, and when the handover was cancelled', async () => {
     const row = parcelRow({ personId: 'p-1', status: 'notifie' });
     const handover = handoverRow({

@@ -153,16 +153,16 @@ export function journalSections(
 
 /** One handover, opened from the journal or a parcel's record. */
 export function describeHandoverDetail(
-  { handover, parcels, sync }: HandoverEntry,
+  { handover, parcels, sync, proofs }: HandoverEntry,
   now: Date,
   t: TranslateFn,
   me?: string,
-): Omit<RemiseDetailScreenProps, 'onBack' | 'onParcel'> {
+): Omit<RemiseDetailScreenProps, 'onBack' | 'onParcel' | 'media'> {
   const items = handoverItems(
     handover,
     sync,
     { now, t, me },
-    { cancelled: false },
+    { cancelled: false, here: proofs },
   );
   const when = handover.cancelledAt && formatWhen(handover.cancelledAt, now, t);
   return {

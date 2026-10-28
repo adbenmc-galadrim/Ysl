@@ -22,6 +22,7 @@ import type {
 } from '@repo/ui';
 import { awaitsNotice } from '#/features/mail/recipients';
 import type {
+  HandoverProofKind,
   LocalContact,
   LocalDirectoryPerson,
   LocalEvent,
@@ -67,6 +68,8 @@ export type ParcelRecord = {
   cancelledHandover?: LocalHandover;
   /** Handovers of this iPhone another one beat to the parcel: not its story. */
   lostHandovers?: ReadonlySet<string>;
+  /** The proofs of the handover shown that this iPhone holds. */
+  handoverProofs?: readonly HandoverProofKind[];
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -504,8 +507,24 @@ function handoverCard(
     ),
   );
   return {
-    items: handoverItems(handover, sync, { now, t, me }, { recipient: true }),
+    items: handoverItems(
+      handover,
+      sync,
+      { now, t, me },
+      { recipient: true, here: record.handoverProofs },
+    ),
   };
+}
+
+/** Where a proof of the handover is: shown below, or on the agent's iPhone (D8). */
+function proofPlace(
+  kind: HandoverProofKind,
+  here: readonly HandoverProofKind[],
+  t: TranslateFn,
+): string {
+  return here.includes(kind)
+    ? t('record.handover.proofHere')
+    : t('record.handover.proofElsewhere');
 }
 
 /**
@@ -518,7 +537,16 @@ export function handoverItems(
   handover: LocalHandover,
   sync: RecordSync,
   { now, t, me }: Pick<DescribeOptions, 'now' | 't' | 'me'>,
-  { recipient = false, cancelled = true } = {},
+  {
+    recipient = false,
+    cancelled = true,
+    here = [],
+  }: {
+    recipient?: boolean;
+    cancelled?: boolean;
+    /** The proofs this iPhone holds; the others stayed where they were taken. */
+    here?: readonly HandoverProofKind[];
+  } = {},
 ): DetailsItem[] {
   const row = (label: string, value: string): DetailsItem[] => [
     { label, value },
@@ -531,6 +559,12 @@ export function handoverItems(
     ...row(t('record.handover.when'), formatWhen(handover.at, now, t)),
     ...row(t('record.handover.agent'), agentNameOf(handover, t, me)),
     ...row(t('record.handover.method'), methodLabel(handover.method, t)),
+    ...(handover.hasSignature
+      ? row(t('record.handover.signature'), proofPlace('signature', here, t))
+      : []),
+    ...(handover.hasPhoto
+      ? row(t('record.handover.photo'), proofPlace('photo', here, t))
+      : []),
     ...row(t('record.detail.sync'), t(`record.sync.${sync}`)),
     ...(cancelled && handover.cancelledAt
       ? row(

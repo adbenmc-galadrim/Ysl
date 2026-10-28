@@ -10,6 +10,7 @@ import {
   handoversOf,
   lostHandoverIds,
 } from '#/features/handover/delivered';
+import { proofKindsOf } from '#/features/handover/entry';
 import type { ParcelRecord } from '#/features/parcels/record';
 
 /**
@@ -39,14 +40,17 @@ export async function loadParcelRecord(
     ? undefined
     : await cancelledHandoverOf(database, parcel);
   const shown = handover ?? cancelledHandover;
-  const ops = await database.outbox
-    .where('[entity+entityId]')
-    .anyOf([
-      ['parcel', parcelId],
-      ...events.map((event) => ['event', event.id]),
-      ...(shown ? [['handover', shown.id]] : []),
-    ])
-    .toArray();
+  const [ops, handoverProofs] = await Promise.all([
+    database.outbox
+      .where('[entity+entityId]')
+      .anyOf([
+        ['parcel', parcelId],
+        ...events.map((event) => ['event', event.id]),
+        ...(shown ? [['handover', shown.id]] : []),
+      ])
+      .toArray(),
+    shown ? proofKindsOf(database, shown.id) : [],
+  ]);
   return {
     parcel,
     person,
@@ -56,6 +60,7 @@ export async function loadParcelRecord(
     handover,
     cancelledHandover,
     lostHandovers,
+    handoverProofs,
   };
 }
 
