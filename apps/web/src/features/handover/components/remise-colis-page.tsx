@@ -157,7 +157,10 @@ export function RemiseColisPage({
     collector ??
     (announced ? collectorCard(announced.name, people, contacts) : null);
   const pick = (card: CollectorCard) => {
-    setCollector(collectorName(card.name, person.name) ? card : null);
+    const next = collectorName(card.name, person.name) ? card : null;
+    // A signature drawn by someone else no longer stands for who collects.
+    if (next?.name !== collector?.name) setSigned([]);
+    setCollector(next);
     setChoosing(null);
     setQuery('');
   };
@@ -231,6 +234,7 @@ export function RemiseColisPage({
           person.name,
           parcels.filter((parcel) => ticked.includes(parcel.id)),
           t,
+          collector?.name,
         )}
         strokes={draft}
         onChange={setDraft}

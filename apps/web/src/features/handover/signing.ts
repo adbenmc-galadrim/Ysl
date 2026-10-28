@@ -3,15 +3,24 @@ import type { LocalParcel } from '#/features/db/schema';
 import { handedParcel } from '#/features/handover/entry';
 
 /**
- * The head of the signature screen: who signs, for how many parcels, and
- * the registered ones among them — « Dont 1 recommandé UPS ···8810 ».
+ * The head of the signature screen: who signs, for whom when a colleague
+ * collects (« Paul Mercier signe pour Nora Haddad, 3 colis »), for how many
+ * parcels, and the registered ones among them — « Dont 1 recommandé UPS ···8810 ».
  */
 export function signatureHeading(
-  name: string,
+  recipientName: string,
   parcels: readonly LocalParcel[],
   t: TranslateFn,
+  delegateName?: string | null,
 ): { title: string; detail?: string } {
-  const title = t('handover.sign.title', { name, count: parcels.length });
+  const count = parcels.length;
+  const title = delegateName
+    ? t('handover.sign.titleFor', {
+        name: delegateName,
+        recipient: recipientName,
+        count,
+      })
+    : t('handover.sign.title', { name: recipientName, count });
   const registered = parcels.filter((parcel) => parcel.type === 'recommande');
   if (!registered.length) return { title };
   if (registered.length > 1) {

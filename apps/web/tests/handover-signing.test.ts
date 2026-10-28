@@ -12,6 +12,17 @@ describe('signatureHeading', () => {
     ).toEqual({ title: 'Nora Haddad signe pour 2 colis' });
   });
 
+  it('names the colleague who signs, and for whom', () => {
+    expect(
+      signatureHeading(
+        'Nora Haddad',
+        [parcelRow(), parcelRow(), parcelRow()],
+        t,
+        'Paul Mercier',
+      ),
+    ).toEqual({ title: 'Paul Mercier signe pour Nora Haddad, 3 colis' });
+  });
+
   it('points out the registered parcel among them, as the mockup does', () => {
     const registered = parcelRow({
       type: 'recommande',

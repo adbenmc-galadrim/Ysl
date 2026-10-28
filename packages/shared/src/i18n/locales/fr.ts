@@ -45,6 +45,8 @@ export const fr = {
   'handover.verified.manuel': 'Sans vérification',
   'handover.registered': 'Un recommandé : la signature est facultative.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
+  'handover.sign.titleFor':
+    '{{name}} signe pour {{recipient}}, {{count}} colis',
   'handover.sign.registeredOne': 'Dont 1 recommandé {{parcel}}',
   'handover.sign.registeredMany': 'Dont {{count}} recommandés',
   'handover.how.qr': 'QR vérifié',
