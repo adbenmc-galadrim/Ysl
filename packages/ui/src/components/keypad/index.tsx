@@ -13,6 +13,7 @@ const keyClass = [
   'text-24 font-medium text-ink outline-none select-none',
   'focus-visible:ring-2 focus-visible:ring-blue',
   'transition-[filter] active:brightness-90',
+  'disabled:cursor-default disabled:opacity-40 disabled:active:brightness-100',
 ];
 
 export type KeypadProps = {
@@ -22,6 +23,8 @@ export type KeypadProps = {
   /** Opens on the letters rather than the digits. */
   letters?: boolean;
   onDelete?: () => void;
+  /** Every key greyed out and inert: too many wrong codes, a wait before the next. */
+  disabled?: boolean;
   className?: string;
 };
 
@@ -39,12 +42,14 @@ export function Keypad({
   onLetter,
   onDelete,
   letters: initialLetters = false,
+  disabled = false,
   className,
 }: KeypadProps) {
   const [letters, setLetters] = useState(initialLetters);
   const erase = (
     <button
       type="button"
+      disabled={disabled}
       aria-label="Effacer"
       className={cn(keyClass)}
       onClick={onDelete}
@@ -59,6 +64,7 @@ export function Keypad({
           <button
             key={letter}
             type="button"
+            disabled={disabled}
             className={cn(keyClass, 'text-20')}
             onClick={() => onLetter(letter)}
           >
@@ -67,6 +73,7 @@ export function Keypad({
         ))}
         <button
           type="button"
+          disabled={disabled}
           aria-label="Chiffres"
           className={cn(keyClass, 'text-15 font-semibold')}
           onClick={() => setLetters(false)}
@@ -83,6 +90,7 @@ export function Keypad({
         <button
           key={digit}
           type="button"
+          disabled={disabled}
           className={cn(keyClass)}
           onClick={() => onDigit?.(digit)}
         >
@@ -92,6 +100,7 @@ export function Keypad({
       {onLetter ? (
         <button
           type="button"
+          disabled={disabled}
           aria-label="Lettres"
           className={cn(keyClass, 'text-17 font-semibold')}
           onClick={() => setLetters(true)}
@@ -104,6 +113,7 @@ export function Keypad({
       )}
       <button
         type="button"
+        disabled={disabled}
         className={cn(keyClass)}
         onClick={() => onDigit?.('0')}
       >

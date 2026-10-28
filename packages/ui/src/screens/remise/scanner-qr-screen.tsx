@@ -5,9 +5,19 @@ import { CameraTopBar } from '#components/camera-controls';
 import { CameraViewport } from '#components/camera-viewport';
 import { Icon } from '#icons';
 
+/** Why the last QR opened nothing: an unknown, expired or used code. */
+export type ScannerQrNotice = { title: string; description?: string };
+
 export type ScannerQrScreenProps = {
+  /** The live `<video>` of the app, full bleed. */
+  video?: ReactNode;
   /** What the camera films; a phone showing the pickup e-mail in the story. */
   subject?: ReactNode;
+  /** Shows the torch square; `onTorch` toggles it. */
+  torch?: boolean;
+  torchOn?: boolean;
+  /** Takes the place of the hint until the next QR is read. */
+  notice?: ScannerQrNotice;
   onClose?: () => void;
   onTorch?: () => void;
   onTypeCode?: () => void;
@@ -20,7 +30,11 @@ export type ScannerQrScreenProps = {
  * screen, so a phone with a cracked screen or no battery costs one tap.
  */
 export function ScannerQrScreen({
+  video,
   subject,
+  torch = true,
+  torchOn = false,
+  notice,
   onClose,
   onTorch,
   onTypeCode,
@@ -28,6 +42,7 @@ export function ScannerQrScreen({
 }: ScannerQrScreenProps) {
   return (
     <CameraViewport
+      video={video}
       subject={subject}
       frame={false}
       floor={false}
@@ -36,15 +51,31 @@ export function ScannerQrScreen({
       <CameraTopBar
         title="Remise"
         titleStyle="text"
+        torch={torch}
+        torchOn={torchOn}
         onClose={onClose}
         onTorch={onTorch}
       />
       {/* Anchored to the actions. On a short phone the gaps close up so the
           hint stays under the picture instead of over it. */}
       <div className="flex-1" />
-      <p className="px-5 text-center text-17 font-semibold">
-        Scannez le QR code de l’e-mail du salarié
-      </p>
+      {notice ? (
+        <div
+          role="alert"
+          className="mx-5 rounded-card bg-black/70 px-4 py-3.5 text-center"
+        >
+          <p className="text-17 font-semibold">{notice.title}</p>
+          {notice.description && (
+            <p className="mt-1 text-15 leading-5 text-white/70">
+              {notice.description}
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="px-5 text-center text-17 font-semibold">
+          Scannez le QR code de l’e-mail du salarié
+        </p>
+      )}
       <div className="mt-[clamp(16px,calc(100dvh-764px),88px)] mb-[clamp(0px,calc(100dvh-784px),68px)] grid grid-cols-2 gap-3 px-5">
         <Button
           variant="night"

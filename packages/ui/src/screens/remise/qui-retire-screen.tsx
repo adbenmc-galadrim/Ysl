@@ -7,9 +7,16 @@ import { PageIntro } from '#components/page-intro';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
-import type { Person } from '#fixtures/people';
 
-export type Collector = { person: Person; parcels: number };
+/** A card of the directory or a contact outside it, as the list shows them. */
+export type Collectee = {
+  id: string;
+  name: string;
+  initials: string;
+  department: string;
+};
+
+export type Collector = { person: Collectee; parcels: number };
 
 export type QuiRetireScreenProps = {
   query: string;
@@ -17,8 +24,8 @@ export type QuiRetireScreenProps = {
   /** Matches with parcels waiting, with how many. */
   waiting: Collector[];
   /** Matches with nothing waiting: shown, so a typo is not mistaken for "no parcel". */
-  others: Person[];
-  onPick?: (person: Person) => void;
+  others: Collectee[];
+  onPick?: (person: Collectee) => void;
   onClose?: () => void;
 };
 
@@ -87,6 +94,11 @@ export function QuiRetireScreen({
             ))}
           </div>
         </section>
+      )}
+      {query.trim() !== '' && waiting.length + others.length === 0 && (
+        <p role="status" className="mt-8 text-center text-15 text-muted">
+          Personne ne correspond à « {query.trim()} ».
+        </p>
       )}
       {others.length > 0 && (
         <section className="mt-[33px]">
