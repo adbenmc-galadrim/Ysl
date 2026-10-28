@@ -500,6 +500,21 @@ export const fr = {
   'recipient.suggestions': 'Suggestions',
   'recipient.outside': 'Hors annuaire',
   'recipient.outside.in': 'Hors annuaire, {{department}}',
+  'contact.noEmail': 'Sans e-mail',
+  'contact.edit.title': 'Modifier le contact',
+  'contact.edit.description':
+    'Proposé à la réception de ses colis, sur tous les iPhone.',
+  'contact.edit.save': 'Enregistrer',
+  'contact.edit.addEmail': 'Ajouter son e-mail',
+  'contact.edit.addEmail.description':
+    'Gardée sur le contact, l’adresse servira aux prochains colis.',
+  'contact.merge': 'Rattacher à {{name}}',
+  'contact.duplicate': 'Un autre contact a déjà cette adresse : {{name}}.',
+  'contact.error.write': 'Le contact n’a pas pu être enregistré. Réessayez.',
+  'contact.delete.title': 'Supprimer {{name}} ?',
+  'contact.delete.description':
+    'Il ne sera plus proposé. Ses colis gardent son nom.',
+  'contact.delete.confirm': 'Supprimer le contact',
   'recipient.photo.close': 'Fermer la photo',
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.pickup.footer': 'Ces informations apparaissent dans chaque e-mail.',
