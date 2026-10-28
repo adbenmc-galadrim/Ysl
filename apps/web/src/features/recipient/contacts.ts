@@ -47,14 +47,17 @@ export function outsideDuplicate(
 /**
  * The contact a hand-typed name stands for: the one this mailroom already
  * typed with that e-mail, or with that name and no e-mail yet, counted once
- * more; a new one otherwise. Typing the same temp twice keeps one card.
+ * more; a new one otherwise. Typing the same temp twice keeps one card. A
+ * department typed replaces the one it had.
  */
 export async function typedContact(
   db: CourrierDatabase,
   name: string,
   email: string,
   { agentId, now = new Date() }: ContactOptions,
+  department = '',
 ): Promise<LocalContact> {
+  const service = department.trim() || null;
   const key = normalizeEmail(email);
   const nameNorm = normalizeName(name);
   const live = (row: LocalContact) => row.deletedAt === null;
@@ -69,6 +72,7 @@ export async function typedContact(
     return {
       ...known,
       email: known.email ?? (key || null),
+      department: service ?? known.department ?? null,
       updatedAt: now,
       usageCount: known.usageCount + 1,
       lastUsedAt: now,
@@ -82,6 +86,7 @@ export async function typedContact(
     name: name.trim(),
     nameNorm,
     email: key || null,
+    department: service,
     createdBy: agentId,
     usageCount: 1,
     lastUsedAt: now,
@@ -106,10 +111,13 @@ export async function saveOutsideContact(
     ).find((p) => p.active && !p.deletedAt);
     if (person) return personOption(person);
   }
-  const contact = await typedContact(db, typed.name, typed.email, {
-    ...options,
-    now,
-  });
+  const contact = await typedContact(
+    db,
+    typed.name,
+    typed.email,
+    { ...options, now },
+    typed.department,
+  );
   await commitLocal(
     db,
     { upserts: [{ entity: 'contact', row: contact }] },

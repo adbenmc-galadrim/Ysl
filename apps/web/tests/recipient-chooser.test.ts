@@ -42,6 +42,30 @@ describe('searchOptions', () => {
     ]);
   });
 
+  it('puts a contact who comes back first, and says it is outside the directory', () => {
+    const louis = personRow({
+      firstName: 'Louis',
+      lastName: 'Petit',
+      nameNorm: 'louis petit',
+    });
+    const once = contactRow({ name: 'Anne Petit', nameNorm: 'anne petit' });
+    const back = contactRow({
+      name: 'Zoé Petit',
+      nameNorm: 'zoe petit',
+      department: 'Studio',
+      usageCount: 3,
+      lastUsedAt: NOW,
+    });
+
+    const found = searchOptions([louis], [once, back], 'petit');
+
+    expect(found.map((o) => [o.name, o.detail])).toEqual([
+      ['Zoé Petit', 'Hors annuaire, Studio'],
+      ['Anne Petit', 'Hors annuaire'],
+      ['Louis Petit', louis.department ?? louis.email],
+    ]);
+  });
+
   it('finds a contact by its e-mail as well as its name', () => {
     expect(searchOptions([], [temp], 'interim').map((o) => o.id)).toEqual([
       temp.id,
@@ -53,7 +77,7 @@ describe('searchOptions', () => {
 });
 
 describe('Personne hors annuaire', () => {
-  it('keeps one contact per e-mail, whatever the name typed', async () => {
+  it('keeps one contact per e-mail, whatever the name typed, with its last department', async () => {
     const first = await saveOutsideContact(
       db,
       { name: 'Marc Petit', email: 'Marc@Interim.fr ', department: '' },
@@ -67,7 +91,12 @@ describe('Personne hors annuaire', () => {
 
     expect(again.id).toBe(first.id);
     expect(await db.contact.toArray()).toMatchObject([
-      { name: 'Marc Petit', email: 'marc@interim.fr', usageCount: 2 },
+      {
+        name: 'Marc Petit',
+        email: 'marc@interim.fr',
+        department: 'Intérim',
+        usageCount: 2,
+      },
     ]);
     const ops = await db.outbox.toArray();
     expect(new Set(ops.map((op) => `${op.entity}:${op.entityId}`))).toEqual(

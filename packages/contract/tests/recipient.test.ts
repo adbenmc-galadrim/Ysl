@@ -148,6 +148,25 @@ describe('matchRecipient — the read name', () => {
     expect(bestOf([ocr('NORA HADDAD')])).toBe('nora');
   });
 
+  it('proposes a contact read as « M. PETIT », the most used first on a tie', () => {
+    const petits = (uses: number) =>
+      matchRecipient(
+        indexRecipients([
+          person('marie', 'Marie', 'Petit'),
+          {
+            id: 'marc',
+            kind: 'contact',
+            firstName: 'Marc',
+            lastName: 'Petit',
+            uses,
+          },
+        ]),
+        [ocr('M. PETIT')],
+      ).suggestions.map((s) => s.entry.id);
+    expect(petits(1)).toEqual(['marie', 'marc']);
+    expect(petits(3)).toEqual(['marc', 'marie']);
+  });
+
   it('keeps the strongest reading of the code and the OCR', () => {
     const { best } = matchRecipient(DIRECTORY, [
       code('HUGO DUPONT'),

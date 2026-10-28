@@ -82,6 +82,76 @@ async function recorded(opId: string) {
 }
 
 describe('sync.push', () => {
+  it('takes a contact merged into a directory card, the same on a second push', async () => {
+    const stamps = { createdAt: NOW, updatedAt: NOW, deletedAt: null };
+    const contact = {
+      id: newId(),
+      ...stamps,
+      name: 'Marc Petit',
+      nameNorm: 'marc petit',
+      email: 'marc.petit@prestataire.fr',
+      department: 'Prestataire',
+    };
+    const card = {
+      id: newId(),
+      ...stamps,
+      lastName: 'Petit',
+      firstName: 'Marc',
+      nameNorm: 'marc petit',
+      email: 'marc.petit@prestataire.fr',
+      department: 'Studio',
+      site: null,
+      source: 'manuel',
+      active: true,
+    };
+    const alias = {
+      id: newId(),
+      ...stamps,
+      nameNorm: 'm petit',
+      personId: null,
+      contactId: contact.id,
+      confirmations: 2,
+    };
+    const row = localParcel({
+      contactId: contact.id,
+      department: 'Prestataire',
+    });
+    await push(sync, writer, {
+      ops: [
+        op('contact', contact),
+        op('directory_person', card),
+        op('recipient_alias', alias),
+        op('parcel', row),
+      ],
+    });
+    const merged = () => [
+      op('recipient_alias', { ...alias, personId: card.id, contactId: null }),
+      op('parcel', { ...row, personId: card.id, contactId: null }),
+      op('contact', { ...contact, deletedAt: NOW }),
+    ];
+
+    const first = await push(sync, writer, { ops: merged() });
+    const again = await push(sync, writer, { ops: merged() });
+
+    expect(first.results.map((r) => r.status)).toEqual([200, 200, 200]);
+    expect(again.results.map((r) => r.status)).toEqual([200, 200, 200]);
+    expect(await parcel(row.id)).toMatchObject({
+      personId: card.id,
+      contactId: null,
+      department: 'Prestataire',
+    });
+    const [kept] = await db
+      .select()
+      .from(schema.contact)
+      .where(eq(schema.contact.id, contact.id));
+    expect(kept).toMatchObject({ department: 'Prestataire', deletedAt: NOW });
+    const [moved] = await db
+      .select()
+      .from(schema.recipientAlias)
+      .where(eq(schema.recipientAlias.id, alias.id));
+    expect(moved).toMatchObject({ personId: card.id, contactId: null });
+  });
+
   it('applies an upsert and keeps its op_id', async () => {
     const row = localParcel({ notes: 'Étagère A' });
     const change = op('parcel', row);

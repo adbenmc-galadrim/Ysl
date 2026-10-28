@@ -36,6 +36,28 @@ export const Annuaire: Story = {
   args: { letters: DIRECTORY_LETTERS },
 };
 
+/** The temps and visitors kept at the desk, under the directory (F27). */
+export const AvecContacts: Story = {
+  name: 'Avec contacts hors annuaire',
+  args: {
+    people: ENTRIES.slice(0, 3),
+    contacts: [
+      {
+        id: 'marc',
+        name: 'Marc Petit',
+        initials: 'MP',
+        detail: 'Prestataire, 4e étage',
+      },
+      {
+        id: 'nina',
+        name: 'Nina Roux',
+        initials: 'NR',
+        detail: 'Sans e-mail',
+      },
+    ],
+  },
+};
+
 /** The first day: nobody yet, the way in is "Ajouter". */
 export const Vide: Story = {
   args: { people: [] },

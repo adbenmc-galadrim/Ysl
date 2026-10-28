@@ -3,7 +3,7 @@ import { recipientEntries } from '#/features/recipient/entries';
 import { contactRow, NOW, personRow } from './helpers/local-rows';
 
 describe('recipientEntries', () => {
-  it('lists the active cards, then the contacts, a contact split on its last word', () => {
+  it('lists the active cards, then the contacts, a contact split on its last word with its uses', () => {
     const entries = recipientEntries(
       [
         personRow({ id: 'lea', firstName: 'Léa', lastName: 'Fontaine' }),
@@ -11,7 +11,7 @@ describe('recipientEntries', () => {
         personRow({ id: 'deleted', deletedAt: NOW }),
       ],
       [
-        contactRow({ id: 'nora', name: ' Nora  Ben Haddad ' }),
+        contactRow({ id: 'nora', name: ' Nora  Ben Haddad ', usageCount: 3 }),
         contactRow({ id: 'old', deletedAt: NOW }),
       ],
     );
@@ -23,6 +23,7 @@ describe('recipientEntries', () => {
         kind: 'contact',
         firstName: 'Nora Ben',
         lastName: 'Haddad',
+        uses: 3,
       },
     ]);
   });

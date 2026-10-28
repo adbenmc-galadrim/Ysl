@@ -11,7 +11,11 @@ import {
   type ParcelRecord,
 } from '#/features/parcels/record';
 import { changeParcelStatus } from '#/features/parcels/status';
+import { saveContact } from '#/features/directory/contacts';
+import { groupByRecipient } from '#/features/mail/recipients';
+import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import {
+  contactRow,
   NOW,
   openTestDatabase,
   parcelRow,
@@ -60,6 +64,44 @@ describe('describeRecord', () => {
       'todo',
     ]);
     expect(view.action).toEqual({ kind: 'notify' });
+  });
+
+  it('says « Hors annuaire » and « Sans e-mail » for a contact without an address, until one is added', async () => {
+    const marc = contactRow({
+      name: 'Marc Petit',
+      nameNorm: 'marc petit',
+      department: 'Prestataire',
+    });
+    await db.contact.put(marc);
+    const row = parcelRow({ personId: null, contactId: marc.id });
+    await db.parcel.put(row);
+    const email = async () =>
+      describeRecord(await record(row.id), options).details.find(
+        (item) => item.label === 'E-mail',
+      )?.value;
+
+    expect(describeRecord(await record(row.id), options)).toMatchObject({
+      recipient: 'Marc Petit',
+      place: 'Hors annuaire, Prestataire',
+    });
+    expect(await email()).toBe('Sans e-mail');
+
+    await saveContact(db, marc.id, {
+      name: 'Marc Petit',
+      email: 'marc.petit@prestataire.fr',
+      department: 'Prestataire',
+    });
+
+    expect(await email()).toBe('marc.petit@prestataire.fr');
+    const parcels = await db.parcel.toArray();
+    const [mail] = groupByRecipient(
+      parcels,
+      await loadRecipientContext(db, parcels),
+    );
+    expect(mail).toMatchObject({
+      contactId: marc.id,
+      address: 'marc.petit@prestataire.fr',
+    });
   });
 
   it('tells the history newest first, the reception last', async () => {

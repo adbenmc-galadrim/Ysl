@@ -28,6 +28,7 @@ export function recipientEntries(
         kind: 'contact',
         firstName: words.join(' '),
         lastName,
+        uses: contact.usageCount,
       };
     });
   return [...cards, ...others];
