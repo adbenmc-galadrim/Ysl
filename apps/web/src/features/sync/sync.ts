@@ -2,6 +2,7 @@ import { onLocalCommit } from '#/features/db/commit';
 import { db } from '#/features/db/database';
 import { settleDeliveryConflicts } from '#/features/handover/conflicts';
 import { announceHandover } from '#/features/handover/done-toast';
+import { firstNameOf } from '#/features/handover/recipient';
 import { createSyncEngine } from '#/features/sync/engine';
 import { queryClient } from '#/lib/query-client';
 import { trpcClient } from '#/lib/trpc';
@@ -21,7 +22,9 @@ export const syncEngine = createSyncEngine({
     for (const conflict of await settleDeliveryConflicts(db)) {
       announceHandover({
         kind: 'conflict',
-        firstName: conflict.recipientName?.trim().split(/\s+/)[0] ?? null,
+        firstName: conflict.recipientName
+          ? firstNameOf(conflict.recipientName)
+          : null,
         byMe: conflict.byMe,
       });
     }

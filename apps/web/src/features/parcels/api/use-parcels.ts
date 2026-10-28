@@ -4,6 +4,7 @@ import { Dexie } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
+import { handoversOf } from '#/features/handover/delivered';
 import type {
   CourrierDatabase,
   LocalContact,
@@ -17,8 +18,6 @@ import {
   toParcelRow,
 } from '#/features/parcels/model';
 import { loadReminderDates } from '#/features/parcels/reminders';
-
-import { handoversOf } from '#/features/handover/delivered';
 
 const t = createTranslator(DEFAULT_LOCALE);
 

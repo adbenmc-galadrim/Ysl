@@ -19,7 +19,7 @@ function publish(next: HandoverToast | undefined) {
   for (const listener of listeners) listener();
 }
 
-/** Called once the handover is written or refused: Colis says so for a few seconds. */
+/** Called once a handover is written here, or found beaten by another iPhone: Colis says so for a few seconds. */
 export function announceHandover(toast: HandoverToast): void {
   publish(toast);
 }

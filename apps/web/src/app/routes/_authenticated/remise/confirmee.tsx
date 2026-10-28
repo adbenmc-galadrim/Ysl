@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { db } from '#/features/db/database';
 import { announceHandover } from '#/features/handover/done-toast';
-import { loadHandoverPerson } from '#/features/handover/recipient';
+import { firstNameOf, loadHandoverPerson } from '#/features/handover/recipient';
 
 /**
  * Where a recorded handover leads. Until the « Remise confirmée » screen
@@ -25,10 +25,7 @@ export const Route = createFileRoute('/_authenticated/remise/confirmee')({
       announceHandover({
         kind: 'done',
         count: handover.parcelIds.length,
-        firstName:
-          person?.firstName ??
-          handover.recipientName.trim().split(/\s+/)[0] ??
-          handover.recipientName,
+        firstName: person?.firstName ?? firstNameOf(handover.recipientName),
       });
     }
     throw redirect({ to: '/', replace: true });

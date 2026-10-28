@@ -24,7 +24,7 @@ function RemiseColisRoute() {
   );
   const refused = useCallback(
     (refus: PickupRefusal) =>
-      void navigate({ to: '/remise', search: { refus } }),
+      void navigate({ to: '/remise', search: { refus }, replace: true }),
     [navigate],
   );
   const done = useCallback(
