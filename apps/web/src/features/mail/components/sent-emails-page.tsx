@@ -297,8 +297,12 @@ export function SentEmailsPage({
   const counts = countMails(mine);
   const shown = filterMails(mine, filter);
   const byId = new Map(sent.mails.map((mail) => [mail.notification.id, mail]));
-  const nameOf = (mail: TrackedMail) =>
-    mailOf(mail.notification, sent.parcels, sent.context).name;
+  // Sent through a contact (YSL-72): « Marc Petit · via Sophie Martin ».
+  const nameOf = (mail: TrackedMail) => {
+    const name = mailOf(mail.notification, sent.parcels, sent.context).name;
+    const relay = mail.notification.relayName;
+    return relay ? t('mails.row.via', { name, relay }) : name;
+  };
 
   const toRow = (mail: TrackedMail): SentEmail => ({
     id: mail.notification.id,
@@ -441,7 +445,22 @@ export function SentEmailsPage({
       sections={sections}
       empty={{ title: EMPTY[filter] }}
       onBack={back}
-      onFix={(email) => setOpen({ kind: 'fix', id: email.id })}
+      onFix={(email) => {
+        // Sent through a contact (YSL-72): the address was the contact's,
+        // never the recipient's card to fix; the ways to tell them again.
+        const relayed = byId.get(email.id)?.notification;
+        const first = relayed?.relayName
+          ? relayed.parcelIds.find((id) => sent.parcels.has(id))
+          : undefined;
+        if (first) {
+          void navigate({
+            to: '/notifier',
+            search: { colis: first, prevenir: true },
+          });
+          return;
+        }
+        setOpen({ kind: 'fix', id: email.id });
+      }}
       onConfirm={(email) => setOpen({ kind: 'confirm', id: email.id })}
       onOpen={(email) => setOpen({ kind: 'parcels', id: email.id })}
       sheet={sheet}

@@ -1,4 +1,7 @@
-import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
+import {
+  PARCEL_EVENT_ENTITY,
+  readParcelEvent,
+} from '@repo/contract/parcel-event';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
@@ -40,7 +43,11 @@ export async function loadParcelRecord(
     ? undefined
     : await cancelledHandoverOf(database, parcel);
   const shown = handover ?? cancelledHandover;
-  const [ops, handoverProofs] = await Promise.all([
+  const mailIds = events.flatMap((row) => {
+    const event = readParcelEvent(row.type, row.detail);
+    return event?.type === 'parcel.notified' ? [event.notificationId] : [];
+  });
+  const [ops, handoverProofs, mails] = await Promise.all([
     database.outbox
       .where('[entity+entityId]')
       .anyOf([
@@ -50,7 +57,13 @@ export async function loadParcelRecord(
       ])
       .toArray(),
     shown ? proofKindsOf(database, shown.id) : [],
+    mailIds.length ? database.notification.bulkGet(mailIds) : [],
   ]);
+  const relays = new Map(
+    mails.flatMap((mail) =>
+      mail?.relayName ? [[mail.id, mail.relayName] as const] : [],
+    ),
+  );
   return {
     parcel,
     person,
@@ -61,6 +74,7 @@ export async function loadParcelRecord(
     cancelledHandover,
     lostHandovers,
     handoverProofs,
+    relays,
   };
 }
 

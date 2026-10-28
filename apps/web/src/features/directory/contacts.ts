@@ -8,7 +8,12 @@ import type {
   LocalDirectoryPerson,
   LocalPickupCode,
 } from '#/features/db/schema';
-import { isEmail, listed, normalizeEmail } from '#/features/directory/people';
+import {
+  fullName,
+  isEmail,
+  listed,
+  normalizeEmail,
+} from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { initialsOf } from '#/features/settings/initials';
 
@@ -16,16 +21,44 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const live = (contact: LocalContact) => contact.deletedAt === null;
 
-/** A contact as the Annuaire lists it: its department, else its e-mail; « Sans e-mail » said either way. */
-export function contactEntry(contact: LocalContact): DirectoryEntry {
+/**
+ * A contact as the Annuaire lists it: its department, else its e-mail;
+ * « Sans e-mail » said either way, with who was told for them last (YSL-72).
+ */
+export function contactEntry(
+  contact: LocalContact,
+  relayName?: string,
+): DirectoryEntry {
   return {
     id: contact.id,
     name: contact.name,
     initials: initialsOf(contact.name),
     detail: contact.email
       ? (contact.department ?? contact.email)
-      : [contact.department, t('contact.noEmail')].filter(Boolean).join(' · '),
+      : [
+          contact.department,
+          relayName
+            ? t('contact.notifyVia', { name: relayName })
+            : t('contact.noEmail'),
+        ]
+          .filter(Boolean)
+          .join(' · '),
   };
+}
+
+/** The names `notifyVia` points to: `person:<id>` and `contact:<id>`. */
+function relayNames(
+  people: readonly LocalDirectoryPerson[],
+  contacts: readonly LocalContact[],
+): Map<string, string> {
+  return new Map([
+    ...people.map(
+      (person) => [`person:${person.id}`, fullName(person)] as const,
+    ),
+    ...contacts.map(
+      (contact) => [`contact:${contact.id}`, contact.name] as const,
+    ),
+  ]);
 }
 
 /**
@@ -36,7 +69,9 @@ export function contactEntry(contact: LocalContact): DirectoryEntry {
 export function contactEntries(
   contacts: readonly LocalContact[],
   query = '',
+  people: readonly LocalDirectoryPerson[] = [],
 ): DirectoryEntry[] {
+  const names = relayNames(people, contacts);
   const needle = normalizeName(query);
   const mail = normalizeEmail(query);
   return contacts
@@ -49,7 +84,12 @@ export function contactEntries(
         (mail !== '' && (contact.email ?? '').includes(mail)),
     )
     .sort((a, b) => a.nameNorm.localeCompare(b.nameNorm))
-    .map(contactEntry);
+    .map((contact) =>
+      contactEntry(
+        contact,
+        contact.notifyVia ? names.get(contact.notifyVia) : undefined,
+      ),
+    );
 }
 
 export function contactDraft(contact: LocalContact): OutsideContactDraft {

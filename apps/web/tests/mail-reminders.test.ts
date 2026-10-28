@@ -21,6 +21,7 @@ import {
   describeReminder,
   dueCount,
   loadReminderMails,
+  reminderSections,
 } from '#/features/mail/reminder-mails';
 import {
   contactRow,
@@ -250,5 +251,38 @@ describe('a person on the screen of the reminders', () => {
         t,
       ).status,
     ).toBe('Notifié il y a 5 jours, jamais relancé');
+  });
+});
+
+describe('the recipients without an address', () => {
+  it('are apart, « Prévenir », whether their reminder is due or both went (YSL-72)', async () => {
+    const nora = personRow({ firstName: 'Nora', email: 'nora@example.com' });
+    const marc = contactRow({ name: 'Marc Petit', nameNorm: 'marc petit' });
+    await db.directoryPerson.put(nora);
+    await db.contact.put(marc);
+    await db.parcel.bulkPut([
+      parcelRow({ personId: nora.id, status: 'notifie', notifiedAt: day(21) }),
+      parcelRow({ contactId: marc.id, status: 'notifie', notifiedAt: day(21) }),
+    ]);
+
+    const mails = await loadReminderMails(db, NOW);
+    const sections = reminderSections(
+      mails,
+      NOW,
+      createTranslator(DEFAULT_LOCALE),
+    );
+
+    expect(
+      sections.map((section) => [
+        section.title,
+        section.actionLabel,
+        section.people.map(({ person }) => person.name),
+      ]),
+    ).toEqual([
+      ['À relancer', undefined, ['Nora Morel']],
+      ['En souffrance', undefined, []],
+      ['À prévenir autrement', 'Prévenir', ['Marc Petit']],
+    ]);
+    expect(dueCount(mails.filter((mail) => mail.address))).toBe(1);
   });
 });

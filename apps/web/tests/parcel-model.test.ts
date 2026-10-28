@@ -158,6 +158,45 @@ describe('toParcelRow', () => {
     expect(partial?.detail).toBe('Studio, 1 sur 3 colis UPS');
   });
 
+  it('says « Sans e-mail » in orange and offers « Prévenir » for a parcel to notify nobody can be written to', () => {
+    const pierre = personRow({
+      firstName: 'Pierre',
+      lastName: 'Roy',
+      email: '',
+    });
+    const people = { ...context, people: new Map([[pierre.id, pierre]]) };
+    const toNotify = toParcelRow(
+      parcel({ personId: pierre.id }),
+      people,
+      NOW,
+      t,
+    );
+    expect(toNotify).toMatchObject({
+      note: 'Sans e-mail',
+      noteTone: 'orange',
+      noAddress: true,
+    });
+    const typed = toParcelRow(
+      parcel({ personId: pierre.id, notificationEmail: 'pierre@example.com' }),
+      people,
+      NOW,
+      t,
+    );
+    expect(typed).toMatchObject({ noAddress: false });
+    expect(typed?.note).toBeUndefined();
+    const notified = toParcelRow(
+      parcel({ contactId: livreur.id, status: 'notifie', notifiedAt: NOW }),
+      context,
+      NOW,
+      t,
+    );
+    expect(notified).toMatchObject({ note: 'Sans e-mail', noAddress: false });
+    expect(notified?.noteTone).toBeUndefined();
+    expect(
+      toParcelRow(parcel({ personId: camille.id }), context, NOW, t)?.noAddress,
+    ).toBe(false);
+  });
+
   it('falls back to the contact, said « Sans e-mail » without an address, then to the name read on the label', () => {
     const contact = toParcelRow(
       parcel({ contactId: livreur.id, readName: 'ATELIER RG' }),

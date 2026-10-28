@@ -44,7 +44,13 @@ export type LocalRow<Row> = Omit<Row, 'organizationId' | 'serverXid'> & {
 export type LocalDirectoryPerson = LocalRow<
   typeof directoryPerson.$inferSelect
 >;
-export type LocalContact = LocalRow<typeof contact.$inferSelect>;
+/** `notifyVia` is missing on a row pulled before YSL-72: read it as nobody. */
+export type LocalContact = Omit<
+  LocalRow<typeof contact.$inferSelect>,
+  'notifyVia'
+> & {
+  notifyVia?: string | null;
+};
 export type LocalSender = LocalRow<typeof sender.$inferSelect>;
 /** `challengerId` and `challenges` are missing on a row pulled before YSL-60: read them as none. */
 export type LocalSenderAccount = Omit<
@@ -65,7 +71,13 @@ export type LocalParcel = Omit<
   statusSeq?: number;
 };
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
-export type LocalNotification = LocalRow<typeof notification.$inferSelect>;
+/** `relayName` is missing on a row pulled before YSL-72: read it as told directly. */
+export type LocalNotification = Omit<
+  LocalRow<typeof notification.$inferSelect>,
+  'relayName'
+> & {
+  relayName?: string | null;
+};
 export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;
 /** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */
 export type LocalHandover = Omit<

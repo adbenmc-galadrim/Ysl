@@ -30,6 +30,8 @@ export type Parcel = {
   detail?: string;
   /** A second state line, shown in the state colour. */
   note?: string;
+  /** Draws the note in orange: something to do, e.g. « Sans e-mail ». */
+  noteTone?: 'orange';
   /** The reserve on the parcel's state, in orange under the detail line: "Réserve · Carton abîmé". */
   damage?: string;
   /**

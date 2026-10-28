@@ -272,25 +272,27 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const { action, damage, ...shown } = view;
   const handoverId = (record.handover ?? record.cancelledHandover)?.id;
   // « Sans e-mail »: the address goes on the contact, for this parcel and
-  // the next ones, and the record shows it at once.
-  const withAddress = addressMissing(record)
-    ? shown.details.map((item) =>
-        item.label === t('record.detail.email')
-          ? {
-              ...item,
-              value: (
-                <button
-                  type="button"
-                  className="text-blue"
-                  onClick={() => setAddingEmail(true)}
-                >
-                  {t('record.email.add')}
-                </button>
-              ),
-            }
-          : item,
-      )
-    : shown.details;
+  // the next ones, and the record shows it at once. A directory card left
+  // without one is only said: Notifier offers its ways (YSL-72).
+  const withAddress =
+    addressMissing(record) && record.contact
+      ? shown.details.map((item) =>
+          item.label === t('record.detail.email')
+            ? {
+                ...item,
+                value: (
+                  <button
+                    type="button"
+                    className="text-blue"
+                    onClick={() => setAddingEmail(true)}
+                  >
+                    {t('record.email.add')}
+                  </button>
+                ),
+              }
+            : item,
+        )
+      : shown.details;
   // The last mail about the parcel, a tap from the sending log.
   // Only the agent who wrote the mail can act on it from the log; a
   // colleague's mail is said, not linked.
@@ -366,7 +368,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       onPrimaryAction={
         action?.kind === 'notify'
           ? () =>
-              void navigate({ to: '/notifier', search: { colis: parcelId } })
+              void navigate({
+                to: '/notifier',
+                search: addressMissing(record)
+                  ? { colis: parcelId, prevenir: true }
+                  : { colis: parcelId },
+              })
           : action?.kind === 'complete'
             ? () => setCompleting(true)
             : edit

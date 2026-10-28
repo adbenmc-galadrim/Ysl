@@ -413,6 +413,13 @@ export const fr = {
   'history.damageLifted': 'Réserve levée : {{reason}}',
   'history.notified': 'Notifié par e-mail',
   'history.reminded': 'Relance envoyée',
+  'history.notified.via': 'Notifié via {{name}}',
+  'history.reminded.via': 'Relance envoyée via {{name}}',
+  'record.detail.told': 'Prévenu',
+  'record.told.via': 'Via {{name}}',
+  'record.told.voice': 'De vive voix, {{when}}',
+  'history.informed': 'Prévenu de vive voix',
+  'history.informed.reminder': 'Relancé de vive voix',
   'history.reply.not_mine': 'A répondu : ce n’est pas pour moi',
   'history.reply.colleague': 'A répondu : {{name}} passera le prendre',
   'history.reply.absent': 'A répondu : absence jusqu’au {{date}}',
@@ -629,6 +636,8 @@ export const fr = {
   'recipient.outside': 'Hors annuaire',
   'recipient.outside.in': 'Hors annuaire, {{department}}',
   'contact.noEmail': 'Sans e-mail',
+  'contact.notifyVia': 'Prévenu via {{name}}',
+  'mails.row.via': '{{name}} · via {{relay}}',
   'record.email.add': 'Sans e-mail · Ajouter',
   'contact.edit.title': 'Modifier le contact',
   'contact.edit.description':
@@ -762,7 +771,34 @@ export const fr = {
   'notify.missing': 'Adresse manquante',
   'notify.missing.title': 'Pas d’adresse e-mail',
   'notify.missing.description':
-    'Ajoutez-la pour lui écrire : elle restera sur sa fiche.',
+    'Ajoutez son adresse, passez par un contact ou prévenez-le de vive voix.',
+  'notify.missing.one': '1 destinataire sans e-mail',
+  'notify.missing.many': '{{count}} destinataires sans e-mail',
+  'notify.way.open': 'Comment le prévenir ?',
+  'notify.way.description':
+    '{{name}} n’a pas d’adresse e-mail dans l’annuaire.',
+  'notify.way.relay.choose': 'Choisir le contact',
+  'notify.way.relay.noEmail':
+    'Pas d’adresse e-mail : choisissez quelqu’un d’autre',
+  'notify.way.relay.collects': 'Il ou elle viendra le chercher',
+  'notify.way.relay.prepare': 'Préparer l’e-mail à {{name}}',
+  'notify.way.voice.note':
+    'Donnez-lui son code de retrait, affiché à l’étape suivante : ses colis passent « Notifié ».',
+  'notify.way.voice.note.reminder':
+    'Rappelez-lui son code de retrait, affiché à l’étape suivante : la relance est notée.',
+  'notify.way.voice.confirm': 'C’est fait, afficher le code',
+  'notify.relay.via': 'Via {{name}}, {{address}}',
+  'notify.voice.code': 'Code à transmettre : {{code}}',
+  'notify.voice.one': 'Prévenu de vive voix : 1 colis passe « Notifié ».',
+  'notify.voice.many':
+    'Prévenu de vive voix : {{count}} colis passent « Notifié ».',
+  'notify.voice.done': 'Prévenu de vive voix',
+  'notify.voice.none':
+    'Ses colis ont été prévenus ou remis entre-temps : aucun code à transmettre.',
+  'notify.voice.reminder.one':
+    'Relancé de vive voix : relance notée sur 1 colis.',
+  'notify.voice.reminder.many':
+    'Relancé de vive voix : relance notée sur {{count}} colis.',
   'notify.sent.title': 'E-mail envoyé',
   'notify.sent.one': '1 colis passe « Notifié ».',
   'notify.sent.many': '{{count}} colis passent « Notifié ».',
@@ -776,6 +812,7 @@ export const fr = {
     'Relances proposées à J+2 et J+5 jours ouvrés. Rien ne part tout seul : chaque e-mail s’ouvre dans votre messagerie.',
   'remind.section.due': 'À relancer',
   'remind.section.late': 'En souffrance',
+  'remind.section.otherWay': 'À prévenir autrement',
   'remind.row.parcels': '{{count}} colis · {{names}}',
   'remind.row.never': 'Notifié il y a {{days}} jours, jamais relancé',
   'remind.row.reminded':
@@ -805,9 +842,10 @@ export const fr = {
   'lot.mails.parcels.many': '{{count}} colis',
   'lot.mails.people.one': '1 personne',
   'lot.mails.people.many': '{{count}} personnes',
-  'lot.missing.one': '1 adresse manquante',
-  'lot.missing.many': '{{count}} adresses manquantes',
-  'lot.missing.detail': 'À saisir dans l’aperçu de l’e-mail',
+  'lot.missing.one': '1 destinataire sans e-mail',
+  'lot.missing.many': '{{count}} destinataires sans e-mail',
+  'lot.missing.detail':
+    'Ajouter l’adresse, prévenir un contact ou de vive voix',
   'lot.toComplete': '{{count}} à compléter',
   'lot.toComplete.detail': 'Rangé dans À compléter, non notifié',
   'lot.toComplete.detail.many': 'Rangés dans À compléter, non notifiés',
@@ -819,6 +857,7 @@ export const fr = {
   'lot.offline': 'Hors ligne',
   'lot.offline.detail': 'Les e-mails partiront au retour du réseau',
   'colis.section.notify': 'Notifier',
+  'colis.row.otherWay': 'Prévenir',
   'colis.section.remind': 'Relancer',
   'mails.section.failed': 'À corriger',
   'mails.section.waiting': 'À confirmer',

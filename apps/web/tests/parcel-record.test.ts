@@ -202,6 +202,75 @@ describe('describeRecord', () => {
     });
   });
 
+  it('says who was told for a recipient without an address: through a contact, or in person (YSL-72)', async () => {
+    const marc = contactRow({ name: 'Marc Petit', nameNorm: 'marc petit' });
+    await db.contact.put(marc);
+    const relayed = parcelRow({
+      contactId: marc.id,
+      status: 'notifie',
+      notifiedAt: at(11),
+    });
+    const told = parcelRow({
+      contactId: marc.id,
+      status: 'notifie',
+      notifiedAt: at(11, 30),
+    });
+    const mailId = newId();
+    await db.parcel.bulkPut([relayed, told]);
+    await db.notification.put({
+      id: mailId,
+      createdAt: at(11),
+      updatedAt: at(11),
+      deletedAt: null,
+      type: 'avis',
+      personId: null,
+      contactId: marc.id,
+      recipients: ['sophie.martin@example.com'],
+      cc: [],
+      parcelIds: [relayed.id],
+      templateId: null,
+      status: 'sent',
+      target: 'mailto',
+      preparedAt: at(11),
+      preparedBy: 'agent-1',
+      openedAt: at(11),
+      sentAt: at(11),
+      failedReason: null,
+      relayName: 'Sophie Martin',
+    });
+    await db.event.bulkPut(
+      [
+        parcelEvent(
+          relayed.id,
+          { type: 'parcel.notified', notificationId: mailId, kind: 'avis' },
+          { agentId: 'agent-1', now: at(11) },
+        ),
+        parcelEvent(
+          told.id,
+          { type: 'parcel.informed', kind: 'avis' },
+          { agentId: 'agent-1', now: at(11, 30) },
+        ),
+      ].map(({ row }) => row as LocalEvent),
+    );
+
+    const viaContact = describeRecord(await record(relayed.id), options);
+    const inPerson = describeRecord(await record(told.id), options);
+
+    expect(viaContact.details).toContainEqual({
+      label: 'Prévenu',
+      value: 'Via Sophie Martin',
+    });
+    expect(viaContact.history?.[0]?.title).toBe('Notifié via Sophie Martin');
+    expect(inPerson.details).toContainEqual({
+      label: 'Prévenu',
+      value: 'De vive voix, aujourd’hui à 11 h 30',
+    });
+    expect(inPerson.history?.map((entry) => entry.title)).toEqual([
+      'Prévenu de vive voix',
+      'Reçu',
+    ]);
+  });
+
   it('shows a handover with its date, and no undo of it here', async () => {
     const row = parcelRow({
       personId: 'p-1',

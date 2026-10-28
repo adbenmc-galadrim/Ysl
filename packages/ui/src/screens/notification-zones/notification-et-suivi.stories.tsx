@@ -1,11 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Button } from '#components/button';
+import { LargeTitle } from '#components/large-title';
+import { NavBar } from '#components/nav-bar';
+import { Screen } from '#components/screen';
 import { PARCELS } from '#fixtures/parcels';
 import { ColisScreen } from '#screens/colis/colis-screen';
 import { FicheColisScreen } from '#screens/colis/fiche-colis-screen';
 import { ColisEnSouffranceScreen } from '#screens/notification-zones/colis-en-souffrance-screen';
 import { DestinataireSansEmailScreen } from '#screens/notification-zones/destinataire-sans-email-screen';
+import { NotifyWaySheet } from '#screens/notification-zones/notify-way-sheet';
 import {
   AbsenceJusquauSheet,
   ColisPasPourMoiSheet,
@@ -75,6 +79,54 @@ export const DestinataireSansEmail: Story = {
       progress="2 sur 2"
       way="email"
       email="marc.petit@prestataire.fr"
+    />
+  ),
+};
+
+function SansEmailBehind() {
+  return (
+    <Screen>
+      <NavBar title="2 sur 2" />
+      <LargeTitle
+        size="md"
+        title={PARCELS.marc.recipient}
+        subtitle={PARCELS.marc.place}
+        className="mt-3 gap-1"
+      />
+    </Screen>
+  );
+}
+
+/** « Prévenir un contact »: the assistant chosen, who will collect it. */
+export const DestinataireSansEmailContact: Story = {
+  name: 'Destinataire sans e-mail, prévenir un contact',
+  render: () => (
+    <NotifyWaySheet
+      recipient={PARCELS.marc.recipient}
+      way="contact"
+      relay={{
+        name: 'Sophie Martin',
+        detail: 'sophie.martin@exemple.fr',
+        chooseLabel: 'Choisir le contact',
+        collects: true,
+        collectsLabel: 'Il ou elle viendra le chercher',
+      }}
+      confirmLabel="Préparer l’e-mail à Sophie"
+      behind={<SansEmailBehind />}
+    />
+  ),
+};
+
+/** « De vive voix »: the code given in person, the parcels notified. */
+export const DestinataireSansEmailViveVoix: Story = {
+  name: 'Destinataire sans e-mail, de vive voix',
+  render: () => (
+    <NotifyWaySheet
+      recipient={PARCELS.marc.recipient}
+      way="voice"
+      voiceNote="Donnez-lui son code de retrait : ses colis passent « Notifié »."
+      confirmLabel="C’est fait, afficher le code"
+      behind={<SansEmailBehind />}
     />
   ),
 };

@@ -9,6 +9,7 @@ import {
   notifyParcel,
   renderMail,
   renderText,
+  RELAY_TEMPLATES,
   REPLY_NOT_MINE,
   replyReference,
   replySubject,
@@ -190,6 +191,55 @@ describe('template rendering', () => {
         'Service Courrier',
       ].join('\n'),
     );
+  });
+
+  it('renders the mail to a colleague: whose parcels, their code, no quick answers', () => {
+    const rendered = renderMail(RELAY_TEMPLATES.avis, {
+      ...mailValues({
+        firstName: 'Marc Petit',
+        code: '4821',
+        parcels: ['DHL ···7741, reçu à 10 h 15'],
+        agent: 'Karim Daoud',
+        replyTo: 'karim.daoud@example.com',
+      }),
+      ...SAMPLE_PICKUP_VALUES,
+    });
+    expect(rendered.unknown).toEqual([]);
+    expect(rendered.missing).toEqual([]);
+    expect(rendered.subject).toBe('Colis pour Marc Petit – Service Courrier');
+    expect(rendered.body).toBe(
+      [
+        'Bonjour,',
+        '',
+        'Marc Petit n’a pas d’adresse e-mail chez nous : pouvez-vous le lui transmettre ?',
+        '',
+        'Nous avons reçu pour Marc Petit :',
+        '• DHL ···7741, reçu à 10 h 15',
+        '',
+        'Son code de retrait : 4821',
+        '',
+        'Où : Rez-de-chaussée, comptoir courrier',
+        'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
+        '',
+        'Marc Petit, ou la personne qui vient à sa place, donne ce code au comptoir du service courrier.',
+        '',
+        'Karim Daoud',
+        'Service Courrier',
+      ].join('\n'),
+    );
+    const reminder = renderMail(RELAY_TEMPLATES.relance, {
+      ...mailValues({
+        firstName: 'Marc Petit',
+        code: '4821',
+        parcels: ['DHL ···7741'],
+      }),
+      ...SAMPLE_PICKUP_VALUES,
+    });
+    expect(reminder.subject).toBe(
+      'Rappel pour Marc Petit : colis en attente – Service Courrier',
+    );
+    expect(reminder.body).toContain('Son code de retrait : 4821');
+    expect(reminder.body).not.toContain('mailto:');
   });
 
   it('renders the reminder: the same code, the parcels and since when, signed neutral', () => {

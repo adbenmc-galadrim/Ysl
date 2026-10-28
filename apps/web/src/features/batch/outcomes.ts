@@ -4,7 +4,10 @@ import type { BatchSummary } from '#/features/batch/summary';
 
 /** Where a row of « Lot enregistré » leads: the mails, a record, or Colis. */
 export type OutcomeTarget =
-  { to: 'mails' } | { to: 'record'; parcelId: string } | { to: 'home' };
+  | { to: 'mails' }
+  | { to: 'otherWay' }
+  | { to: 'record'; parcelId: string }
+  | { to: 'home' };
 
 export type OutcomeRow = Omit<LotOutcome, 'onClick'> & {
   target?: OutcomeTarget;
@@ -51,7 +54,7 @@ export function lotOutcomes(
         count: missing,
       }),
       detail: t('lot.missing.detail'),
-      target: { to: 'mails' },
+      target: { to: 'otherWay' },
     });
   const [first] = toComplete;
   if (first)

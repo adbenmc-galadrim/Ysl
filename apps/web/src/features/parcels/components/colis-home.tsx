@@ -83,6 +83,13 @@ export function ColisHome() {
   // for, with the name read on their label, open the picker in place.
   const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
   const [choosing, setChoosing] = useState<string | null>(null);
+  const withoutAddress = useMemo(
+    () =>
+      new Set(
+        (parcels ?? []).filter((row) => row.noAddress).map((row) => row.id),
+      ),
+    [parcels],
+  );
   // F32: a counter on keeps only its parcels; the sections fold as before.
   const [counter, setCounter] = useState<CounterId | null>(null);
   // Next to the banner, the rows say which parcels its changes are; online,
@@ -138,27 +145,55 @@ export function ColisHome() {
           ) : undefined;
         },
         rowControl: (parcel: { id: string }) =>
-          unaddressed.has(parcel.id) &&
-          !(labelled && pending.has(parcel.id)) && (
-            // « Ce n'est pas pour moi » (YSL-70): the same picker, worded
-            // as the maquette 09 does.
+          withoutAddress.has(parcel.id) &&
+          sectionId(section.title) === 'toNotify' ? (
+            // « Destinataire sans e-mail » (YSL-72): no mail to prepare, the
+            // ways to tell them instead.
             <Button
-              variant="danger"
+              variant="warning"
               size="xs"
-              className={
-                sectionId(section.title) === 'replies'
-                  ? 'w-[112px]'
-                  : 'w-[81px]'
+              className="w-[81px]"
+              onClick={() =>
+                void navigate({
+                  to: '/notifier',
+                  search: { colis: parcel.id, prevenir: true },
+                })
               }
-              onClick={() => setChoosing(parcel.id)}
             >
-              {sectionId(section.title) === 'replies'
-                ? t('colis.row.reassign')
-                : t('colis.row.choose')}
+              {t('colis.row.otherWay')}
             </Button>
+          ) : (
+            unaddressed.has(parcel.id) &&
+            !(labelled && pending.has(parcel.id)) && (
+              // « Ce n'est pas pour moi » (YSL-70): the same picker, worded
+              // as the maquette 09 does.
+              <Button
+                variant="danger"
+                size="xs"
+                className={
+                  sectionId(section.title) === 'replies'
+                    ? 'w-[112px]'
+                    : 'w-[81px]'
+                }
+                onClick={() => setChoosing(parcel.id)}
+              >
+                {sectionId(section.title) === 'replies'
+                  ? t('colis.row.reassign')
+                  : t('colis.row.choose')}
+              </Button>
+            )
           ),
       })),
-    [parcels, counter, labelled, pending, mails, navigate, unaddressed],
+    [
+      parcels,
+      counter,
+      labelled,
+      pending,
+      mails,
+      navigate,
+      unaddressed,
+      withoutAddress,
+    ],
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 

@@ -238,7 +238,11 @@ export function carrierLabel(
 }
 
 /** A row of the home list, and whether a reminder is due for its parcel (F37). */
-export type HomeParcel = ParcelRow & { remindDue: boolean };
+export type HomeParcel = ParcelRow & {
+  remindDue: boolean;
+  /** To notify, and nobody to write to: « Prévenir » instead (YSL-72). */
+  noAddress: boolean;
+};
 
 /** The list row of a local parcel; nothing when the home list leaves it out. */
 export function toParcelRow(
@@ -253,6 +257,9 @@ export function toParcelRow(
   return {
     ...describeParcel(parcel, state, context, now, t, dates),
     remindDue: reminderOf(parcel, now, dates)?.due ?? false,
+    noAddress:
+      state === 'toNotify' &&
+      addressMissing({ parcel, ...recipientOf(parcel, context) }),
   };
 }
 
@@ -281,8 +288,9 @@ export function damageLine(
 }
 
 /**
- * A contact outside the directory with no address, and none typed on the
- * parcel (« Destinataire sans e-mail »): nobody can be told by mail yet.
+ * A recipient with no address, a contact outside the directory or a card
+ * left without one, and none typed on the parcel (« Destinataire sans
+ * e-mail », YSL-72): nobody can be told by mail yet.
  */
 export function addressMissing({
   parcel,
@@ -297,11 +305,10 @@ export function addressMissing({
     (parcel.status === 'a_completer' ||
       parcel.status === 'recu' ||
       parcel.status === 'notifie') &&
-    !person &&
-    contact !== undefined &&
-    !contact.deletedAt &&
-    !contact.email &&
-    !parcel.notificationEmail
+    !parcel.notificationEmail?.trim() &&
+    (person
+      ? !person.email.trim()
+      : contact !== undefined && !contact.deletedAt && !contact.email)
   );
 }
 
@@ -373,10 +380,11 @@ export function describeParcel(
       : last4
         ? `${carrier} ···${last4}`
         : carrier;
+  const noEmail = addressMissing({ parcel, person, contact });
   const note =
     !person && !contact && parcel.readName && reply?.kind !== 'notMine'
       ? t('parcel.readName', { name: parcel.readName })
-      : addressMissing({ parcel, person, contact })
+      : noEmail
         ? t('contact.noEmail')
         : undefined;
 
@@ -397,6 +405,7 @@ export function describeParcel(
     ),
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,
+    ...(noEmail && state === 'toNotify' ? { noteTone: 'orange' as const } : {}),
     damage: damageLine(parcel, t),
     reply,
     tracking: parcel.tracking ?? undefined,
