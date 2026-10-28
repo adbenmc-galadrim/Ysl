@@ -1,4 +1,5 @@
 import { renderMail, type MailMessage } from '@repo/contract/mail';
+import { newPickupToken } from '@repo/contract/pickup';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -25,7 +26,7 @@ import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
+import { drawPins } from '#/features/mail/pickup-code';
 import { parcelName, recipientValues } from '#/features/mail/recipients';
 import {
   listTemplates,
@@ -69,25 +70,25 @@ type Draft = {
   card: AddressCard;
   template: EmailTemplateView;
   pickup: PickupSetting;
-  secret: PickupSecret | null;
+  pin: string | null;
 };
 
 async function openDraft(
   notification: LocalNotification,
   userId: string,
 ): Promise<Draft> {
-  const [card, templates, pickup, secrets] = await Promise.all([
+  const [card, templates, pickup, pins] = await Promise.all([
     cardOf(db, notification),
     listTemplates(db, userId),
     readPickup(db),
-    drawSecrets(db, 1),
+    drawPins(db, 1),
   ]);
   const ofType = templates.filter((row) => row.type === notification.type);
   const template =
     ofType.find((row) => row.id === notification.templateId) ??
     ofType.find((row) => row.isDefault) ??
     templates.find((row) => row.isDefault)!;
-  return { card, template, pickup, secret: secrets[0] ?? null };
+  return { card, template, pickup, pin: pins[0] ?? null };
 }
 
 function parcelDetail(parcel: LocalParcel | undefined): string {
@@ -153,7 +154,7 @@ function FixSheet({
         pickup: draft.pickup,
         agent: session.user.name,
         replyTo: session.user.email,
-        code: draft.secret?.pin ?? null,
+        code: draft.pin,
         now: new Date(),
         t,
       }),
@@ -183,7 +184,11 @@ function FixSheet({
       parcelIds,
       templateId: draft.template.stored ? draft.template.id : null,
       target,
-      pickup: draft.secret ?? undefined,
+      // A fresh token per try: a token is written once
+      // (`pickup_code_token_hash_idx`), and this mail carries no QR.
+      pickup: draft.pin
+        ? { pin: draft.pin, token: newPickupToken() }
+        : undefined,
     });
     const fixing = fixAddress(
       db,
