@@ -136,24 +136,34 @@ export async function addHandoverProof(
   }
   if (current.cancelledAt) throw new HandoverProofRefusedError('cancelled');
   const proof = await saveProof(db, files, handoverId, input, now);
-  const handover = await db.handover.get(handoverId);
-  if (!handover || handover.cancelledAt || handover.deletedAt) {
+  // Read and written in one transaction: a signature and a photo kept at
+  // the same moment each see the other's flag, and neither erases it.
+  const refused = await db.transaction(
+    'rw',
+    [db.handover, db.outbox],
+    async () => {
+      const handover = await db.handover.get(handoverId);
+      if (!handover || handover.cancelledAt || handover.deletedAt) {
+        return handover?.cancelledAt ? 'cancelled' : 'gone';
+      }
+      const next = withProof(handover, input.kind);
+      if (
+        next.method !== handover.method ||
+        !!next.hasSignature !== !!handover.hasSignature ||
+        !!next.hasPhoto !== !!handover.hasPhoto
+      ) {
+        await commitLocal(
+          db,
+          { upserts: [{ entity: 'handover', row: next }] },
+          { now },
+        );
+      }
+      return null;
+    },
+  );
+  if (refused) {
     await deleteProof(db, files, proof);
-    throw new HandoverProofRefusedError(
-      handover?.cancelledAt ? 'cancelled' : 'gone',
-    );
-  }
-  const next = withProof(handover, input.kind);
-  if (
-    next.method !== handover.method ||
-    !!next.hasSignature !== !!handover.hasSignature ||
-    !!next.hasPhoto !== !!handover.hasPhoto
-  ) {
-    await commitLocal(
-      db,
-      { upserts: [{ entity: 'handover', row: next }] },
-      { now },
-    );
+    throw new HandoverProofRefusedError(refused);
   }
   return proof;
 }

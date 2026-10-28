@@ -205,6 +205,26 @@ describe('addHandoverProof', () => {
     ).toHaveLength(1);
   });
 
+  it('keeps both flags when a signature and a photo are added at the same moment', async () => {
+    const handover = handoverRow({ method: 'manuel' });
+    await db.handover.put(handover);
+
+    await Promise.all([
+      addHandoverProof(db, files, handover.id, signature()),
+      addHandoverProof(db, files, handover.id, photo()),
+    ]);
+
+    expect(await db.handover.get(handover.id)).toMatchObject({
+      method: 'signature',
+      hasSignature: true,
+      hasPhoto: true,
+    });
+    expect((await db.outbox.toArray()).at(-1)?.patch).toMatchObject({
+      hasSignature: true,
+      hasPhoto: true,
+    });
+  });
+
   it('refuses a cancelled handover, and one no longer here, keeping nothing', async () => {
     const cancelled = handoverRow({ cancelledAt: NOW });
     await db.handover.put(cancelled);
