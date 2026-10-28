@@ -17,6 +17,7 @@ import {
 import {
   emailTemplate,
   notification,
+  pickupCode,
   syncOp as syncOpTable,
 } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
@@ -84,6 +85,9 @@ function valuesOf(table: SyncTable, op: SyncOp): Values {
  * What an update may change: not the server columns, and a deletion stays.
  * A device that still holds the row as alive sends it whole; without this,
  * the stale copy would bring a deleted row back (§8.4: deletes are logical).
+ * A pickup code's use stays too, as first received: two iPhones that both
+ * handed over on the same code offline keep the use of the one whose
+ * handover won, and a later reminder does not reopen it (F41).
  */
 function updatesOf(table: SyncTable, values: Values): Values {
   const set: Values = {};
@@ -93,6 +97,9 @@ function updatesOf(table: SyncTable, values: Values): Values {
   }
   if ('deletedAt' in set) {
     set.deletedAt = sql`coalesce(${table.deletedAt}, excluded.deleted_at)`;
+  }
+  if (table === pickupCode && 'usedAt' in set) {
+    set.usedAt = sql`coalesce(${pickupCode.usedAt}, excluded.used_at)`;
   }
   return set;
 }

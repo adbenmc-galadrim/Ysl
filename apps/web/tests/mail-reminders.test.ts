@@ -9,6 +9,10 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
 import {
+  lookupPickupPin,
+  lookupPickupText,
+} from '#/features/handover/pickup-lookup';
+import {
   pickupCodeWrites,
   pickupToWrite,
   recallSecrets,
@@ -85,9 +89,14 @@ describe('the code a reminder quotes', () => {
     expect(forNora?.token).not.toBe(forInes?.token);
   });
 
-  it('keeps the open code with the new QR token, the PIN unchanged', async () => {
+  it('moves the open code to the new QR token, the PIN and the date unchanged', async () => {
     const nora = personRow();
-    const open = await code({ personId: nora.id, pin: '4821' });
+    const firstToken = newPickupToken();
+    const open = await code({
+      personId: nora.id,
+      pin: '4821',
+      tokenHash: await pickupTokenHash(firstToken),
+    });
     const token = newPickupToken();
 
     const writes = await pickupCodeWrites(
@@ -96,17 +105,31 @@ describe('the code a reminder quotes', () => {
       { pin: '4821', token, codeId: open.id },
       { now: NOW },
     );
+    await db.pickupCode.bulkPut(
+      writes.map((write) => write.row as LocalPickupCode),
+    );
+    const [withdrawn, next] = writes.map((write) => write.row);
 
-    expect(writes).toEqual([
-      {
-        entity: 'pickup_code',
-        row: {
-          ...open,
-          updatedAt: NOW,
-          tokenHash: await pickupTokenHash(token),
-        },
-      },
-    ]);
+    expect(withdrawn).toEqual({ ...open, deletedAt: NOW });
+    expect(next).toMatchObject({
+      personId: nora.id,
+      pinHash: open.pinHash,
+      expiresAt: open.expiresAt,
+      tokenHash: await pickupTokenHash(token),
+      deletedAt: null,
+      usedAt: null,
+    });
+    expect((await lookupPickupText(db, firstToken, NOW)).status).toBe(
+      'replaced',
+    );
+    expect(await lookupPickupText(db, token, NOW)).toEqual({
+      status: 'active',
+      code: next,
+    });
+    expect(await lookupPickupPin(db, '4821', NOW)).toEqual({
+      status: 'active',
+      code: next,
+    });
   });
 });
 

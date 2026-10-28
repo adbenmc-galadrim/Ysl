@@ -1,47 +1,32 @@
 import {
+  type PickupHashKind,
   pickupPinHash,
+  type PickupRefusal,
   pickupTokenHash,
+  pickupVerdict,
+  type PickupVerifyInput,
+  type PickupVerifyOutput,
   readPickupToken,
 } from '@repo/contract/pickup';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
 
-/** What the desk holds of a code: the hash of the QR's token, or of the PIN. */
-export type PickupHashKind = 'token' | 'pin';
+export {
+  isActiveCode,
+  type PickupHashKind,
+  type PickupRefusal,
+} from '@repo/contract/pickup';
 
 /**
  * What a QR or a PIN opens. Only `active` names someone; the others say
- * why not, so the desk tells an old mail from a typo: `replaced` by a later
- * mail, `used` for a handover, `expired` after 30 days, `ambiguous` when
- * two iPhones drew the same PIN (the name settles it).
+ * why not, so the desk tells an old mail from a typo (`PickupRefusal`).
  */
 export type PickupMatch =
   { status: 'active'; code: LocalPickupCode } | { status: PickupRefusal };
 
-export type PickupRefusal =
-  'ambiguous' | 'expired' | 'used' | 'replaced' | 'unknown';
-
-/** Open, in date and pointing at someone: the code a handover may rest on. */
-export function isActiveCode(row: LocalPickupCode, now: Date): boolean {
-  return (
-    !row.deletedAt &&
-    !row.usedAt &&
-    row.expiresAt > now &&
-    Boolean(row.personId || row.contactId)
-  );
-}
-
-function whyNot(row: LocalPickupCode, now: Date): PickupRefusal {
-  if (row.usedAt) return 'used';
-  if (row.deletedAt) return 'replaced';
-  return row.expiresAt <= now ? 'expired' : 'unknown';
-}
-
 /**
  * The code behind a hash, checked on this iPhone only (F41): the synced
- * hashes are the check, nothing goes to the server. An active code wins
- * over older ones of the same hash, which a 4-digit PIN will meet; with
- * none active, the latest says why. Entry point of the handover (YSL-73
- * marks the code used).
+ * hashes are the check, nothing goes to the server (`pickupVerdict`, the
+ * same rule as `pickup.verify`). Entry point of the handover.
  */
 export async function findActivePickupCode(
   db: CourrierDatabase,
@@ -53,13 +38,75 @@ export async function findActivePickupCode(
     kind === 'token'
       ? await db.pickupCode.where('tokenHash').equals(hash).toArray()
       : await db.pickupCode.filter((row) => row.pinHash === hash).toArray();
-  const active = rows.filter((row) => isActiveCode(row, now));
-  if (active.length === 1) return { status: 'active', code: active[0]! };
-  if (active.length > 1) return { status: 'ambiguous' };
-  const latest = rows.sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  )[0];
-  return { status: latest ? whyNot(latest, now) : 'unknown' };
+  return pickupVerdict(rows, now);
+}
+
+/**
+ * The server, when the network is there: `verify` is `pickup.verify`,
+ * `sync` a synchronisation that brings its rows to this iPhone.
+ */
+export type OnlineCheck = {
+  online: () => boolean;
+  verify: (input: PickupVerifyInput) => Promise<PickupVerifyOutput>;
+  sync: () => Promise<unknown>;
+  /** How long the desk waits for an answer before it trusts its own copy. */
+  waitMs?: number;
+};
+
+/** The longest wait for the server's verdict: past it, this iPhone decides. */
+export const SERVER_CHECK_MS = 1_500;
+
+/** The longest wait for the rows of a code the server knows and this iPhone not. */
+export const SERVER_SYNC_MS = 5_000;
+
+function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise.catch(() => null),
+    new Promise<null>((resolve) => {
+      timer = setTimeout(() => resolve(null), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * The local verdict, then the server's when the network is there (§8.6):
+ * a code `unknown` here may have just been issued on a colleague's iPhone
+ * (its rows are pulled, then checked here again), one `active` here may
+ * have been used on another since the last pull (the server's refusal
+ * wins, for that very code, and the pull runs behind it: the desk shows
+ * the refusal at once). Offline, slow or failing, the server is not
+ * asked or not waited for: the hashes of this iPhone decide (F41). Any
+ * other refusal is final here, the server is not asked.
+ */
+export async function checkPickupCode(
+  db: CourrierDatabase,
+  kind: PickupHashKind,
+  hash: string,
+  check?: OnlineCheck,
+  now = new Date(),
+): Promise<PickupMatch> {
+  const local = await findActivePickupCode(db, kind, hash, now);
+  if (!check || (local.status !== 'unknown' && local.status !== 'active')) {
+    return local;
+  }
+  if (!check.online()) return local;
+  const server = await within(
+    check.verify({ kind, hash }),
+    check.waitMs ?? SERVER_CHECK_MS,
+  );
+  if (!server) return local;
+  const { status, codeId } = server;
+  if (local.status === 'active') {
+    const closed =
+      codeId === local.code.id && status !== 'active' && status !== 'ambiguous';
+    if (!closed) return local;
+    void check.sync().catch(() => undefined);
+    return { status };
+  }
+  if (status !== 'active') return { status };
+  await within(check.sync(), SERVER_SYNC_MS);
+  return findActivePickupCode(db, kind, hash, now);
 }
 
 /** A scanned text: `notPickup` for any QR but a pickup one (a parcel label). */
@@ -67,10 +114,12 @@ export async function lookupPickupText(
   db: CourrierDatabase,
   text: string,
   now = new Date(),
+  check?: OnlineCheck,
 ): Promise<PickupMatch | { status: 'notPickup' }> {
   const token = readPickupToken(text);
   if (!token) return { status: 'notPickup' };
-  return findActivePickupCode(db, 'token', await pickupTokenHash(token), now);
+  const hash = await pickupTokenHash(token);
+  return checkPickupCode(db, 'token', hash, check, now);
 }
 
 /** A PIN typed at the desk. */
@@ -78,6 +127,7 @@ export async function lookupPickupPin(
   db: CourrierDatabase,
   pin: string,
   now = new Date(),
+  check?: OnlineCheck,
 ): Promise<PickupMatch> {
-  return findActivePickupCode(db, 'pin', await pickupPinHash(pin), now);
+  return checkPickupCode(db, 'pin', await pickupPinHash(pin), check, now);
 }

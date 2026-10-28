@@ -71,7 +71,8 @@ export async function drawSecrets(
 /**
  * The code a mail writes with it. A reminder quoting the open code (F37)
  * sent as text writes nothing: same PIN, and the QR of the first mail still
- * opens. Shared with its QR, the open code takes the new token.
+ * opens. Shared with its QR, it is written again: same PIN and date, a new
+ * code for the new token (`pickupCodeWrites`).
  */
 export function pickupToWrite(
   secret: PickupSecret | undefined,
@@ -153,8 +154,9 @@ export async function recallSecrets(
  * person (`pickup_code_active_person_idx`), then the new one. The last mail
  * sent holds the valid code. Only the hashes are written: the token lives
  * in the QR shared with the mail, or nowhere when the mail went as text.
- * A reminder that quotes the open code (`codeId`) keeps it, with the QR's
- * new token: the PIN does not change, the former QR no longer opens.
+ * A reminder that quotes the open code (`codeId`) keeps its PIN and its
+ * date, with the QR's new token on a new code: the former one stays
+ * withdrawn, so its QR says « replaced » at the desk, not « unknown ».
  */
 export async function pickupCodeWrites(
   db: CourrierDatabase,
@@ -167,17 +169,6 @@ export async function pickupCodeWrites(
   const kept = secret.codeId
     ? mine.find((row) => row.id === secret.codeId && isLive(row))
     : undefined;
-  if (kept)
-    return [
-      {
-        entity: 'pickup_code',
-        row: {
-          ...kept,
-          updatedAt: now,
-          tokenHash: await pickupTokenHash(secret.token),
-        },
-      },
-    ];
   const { pin, token } = secret;
   const code: LocalPickupCode = {
     id: newId(),
@@ -187,8 +178,8 @@ export async function pickupCodeWrites(
     personId,
     contactId: personId ? null : contactId,
     tokenHash: await pickupTokenHash(token),
-    pinHash: await pickupPinHash(pin),
-    expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
+    pinHash: kept?.pinHash ?? (await pickupPinHash(pin)),
+    expiresAt: kept?.expiresAt ?? new Date(now.getTime() + PICKUP_CODE_TTL_MS),
     usedAt: null,
   };
   return [

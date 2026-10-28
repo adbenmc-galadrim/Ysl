@@ -29,7 +29,8 @@ const { appRouter, createTRPCContext } = await import('@repo/api');
 const { commitLocal } = await import('#/features/db/commit');
 const { settleDeliveryConflicts } =
   await import('#/features/handover/conflicts');
-const { lookupPickupText } = await import('#/features/handover/pickup-lookup');
+const { lookupPickupPin, lookupPickupText } =
+  await import('#/features/handover/pickup-lookup');
 const { recordHandover } = await import('#/features/handover/record-handover');
 const { searchForCode } = await import('#/features/handover/route');
 const { listHomeParcels } = await import('#/features/parcels/api/use-parcels');
@@ -38,7 +39,8 @@ const { loadParcelRecord } =
 const { describeRecord } = await import('#/features/parcels/record');
 const { createTranslator, DEFAULT_LOCALE } = await import('@repo/shared/i18n');
 const { createSyncEngine } = await import('#/features/sync/engine');
-const { openTestDatabase, parcelRow, personRow, pickupCodeRow } =
+const { mergeContact } = await import('#/features/directory/contacts');
+const { contactRow, openTestDatabase, parcelRow, personRow, pickupCodeRow } =
   await import('./helpers/local-rows');
 
 type Db = Awaited<ReturnType<typeof openTestDatabase>>;
@@ -91,14 +93,18 @@ function sessionOf(userId: string): Session {
   };
 }
 
-/** An iPhone of the mailroom: its own base, its engine, the real router. */
-function iphone(db: Db, userId: string) {
-  const api = appRouter.createCaller(
+function apiOf(userId: string) {
+  return appRouter.createCaller(
     createTRPCContext({
       headers: new Headers({ cookie: 'session=abc' }),
       session: sessionOf(userId),
     }),
   );
+}
+
+/** An iPhone of the mailroom: its own base, its engine, the real router. */
+function iphone(db: Db, userId: string) {
+  const api = apiOf(userId);
   return createSyncEngine({
     db,
     push: (input) => api.sync.push(input),
@@ -300,5 +306,119 @@ describe('a handover between two iPhones', () => {
         (title) => typeof title === 'string' && title.startsWith('Remis'),
       ),
     ).toEqual(['Remis à Nora Haddad par Karim (sans vérification)']);
+  });
+});
+
+describe('a pickup code between two iPhones (F41)', () => {
+  const issue = async (pin = '4821') => {
+    const token = newPickupToken();
+    const code = await pickupCodeRow(
+      { personId: nora.id },
+      { token, pin, now: new Date() },
+    );
+    await commitLocal(first, {
+      upserts: [{ entity: 'pickup_code', row: code }],
+    });
+    return { token, code };
+  };
+
+  it('reaches the other iPhone at its next sync, or at once by pickup.verify', async () => {
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await other.syncNow({ force: true });
+    const { token, code } = await issue();
+    await desk.syncNow({ force: true });
+
+    expect((await lookupPickupText(second, token)).status).toBe('unknown');
+    const api = apiOf(LINA);
+    const match = await lookupPickupText(second, token, new Date(), {
+      online: () => true,
+      verify: (input) => api.pickup.verify(input),
+      sync: () => other.syncNow({ force: true }),
+    });
+
+    expect(match).toMatchObject({ status: 'active', code: { id: code.id } });
+    expect((await lookupPickupPin(second, '4821')).status).toBe('active');
+  });
+
+  it('is refused after use, offline too, and keeps the first use once both are back', async () => {
+    const { token } = await issue();
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+    const handOver = async (db: Db, agentId: string, now: Date) => {
+      const match = await lookupPickupText(db, token, now);
+      if (match.status !== 'active') throw new Error(match.status);
+      return recordHandover(
+        db,
+        {
+          ...searchForCode(match.code, 'qr', now.getTime()),
+          parcelIds: parcels.map((parcel) => parcel.id),
+        },
+        { agentId, now },
+      );
+    };
+    const firstUse = new Date(Date.now() + 60_000);
+    const secondUse = new Date(Date.now() + 120_000);
+
+    await handOver(first, KARIM, firstUse);
+    expect((await lookupPickupText(first, token, firstUse)).status).toBe(
+      'used',
+    );
+    const lost = await handOver(second, LINA, secondUse);
+    await desk.syncNow({ force: true });
+    const run = await other.syncNow({ force: true });
+
+    expect(run.rejected).toBe(2);
+    const [onServer] = await server
+      .select()
+      .from(schema.pickupCode)
+      .where(eq(schema.pickupCode.personId, nora.id));
+    expect(onServer?.usedAt).toEqual(firstUse);
+    const local = await second.pickupCode.get(onServer!.id);
+    expect(local?.usedAt).toEqual(firstUse);
+    expect((await lookupPickupText(second, token)).status).toBe('used');
+    expect(
+      (await second.handover.get(lost.handoverId))?.cancelledAt,
+    ).not.toBeNull();
+    expect(conflicts).toEqual([
+      { recipientName: 'Nora Haddad', byMe: false, count: 2 },
+    ]);
+  });
+
+  it('moves a merged contact’s code to the person on the server, one open code left', async () => {
+    const desk = iphone(first, KARIM);
+    const outside = contactRow({ name: 'Nora H.', nameNorm: 'nora h' });
+    const token = newPickupToken();
+    const older = await pickupCodeRow(
+      { personId: nora.id },
+      { pin: '1111', now: new Date(Date.now() - 60_000) },
+    );
+    const latest = await pickupCodeRow(
+      { contactId: outside.id },
+      { token, pin: '2222', now: new Date() },
+    );
+    await commitLocal(first, {
+      upserts: [
+        { entity: 'contact', row: outside },
+        { entity: 'pickup_code', row: older },
+        { entity: 'pickup_code', row: latest },
+      ],
+    });
+    await desk.syncNow({ force: true });
+
+    await mergeContact(first, outside.id, nora.id, { agentId: KARIM });
+    const run = await desk.syncNow({ force: true });
+    const open = (
+      await server
+        .select()
+        .from(schema.pickupCode)
+        .where(eq(schema.pickupCode.personId, nora.id))
+    ).filter((row) => !row.deletedAt && !row.usedAt);
+
+    expect(run).toMatchObject({ status: 'idle', rejected: 0 });
+    expect(open.map((row) => row.id)).toEqual([latest.id]);
+    expect((await lookupPickupText(first, token)).status).toBe('active');
   });
 });

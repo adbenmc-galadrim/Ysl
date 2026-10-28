@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { readParcelEvent } from '@repo/contract/parcel-event';
+import { newPickupToken } from '@repo/contract/pickup';
 import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
@@ -10,11 +11,16 @@ import {
   saveContact,
 } from '#/features/directory/contacts';
 import {
+  lookupPickupPin,
+  lookupPickupText,
+} from '#/features/handover/pickup-lookup';
+import {
   contactRow,
   NOW,
   openTestDatabase,
   parcelRow,
   personRow,
+  pickupCodeRow,
 } from './helpers/local-rows';
 
 let db: CourrierDatabase;
@@ -152,5 +158,85 @@ describe('mergeContact', () => {
 
     expect(await mergeContact(db, temp.id, card.id, options)).toBe(0);
     expect(await db.outbox.count()).toBe(queued);
+  });
+
+  const day = 24 * 60 * 60 * 1000;
+
+  it('moves the contact’s open code to the card, so its QR and PIN still open', async () => {
+    const temp = marc();
+    const card = personRow({ email: 'marc.petit@prestataire.fr' });
+    const token = newPickupToken();
+    const code = await pickupCodeRow({ contactId: temp.id }, { token });
+    const old = await pickupCodeRow(
+      { contactId: temp.id, usedAt: NOW },
+      { now: new Date(NOW.getTime() - 3 * day) },
+    );
+    await db.contact.put(temp);
+    await db.directoryPerson.put(card);
+    await db.pickupCode.bulkPut([code, old]);
+    const later = new Date(NOW.getTime() + 60_000);
+
+    await mergeContact(db, temp.id, card.id, {
+      agentId: 'agent-1',
+      now: later,
+    });
+
+    expect(await db.pickupCode.get(code.id)).toMatchObject({
+      personId: card.id,
+      contactId: null,
+      deletedAt: null,
+    });
+    expect(await db.pickupCode.get(old.id)).toEqual(old);
+    const match = await lookupPickupText(db, token, later);
+    expect(match.status === 'active' && match.code.personId).toBe(card.id);
+  });
+
+  it('keeps the latest of two open codes on the card, and withdraws the other', async () => {
+    const temp = marc();
+    const card = personRow({ email: 'marc.petit@prestataire.fr' });
+    const older = await pickupCodeRow(
+      { personId: card.id },
+      { now: new Date(NOW.getTime() - 2 * day) },
+    );
+    const latest = await pickupCodeRow({ contactId: temp.id }, { pin: '1234' });
+    const stale = await pickupCodeRow(
+      { contactId: temp.id },
+      { now: new Date(NOW.getTime() - 40 * day) },
+    );
+    const mine = await pickupCodeRow({ personId: card.id }, { pin: '5555' });
+    const theirs = await pickupCodeRow(
+      { contactId: temp.id },
+      { pin: '6666', now: new Date(NOW.getTime() - day) },
+    );
+    await db.contact.put(temp);
+    await db.directoryPerson.put(card);
+    const later = new Date(NOW.getTime() + 60_000);
+    const options = { agentId: 'agent-1', now: later };
+
+    await db.pickupCode.bulkPut([older, latest, stale]);
+    await mergeContact(db, temp.id, card.id, options);
+    const open = (await db.pickupCode.toArray()).filter(
+      (row) => !row.deletedAt && !row.usedAt,
+    );
+
+    expect(open.map((row) => [row.id, row.personId])).toEqual(
+      expect.arrayContaining([
+        [latest.id, card.id],
+        [stale.id, null],
+      ]),
+    );
+    expect(open).toHaveLength(2);
+    expect((await db.pickupCode.get(older.id))?.deletedAt).toEqual(later);
+    expect((await lookupPickupPin(db, '1234', later)).status).toBe('active');
+
+    const other = contactRow({ name: 'Marc P.', nameNorm: 'marc p' });
+    await db.contact.put(other);
+    await db.pickupCode.bulkPut([mine, { ...theirs, contactId: other.id }]);
+    await db.pickupCode.update(latest.id, { usedAt: NOW });
+    await mergeContact(db, other.id, card.id, options);
+
+    expect((await db.pickupCode.get(mine.id))?.deletedAt).toBeNull();
+    expect((await db.pickupCode.get(theirs.id))?.deletedAt).toEqual(later);
+    expect((await lookupPickupPin(db, '6666', later)).status).toBe('replaced');
   });
 });
