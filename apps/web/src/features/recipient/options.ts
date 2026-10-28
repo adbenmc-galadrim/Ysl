@@ -1,4 +1,5 @@
-import type { RecipientKind } from '@repo/contract/recipient';
+import { FREQUENT_USES, type RecipientKind } from '@repo/contract/recipient';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { normalizeName } from '@repo/shared/text';
 import type { RecipientOption } from '@repo/ui';
 import {
@@ -13,6 +14,8 @@ import type {
 } from '#/features/db/schema';
 import { initialsOf } from '#/features/settings/initials';
 
+const t = createTranslator(DEFAULT_LOCALE);
+
 /** A card or a contact, as the two screens of F18 list it, and what choosing it records. */
 export type Choice = RecipientOption & { kind: RecipientKind };
 
@@ -20,16 +23,25 @@ export function personOption(person: LocalDirectoryPerson): Choice {
   return { ...toEntry(person), email: person.email, kind: 'person' };
 }
 
+/** « Hors annuaire », with the department when known: how a contact is told from a card. */
+export function outsideDetail(contact: Pick<LocalContact, 'department'>) {
+  return contact.department
+    ? t('recipient.outside.in', { department: contact.department })
+    : t('recipient.outside');
+}
+
 export function contactOption(contact: LocalContact): Choice {
   return {
     id: contact.id,
     name: contact.name,
     initials: initialsOf(contact.name),
-    detail: contact.email ?? undefined,
+    detail: outsideDetail(contact),
     email: contact.email ?? undefined,
     kind: 'contact',
   };
 }
+
+const lastUse = (contact: LocalContact) => contact.lastUsedAt?.getTime() ?? 0;
 
 /** The option of a card or contact by its id, if it is still listed. */
 export function optionOf(
@@ -47,9 +59,11 @@ export function optionOf(
 }
 
 /**
- * « Choisir le destinataire »: the directory's search, then the contacts
- * whose name or e-mail matches; accents and case aside, so « lefevre »
- * finds Hugo Lefèvre.
+ * « Choisir le destinataire »: the directory and the contacts whose name,
+ * department or e-mail matches, accents and case aside, so « lefevre »
+ * finds Hugo Lefèvre. The contacts who keep coming back head the list,
+ * last used first; everyone else follows in alphabetical order, cards and
+ * contacts alike.
  */
 export function searchOptions(
   people: readonly LocalDirectoryPerson[],
@@ -60,18 +74,30 @@ export function searchOptions(
   if (!needle) return [];
   const mail = normalizeEmail(query);
   const byId = new Map(people.map((person) => [person.id, person]));
-  const cards = directoryEntries(people, query).map((entry) =>
-    personOption(byId.get(entry.id)!),
+  const cards = directoryEntries(people, query).map((entry) => ({
+    key: byId.get(entry.id)!.nameNorm,
+    choice: personOption(byId.get(entry.id)!),
+  }));
+  const found = contacts.filter(
+    (c) =>
+      !c.deletedAt &&
+      (normalizeName(c.name).includes(needle) ||
+        normalizeName(c.department ?? '').includes(needle) ||
+        (c.email !== null && c.email.toLowerCase().includes(mail))),
   );
-  const others = contacts
-    .filter(
-      (c) =>
-        !c.deletedAt &&
-        (normalizeName(c.name).includes(needle) ||
-          (c.email !== null && c.email.toLowerCase().includes(mail))),
-    )
+  const frequent = found
+    .filter((c) => c.usageCount >= FREQUENT_USES)
+    .sort((a, b) => lastUse(b) - lastUse(a) || b.usageCount - a.usageCount)
     .map(contactOption);
-  return [...cards, ...others];
+  const rest = [
+    ...cards,
+    ...found
+      .filter((c) => c.usageCount < FREQUENT_USES)
+      .map((c) => ({ key: c.nameNorm, choice: contactOption(c) })),
+  ]
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map(({ choice }) => choice);
+  return [...frequent, ...rest];
 }
 
 /** The people the last parcels were for, most recent first, each once. */

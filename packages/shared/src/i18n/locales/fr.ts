@@ -498,6 +498,8 @@ export const fr = {
   'review.summary.allSure': 'Tout est sûr.',
   'recipient.submit.next': 'Valider et suivant',
   'recipient.suggestions': 'Suggestions',
+  'recipient.outside': 'Hors annuaire',
+  'recipient.outside.in': 'Hors annuaire, {{department}}',
   'recipient.photo.close': 'Fermer la photo',
   'settings.pickup': 'Lieu et horaires de retrait',
   'settings.pickup.footer': 'Ces informations apparaissent dans chaque e-mail.',

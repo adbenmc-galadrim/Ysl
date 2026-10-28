@@ -1,6 +1,7 @@
 export {
   BEST_SCORE,
   EXACT_SCORE,
+  FREQUENT_USES,
   FUZZY_MIN_LENGTH,
   indexRecipients,
   matchRecipient,

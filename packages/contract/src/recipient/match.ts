@@ -14,7 +14,15 @@ export type RecipientEntry = {
   kind: RecipientKind;
   firstName: string;
   lastName: string;
+  /** How many parcels the mailroom gave a contact (F27): a visitor who comes back rises on a tie. */
+  uses?: number;
 };
+
+/** A contact given this many parcels comes back: it passes a card on a tie (F27). */
+export const FREQUENT_USES = 2;
+
+const comesBack = (entry: RecipientEntry) =>
+  (entry.uses ?? 0) >= FREQUENT_USES ? entry.uses! : 0;
 
 type Indexed = {
   entry: RecipientEntry;
@@ -197,9 +205,10 @@ const KIND_ORDER: Record<RecipientKind, number> = { person: 0, contact: 1 };
 /**
  * The recipient chain of F18 after the reading: the names a code or the OCR
  * gave, mended, weighed against every card; without any name, the whole
- * printed text, exact words only (v1 strict mode). The best ranked first,
- * a card before a contact on a tie. An empty directory proposes nobody and
- * still returns the name read, for a new card.
+ * printed text, exact words only (v1 strict mode). The best ranked first;
+ * on a tie, a contact who keeps coming back, then a card before a contact.
+ * An empty directory proposes nobody and still returns the name read, for
+ * a new card.
  */
 export function matchRecipient(
   index: RecipientIndex,
@@ -247,6 +256,7 @@ export function matchRecipient(
   scored.sort(
     (a, b) =>
       b.score - a.score ||
+      comesBack(b.entry) - comesBack(a.entry) ||
       KIND_ORDER[a.entry.kind] - KIND_ORDER[b.entry.kind] ||
       order.get(a.entry)!.localeCompare(order.get(b.entry)!),
   );
