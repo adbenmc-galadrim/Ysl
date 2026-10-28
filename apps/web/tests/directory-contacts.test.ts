@@ -53,6 +53,24 @@ describe('contactEntries', () => {
   });
 });
 
+describe('a contact told through someone (F25)', () => {
+  it('says who was told for them last, instead of « Sans e-mail »', () => {
+    const sophie = personRow({ firstName: 'Sophie', lastName: 'Martin' });
+    const nina = contactRow({
+      name: 'Nina Roux',
+      nameNorm: 'nina roux',
+      notifyVia: `person:${sophie.id}`,
+    });
+
+    expect(contactEntries([nina], '', [sophie]).map((e) => e.detail)).toEqual([
+      'Prévenu via Sophie Martin',
+    ]);
+    expect(contactEntries([nina]).map((e) => e.detail)).toEqual([
+      'Sans e-mail',
+    ]);
+  });
+});
+
 describe('mergeTarget', () => {
   it('finds the directory card of the same e-mail, or of the same name for a contact without one', () => {
     const card = personRow({

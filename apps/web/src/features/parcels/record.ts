@@ -71,6 +71,8 @@ export type ParcelRecord = {
   lostHandovers?: ReadonlySet<string>;
   /** The proofs of the handover shown that this iPhone holds. */
   handoverProofs?: readonly HandoverProofKind[];
+  /** The mails of its history sent through a contact (F25): who, by mail id. */
+  relays?: ReadonlyMap<string, string>;
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -312,9 +314,46 @@ function details(
       t('record.detail.delivered'),
       parcel.deliveredAt && formatWhen(parcel.deliveredAt, now, t),
     ),
+    ...toldDetails(record, now, t),
     ...replyDetails(parcel, now, t),
     { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
   ];
+}
+
+/**
+ * « Prévenu via Sophie Martin », « De vive voix, hier à 15 h 10 »: how the
+ * recipient without an address was last told (F25), while the parcel waits.
+ */
+function toldDetails(
+  record: ParcelRecord,
+  now: Date,
+  t: TranslateFn,
+): DetailsItem[] {
+  if (record.parcel.status !== 'notifie') return [];
+  const last = record.events
+    .flatMap((row) => {
+      const event = readParcelEvent(row.type, row.detail);
+      return event?.type === 'parcel.notified' ||
+        event?.type === 'parcel.informed'
+        ? [{ event, at: row.at }]
+        : [];
+    })
+    .sort((a, b) => b.at.getTime() - a.at.getTime())[0];
+  if (!last) return [];
+  const label = t('record.detail.told');
+  if (last.event.type === 'parcel.informed') {
+    const when = formatWhen(last.at, now, t);
+    return [
+      {
+        label,
+        value: t('record.told.voice', {
+          when: when.charAt(0).toLowerCase() + when.slice(1),
+        }),
+      },
+    ];
+  }
+  const relay = record.relays?.get(last.event.notificationId);
+  return relay ? [{ label, value: t('record.told.via', { name: relay }) }] : [];
 }
 
 /** « Retrait prévu par Paul Mercier », « Absence jusqu'au 3 nov. »: what the recipient answered, while it holds. */
@@ -379,10 +418,19 @@ function eventTitle(
         : t(`history.status.${event.to === 'a_completer' ? 'recu' : event.to}`);
     case 'parcel.deleted':
       return t('history.deleted');
-    case 'parcel.notified':
+    case 'parcel.notified': {
+      const relay = record.relays?.get(event.notificationId);
+      if (relay)
+        return t(
+          event.kind === 'relance'
+            ? 'history.reminded.via'
+            : 'history.notified.via',
+          { name: relay },
+        );
       return t(
         event.kind === 'relance' ? 'history.reminded' : 'history.notified',
       );
+    }
     case 'parcel.informed':
       return t(
         event.kind === 'relance'

@@ -297,8 +297,12 @@ export function SentEmailsPage({
   const counts = countMails(mine);
   const shown = filterMails(mine, filter);
   const byId = new Map(sent.mails.map((mail) => [mail.notification.id, mail]));
-  const nameOf = (mail: TrackedMail) =>
-    mailOf(mail.notification, sent.parcels, sent.context).name;
+  // Sent through a contact (F25): « Marc Petit · via Sophie Martin ».
+  const nameOf = (mail: TrackedMail) => {
+    const name = mailOf(mail.notification, sent.parcels, sent.context).name;
+    const relay = mail.notification.relayName;
+    return relay ? t('mails.row.via', { name, relay }) : name;
+  };
 
   const toRow = (mail: TrackedMail): SentEmail => ({
     id: mail.notification.id,

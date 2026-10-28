@@ -48,7 +48,7 @@ export function DirectoryScreen() {
     <>
       <AnnuaireScreen
         people={directoryEntries(people, query)}
-        contacts={contactEntries(contacts, query)}
+        contacts={contactEntries(contacts, query, people)}
         onSelectContact={(id) =>
           setContact(contacts.find((row) => row.id === id) ?? null)
         }
