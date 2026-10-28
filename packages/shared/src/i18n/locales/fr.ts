@@ -322,6 +322,7 @@ export const fr = {
   'record.handover.photo': 'Photo',
   'record.handover.proofHere': 'Sur cet iPhone',
   'record.handover.proofElsewhere': 'Sur l’iPhone de l’agent',
+  'record.handover.proofPurged': 'Effacée (durée de conservation)',
   'record.handover.cancelled': 'Annulée',
   'record.notice.unsent.title': 'Modifié sur cet iPhone, pas encore envoyé',
   'record.notice.unsent.description': 'Partira dès que le réseau revient.',

@@ -3,6 +3,7 @@ import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import { fromDayKey } from '@repo/contract/parcel-reply';
 import { resumeOf } from '@repo/contract/reminders';
+import { cutoff, RETENTION } from '@repo/contract/retention';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -516,14 +517,21 @@ function handoverCard(
   };
 }
 
-/** Where a proof of the handover is: shown below, or on the agent's iPhone (D8). */
+/**
+ * Where a proof of the handover is: shown below, on the agent's iPhone (D8),
+ * or gone once past its time (§9.2) — the flag stays on the handover, the
+ * file does not, on any iPhone.
+ */
 function proofPlace(
+  handover: LocalHandover,
   kind: HandoverProofKind,
   here: readonly HandoverProofKind[],
-  t: TranslateFn,
+  { now, t }: Pick<DescribeOptions, 'now' | 't'>,
 ): string {
-  return here.includes(kind)
-    ? t('record.handover.proofHere')
+  if (here.includes(kind)) return t('record.handover.proofHere');
+  const kept = kind === 'photo' ? RETENTION.photo : RETENTION.signature;
+  return handover.at < cutoff(now, kept)
+    ? t('record.handover.proofPurged')
     : t('record.handover.proofElsewhere');
 }
 
@@ -560,10 +568,16 @@ export function handoverItems(
     ...row(t('record.handover.agent'), agentNameOf(handover, t, me)),
     ...row(t('record.handover.method'), methodLabel(handover.method, t)),
     ...(handover.hasSignature
-      ? row(t('record.handover.signature'), proofPlace('signature', here, t))
+      ? row(
+          t('record.handover.signature'),
+          proofPlace(handover, 'signature', here, { now, t }),
+        )
       : []),
     ...(handover.hasPhoto
-      ? row(t('record.handover.photo'), proofPlace('photo', here, t))
+      ? row(
+          t('record.handover.photo'),
+          proofPlace(handover, 'photo', here, { now, t }),
+        )
       : []),
     ...row(t('record.detail.sync'), t(`record.sync.${sync}`)),
     ...(cancelled && handover.cancelledAt
