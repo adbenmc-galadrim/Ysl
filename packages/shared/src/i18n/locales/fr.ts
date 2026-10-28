@@ -596,6 +596,8 @@ export const fr = {
   'notify.share.hint':
     'Le texte et le QR de retrait partent par la feuille de partage ; saisissez l’adresse dans la messagerie.',
   'notify.share.reason': 'Partage avec le QR annulé, e-mail abandonné',
+  'notify.share.refused':
+    'Partage avec le QR refusé par l’iPhone, e-mail abandonné',
   'notify.empty.title': 'Aucun e-mail à préparer',
   'notify.empty.description':
     'Les colis « À notifier » sans destinataire réglé attendent leur fiche.',

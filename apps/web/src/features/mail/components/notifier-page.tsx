@@ -370,7 +370,14 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
           setAsking({ key, id: row.id });
           return;
         }
-        await outbox.markFailed(row.id, t('notify.share.reason'));
+        await outbox.markFailed(
+          row.id,
+          t(
+            outcome === 'cancelled'
+              ? 'notify.share.reason'
+              : 'notify.share.refused',
+          ),
+        );
         setDone((all) => ({
           ...all,
           [key]: {
