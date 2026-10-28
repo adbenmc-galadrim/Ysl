@@ -10,6 +10,7 @@ import {
   CourrierDatabase,
   type LocalContact,
   type LocalDirectoryPerson,
+  type LocalHandover,
   type LocalParcel,
   type LocalPickupCode,
   type LocalSender,
@@ -154,6 +155,28 @@ export async function pickupCodeRow(
     pinHash: await pickupPinHash(pin),
     expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
     usedAt: null,
+    ...overrides,
+  };
+}
+
+export function handoverRow(
+  overrides: Partial<LocalHandover> = {},
+): LocalHandover {
+  return {
+    id: newId(),
+    createdAt: NOW,
+    updatedAt: NOW,
+    deletedAt: null,
+    parcelIds: [],
+    personId: null,
+    contactId: null,
+    recipientName: 'Nora Haddad',
+    delegateName: null,
+    method: 'pin',
+    agentId: 'agent-1',
+    agentName: 'Karim Benali',
+    at: NOW,
+    cancelledAt: null,
     ...overrides,
   };
 }

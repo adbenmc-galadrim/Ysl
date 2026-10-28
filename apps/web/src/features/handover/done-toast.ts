@@ -1,15 +1,17 @@
 import { useEffect, useSyncExternalStore } from 'react';
 
-/** How long « 3 colis remis à Nora » stays over Colis. */
+/** How long « Déjà remis à Nora par un collègue » stays over Colis. */
 export const HANDOVER_TOAST_MS = 5_000;
 
 /**
- * A handover just written here (`done`), or one another iPhone had
- * recorded first (`conflict`), found by the synchronisation.
+ * A handover another iPhone had recorded first, found by the
+ * synchronisation. The one written here has its own screen (YSL-76).
  */
-export type HandoverToast =
-  | { kind: 'done'; count: number; firstName: string }
-  | { kind: 'conflict'; firstName: string | null; byMe: boolean };
+export type HandoverToast = {
+  kind: 'conflict';
+  firstName: string | null;
+  byMe: boolean;
+};
 
 let current: HandoverToast | undefined;
 const listeners = new Set<() => void>();
@@ -19,7 +21,7 @@ function publish(next: HandoverToast | undefined) {
   for (const listener of listeners) listener();
 }
 
-/** Called once a handover is written here, or found beaten by another iPhone: Colis says so for a few seconds. */
+/** Called once a handover is found beaten by another iPhone: Colis says so for a few seconds. */
 export function announceHandover(toast: HandoverToast): void {
   publish(toast);
 }
