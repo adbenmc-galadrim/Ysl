@@ -378,7 +378,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
             reason:
               outcome === 'blocked'
                 ? t('mail.fallback.shareBlocked')
-                : t('mail.fallback.shareCancelled'),
+                : outcome === 'cancelled'
+                  ? t('mail.fallback.shareCancelled')
+                  : t('mail.fallback.shareUnavailable'),
           },
         }));
       } catch {

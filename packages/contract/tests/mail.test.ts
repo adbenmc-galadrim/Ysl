@@ -104,6 +104,13 @@ describe('template rendering', () => {
     expect(rendered.empty).toEqual(['lieu', 'horaires']);
   });
 
+  it('leaves no blank line at the edges where a block went', () => {
+    const values = { consignes: '', reserve: '' };
+    expect(renderText('{consignes}\n\nBonjour', values).text).toBe('Bonjour');
+    expect(renderText('Merci\n\n{reserve}', values).text).toBe('Merci');
+    expect(renderText('\nMerci\n\n', values).text).toBe('\nMerci\n\n');
+  });
+
   it('keeps a line where one variable has a value', () => {
     expect(
       renderText('{lieu}, {horaires}', { lieu: '', horaires: '9 h' }).text,

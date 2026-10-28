@@ -158,13 +158,14 @@ async function checkTemplate(
   const deleting =
     op.type === 'delete' || (op.patch.deletedAt ?? null) !== null;
   if (!deleting) return;
-  const type = (op.type === 'upsert' ? op.patch.type : undefined) ?? row?.type;
+  const types = [op.type === 'upsert' ? op.patch.type : undefined, row?.type];
   const isDefault =
     row?.isDefault === true ||
     (op.type === 'upsert' && op.patch.isDefault === true);
-  const isPreset =
-    typeof type === 'string' &&
-    op.entityId === (await presetTemplateId(userId, type));
+  let isPreset = false;
+  for (const type of types)
+    if (typeof type === 'string')
+      isPreset ||= op.entityId === (await presetTemplateId(userId, type));
   if (isDefault || isPreset) {
     throw new SyncRejected(
       SYNC_STATUS.conflict,

@@ -66,6 +66,7 @@ export async function presetTemplateId(
   ownerId: string,
   type: string,
 ): Promise<string> {
+  // The seed keeps its first name: the rows already written keep their id.
   const digest = new Uint8Array(
     await crypto.subtle.digest(
       'SHA-256',

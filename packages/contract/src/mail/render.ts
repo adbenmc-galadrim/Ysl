@@ -69,12 +69,14 @@ export function renderText(text: string, values: MailValues): RenderedText {
       dropping = true;
       continue;
     }
-    // A block gone whole leaves one blank line between its neighbours, not two.
-    if (dropping && !line.trim() && lines.length && !lines.at(-1)!.trim())
+    // A block gone whole leaves one blank line between its neighbours, not
+    // two, and none at the very start.
+    if (dropping && !line.trim() && (!lines.length || !lines.at(-1)!.trim()))
       continue;
     dropping = false;
     lines.push(line);
   }
+  if (dropping) while (lines.length && !lines.at(-1)!.trim()) lines.pop();
   const kept = lines.join('\n');
   const rendered = kept.replace(PLACEHOLDER, (match, name: string) => {
     if (!isMailVariable(name)) {

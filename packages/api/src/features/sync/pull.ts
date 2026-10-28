@@ -84,7 +84,8 @@ function withoutOrganization(row: Row): PullChange['row'] {
 }
 
 /**
- * `sync.pull`: the rows of one mailroom written since the cursor, up to the
+ * `sync.pull`: the rows of one mailroom written since the cursor (of its
+ * e-mail templates, the reader's own), up to the
  * snapshot bound fixed by the first page, entity after entity in
  * `(server_xid, id)` order. A row may come back twice across two pulls; the
  * device upserts. A cursor from another generation, beyond the bound, or
