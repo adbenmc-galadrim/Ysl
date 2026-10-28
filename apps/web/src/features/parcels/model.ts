@@ -341,7 +341,9 @@ export function describeParcel(
   dates?: ReminderDates,
 ): ParcelRow {
   const { person, contact } = recipientOf(parcel, context);
-  const reply = replyLine(parcel, now, t);
+  // A parcel in distress stays in its section, said as such: the answer
+  // does not hide it (the record still names the colleague).
+  const reply = state === 'late' ? undefined : replyLine(parcel, now, t);
   // « Pas pour moi » took the recipient off: the name read heads the row,
   // as the maquette names who answered.
   const recipient = person

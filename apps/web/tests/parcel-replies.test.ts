@@ -317,6 +317,22 @@ describe('the answer on the lists', () => {
     );
   });
 
+  it('leaves a parcel in distress in its section, said as such', async () => {
+    const old = new Date(2026, 9, 12, 9);
+    const parcel = notified({ notifiedAt: old, lastNotifiedAt: old });
+    await db.parcel.put(parcel);
+    await replyColleague(db, [parcel.id], 'Paul Mercier', options);
+
+    const row = toParcelRow(
+      (await db.parcel.get(parcel.id))!,
+      context(),
+      NOW,
+      t,
+    );
+
+    expect(row).toMatchObject({ state: 'late', reply: undefined });
+  });
+
   it('says until when the recipient is away, then nothing once back', async () => {
     const parcel = notified();
     await db.parcel.put(parcel);

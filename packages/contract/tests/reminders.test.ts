@@ -99,6 +99,14 @@ describe('a recipient away (YSL-70)', () => {
     expect(state.late).toBe(true);
   });
 
+  it('gives two working days after the return even when the alert fell just after it', () => {
+    // Away until Monday the 26th: back on Tuesday, the alert would have
+    // been on Wednesday the 28th, it waits until Thursday the 29th.
+    const history = { notifiedAt, reminders: [], pausedUntil: at(26, 0) };
+    expect(reminderState(history, at(28)).late).toBe(false);
+    expect(reminderState(history, at(29)).lateAt).toEqual(at(29, 0));
+  });
+
   it('changes nothing once the absence is over before anything fell due', () => {
     const plain = reminderState({ notifiedAt, reminders: [] }, at(27));
     const paused = reminderState(
