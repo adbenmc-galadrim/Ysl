@@ -4,6 +4,7 @@ import {
   type MailTarget,
   type NotifyChange,
 } from '@repo/contract/mail';
+import { newPickupToken } from '@repo/contract/pickup';
 import type { PickupSetting } from '@repo/contract/settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -31,7 +32,7 @@ import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawPins } from '#/features/mail/pickup-code';
+import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
 import {
   mailsAbout,
   mailsOfBatch,
@@ -57,7 +58,7 @@ export type NotifierScope = { parcelId?: string; batchId?: string };
 
 type Session = {
   mails: RecipientMail[];
-  pins: string[];
+  secrets: PickupSecret[];
   templates: EmailTemplateView[];
   pickup: PickupSetting;
   now: Date;
@@ -79,14 +80,14 @@ async function openSession(
     : batchId
       ? mailsOfBatch(all, batchId)
       : all;
-  const [pins, templates, pickup] = await Promise.all([
-    drawPins(db, mails.length, { now }),
+  const [secrets, templates, pickup] = await Promise.all([
+    drawSecrets(db, mails.length, { now }),
     listTemplates(db, userId),
     readPickup(db),
   ]);
   return {
     mails,
-    pins,
+    secrets,
     templates: templates.filter((template) => template.type === 'avis'),
     pickup,
     now,
@@ -217,7 +218,7 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
   };
 
   if (!opened) return null;
-  const { mails, pins, templates, pickup, now } = opened;
+  const { mails, secrets, templates, pickup, now } = opened;
   const mail = mails[index];
   if (!mail) {
     return (
@@ -234,7 +235,8 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
   }
 
   const template = pickTemplate(templates, templateId)!;
-  const code = pins[index] ?? null;
+  const secret = secrets[index];
+  const code = secret?.pin ?? null;
   const rendered = renderMail(
     template,
     recipientValues(mail, {
@@ -262,6 +264,16 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
     });
   const last = index === mails.length - 1;
 
+  // A token is written once (`pickup_code_token_hash_idx`): a second try on
+  // this page, after a "no", quotes the same PIN with a new token.
+  const renewToken = () =>
+    setOpened({
+      ...opened,
+      secrets: secrets.map((other, at) =>
+        at === index ? { ...other, token: newPickupToken() } : other,
+      ),
+    });
+
   const send = (event: MouseEvent) => {
     if (!prepared || !message || !mail.address || busy.current) {
       event.preventDefault();
@@ -278,8 +290,9 @@ export function NotifierPage({ parcelId, batchId }: NotifierScope) {
       parcelIds: mail.parcels.map(({ id }) => id),
       templateId: template.stored ? template.id : null,
       target: mailTarget,
-      pickupPin: code ?? undefined,
+      pickup: secret,
     });
+    renewToken();
     void (async () => {
       try {
         const row = await preparing;

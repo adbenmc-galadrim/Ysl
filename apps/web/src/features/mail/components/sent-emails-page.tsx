@@ -25,7 +25,7 @@ import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawPins } from '#/features/mail/pickup-code';
+import { drawSecrets, type PickupSecret } from '#/features/mail/pickup-code';
 import { parcelName, recipientValues } from '#/features/mail/recipients';
 import {
   listTemplates,
@@ -69,25 +69,25 @@ type Draft = {
   card: AddressCard;
   template: EmailTemplateView;
   pickup: PickupSetting;
-  pin: string | null;
+  secret: PickupSecret | null;
 };
 
 async function openDraft(
   notification: LocalNotification,
   userId: string,
 ): Promise<Draft> {
-  const [card, templates, pickup, pins] = await Promise.all([
+  const [card, templates, pickup, secrets] = await Promise.all([
     cardOf(db, notification),
     listTemplates(db, userId),
     readPickup(db),
-    drawPins(db, 1),
+    drawSecrets(db, 1),
   ]);
   const ofType = templates.filter((row) => row.type === notification.type);
   const template =
     ofType.find((row) => row.id === notification.templateId) ??
     ofType.find((row) => row.isDefault) ??
     templates.find((row) => row.isDefault)!;
-  return { card, template, pickup, pin: pins[0] ?? null };
+  return { card, template, pickup, secret: secrets[0] ?? null };
 }
 
 function parcelDetail(parcel: LocalParcel | undefined): string {
@@ -153,7 +153,7 @@ function FixSheet({
         pickup: draft.pickup,
         agent: session.user.name,
         replyTo: session.user.email,
-        code: draft.pin,
+        code: draft.secret?.pin ?? null,
         now: new Date(),
         t,
       }),
@@ -183,7 +183,7 @@ function FixSheet({
       parcelIds,
       templateId: draft.template.stored ? draft.template.id : null,
       target,
-      pickupPin: draft.pin ?? undefined,
+      pickup: draft.secret ?? undefined,
     });
     const fixing = fixAddress(
       db,

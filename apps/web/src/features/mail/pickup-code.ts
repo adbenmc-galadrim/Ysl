@@ -1,24 +1,15 @@
+import {
+  newPickupToken,
+  PICKUP_CODE_TTL_MS,
+  PICKUP_PIN_LENGTH,
+  pickupPinHash,
+  pickupTokenHash,
+} from '@repo/contract/pickup';
 import { newId } from '@repo/shared/id';
 import type { Upsert } from '#/features/db/commit';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
-import { sha256Hex } from '#/features/photos/sha256';
-
-/** Four digits, as the mockups and the Remise keypad say ("Code à 4 chiffres"). */
-export const PICKUP_PIN_LENGTH = 4;
 
 const PIN_SPACE = 10 ** PICKUP_PIN_LENGTH;
-
-/** A code lives a month; the reminder of a later mail issues the next one. */
-export const PICKUP_CODE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-
-/**
- * What every iPhone keeps of a PIN (F41: checked offline at the desk). Four
- * digits hide nothing from whoever holds the hash; it only keeps the code
- * out of plain sight in the database and the exports.
- */
-export function pinHash(pin: string): Promise<string> {
-  return sha256Hex(new Blob([`pickup:${pin}`]));
-}
 
 /** A whole number below `bound`, without the modulo's bias. */
 export type RandomBelow = (bound: number) => number;
@@ -52,12 +43,25 @@ export async function drawPins(
   const pins: string[] = [];
   while (pins.length < count && taken.size < PIN_SPACE) {
     const pin = String(random(PIN_SPACE)).padStart(PICKUP_PIN_LENGTH, '0');
-    const hash = await pinHash(pin);
+    const hash = await pickupPinHash(pin);
     if (taken.has(hash)) continue;
     taken.add(hash);
     pins.push(pin);
   }
   return pins;
+}
+
+/** What the mail hands the employee: the PIN it quotes, the token its QR carries. */
+export type PickupSecret = { pin: string; token: string };
+
+/** `drawPins`, each with a token for its QR, kept in memory until the mail is written. */
+export async function drawSecrets(
+  db: CourrierDatabase,
+  count: number,
+  options: { random?: RandomBelow; now?: Date } = {},
+): Promise<PickupSecret[]> {
+  const pins = await drawPins(db, count, options);
+  return pins.map((pin) => ({ pin, token: newPickupToken() }));
 }
 
 export type PickupRecipient = {
@@ -66,16 +70,16 @@ export type PickupRecipient = {
 };
 
 /**
- * The writes that make `pin` the recipient's code: the codes still open
- * for them go first, since the server allows one open code per person
- * (`pickup_code_active_person_idx`), then the new one. The last mail sent
- * holds the valid code. The QR's token is drawn and dropped: the QR itself
- * comes with the final template (YSL-66).
+ * The writes that make this PIN and token the recipient's code: the codes
+ * still open for them go first, since the server allows one open code per
+ * person (`pickup_code_active_person_idx`), then the new one. The last mail
+ * sent holds the valid code. Only the hashes are written: the token lives
+ * in the QR shared with the mail, or nowhere when the mail went as text.
  */
 export async function pickupCodeWrites(
   db: CourrierDatabase,
   recipient: PickupRecipient,
-  pin: string,
+  { pin, token }: PickupSecret,
   { now = new Date() }: { now?: Date } = {},
 ): Promise<Upsert[]> {
   const { personId, contactId } = recipient;
@@ -84,8 +88,6 @@ export async function pickupCodeWrites(
     : contactId
       ? await db.pickupCode.where('contactId').equals(contactId).toArray()
       : [];
-  const token = new Uint8Array(32);
-  crypto.getRandomValues(token);
   const code: LocalPickupCode = {
     id: newId(),
     createdAt: now,
@@ -93,8 +95,8 @@ export async function pickupCodeWrites(
     deletedAt: null,
     personId,
     contactId: personId ? null : contactId,
-    tokenHash: await sha256Hex(new Blob([token])),
-    pinHash: await pinHash(pin),
+    tokenHash: await pickupTokenHash(token),
+    pinHash: await pickupPinHash(pin),
     expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
     usedAt: null,
   };

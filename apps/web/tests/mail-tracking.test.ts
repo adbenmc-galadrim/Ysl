@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { newPickupToken, pickupPinHash } from '@repo/contract/pickup';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
@@ -8,7 +9,6 @@ import {
   markSent,
   prepareNotification,
 } from '#/features/mail/notifications';
-import { pinHash } from '#/features/mail/pickup-code';
 import {
   countMails,
   filterMails,
@@ -51,7 +51,7 @@ function prepare(
       parcelIds: parcels.map(({ id }) => id),
       templateId: null,
       target: 'mailto',
-      pickupPin: pin,
+      pickup: pin ? { pin, token: newPickupToken() } : undefined,
     },
     { userId, now },
   );
@@ -148,7 +148,9 @@ describe('the sending log', () => {
     const open = (await db.pickupCode.toArray()).filter(
       (code) => !code.deletedAt,
     );
-    expect(open.map((code) => code.pinHash)).toEqual([await pinHash('5678')]);
+    expect(open.map((code) => code.pinHash)).toEqual([
+      await pickupPinHash('5678'),
+    ]);
   });
 
   it('closes a failure whose parcels all moved on', async () => {
