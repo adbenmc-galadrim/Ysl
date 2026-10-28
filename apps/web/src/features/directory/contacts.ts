@@ -6,6 +6,7 @@ import type {
   CourrierDatabase,
   LocalContact,
   LocalDirectoryPerson,
+  LocalPickupCode,
 } from '#/features/db/schema';
 import { isEmail, listed, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
@@ -157,13 +158,62 @@ export async function deleteContact(
 
 export type MergeOptions = { agentId: string; now?: Date };
 
+const open = (code: LocalPickupCode) => !code.deletedAt && !code.usedAt;
+
+/**
+ * The pickup codes of a merge: one open code per person (the server's
+ * `pickup_code_active_person_idx`), the one of the latest mail, as when a
+ * new mail is sent. The contact's, when it is the latest still in date,
+ * moves to the person and the person's own are withdrawn; the contact's
+ * other codes in date are withdrawn, so their QR says « replaced », and
+ * its expired ones stay as they are.
+ * Withdrawals come first: the server checks the index row by row.
+ */
+async function mergedCodes(
+  db: CourrierDatabase,
+  contactId: string,
+  personId: string,
+  now: Date,
+): Promise<Upsert[]> {
+  const theirs = (
+    await db.pickupCode.where('contactId').equals(contactId).toArray()
+  ).filter(open);
+  const mine = (
+    await db.pickupCode.where('personId').equals(personId).toArray()
+  ).filter(open);
+  const inDate = (code: LocalPickupCode) => code.expiresAt > now;
+  const latest = [...theirs, ...mine]
+    .filter(inDate)
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+  const moved = latest && theirs.includes(latest) ? latest : undefined;
+  const withdrawn = [
+    ...(moved ? mine : []),
+    ...theirs.filter((code) => code !== moved && inDate(code)),
+  ];
+  return [
+    ...withdrawn.map((row): Upsert => ({
+      entity: 'pickup_code',
+      row: { ...row, deletedAt: now, updatedAt: now },
+    })),
+    ...(moved
+      ? [
+          {
+            entity: 'pickup_code',
+            row: { ...moved, personId, contactId: null, updatedAt: now },
+          } as const,
+        ]
+      : []),
+  ];
+}
+
 /**
  * « Rattacher à … »: a contact who joined the directory becomes that card
  * everywhere. Its parcels name the person (the department typed on each
- * stays), the names learned for it point to the person, and the contact
- * leaves the lists; each parcel's history says its recipient changed. All
- * in one local write, queued for `sync.push`. A contact already merged or
- * deleted writes nothing: the merge is safe to run twice.
+ * stays), the names learned for it point to the person, its pickup code
+ * too (`mergedCodes`), and the contact leaves the lists; each parcel's
+ * history says its recipient changed. All in one local write, queued for
+ * `sync.push`. A contact already merged or deleted writes nothing: the
+ * merge is safe to run twice.
  */
 export async function mergeContact(
   db: CourrierDatabase,
@@ -197,6 +247,7 @@ export async function mergeContact(
         options,
       ),
     ]),
+    ...(await mergedCodes(db, contactId, personId, now)),
     { entity: 'contact', row: { ...contact, deletedAt: now, updatedAt: now } },
   ];
   await commitLocal(db, { upserts }, { now });
