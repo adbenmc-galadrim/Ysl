@@ -334,7 +334,7 @@ describe('describeRecord', () => {
       { label: 'Synchronisation', value: 'À jour' },
     ]);
     expect(view.history?.[0]?.title).toBe(
-      'Remis à Nora Haddad par Karim (code vérifié)',
+      'Remis à Nora Haddad, retiré par Lucas Martin, par Karim (code vérifié)',
     );
   });
 
