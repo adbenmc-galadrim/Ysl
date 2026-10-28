@@ -43,6 +43,14 @@ describe('announcedCollector', () => {
     });
   });
 
+  it('offers the colleague without a date when the reply was not dated', () => {
+    expect(
+      announcedCollector([
+        parcelRow({ status: 'notifie', expectedDelegate: 'Paul Mercier' }),
+      ]),
+    ).toEqual({ name: 'Paul Mercier', at: null });
+  });
+
   it('offers nobody when no one was announced, or the parcel was not notified', () => {
     expect(
       announcedCollector([
@@ -91,5 +99,6 @@ describe('collectorName', () => {
     expect(collectorName('  Léa   Roux ', 'Nora Haddad')).toBe('Léa Roux');
     expect(collectorName('NORA haddad', 'Nora Haddad')).toBeNull();
     expect(collectorName('   ', 'Nora Haddad')).toBeNull();
+    expect(collectorName(' ... ', 'Nora Haddad')).toBeNull();
   });
 });

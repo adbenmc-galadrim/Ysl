@@ -1,4 +1,3 @@
-import { nameTokens } from '@repo/contract/recipient';
 import type { Collectee } from '@repo/ui';
 import type {
   LocalContact,
@@ -15,10 +14,11 @@ import {
 } from '#/features/recipient/options';
 import { delegateName } from '#/features/replies/record';
 import { initialsOf } from '#/features/settings/initials';
+import { normalizeName } from '@repo/shared/text';
 
-/** Two spellings of one name: case, accents and punctuation aside. */
+/** Two spellings of one name, by the key the directory stores (`name_norm`). */
 export const sameName = (a: string, b: string) =>
-  nameTokens(a).join(' ') === nameTokens(b).join(' ');
+  normalizeName(a) === normalizeName(b);
 
 /**
  * Who collected, as the handover keeps it: the name as typed or picked, one
@@ -29,7 +29,8 @@ export function collectorName(
   recipientName: string,
 ): string | null {
   const name = delegateName(value ?? '');
-  return name && !sameName(name, recipientName) ? name : null;
+  // Punctuation alone names nobody.
+  return normalizeName(name) && !sameName(name, recipientName) ? name : null;
 }
 
 /** Who collects as the screens show them: a card, a contact, or a name as typed. */
