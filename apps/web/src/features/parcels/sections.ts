@@ -4,6 +4,7 @@ import type { ColisSection, Parcel, ParcelState } from '@repo/ui';
 const t = createTranslator(DEFAULT_LOCALE);
 
 export const SECTION_IDS = [
+  'replies',
   'incomplete',
   'toNotify',
   'waiting',
@@ -17,6 +18,18 @@ const SECTIONS: {
   title: string;
   states: readonly ParcelState[];
 }[] = [
+  // Every state: a parcel with an answer standing is listed here, first.
+  {
+    id: 'replies',
+    title: t('colis.section.replies'),
+    states: [
+      'incomplete',
+      'toNotify',
+      'notified',
+      'handedOver',
+      'returned',
+    ],
+  },
   {
     id: 'incomplete',
     title: t('colis.section.incomplete'),
@@ -48,10 +61,18 @@ export function sectionId(title: string): SectionId | undefined {
 
 const TODO_STATES: readonly ParcelState[] = ['incomplete', 'toNotify'];
 
-/** The home list: one section per thing left to do, in the order of the day. */
+/**
+ * The home list: one section per thing left to do, in the order of the day;
+ * the recipients' answers on top (maquette 09 « Réponses des salariés »),
+ * each parcel listed once.
+ */
 export function toSections(parcels: readonly Parcel[]): ColisSection[] {
-  return SECTIONS.flatMap(({ title, states }) => {
-    const rows = parcels.filter((parcel) => states.includes(parcel.state));
+  return SECTIONS.flatMap(({ id, title, states }) => {
+    const rows = parcels.filter(
+      (parcel) =>
+        states.includes(parcel.state) &&
+        (id === 'replies') === (parcel.reply !== undefined),
+    );
     return rows.length ? [{ title, parcels: rows }] : [];
   });
 }

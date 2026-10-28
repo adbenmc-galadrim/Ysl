@@ -10,11 +10,13 @@ import {
   Sheet,
 } from '@repo/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
 import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
+import type { LocalParcel } from '#/features/db/schema';
 import { ContactSheet } from '#/features/directory/components/contact-sheet';
 import {
   type PhotoUrl,
@@ -33,6 +35,8 @@ import {
   stepBackLabel,
 } from '#/features/parcels/record';
 import { changeParcelStatus, deleteParcel } from '#/features/parcels/status';
+import { answeredWith } from '#/features/replies/record';
+import { EmployeeReply } from '#/features/replies/components/employee-reply';
 import { showsPendingBanner } from '#/features/sync/sync-value';
 import { useSync } from '#/features/sync/use-sync';
 
@@ -103,6 +107,11 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [completing, setCompleting] = useState(false);
   const [addingEmail, setAddingEmail] = useState(false);
+  // Frozen at the tap: « pas pour moi » takes the parcel out of the live
+  // list while its sheet still has the recipient to choose.
+  const [replying, setReplying] = useState<LocalParcel[] | null>(null);
+  // The recipient answers for all their parcels the e-mails told about.
+  const answered = useLiveQuery(() => answeredWith(db, parcelId), [parcelId]);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -346,6 +355,14 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
             }
           : undefined
       }
+      replyAction={
+        answered?.length
+          ? {
+              label: t('record.action.reply'),
+              onClick: () => setReplying(answered),
+            }
+          : undefined
+      }
       onDelete={() => {
         setFailed(false);
         setConfirm('delete');
@@ -361,6 +378,13 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               addingEmail
               onDone={() => setAddingEmail(false)}
               onDismiss={() => setAddingEmail(false)}
+            />
+          )}
+          {replying && (
+            <EmployeeReply
+              parcels={replying}
+              recipient={shown.recipient}
+              onClose={() => setReplying(null)}
             />
           )}
           {completing && (

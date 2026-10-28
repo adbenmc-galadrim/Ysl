@@ -365,6 +365,31 @@ dommage », `/colis/<id>/dommage`).
   enregistré (`actor_id`) mais l'historique de la fiche n'affiche que la date. Les
   photos d'une réserve levée restent dans OPFS, sans être montrées.
 
+## Réponses des salariés (YSL-70)
+
+L'app ne lit pas les e-mails (D2) : le salarié répond dans la boîte de l'agent (liens
+`{lien_pas_moi}` et `{lien_collegue}` du modèle, `mailto:` à objet seul « Ce n'est pas pour
+moi - 7112 »), et l'agent reporte la réponse (« Le salarié a répondu », fiche colis ou
+« E-mails envoyés »).
+
+- **Ligne** : colonnes de `parcel` (migration `0011_reponses_salaries`) : `reply`
+  (`not_mine`, `colleague`, `absent`) et `replied_at` (ensemble, `parcel_reply_check`),
+  `expected_delegate` (nom du collègue, proposé par la remise en YSL-77),
+  `reminders_paused_until` (dernier jour d'absence, début de journée sur l'iPhone).
+- **Événement** `parcel.reply` (`detail.reply`, et `previous` / `delegate` / `until`
+  `YYYY-MM-DD`), dans le même commit que la ligne (`features/replies/record.ts`).
+- **« Pas pour moi »** : deux ops du colis dans l'ordre, `notifie → recu` puis
+  `recu → a_completer` (`status_seq` + 1 chacune, le garde-fou n'accepte qu'un pas), avec
+  leurs `parcel.status` ; destinataire, service et adresse saisie retirés, nom lu gardé ;
+  les `recipient_alias` d'un nom imprimé vers l'ancienne fiche supprimés. Choisir un
+  destinataire efface la réponse (`saveParcelEdit`).
+- **Collègue, absence** : écrits sur tous les colis `notifie` du même destinataire. Pendant
+  l'absence, `reminderState` (`@repo/contract/reminders`) ne rend rien de dû ni « en
+  souffrance » ; au jour ouvré suivant, la relance redevient due et la souffrance attend
+  deux jours ouvrés de plus.
+- **Idempotence** : la même réponse redonnée n'écrit rien ; un colis non notifié n'est pas
+  concerné.
+
 ## Alerte et export de secours
 
 Ticket YSL-36 (F47, §8.4.7). Tant qu'un changement n'a pas atteint le serveur, le

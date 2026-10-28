@@ -4,6 +4,8 @@ import { IMPORT_FLAGS, type ImportFlag } from './imports';
 import { DAMAGE_REASONS, type DamageReason } from './parcel-damage';
 import { NOTIFICATION_TYPES, type NotificationType } from './mail/templates';
 import { PARCEL_STATUSES, type ParcelStatus } from './parcel-status';
+import { REPLY_KINDS } from './parcel-reply';
+import type { RecipientKind } from './recipient/match';
 
 /** The `entity` of the `event` rows that tell a parcel's story. */
 export const PARCEL_EVENT_ENTITY = 'parcel';
@@ -55,7 +57,22 @@ export type ParcelEvent =
       type: 'parcel.delivered';
       handoverId: string;
       method: HandoverMethod;
-    };
+    }
+  | ParcelReplyEvent;
+
+/**
+ * The recipient's answer as the agent reported it (YSL-70). « Pas pour
+ * moi » keeps who the parcel was set for, the lesson to unlearn (§4.8);
+ * a colleague, their name; an absence, the last day away (`YYYY-MM-DD`).
+ */
+export type ParcelReplyEvent =
+  | {
+      type: 'parcel.reply';
+      reply: 'not_mine';
+      previous: { kind: RecipientKind; id: string; name: string } | null;
+    }
+  | { type: 'parcel.reply'; reply: 'colleague'; delegate: string }
+  | { type: 'parcel.reply'; reply: 'absent'; until: string };
 
 const status = z.enum(PARCEL_STATUSES);
 const reason = z.enum(DAMAGE_REASONS);
@@ -96,6 +113,24 @@ const details = {
     handoverId: z.string(),
     method: z.enum(HANDOVER_METHODS),
   }),
+  'parcel.reply': z.discriminatedUnion('reply', [
+    z.object({
+      reply: z.literal(REPLY_KINDS[0]),
+      previous: z
+        .object({
+          kind: z.enum(['person', 'contact']),
+          id: z.string(),
+          name: z.string(),
+        })
+        .nullish()
+        .transform((previous) => previous ?? null),
+    }),
+    z.object({ reply: z.literal(REPLY_KINDS[1]), delegate: z.string() }),
+    z.object({
+      reply: z.literal(REPLY_KINDS[2]),
+      until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+  ]),
 } as const;
 
 /** The `type` and `detail` columns of an event row. */
@@ -128,6 +163,10 @@ export function eventColumns(event: ParcelEvent): {
         type: event.type,
         detail: { handoverId: event.handoverId, method: event.method },
       };
+    case 'parcel.reply': {
+      const { type, ...detail } = event;
+      return { type, detail };
+    }
   }
 }
 
@@ -170,6 +209,10 @@ export function readParcelEvent(
       return read.success ? { type, ...read.data } : undefined;
     }
     case 'parcel.delivered': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.reply': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
     }

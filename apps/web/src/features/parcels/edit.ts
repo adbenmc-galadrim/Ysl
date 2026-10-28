@@ -195,7 +195,7 @@ async function cardName(
  * The names the label printed for its recipient, as this iPhone read them:
  * the code's name kept on the parcel, and what the reading proposed.
  */
-async function printedOn(
+export async function printedOn(
   db: CourrierDatabase,
   parcel: LocalParcel,
 ): Promise<string[]> {
@@ -385,6 +385,15 @@ export async function saveParcelEdit(
         : parcel.department;
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };
+  // What the recipient answered was theirs (YSL-70): someone else set,
+  // « pas pour moi » is dealt with, a colleague or an absence no longer
+  // speaks for the parcel.
+  if (fields.includes('recipient') && parcel.reply) {
+    edited.reply = null;
+    edited.repliedAt = null;
+    edited.expectedDelegate = null;
+    edited.remindersPausedUntil = null;
+  }
 
   const card = edited.personId
     ? { kind: 'person' as const, id: edited.personId }
@@ -400,8 +409,11 @@ export async function saveParcelEdit(
   }
 
   const complete = isComplete(edited);
+  // A parcel the recipient disowned was notified: its number was vouched
+  // for then (YSL-70).
   const vouched =
     seesTracking ||
+    parcel.reply === 'not_mine' ||
     fields.includes('tracking') ||
     fields.includes('carrier') ||
     (await trackingVouched(db, edited));

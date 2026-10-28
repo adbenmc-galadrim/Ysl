@@ -75,3 +75,44 @@ describe('the reminders of a notified parcel', () => {
     expect(reminderState(one, at(30)).late).toBe(true);
   });
 });
+
+describe('a recipient away (YSL-70)', () => {
+  // Notified Wednesday the 21st: first reminder due Friday the 23rd.
+  const notifiedAt = at(21, 9);
+
+  it('holds the reminder back until the working day after the last day away', () => {
+    const history = { notifiedAt, reminders: [], pausedUntil: at(23, 0) };
+    const away = reminderState(history, at(23));
+    expect(away).toMatchObject({ due: false, late: false });
+    expect(away.pausedUntil).toEqual(at(23, 0));
+    const back = reminderState(history, new Date(2026, 9, 26, 0, 0));
+    expect(back).toMatchObject({ due: true, late: false, pausedUntil: null });
+    expect(back.dueAt).toEqual(new Date(2026, 9, 26));
+  });
+
+  it('is not late while away, and alerts two working days after the return', () => {
+    const history = { notifiedAt, reminders: [], pausedUntil: at(30, 0) };
+    expect(reminderState(history, at(29)).late).toBe(false);
+    expect(reminderState(history, new Date(2026, 10, 2, 9)).late).toBe(false);
+    const state = reminderState(history, new Date(2026, 10, 4, 9));
+    expect(state.lateAt).toEqual(new Date(2026, 10, 4));
+    expect(state.late).toBe(true);
+  });
+
+  it('gives two working days after the return even when the alert fell just after it', () => {
+    // Away until Monday the 26th: back on Tuesday, the alert would have
+    // been on Wednesday the 28th, it waits until Thursday the 29th.
+    const history = { notifiedAt, reminders: [], pausedUntil: at(26, 0) };
+    expect(reminderState(history, at(28)).late).toBe(false);
+    expect(reminderState(history, at(29)).lateAt).toEqual(at(29, 0));
+  });
+
+  it('changes nothing once the absence is over before anything fell due', () => {
+    const plain = reminderState({ notifiedAt, reminders: [] }, at(27));
+    const paused = reminderState(
+      { notifiedAt, reminders: [], pausedUntil: at(21, 0) },
+      at(27),
+    );
+    expect(paused).toEqual(plain);
+  });
+});

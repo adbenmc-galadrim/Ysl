@@ -1,6 +1,8 @@
 import { isTrackingFlag } from '@repo/contract/imports';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
+import { fromDayKey } from '@repo/contract/parcel-reply';
+import { resumeOf } from '@repo/contract/reminders';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -294,11 +296,30 @@ function details(
       t('record.detail.delivered'),
       parcel.deliveredAt && formatWhen(parcel.deliveredAt, now, t),
     ),
+    ...replyDetails(parcel, now, t),
     { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
   ];
 }
 
-function eventTitle(event: ParcelEvent, t: TranslateFn): string {
+/** « Retrait prévu par Paul Mercier », « Absence jusqu'au 3 nov. »: what the recipient answered, while it holds. */
+function replyDetails(
+  parcel: LocalParcel,
+  now: Date,
+  t: TranslateFn,
+): DetailsItem[] {
+  if (parcel.deletedAt || parcel.status !== 'notifie') return [];
+  // Both may hold at once: a colleague comes while the recipient is away.
+  const until = parcel.remindersPausedUntil;
+  const away = until && now < resumeOf(until) ? shortDate(until, now) : null;
+  return [
+    ...(parcel.expectedDelegate
+      ? [{ label: t('record.detail.delegate'), value: parcel.expectedDelegate }]
+      : []),
+    ...(away ? [{ label: t('record.detail.away'), value: away }] : []),
+  ];
+}
+
+function eventTitle(event: ParcelEvent, now: Date, t: TranslateFn): string {
   switch (event.type) {
     case 'parcel.edited':
       return t('history.edited', {
@@ -338,6 +359,14 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
       });
     case 'parcel.delivered':
       return t(`history.delivered.${event.method}`);
+    case 'parcel.reply':
+      return event.reply === 'colleague'
+        ? t('history.reply.colleague', { name: event.delegate })
+        : event.reply === 'absent'
+          ? t('history.reply.absent', {
+              date: shortDate(fromDayKey(event.until), now),
+            })
+          : t('history.reply.not_mine');
   }
 }
 
@@ -377,7 +406,7 @@ function history(
     entries.push({
       id: row.id,
       at: row.at,
-      title: eventTitle(event, t),
+      title: eventTitle(event, now, t),
       ...(rejected
         ? {
             detail: t('history.rejected', {
@@ -407,8 +436,15 @@ function history(
     title: t('history.received'),
     detail: formatWhen(parcel.receivedAt, now, t),
   });
+  // Events written in one go share their time: the last written first,
+  // by their ids (UUID v7, in the order they were drawn).
+  const written = (entry: Dated) => !entry.id.startsWith('row:');
   return entries
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
+    .sort(
+      (a, b) =>
+        b.at.getTime() - a.at.getTime() ||
+        (written(a) && written(b) ? b.id.localeCompare(a.id) : 0),
+    )
     .map(({ id, title, detail, tone }) => ({ id, title, detail, tone }));
 }
 

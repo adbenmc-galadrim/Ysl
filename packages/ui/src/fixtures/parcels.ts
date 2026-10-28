@@ -34,9 +34,10 @@ export type Parcel = {
   damage?: string;
   /**
    * The recipient answered the notification e-mail: "not mine" puts the
-   * parcel back in the agent's hands, "a colleague will come" just informs.
+   * parcel back in the agent's hands, "a colleague will come" and "away
+   * until" just inform.
    */
-  reply?: { kind: 'notMine' | 'delegated'; text: string };
+  reply?: { kind: 'notMine' | 'delegated' | 'absent'; text: string };
   /** Record fields, shown on the parcel screen and its edit form. */
   tracking?: string;
   sender?: string;
@@ -150,7 +151,10 @@ export const PARCELS = {
     state: 'notified',
     status: 'Notifié il y a 2 h',
     detail: 'DHL ···7112',
-    reply: { kind: 'notMine', text: '« Ce n’est pas à moi », il y a 10 min' },
+    reply: {
+      kind: 'notMine',
+      text: '« Ce n’est pas pour moi », il y a 10 min',
+    },
   },
   noraDelegated: {
     id: 'p-4471-r',

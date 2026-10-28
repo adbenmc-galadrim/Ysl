@@ -37,6 +37,28 @@ describe('toSections', () => {
     expect(sections[2]?.parcels.map((row) => row.id)).toEqual(['d', 'c']);
   });
 
+  it('lists the parcels answered for on top, and only there', () => {
+    const answered = {
+      ...parcel('r', 'incomplete'),
+      reply: { kind: 'notMine' as const, text: '« Ce n’est pas pour moi »' },
+    };
+    const sections = toSections([
+      parcel('a', 'incomplete'),
+      answered,
+      {
+        ...parcel('c', 'notified'),
+        reply: { kind: 'delegated' as const, text: 'Paul passera' },
+      },
+    ]);
+    expect(
+      sections.map(({ title, parcels }) => [title, parcels.map((p) => p.id)]),
+    ).toEqual([
+      ['Réponses des salariés', ['r', 'c']],
+      ['À compléter', ['a']],
+    ]);
+    expect(sectionId('Réponses des salariés')).toBe('replies');
+  });
+
   it('leaves out an empty section', () => {
     expect(toSections([parcel('a', 'notified')]).map((s) => s.title)).toEqual([
       'En attente de retrait',

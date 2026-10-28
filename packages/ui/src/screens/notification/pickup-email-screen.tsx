@@ -7,11 +7,26 @@ export type PickupEmailScreenProps = {
   email: PickupEmail;
 };
 
+const LINK = /(mailto:\S+)/;
+
+/** Mail turns a `mailto:` of the text into a link, as the reply links of the template. */
+function linked(body: string) {
+  return body.split(LINK).map((part, index) =>
+    index % 2 === 1 ? (
+      <a key={index} href={part} className="break-all text-blue underline">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  );
+}
+
 /**
  * The pickup e-mail in the employee's mailbox, as it really lands: plain
  * text from the agent's own address (D2, S5), the code first, one line per
- * parcel, where and when, then the agent's name. Shared with the QR, Mail
- * inserts the picture at the foot.
+ * parcel, where and when, the two reply links (YSL-70), then the agent's
+ * name. Shared with the QR, Mail inserts the picture at the foot.
  *
  * Drawn in an iOS Mail view, not inside the app: it is the template's
  * documentation, and the white status-bar-only chrome is Mail's.
@@ -27,7 +42,7 @@ export function PickupEmailScreen({ email }: PickupEmailScreenProps) {
         className="mx-auto max-w-[480px] px-5 pt-[calc(var(--safe-top)+8px)] pb-[calc(var(--safe-bottom)+32px)]"
       >
         <p className="text-15 leading-[1.4] break-words whitespace-pre-wrap">
-          {email.body}
+          {linked(email.body)}
         </p>
         {email.qr && (
           <QrCode

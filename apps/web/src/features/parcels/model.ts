@@ -1,5 +1,6 @@
 import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
+import { standingReply } from '@repo/contract/parcel-reply';
 import { reminderState, type ReminderState } from '@repo/contract/reminders';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
@@ -43,7 +44,7 @@ export type ReminderDates = ReadonlyMap<string, readonly Date[]>;
  * Where a notified parcel stands with its reminders (F37, D12), by the
  * rule of `@repo/contract/reminders`. The sent mails on the iPhone date
  * the reminders; without them, a reminder later than the notice still
- * counts once (`lastNotifiedAt`).
+ * counts once (`lastNotifiedAt`). A recipient away (YSL-70) holds them back.
  */
 export function reminderOf(
   parcel: LocalParcel,
@@ -58,7 +59,14 @@ export function reminderOf(
     last && last > notifiedAt && !known.some((at) => at >= last)
       ? [...known, last]
       : known;
-  return reminderState({ notifiedAt, reminders }, now);
+  return reminderState(
+    {
+      notifiedAt,
+      reminders,
+      pausedUntil: parcel.remindersPausedUntil ?? null,
+    },
+    now,
+  );
 }
 
 /** Where the parcel sits on the home list; nothing when it is not shown. */
@@ -297,6 +305,32 @@ export function addressMissing({
   );
 }
 
+const REPLY_ROW = {
+  not_mine: 'notMine',
+  colleague: 'delegated',
+  absent: 'absent',
+} as const;
+
+/**
+ * The recipient's answer while it holds (YSL-70): « Ce n'est pas pour moi »
+ * and when, the colleague who comes, the last day away.
+ */
+export function replyLine(
+  parcel: LocalParcel,
+  now: Date,
+  t: TranslateFn,
+): ParcelRow['reply'] {
+  const reply = standingReply(parcel, now);
+  if (!reply) return undefined;
+  const text =
+    reply.kind === 'not_mine'
+      ? t('parcel.reply.not_mine', { ago: formatAgo(reply.at, now, t) })
+      : reply.kind === 'colleague'
+        ? t('parcel.reply.colleague', { name: reply.delegate })
+        : t('parcel.reply.absent', { date: shortDate(reply.until, now) });
+  return { kind: REPLY_ROW[reply.kind], text };
+}
+
 /** The list row of a parcel drawn in `state`, wherever it is listed. */
 export function describeParcel(
   parcel: LocalParcel,
@@ -307,9 +341,17 @@ export function describeParcel(
   dates?: ReminderDates,
 ): ParcelRow {
   const { person, contact } = recipientOf(parcel, context);
+  // A parcel in distress stays in its section, said as such: the answer
+  // does not hide it (the record still names the colleague).
+  const reply = state === 'late' ? undefined : replyLine(parcel, now, t);
+  // « Pas pour moi » took the recipient off: the name read heads the row,
+  // as the maquette names who answered.
   const recipient = person
     ? `${person.firstName} ${person.lastName}`
-    : (contact?.name ?? t('parcel.recipient.unknown'));
+    : (contact?.name ??
+      (reply?.kind === 'notMine' && parcel.readName
+        ? parcel.readName
+        : t('parcel.recipient.unknown')));
   const department = person?.department ?? parcel.department ?? '';
   // A parcel « Sans suivi » carries the app's own number: no « ···MXA4 ».
   const last4 =
@@ -332,7 +374,7 @@ export function describeParcel(
         ? `${carrier} ···${last4}`
         : carrier;
   const note =
-    !person && !contact && parcel.readName
+    !person && !contact && parcel.readName && reply?.kind !== 'notMine'
       ? t('parcel.readName', { name: parcel.readName })
       : addressMissing({ parcel, person, contact })
         ? t('contact.noEmail')
@@ -356,6 +398,7 @@ export function describeParcel(
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,
     damage: damageLine(parcel, t),
+    reply,
     tracking: parcel.tracking ?? undefined,
     sender: parcel.senderName ?? undefined,
     pieces: parcel.pieceTotal ?? undefined,

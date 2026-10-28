@@ -143,13 +143,21 @@ export function ColisHome() {
         rowControl: (parcel: { id: string }) =>
           unaddressed.has(parcel.id) &&
           !(labelled && pending.has(parcel.id)) && (
+            // « Ce n'est pas pour moi » (YSL-70): the same picker, worded
+            // as the maquette 09 does.
             <Button
               variant="danger"
               size="xs"
-              className="w-[81px]"
+              className={
+                sectionId(section.title) === 'replies'
+                  ? 'w-[112px]'
+                  : 'w-[81px]'
+              }
               onClick={() => setChoosing(parcel.id)}
             >
-              {t('colis.row.choose')}
+              {sectionId(section.title) === 'replies'
+                ? t('colis.row.reassign')
+                : t('colis.row.choose')}
             </Button>
           ),
       })),

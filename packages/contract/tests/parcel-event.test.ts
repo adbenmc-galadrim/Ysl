@@ -28,6 +28,14 @@ describe('parcel events', () => {
       },
       { type: 'parcel.damage_lifted', reason: 'mouille' },
       { type: 'parcel.delivered', handoverId: 'h-1', method: 'pin' },
+      {
+        type: 'parcel.reply',
+        reply: 'not_mine',
+        previous: { kind: 'person', id: 'p-1', name: 'Hugo Lefèvre' },
+      },
+      { type: 'parcel.reply', reply: 'not_mine', previous: null },
+      { type: 'parcel.reply', reply: 'colleague', delegate: 'Paul Mercier' },
+      { type: 'parcel.reply', reply: 'absent', until: '2026-11-03' },
     ];
     for (const event of events) expect(roundTrip(event)).toEqual(event);
   });
@@ -46,6 +54,12 @@ describe('parcel events', () => {
         handoverId: 'h-1',
         method: 'face',
       }),
+    ).toBeUndefined();
+    expect(
+      readParcelEvent('parcel.reply', { reply: 'en_conges' }),
+    ).toBeUndefined();
+    expect(
+      readParcelEvent('parcel.reply', { reply: 'absent', until: '3 nov.' }),
     ).toBeUndefined();
   });
 

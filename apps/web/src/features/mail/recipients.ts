@@ -1,4 +1,9 @@
-import { damageNotice, mailValues, type MailValues } from '@repo/contract/mail';
+import {
+  damageNotice,
+  mailValues,
+  type MailValues,
+  replyReference,
+} from '@repo/contract/mail';
 import { damageForEmail } from '@repo/contract/parcel-damage';
 import type { PickupSetting } from '@repo/contract/settings';
 import type { TranslateFn } from '@repo/shared/i18n';
@@ -230,5 +235,11 @@ export function recipientValues(
     pickup,
     agent,
     replyTo,
+    replyReference: replyReference({
+      trackings: mail.parcels.map((parcel) =>
+        parcel.type === 'sans_suivi' ? null : parcel.tracking,
+      ),
+      name: mail.name,
+    }),
   });
 }

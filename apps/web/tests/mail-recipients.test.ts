@@ -238,6 +238,47 @@ describe('the e-mail of one recipient', () => {
     );
     expect(rendered.body).not.toContain('DHL ···7890, ouvert');
   });
+
+  it('answers about the parcel by the end of its number, about several by the name', () => {
+    const mail = (parcels: RecipientMail['parcels']): RecipientMail => ({
+      key: 'hugo',
+      personId: null,
+      contactId: null,
+      name: 'Hugo Lefèvre',
+      firstName: 'Hugo',
+      lastName: 'Lefèvre',
+      address: 'hugo@example.com',
+      parcels,
+    });
+    const links = (parcels: RecipientMail['parcels']) =>
+      recipientValues(mail(parcels), {
+        pickup,
+        agent: 'Karim',
+        replyTo: 'karim@example.com',
+        code: '0427',
+        now: NOW,
+        t,
+      });
+
+    expect(
+      links([parcelRow({ carrier: 'DHL', tracking: 'JD0140000007112' })])
+        .lien_pas_moi,
+    ).toBe(
+      "mailto:karim@example.com?subject=Ce%20n'est%20pas%20pour%20moi%20-%207112",
+    );
+    expect(
+      links([
+        parcelRow({ tracking: 'A0001' }),
+        parcelRow({ tracking: 'B0002' }),
+      ]).lien_collegue,
+    ).toBe(
+      'mailto:karim@example.com?subject=Un%20coll%C3%A8gue%20viendra%20le%20chercher%20-%20Hugo%20Lef%C3%A8vre',
+    );
+    expect(
+      links([parcelRow({ type: 'sans_suivi', tracking: 'INT0Q6A2VF1' })])
+        .lien_pas_moi,
+    ).toContain('-%20Hugo%20Lef%C3%A8vre');
+  });
 });
 
 describe('the pickup code', () => {

@@ -15,6 +15,7 @@ export * from '#screens/notification/mail-fallback-sheet';
 export * from '#screens/notification/notifier-screen';
 export * from '#screens/notification/relances-screen';
 export * from '#screens/notification/sent-emails-screen';
+export * from '#screens/notification-zones/reponse-salarie-sheet';
 export * from '#screens/pilotage/donnees-screen';
 export * from '#screens/pilotage/export-screen';
 export * from '#screens/reception/choisir-destinataire-screen';
