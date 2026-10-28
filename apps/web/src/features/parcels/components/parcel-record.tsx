@@ -263,6 +263,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     ));
 
   const { action, damage, ...shown } = view;
+  const handoverId = (record.handover ?? record.cancelledHandover)?.id;
   // « Sans e-mail »: the address goes on the contact, for this parcel and
   // the next ones, and the record shows it at once.
   const withAddress = addressMissing(record)
@@ -314,6 +315,18 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   return (
     <FicheColisScreen
       {...shown}
+      handover={
+        shown.handover && handoverId !== undefined
+          ? {
+              ...shown.handover,
+              onOpen: () =>
+                void navigate({
+                  to: '/reglages/remises/$handoverId',
+                  params: { handoverId },
+                }),
+            }
+          : undefined
+      }
       details={details}
       photo={photo}
       damage={

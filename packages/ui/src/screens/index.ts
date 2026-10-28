@@ -37,6 +37,7 @@ export * from '#screens/reglages/new-contact-sheet';
 export * from '#screens/reglages/reglages-screen';
 export * from '#screens/reglages/settings-screen';
 export * from '#screens/reglages/synchronisation-screen';
+export * from '#screens/remise/journal-remises-screen';
 export * from '#screens/remise/qui-retire-screen';
 export * from '#screens/remise/remettre-actions';
 export * from '#screens/remise/remise-code-screen';

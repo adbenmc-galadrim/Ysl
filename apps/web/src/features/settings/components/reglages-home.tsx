@@ -95,6 +95,12 @@ export function ReglagesHome() {
         label: t('settings.export'),
         onPress: () => void navigate({ to: '/reglages/export' }),
       },
+      {
+        icon: 'check',
+        color: 'green',
+        label: t('settings.handovers'),
+        onPress: () => void navigate({ to: '/reglages/remises' }),
+      },
       ...(role === 'admin'
         ? [
             {
