@@ -2,7 +2,10 @@ import type { ProofMediaItem } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
-import type { HandoverProofKind } from '#/features/db/schema';
+import {
+  HANDOVER_PROOF_KINDS,
+  type HandoverProofKind,
+} from '#/features/db/schema';
 import { readProof } from '#/features/handover/proofs';
 import { photoFiles } from '#/features/photos/opfs';
 
@@ -64,7 +67,7 @@ export function proofMediaItems(
   labels: Record<HandoverProofKind, string>,
   onOpen?: (url: string) => void,
 ): ProofMediaItem[] {
-  return (['signature', 'photo'] as const).flatMap((kind) => {
+  return HANDOVER_PROOF_KINDS.flatMap((kind) => {
     const src = urls[kind];
     return src
       ? [

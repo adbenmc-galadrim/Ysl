@@ -1,10 +1,5 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
-import {
-  type CheckListItem,
-  PhotoViewer,
-  RemiseConfirmeeScreen,
-  SignatureScreen,
-} from '@repo/ui';
+import { PhotoViewer, RemiseConfirmeeScreen, SignatureScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { encodePhoto } from '#/features/camera/capture';
@@ -13,6 +8,7 @@ import type { HandoverProofKind } from '#/features/db/schema';
 import {
   confirmationGone,
   describeConfirmation,
+  proofLabels,
 } from '#/features/handover/confirmation';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
@@ -25,10 +21,7 @@ import { useOnline } from '#/lib/use-online';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const PROOF_LABELS: Record<HandoverProofKind, string> = {
-  signature: t('handover.proof.signature'),
-  photo: t('handover.proof.photo'),
-};
+const PROOF_LABELS = proofLabels(t);
 
 /** The photo of the handover as kept: upright, 1 600 px, JPEG without EXIF. */
 async function photoProof(file: File): Promise<ProofInput> {
@@ -42,6 +35,8 @@ async function photoProof(file: File): Promise<ProofInput> {
 
 export type RemiseConfirmeePageProps = {
   handoverId: string;
+  /** The signature drawn before « Remettre » could not be kept: said at once. */
+  signatureLost?: boolean;
   /** « Terminé », or the handover is not here to show: back to Colis. */
   onDone: () => void;
   onAnother: () => void;
@@ -57,6 +52,7 @@ export type RemiseConfirmeePageProps = {
  */
 export function RemiseConfirmeePage({
   handoverId,
+  signatureLost = false,
   onDone,
   onAnother,
 }: RemiseConfirmeePageProps) {
@@ -68,7 +64,9 @@ export function RemiseConfirmeePage({
   const urls = useProofUrls(handoverId);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
-  const [failed, setFailed] = useState<HandoverProofKind | null>(null);
+  const [failed, setFailed] = useState<HandoverProofKind | null>(
+    signatureLost ? 'signature' : null,
+  );
   const input = useRef<HTMLInputElement>(null);
   const missing = confirmationGone(entry);
   useEffect(() => {
@@ -105,20 +103,9 @@ export function RemiseConfirmeePage({
       ? describeConfirmation(entry, online, t, {
           onSign: () => setDraft([]),
           onPhoto: () => input.current?.click(),
+          failed,
         })
       : null;
-  const proofs: CheckListItem[] =
-    view && failed
-      ? [
-          ...view.proofs.slice(0, -1),
-          {
-            icon: 'alert',
-            label: `${PROOF_LABELS[failed]} : ${t('handover.proof.failed')}`,
-          },
-          ...view.proofs.slice(-1),
-        ]
-      : (view?.proofs ?? []);
-
   return (
     <>
       {!entry || !view ? null : draft ? (
@@ -143,7 +130,6 @@ export function RemiseConfirmeePage({
       ) : (
         <RemiseConfirmeeScreen
           {...view}
-          proofs={proofs}
           media={{
             items: proofMediaItems(urls, PROOF_LABELS, setViewing),
           }}

@@ -1,5 +1,6 @@
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { CheckListItem, RemiseConfirmeeScreenProps } from '@repo/ui';
+import type { HandoverProofKind } from '#/features/db/schema';
 import {
   handedParcel,
   type HandoverEntry,
@@ -46,7 +47,17 @@ function syncProof(
 export type ConfirmationActions = {
   onSign?: () => void;
   onPhoto?: () => void;
+  /** The last signature or photo could not be kept on this iPhone. */
+  failed?: HandoverProofKind | null;
 };
+
+/** « Signature », « Photo de la remise »: how the screens name each proof. */
+export function proofLabels(t: TranslateFn): Record<HandoverProofKind, string> {
+  return {
+    signature: t('handover.proof.signature'),
+    photo: t('handover.proof.photo'),
+  };
+}
 
 /**
  * The signature and the photo, kept or still to take: a handover picked by
@@ -54,7 +65,7 @@ export type ConfirmationActions = {
  */
 function evidenceProofs(
   { handover }: HandoverEntry,
-  { onSign, onPhoto }: ConfirmationActions,
+  { onSign, onPhoto, failed }: ConfirmationActions,
   t: TranslateFn,
 ): CheckListItem[] {
   const signature: CheckListItem[] =
@@ -72,7 +83,15 @@ function evidenceProofs(
   const photo: CheckListItem = handover.hasPhoto
     ? { icon: 'camera', label: t('handover.confirm.photographed'), done: true }
     : { icon: 'camera', label: t('handover.confirm.photo'), onClick: onPhoto };
-  return [...signature, photo];
+  const lost: CheckListItem[] = failed
+    ? [
+        {
+          icon: 'alert',
+          label: `${proofLabels(t)[failed]} : ${t('handover.proof.failed')}`,
+        },
+      ]
+    : [];
+  return [...signature, photo, ...lost];
 }
 
 /**

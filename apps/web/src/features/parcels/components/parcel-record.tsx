@@ -14,6 +14,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
+import { proofLabels } from '#/features/handover/confirmation';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
@@ -328,10 +329,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               media: {
                 items: proofMediaItems(
                   proofUrls,
-                  {
-                    signature: t('handover.proof.signature'),
-                    photo: t('handover.proof.photo'),
-                  },
+                  proofLabels(t),
                   setViewingProof,
                 ),
               },

@@ -101,6 +101,20 @@ describe('describeConfirmation', () => {
     ]);
   });
 
+  it('says a signature that could not be kept, the signature still to add', async () => {
+    const view = describeConfirmation(await handedOver('manuel'), true, t, {
+      failed: 'signature',
+    });
+
+    expect(view.proofs.map((proof) => proof.label)).toEqual([
+      'Sans vérification',
+      'Ajouter une signature',
+      'Ajouter une photo',
+      'Signature : Non enregistrée sur cet iPhone',
+      'Envoyée au serveur',
+    ]);
+  });
+
   it('says « Signée » once for a handover picked by the name and signed', async () => {
     const view = describeConfirmation(
       await handedOver('signature', { hasSignature: true }),

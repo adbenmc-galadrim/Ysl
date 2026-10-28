@@ -97,16 +97,18 @@ export function RemiseColisPage({
                 proof: { kind: 'signature' as const, ...image },
                 files: photoFiles,
               }),
-              () => undefined,
+              (error: unknown) => {
+                console.warn('Signature not drawn', error);
+                return null;
+              },
             )
           : undefined;
-      onDone(
-        await recordHandover(
-          db,
-          { ...search, parcelIds: ticked },
-          { agentId, agentName, signature },
-        ),
+      const done = await recordHandover(
+        db,
+        { ...search, parcelIds: ticked },
+        { agentId, agentName, signature: signature ?? undefined },
       );
+      onDone(signature === null ? { ...done, signatureLost: true } : done);
     } catch (error) {
       setBusy(false);
       if (!(error instanceof HandoverRefusedError)) throw error;

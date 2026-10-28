@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import { loadHandoverEntry } from '#/features/handover/entry';
+import { proofLabels } from '#/features/handover/confirmation';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import {
   describeHandoverDetail,
@@ -80,14 +81,7 @@ export function RemiseDetailPage({
       <RemiseDetailScreen
         {...describeHandoverDetail(entry, now, t, session.user.id)}
         media={{
-          items: proofMediaItems(
-            urls,
-            {
-              signature: t('handover.proof.signature'),
-              photo: t('handover.proof.photo'),
-            },
-            setViewing,
-          ),
+          items: proofMediaItems(urls, proofLabels(t), setViewing),
         }}
         onBack={onBack}
         onParcel={(parcel) => onParcel(parcel.id)}
