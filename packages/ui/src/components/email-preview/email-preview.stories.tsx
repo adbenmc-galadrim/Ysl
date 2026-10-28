@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { EmailPreview } from '#components/email-preview';
-import { PickupCode } from '#components/pickup-code';
-import { PICKUP_EMAIL, QR_4821 } from '#fixtures/emails';
+import { PICKUP_EMAIL } from '#fixtures/emails';
 
 const meta = {
   title: 'Composants/EmailPreview',
@@ -28,8 +27,9 @@ export const Retrait: Story = {
     meta: `À : ${PICKUP_EMAIL.to}, ${PICKUP_EMAIL.sentAt}`,
     children: (
       <>
-        <p className="text-15">Bonjour Nora,</p>
-        <PickupCode code="4821" qr={QR_4821} className="mt-3.5" />
+        <p className="text-15 leading-[1.4] whitespace-pre-wrap">
+          {PICKUP_EMAIL.body}
+        </p>
       </>
     ),
   },

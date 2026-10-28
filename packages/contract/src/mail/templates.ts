@@ -92,7 +92,10 @@ export const SAMPLE_MAIL = {
   firstName: 'Nora',
   lastName: 'Haddad',
   code: '4821',
-  parcels: ['Amazon ···4471, reçu à 10 h 15', 'Amazon ···4472, reçu à 10 h 15'],
+  parcels: [
+    'Amazon ···4471, reçu à 10 h 15',
+    'UPS ···0622, de Zalando, 2 pièces sur 3, reçu à 10 h 15',
+  ],
 } as const;
 
 export const SAMPLE_PICKUP_VALUES = {

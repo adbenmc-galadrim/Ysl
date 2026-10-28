@@ -12,7 +12,7 @@ const BODY = [
   '',
   'Nous avons reçu pour vous :',
   '• Amazon ···4471, reçu à 10 h 15',
-  '• Amazon ···4472, reçu à 10 h 15',
+  '• UPS ···0622, de Zalando, 2 pièces sur 3, reçu à 10 h 15',
   '',
   'Où : Rez-de-chaussée, comptoir courrier',
   'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',

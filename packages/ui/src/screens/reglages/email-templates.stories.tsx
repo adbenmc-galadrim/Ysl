@@ -46,7 +46,7 @@ const PREVIEW = {
     '',
     'Nous avons reçu pour vous :',
     '• Amazon ···4471, reçu à 10 h 15',
-    '• Amazon ···4472, reçu à 10 h 15',
+    '• UPS ···0622, de Zalando, 2 pièces sur 3, reçu à 10 h 15',
     '',
     'Où : Rez-de-chaussée, comptoir courrier',
     'Quand : Lun. au ven. : 9 h à 12 h 30 et 14 h à 18 h',
@@ -64,9 +64,9 @@ const VARIABLES = [
   ['code', 'Code de retrait'],
   ['colis', 'Les colis, une puce par colis'],
   ['nombre_colis', '« Colis » ou « 2 colis », pour l’objet'],
-  ['lieu', 'Lieu de retrait (Réglages)'],
-  ['horaires', 'Horaires de retrait (Réglages)'],
-  ['consignes', 'Consignes (Réglages)'],
+  ['lieu', 'Lieu de retrait (Réglages), ligne retirée si vide'],
+  ['horaires', 'Horaires de retrait (Réglages), ligne retirée si vides'],
+  ['consignes', 'Consignes (Réglages), ligne retirée si vide'],
   ['reserve', 'Colis arrivés abîmés à signaler'],
   ['agent', 'Votre nom'],
   ['lien_pas_moi', 'Lien « Ce n’est pas à moi »'],
@@ -104,10 +104,13 @@ export const Liste: Story = {
 function Editor({
   initial,
   isDefault,
+  preset,
   warnings,
 }: {
   initial: { name: string; subject: string; body: string };
   isDefault?: boolean;
+  /** The template the app ships: restored, never deleted. */
+  preset?: boolean;
   warnings?: { title: string; description?: string }[];
 }) {
   const [value, setValue] = useState(initial);
@@ -125,8 +128,8 @@ function Editor({
       onDuplicate={() => {}}
       isDefault={isDefault}
       onMakeDefault={isDefault ? undefined : () => {}}
-      onRestore={isDefault ? () => {} : undefined}
-      onDelete={isDefault ? undefined : () => {}}
+      onRestore={preset ? () => {} : undefined}
+      onDelete={isDefault || preset ? undefined : () => {}}
       onBack={() => {}}
       onDone={() => {}}
     />
@@ -138,6 +141,7 @@ export const ModeleParDefaut: Story = {
   render: () => (
     <Editor
       isDefault
+      preset
       initial={{
         name: 'Avis de retrait',
         subject: '{nombre_colis} en attente de retrait – Service Courrier',
@@ -163,6 +167,34 @@ export const VariableInconnue: Story = {
             'Elle restera telle quelle dans l’e-mail. Vouliez-vous dire {prénom} ?',
         },
       ]}
+    />
+  ),
+};
+
+export const ModeleLivreNonParDefaut: Story = {
+  name: 'Modèle livré, un autre par défaut',
+  render: () => (
+    <Editor
+      preset
+      initial={{
+        name: 'Avis de retrait',
+        subject: '{nombre_colis} en attente de retrait – Service Courrier',
+        body: BODY,
+      }}
+    />
+  ),
+};
+
+export const ModelePersoParDefaut: Story = {
+  name: 'Modèle personnel par défaut',
+  render: () => (
+    <Editor
+      isDefault
+      initial={{
+        name: 'Colis volumineux',
+        subject: '{nombre_colis} volumineux à retirer',
+        body: BODY,
+      }}
     />
   ),
 };
