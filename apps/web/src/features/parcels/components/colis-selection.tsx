@@ -4,6 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
+import { writeQueue } from '#/features/handover/queue';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import type { HomeParcel } from '#/features/parcels/model';
 import {
@@ -15,6 +16,7 @@ import {
 import {
   allTicked,
   matchesQuery,
+  planHandovers,
   planMails,
   type Selection,
   skipsLine,
@@ -126,6 +128,49 @@ export function ColisSelection({
     }
   };
 
+  // P4 by name, as « Remettre » does without a QR: one person opens their
+  // parcels with the ticked ones ticked; several are handed over in turn.
+  const handOver = async () => {
+    const { groups, skipped } = planHandovers(await loadTicked());
+    const [first, ...rest] = groups;
+    if (!first) {
+      setToast(
+        [
+          t('selection.handover.none'),
+          skipped > 0 &&
+            t(
+              skipped === 1
+                ? 'selection.handover.skipped.one'
+                : 'selection.handover.skipped.many',
+              { count: skipped },
+            ),
+        ]
+          .filter(Boolean)
+          .join(' · '),
+      );
+      return;
+    }
+    writeQueue(
+      rest.map(({ recipient, parcelIds }) => ({
+        ...recipient,
+        name:
+          rows.find((row) => row.id === parcelIds[0])?.recipient ??
+          recipient.id,
+        parcelIds,
+      })),
+    );
+    void navigate({
+      to: '/remise/colis',
+      search: {
+        ...first.recipient,
+        via: 'manuel',
+        at: Date.now(),
+        colis: first.parcelIds,
+        ...(rest.length > 0 && { file: true }),
+      },
+    });
+  };
+
   return (
     <SelectionScreen
       sections={sections}
@@ -146,6 +191,7 @@ export function ColisSelection({
       onQueryChange={setQuery}
       remindLabel={t(notices ? 'selection.notify' : 'selection.remind')}
       onRemind={() => void remind()}
+      onHandover={() => void handOver()}
       toast={toast ? <Toast message={toast} /> : undefined}
     >
       {visible.length === 0 ? (

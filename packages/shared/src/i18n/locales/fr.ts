@@ -232,6 +232,11 @@ export const fr = {
   'selection.skipped.recipient': '{{count}} sans destinataire',
   'selection.skipped.address': '{{count}} sans e-mail',
   'selection.mail.none': 'Aucun e-mail à préparer',
+  'selection.next': 'Suivant : {{name}}, {{count}} colis',
+  'selection.handover.none': 'Aucun colis à remettre',
+  'selection.handover.skipped.one': '1 colis sans destinataire laissé de côté',
+  'selection.handover.skipped.many':
+    '{{count}} colis sans destinataire laissés de côté',
   'search.filter.all': 'Tout',
   'search.filter.waiting': 'En attente',
   'search.filter.delivered': 'Remis',

@@ -18,9 +18,14 @@ function RemiseColisRoute() {
   const back = useCallback(
     () =>
       void navigate({
-        to: search.via === 'manuel' ? '/remise/nom' : '/remise',
+        // From a selection, back where it was made.
+        to: search.colis
+          ? '/'
+          : search.via === 'manuel'
+            ? '/remise/nom'
+            : '/remise',
       }),
-    [navigate, search.via],
+    [navigate, search.via, search.colis],
   );
   const refused = useCallback(
     (refus: PickupRefusal) =>
@@ -34,10 +39,11 @@ function RemiseColisRoute() {
         search: {
           handover: handoverId,
           ...(signatureLost ? { signature: 'lost' as const } : {}),
+          ...(search.file ? { file: true } : {}),
         },
         replace: true,
       }),
-    [navigate],
+    [navigate, search.file],
   );
   return (
     <RemiseColisPage

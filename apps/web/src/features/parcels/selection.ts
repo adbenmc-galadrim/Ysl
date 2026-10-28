@@ -2,6 +2,10 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import { normalizeName } from '@repo/shared/text';
 import type { Parcel } from '@repo/ui';
 import type { LocalParcel } from '#/features/db/schema';
+import {
+  type HandoverRecipient,
+  recipientKey,
+} from '#/features/handover/waiting';
 import { addressOf, groupByRecipient } from '#/features/mail/recipients';
 import type { RecipientContext } from '#/features/parcels/model';
 
@@ -134,4 +138,45 @@ export function skipsLine(
     count: total,
     reasons: reasons.join(', '),
   });
+}
+
+/** The ticked parcels waiting for each person, in the order they were ticked in the list. */
+export type HandoverGroup = {
+  recipient: HandoverRecipient;
+  parcelIds: string[];
+};
+
+/**
+ * The handovers a selection calls for (P4), one per person or contact:
+ * what is received or notified for someone. A parcel nobody is set for
+ * cannot be handed over and is counted; one already handed over or
+ * returned is left as it is.
+ */
+export function planHandovers(parcels: readonly LocalParcel[]): {
+  groups: HandoverGroup[];
+  skipped: number;
+} {
+  const groups = new Map<string, HandoverGroup>();
+  let skipped = 0;
+  for (const parcel of parcels) {
+    if (parcel.deletedAt) continue;
+    if (parcel.status !== 'recu' && parcel.status !== 'notifie') {
+      if (parcel.status === 'a_completer') skipped += 1;
+      continue;
+    }
+    const recipient: HandoverRecipient | null = parcel.personId
+      ? { kind: 'person', id: parcel.personId }
+      : parcel.contactId
+        ? { kind: 'contact', id: parcel.contactId }
+        : null;
+    if (!recipient) {
+      skipped += 1;
+      continue;
+    }
+    const key = recipientKey(recipient);
+    const group = groups.get(key);
+    if (group) group.parcelIds.push(parcel.id);
+    else groups.set(key, { recipient, parcelIds: [parcel.id] });
+  }
+  return { groups: [...groups.values()], skipped };
 }
