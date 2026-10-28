@@ -89,15 +89,17 @@ export function addressOf(
  * The mails for these parcels, one per address: a directory person and a
  * contact sharing an address are one human and get one mail, named after
  * the directory. Without an address, one block per person or contact, kept
- * to say what is missing. By name, then by address.
+ * to say what is missing. By name, then by address. `keep`: the parcels a
+ * mail is about, those awaiting their first notice unless said otherwise.
  */
 export function groupByRecipient(
   parcels: readonly LocalParcel[],
   context: RecipientContext,
+  keep: (parcel: LocalParcel) => boolean = awaitsNotice,
 ): RecipientMail[] {
   const mails = new Map<string, RecipientMail>();
   const byReception = [...parcels]
-    .filter(awaitsNotice)
+    .filter(keep)
     .sort((a, b) => a.receivedAt.getTime() - b.receivedAt.getTime());
   for (const parcel of byReception) {
     const { person, contact } = recipientOf(parcel, context);

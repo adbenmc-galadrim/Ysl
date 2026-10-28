@@ -156,7 +156,11 @@ export const fr = {
   'colis.row.choose': 'Choisir',
   'colis.counter.incomplete': 'À compléter',
   'colis.counter.waiting': 'À retirer',
+  'colis.counter.remind': 'À relancer',
   'colis.counter.late': 'En souffrance',
+  'colis.remind.one': '1 personne à relancer',
+  'colis.remind.many': '{{count}} personnes à relancer',
+  'colis.remind.description': 'Relancer : les e-mails sont prêts.',
   'search.filter.all': 'Tout',
   'search.filter.waiting': 'En attente',
   'search.filter.delivered': 'Remis',
@@ -201,7 +205,9 @@ export const fr = {
   'parcel.status.notified': 'Notifié {{ago}}',
   'parcel.status.late': 'En attente depuis {{days}} jours',
   'parcel.status.lateReminded':
-    'En attente depuis {{days}} jours, relancé {{ago}}',
+    'En attente depuis {{days}} jours, relancé {{count}} fois',
+  'parcel.status.remindDue': 'Notifié {{ago}}, à relancer',
+  'parcel.status.reminded': 'Relancé {{ago}}',
   'parcel.status.delivered': 'Remis à {{time}}',
   'parcel.status.deliveredOn': 'Remis le {{date}} à {{time}}',
   'parcel.status.receivedOn': 'Reçu le {{date}} à {{time}}',
@@ -268,6 +274,9 @@ export const fr = {
   'record.notice.unsent.title': 'Modifié sur cet iPhone, pas encore envoyé',
   'record.notice.unsent.description': 'Partira dès que le réseau revient.',
   'record.notice.rejected.title': 'Modification refusée par le serveur',
+  'record.reminded': 'Relance envoyée {{when}}',
+  'record.remindDue': 'Une relance est à faire.',
+  'record.remindedCount': 'Relancé {{count}} fois, en attente de retrait.',
   'record.when.today': 'Aujourd’hui à {{time}}',
   'record.when.yesterday': 'Hier à {{time}}',
   'record.when.day': 'Le {{date}} à {{time}}',
@@ -571,6 +580,15 @@ export const fr = {
   'settings.group.mail': 'E-mails',
   'settings.mailTemplates': 'Modèles d’e-mail',
   'mail.template.newName': 'Nouveau modèle',
+  'mail.template.type.avis': 'Avis de retrait',
+  'mail.template.type.relance': 'Relances',
+  'mail.template.type.resume_service': 'Résumés par service',
+  'mail.template.type.avis.note':
+    'Avis : il sert au premier e-mail, quand les colis arrivent.',
+  'mail.template.type.relance.note':
+    'Relance : il sert aux rappels des colis qui attendent leur retrait.',
+  'mail.template.type.resume_service.note':
+    'Résumé : il sert au récapitulatif envoyé à un service.',
   'mail.template.copyName': '{{name}} (copie)',
   'mail.template.untitled': 'Sans nom',
   'mail.template.previewNote':
@@ -675,6 +693,26 @@ export const fr = {
   'notify.notSent.reason': 'Non envoyé, d’après l’agent',
   'notify.error': 'E-mail non préparé sur l’iPhone, réessayez.',
   'notify.template.title': 'Modèle d’e-mail',
+  'remind.intro':
+    'Relances proposées à J+2 et J+5 jours ouvrés. Rien ne part tout seul : chaque e-mail s’ouvre dans votre messagerie.',
+  'remind.section.due': 'À relancer',
+  'remind.section.late': 'En souffrance',
+  'remind.row.parcels': '{{count}} colis · {{names}}',
+  'remind.row.never': 'Notifié il y a {{days}} jours, jamais relancé',
+  'remind.row.reminded':
+    'En attente depuis {{days}} jours · relancé {{count}} fois, le {{date}}',
+  'remind.all.one': 'Relancer',
+  'remind.all.many': 'Relancer les {{count}}',
+  'remind.none.title': 'Aucun colis en souffrance',
+  'remind.none.description':
+    'Les colis notifiés apparaissent ici quand une relance est due.',
+  'remind.empty.title': 'Aucune relance à faire',
+  'remind.empty.description':
+    'Les colis notifiés sont relancés à J+2 et J+5 jours ouvrés. Rien n’est dû pour le moment.',
+  'remind.sent.one': 'Relance notée sur 1 colis.',
+  'remind.sent.many': 'Relance notée sur {{count}} colis.',
+  'remind.question':
+    'Si le message à {{name}} est dans vos envoyés, la relance est notée sur ses colis.',
   'lot.span': 'Lot de {{start}} à {{end}}',
   'lot.span.single': 'Lot de {{start}}',
   'lot.send.one': 'Envoyer 1 e-mail',
@@ -702,6 +740,7 @@ export const fr = {
   'lot.offline': 'Hors ligne',
   'lot.offline.detail': 'Les e-mails partiront au retour du réseau',
   'colis.section.notify': 'Notifier',
+  'colis.section.remind': 'Relancer',
   'mails.section.failed': 'À corriger',
   'mails.section.waiting': 'À confirmer',
   'mails.section.sent': 'Envoyés',

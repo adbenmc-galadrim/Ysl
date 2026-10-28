@@ -82,16 +82,20 @@ export const Liste: Story = {
           name: 'Avis de retrait',
           subject: '{nombre_colis} en attente de retrait – Service Courrier',
           isDefault: true,
+          group: 'Avis de retrait',
         },
         {
           id: '2',
           name: 'Colis volumineux',
           subject: 'Un colis volumineux vous attend',
+          group: 'Avis de retrait',
         },
         {
           id: '3',
           name: 'Relance',
-          subject: 'Rappel : vos colis attendent toujours',
+          subject: 'Rappel : colis en attente de retrait – Service Courrier',
+          isDefault: true,
+          group: 'Relances',
         },
       ]}
       onOpen={() => {}}
@@ -103,11 +107,13 @@ export const Liste: Story = {
 
 function Editor({
   initial,
+  typeNote,
   isDefault,
   preset,
   warnings,
 }: {
   initial: { name: string; subject: string; body: string };
+  typeNote?: string;
   isDefault?: boolean;
   /** The template the app ships: restored, never deleted. */
   preset?: boolean;
@@ -117,6 +123,7 @@ function Editor({
   return (
     <EmailTemplateScreen
       {...value}
+      typeNote={typeNote}
       onNameChange={(name) => setValue({ ...value, name })}
       onSubjectChange={(subject) => setValue({ ...value, subject })}
       onBodyChange={(body) => setValue({ ...value, body })}
@@ -194,6 +201,25 @@ export const ModelePersoParDefaut: Story = {
         name: 'Colis volumineux',
         subject: '{nombre_colis} volumineux à retirer',
         body: BODY,
+      }}
+    />
+  ),
+};
+
+export const ModeleDeRelance: Story = {
+  name: 'Modèle de relance',
+  render: () => (
+    <Editor
+      isDefault
+      preset
+      typeNote="Relance : il sert aux rappels des colis qui attendent leur retrait."
+      initial={{
+        name: 'Relance',
+        subject: 'Rappel : colis en attente de retrait – Service Courrier',
+        body: BODY.replace(
+          'Votre code de retrait : {code}',
+          'Petit rappel : votre code de retrait est {code}.',
+        ),
       }}
     />
   ),

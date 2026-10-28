@@ -16,6 +16,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
+import { Route as AuthenticatedRelancesRouteImport } from './routes/_authenticated/relances'
 import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/revue'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
@@ -76,6 +77,11 @@ const AuthenticatedPreparationRoute =
 const AuthenticatedRechercheRoute = AuthenticatedRechercheRouteImport.update({
   id: '/recherche',
   path: '/recherche',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRelancesRoute = AuthenticatedRelancesRouteImport.update({
+  id: '/relances',
+  path: '/relances',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRevueRoute = AuthenticatedRevueRouteImport.update({
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
+  '/relances': typeof AuthenticatedRelancesRoute
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
+  '/relances': typeof AuthenticatedRelancesRoute
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/': typeof AuthenticatedIndexRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
+  '/_authenticated/relances': typeof AuthenticatedRelancesRoute
   '/_authenticated/revue': typeof AuthenticatedRevueRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/notifier'
     | '/preparation'
     | '/recherche'
+    | '/relances'
     | '/revue'
     | '/scan'
     | '/lot/$batchId'
@@ -376,6 +386,7 @@ export interface FileRouteTypes {
     | '/notifier'
     | '/preparation'
     | '/recherche'
+    | '/relances'
     | '/revue'
     | '/scan'
     | '/'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
     | '/_authenticated/recherche'
+    | '/_authenticated/relances'
     | '/_authenticated/revue'
     | '/_authenticated/scan'
     | '/_authenticated/'
@@ -495,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/recherche'
       fullPath: '/recherche'
       preLoaderRoute: typeof AuthenticatedRechercheRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/relances': {
+      id: '/_authenticated/relances'
+      path: '/relances'
+      fullPath: '/relances'
+      preLoaderRoute: typeof AuthenticatedRelancesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/revue': {
@@ -686,6 +705,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
+  AuthenticatedRelancesRoute: typeof AuthenticatedRelancesRoute
   AuthenticatedRevueRoute: typeof AuthenticatedRevueRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -719,6 +739,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
+  AuthenticatedRelancesRoute: AuthenticatedRelancesRoute,
   AuthenticatedRevueRoute: AuthenticatedRevueRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,

@@ -199,6 +199,7 @@ export function EmailTemplatePage({ templateId }: { templateId: string }) {
     <>
       <EmailTemplateScreen
         name={value.name}
+        typeNote={t(`mail.template.type.${template.type}.note`)}
         subject={value.subject}
         body={value.body}
         onNameChange={(name) => edit({ name })}

@@ -13,6 +13,7 @@ export * from '#screens/demarrage/offline-prep-screen';
 export * from '#screens/notification/fix-address-sheet';
 export * from '#screens/notification/mail-fallback-sheet';
 export * from '#screens/notification/notifier-screen';
+export * from '#screens/notification/relances-screen';
 export * from '#screens/notification/sent-emails-screen';
 export * from '#screens/pilotage/donnees-screen';
 export * from '#screens/pilotage/export-screen';

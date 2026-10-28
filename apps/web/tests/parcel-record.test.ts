@@ -2,7 +2,12 @@ import 'fake-indexeddb/auto';
 import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { CourrierDatabase, OutboxOp } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  LocalEvent,
+  OutboxOp,
+} from '#/features/db/schema';
+import { parcelEvent } from '#/features/parcels/events';
 import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
 import { editOf, saveParcelEdit } from '#/features/parcels/edit';
 import {
@@ -147,6 +152,52 @@ describe('describeRecord', () => {
       kind: 'stepBack',
       from: 'notifie',
       to: 'recu',
+    });
+  });
+
+  it('says when the last reminder left and how many went', async () => {
+    const day = (date: number) => new Date(2026, 9, date, 10);
+    const row = parcelRow({
+      personId: 'p-1',
+      status: 'notifie',
+      receivedAt: day(15),
+      notifiedAt: day(16),
+      lastNotifiedAt: day(22),
+    });
+    await db.parcel.put(row);
+    const mail = (date: number, kind: 'avis' | 'relance') =>
+      parcelEvent(
+        row.id,
+        { type: 'parcel.notified', notificationId: newId(), kind },
+        { agentId: 'agent-1', now: day(date) },
+      ).row as LocalEvent;
+    await db.event.bulkPut([
+      mail(16, 'avis'),
+      mail(20, 'relance'),
+      mail(22, 'relance'),
+    ]);
+
+    const view = describeRecord(await record(row.id), options);
+
+    expect(view.state).toMatchObject({
+      icon: 'mail',
+      title: 'Relance envoyée le 22 oct. à 10 h 00',
+      description: 'Relancé 2 fois, en attente de retrait.',
+    });
+    expect(view.history?.map((entry) => entry.title)).toEqual([
+      'Relance envoyée',
+      'Relance envoyée',
+      'Notifié par e-mail',
+      'Reçu',
+    ]);
+
+    const late = describeRecord(await record(row.id), {
+      ...options,
+      now: new Date(2026, 9, 27, 12),
+    });
+    expect(late.state).toMatchObject({
+      icon: 'clock',
+      description: 'En attente depuis 11 jours, relancé 2 fois',
     });
   });
 

@@ -1,5 +1,6 @@
 import {
   DEFAULT_TEMPLATES,
+  NOTIFICATION_TYPES,
   presetTemplateId,
   type DefaultTemplateType,
   type NotificationType,
@@ -64,7 +65,8 @@ async function presets(ownerId: string): Promise<EmailTemplateView[]> {
 }
 
 /**
- * The agent's templates, the default one first, then by name. Templates
+ * The agent's templates by type (notices, then reminders), the default one
+ * first, then by name. Templates
  * belong to whoever wrote them (D2): a colleague's, pulled before the server
  * kept them back, are not shown. A type left without a default (its default
  * deleted from another iPhone) falls back on the preset.
@@ -91,6 +93,7 @@ export async function listTemplates(
   ];
   return all.sort(
     (a, b) =>
+      NOTIFICATION_TYPES.indexOf(a.type) - NOTIFICATION_TYPES.indexOf(b.type) ||
       Number(b.isDefault) - Number(a.isDefault) ||
       Number(b.preset) - Number(a.preset) ||
       a.name.localeCompare(b.name, 'fr'),

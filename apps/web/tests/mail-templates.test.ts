@@ -48,7 +48,10 @@ describe('e-mail templates', () => {
     );
 
     const templates = await listTemplates(db, 'agent-1');
-    expect(templates).toHaveLength(1);
+    expect(templates.map((row) => [row.type, row.stored])).toEqual([
+      ['avis', true],
+      ['relance', false],
+    ]);
     expect(templates[0]).toMatchObject({
       id: preset?.id,
       body: 'Bonjour {prénom}',
@@ -86,19 +89,19 @@ describe('e-mail templates', () => {
 
   it('creates, duplicates and deletes the agent’s own, hiding a colleague’s', async () => {
     const [preset] = await listTemplates(db, 'agent-1');
-    const relance = await createTemplate(db, 'Relance', options);
+    const relance = await createTemplate(db, 'Colis volumineux', options);
     const copy = await duplicateTemplate(db, preset!, 'Avis (copie)', options);
     await createTemplate(db, 'Le sien', { ...options, userId: 'agent-2' });
 
     expect(copy).toMatchObject({ isDefault: false, body: preset?.body });
     expect((await listTemplates(db, 'agent-1')).map((row) => row.name)).toEqual(
-      ['Avis de retrait', 'Avis (copie)', 'Relance'],
+      ['Avis de retrait', 'Avis (copie)', 'Colis volumineux', 'Relance'],
     );
 
     await deleteTemplate(db, relance, { now: NOW });
 
     expect((await listTemplates(db, 'agent-1')).map((row) => row.name)).toEqual(
-      ['Avis de retrait', 'Avis (copie)'],
+      ['Avis de retrait', 'Avis (copie)', 'Relance'],
     );
     expect((await db.outbox.toArray()).at(-1)).toMatchObject({
       type: 'delete',
@@ -107,7 +110,7 @@ describe('e-mail templates', () => {
   });
 
   it('makes another template the default, the former one written first and kept', async () => {
-    const relance = await createTemplate(db, 'Relance', options);
+    const relance = await createTemplate(db, 'Colis volumineux', options);
 
     const chosen = await setDefaultTemplate(db, relance, options);
 
@@ -116,8 +119,9 @@ describe('e-mail templates', () => {
     expect(
       templates.map((row) => [row.name, row.isDefault, row.preset]),
     ).toEqual([
-      ['Relance', true, false],
+      ['Colis volumineux', true, false],
       ['Avis de retrait', false, true],
+      ['Relance', true, true],
     ]);
     const ops = (await db.outbox.toArray()).slice(-2);
     expect(ops.map((op) => [op.entityId, op.patch.isDefault])).toEqual([
@@ -127,7 +131,7 @@ describe('e-mail templates', () => {
   });
 
   it('never deletes the default one nor the preset, which comes back as default', async () => {
-    const relance = await createTemplate(db, 'Relance', options);
+    const relance = await createTemplate(db, 'Colis volumineux', options);
     const chosen = await setDefaultTemplate(db, relance, options);
     const preset = (await listTemplates(db, 'agent-1')).find(
       (row) => row.preset,
@@ -143,12 +147,38 @@ describe('e-mail templates', () => {
     await deleteTemplate(db, { ...chosen, isDefault: false });
 
     expect(await listTemplates(db, 'agent-1')).toEqual([
-      expect.objectContaining({ preset: true, isDefault: true }),
+      expect.objectContaining({ type: 'avis', preset: true, isDefault: true }),
+      expect.objectContaining({
+        type: 'relance',
+        preset: true,
+        isDefault: true,
+      }),
+    ]);
+  });
+
+  it('offers the reminder template, default of its own type', async () => {
+    const templates = await listTemplates(db, 'agent-1');
+    const reminder = templates.find((row) => row.type === 'relance');
+    expect(reminder).toMatchObject({
+      ...DEFAULT_TEMPLATES.relance,
+      id: await presetTemplateId('agent-1', 'relance'),
+      isDefault: true,
+      preset: true,
+    });
+    const copy = await duplicateTemplate(db, reminder!, 'Relance courte', {
+      ...options,
+    });
+    await setDefaultTemplate(db, copy, options);
+    const after = await listTemplates(db, 'agent-1');
+    expect(after.map((row) => [row.name, row.type, row.isDefault])).toEqual([
+      ['Avis de retrait', 'avis', true],
+      ['Relance courte', 'relance', true],
+      ['Relance', 'relance', false],
     ]);
   });
 
   it('restores only the preset', async () => {
-    const relance = await createTemplate(db, 'Relance', options);
+    const relance = await createTemplate(db, 'Colis volumineux', options);
     const restored = await restoreDefault(
       db,
       { ...relance, body: 'Changé' },

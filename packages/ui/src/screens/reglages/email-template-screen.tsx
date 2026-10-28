@@ -18,6 +18,8 @@ export type TemplateWarning = { title: string; description?: ReactNode };
 
 export type EmailTemplateScreenProps = {
   name: string;
+  /** What the template is for, said under its name: a notice, a reminder. */
+  typeNote?: string;
   subject: string;
   body: string;
   onNameChange?: (name: string) => void;
@@ -61,6 +63,7 @@ type Field = 'subject' | 'body';
  */
 export function EmailTemplateScreen({
   name,
+  typeNote,
   subject,
   body,
   onNameChange,
@@ -111,7 +114,7 @@ export function EmailTemplateScreen({
       trailing={onDone && <NavBarAction onClick={onDone}>OK</NavBarAction>}
       className="mt-4"
     >
-      <GroupedSection header="Nom">
+      <GroupedSection header="Nom" footer={typeNote}>
         <div className="flex h-[52px] px-4">
           <input
             aria-label="Nom du modèle"

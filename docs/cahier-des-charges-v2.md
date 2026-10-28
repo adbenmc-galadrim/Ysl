@@ -116,8 +116,8 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 4. Le colis passe à **Remis**, avec l'heure, l'agent et la méthode. Toast « Annuler ». Tout cela fonctionne hors ligne.
 
 **P5. Relance**
-1. Un colis non retiré déclenche des relances automatiques (proposition : J+2 et J+5 ouvrés, à valider, cf. décision D12).
-2. Ensuite, il apparaît dans « En souffrance » (compteur cliquable). L'agent décide : relancer à la main, appeler, ou retourner à l'expéditeur.
+1. Un colis notifié et non retiré appelle une relance à J+2 puis à J+5 jours ouvrés (D12, lundi à vendredi ; les jours fériés ne sont pas connus et comptent comme ouvrés). Aucun envoi automatique (D2 révisée) : l'app calcule qui relancer, prépare un e-mail par personne avec le modèle de relance et le même code de retrait, et le signale par un bandeau « N personnes à relancer » sur Colis et le compteur « À relancer ». L'agent envoie chaque relance d'un toucher depuis l'écran « Colis en souffrance » (« Relancer », « Relancer les N »).
+2. Deux jours ouvrés après la seconde relance (ou dès J+5 si les deux relances ne sont pas parties), le colis est « En souffrance » (compteur cliquable). L'agent décide : relancer encore à la main, appeler, ou retourner à l'expéditeur (L3).
 
 **P6. Recherche**
 1. Onglet **Colis** : barre de recherche instantanée, insensible aux accents, sur le tracking, le nom, le service, l'expéditeur et le transporteur, avec résultats à chaque frappe.
@@ -177,7 +177,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F29 | Fiche colis : tous les champs modifiables, photo zoomable, historique des événements, état de synchronisation | Amélioré (F16) | M | L1 |
 | F30 | Statuts explicites et réversibles (voir §8.3) ; suppression du statut mort « En attente » de la v1 | Amélioré (F15) | M | L1 |
 | F31 | Actions groupées : sélection, renotifier, marquer remis | Repris | S | L2 |
-| F32 | Compteurs cliquables (À compléter, À retirer, En souffrance) en tête de l'onglet Colis | Amélioré (Accueil v1) | S | L2 |
+| F32 | Compteurs cliquables (À compléter, À retirer, À relancer, En souffrance) en tête de l'onglet Colis | Amélioré (Accueil v1) | S | L2 |
 
 ### 3.4 Notification et relance
 
@@ -187,7 +187,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F34 | Un e-mail par destinataire, regroupant ses colis ; « par service » devient un résumé optionnel | Amélioré (F17) | M | L2 |
 | F35 | E-mail ~~en HTML et en texte~~ en texte brut (D2 révisée, S5), accents corrects ; lieu et horaires de retrait ; code de retrait écrit en clair ; QR de retrait joint en image par « Partager avec le QR » (feuille de partage de l'iPhone), le `mailto:` ne portant pas d'image (YSL-66) | Amélioré | M | L2 |
 | F36 | ~~Repli `mailto:` manuel si l'envoi serveur est indisponible~~ **Périmé (D2 révisée) :** `mailto:` devient la voie principale, il n'y a plus d'envoi serveur ; Outlook, Gmail et « copier le texte » restent en option | Repris (voie principale) | S | L2 |
-| F37 | Relances automatiques, puis alerte « En souffrance » à l'agent | Nouveau | S | L2 |
+| F37 | Relances ~~automatiques~~ proposées automatiquement (D2 révisée, YSL-67) : à J+2 et J+5 jours ouvrés l'app prépare un e-mail de relance par personne (modèle « Relance », même code de retrait) et le signale à l'agent, qui l'envoie d'un toucher ; puis alerte « En souffrance » | Nouveau | S | L2 |
 | F38 | Copie à un délégué ou à des collègues, par e-mail | Amélioré (F18) | C | L3 |
 | F39 | Envoi à heures fixes (créneaux) plutôt qu'immédiat | Nouveau | C | L3 |
 
@@ -784,7 +784,7 @@ stateDiagram-v2
     Notifie --> Retourne: retour à l'expéditeur
 ```
 
-« En souffrance » n'est pas un statut : c'est un filtre (Notifié depuis plus de N jours). « Retourné » est un statut Could (L3).
+« En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3).
 
 ### 8.4 Synchronisation et outbox
 
@@ -970,7 +970,7 @@ Chaque décision est accompagnée d'une recommandation.
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |
-| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte à l'agent |
+| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte à l'agent ; le rythme reste à la main de l'agent : l'app propose, rien ne part seul (YSL-67, jours fériés comptés comme ouvrés) |
 | D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | À fournir par le service |
 | D14 | Usage du nom et de l'identité visuelle Saint Laurent | Entreprise | Demander l'accord ; en attendant, interface sobre sans logo |
 | D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | Export CSV (nom, prénom, e-mail, service, site) fourni par les RH ou la DSI ; Entra en cible |

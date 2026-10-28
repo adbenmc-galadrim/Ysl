@@ -34,8 +34,8 @@ import {
   DAY_MS,
   formatAgo,
   formatTime,
-  homeState,
   missingOf,
+  reminderOf,
   shortDate,
   startOfDay,
 } from '#/features/parcels/model';
@@ -143,11 +143,22 @@ function syncOf(ops: readonly OutboxOp[]): RecordSync {
   return ops.length ? 'unsent' : 'synced';
 }
 
+/** The reminders the record's history dates: every mail sent after the notice. */
+function reminderDates(record: ParcelRecord): Map<string, Date[]> {
+  const dates = record.events.flatMap((row) =>
+    readParcelEvent(row.type, row.detail)?.type === 'parcel.notified'
+      ? [row.at]
+      : [],
+  );
+  return new Map([[record.parcel.id, dates]]);
+}
+
 function stateCard(
-  parcel: LocalParcel,
+  record: ParcelRecord,
   now: Date,
   t: TranslateFn,
 ): RecordView['state'] {
+  const { parcel } = record;
   const description = t(STATUS_TODO[parcel.status]);
   const today = startOfDay(now);
   const at = (key: 'received' | 'delivered', date: Date) =>
@@ -171,14 +182,30 @@ function stateCard(
         description,
       };
     case 'notifie': {
-      const late = homeState(parcel, now) === 'late';
-      const last = parcel.lastNotifiedAt ?? parcel.notifiedAt;
+      const reminder = reminderOf(parcel, now, reminderDates(record));
+      const first = parcel.notifiedAt;
+      const when = reminder?.sent ? formatWhen(reminder.last, now, t) : '';
+      const days = first
+        ? Math.floor((now.getTime() - first.getTime()) / DAY_MS)
+        : 0;
       return {
-        icon: late ? 'clock' : 'mail',
-        title: last
-          ? t('parcel.status.notified', { ago: formatAgo(last, now, t) })
-          : t('parcel.state.notifie'),
-        description,
+        icon: reminder?.late ? 'clock' : 'mail',
+        title: reminder?.sent
+          ? t('record.reminded', {
+              when: when.charAt(0).toLowerCase() + when.slice(1),
+            })
+          : first
+            ? t('parcel.status.notified', { ago: formatAgo(first, now, t) })
+            : t('parcel.state.notifie'),
+        description: reminder?.late
+          ? reminder.sent
+            ? t('parcel.status.lateReminded', { days, count: reminder.sent })
+            : t('parcel.status.late', { days })
+          : reminder?.due
+            ? t('record.remindDue')
+            : reminder?.sent
+              ? t('record.remindedCount', { count: reminder.sent })
+              : description,
       };
     }
     case 'remis':
@@ -450,7 +477,7 @@ export function describeRecord(
       ? formatTracking(parcel.tracking)
       : t('record.tracking.none'),
     carrier: carrierLabel(parcel, t),
-    state: stateCard(parcel, now, t),
+    state: stateCard(record, now, t),
     notice:
       sync === 'rejected'
         ? {

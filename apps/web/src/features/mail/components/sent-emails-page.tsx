@@ -26,7 +26,12 @@ import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
-import { drawPins } from '#/features/mail/pickup-code';
+import {
+  drawSecrets,
+  pickupToWrite,
+  recallSecrets,
+  type PickupSecret,
+} from '#/features/mail/pickup-code';
 import { parcelName, recipientValues } from '#/features/mail/recipients';
 import {
   listTemplates,
@@ -70,7 +75,7 @@ type Draft = {
   card: AddressCard;
   template: EmailTemplateView;
   pickup: PickupSetting;
-  pin: string | null;
+  secret: PickupSecret | null;
 };
 
 async function openDraft(
@@ -81,14 +86,17 @@ async function openDraft(
     cardOf(db, notification),
     listTemplates(db, userId),
     readPickup(db),
-    drawPins(db, 1),
+    // A reminder quotes the code the employee already holds (F37).
+    notification.type === 'relance'
+      ? recallSecrets(db, [notification])
+      : drawSecrets(db, 1),
   ]);
   const ofType = templates.filter((row) => row.type === notification.type);
   const template =
     ofType.find((row) => row.id === notification.templateId) ??
     ofType.find((row) => row.isDefault) ??
     templates.find((row) => row.isDefault)!;
-  return { card, template, pickup, pin: pins[0] ?? null };
+  return { card, template, pickup, secret: pins[0] ?? null };
 }
 
 function parcelDetail(parcel: LocalParcel | undefined): string {
@@ -154,7 +162,7 @@ function FixSheet({
         pickup: draft.pickup,
         agent: session.user.name,
         replyTo: session.user.email,
-        code: draft.pin,
+        code: draft.secret?.pin ?? null,
         now: new Date(),
         t,
       }),
@@ -186,8 +194,11 @@ function FixSheet({
       target,
       // A fresh token per try: a token is written once
       // (`pickup_code_token_hash_idx`), and this mail carries no QR.
-      pickup: draft.pin
-        ? { pin: draft.pin, token: newPickupToken() }
+      pickup: draft.secret
+        ? pickupToWrite(
+            { ...draft.secret, token: newPickupToken() },
+            { withQr: false },
+          )
         : undefined,
     });
     const fixing = fixAddress(
