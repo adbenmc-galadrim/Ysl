@@ -189,7 +189,7 @@ export async function replyColleague(
 }
 
 /**
- * « Absent jusqu'au … »: no reminder for these parcels before the working
+ * « Absence jusqu'au … »: no reminder for these parcels before the working
  * day after `day` (`@repo/contract/reminders`). A day already gone is
  * refused.
  */

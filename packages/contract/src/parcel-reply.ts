@@ -66,7 +66,7 @@ export function standingReply(
   }
 }
 
-/** The day picked in « Absent jusqu'au … », at the start of that day on the iPhone. */
+/** The day picked in « Absence jusqu'au … », at the start of that day on the iPhone. */
 export function lastDayAway(day: Date): Date {
   const start = new Date(day);
   start.setHours(0, 0, 0, 0);

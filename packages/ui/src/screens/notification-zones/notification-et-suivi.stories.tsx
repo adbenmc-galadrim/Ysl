@@ -190,7 +190,7 @@ export const UnCollegueVient: Story = {
 };
 
 export const AbsentJusquau: Story = {
-  name: 'Absent jusqu’au',
+  name: 'Absence jusqu’au',
   render: () => (
     <AbsentJusquauSheet
       recipient="Hugo Lefèvre"

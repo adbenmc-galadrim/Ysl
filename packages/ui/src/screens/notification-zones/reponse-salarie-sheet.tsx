@@ -62,7 +62,7 @@ export function ReponseSalarieSheet({
     {
       icon: 'calendar' as const,
       tone: 'orange' as const,
-      title: 'Absent jusqu’au …',
+      title: 'Absence jusqu’au …',
       line: 'Pas de relance avant son retour',
       onClick: onAbsent,
     },
@@ -157,7 +157,7 @@ export type AbsentJusquauSheetProps = SheetFrame & {
   onSave?: () => void;
 };
 
-/** « Absent jusqu'au … »: the last day away, picked on the iPhone's wheel. */
+/** « Absence jusqu'au … »: the last day away, picked on the iPhone's wheel. */
 export function AbsentJusquauSheet({
   recipient,
   value,
@@ -175,13 +175,13 @@ export function AbsentJusquauSheet({
     <Sheet
       fixed={fixed}
       behind={behind}
-      title="Absent jusqu’au …"
+      title="Absence jusqu’au …"
       description={`${recipient} : aucune relance ne partira avant son retour.`}
       className={FRAME}
       onDismiss={onDismiss}
     >
       <Field
-        label="Absent jusqu’au"
+        label="Dernier jour d’absence"
         help={error ?? help}
         helpTone={error ? 'red' : 'muted'}
         className="mt-5"
