@@ -66,7 +66,7 @@ describe('recordHandover', () => {
     const done = await recordHandover(
       db,
       { ...byPin(), parcelIds: all() },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     expect(done).toMatchObject({ count: 3, firstName: 'Nora' });
@@ -79,6 +79,7 @@ describe('recordHandover', () => {
       delegateName: null,
       method: 'pin',
       agentId: AGENT,
+      agentName: 'Karim Benali',
       at: LATER,
       cancelledAt: null,
     });
@@ -106,7 +107,7 @@ describe('recordHandover', () => {
     await recordHandover(
       db,
       { ...byPin(), parcelIds: all() },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     const ops = await db.outbox.orderBy('seq').toArray();
@@ -127,7 +128,7 @@ describe('recordHandover', () => {
     await recordHandover(
       db,
       { ...byPin(), parcelIds: taken },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     expect((await db.parcel.get(kept!))?.status).toBe('notifie');
@@ -144,7 +145,7 @@ describe('recordHandover', () => {
         at: NOW.getTime(),
         parcelIds: all(),
       },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     expect((await db.handover.get(done.handoverId))?.method).toBe('manuel');
@@ -166,7 +167,7 @@ describe('recordHandover', () => {
         at: NOW.getTime(),
         parcelIds: [parcel.id],
       },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     expect(done.firstName).toBe('Marc');
@@ -193,7 +194,7 @@ describe('recordHandover', () => {
       const write = recordHandover(
         db,
         { ...byPin(), parcelIds: all() },
-        { agentId: AGENT, now: LATER },
+        { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
       );
 
       await expect(write).rejects.toEqual(new HandoverRefusedError(reason));
@@ -205,7 +206,7 @@ describe('recordHandover', () => {
   it('refuses a QR or a code the URL does not name, or names for someone else', async () => {
     const other = await pickupCodeRow({ personId: newId() });
     await db.pickupCode.put(other);
-    const options = { agentId: AGENT, now: LATER };
+    const options = { agentId: AGENT, agentName: 'Karim Benali', now: LATER };
 
     await expect(
       recordHandover(
@@ -237,7 +238,7 @@ describe('recordHandover', () => {
       deliveredAt: NOW,
       deliveredBy: 'agent-2',
     });
-    const options = { agentId: AGENT, now: LATER };
+    const options = { agentId: AGENT, agentName: 'Karim Benali', now: LATER };
 
     await expect(
       recordHandover(db, { ...byPin(), parcelIds: all() }, options),
@@ -255,7 +256,7 @@ describe('recordHandover', () => {
       recordHandover(
         db,
         { ...byPin(), parcelIds: all() },
-        { agentId: AGENT, now: LATER },
+        { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
       ),
     ).rejects.toEqual(new HandoverRefusedError('gone'));
   });
@@ -269,7 +270,7 @@ describe('a parcel handed over', () => {
     await recordHandover(
       db,
       { ...byPin({ via: 'qr' }), parcelIds: taken },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     const rows = await listHomeParcels(db, LATER);
@@ -299,7 +300,7 @@ describe('a parcel handed over', () => {
         at: NOW.getTime(),
         parcelIds: all(),
       },
-      { agentId: AGENT, now: LATER },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
     );
 
     const record = await loadParcelRecord(db, all()[0]!);

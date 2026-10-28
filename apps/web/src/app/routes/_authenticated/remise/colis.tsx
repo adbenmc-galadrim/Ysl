@@ -41,6 +41,7 @@ function RemiseColisRoute() {
       key={`${search.kind}:${search.id}`}
       search={search}
       agentId={session.user.id}
+      agentName={session.user.name}
       onBack={back}
       onGone={back}
       onRefused={refused}

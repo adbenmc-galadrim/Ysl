@@ -40,7 +40,12 @@ export type HandoverInput = RemiseColisSearch & {
   parcelIds: readonly string[];
 };
 
-export type HandoverOptions = { agentId: string; now?: Date };
+export type HandoverOptions = {
+  agentId: string;
+  /** Kept on the handover: the journal names the agent on every iPhone. */
+  agentName: string;
+  now?: Date;
+};
 
 export type HandoverDone = {
   handoverId: string;
@@ -92,7 +97,7 @@ async function openCodeOf(
 export async function recordHandover(
   db: CourrierDatabase,
   input: HandoverInput,
-  { agentId, now = new Date() }: HandoverOptions,
+  { agentId, agentName, now = new Date() }: HandoverOptions,
 ): Promise<HandoverDone> {
   const recipient: HandoverRecipient = { kind: input.kind, id: input.id };
   const person = await loadHandoverPerson(db, recipient);
@@ -118,6 +123,7 @@ export async function recordHandover(
     delegateName: null,
     method: input.via,
     agentId,
+    agentName: agentName.trim() || null,
     at: now,
     cancelledAt: null,
   };
