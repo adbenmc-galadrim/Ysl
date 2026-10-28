@@ -122,6 +122,7 @@ export const fr = {
   'handover.collector.announcement': 'Réponse à l’e-mail, {{when}}',
   'handover.collector.self': 'Retire ses colis',
   'handover.collector.title': 'Qui retire pour {{name}} ?',
+  'handover.collector.nav': 'Retiré par',
   'handover.collector.results': 'Annuaire et contacts',
   'handover.collector.continue': 'Continuer',
   'handover.collector.proofNote':

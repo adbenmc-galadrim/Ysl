@@ -11,14 +11,19 @@ import type { Person } from '#fixtures/people';
 
 export type RetireParProof = 'signature' | 'badge';
 
+/** Someone at the desk, of the directory or not. */
+export type RetireParPerson = Pick<Person, 'name' | 'initials'> & {
+  department?: string;
+};
+
 /** Who the screen offers: the colleague, or the recipient after all. */
 export type RetireParChoice = 'collector' | 'recipient';
 
 export type RetireParScreenProps = {
   /** Whose parcels these are. */
-  recipient: Pick<Person, 'name' | 'initials'> & { department?: string };
+  recipient: RetireParPerson;
   /** Who is at the desk. */
-  collector: Pick<Person, 'name' | 'initials'> & { department?: string };
+  collector: RetireParPerson;
   /** How the recipient named the colleague: "Réponse à l’e-mail, ce matin à 11 h 02". */
   announcement?: string;
   /** The proof to choose; without it, the QR or the code already stands for the recipient. */
@@ -40,9 +45,10 @@ const firstName = (person: Pick<Person, 'name'>) => person.name.split(' ')[0];
 
 /**
  * A colleague collects for someone. When the recipient announced them by
- * replying to the notification, that colleague is already picked; the agent
- * only chooses the proof, and the recipient is told by e-mail who took the
- * parcels.
+ * replying to the notification, that colleague is already picked. The
+ * mockup has the agent choose a proof and tells the recipient by e-mail;
+ * the app, where the QR or the code stands for the recipient (D6), shows a
+ * reminder instead and offers the recipient too (`recipientOption`).
  */
 export function RetireParScreen({
   recipient,

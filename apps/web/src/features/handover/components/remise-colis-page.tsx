@@ -17,6 +17,7 @@ import {
   collectorName,
   sameName,
 } from '#/features/handover/collector';
+import { lowerFirst } from '#/features/handover/journal';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 import {
   type HandoverDone,
@@ -78,6 +79,8 @@ export function RemiseColisPage({
   const [choosing, setChoosing] = useState<'choice' | 'search' | null>(null);
   const [choice, setChoice] = useState<'collector' | 'recipient'>('collector');
   const [query, setQuery] = useState('');
+  /** A choice was made on this screen: the announcement no longer decides. */
+  const [touched, setTouched] = useState(false);
   const book = useLiveQuery(() => loadRecipientBook(db), []);
   const loaded = useLiveQuery(async () => {
     const [person, parcels] = await Promise.all([
@@ -161,11 +164,13 @@ export function RemiseColisPage({
     // A signature drawn by someone else no longer stands for who collects.
     if (next?.name !== collector?.name) setSigned([]);
     setCollector(next);
+    setTouched(true);
     setChoosing(null);
     setQuery('');
   };
   const openCollector = () => {
-    setChoice('collector');
+    // Opened again after « elle-même », the choice made stays ticked.
+    setChoice(collector || !touched ? 'collector' : 'recipient');
     setChoosing(candidate ? 'choice' : 'search');
   };
 
@@ -175,7 +180,7 @@ export function RemiseColisPage({
     return (
       <QuiRetireScreen
         title={t('handover.collector.title', { name: person.name })}
-        navTitle={t('record.handover.delegate')}
+        navTitle={t('handover.collector.nav')}
         query={query}
         onQueryChange={setQuery}
         waiting={[]}
@@ -281,6 +286,3 @@ export function RemiseColisPage({
     />
   );
 }
-
-const lowerFirst = (text: string) =>
-  text.charAt(0).toLocaleLowerCase('fr') + text.slice(1);

@@ -77,7 +77,7 @@ export function receivedLine(date: Date, now: Date, t: TranslateFn): string {
   return t('handover.received.on', { date: shortDate(date, now) });
 }
 
-/** « Retrait prévu par Paul Mercier »: the recipient said who comes (YSL-70; YSL-77 will offer the name). */
+/** « Retrait prévu par Paul Mercier »: the recipient said who comes (YSL-70); the handover offers them first. */
 export function delegateLine(
   parcel: LocalParcel,
   t: TranslateFn,

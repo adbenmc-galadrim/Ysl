@@ -46,7 +46,9 @@ export type QuiRetireScreenProps = {
 /**
  * Handover without QR or code: the agent looks the person up by name.
  * People with parcels come first and carry the count, so the usual case is
- * one tap; the banner says up front that a signature will be asked.
+ * one tap; the banner says up front that a signature will be asked. The
+ * same sheet names a colleague who collects (`onPickOther`, `typed`), with
+ * its own question and reminder.
  */
 export function QuiRetireScreen({
   query,
