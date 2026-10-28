@@ -7,6 +7,7 @@ import {
 } from '@repo/contract/pickup';
 import { readParcelEvent } from '@repo/contract/parcel-event';
 import { newId } from '@repo/shared/id';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type {
   CourrierDatabase,
@@ -19,6 +20,9 @@ import {
   recordHandover,
 } from '#/features/handover/record-handover';
 import type { RemiseColisSearch } from '#/features/handover/route';
+import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
+import { listHomeParcels } from '#/features/parcels/api/use-parcels';
+import { describeRecord } from '#/features/parcels/record';
 import {
   contactRow,
   NOW,
@@ -277,5 +281,54 @@ describe('recordHandover', () => {
         { agentId: AGENT, now: LATER },
       ),
     ).rejects.toEqual(new HandoverRefusedError('gone'));
+  });
+});
+
+describe('a parcel handed over', () => {
+  const t = createTranslator(DEFAULT_LOCALE);
+
+  it('says on Colis and on its record to whom and how, and counts as handed over', async () => {
+    const [kept, ...taken] = all();
+    await recordHandover(
+      db,
+      { ...byPin({ via: 'qr' }), parcelIds: taken },
+      { agentId: AGENT, now: LATER },
+    );
+
+    const rows = await listHomeParcels(db, LATER);
+    const handed = rows.filter((row) => row.state === 'handedOver');
+    expect(handed.map((row) => row.status)).toEqual([
+      'Remis à 12 h 05, QR vérifié',
+      'Remis à 12 h 05, QR vérifié',
+    ]);
+    expect(rows.find((row) => row.id === kept)?.state).toBe('notified');
+
+    const record = await loadParcelRecord(db, taken[0]!);
+    expect(
+      describeRecord(record!, { now: LATER, t, showUnsent: true }).state,
+    ).toMatchObject({
+      title: 'Remis à 12 h 05',
+      description: 'À Nora Haddad, QR vérifié',
+    });
+  });
+
+  it('says a pick by the name went unchecked', async () => {
+    await recordHandover(
+      db,
+      {
+        kind: 'person',
+        id: nora.id,
+        via: 'manuel',
+        at: NOW.getTime(),
+        parcelIds: all(),
+      },
+      { agentId: AGENT, now: LATER },
+    );
+
+    const record = await loadParcelRecord(db, all()[0]!);
+    expect(
+      describeRecord(record!, { now: LATER, t, showUnsent: true }).state
+        .description,
+    ).toBe('À Nora Haddad, sans vérification');
   });
 });

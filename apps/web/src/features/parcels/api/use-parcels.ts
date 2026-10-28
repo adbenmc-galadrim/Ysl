@@ -18,6 +18,8 @@ import {
 } from '#/features/parcels/model';
 import { loadReminderDates } from '#/features/parcels/reminders';
 
+import { handoversOf } from '#/features/handover/delivered';
+
 const t = createTranslator(DEFAULT_LOCALE);
 
 const byId = <Row extends { id: string }>(rows: (Row | undefined)[]) =>
@@ -34,13 +36,15 @@ export async function loadRecipientContext(
   const contactIds = [
     ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
   ];
-  const [people, contacts] = await Promise.all([
+  const [people, contacts, handovers] = await Promise.all([
     database.directoryPerson.bulkGet(personIds),
     database.contact.bulkGet(contactIds),
+    handoversOf(database, parcels),
   ]);
   return {
     people: byId<LocalDirectoryPerson>(people),
     contacts: byId<LocalContact>(contacts),
+    handovers,
   };
 }
 

@@ -23,9 +23,11 @@ import type {
   LocalContact,
   LocalDirectoryPerson,
   LocalEvent,
+  LocalHandover,
   LocalParcel,
   OutboxOp,
 } from '#/features/db/schema';
+import { proofLabel } from '#/features/handover/delivered';
 import { fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
@@ -51,6 +53,8 @@ export type ParcelRecord = {
   events: readonly LocalEvent[];
   /** The outbox ops of the parcel and of its events. */
   ops: readonly OutboxOp[];
+  /** Who it was handed to and how, while it is `remis`. */
+  handover?: LocalHandover;
 };
 
 /** Where the parcel's own changes stand with the server. */
@@ -214,7 +218,12 @@ function stateCard(
         title: parcel.deliveredAt
           ? at('delivered', parcel.deliveredAt)
           : t('parcel.state.remis'),
-        description,
+        description: record.handover
+          ? t('handover.to', {
+              name: record.handover.recipientName,
+              how: proofLabel(record.handover.method, t),
+            })
+          : description,
       };
     case 'retourne':
       return {
