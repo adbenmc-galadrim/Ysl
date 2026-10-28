@@ -37,14 +37,14 @@ faites. Le serveur les applique une par une, chacune dans sa transaction :
 
 Un statut par opération, dans l'ordre envoyé :
 
-| Statut | Sens                                                                                                                                                                                                           | Côté appareil                                               |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 200    | appliquée, maintenant ou par un envoi précédent                                                                                                                                                                | retirée de l'outbox                                         |
-| 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                      |
-| 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails »)                              | `rejected`                                                  |
-| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                  |
-| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger »                  |
-| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard |
+| Statut | Sens                                                                                                                                                                                                           | Côté appareil                                                                                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 200    | appliquée, maintenant ou par un envoi précédent                                                                                                                                                                | retirée de l'outbox                                                                            |
+| 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                                                         |
+| 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails »)                              | `rejected`                                                                                     |
+| 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                                                     |
+| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
+| 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard                                    |
 
 Le suivi d'un colis (`tracking_norm`) n'est pas une clé naturelle : un même numéro peut
 être reçu deux fois (« Ajouter quand même », F10), l'index `parcel_tracking_norm_idx` n'est
@@ -72,7 +72,7 @@ modèles ; `sync.push` vérifie avant d'écrire :
 | -------------------------------------------------------------------------------------------- | ------ | ------------------------------ |
 | modèle dont `owner_id` (envoyé ou en base) n'est pas l'agent qui pousse                      | 403    | `sync.op.templateOwner`        |
 | suppression du modèle par défaut (`delete`, ou `deleted_at` posé sur une ligne `is_default`) | 409    | `sync.op.defaultTemplate`      |
-| suppression du modèle livré (id `presetTemplateId`), même quand un autre est par défaut       | 409    | `sync.op.defaultTemplate`      |
+| suppression du modèle livré (id `presetTemplateId`), même quand un autre est par défaut      | 409    | `sync.op.defaultTemplate`      |
 | second modèle par défaut du même agent et du même type (`email_template_default_idx`)        | 409    | `sync.op.defaultTemplateTwice` |
 | notification qui ne suit pas le contrat `notificationRow` (`@repo/contract/mail`)            | 400    | message générique              |
 | notification dont `prepared_by` n'est pas l'agent qui pousse                                 | 403    | `sync.op.notificationOwner`    |
@@ -124,6 +124,16 @@ Ce que cela donne entre deux appareils :
   (`parcel_delivery_protected`) tant qu'aucune remise annulée ne liste le colis, que la
   `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement ; la ligne du
   serveur ne bouge pas, l'opération de B part en « Corriger ».
+- **Même colis remis sur deux appareils.** A et B, hors ligne, remettent le même colis.
+  A envoie le premier ; la `handover` de B passe, mais son colis est refusé en 409
+  (`parcel_delivery_protected`, la preuve de remise ne change pas). Après le pull, B
+  range sa copie sur celle du serveur (une opération refusée ne protège pas sa ligne),
+  retire l'opération refusée de l'outbox et, quand aucun colis de sa `handover` n'est
+  plus remis par elle, l'annule (`cancelled_at`, jamais supprimée : une `handover`
+  vivante bloquerait l'annulation de celle de A) ; Colis affiche « Déjà remis à … par un
+  collègue » (`settleDeliveryConflicts`, appelé par `afterPull` du moteur). Une
+  `handover` qui garde une partie de ses colis reste vivante ; la ligne, la fiche et
+  l'historique d'un colis suivent la `handover` dont l'heure est son `delivered_at`.
 - **Annulation tracée.** Annuler une remise, c'est poser `cancelled_at` sur la
   `handover` **puis** repasser le colis `notifie` (`delivered_at` et `delivered_by` à
   nul, `status_seq` + 1, sinon 409 `parcel_status_stale`), dans cet ordre dans
@@ -148,8 +158,8 @@ une copie qui renvoie le compteur inchangé se lit comme une app sans compteur
 (`sync.push` ne réécrit que les colonnes reçues, le trigger ne voit pas la différence) :
 un pas en avant passe, un retour arrière est refusé. Reste une limite, assumée : un colis
 `remis` dont la `handover` a été refusée au push ne peut revenir en arrière qu'après l'envoi d'une `handover`
-annulée ; l'écran de remise (YSL-75) enverra la `handover` avant le colis et relira le
-serveur avant d'annuler. Enfin,
+annulée ; l'écran de remise (`recordHandover`, YSL-74) envoie la `handover` avant le
+colis, et l'annulation devra relire le serveur avant d'annuler. Enfin,
 `parcel_recipient_check` fait échouer le `SET NULL` des clés `person_id` et
 `contact_id` sur un colis `notifie`/`remis` : une personne ou un contact qui a un tel
 colis se désactive, il ne se supprime pas.
@@ -299,11 +309,18 @@ La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le rest
 - **Retour arrière** depuis la fiche : « Annuler la notification » et « Annuler le
   retour » (`changeParcelStatus`). « Annuler la remise » attend l'écran de remise :
   il faut annuler la `handover` avec son motif dans le même commit.
+- **Remise** (`recordHandover`) : en un seul commit, la `handover` (méthode de la voie :
+  `qr`, `pin`, ou `manuel` pour un nom choisi sans preuve), chaque colis coché `remis`
+  (`delivered_at`, `delivered_by`, `status_seq` + 1), un `parcel.delivered` par colis
+  et, si plus aucun colis de la personne n'attend, son code de retrait `used_at` ; le
+  QR ou le code est revérifié sur l'appareil juste avant.
 - **Suppression** : logique (`deleted_at`), avec son événement ; le colis quitte les
   listes de tous les appareils, son historique reste.
 - **Événements** (`@repo/contract/parcel-event`) : `event.entity = 'parcel'`,
   `type` `parcel.edited` (`detail.fields`, les champs changés), `parcel.status`
-  (`detail.from`, `detail.to`) ou `parcel.deleted`, `actor_id` = l'agent. La
+  (`detail.from`, `detail.to`), `parcel.deleted` ou `parcel.delivered`
+  (`detail.handoverId`, `detail.method` : `qr`, `pin`, `signature`, `manuel`),
+  `actor_id` = l'agent. La
   réception n'a pas d'événement : la ligne la porte (`received_at`). Un appareil
   ignore un type ou un `detail` qu'il ne sait pas lire. L'historique de la fiche y
   ajoute la notification et la remise portées par la ligne sans événement, et l'état
