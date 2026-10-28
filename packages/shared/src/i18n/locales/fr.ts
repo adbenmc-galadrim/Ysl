@@ -693,7 +693,6 @@ export const fr = {
   'notify.notSent.reason': 'Non envoyé, d’après l’agent',
   'notify.error': 'E-mail non préparé sur l’iPhone, réessayez.',
   'notify.template.title': 'Modèle d’e-mail',
-  'remind.title': 'Colis en souffrance',
   'remind.intro':
     'Relances proposées à J+2 et J+5 jours ouvrés. Rien ne part tout seul : chaque e-mail s’ouvre dans votre messagerie.',
   'remind.section.due': 'À relancer',

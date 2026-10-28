@@ -60,7 +60,7 @@ export const DEFAULT_TEMPLATES = {
     body: [
       'Bonjour {prénom},',
       '',
-      'Petit rappel : votre code de retrait reste {code}.',
+      'Petit rappel : votre code de retrait est {code}.',
       '',
       'Ces colis vous attendent toujours :',
       '{colis}',

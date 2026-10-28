@@ -44,7 +44,7 @@ export const ColisEnSouffrance: Story = {
               name: 'Nora Haddad',
               parcels:
                 '3 colis · Amazon ···4471, UPS ···0622, Colissimo ···7505',
-              status: 'En attente depuis 6 jours · relancée 1 fois, le 22 oct.',
+              status: 'En attente depuis 6 jours · relancé 1 fois, le 22 oct.',
               due: true,
             },
           ],
@@ -56,7 +56,7 @@ export const ColisEnSouffrance: Story = {
               id: 'ines',
               name: 'Inès Garnier',
               parcels: '1 colis · FedEx ···3338',
-              status: 'En attente depuis 8 jours · relancée 2 fois, le 23 oct.',
+              status: 'En attente depuis 8 jours · relancé 2 fois, le 23 oct.',
               due: false,
             },
           ],

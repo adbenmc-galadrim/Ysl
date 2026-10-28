@@ -205,7 +205,7 @@ describe('template rendering', () => {
       [
         'Bonjour Inès,',
         '',
-        'Petit rappel : votre code de retrait reste 4821.',
+        'Petit rappel : votre code de retrait est 4821.',
         '',
         'Ces colis vous attendent toujours :',
         '• FedEx ···3338, reçu le 19 oct.',

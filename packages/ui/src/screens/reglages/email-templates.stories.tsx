@@ -218,7 +218,7 @@ export const ModeleDeRelance: Story = {
         subject: 'Rappel : colis en attente de retrait – Service Courrier',
         body: BODY.replace(
           'Votre code de retrait : {code}',
-          'Petit rappel : votre code de retrait reste {code}.',
+          'Petit rappel : votre code de retrait est {code}.',
         ),
       }}
     />
