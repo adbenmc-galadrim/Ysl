@@ -6,7 +6,7 @@ import {
   type PullOutput,
   type PullPage,
 } from '@repo/contract/sync';
-import { event, syncGeneration } from '@repo/db/schema';
+import { emailTemplate, event, syncGeneration } from '@repo/db/schema';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
 import { purgeHorizon } from '#features/maintenance/purge';
 import { tableOf, type SyncTable } from '#features/sync/tables';
@@ -41,10 +41,16 @@ async function snapshot(
   return { generation: row.generation, bound: Number(row.bound) };
 }
 
+/**
+ * Who pulls: the mailroom's rows are theirs, but for the e-mail templates,
+ * each agent's own (D2): a colleague's never reach the phone.
+ */
+export type Reader = { organizationId: string; userId: string };
+
 async function pageOf(
   db: AnyDb,
   table: SyncTable,
-  organizationId: string,
+  { organizationId, userId }: Reader,
   page: Pick<PullPage, 'from' | 'bound' | 'after'>,
   limit: number,
   now: Date,
@@ -55,6 +61,7 @@ async function pageOf(
     .where(
       and(
         eq(table.organizationId, organizationId),
+        table === emailTemplate ? eq(emailTemplate.ownerId, userId) : undefined,
         gte(table.serverXid, page.from),
         lt(table.serverXid, page.bound),
         table === event && page.from === 0
@@ -86,10 +93,11 @@ function withoutOrganization(row: Row): PullChange['row'] {
  */
 export async function pull(
   db: AnyDb,
-  organizationId: string,
+  reader: Reader,
   input: PullInput,
   now = new Date(),
 ): Promise<PullOutput> {
+  const { organizationId } = reader;
   const { generation, bound } = await snapshot(db);
   let reset = false;
   let range: Pick<PullPage, 'from' | 'bound'>;
@@ -131,7 +139,7 @@ export async function pull(
     const page = await pageOf(
       db,
       tableOf(name),
-      organizationId,
+      reader,
       { ...range, after },
       room + 1,
       now,

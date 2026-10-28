@@ -56,6 +56,36 @@ export const DEFAULT_TEMPLATES = {
 
 export type DefaultTemplateType = keyof typeof DEFAULT_TEMPLATES;
 
+/**
+ * The id of the template an agent starts with, the same on every iPhone and
+ * on the server: two iPhones that each save it write the same row, never a
+ * second one, and the server knows it to keep it from being deleted. Shaped
+ * as a UUID v7, as every id is.
+ */
+export async function presetTemplateId(
+  ownerId: string,
+  type: string,
+): Promise<string> {
+  const digest = new Uint8Array(
+    await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(`email_template:default:${ownerId}:${type}`),
+    ),
+  ).slice(0, 16);
+  digest[6] = (digest[6]! & 0x0f) | 0x70;
+  digest[8] = (digest[8]! & 0x3f) | 0x80;
+  const hex = [...digest].map((byte) => byte.toString(16).padStart(2, '0'));
+  return [
+    hex.slice(0, 4),
+    hex.slice(4, 6),
+    hex.slice(6, 8),
+    hex.slice(8, 10),
+    hex.slice(10, 16),
+  ]
+    .map((part) => part.join(''))
+    .join('-');
+}
+
 /** The parcel and person every preview renders: the ones of the maquette. */
 export const SAMPLE_MAIL = {
   firstName: 'Nora',

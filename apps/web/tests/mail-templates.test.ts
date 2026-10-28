@@ -1,12 +1,11 @@
 import 'fake-indexeddb/auto';
-import { DEFAULT_TEMPLATES } from '@repo/contract/mail';
+import { DEFAULT_TEMPLATES, presetTemplateId } from '@repo/contract/mail';
 import { isUuidV7 } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
   createTemplate,
   DefaultTemplateError,
-  defaultTemplateId,
   deleteTemplate,
   duplicateTemplate,
   isPreset,
@@ -32,9 +31,9 @@ describe('e-mail templates', () => {
       isDefault: true,
       stored: false,
     });
-    expect(preset?.id).toBe(await defaultTemplateId('agent-1', 'avis'));
+    expect(preset?.id).toBe(await presetTemplateId('agent-1', 'avis'));
     expect(isUuidV7(preset!.id)).toBe(true);
-    expect(await defaultTemplateId('agent-2', 'avis')).not.toBe(preset?.id);
+    expect(await presetTemplateId('agent-2', 'avis')).not.toBe(preset?.id);
     expect(await db.outbox.count()).toBe(0);
   });
 

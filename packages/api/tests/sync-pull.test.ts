@@ -9,11 +9,14 @@ import { EVENT_HORIZON_DAYS, pull } from '#features/sync/pull';
 import {
   asAnyDb,
   openTestDb,
+  AGENT_ID,
   ORGANIZATION_ID,
   OTHER_ORGANIZATION_ID,
   parcelRow,
   type TestDb,
 } from './helpers/pglite';
+
+const READER = { organizationId: ORGANIZATION_ID, userId: AGENT_ID };
 
 let client: PGlite;
 let db: TestDb;
@@ -28,12 +31,11 @@ afterAll(async () => {
   await client.close();
 });
 
-const ids = (output: PullOutput) =>
-  output.rows.map((change) => change.row.id);
+const ids = (output: PullOutput) => output.rows.map((change) => change.row.id);
 
 async function fullPull(cursor: PullOutput['cursor'] | null, limit = 50) {
   const pages: PullOutput[] = [];
-  let first = await pull(sync, ORGANIZATION_ID, {
+  let first = await pull(sync, READER, {
     cursor:
       cursor === null ? null : { generation: await generation(), xid: cursor },
     page: null,
@@ -41,7 +43,7 @@ async function fullPull(cursor: PullOutput['cursor'] | null, limit = 50) {
   });
   pages.push(first);
   while (first.next) {
-    first = await pull(sync, ORGANIZATION_ID, {
+    first = await pull(sync, READER, {
       cursor: null,
       page: first.next,
       limit,
@@ -149,13 +151,41 @@ describe('sync.pull', () => {
     await db.delete(schema.contact).where(eq(schema.contact.id, contact.id));
   });
 
+  it('carries the puller’s own e-mail templates, not a colleague’s', async () => {
+    await db
+      .insert(schema.user)
+      .values({ id: 'agent-3', name: 'Collègue', email: 'c@example.test' });
+    await db
+      .insert(schema.organizationMember)
+      .values({ userId: 'agent-3', organizationId: ORGANIZATION_ID });
+    const template = (ownerId: string) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      type: 'avis' as const,
+      name: 'Modèle',
+      subject: 'Colis',
+      body: 'Bonjour',
+      isDefault: false,
+      ownerId,
+    });
+    const mine = template(AGENT_ID);
+    const theirs = template('agent-3');
+    await db.insert(schema.emailTemplate).values([mine, theirs]);
+
+    const pulled = (await fullPull(null)).flatMap(ids);
+
+    expect(pulled).toContain(mine.id);
+    expect(pulled).not.toContain(theirs.id);
+    await db.delete(schema.emailTemplate);
+  });
+
   it('starts over when the cursor comes from another generation', async () => {
     await clearParcels();
     const row = parcelRow();
     await db.insert(schema.parcel).values(row);
     const [current] = await fullPull(null);
 
-    const output = await pull(sync, ORGANIZATION_ID, {
+    const output = await pull(sync, READER, {
       cursor: { generation: newId(), xid: current!.cursor },
       page: null,
       limit: 50,
@@ -171,7 +201,7 @@ describe('sync.pull', () => {
     await db.insert(schema.parcel).values(row);
     const [current] = await fullPull(null);
 
-    const output = await pull(sync, ORGANIZATION_ID, {
+    const output = await pull(sync, READER, {
       cursor: {
         generation: await generation(),
         xid: current!.cursor + 1_000_000,
@@ -191,7 +221,7 @@ describe('sync.pull', () => {
       .update(schema.syncGeneration)
       .set({ generation: sql`gen_random_uuid()` });
 
-    const output = await pull(sync, ORGANIZATION_ID, {
+    const output = await pull(sync, READER, {
       cursor: { generation: before!.generation, xid: before!.cursor },
       page: null,
       limit: 50,
@@ -221,7 +251,7 @@ describe('sync.pull', () => {
 
     const first = await pull(
       sync,
-      ORGANIZATION_ID,
+      READER,
       { cursor: null, page: null, limit: 50 },
       now,
     );
@@ -229,7 +259,7 @@ describe('sync.pull', () => {
     await db.insert(schema.event).values(older);
     const second = await pull(
       sync,
-      ORGANIZATION_ID,
+      READER,
       {
         cursor: { generation: await generation(), xid: first.cursor },
         page: null,

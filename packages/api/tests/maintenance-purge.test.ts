@@ -28,6 +28,8 @@ import {
   type TestDb,
 } from './helpers/pglite';
 
+const READER = { organizationId: ORGANIZATION_ID, userId: AGENT_ID };
+
 let client: PGlite;
 let db: TestDb;
 let purgeDb: AnyDb;
@@ -436,7 +438,7 @@ describe('retention purge, record and horizon', () => {
     const old = delivered(person.id, monthsAgo(14), daysAgo(31));
     await db.insert(schema.parcel).values(old);
     const [generation] = await db.select().from(schema.syncGeneration);
-    const before = await pull(purgeDb, ORGANIZATION_ID, {
+    const before = await pull(purgeDb, READER, {
       cursor: null,
       page: null,
       limit: 200,
@@ -449,12 +451,12 @@ describe('retention purge, record and horizon', () => {
       trigger: 'auto',
     });
 
-    const late = await pull(purgeDb, ORGANIZATION_ID, {
+    const late = await pull(purgeDb, READER, {
       cursor: behind,
       page: null,
       limit: 200,
     });
-    const upToDate = await pull(purgeDb, ORGANIZATION_ID, {
+    const upToDate = await pull(purgeDb, READER, {
       cursor: { generation: generation!.generation, xid: before.cursor },
       page: null,
       limit: 200,
@@ -511,7 +513,7 @@ describe('retention purge, lock and failures', () => {
       horizonXid: 1_000_000_000,
     });
 
-    const output = await pull(purgeDb, ORGANIZATION_ID, {
+    const output = await pull(purgeDb, READER, {
       cursor: null,
       page: { from: 5, bound: 2_000_000_000, entity: 3, after: null },
       limit: 200,

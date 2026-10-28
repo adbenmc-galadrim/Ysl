@@ -1,5 +1,6 @@
 import {
   DEFAULT_TEMPLATES,
+  presetTemplateId,
   type DefaultTemplateType,
   type NotificationType,
   type TemplateText,
@@ -31,35 +32,6 @@ export class DefaultTemplateError extends Error {
   }
 }
 
-/**
- * The id of an agent's default template, the same on every iPhone: two
- * iPhones that each save it write the same row, never a second default
- * (`email_template_default_idx`). Shaped as a UUID v7, as every id is.
- */
-export async function defaultTemplateId(
-  ownerId: string,
-  type: NotificationType,
-): Promise<string> {
-  const digest = new Uint8Array(
-    await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(`email_template:default:${ownerId}:${type}`),
-    ),
-  ).slice(0, 16);
-  digest[6] = (digest[6]! & 0x0f) | 0x70;
-  digest[8] = (digest[8]! & 0x3f) | 0x80;
-  const hex = [...digest].map((byte) => byte.toString(16).padStart(2, '0'));
-  return [
-    hex.slice(0, 4),
-    hex.slice(4, 6),
-    hex.slice(6, 8),
-    hex.slice(8, 10),
-    hex.slice(10, 16),
-  ]
-    .map((part) => part.join(''))
-    .join('-');
-}
-
 const view = (row: LocalEmailTemplate): EmailTemplateView => ({
   id: row.id,
   type: row.type,
@@ -74,7 +46,7 @@ async function presets(ownerId: string): Promise<EmailTemplateView[]> {
   const types = Object.keys(DEFAULT_TEMPLATES) as DefaultTemplateType[];
   return Promise.all(
     types.map(async (type) => ({
-      id: await defaultTemplateId(ownerId, type),
+      id: await presetTemplateId(ownerId, type),
       type,
       ...DEFAULT_TEMPLATES[type],
       isDefault: true,
