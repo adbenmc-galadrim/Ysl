@@ -46,6 +46,10 @@ type Db = Awaited<ReturnType<typeof openTestDatabase>>;
 const ORGANIZATION_ID = newId();
 const KARIM = 'agent-karim';
 const LINA = 'agent-lina';
+const NAMES: Record<string, string> = {
+  [KARIM]: 'Karim Benali',
+  [LINA]: 'Lina Morel',
+};
 
 await server
   .insert(schema.organization)
@@ -216,7 +220,7 @@ describe('a handover between two iPhones', () => {
           at: Date.now(),
           parcelIds: parcels.map((parcel) => parcel.id),
         },
-        { agentId, agentName: agentId },
+        { agentId, agentName: NAMES[agentId]! },
       );
 
     await handOver(first, KARIM);
@@ -268,7 +272,7 @@ describe('a handover between two iPhones', () => {
           at: Date.now(),
           parcelIds,
         },
-        { agentId, agentName: agentId },
+        { agentId, agentName: NAMES[agentId]! },
       );
 
     await handOver(first, KARIM, [beaten]);
@@ -295,6 +299,6 @@ describe('a handover between two iPhones', () => {
       titles?.filter(
         (title) => typeof title === 'string' && title.startsWith('Remis'),
       ),
-    ).toEqual(['Remis sans vérification']);
+    ).toEqual(['Remis à Nora Haddad par Karim (sans vérification)']);
   });
 });

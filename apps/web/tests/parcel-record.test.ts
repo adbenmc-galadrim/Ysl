@@ -21,6 +21,7 @@ import { groupByRecipient } from '#/features/mail/recipients';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import {
   contactRow,
+  handoverRow,
   NOW,
   openTestDatabase,
   parcelRow,
@@ -225,6 +226,97 @@ describe('describeRecord', () => {
       'Reçu',
     ]);
     expect(view.action).toBeUndefined();
+  });
+
+  it('keeps the handover on the record: to whom, when, which agent, how', async () => {
+    const nora = personRow({ firstName: 'Nora', lastName: 'Haddad' });
+    const at = new Date(2026, 9, 24, 11, 20);
+    const row = parcelRow({
+      personId: nora.id,
+      status: 'remis',
+      deliveredAt: at,
+      deliveredBy: 'agent-1',
+    });
+    const handover = handoverRow({
+      parcelIds: [row.id],
+      personId: nora.id,
+      delegateName: 'Lucas Martin',
+      at,
+    });
+    await db.directoryPerson.put(nora);
+    await db.parcel.put(row);
+    await db.handover.put(handover);
+    await db.event.put(
+      parcelEvent(
+        row.id,
+        { type: 'parcel.delivered', handoverId: handover.id, method: 'pin' },
+        { agentId: 'agent-1', now: at },
+      ).row as LocalEvent,
+    );
+
+    const view = describeRecord(await record(row.id), options);
+
+    expect(view.handover?.items).toEqual([
+      { label: 'Remis à', value: 'Nora Haddad' },
+      { label: 'Retiré par', value: 'Lucas Martin' },
+      { label: 'Quand', value: 'Aujourd’hui à 11 h 20' },
+      { label: 'Agent', value: 'Karim Benali' },
+      { label: 'Méthode', value: 'Code vérifié' },
+      { label: 'Synchronisation', value: 'À jour' },
+    ]);
+    expect(view.history?.[0]?.title).toBe(
+      'Remis à Nora Haddad par Karim (code vérifié)',
+    );
+  });
+
+  it('says « Un agent » without a name, and when the handover was cancelled', async () => {
+    const row = parcelRow({ personId: 'p-1', status: 'notifie' });
+    const handover = handoverRow({
+      parcelIds: [row.id],
+      personId: 'p-1',
+      method: 'manuel',
+      agentName: null,
+      at: at(10),
+      cancelledAt: at(10, 5),
+    });
+    await db.parcel.put(row);
+    await db.handover.put(handover);
+    await db.outbox.add({
+      opId: newId(),
+      entity: 'handover',
+      entityId: handover.id,
+      type: 'upsert',
+      patch: {},
+      clientTs: NOW,
+      state: 'queued',
+      attempts: 0,
+      lastError: null,
+    });
+
+    const items = describeRecord(await record(row.id), options).handover?.items;
+
+    expect(items).toContainEqual({ label: 'Agent', value: 'Un agent' });
+    expect(items).toContainEqual({
+      label: 'Méthode',
+      value: 'Sans vérification',
+    });
+    expect(items).toContainEqual({
+      label: 'Synchronisation',
+      value: 'Non envoyé',
+    });
+    expect(items?.at(-1)).toEqual({
+      label: 'Annulée',
+      value: 'Aujourd’hui à 10 h 05',
+    });
+  });
+
+  it('shows no handover card before the parcel is handed over', async () => {
+    const row = parcelRow();
+    await db.parcel.put(row);
+
+    expect(
+      describeRecord(await record(row.id), options).handover,
+    ).toBeUndefined();
   });
 
   it('puts a refused change before one only waiting', async () => {

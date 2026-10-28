@@ -205,3 +205,48 @@ export const VoirCeQuiAEteLu: Story = {
     onShowReading: () => {},
   },
 };
+
+/** A delivered parcel: the handover as the journal keeps it (F43). */
+export const Remis: Story = {
+  args: {
+    recipient: 'Nora Haddad',
+    place: 'Studio, 2e étage',
+    tracking: '0944 5566 7744 71',
+    carrier: 'DPD',
+    state: {
+      icon: 'check',
+      title: 'Remis à 11 h 20',
+      description: 'À Nora Haddad, code vérifié',
+    },
+    steps: [
+      { label: 'Reçu', state: 'done' },
+      { label: 'Notifié', state: 'done' },
+      { label: 'Remis', state: 'current' },
+    ],
+    photo: { absent: 'Photo restée sur l’iPhone qui a scanné ce colis' },
+    handover: {
+      items: [
+        { label: 'Remis à', value: 'Nora Haddad' },
+        { label: 'Retiré par', value: 'Lucas Martin' },
+        { label: 'Quand', value: 'Aujourd’hui à 11 h 20' },
+        { label: 'Agent', value: 'Karim Benali' },
+        { label: 'Méthode', value: 'Code vérifié' },
+        { label: 'Synchronisation', value: 'À jour' },
+      ],
+      onOpen: () => {},
+    },
+    details: [
+      { label: 'Expéditeur', value: 'Zalando' },
+      { label: 'Nombre de colis', value: 1 },
+      { label: 'Note', value: 'Aucune' },
+    ],
+    history: [
+      {
+        id: 'e2',
+        title: 'Remis à Nora Haddad par Karim (code vérifié)',
+        detail: 'Aujourd’hui à 11 h 20',
+      },
+      { id: 'e1', title: 'Reçu', detail: 'Hier à 9 h 12' },
+    ],
+  },
+};

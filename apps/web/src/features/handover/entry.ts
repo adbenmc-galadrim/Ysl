@@ -48,6 +48,11 @@ export async function loadHandoverEntry(
   };
 }
 
+/** « Karim Benali », or « Un agent » for a handover written before the name was kept. */
+export function agentNameOf(handover: LocalHandover, t: TranslateFn): string {
+  return handover.agentName ?? t('handover.agent.unknown');
+}
+
 /** « QR code vérifié », « Code vérifié », « Sans vérification ». */
 export function methodLabel(method: HandoverMethod, t: TranslateFn): string {
   return t(`handover.method.${method}`);

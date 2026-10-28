@@ -30,6 +30,12 @@ import type {
   OutboxOp,
 } from '#/features/db/schema';
 import { proofLabel } from '#/features/handover/delivered';
+import {
+  agentNameOf,
+  handoverSyncOf,
+  methodLabel,
+} from '#/features/handover/entry';
+import { firstNameOf } from '#/features/handover/recipient';
 import { fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
@@ -57,6 +63,8 @@ export type ParcelRecord = {
   ops: readonly OutboxOp[];
   /** Who it was handed to and how, while it is `remis`. */
   handover?: LocalHandover;
+  /** Without a standing one, the last handover of the parcel that was cancelled. */
+  cancelledHandover?: LocalHandover;
   /** Handovers of this iPhone another one beat to the parcel: not its story. */
   lostHandovers?: ReadonlySet<string>;
 };
@@ -81,6 +89,7 @@ export type RecordView = Pick<
   | 'steps'
   | 'details'
   | 'history'
+  | 'handover'
 > & { sync: RecordSync; action?: RecordAction; damage?: RecordDamage };
 
 /**
@@ -319,7 +328,35 @@ function replyDetails(
   ];
 }
 
-function eventTitle(event: ParcelEvent, now: Date, t: TranslateFn): string {
+/**
+ * « Remis à Nora Haddad par Karim (code vérifié) »: the handover the event
+ * names, when this iPhone holds it.
+ */
+function deliveredTitle(
+  event: Extract<ParcelEvent, { type: 'parcel.delivered' }>,
+  record: ParcelRecord,
+  t: TranslateFn,
+): string {
+  const handover = [record.handover, record.cancelledHandover].find(
+    (row) => row?.id === event.handoverId,
+  );
+  if (!handover) return t(`history.delivered.${event.method}`);
+  const how = proofLabel(handover.method, t);
+  return handover.agentName
+    ? t('history.delivered.by', {
+        name: handover.recipientName,
+        agent: firstNameOf(handover.agentName),
+        how,
+      })
+    : t('history.delivered.to', { name: handover.recipientName, how });
+}
+
+function eventTitle(
+  event: ParcelEvent,
+  record: ParcelRecord,
+  now: Date,
+  t: TranslateFn,
+): string {
   switch (event.type) {
     case 'parcel.edited':
       return t('history.edited', {
@@ -358,7 +395,7 @@ function eventTitle(event: ParcelEvent, now: Date, t: TranslateFn): string {
         reason: DAMAGE_LABEL[event.reason].toLowerCase(),
       });
     case 'parcel.delivered':
-      return t(`history.delivered.${event.method}`);
+      return deliveredTitle(event, record, t);
     case 'parcel.reply':
       return event.reply === 'colleague'
         ? t('history.reply.colleague', { name: event.delegate })
@@ -406,7 +443,7 @@ function history(
     entries.push({
       id: row.id,
       at: row.at,
-      title: eventTitle(event, now, t),
+      title: eventTitle(event, record, now, t),
       ...(rejected
         ? {
             detail: t('history.rejected', {
@@ -446,6 +483,56 @@ function history(
         (written(a) && written(b) ? b.id.localeCompare(a.id) : 0),
     )
     .map(({ id, title, detail, tone }) => ({ id, title, detail, tone }));
+}
+
+/**
+ * The handover as the journal keeps it (F43): to whom, by whom on their
+ * behalf, when, which agent, how it was proved, where it stands with the
+ * server, and when it was cancelled.
+ */
+function handoverCard(
+  record: ParcelRecord,
+  now: Date,
+  t: TranslateFn,
+): RecordView['handover'] {
+  const handover = record.handover ?? record.cancelledHandover;
+  if (!handover) return undefined;
+  const sync = handoverSyncOf(
+    record.ops.filter(
+      (op) => op.entity === 'handover' && op.entityId === handover.id,
+    ),
+  );
+  return {
+    items: [
+      { label: t('record.handover.to'), value: handover.recipientName },
+      ...(handover.delegateName
+        ? [
+            {
+              label: t('record.handover.delegate'),
+              value: handover.delegateName,
+            },
+          ]
+        : []),
+      {
+        label: t('record.handover.when'),
+        value: formatWhen(handover.at, now, t),
+      },
+      { label: t('record.handover.agent'), value: agentNameOf(handover, t) },
+      {
+        label: t('record.handover.method'),
+        value: methodLabel(handover.method, t),
+      },
+      { label: t('record.detail.sync'), value: t(`record.sync.${sync}`) },
+      ...(handover.cancelledAt
+        ? [
+            {
+              label: t('record.handover.cancelled'),
+              value: formatWhen(handover.cancelledAt, now, t),
+            },
+          ]
+        : []),
+    ],
+  };
 }
 
 function action(parcel: LocalParcel): RecordAction | undefined {
@@ -556,5 +643,6 @@ export function describeRecord(
     sync,
     action: action(parcel),
     damage: damageCard(record, now, t),
+    handover: handoverCard(record, now, t),
   };
 }

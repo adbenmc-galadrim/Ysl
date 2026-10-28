@@ -27,6 +27,16 @@ export type FicheColisPhoto =
 export type FicheColisAction = { label: string; onClick?: () => void };
 
 /**
+ * The handover of a delivered parcel, as the journal keeps it (F43): to
+ * whom, when, by which agent, how it was proved, whether the server has it.
+ */
+export type FicheColisHandover = {
+  items: DetailsItem[];
+  /** Opens the whole handover: its other parcels. */
+  onOpen?: () => void;
+};
+
+/**
  * The reserve on the parcel's state: the reason, the remark and when, the
  * photos of the damage — or a word saying they stayed on the iPhone that
  * reported it — and the way to lift it.
@@ -64,6 +74,7 @@ export type FicheColisScreenProps = {
   steps: TimelineStep[];
   photo?: FicheColisPhoto;
   damage?: FicheColisDamage;
+  handover?: FicheColisHandover;
   /** Offered while the parcel carries no reserve. */
   onReportDamage?: () => void;
   /** Opens what the reader made of the label (F22), under the photo. */
@@ -184,6 +195,7 @@ export function FicheColisScreen({
   steps,
   photo,
   damage,
+  handover,
   onReportDamage,
   onShowReading,
   details,
@@ -298,6 +310,25 @@ export function FicheColisScreen({
           >
             {replyAction.label}
           </Button>
+        )}
+        {handover && (
+          <>
+            <DetailsList
+              title="Remise"
+              items={handover.items}
+              className="mt-5"
+            />
+            {handover.onOpen && (
+              <button
+                type="button"
+                onClick={handover.onOpen}
+                className="mt-1 flex h-11 cursor-pointer items-center gap-1 self-start text-16 font-semibold text-blue outline-none focus-visible:underline"
+              >
+                Voir la remise
+                <Icon name="chevron" size={18} />
+              </button>
+            )}
+          </>
         )}
         <DetailsList title="Détails" items={details} className="mt-5" />
         {!damage && onReportDamage && (

@@ -5,7 +5,11 @@ import { db } from '#/features/db/database';
 import type { CourrierDatabase, LocalPhoto } from '#/features/db/schema';
 import { photoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
-import { handoversOf, lostHandoverIds } from '#/features/handover/delivered';
+import {
+  cancelledHandoverOf,
+  handoversOf,
+  lostHandoverIds,
+} from '#/features/handover/delivered';
 import type { ParcelRecord } from '#/features/parcels/record';
 
 /**
@@ -26,24 +30,31 @@ export async function loadParcelRecord(
       .equals([PARCEL_EVENT_ENTITY, parcelId])
       .toArray(),
   ]);
+  const [handovers, lostHandovers] = await Promise.all([
+    handoversOf(database, [parcel]),
+    lostHandoverIds(database, parcel),
+  ]);
+  const handover = handovers.get(parcelId);
+  const cancelledHandover = handover
+    ? undefined
+    : await cancelledHandoverOf(database, parcel);
+  const shown = handover ?? cancelledHandover;
   const ops = await database.outbox
     .where('[entity+entityId]')
     .anyOf([
       ['parcel', parcelId],
       ...events.map((event) => ['event', event.id]),
+      ...(shown ? [['handover', shown.id]] : []),
     ])
     .toArray();
-  const [handovers, lostHandovers] = await Promise.all([
-    handoversOf(database, [parcel]),
-    lostHandoverIds(database, parcel),
-  ]);
   return {
     parcel,
     person,
     contact,
     events,
     ops,
-    handover: handovers.get(parcelId),
+    handover,
+    cancelledHandover,
     lostHandovers,
   };
 }
