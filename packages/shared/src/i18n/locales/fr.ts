@@ -803,6 +803,7 @@ export const fr = {
     'Relances proposées à J+2 et J+5 jours ouvrés. Rien ne part tout seul : chaque e-mail s’ouvre dans votre messagerie.',
   'remind.section.due': 'À relancer',
   'remind.section.late': 'En souffrance',
+  'remind.section.otherWay': 'À prévenir autrement',
   'remind.row.parcels': '{{count}} colis · {{names}}',
   'remind.row.never': 'Notifié il y a {{days}} jours, jamais relancé',
   'remind.row.reminded':

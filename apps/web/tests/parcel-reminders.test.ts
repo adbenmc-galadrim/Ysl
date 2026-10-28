@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto';
 import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalNotification } from '#/features/db/schema';
+import { parcelEvent } from '#/features/parcels/events';
 import { loadReminderDates } from '#/features/parcels/reminders';
 import { openTestDatabase, parcelRow } from './helpers/local-rows';
 
@@ -61,6 +62,26 @@ describe('loadReminderDates', () => {
 
     expect(dates.get(parcel.id)).toEqual([day(20), day(22)]);
     expect(dates.has(other.id)).toBe(false);
+  });
+
+  it('counts a reminder given in person, in order with the mails (F25)', async () => {
+    const parcel = parcelRow({
+      contactId: 'c-1',
+      status: 'notifie',
+      notifiedAt: day(16),
+    });
+    const told = (at: Date, kind: 'avis' | 'relance') =>
+      parcelEvent(
+        parcel.id,
+        { type: 'parcel.informed', kind },
+        { agentId: 'agent-1', now: at },
+      ).row as never;
+    await db.event.bulkPut([told(day(16), 'avis'), told(day(22), 'relance')]);
+    await db.notification.put(mail([parcel.id], day(20)));
+
+    const dates = await loadReminderDates(db, [parcel]);
+
+    expect(dates.get(parcel.id)).toEqual([day(20), day(22)]);
   });
 
   it('reads nothing without a notified parcel', async () => {

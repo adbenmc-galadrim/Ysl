@@ -117,3 +117,41 @@ export function describeReminder(
     due: mail.due,
   };
 }
+
+export type ReminderSection = {
+  title: string;
+  actionLabel?: string;
+  people: { mail: ReminderMail; person: ReminderPerson }[];
+};
+
+/**
+ * The screen's sections: a reminder due, both sent and still waiting, then
+ * whoever has no address, whatever their rhythm (F25): « Prévenir » there,
+ * never part of « Relancer les N ».
+ */
+export function reminderSections(
+  mails: readonly ReminderMail[],
+  now: Date,
+  t: TranslateFn,
+): ReminderSection[] {
+  const people = mails.map((mail) => ({
+    mail,
+    person: describeReminder(mail, now, t),
+  }));
+  const reachable = people.filter(({ mail }) => mail.address);
+  return [
+    {
+      title: t('remind.section.due'),
+      people: reachable.filter(({ mail }) => mail.due),
+    },
+    {
+      title: t('remind.section.late'),
+      people: reachable.filter(({ mail }) => !mail.due),
+    },
+    {
+      title: t('remind.section.otherWay'),
+      actionLabel: t('colis.row.otherWay'),
+      people: people.filter(({ mail }) => !mail.address),
+    },
+  ];
+}

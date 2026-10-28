@@ -18,7 +18,12 @@ export type ReminderPerson = {
   due: boolean;
 };
 
-export type RelancesSection = { title: string; people: ReminderPerson[] };
+export type RelancesSection = {
+  title: string;
+  people: ReminderPerson[];
+  /** The button of each row: « Relancer », or « Prévenir » without an address. */
+  actionLabel?: string;
+};
 
 export type RelancesScreenProps = {
   sections: RelancesSection[];
@@ -102,7 +107,7 @@ export function RelancesScreen({
                       class: 'w-[89px]',
                     })}
                   >
-                    Relancer
+                    {section.actionLabel ?? 'Relancer'}
                   </span>
                 }
                 separator={i < section.people.length - 1}

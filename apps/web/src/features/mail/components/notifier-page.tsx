@@ -103,8 +103,11 @@ async function openSession(
   const now = new Date();
   if (reminder) {
     const all = await loadReminderMails(db, now);
+    // « Relancer les N » sends: those without an address are told apart.
     const mails = addressedFirst(
-      parcelId ? mailsAbout(all, parcelId) : all.filter((mail) => mail.due),
+      parcelId
+        ? mailsAbout(all, parcelId)
+        : all.filter((mail) => mail.due && mail.address),
     );
     const [secrets, templates, pickup] = await Promise.all([
       recallSecrets(db, mails, { now }),
