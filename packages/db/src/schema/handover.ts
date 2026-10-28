@@ -1,3 +1,4 @@
+import { HANDOVER_METHODS } from '@repo/contract/handover';
 import { relations, sql } from 'drizzle-orm';
 import {
   check,
@@ -12,7 +13,7 @@ import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
-export const HANDOVER_METHODS = ['qr', 'pin', 'signature', 'manuel'] as const;
+export { HANDOVER_METHODS } from '@repo/contract/handover';
 
 export const handover = pgTable(
   'handover',

@@ -325,6 +325,8 @@ function eventTitle(event: ParcelEvent, t: TranslateFn): string {
       return t('history.damageLifted', {
         reason: DAMAGE_LABEL[event.reason].toLowerCase(),
       });
+    case 'parcel.delivered':
+      return t(`history.delivered.${event.method}`);
   }
 }
 
@@ -351,6 +353,7 @@ function history(
     if (!event) continue;
     if (event.type === 'parcel.status') reached.add(event.to);
     if (event.type === 'parcel.notified') reached.add('notifie');
+    if (event.type === 'parcel.delivered') reached.add('remis');
     const own = opsOf(row.id);
     const when = formatWhen(row.at, now, t);
     const rejected = own.find((op) => op.state === 'rejected');
