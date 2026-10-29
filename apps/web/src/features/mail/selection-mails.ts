@@ -1,5 +1,10 @@
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import {
+  drawSecrets,
+  type PickupSecret,
+  recallSecrets,
+} from '#/features/mail/pickup-code';
+import {
   groupByRecipient,
   type RecipientMail,
 } from '#/features/mail/recipients';
@@ -27,4 +32,19 @@ export async function loadSelectionMails(
       (parcel.personId !== null || parcel.contactId !== null) &&
       (parcel.status === 'notifie' || (!reminder && parcel.status === 'recu')),
   );
+}
+
+/**
+ * The codes the selection's mails quote, in their order: a reminder quotes
+ * the code its recipient already holds (F37), a notice a new one.
+ */
+export function selectionSecrets(
+  db: CourrierDatabase,
+  mails: readonly RecipientMail[],
+  reminder: boolean,
+  now: Date,
+): Promise<PickupSecret[]> {
+  return reminder
+    ? recallSecrets(db, mails, { now })
+    : drawSecrets(db, mails.length, { now });
 }

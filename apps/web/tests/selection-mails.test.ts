@@ -1,8 +1,10 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
-import { recallSecrets } from '#/features/mail/pickup-code';
-import { loadSelectionMails } from '#/features/mail/selection-mails';
+import {
+  loadSelectionMails,
+  selectionSecrets,
+} from '#/features/mail/selection-mails';
 import {
   NOW,
   openTestDatabase,
@@ -51,9 +53,12 @@ describe('loadSelectionMails', () => {
     );
 
     const mails = await loadSelectionMails(db, [ticked.id, notified.id], true);
-    const secrets = await recallSecrets(db, mails, { now: NOW });
+    const [secret] = await selectionSecrets(db, mails, true, NOW);
+    const notices = await loadSelectionMails(db, [ticked.id], false);
+    const [fresh] = await selectionSecrets(db, notices, false, NOW);
 
     expect(mails[0]?.parcels.map(({ id }) => id)).toEqual([notified.id]);
-    expect(secrets[0]?.pin).toBe('4821');
+    expect(secret?.pin).toBe('4821');
+    expect(fresh?.pin).not.toBe('4821');
   });
 });

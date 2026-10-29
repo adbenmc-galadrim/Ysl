@@ -61,7 +61,10 @@ import { whenVisible } from '#/features/mail/visibility';
 import { templateWarnings } from '#/features/mail/warnings';
 import { initialsOf } from '#/features/settings/initials';
 import { type MailSkips, skipsLine } from '#/features/parcels/selection';
-import { loadSelectionMails } from '#/features/mail/selection-mails';
+import {
+  loadSelectionMails,
+  selectionSecrets,
+} from '#/features/mail/selection-mails';
 import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -118,9 +121,7 @@ async function openSession(
     );
     const type = reminder ? 'relance' : 'avis';
     const [secrets, templates, pickup] = await Promise.all([
-      reminder
-        ? recallSecrets(db, mails, { now })
-        : drawSecrets(db, mails.length, { now }),
+      selectionSecrets(db, mails, reminder === true, now),
       listTemplates(db, userId),
       readPickup(db),
     ]);
