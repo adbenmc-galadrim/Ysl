@@ -45,7 +45,6 @@ import {
 import { pickupQrFile } from '#/features/mail/pickup-qr';
 import {
   mailsAbout,
-  groupByRecipient,
   mailsOfBatch,
   recipientValues,
   type RecipientMail,
@@ -61,16 +60,17 @@ import { useNotifications } from '#/features/mail/use-notifications';
 import { whenVisible } from '#/features/mail/visibility';
 import { templateWarnings } from '#/features/mail/warnings';
 import { initialsOf } from '#/features/settings/initials';
-import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { type MailSkips, skipsLine } from '#/features/parcels/selection';
+import { loadSelectionMails } from '#/features/mail/selection-mails';
 import { readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 /**
- * Every mail to send, one recipient's (from a record), or one batch's.
- * `reminder`: the reminders due instead of the notices (F37), or one
- * recipient's with `parcelId`.
+ * Every mail to send, one recipient's (from a record), one batch's, or
+ * those of the parcels ticked on Colis (`selection`). `reminder`: the
+ * reminders due instead of the notices (F37), one recipient's with
+ * `parcelId`, or the selection's.
  */
 export type NotifierScope = {
   parcelId?: string;
@@ -113,20 +113,8 @@ async function openSession(
 ): Promise<Session> {
   const now = new Date();
   if (selection) {
-    const parcels = (await db.parcel.bulkGet([...selection])).filter(
-      (parcel) => parcel !== undefined,
-    );
-    const context = await loadRecipientContext(db, parcels);
     const mails = addressedFirst(
-      groupByRecipient(
-        parcels,
-        context,
-        (parcel) =>
-          !parcel.deletedAt &&
-          (parcel.personId !== null || parcel.contactId !== null) &&
-          (parcel.status === 'notifie' ||
-            (!reminder && parcel.status === 'recu')),
-      ),
+      await loadSelectionMails(db, selection, reminder === true),
     );
     const type = reminder ? 'relance' : 'avis';
     const [secrets, templates, pickup] = await Promise.all([
