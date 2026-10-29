@@ -24,6 +24,8 @@ pnpm --filter @repo/ui test                 # Vitest, tests/**/*.test.ts
 ```
 styles.css            tokens (colours, type scale, radii) — read off Penpot
 reference/<page>/     Penpot exports: <screen>.png (2x) and <screen>.json
+reference/multi-entreprises/<page>/
+                      multi-company model, one Penpot page per topic, one row per role
 visual/compare.mjs    pixel diff, writes visual/out/<ref>.sheet.png
 tests/                Vitest unit tests (QR matrix read back with jsQR)
 src/
