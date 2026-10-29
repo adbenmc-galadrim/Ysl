@@ -41,7 +41,7 @@ export type ParcelRowProps = {
   onLongPress?: () => void;
   /** `'chevron'` (the default) or any node; see `ListRow`. */
   trailing?: ReactNode;
-  /** A button beside the row's own, e.g. « Choisir »; see `ListRow`. */
+  /** A button beside the row's own, e.g. « Choisir »; see `ListRow`. Left out in selection mode. */
   control?: ReactNode;
   separator?: boolean;
   onClick?: () => void;

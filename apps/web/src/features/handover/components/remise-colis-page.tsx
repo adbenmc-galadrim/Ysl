@@ -73,7 +73,7 @@ export function RemiseColisPage({
   const now = useMinuteClock();
   const { kind, id, via, at } = search;
   // Opened from a selection, the parcels not ticked on Colis start unticked.
-  const [unticked, setExcluded] = useState<string[] | null>(null);
+  const [unticked, setUnticked] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   /** The strokes on the pad while it is open, and those validated. */
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -113,13 +113,13 @@ export function RemiseColisPage({
   const time = formatTime(new Date(at));
 
   const toggle = (parcelId: string) =>
-    setExcluded(
+    setUnticked(
       excluded.includes(parcelId)
         ? excluded.filter((other) => other !== parcelId)
         : [...excluded, parcelId],
     );
   const toggleAll = () =>
-    setExcluded(
+    setUnticked(
       ticked.length === parcels.length ? parcels.map((p) => p.id) : [],
     );
   const confirm = async () => {

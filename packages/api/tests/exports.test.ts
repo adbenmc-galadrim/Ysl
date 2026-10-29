@@ -33,6 +33,7 @@ const ids = {
   contact: newId(),
   readName: newId(),
   deleted: newId(),
+  other: newId(),
 };
 
 beforeAll(async () => {
@@ -101,7 +102,7 @@ beforeAll(async () => {
       id: ids.deleted,
       deletedAt: new Date('2026-10-24T11:00:00Z'),
     },
-    { ...parcelRow(OTHER_ORGANIZATION_ID) },
+    { ...parcelRow(OTHER_ORGANIZATION_ID), id: ids.other },
   ]);
   const handed = {
     organizationId: ORGANIZATION_ID,
