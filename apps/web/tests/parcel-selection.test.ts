@@ -4,10 +4,11 @@ import type { Parcel, ParcelState } from '@repo/ui';
 import { describe, expect, it } from 'vitest';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { filterRows } from '#/features/parcels/sections';
+import { prepareQuery } from '#/features/search/search-index';
 import {
   allTicked,
-  matchesQuery,
   planMails,
+  rowMatches,
   skipsLine,
   tickedIn,
   toggled,
@@ -69,10 +70,16 @@ describe('selection', () => {
   });
 
   it('narrows to the rows answering every word, accents ignored', () => {
-    expect(matchesQuery(rows[1]!, 'hugo lefevre')).toBe(true);
-    expect(matchesQuery(rows[1]!, 'ups 0002')).toBe(true);
-    expect(matchesQuery(rows[1]!, 'hugo dhl')).toBe(false);
-    expect(matchesQuery(rows[1]!, '  ')).toBe(true);
+    expect(rowMatches(rows[1]!, prepareQuery('hugo lefevre'))).toBe(true);
+    expect(rowMatches(rows[1]!, prepareQuery('ups 0002'))).toBe(true);
+    expect(rowMatches(rows[1]!, prepareQuery('hugo dhl'))).toBe(false);
+    expect(rowMatches(rows[1]!, prepareQuery('  '))).toBe(true);
+    expect(
+      rowMatches(
+        { ...rows[1]!, tracking: '1Z 999 AA1' },
+        prepareQuery('1z999aa1'),
+      ),
+    ).toBe(true);
   });
 });
 

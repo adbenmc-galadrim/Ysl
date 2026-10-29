@@ -141,7 +141,10 @@ export function prepareQuery(query: string): SearchQuery {
 }
 
 /** Every word somewhere in the fields, or the whole query in the tracking. */
-export function matchesQuery(entry: SearchEntry, query: SearchQuery): boolean {
+export function matchesQuery(
+  entry: Pick<SearchEntry, 'text' | 'tracking'>,
+  query: SearchQuery,
+): boolean {
   if (!query.words.length) return true;
   if (entry.tracking.includes(query.compact)) return true;
   return query.words.every((word) => entry.text.includes(word));

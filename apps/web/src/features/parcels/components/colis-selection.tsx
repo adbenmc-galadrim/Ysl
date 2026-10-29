@@ -8,6 +8,7 @@ import type { LocalParcel } from '#/features/db/schema';
 import { writeQueue } from '#/features/handover/queue';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { deleteParcels } from '#/features/parcels/status';
+import { prepareQuery } from '#/features/search/search-index';
 import type { HomeParcel } from '#/features/parcels/model';
 import {
   type CounterId,
@@ -17,9 +18,9 @@ import {
 } from '#/features/parcels/sections';
 import {
   allTicked,
-  matchesQuery,
   planHandovers,
   planMails,
+  rowMatches,
   type Selection,
   skipsLine,
   tickedIn,
@@ -64,10 +65,10 @@ export function ColisSelection({
     const timer = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(timer);
   }, [toast]);
-  const visible = useMemo(
-    () => filterRows(rows, counter).filter((row) => matchesQuery(row, query)),
-    [rows, counter, query],
-  );
+  const visible = useMemo(() => {
+    const words = prepareQuery(query);
+    return filterRows(rows, counter).filter((row) => rowMatches(row, words));
+  }, [rows, counter, query]);
   const visibleIds = useMemo(() => visible.map((row) => row.id), [visible]);
   const ticked = useMemo(() => tickedIn(selection, rows), [selection, rows]);
   const sections = useMemo(

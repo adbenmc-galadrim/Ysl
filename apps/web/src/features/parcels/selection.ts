@@ -8,6 +8,7 @@ import {
 } from '#/features/handover/waiting';
 import { addressOf, groupByRecipient } from '#/features/mail/recipients';
 import type { RecipientContext } from '#/features/parcels/model';
+import { matchesQuery, type SearchQuery } from '#/features/search/search-index';
 
 /**
  * The ticked parcels of the home list, by id: a row scrolled out of the
@@ -54,24 +55,26 @@ export function tickedIn(
 }
 
 /**
- * Whether a row answers what was typed over the selection: the name, the
- * department, the carrier or the end of the number, accents and case
- * ignored, every word found.
+ * Whether a row answers what was typed over the selection, as the search
+ * screen matches (YSL-47): every word in the name, department, carrier or
+ * detail line, or the whole query in the number.
  */
-export function matchesQuery(row: Parcel, query: string): boolean {
-  const words = normalizeName(query).split(' ').filter(Boolean);
-  if (!words.length) return true;
-  const text = normalizeName(
-    [
-      row.recipient,
-      row.department,
-      row.carrier,
-      row.last4,
-      row.tracking ?? '',
-      row.detail ?? '',
-    ].join(' '),
+export function rowMatches(row: Parcel, query: SearchQuery): boolean {
+  return matchesQuery(
+    {
+      text: normalizeName(
+        [
+          row.recipient,
+          row.department,
+          row.carrier,
+          row.last4,
+          row.detail ?? '',
+        ].join(' '),
+      ),
+      tracking: normalizeName(row.tracking ?? '').replaceAll(' ', ''),
+    },
+    query,
   );
-  return words.every((word) => text.includes(word));
 }
 
 /** Why a ticked parcel was left out of the mails: told to the agent, counted. */

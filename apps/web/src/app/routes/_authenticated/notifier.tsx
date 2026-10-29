@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { NotifierPage } from '#/features/mail/components/notifier-page';
+import { searchIds } from '#/lib/search-ids';
 
 type NotifierSearch = {
   colis?: string;
@@ -12,11 +13,6 @@ type NotifierSearch = {
   sansDestinataire?: number;
   sansEmail?: number;
 };
-
-const ids = (value: unknown): string[] | undefined =>
-  Array.isArray(value)
-    ? value.filter((id): id is string => typeof id === 'string')
-    : undefined;
 
 const count = (value: unknown): number => {
   const n = Number(value);
@@ -33,8 +29,12 @@ export const Route = createFileRoute('/_authenticated/notifier')({
     ...(search.prevenir === true || search.prevenir === 'true'
       ? { prevenir: true }
       : {}),
-    ...(ids(search.selection) ? { selection: ids(search.selection) } : {}),
-    ...(ids(search.ensuite) ? { ensuite: ids(search.ensuite) } : {}),
+    ...(searchIds(search.selection)
+      ? { selection: searchIds(search.selection) }
+      : {}),
+    ...(searchIds(search.ensuite)
+      ? { ensuite: searchIds(search.ensuite) }
+      : {}),
     ...(count(search.sansDestinataire)
       ? { sansDestinataire: count(search.sansDestinataire) }
       : {}),

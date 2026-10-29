@@ -1,15 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { ExportScreen } from '#/features/exports/components/export-screen';
+import { searchIds } from '#/lib/search-ids';
 
 export const Route = createFileRoute('/_authenticated/reglages/export')({
-  validateSearch: (search: Record<string, unknown>): { colis?: string[] } =>
-    Array.isArray(search.colis)
-      ? {
-          colis: search.colis.filter(
-            (id): id is string => typeof id === 'string',
-          ),
-        }
-      : {},
+  validateSearch: (search: Record<string, unknown>): { colis?: string[] } => {
+    const colis = searchIds(search.colis);
+    return colis ? { colis } : {};
+  },
   component: ExportRoute,
 });
 

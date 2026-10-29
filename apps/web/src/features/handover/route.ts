@@ -2,6 +2,7 @@ import type { HandoverMethod } from '@repo/contract/handover';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { LocalPickupCode } from '#/features/db/schema';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
+import { searchIds } from '#/lib/search-ids';
 
 /** How the person was identified: the `handover.method` the handover will record. */
 export type HandoverVia = Extract<HandoverMethod, 'qr' | 'pin' | 'manuel'>;
@@ -37,13 +38,7 @@ export function parseRemiseColisSearch(
     ...(via !== 'manuel' && typeof search.code === 'string'
       ? { code: search.code }
       : {}),
-    ...(Array.isArray(search.colis)
-      ? {
-          colis: search.colis.filter(
-            (id): id is string => typeof id === 'string',
-          ),
-        }
-      : {}),
+    ...(searchIds(search.colis) ? { colis: searchIds(search.colis) } : {}),
     ...(search.file === true || search.file === 'true' ? { file: true } : {}),
   };
 }
