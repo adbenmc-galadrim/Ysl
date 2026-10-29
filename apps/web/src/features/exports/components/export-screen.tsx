@@ -48,9 +48,9 @@ export function ExportScreen({ parcelIds }: { parcelIds?: string[] }) {
         return;
       }
       setProgress({ state: 'running' });
-      const result = await trpcClient.exports.parcelsCsv.query(
-        parcelIds?.length ? { parcelIds } : undefined,
-      );
+      const result = parcelIds?.length
+        ? await trpcClient.exports.selectionCsv.mutate({ parcelIds })
+        : await trpcClient.exports.parcelsCsv.query();
       await share(csvFile(result), result.count);
     } catch (error) {
       console.error('Parcels export failed', error);

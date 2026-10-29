@@ -166,9 +166,9 @@ describe('exports.parcelsCsv', () => {
   });
 
   it('holds only the parcels ticked on Colis, never another mailroom’s', async () => {
-    const result = await callerFor(memberSession(AGENT_ID)).exports.parcelsCsv({
-      parcelIds: [ids.contact, newId()],
-    });
+    const result = await callerFor(
+      memberSession(AGENT_ID),
+    ).exports.selectionCsv({ parcelIds: [ids.contact, ids.other] });
     expect(result.count).toBe(1);
     expect(
       parseCsv(result.csv)
