@@ -235,11 +235,14 @@ export async function exportParcelsCsv(
   db: AnyDb,
   organizationId: string,
   now = new Date(),
+  parcelIds?: readonly string[],
 ): Promise<ParcelsCsvOutput> {
-  const [rows, handovers] = await Promise.all([
+  const [all, handovers] = await Promise.all([
     readParcels(db, organizationId),
     readHandovers(db, organizationId),
   ]);
+  const only = parcelIds && new Set(parcelIds);
+  const rows = only ? all.filter((row) => only.has(row.parcel.id)) : all;
   const handed = handoverByParcel(rows, handovers);
   return {
     filename: parcelsCsvFilename(now),

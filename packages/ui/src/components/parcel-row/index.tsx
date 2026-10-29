@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Checkbox } from '#components/checkbox';
+import { CheckCircle } from '#components/checkbox';
 import { IconTile, type IconTileProps } from '#components/icon-tile';
 import { ListRow, type ListRowLine } from '#components/list-row';
 import type { Parcel, ParcelState } from '#fixtures/parcels';
@@ -32,14 +32,16 @@ export type ParcelRowProps = {
   /** Replaces the tile, e.g. with a selection checkbox. */
   leading?: ReactNode;
   /**
-   * Selection mode: a round checkbox is drawn before the tile. Left
-   * undefined, the row is a plain row.
+   * Selection mode: a round checkbox is drawn before the tile and a tap
+   * anywhere on the row ticks it. Left undefined, the row is a plain row.
    */
   selected?: boolean;
   onSelectedChange?: (selected: boolean) => void;
+  /** A finger resting on the row, e.g. to enter selection mode. */
+  onLongPress?: () => void;
   /** `'chevron'` (the default) or any node; see `ListRow`. */
   trailing?: ReactNode;
-  /** A button beside the row's own, e.g. « Choisir »; see `ListRow`. */
+  /** A button beside the row's own, e.g. « Choisir »; see `ListRow`. Left out in selection mode. */
   control?: ReactNode;
   separator?: boolean;
   onClick?: () => void;
@@ -51,6 +53,7 @@ export function ParcelRow({
   leading,
   selected,
   onSelectedChange,
+  onLongPress,
   trailing,
   control,
   separator,
@@ -83,11 +86,7 @@ export function ParcelRow({
         leading ??
         (selecting ? (
           <span className="flex items-center gap-4">
-            <Checkbox
-              checked={selected}
-              onCheckedChange={onSelectedChange}
-              label={`Sélectionner ${parcel.recipient}`}
-            />
+            <CheckCircle checked={selected} />
             {tile}
           </span>
         ) : (
@@ -98,10 +97,12 @@ export function ParcelRow({
       titleTone={parcel.state === 'incomplete' && !parcel.reply ? 'red' : 'ink'}
       lines={lines}
       trailing={trailing}
-      control={control}
+      control={selecting ? undefined : control}
       separator={separator}
       separatorInset={selecting ? 92 : undefined}
-      onClick={onClick}
+      checked={selected}
+      onClick={selecting ? () => onSelectedChange?.(!selected) : onClick}
+      onLongPress={selecting ? undefined : onLongPress}
       className={className}
     />
   );

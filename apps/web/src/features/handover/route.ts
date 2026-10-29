@@ -2,6 +2,7 @@ import type { HandoverMethod } from '@repo/contract/handover';
 import type { RecipientKind } from '@repo/contract/recipient';
 import type { LocalPickupCode } from '#/features/db/schema';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
+import { searchIds } from '#/lib/search-ids';
 
 /** How the person was identified: the `handover.method` the handover will record. */
 export type HandoverVia = Extract<HandoverMethod, 'qr' | 'pin' | 'manuel'>;
@@ -15,6 +16,10 @@ export type RemiseColisSearch = {
   at: number;
   /** The `pickup_code` checked, for the handover to mark used (YSL-73). */
   code?: string;
+  /** Ticked on Colis (F31): only these start ticked. */
+  colis?: string[];
+  /** One of a queue of handovers made from a selection. */
+  file?: boolean;
 };
 
 const VIAS: readonly HandoverVia[] = ['qr', 'pin', 'manuel'];
@@ -33,7 +38,17 @@ export function parseRemiseColisSearch(
     ...(via !== 'manuel' && typeof search.code === 'string'
       ? { code: search.code }
       : {}),
+    ...(searchIds(search.colis) ? { colis: searchIds(search.colis) } : {}),
+    ...(search.file === true || search.file === 'true' ? { file: true } : {}),
   };
+}
+
+/** The waiting parcels that start unticked: those not ticked on Colis, when opened from a selection. */
+export function untickedAtFirst(
+  parcelIds: readonly string[],
+  colis: readonly string[] | undefined,
+): string[] {
+  return colis ? parcelIds.filter((id) => !colis.includes(id)) : [];
 }
 
 /** Where a checked QR or code leads: its recipient's parcels. */

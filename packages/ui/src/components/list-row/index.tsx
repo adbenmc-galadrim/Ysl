@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { Icon } from '#icons';
+import { useLongPress } from '#lib/long-press';
 import { cn, tv, type VariantProps } from '#lib/tv';
 
 const lineVariants = tv({
@@ -59,6 +60,13 @@ export type ListRowProps = {
    */
   align?: 'top' | 'center';
   onClick?: () => void;
+  /**
+   * Selection mode: the whole row is the checkbox, so the 78 px row is
+   * the target and VoiceOver reads it ticked or not.
+   */
+  checked?: boolean;
+  /** A finger resting on the row (entering selection mode). */
+  onLongPress?: () => void;
   className?: string;
 };
 
@@ -77,17 +85,30 @@ export function ListRow({
   separatorInset,
   align = 'top',
   onClick,
+  checked,
+  onLongPress,
   className,
 }: ListRowProps) {
   const Root = onClick ? 'button' : 'div';
   const centered = align === 'center';
+  const press = useLongPress(onLongPress);
   const row = (
     <Root
       type={onClick ? 'button' : undefined}
-      onClick={onClick}
+      role={checked === undefined ? undefined : 'checkbox'}
+      aria-checked={checked}
+      onClick={
+        onClick &&
+        (() => {
+          if (!press?.swallowClick()) onClick();
+        })
+      }
+      {...press?.handlers}
       className={cn(
         'flex w-full min-w-0 gap-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue',
         centered ? 'min-h-[61px] items-center' : 'items-start',
+        // Safari would raise its magnifier and text menu under a resting finger.
+        press && 'select-none [-webkit-touch-callout:none]',
       )}
     >
       {leading && (

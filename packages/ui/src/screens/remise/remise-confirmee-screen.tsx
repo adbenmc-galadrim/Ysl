@@ -35,6 +35,11 @@ export type RemiseConfirmeeScreenProps = {
   onUndo?: () => void;
   /** A grey button beside "Terminé": straight back to the viewfinder. */
   onAnother?: () => void;
+  /**
+   * Handovers queued from a selection: the next person, in place of
+   * « Remettre un autre », above a grey « Terminé ».
+   */
+  next?: { label: string; onClick: () => void };
   onDone?: () => void;
 };
 
@@ -55,11 +60,12 @@ export function RemiseConfirmeeScreen({
   undoDisabled = false,
   onUndo,
   onAnother,
+  next,
   onDone,
 }: RemiseConfirmeeScreenProps) {
   return (
     <Screen
-      bottomInset={180}
+      bottomInset={next ? 240 : 180}
       bottom={
         <BottomBar surface="none" className="flex-col gap-7">
           {undoable && (
@@ -70,20 +76,31 @@ export function RemiseConfirmeeScreen({
               onAction={onUndo}
             />
           )}
-          <div className="flex w-full gap-3">
-            {onAnother && (
-              <Button
-                variant="secondary"
-                className="min-w-0 flex-1"
-                onClick={onAnother}
-              >
-                Remettre un autre
+          {next ? (
+            <div className="flex w-full flex-col gap-3">
+              <Button block onClick={next.onClick} className="truncate">
+                {next.label}
               </Button>
-            )}
-            <Button className="min-w-0 flex-1" onClick={onDone}>
-              Terminé
-            </Button>
-          </div>
+              <Button variant="secondary" block onClick={onDone}>
+                Terminé
+              </Button>
+            </div>
+          ) : (
+            <div className="flex w-full gap-3">
+              {onAnother && (
+                <Button
+                  variant="secondary"
+                  className="min-w-0 flex-1"
+                  onClick={onAnother}
+                >
+                  Remettre un autre
+                </Button>
+              )}
+              <Button className="min-w-0 flex-1" onClick={onDone}>
+                Terminé
+              </Button>
+            </div>
+          )}
         </BottomBar>
       }
     >

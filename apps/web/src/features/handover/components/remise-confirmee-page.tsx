@@ -40,6 +40,8 @@ export type RemiseConfirmeePageProps = {
   /** « Terminé », or the handover is not here to show: back to Colis. */
   onDone: () => void;
   onAnother: () => void;
+  /** The next handover of a selection's queue, in place of « Remettre un autre ». */
+  next?: { label: string; onClick: () => void };
 };
 
 /**
@@ -55,6 +57,7 @@ export function RemiseConfirmeePage({
   signatureLost = false,
   onDone,
   onAnother,
+  next,
 }: RemiseConfirmeePageProps) {
   const online = useOnline();
   const entry = useLiveQuery(
@@ -141,6 +144,7 @@ export function RemiseConfirmeePage({
           undoLabel={t('handover.done.undo')}
           undoDisabled
           onAnother={onAnother}
+          next={next}
           onDone={onDone}
         />
       )}

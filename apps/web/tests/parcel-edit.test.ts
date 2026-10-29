@@ -8,7 +8,7 @@ import {
   parseWeight,
   saveParcelEdit,
 } from '#/features/parcels/edit';
-import { deleteParcel } from '#/features/parcels/status';
+import { deleteParcel, deleteParcels } from '#/features/parcels/status';
 import {
   NOW,
   openTestDatabase,
@@ -377,5 +377,33 @@ describe('deleteParcel', () => {
       ['parcel', 'delete'],
     ]);
     expect(await events(row.id)).toEqual([{ type: 'parcel.deleted' }]);
+  });
+});
+
+describe('deleteParcels', () => {
+  it('deletes the ticked parcels nobody was told about in one write, and leaves the others', async () => {
+    const incomplete = parcelRow({ status: 'a_completer' });
+    const received = parcelRow();
+    const notified = parcelRow({ status: 'notifie', notifiedAt: NOW });
+    await db.parcel.bulkPut([incomplete, received, notified]);
+
+    const deleted = await deleteParcels(
+      db,
+      [incomplete.id, notified.id, received.id, 'gone'],
+      options,
+    );
+
+    expect(deleted).toEqual([incomplete.id, received.id]);
+    expect((await db.parcel.get(notified.id))?.deletedAt).toBeNull();
+    expect((await db.parcel.get(received.id))?.deletedAt).toEqual(NOW);
+    const ops = await db.outbox.toArray();
+    expect(ops.map((op) => [op.entity, op.type])).toEqual([
+      ['event', 'upsert'],
+      ['event', 'upsert'],
+      ['parcel', 'delete'],
+      ['parcel', 'delete'],
+    ]);
+    expect(await events(incomplete.id)).toEqual([{ type: 'parcel.deleted' }]);
+    expect(await deleteParcels(db, [notified.id], options)).toEqual([]);
   });
 });

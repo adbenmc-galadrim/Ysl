@@ -24,6 +24,7 @@ import {
   listUnaddressed,
   useHomeParcels,
 } from '#/features/parcels/api/use-parcels';
+import { ColisSelection } from '#/features/parcels/components/colis-selection';
 import { assignRecipient } from '#/features/parcels/complete';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
@@ -35,6 +36,7 @@ import {
   summarize,
   toSections,
 } from '#/features/parcels/sections';
+import type { Selection } from '#/features/parcels/selection';
 import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 import {
   awaitsServer,
@@ -92,6 +94,9 @@ export function ColisHome() {
   );
   // F32: a counter on keeps only its parcels; the sections fold as before.
   const [counter, setCounter] = useState<CounterId | null>(null);
+  // F31: a long press on a row, or « Sélectionner », turns the list into
+  // checkboxes; the ids ticked when it opens.
+  const [selecting, setSelecting] = useState<Selection | null>(null);
   // Next to the banner, the rows say which parcels its changes are; online,
   // a change leaves within seconds and a label would only flicker.
   const labelled = banner !== null;
@@ -131,6 +136,8 @@ export function ColisHome() {
             to: '/colis/$parcelId',
             params: { parcelId: parcel.id },
           }),
+        onParcelLongPress: (parcel: { id: string }) =>
+          setSelecting(new Set([parcel.id])),
         rowAction: (parcel: { id: string }) => {
           const state = labelled ? pending.get(parcel.id) : undefined;
           if (state)
@@ -200,6 +207,18 @@ export function ColisHome() {
   const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
   const searchParcels = () => void navigate({ to: '/recherche' });
+
+  if (selecting) {
+    return (
+      <ColisSelection
+        rows={rows}
+        counter={counter}
+        onCounter={setCounter}
+        initial={selecting}
+        onDone={() => setSelecting(null)}
+      />
+    );
+  }
 
   return (
     <>
@@ -297,6 +316,7 @@ export function ColisHome() {
           />
         }
         onMenu={() => void navigate({ to: '/reglages' })}
+        onSelect={empty ? undefined : () => setSelecting(new Set())}
         onSearch={searchParcels}
         onScan={scan}
       >

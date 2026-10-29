@@ -27,7 +27,10 @@ import {
 import { loadHandoverPerson } from '#/features/handover/recipient';
 import { strokesToPng } from '#/features/handover/signature-png';
 import { signatureHeading } from '#/features/handover/signing';
-import type { RemiseColisSearch } from '#/features/handover/route';
+import {
+  type RemiseColisSearch,
+  untickedAtFirst,
+} from '#/features/handover/route';
 import {
   listWaitingParcels,
   toRemiseParcel,
@@ -69,7 +72,8 @@ export function RemiseColisPage({
 }: RemiseColisPageProps) {
   const now = useMinuteClock();
   const { kind, id, via, at } = search;
-  const [excluded, setExcluded] = useState<string[]>([]);
+  // Opened from a selection, the parcels not ticked on Colis start unticked.
+  const [unticked, setUnticked] = useState<string[] | null>(null);
   const [busy, setBusy] = useState(false);
   /** The strokes on the pad while it is open, and those validated. */
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -97,19 +101,25 @@ export function RemiseColisPage({
 
   if (!loaded?.person) return null;
   const { person, parcels } = loaded;
+  const excluded =
+    unticked ??
+    untickedAtFirst(
+      parcels.map((parcel) => parcel.id),
+      search.colis,
+    );
   const ticked = parcels
     .map((parcel) => parcel.id)
     .filter((parcelId) => !excluded.includes(parcelId));
   const time = formatTime(new Date(at));
 
   const toggle = (parcelId: string) =>
-    setExcluded((current) =>
-      current.includes(parcelId)
-        ? current.filter((other) => other !== parcelId)
-        : [...current, parcelId],
+    setUnticked(
+      excluded.includes(parcelId)
+        ? excluded.filter((other) => other !== parcelId)
+        : [...excluded, parcelId],
     );
   const toggleAll = () =>
-    setExcluded(
+    setUnticked(
       ticked.length === parcels.length ? parcels.map((p) => p.id) : [],
     );
   const confirm = async () => {

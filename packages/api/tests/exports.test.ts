@@ -33,6 +33,7 @@ const ids = {
   contact: newId(),
   readName: newId(),
   deleted: newId(),
+  other: newId(),
 };
 
 beforeAll(async () => {
@@ -101,7 +102,7 @@ beforeAll(async () => {
       id: ids.deleted,
       deletedAt: new Date('2026-10-24T11:00:00Z'),
     },
-    { ...parcelRow(OTHER_ORGANIZATION_ID) },
+    { ...parcelRow(OTHER_ORGANIZATION_ID), id: ids.other },
   ]);
   const handed = {
     organizationId: ORGANIZATION_ID,
@@ -162,6 +163,18 @@ describe('exports.parcelsCsv', () => {
     expect(result.filename).toMatch(
       /^courrier-historique-\d{4}-\d{2}-\d{2}\.csv$/,
     );
+  });
+
+  it('holds only the parcels ticked on Colis, never another mailroom’s', async () => {
+    const result = await callerFor(
+      memberSession(AGENT_ID),
+    ).exports.selectionCsv({ parcelIds: [ids.contact, ids.other] });
+    expect(result.count).toBe(1);
+    expect(
+      parseCsv(result.csv)
+        .slice(1)
+        .map((row) => row[0]),
+    ).toEqual([ids.contact]);
   });
 });
 
