@@ -77,6 +77,27 @@ export const SigneParLeNom: Story = {
   args: { ...ChoisiParLeNom.args, signed: true },
 };
 
+/** A colleague was announced: the card says so before anyone is picked (YSL-77). */
+export const CollegueAnnonce: Story = {
+  name: 'Collègue annoncé',
+  args: {
+    ...QrVerifie.args,
+    extras: false,
+    announced: 'Paul Mercier, annoncé par e-mail',
+    onCollector: () => {},
+  },
+};
+
+/** Paul collects with Nora's code; picked by the name, he is the one who signs. */
+export const RetireParUnCollegue: Story = {
+  name: 'Retiré par un collègue',
+  args: {
+    ...ChoisiParLeNom.args,
+    collector: 'Paul Mercier',
+    onCollector: () => {},
+  },
+};
+
 /** The code was right, but nothing waits for them any more. */
 export const AucunColis: Story = {
   name: 'Aucun colis',

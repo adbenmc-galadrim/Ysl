@@ -214,12 +214,15 @@ function statusLine(
     }
     case 'handedOver': {
       const time = formatTime(parcel.deliveredAt ?? parcel.receivedAt);
-      return handover
-        ? t('parcel.status.deliveredHow', {
+      if (!handover) return t('parcel.status.delivered', { time });
+      const how = proofLabel(handover.method, t);
+      return handover.delegateName
+        ? t('parcel.status.deliveredHowDelegate', {
             time,
-            how: proofLabel(handover.method, t),
+            how,
+            delegate: handover.delegateName,
           })
-        : t('parcel.status.delivered', { time });
+        : t('parcel.status.deliveredHow', { time, how });
     }
     case 'returned':
       return t('parcel.status.returned');

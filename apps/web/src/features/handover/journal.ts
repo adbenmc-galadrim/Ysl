@@ -83,7 +83,7 @@ function summaryOf({ handover, count }: JournalItem, t: TranslateFn): string {
     : summary;
 }
 
-const lowerFirst = (text: string) =>
+export const lowerFirst = (text: string) =>
   text.charAt(0).toLowerCase() + text.slice(1);
 
 function stateOf({ handover, sync }: JournalItem, now: Date, t: TranslateFn) {

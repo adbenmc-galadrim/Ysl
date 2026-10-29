@@ -2,6 +2,7 @@ import { Banner } from '#components/banner';
 import { Button } from '#components/button';
 import { ContactRow } from '#components/contact-row';
 import { IconButton } from '#components/icon-button';
+import { LinkCard } from '#components/link-card';
 import { NavBar } from '#components/nav-bar';
 import { PageIntro } from '#components/page-intro';
 import { Screen } from '#components/screen';
@@ -27,12 +28,27 @@ export type QuiRetireScreenProps = {
   others: Collectee[];
   onPick?: (person: Collectee) => void;
   onClose?: () => void;
+  /** The question, « Qui retire ses colis ? » by default. */
+  title?: string;
+  /** The bar's title, « Remise » by default. */
+  navTitle?: string;
+  /** Over the matches with nothing waiting: « Sans colis en attente » by default. */
+  othersTitle?: string;
+  /** Makes the matches with nothing waiting pickable too: a colleague who collects. */
+  onPickOther?: (person: Collectee) => void;
+  /** The name as typed, offered as it is: « Utiliser « Paul M. » ». */
+  typed?: string;
+  onUseTyped?: () => void;
+  /** The banner at the bottom; the mockup's by default. */
+  note?: string;
 };
 
 /**
  * Handover without QR or code: the agent looks the person up by name.
  * People with parcels come first and carry the count, so the usual case is
- * one tap; the banner says up front that a signature will be asked.
+ * one tap; the banner says up front that a signature will be asked. The
+ * same sheet names a colleague who collects (`onPickOther`, `typed`), with
+ * its own question and reminder.
  */
 export function QuiRetireScreen({
   query,
@@ -41,11 +57,19 @@ export function QuiRetireScreen({
   others,
   onPick,
   onClose,
+  title = 'Qui retire ses colis ?',
+  navTitle = 'Remise',
+  othersTitle = 'Sans colis en attente',
+  onPickOther,
+  typed,
+  onUseTyped,
+  note = 'Sans QR ni code, la signature sera demandée',
 }: QuiRetireScreenProps) {
+  const offerTyped = !!typed && !!onUseTyped;
   return (
     <Screen>
       <NavBar
-        title="Remise"
+        title={navTitle}
         leading={
           <IconButton
             icon="x"
@@ -57,7 +81,7 @@ export function QuiRetireScreen({
           />
         }
       />
-      <PageIntro size="md" title="Qui retire ses colis ?" className="mt-3" />
+      <PageIntro size="md" title={title} className="mt-3" />
       <SearchField
         size="form"
         value={query}
@@ -65,6 +89,14 @@ export function QuiRetireScreen({
         placeholder="Nom ou service"
         className="mt-[13px]"
       />
+      {offerTyped && (
+        <LinkCard
+          icon="user"
+          label={`Utiliser « ${typed} »`}
+          onClick={onUseTyped}
+          className="mt-4"
+        />
+      )}
       {waiting.length > 0 && (
         <section className="mt-6">
           <SectionHeader title="Avec des colis en attente" />
@@ -95,14 +127,16 @@ export function QuiRetireScreen({
           </div>
         </section>
       )}
-      {query.trim() !== '' && waiting.length + others.length === 0 && (
-        <p role="status" className="mt-8 text-center text-15 text-muted">
-          Personne ne correspond à « {query.trim()} ».
-        </p>
-      )}
+      {!offerTyped &&
+        query.trim() !== '' &&
+        waiting.length + others.length === 0 && (
+          <p role="status" className="mt-8 text-center text-15 text-muted">
+            Personne ne correspond à « {query.trim()} ».
+          </p>
+        )}
       {others.length > 0 && (
         <section className="mt-[33px]">
-          <SectionHeader title="Sans colis en attente" />
+          <SectionHeader title={othersTitle} />
           <div className="mt-[23px]">
             {others.map((person, i) => (
               <ContactRow
@@ -115,6 +149,7 @@ export function QuiRetireScreen({
                 textClassName="translate-y-px pt-0"
                 separator={i < others.length - 1}
                 trailing={null}
+                onClick={onPickOther && (() => onPickOther(person))}
               />
             ))}
           </div>
@@ -123,7 +158,7 @@ export function QuiRetireScreen({
       <Banner
         tone="blue"
         icon="info"
-        title="Sans QR ni code, la signature sera demandée"
+        title={note}
         // The mockup sets the box to 56 px and the two lines 14 px from its
         // top, so the icon is aligned on the box rather than centred.
         classNames={{ root: 'items-start pt-3.5 pb-1.5', icon: 'mt-1' }}

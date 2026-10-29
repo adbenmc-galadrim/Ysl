@@ -51,6 +51,14 @@ export type RemiseColisScreenProps = {
   signatureNote?: string;
   /** The recipient signed: the line says so and opens the signature again. */
   signed?: boolean;
+  /**
+   * Who collects, when not the recipient: « Retiré par Paul Mercier ». With
+   * `onCollector`, a card under the banner opens the choice.
+   */
+  collector?: string;
+  /** In place of « Retiré par quelqu’un d’autre »: « Paul Mercier, annoncé par e-mail ». */
+  announced?: string;
+  onCollector?: () => void;
   /** The banner of a registered parcel among those listed. */
   registeredNote?: string;
   /** The handover is being written: the button waits. */
@@ -94,6 +102,9 @@ export function RemiseColisScreen({
   excluded = [],
   signatureNote,
   signed = false,
+  collector,
+  announced,
+  onCollector,
   // The mockup's wording, kept so its reference holds; the app says the
   // signature is optional (D6).
   registeredNote = 'Un recommandé : la signature sera demandée.',
@@ -150,6 +161,18 @@ export function RemiseColisScreen({
         classNames={{ root: 'h-[52px] items-start rounded-control pt-4 pb-0' }}
         className="mt-5"
       />
+      {onCollector && (
+        <LinkCard
+          icon={collector || announced ? 'users' : 'user'}
+          label={
+            collector
+              ? `Retiré par ${collector}`
+              : (announced ?? 'Retiré par quelqu’un d’autre')
+          }
+          onClick={onCollector}
+          className="mt-3"
+        />
+      )}
       {verifiedBy === 'name' &&
         (signatureNote !== undefined || onSignature) && (
           <LinkCard

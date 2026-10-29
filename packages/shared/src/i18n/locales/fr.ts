@@ -45,6 +45,8 @@ export const fr = {
   'handover.verified.manuel': 'Sans vérification',
   'handover.registered': 'Un recommandé : la signature est facultative.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
+  'handover.sign.titleFor':
+    '{{name}} signe pour {{recipient}}, {{count}} colis',
   'handover.sign.registeredOne': 'Dont 1 recommandé {{parcel}}',
   'handover.sign.registeredMany': 'Dont {{count}} recommandés',
   'handover.how.qr': 'QR vérifié',
@@ -52,11 +54,16 @@ export const fr = {
   'handover.how.signature': 'signé',
   'handover.how.manuel': 'sans vérification',
   'handover.to': 'À {{name}}, {{how}}',
+  'handover.toDelegate': 'À {{name}} (retiré par {{delegate}}), {{how}}',
   'handover.done.undo': 'Annuler · bientôt',
   'handover.confirm.title': '{{count}} colis remis',
   'handover.agent.me': 'Vous',
   'handover.agent.unknown': 'Un agent',
   'handover.confirm.to': 'à {{name}}, à {{time}}',
+  'handover.confirm.toDelegate.one':
+    'à {{name}}, retiré par {{delegate}}, à {{time}}',
+  'handover.confirm.toDelegate.many':
+    'à {{name}}, retirés par {{delegate}}, à {{time}}',
   'handover.confirm.signature': 'Ajouter une signature',
   'handover.confirm.photo': 'Ajouter une photo',
   'handover.confirm.signed': 'Signature enregistrée',
@@ -111,6 +118,17 @@ export const fr = {
   'handover.pin.locked':
     'Trop d’essais. Réessayez dans {{seconds}} s, ou cherchez le nom.',
   'handover.delegate': 'Retrait prévu par {{name}}',
+  'handover.collector.announced': '{{name}}, annoncé par e-mail',
+  'handover.collector.announcement': 'Réponse à l’e-mail, {{when}}',
+  'handover.collector.self': 'Retire ses colis',
+  'handover.collector.title': 'Qui retire pour {{name}} ?',
+  'handover.collector.nav': 'Retiré par',
+  'handover.collector.results': 'Annuaire et contacts',
+  'handover.collector.continue': 'Continuer',
+  'handover.collector.proofNote':
+    'Le QR ou le code présenté vaut preuve pour {{name}} ; notez qui retire.',
+  'handover.collector.signNote':
+    'Sans QR ni code, vous pouvez faire signer la personne qui retire.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
   'handover.received.yesterday': 'Reçu hier',
   'handover.received.on': 'Reçu le {{date}}',
@@ -249,6 +267,8 @@ export const fr = {
   'parcel.status.reminded': 'Relancé {{ago}}',
   'parcel.status.delivered': 'Remis à {{time}}',
   'parcel.status.deliveredHow': 'Remis à {{time}}, {{how}}',
+  'parcel.status.deliveredHowDelegate':
+    'Remis à {{time}} (retiré par {{delegate}}), {{how}}',
   'parcel.status.deliveredOn': 'Remis le {{date}} à {{time}}',
   'parcel.status.receivedOn': 'Reçu le {{date}} à {{time}}',
   'parcel.status.returned': 'Retourné à l’expéditeur',
@@ -315,6 +335,7 @@ export const fr = {
   'record.sync.rejected': 'Refusé',
   'record.handover.to': 'Remis à',
   'record.handover.delegate': 'Retiré par',
+  'record.handover.announced': 'Annoncé',
   'record.handover.when': 'Quand',
   'record.handover.agent': 'Agent',
   'record.handover.method': 'Méthode',
@@ -436,6 +457,10 @@ export const fr = {
   'history.delivered.manuel': 'Remis sans vérification',
   'history.delivered.to': 'Remis à {{name}} ({{how}})',
   'history.delivered.by': 'Remis à {{name}} par {{agent}} ({{how}})',
+  'history.delivered.toDelegate':
+    'Remis à {{name}}, retiré par {{delegate}} ({{how}})',
+  'history.delivered.byDelegate':
+    'Remis à {{name}}, retiré par {{delegate}}, par {{agent}} ({{how}})',
   'history.status.retourne': 'Retourné à l’expéditeur',
   'history.undo.recu': 'Remis à compléter',
   'history.undo.notifie': 'Notification annulée',

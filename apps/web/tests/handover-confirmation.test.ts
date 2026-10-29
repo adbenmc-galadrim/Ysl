@@ -37,7 +37,11 @@ beforeEach(async () => {
 
 const handedOver = async (
   method: 'qr' | 'pin' | 'manuel' | 'signature',
-  proofs: { hasSignature?: boolean; hasPhoto?: boolean } = {},
+  proofs: {
+    hasSignature?: boolean;
+    hasPhoto?: boolean;
+    delegateName?: string;
+  } = {},
 ) => {
   const row = handoverRow({
     parcelIds: parcels.map((p) => p.id),
@@ -70,6 +74,18 @@ describe('describeConfirmation', () => {
     const view = describeConfirmation(await handedOver(method), true, t);
 
     expect(view.proofs[0]).toMatchObject({ label, done });
+  });
+
+  it('says who collected for the recipient', async () => {
+    const view = describeConfirmation(
+      await handedOver('pin', { delegateName: 'Paul Mercier' }),
+      true,
+      t,
+    );
+
+    expect(`${view.title} ${view.description}`).toBe(
+      '2 colis remis à Nora Haddad, retirés par Paul Mercier, à 12\u00a0h\u00a000',
+    );
   });
 
   it('offers the signature and the photo, each one tap away', async () => {

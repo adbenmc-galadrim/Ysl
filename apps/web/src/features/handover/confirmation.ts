@@ -108,10 +108,22 @@ export function describeConfirmation(
   const { handover, parcels } = entry;
   return {
     title: t('handover.confirm.title', { count: parcels.length }),
-    description: t('handover.confirm.to', {
-      name: handover.recipientName,
-      time: formatTime(handover.at),
-    }),
+    description: handover.delegateName
+      ? t(
+          parcels.length > 1
+            ? 'handover.confirm.toDelegate.many'
+            : 'handover.confirm.toDelegate.one',
+          {
+            name: handover.recipientName,
+            delegate: handover.delegateName,
+            // The longer sentence wraps: never inside « 11 h 20 ».
+            time: formatTime(handover.at).replace(/ /g, '\u00a0'),
+          },
+        )
+      : t('handover.confirm.to', {
+          name: handover.recipientName,
+          time: formatTime(handover.at),
+        }),
     proofs: [
       {
         icon: METHOD_ICON[handover.method],

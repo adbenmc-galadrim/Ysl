@@ -152,6 +152,31 @@ describe('recordHandover', () => {
     expect((await db.pickupCode.get(code.id))?.usedAt).toEqual(LATER);
   });
 
+  it('notes who collected for the recipient, the method left as checked', async () => {
+    const done = await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: '  Paul   Mercier ' },
+      { agentId: AGENT, now: LATER },
+    );
+
+    expect(await db.handover.get(done.handoverId)).toMatchObject({
+      recipientName: 'Nora Haddad',
+      delegateName: 'Paul Mercier',
+      method: 'pin',
+    });
+    expect((await db.pickupCode.get(code.id))?.usedAt).toEqual(LATER);
+  });
+
+  it('notes nobody when the recipient collects themselves', async () => {
+    const done = await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: 'nora HADDAD' },
+      { agentId: AGENT, now: LATER },
+    );
+
+    expect((await db.handover.get(done.handoverId))?.delegateName).toBeNull();
+  });
+
   it('hands a contact’s parcels over by their name', async () => {
     const contact = contactRow({ name: 'Marc Petit' });
     const parcel = parcelRow({ contactId: contact.id });
@@ -288,6 +313,86 @@ describe('a parcel handed over', () => {
       title: 'Remis à 12 h 05',
       description: 'À Nora Haddad, QR vérifié',
     });
+  });
+
+  it('says who collected for the recipient, and whom they had announced', async () => {
+    await db.parcel.put({
+      ...parcels[0]!,
+      expectedDelegate: 'Paul Mercier',
+      reply: 'colleague',
+      repliedAt: NOW,
+    });
+    const done = await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: 'Lucas Martin' },
+      { agentId: AGENT, agentName: 'Karim Benali', now: LATER },
+    );
+
+    const rows = await listHomeParcels(db, LATER);
+    expect(rows.map((row) => row.status)).toEqual(
+      all().map(
+        () => 'Remis à 12 h 05 (retiré par Lucas Martin), code vérifié',
+      ),
+    );
+    expect(rows.some((row) => row.reply)).toBe(false);
+
+    const view = describeRecord((await loadParcelRecord(db, all()[0]!))!, {
+      now: LATER,
+      t,
+      showUnsent: true,
+    });
+    expect(view.state.description).toBe(
+      'À Nora Haddad (retiré par Lucas Martin), code vérifié',
+    );
+    expect(view.history?.[0]?.title).toBe(
+      'Remis à Nora Haddad, retiré par Lucas Martin, par Karim (code vérifié)',
+    );
+    expect(view.handover?.items.slice(0, 3)).toEqual([
+      { label: 'Remis à', value: 'Nora Haddad' },
+      { label: 'Annoncé', value: 'Paul Mercier' },
+      { label: 'Retiré par', value: 'Lucas Martin' },
+    ]);
+    expect((await db.handover.get(done.handoverId))?.delegateName).toBe(
+      'Lucas Martin',
+    );
+  });
+
+  it('keeps the announcement quiet when the colleague announced came', async () => {
+    await db.parcel.put({ ...parcels[0]!, expectedDelegate: 'Paul Mercier' });
+    await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all(), delegateName: 'paul mercier' },
+      { agentId: AGENT, now: LATER },
+    );
+
+    const view = describeRecord((await loadParcelRecord(db, all()[0]!))!, {
+      now: LATER,
+      t,
+      showUnsent: true,
+    });
+    expect(view.handover?.items.map((item) => item.label)).not.toContain(
+      'Annoncé',
+    );
+  });
+
+  it('tells the announcement alone when nobody was named at the desk', async () => {
+    await db.parcel.put({ ...parcels[0]!, expectedDelegate: 'Paul Mercier' });
+    await recordHandover(
+      db,
+      { ...byPin(), parcelIds: all() },
+      { agentId: AGENT, now: LATER },
+    );
+
+    const view = describeRecord((await loadParcelRecord(db, all()[0]!))!, {
+      now: LATER,
+      t,
+      showUnsent: true,
+    });
+    expect(view.handover?.items.slice(0, 3)).toEqual([
+      { label: 'Remis à', value: 'Nora Haddad' },
+      { label: 'Annoncé', value: 'Paul Mercier' },
+      expect.objectContaining({ label: 'Quand' }),
+    ]);
   });
 
   it('says a pick by the name went unchecked', async () => {

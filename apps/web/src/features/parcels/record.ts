@@ -31,6 +31,7 @@ import type {
   LocalParcel,
   OutboxOp,
 } from '#/features/db/schema';
+import { sameName } from '#/features/handover/collector';
 import { proofLabel } from '#/features/handover/delivered';
 import {
   agentNameOf,
@@ -241,10 +242,16 @@ function stateCard(
           ? at('delivered', parcel.deliveredAt)
           : t('parcel.state.remis'),
         description: record.handover
-          ? t('handover.to', {
-              name: record.handover.recipientName,
-              how: proofLabel(record.handover.method, t),
-            })
+          ? t(
+              record.handover.delegateName
+                ? 'handover.toDelegate'
+                : 'handover.to',
+              {
+                name: record.handover.recipientName,
+                delegate: record.handover.delegateName ?? '',
+                how: proofLabel(record.handover.method, t),
+              },
+            )
           : description,
       };
     case 'retourne':
@@ -387,14 +394,25 @@ function deliveredTitle(
     (row) => row?.id === event.handoverId,
   );
   if (!handover) return t(`history.delivered.${event.method}`);
-  const how = proofLabel(handover.method, t);
-  return handover.agentName
-    ? t('history.delivered.by', {
-        name: handover.recipientName,
-        agent: firstNameOf(handover.agentName),
-        how,
-      })
-    : t('history.delivered.to', { name: handover.recipientName, how });
+  const values = {
+    name: handover.recipientName,
+    delegate: handover.delegateName ?? '',
+    how: proofLabel(handover.method, t),
+  };
+  if (handover.agentName) {
+    return t(
+      handover.delegateName
+        ? 'history.delivered.byDelegate'
+        : 'history.delivered.by',
+      { ...values, agent: firstNameOf(handover.agentName) },
+    );
+  }
+  return t(
+    handover.delegateName
+      ? 'history.delivered.toDelegate'
+      : 'history.delivered.to',
+    values,
+  );
 }
 
 function eventTitle(
@@ -568,7 +586,11 @@ function handoverCard(
       handover,
       sync,
       { now, t, me },
-      { recipient: true, here: record.handoverProofs },
+      {
+        recipient: true,
+        here: record.handoverProofs,
+        announced: record.parcel.expectedDelegate,
+      },
     ),
   };
 }
@@ -605,18 +627,27 @@ export function handoverItems(
     recipient = false,
     cancelled = true,
     here = [],
+    announced,
   }: {
     recipient?: boolean;
     cancelled?: boolean;
     /** The proofs this iPhone holds; the others stayed where they were taken. */
     here?: readonly HandoverProofKind[];
+    /** The colleague the recipient announced (YSL-70), told when someone else came. */
+    announced?: string | null;
   } = {},
 ): DetailsItem[] {
   const row = (label: string, value: string): DetailsItem[] => [
     { label, value },
   ];
+  // Nobody named means nobody declared: the announcement is told alone,
+  // never as if the recipient had come in person.
+  const unlike =
+    !!announced &&
+    !sameName(announced, handover.delegateName ?? handover.recipientName);
   return [
     ...(recipient ? row(t('record.handover.to'), handover.recipientName) : []),
+    ...(unlike ? row(t('record.handover.announced'), announced) : []),
     ...(handover.delegateName
       ? row(t('record.handover.delegate'), handover.delegateName)
       : []),

@@ -110,7 +110,12 @@ export function RemiseConfirmeePage({
     <>
       {!entry || !view ? null : draft ? (
         <SignatureScreen
-          {...signatureHeading(entry.handover.recipientName, entry.parcels, t)}
+          {...signatureHeading(
+            entry.handover.recipientName,
+            entry.parcels,
+            t,
+            entry.handover.delegateName,
+          )}
           strokes={draft}
           onChange={setDraft}
           onClear={() => setDraft([])}

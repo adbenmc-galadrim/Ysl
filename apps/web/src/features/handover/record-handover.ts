@@ -17,6 +17,7 @@ import {
   saveProof,
   signedMethod,
 } from '#/features/handover/proofs';
+import { collectorName } from '#/features/handover/collector';
 import { loadHandoverPerson } from '#/features/handover/recipient';
 import type { RemiseColisSearch } from '#/features/handover/route';
 import {
@@ -45,6 +46,8 @@ export class HandoverRefusedError extends Error {
 export type HandoverInput = RemiseColisSearch & {
   /** The parcels ticked on the screen. */
   parcelIds: readonly string[];
+  /** Someone else collects for the recipient; their proof still stands for them. */
+  delegateName?: string | null;
 };
 
 export type HandoverOptions = {
@@ -149,7 +152,7 @@ export async function recordHandover(
     personId: recipient.kind === 'person' ? recipient.id : null,
     contactId: recipient.kind === 'contact' ? recipient.id : null,
     recipientName: person.name,
-    delegateName: null,
+    delegateName: collectorName(input.delegateName, person.name),
     method: signed ? signedMethod(input.via) : input.via,
     agentId,
     agentName: agentName?.trim() || null,
