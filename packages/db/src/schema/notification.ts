@@ -10,6 +10,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import {
+  DELIVERY_STATUSES,
   MAIL_TARGETS,
   NOTIFICATION_STATUSES,
   NOTIFICATION_TYPES,
@@ -65,12 +66,20 @@ export const notification = pgTable(
     // Told through someone else (YSL-72): the recipient has no address, the mail
     // went to `recipients`, a colleague or an assistant, named here.
     relayName: text('relay_name'),
+    // Told by the provider's webhook (YSL-113), never by a device.
+    deliveryStatus: text('delivery_status', { enum: DELIVERY_STATUSES }),
+    deliveryAt: timestamp('delivery_at', { withTimezone: true }),
   },
   (table) => [
     ...syncConstraints('notification', table),
     oneOf('notification_type_check', table.type, NOTIFICATION_TYPES),
     oneOf('notification_status_check', table.status, NOTIFICATION_STATUSES),
     oneOf('notification_target_check', table.target, MAIL_TARGETS),
+    oneOf(
+      'notification_delivery_status_check',
+      table.deliveryStatus,
+      DELIVERY_STATUSES,
+    ),
     check(
       'notification_sent_check',
       sql`(${table.status} = 'sent') = (${table.sentAt} is not null)`,

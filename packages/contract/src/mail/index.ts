@@ -61,5 +61,5 @@ export type {
   NotifyChange,
   NotifySkip,
 } from './notification';
-export { EMAIL_OUTBOX_STATUSES } from './outbox';
-export type { EmailOutboxStatus } from './outbox';
+export { DELIVERY_STATUSES, EMAIL_OUTBOX_STATUSES } from './outbox';
+export type { DeliveryStatus, EmailOutboxStatus } from './outbox';

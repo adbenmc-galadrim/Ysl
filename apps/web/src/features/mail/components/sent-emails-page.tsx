@@ -266,7 +266,8 @@ function FixSheet({
 
 /**
  * Réglages › E-mails envoyés: the agent's own mails (D2: only the one whose
- * mail app opened a draft can say whether it left), what failed first with
+ * mail app opened a draft can say whether it left, unless the provider
+ * reports a bounce), what failed first with
  * its fix, then what waits for an answer, then what left. Opened from a
  * parcel's record, the log keeps to that parcel's mails.
  */

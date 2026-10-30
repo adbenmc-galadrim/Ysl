@@ -20,7 +20,10 @@ const DRAIN_LIMIT = 20;
 /** Until the next look at an account the provider refuses. */
 export const BLOCKED_DELAY_MS = 5 * 60_000;
 
-export type EnqueueEmail = EmailMessage & { organizationId?: string | null };
+export type EnqueueEmail = EmailMessage & {
+  organizationId?: string | null;
+  notificationId?: string | null;
+};
 
 type OutboxRow = typeof emailOutbox.$inferSelect;
 
@@ -34,6 +37,7 @@ export async function enqueueEmail(
     .values({
       idempotencyKey: message.idempotencyKey,
       organizationId: message.organizationId ?? null,
+      notificationId: message.notificationId ?? null,
       recipient: message.to,
       recipientName: message.toName ?? null,
       subject: message.subject,

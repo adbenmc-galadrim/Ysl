@@ -25,6 +25,8 @@ export const env = createEnv({
     PURGE_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(1440),
     /** Without the key or the sender address, the mail job stays off. */
     BREVO_API_KEY: z.string().optional(),
+    /** Sent back by Brevo with each event; without it, the webhook stays off. */
+    BREVO_WEBHOOK_TOKEN: z.string().min(32).optional(),
     MAIL_FROM_ADDRESS: z.email().optional(),
     MAIL_FROM_NAME: z.string().default('Courrier'),
     /** Seconds between two drains of the e-mail queue; 0 turns the job off. */

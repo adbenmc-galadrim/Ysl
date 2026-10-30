@@ -6,6 +6,7 @@ import {
   brevoMailer,
   createTRPCContext,
   drainEmailOutbox,
+  receiveMailEvent,
   runPurge,
 } from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
@@ -18,6 +19,7 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { clientIp } from '#client-ip';
 import { startMailJob } from '#mail-job';
+import { mailWebhook } from '#mail-webhook';
 import { startPurgeJob } from '#purge-job';
 import { requestLog } from '#request-log';
 
@@ -81,6 +83,14 @@ app.on(['GET', 'POST'], '/api/auth/*', (c) => {
   );
   return auth.handler(new Request(c.req.raw, { headers }));
 });
+
+app.route(
+  '/api/webhooks/mail',
+  mailWebhook({
+    token: env.BREVO_WEBHOOK_TOKEN,
+    receive: (body) => receiveMailEvent(db, body),
+  }),
+);
 
 app.use(
   '/trpc/*',

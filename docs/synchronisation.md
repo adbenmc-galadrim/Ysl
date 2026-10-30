@@ -301,6 +301,24 @@ Cette durée ne fait pas partie du §9.2 : elle reste à valider par le DPO. Job
 dans `apps/server` (`MAIL_POLL_SECONDS`, 30 par défaut, 0 le coupe), éteint sans
 `BREVO_API_KEY` ou `MAIL_FROM_ADDRESS`.
 
+**Statuts réels** (`POST /api/webhooks/mail`, YSL-113) : Brevo ne signe pas ses
+événements, il renvoie le jeton donné à la création du webhook
+(`Authorization: Bearer`, `BREVO_WEBHOOK_TOKEN`, 32 caractères au moins ; sans lui la
+route répond 404). `delivered` donne délivré ; `hard_bounce`, `invalid_email` et
+`blocked` un rebond ; `spam` une plainte ; `unsubscribed` une désinscription ; le
+reste, dont `soft_bounce`, n'écrit rien. Le statut s'écrit sur `email_outbox` et, par
+`notification_id`, sur `notification`, d'où la synchro le ramène ; les appareils ne
+peuvent pas l'écrire. Il ne fait qu'avancer (délivré, désinscription, plainte, rebond),
+donc un rejeu n'écrit rien. L'adresse et le motif de Brevo ne sont ni gardés ni
+journalisés. Brevo abandonne un événement sur tout 5xx et tout 4xx sauf 429 : une panne
+de notre côté, ou un message inconnu de moins de 5 minutes, répond 429 (reprises à
+10 min, 1 h, 2 h, 8 h).
+
+Mise en service : poser `BREVO_WEBHOOK_TOKEN` sur l'API,
+puis `POST https://api.brevo.com/v3/webhooks` avec `type: "transactional"`, l'URL de la
+route, `events: ["delivered", "hardBounce", "invalid", "blocked", "spam", "unsubscribed"]`
+et `auth: { type: "bearer", token }`.
+
 **iPhone** (`apps/web/src/features/retention`), à l'ouverture puis après une
 synchronisation (au plus tous les quarts d'heure), au repos du fil principal :
 photos d'étiquette et de dommage 7 jours après la sortie du colis (remise ou retour)

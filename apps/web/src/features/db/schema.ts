@@ -1,3 +1,4 @@
+import type { DeliveryStatus } from '@repo/contract/mail';
 import type { DamageInput } from '#/features/damage/report';
 import type { DraftAnnex } from '#/features/scan/annex';
 import type { OcrLine } from '@repo/ocr/worker';
@@ -71,12 +72,18 @@ export type LocalParcel = Omit<
   statusSeq?: number;
 };
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
-/** `relayName` is missing on a row pulled before YSL-72: read it as told directly. */
+/**
+ * `relayName` is missing on a row pulled before YSL-72: read it as told
+ * directly; `deliveryStatus` and `deliveryAt`, written by the server, on a row
+ * written here or pulled before YSL-113: nothing known yet.
+ */
 export type LocalNotification = Omit<
   LocalRow<typeof notification.$inferSelect>,
-  'relayName'
+  'relayName' | 'deliveryStatus' | 'deliveryAt'
 > & {
   relayName?: string | null;
+  deliveryStatus?: DeliveryStatus | null;
+  deliveryAt?: Date | null;
 };
 export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;
 /** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */

@@ -40,7 +40,12 @@ import { tableOf, type SyncTable } from '#features/sync/tables';
 export const LOCK_TIMEOUT = '3s';
 
 /** Columns the server owns: a device cannot set or move them. */
-const SERVER_COLUMNS = new Set(['organizationId', 'serverXid']);
+const SERVER_COLUMNS = new Set([
+  'organizationId',
+  'serverXid',
+  'deliveryStatus',
+  'deliveryAt',
+]);
 
 /** Columns an update leaves alone, whatever the device sends. */
 const IMMUTABLE_COLUMNS = new Set([
