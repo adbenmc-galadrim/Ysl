@@ -115,7 +115,7 @@ function updatesOf(table: SyncTable, values: Values): Values {
       set.cancelNote = sql`case when ${handover.cancelReason} is null then excluded.cancel_note else ${handover.cancelNote} end`;
     }
     if ('cancelledByName' in set) {
-      set.cancelledByName = sql`coalesce(${handover.cancelledByName}, excluded.cancelled_by_name)`;
+      set.cancelledByName = sql`case when ${handover.cancelReason} is null then excluded.cancelled_by_name else ${handover.cancelledByName} end`;
     }
   }
   return set;

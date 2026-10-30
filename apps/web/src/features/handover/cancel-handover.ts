@@ -98,6 +98,7 @@ export async function cancelHandover(
     throw new HandoverCancelRefusedError(handoverId);
   }
   const { handover, parcels } = entry;
+  const kept = note?.trim() || null;
   // Another iPhone's clock may be ahead: a cancellation never precedes its handover.
   const cancelledAt = now < handover.at ? handover.at : now;
   const upserts: Upsert[] = [
@@ -107,7 +108,7 @@ export async function cancelHandover(
         ...handover,
         cancelledAt,
         cancelReason: reason,
-        cancelNote: note?.trim() || null,
+        cancelNote: kept,
         cancelledByName: agentName?.trim() || null,
       },
     },
@@ -126,7 +127,7 @@ export async function cancelHandover(
           type: 'parcel.handover_cancelled',
           handoverId: handover.id,
           reason,
-          note: note?.trim() || null,
+          note: kept,
         },
         { agentId, now },
       ),
