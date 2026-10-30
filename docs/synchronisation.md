@@ -289,9 +289,10 @@ coupe ; premier passage une minute après le démarrage), une instance à la foi
 `pg_try_advisory_lock` ; `maintenance.purgeNow` (admin) purge son organisation à la
 demande, `maintenance.status` rend le dernier passage.
 
-**E-mails du serveur** (`email_outbox`) : `drainEmailOutbox` s'en charge lui-même,
-pas `runPurge` : une ligne envoyée ou abandonnée est effacée après 30 jours. Job dans
-`apps/server` (`MAIL_POLL_SECONDS`, 30 par défaut, 0 le coupe), éteint sans
+**E-mails du serveur** (`email_outbox`) : `runPurge`, hors purge d'une seule
+organisation, efface les lignes envoyées, abandonnées ou jamais parties après 30 jours.
+Cette durée ne fait pas partie du §9.2 : elle reste à valider par le DPO. Job d'envoi
+dans `apps/server` (`MAIL_POLL_SECONDS`, 30 par défaut, 0 le coupe), éteint sans
 `BREVO_API_KEY` ou `MAIL_FROM_ADDRESS`.
 
 **iPhone** (`apps/web/src/features/retention`), à l'ouverture puis après une
