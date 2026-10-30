@@ -57,7 +57,7 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 
 ### 1.3 Périmètre : ce qui change par rapport à la v1
 
-| Sujet | v1 | Aujourd'hui |
+| Sujet | v1 | Produit visé |
 | --- | --- | --- |
 | Architecture | Une page statique, aucun serveur | PWA et petit serveur (API, base de données, envoi d'e-mails), sur la même stack qu'Emis |
 | Saisie | Un colis à la fois, formulaire long | **Scan en rafale** : un geste par colis, revue en fin de lot |
@@ -369,7 +369,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ME26 | Écran « À déposer » groupé par département, hors ligne compris |
 | ME27 | QR imprimable de chaque département ; la navette le scanne ou choisit le département, l'app affiche le nombre ; le département confirme le nombre reçu |
 | ME28 | Écart au dépôt : colis « À régulariser », visible par la navette et l'admin entreprise, qui réaffecte |
-| ME29 | E-mail au scan ou au dépôt selon le profil, avec les lieu, horaires et consignes du département ; relances comptées à partir du dépôt |
+| ME29 | E-mail au scan ou au dépôt selon le profil, avec les lieu, horaires et consignes du département ; relances comptées à partir du dépôt, ou de la réception si la navette fait office de département |
 
 #### 3.7.7 Espace département (F41, D23)
 
@@ -718,7 +718,7 @@ Sur ordinateur : même app en mise en page large, avec tableau des colis, revue,
 
 **Ce que deviennent les onglets de la v1 :**
 
-| Onglet v1 | Aujourd'hui |
+| Onglet v1 | Produit visé |
 | --- | --- |
 | Accueil | Compteurs en tête de l'onglet Colis (cliquables, contrairement à la v1) |
 | Nouveau | Scanner |
@@ -1034,7 +1034,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 - **Modèles** : par agent, synchronisés ; création, renommage, modification, copie, choix du modèle par défaut, suppression (sauf le modèle par défaut et le modèle livré, qui se rétablit) ; liste fermée de variables affichée sous l'éditeur, aperçu rempli.
 - **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le QR porte un jeton long `YSL:RETRAIT:<32 caractères base32>` (`@repo/contract/pickup`, 160 bits) ; le PIN a 4 chiffres. L'iPhone qui prépare l'e-mail tire les deux et n'écrit que leurs empreintes (`tokenHash`, `pinHash`), synchronisées vers les appareils pour vérifier un code hors ligne (F40, F41). Le jeton vit dans l'image partagée ; un e-mail envoyé par « Envoyer à … » n'a que le PIN.
 - **QR** : « Partager avec le QR » sur l'écran Notifier ouvre la feuille de partage avec le texte et le QR en PNG (inséré en pied dans Mail, en pièce jointe dans Outlook, S5) ; l'adresse se saisit dans la messagerie. L'image est dessinée en mémoire, jamais conservée.
-- **Vérification hors ligne (F41, YSL-73)** : la remise vérifie le QR et le PIN sur les empreintes de l'iPhone, sans réseau. Tous les codes du département arrivent au pull (ceux de l'entreprise pour une navette faisant office de département), sans horizon : actifs, utilisés, expirés et remplacés, jusqu'à la purge (§9), pour dire hors ligne « déjà servi », « expiré » ou « remplacé ». Un code émis sur un iPhone part au serveur 0,5 s après l'écriture et arrive sur les autres à leur synchro suivante : au plus 60 s app ouverte, au retour au premier plan ou du réseau (§5.3). Réseau présent, le viseur demande aussi `pickup.verify` (réponse attendue 1,5 s au plus) : un code inconnu ici mais actif au serveur est tiré tout de suite par une synchro (5 s de plus au plus), un code déjà utilisé sur un autre iPhone est refusé ; hors ligne, lent ou en erreur, l'iPhone décide seul.
+- **Vérification hors ligne (F41, YSL-73)** : la remise vérifie le QR et le PIN sur les empreintes de l'iPhone, sans réseau. Un code d'un autre département est refusé, et `pickup.verify` n'en dit pas le destinataire. Tous les codes du département arrivent au pull (ceux de l'entreprise pour une navette faisant office de département), sans horizon : actifs, utilisés, expirés et remplacés, jusqu'à la purge (§9), pour dire hors ligne « déjà servi », « expiré » ou « remplacé ». Un code émis sur un iPhone part au serveur 0,5 s après l'écriture et arrive sur les autres à leur synchro suivante : au plus 60 s app ouverte, au retour au premier plan ou du réseau (§5.3). Réseau présent, le viseur demande aussi `pickup.verify` (réponse attendue 1,5 s au plus) : un code inconnu ici mais actif au serveur est tiré tout de suite par une synchro (5 s de plus au plus), un code déjà utilisé sur un autre iPhone est refusé ; hors ligne, lent ou en erreur, l'iPhone décide seul.
 - **Code utilisé** : la remise qui couvre tous les colis en attente consomme le code (`usedAt`). Deux iPhone hors ligne peuvent remettre sur le même code : au retour du réseau la remise arrivée la seconde est refusée (409, colis déjà remis) et annulée sur son iPhone, et le serveur garde le premier `usedAt` reçu (un `usedAt` posé ne change plus, une relance ne rouvre pas un code utilisé).
 - **Relance et rattachement** : une relance avec le QR garde le PIN et l'échéance mais pose un nouveau code (nouveau jeton) et retire l'ancien : l'ancien QR dit « remplacé ». Au rattachement d'un contact à une personne, le code ouvert le plus récent des deux passe sur la personne, l'autre est retiré.
 - **Horloge** : l'expiration est jugée à l'horloge de l'iPhone, sans tolérance ; sur une validité de 30 jours un décalage de quelques minutes ne change rien. En ligne, `pickup.verify` juge à l'horloge du serveur.
