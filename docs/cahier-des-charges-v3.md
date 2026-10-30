@@ -304,7 +304,7 @@ Ces exigences sont toutes de lot L2 et priorité M, sauf mention contraire. Chaq
 | ID | Exigence |
 | --- | --- |
 | ME01 | Adaptateur Brevo derrière l'interface `Mailer`, remplaçable par Scaleway TEM ou Graph sans toucher aux appelants ; file d'envoi avec reprises espacées et idempotence par message |
-| ME02 | Webhook signé : délivré, rebond, plainte, désinscription. Statut réel sur la fiche colis et dans le suivi ; un rebond propose de corriger l'adresse |
+| ME02 | Webhook authentifié par jeton (Brevo ne signe pas ses événements) : délivré, rebond, plainte, désinscription. Statut réel sur la fiche colis et dans le suivi ; un rebond propose de corriger l'adresse |
 | ME03 | Nom et adresse d'expédition par entreprise ; enregistrements SPF et DKIM affichés pour la DSI du client, vérification par Brevo ; repli sur le domaine de la plateforme tant que le domaine n'est pas vérifié |
 | ME04 | Un e-mail par destinataire avec QR et code de retrait, modèles par entreprise, relances envoyées par le serveur, messagerie du téléphone gardée en repli |
 
@@ -1028,7 +1028,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 | `reports.summary` | tRPC (admin entreprise) | Rapports par département (L2) |
 | `tracking.lookup` | tRPC | Suivi transporteur (L4, optionnel) |
 | `extraction.cloudAssist` | tRPC | Renfort cloud (L4, désactivé par défaut) |
-| `POST /api/webhooks/mail` | Hono | Statuts de Brevo (D2 révisée) : signature vérifiée, idempotent |
+| `POST /api/webhooks/mail` | Hono | Statuts de Brevo (D2 révisée) : jeton vérifié, idempotent |
 | `/health`, `/ready`, `/version.json` | Hono | Sondes, détection de nouvelle version |
 
 ### 8.7 E-mail et retrait
