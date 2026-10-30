@@ -757,7 +757,7 @@ Clés primaires : UUID v7 générés par le client. Chaque table synchronisée p
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
 | `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, statut (`prepared`, `opened`, `sent`, `failed`), messagerie (`mailto`, `outlook`, `gmail`), prepared_at/by, opened_at, sent_at, failed_reason | Suivi déclaratif (D2 révisée, S5) : l'app sait qu'elle a ouvert la messagerie, l'agent confirme l'envoi ; le texte de l'e-mail n'est pas stocké |
 | `pickup_code` | id, person_id ou contact_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne, qui couvre tous ses colis en attente |
-| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
+| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
 | `setting` | clé, valeur | Lieu et horaires de retrait, relances, conservation |
 
@@ -779,7 +779,8 @@ stateDiagram-v2
     Recu --> Remis: retrait sans notification
     Notifie --> Notifie: relance
     Notifie --> Remis: QR, PIN ou signature
-    Remis --> Notifie: remise annulée (tracée)
+    Remis --> Notifie: remise annulée (tracée, motif)
+    Remis --> Recu: remise annulée, jamais notifié
     Recu --> Retourne: retour à l'expéditeur
     Notifie --> Retourne: retour à l'expéditeur
 ```
