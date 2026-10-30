@@ -1,5 +1,6 @@
 export * from '#schema/auth';
 export * from '#schema/directory';
+export * from '#schema/email-outbox';
 export * from '#schema/event';
 export * from '#schema/handover';
 export * from '#schema/notification';

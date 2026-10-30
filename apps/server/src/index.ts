@@ -1,9 +1,15 @@
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { trpcServer } from '@hono/trpc-server';
-import { appRouter, createTRPCContext, runPurge } from '@repo/api';
+import {
+  appRouter,
+  brevoMailer,
+  createTRPCContext,
+  drainEmailOutbox,
+  runPurge,
+} from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
-import { closeDb, pingDb, withConnection } from '@repo/db';
+import { closeDb, db, pingDb, withConnection } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
@@ -11,6 +17,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { clientIp } from '#client-ip';
+import { startMailJob } from '#mail-job';
 import { startPurgeJob } from '#purge-job';
 import { requestLog } from '#request-log';
 
@@ -112,19 +119,46 @@ const server = serve({ fetch: app.fetch, port: env.SERVER_PORT }, (info) => {
   logger.info({ port: info.port }, 'server listening');
 });
 
+function startMailerJob(
+  apiKey: string,
+  fromAddress: string,
+): () => Promise<void> {
+  const mailer = brevoMailer({
+    apiKey,
+    from: { email: fromAddress, name: env.MAIL_FROM_NAME },
+  });
+  return startMailJob({
+    intervalSeconds: env.MAIL_POLL_SECONDS,
+    run: (signal) => drainEmailOutbox(db, mailer, { signal }),
+  });
+}
+
+function mailJobOff(): () => Promise<void> {
+  logger.warn('mail job off: BREVO_API_KEY or MAIL_FROM_ADDRESS is missing');
+  return () => Promise.resolve();
+}
+
 const stopPurge = startPurgeJob({
   intervalMinutes: env.PURGE_INTERVAL_MINUTES,
   run: () => withConnection((conn) => runPurge(conn, { trigger: 'auto' })),
 });
 
+const stopMail =
+  env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
+    ? startMailerJob(env.BREVO_API_KEY, env.MAIL_FROM_ADDRESS)
+    : mailJobOff();
+
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     logger.info({ signal }, 'shutting down');
     stopPurge();
+    // A send cut short would leave a mail accepted but not recorded: sent twice.
+    const mailStopped = stopMail();
 
     server.close((error) => {
       if (error) logger.error({ err: error }, 'server did not close cleanly');
-      void closeDb()
+      void mailStopped
+        .then(() => closeDb())
         .catch((cause: unknown) => {
           logger.error({ err: cause }, 'database pool did not close cleanly');
         })

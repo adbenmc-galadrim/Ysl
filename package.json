@@ -17,7 +17,8 @@
     "db:migrate": "turbo run db:migrate",
     "auth:generate": "turbo run auth:generate",
     "auth:create-user": "pnpm --filter @repo/auth auth:create-user",
-    "auth:attach-organization": "pnpm --filter @repo/auth auth:attach-organization"
+    "auth:attach-organization": "pnpm --filter @repo/auth auth:attach-organization",
+    "mail:send-test": "pnpm --filter @repo/server mail:send-test"
   },
   "devDependencies": {
     "prettier": "^3.7.4",
