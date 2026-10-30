@@ -59,7 +59,8 @@ export async function handoversOf(
  * The handovers that list a parcel `remis` by another one: those that lost
  * it to another iPhone, cancelled by the synchronisation or kept for the
  * parcels they did hand over. Their `parcel.delivered` events for it tell a
- * handover that never happened.
+ * handover that never happened. One an agent undid with a reason did happen:
+ * its story stays.
  */
 export async function lostHandoverIds(
   db: CourrierDatabase,
@@ -75,7 +76,9 @@ export async function lostHandoverIds(
     .equals(id)
     .filter(
       (handover) =>
-        handover.parcelIds.includes(parcel.id) && handover.at.getTime() !== at,
+        handover.parcelIds.includes(parcel.id) &&
+        handover.at.getTime() !== at &&
+        !handover.cancelReason,
     )
     .toArray();
   return new Set(lost.map((handover) => handover.id));

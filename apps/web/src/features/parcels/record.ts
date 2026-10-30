@@ -475,6 +475,10 @@ function eventTitle(
       });
     case 'parcel.delivered':
       return deliveredTitle(event, record, t);
+    case 'parcel.handover_cancelled':
+      return t('history.handoverCancelled', {
+        reason: t(`handover.cancel.reason.${event.reason}`).toLowerCase(),
+      });
     case 'parcel.reply':
       return event.reply === 'colleague'
         ? t('history.reply.colleague', { name: event.delegate })
