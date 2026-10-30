@@ -41,6 +41,7 @@ export const PARCELS_CSV_HEADER = [
   'remis_par',
   'methode_remise',
   'remise_annulee',
+  'motif_annulation',
   'signature',
   'photo_remise',
 ] as const;
@@ -122,6 +123,8 @@ async function readHandovers(db: AnyDb, organizationId: string) {
       agentName: handover.agentName,
       at: handover.at,
       cancelledAt: handover.cancelledAt,
+      cancelReason: handover.cancelReason,
+      cancelNote: handover.cancelNote,
       hasSignature: handover.hasSignature,
       hasPhoto: handover.hasPhoto,
     })
@@ -170,8 +173,15 @@ function handoverByParcel(
 /** « oui » or « non »: the file says a proof exists, the proof stays on the iPhone (D8). */
 const yesNo = (value: boolean) => translate(value ? 'export.yes' : 'export.no');
 
+/** « Mauvais colis : celui de M. Bernard », empty when nobody undid it. */
+function cancelReasonCell({ cancelReason, cancelNote }: ExportedHandover) {
+  if (!cancelReason) return '';
+  const reason = translate(`handover.cancel.reason.${cancelReason}`);
+  return cancelNote ? `${reason} : ${cancelNote}` : reason;
+}
+
 function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
-  if (!row) return ['', '', '', '', '', '', ''];
+  if (!row) return ['', '', '', '', '', '', '', ''];
   return [
     formatExportDate(row.at),
     row.delegateName
@@ -183,6 +193,7 @@ function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
     row.agentName,
     translate(`handover.method.${row.method}`),
     formatExportDate(row.cancelledAt),
+    cancelReasonCell(row),
     yesNo(row.hasSignature),
     yesNo(row.hasPhoto),
   ];

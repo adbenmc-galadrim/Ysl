@@ -13,6 +13,8 @@ import {
 } from '#/features/handover/cancel-handover';
 import { lostHandoverIds } from '#/features/handover/delivered';
 import { loadHandoverEntry } from '#/features/handover/entry';
+import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
+import { describeRecord } from '#/features/parcels/record';
 import { recordHandover } from '#/features/handover/record-handover';
 import {
   NOW,
@@ -177,6 +179,26 @@ describe('cancelHandover', () => {
     await expect(
       cancelHandover(db, 'absent', { reason: 'entry_error' }, AGENT),
     ).rejects.toBeInstanceOf(HandoverCancelRefusedError);
+  });
+
+  it('tells the reason on the record and in the history', async () => {
+    await cancel();
+
+    const record = (await loadParcelRecord(db, received.id))!;
+    const view = describeRecord(record, { now: LATEST, t, showUnsent: true });
+
+    expect(view.handover?.items).toEqual(
+      expect.arrayContaining([
+        { label: 'Motif', value: 'Mauvais colis' },
+        { label: 'Précision', value: 'Celui de M. Bernard' },
+        { label: 'Annulée par', value: 'Karim Benali' },
+      ]),
+    );
+    expect(view.history?.map((entry) => entry.title)).toEqual(
+      expect.arrayContaining([
+        'Remise annulée : mauvais colis (Celui de M. Bernard)',
+      ]),
+    );
   });
 
   it('keeps the story of a handover undone, not of one that lost', async () => {

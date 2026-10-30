@@ -476,9 +476,15 @@ function eventTitle(
     case 'parcel.delivered':
       return deliveredTitle(event, record, t);
     case 'parcel.handover_cancelled':
-      return t('history.handoverCancelled', {
-        reason: t(`handover.cancel.reason.${event.reason}`).toLowerCase(),
-      });
+      return t(
+        event.note
+          ? 'history.handoverCancelled.note'
+          : 'history.handoverCancelled',
+        {
+          reason: t(`handover.cancel.reason.${event.reason}`).toLowerCase(),
+          note: event.note ?? '',
+        },
+      );
     case 'parcel.reply':
       return event.reply === 'colleague'
         ? t('history.reply.colleague', { name: event.delegate })
@@ -677,14 +683,25 @@ export function handoverItems(
           formatWhen(handover.cancelledAt, now, t),
         )
       : []),
+    ...(handover.cancelReason
+      ? row(
+          t('record.handover.cancelReason'),
+          t(`handover.cancel.reason.${handover.cancelReason}`),
+        )
+      : []),
+    ...(handover.cancelNote
+      ? row(t('record.handover.cancelNote'), handover.cancelNote)
+      : []),
+    ...(handover.cancelledByName
+      ? row(t('record.handover.cancelledBy'), handover.cancelledByName)
+      : []),
   ];
 }
 
 function action(parcel: LocalParcel): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
   if (awaitsNotice(parcel)) return { kind: 'notify' };
-  // Undoing a handover needs the handover cancelled with its reason (F44,
-  // YSL-75). A received parcel goes back to "À compléter" from the form,
+  // A handover is undone with its reason, by its own sheet (F44). A received parcel goes back to "À compléter" from the form,
   // once it lacks a number or anyone to tell, a name read included.
   if (parcel.status !== 'notifie' && parcel.status !== 'retourne') return;
   const to = stepBackOf(parcel);

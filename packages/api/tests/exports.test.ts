@@ -140,6 +140,8 @@ beforeAll(async () => {
       method: 'pin',
       at: new Date('2026-10-24T09:20:00Z'),
       cancelledAt: new Date('2026-10-24T09:25:00Z'),
+      cancelReason: 'wrong_parcel',
+      cancelNote: 'Celui de M. Bernard',
     },
   ]);
 });
@@ -242,6 +244,7 @@ describe('exportParcelsCsv', () => {
       remis_par: 'Karim Benali',
       methode_remise: 'QR code vérifié',
       remise_annulee: '',
+      motif_annulation: '',
       signature: 'oui',
       photo_remise: 'non',
     });
@@ -267,13 +270,14 @@ describe('exportParcelsCsv', () => {
     const { csv } = await exportParcelsCsv(db, ORGANIZATION_ID, now);
     const [header, , second, third] = parseCsv(csv);
     const cells = (row: string[]) =>
-      header!.slice(-7).map((_, i) => row[header!.length - 7 + i]);
-    expect(header!.slice(-7)).toEqual([
+      header!.slice(-8).map((_, i) => row[header!.length - 8 + i]);
+    expect(header!.slice(-8)).toEqual([
       'remis_le',
       'remis_a',
       'remis_par',
       'methode_remise',
       'remise_annulee',
+      'motif_annulation',
       'signature',
       'photo_remise',
     ]);
@@ -283,10 +287,11 @@ describe('exportParcelsCsv', () => {
       '',
       'Code vérifié',
       '24/10/2026 11:25',
+      'Mauvais colis : Celui de M. Bernard',
       'non',
       'non',
     ]);
-    expect(cells(third!)).toEqual(['', '', '', '', '', '', '']);
+    expect(cells(third!)).toEqual(['', '', '', '', '', '', '', '']);
   });
 
   it('writes a winter date in Paris winter time', () => {

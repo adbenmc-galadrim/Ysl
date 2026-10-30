@@ -59,8 +59,6 @@ export const DansLApp: Story = {
       { icon: 'cloud', label: 'Envoyée au serveur', done: true },
     ],
     parcels: APP_PARCELS,
-    undoLabel: 'Annuler · bientôt',
-    undoDisabled: true,
     onAnother: () => {},
   },
 };
