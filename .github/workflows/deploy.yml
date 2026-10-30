@@ -1,26 +1,20 @@
-# Vérifie (`ci.yml`) puis déploie sur Coolify (shinseo.fr) : main sur staging, prod
-# sur la production. Les ressources Coolify suivent la même branche et construisent les
-# images sur le serveur ; leur auto-deploy doit rester coupé pour ne pas déployer
-# deux fois.
+# Vérifie (`ci.yml`) puis déploie `prod` sur Coolify (shinseo.fr). Les ressources Coolify
+# suivent cette branche et construisent les images sur le serveur ; leur auto-deploy doit
+# rester coupé pour ne pas déployer deux fois.
 #
 # Réglages du dépôt (Settings → Secrets and variables → Actions) :
 #   secret   COOLIFY_TOKEN           jeton API Coolify (droit « deploy » seul ; le
 #                                    suivi du déploiement se fait dans Coolify)
 #   variable COOLIFY_URL             https://coolify.shinseo.fr
-# Réglages de chaque environnement GitHub (staging, production) :
+# Réglages de l'environnement GitHub `production` :
 #   variable COOLIFY_RESOURCE_UUIDS  UUID de l'API puis du web, séparés par une virgule
 name: Déploiement
 
 on:
   push:
-    branches: [main, prod]
+    branches: [prod]
   workflow_dispatch:
     inputs:
-      environment:
-        description: Environnement à déployer
-        type: choice
-        options: [staging, production]
-        default: staging
       force:
         description: Reconstruire les images sans cache (même commit, nouvelle version)
         type: boolean
@@ -30,49 +24,30 @@ permissions:
   contents: read
 
 jobs:
-  target:
-    name: Environnement cible
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.pick.outputs.environment }}
-      url: ${{ steps.pick.outputs.url }}
-    steps:
-      - id: pick
-        env:
-          ENVIRONMENT: ${{ github.event_name == 'workflow_dispatch' && inputs.environment || (github.ref_name == 'prod' && 'production' || 'staging') }}
-        run: |
-          case "$ENVIRONMENT" in
-            production) url=https://ysl.shinseo.fr ;;
-            *) url=https://ysl-staging.shinseo.fr ;;
-          esac
-          echo "environment=$ENVIRONMENT" >> "$GITHUB_OUTPUT"
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-
   checks:
     name: Vérification
     uses: ./.github/workflows/ci.yml
 
   deploy:
     name: Déploiement Coolify
-    needs: [target, checks]
+    needs: [checks]
     runs-on: ubuntu-latest
     environment:
-      name: ${{ needs.target.outputs.environment }}
-      url: ${{ needs.target.outputs.url }}
+      name: production
+      url: https://ysl.shinseo.fr
     concurrency:
-      group: deploy-${{ needs.target.outputs.environment }}
+      group: deploy-production
       cancel-in-progress: false
     env:
       COOLIFY_URL: ${{ vars.COOLIFY_URL }}
       COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
       RESOURCE_UUIDS: ${{ vars.COOLIFY_RESOURCE_UUIDS }}
       FORCE: ${{ inputs.force && 'true' || 'false' }}
-      ENVIRONMENT: ${{ needs.target.outputs.environment }}
     steps:
       - name: Déclenche le déploiement
         run: |
           if [ -z "$RESOURCE_UUIDS" ]; then
-            echo "::error::COOLIFY_RESOURCE_UUIDS manque dans l'environnement GitHub $ENVIRONMENT"
+            echo "::error::COOLIFY_RESOURCE_UUIDS manque dans l'environnement GitHub production"
             exit 1
           fi
           response=$(curl --silent --show-error --fail-with-body --request POST \

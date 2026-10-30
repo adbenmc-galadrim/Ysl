@@ -1,13 +1,15 @@
-# Vérifie une pull request : lint, types et tests Vitest d'un côté ; de l'autre le
+# Vérifie une pull request et `main` : lint, types et tests Vitest d'un côté ; de l'autre le
 # build du Storybook et la comparaison de chaque écran à sa maquette (`pnpm visual`,
 # qui échoue au-delà de `--max` % de pixels différents). Les planches
 # référence | capture | diff de chaque écran sont jointes au run en artefact.
 #
-# `deploy.yml` appelle ce workflow avant de déployer `main` et `prod`.
+# `deploy.yml` appelle ce workflow avant de déployer `prod`.
 name: Vérification
 
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_call:
 
 # Un nouveau push sur une PR annule le run précédent ; appelé par `deploy.yml`, chaque
