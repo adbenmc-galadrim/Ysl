@@ -134,8 +134,8 @@ function CompanyShellBar({
             <li key={`${i}-${label}`} className="flex whitespace-nowrap">
               <span
                 aria-current={last ? 'page' : undefined}
-                className={last ? 'font-semibold' : 'text-muted'}
-                style={last ? undefined : { minWidth: width }}
+                className={last ? 'font-semibold' : 'min-w-0 shrink-0 text-muted'}
+                style={last ? undefined : { width }}
               >
                 {label}
               </span>
