@@ -241,11 +241,11 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 
 | ID | Exigence | Origine | Prio | Lot |
 | --- | --- | --- | --- | --- |
-| F33 | ~~Envoi par le serveur via une file d'attente (outbox), avec reprises~~ **Périmé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'e-mail part de l'adresse de l'agent, ouvert prérempli dans la messagerie de l'iPhone (`mailto:`, Outlook ou Gmail en option) depuis ses propres modèles ; suivi déclaratif de chaque e-mail (préparé, messagerie ouverte, envoyé confirmé par l'agent, échec) | Nouveau (remplace l'envoi manuel) | M | L2 |
+| F33 | Envoi par le serveur via une file d'attente (outbox), avec reprises et statut réel (D2 révisée, Brevo au MVP) ; messagerie du téléphone en repli, avec son suivi déclaratif | Nouveau (remplace l'envoi manuel) | M | L2 |
 | F34 | Un e-mail par destinataire, regroupant ses colis ; « par service » devient un résumé optionnel | Amélioré (F17) | M | L2 |
-| F35 | E-mail ~~en HTML et en texte~~ en texte brut (D2 révisée, S5), accents corrects ; lieu et horaires de retrait ; code de retrait écrit en clair ; QR de retrait joint en image par « Partager avec le QR » (feuille de partage de l'iPhone), le `mailto:` ne portant pas d'image (YSL-66) | Amélioré | M | L2 |
-| F36 | ~~Repli `mailto:` manuel si l'envoi serveur est indisponible~~ **Périmé (D2 révisée) :** `mailto:` devient la voie principale, il n'y a plus d'envoi serveur ; Outlook, Gmail et « copier le texte » restent en option | Repris (voie principale) | S | L2 |
-| F37 | Relances ~~automatiques~~ proposées automatiquement (D2 révisée, YSL-67) : à J+2 et J+5 jours ouvrés l'app prépare un e-mail de relance par personne (modèle « Relance », même code de retrait) et le signale à l'agent, qui l'envoie d'un toucher ; puis alerte « En souffrance » | Nouveau | S | L2 |
+| F35 | E-mail en HTML et en texte, accents corrects ; lieu, horaires et consignes du département ; code de retrait écrit en clair et QR de retrait en image | Amélioré | M | L2 |
+| F36 | Repli par la messagerie du téléphone (`mailto:`, Outlook, Gmail, « copier le texte », partage du QR) si l'envoi serveur est indisponible ; livré, gardé tel quel (D2 révisée) | Repris | S | L2 |
+| F37 | Relances automatiques à J+2 et J+5 jours ouvrés après le dépôt, envoyées par le serveur si le profil les active (modèle « Relance », même code de retrait) ; relance à la main possible ; puis alerte « En souffrance » | Nouveau | S | L2 |
 | F38 | Copie à un délégué ou à des collègues, par e-mail | Amélioré (F18) | C | L3 |
 | F39 | Envoi à heures fixes (créneaux) plutôt qu'immédiat | Nouveau | C | L3 |
 
@@ -255,7 +255,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | --- | --- | --- | --- | --- |
 | F40 | Onglet Remise : scan du QR, saisie du PIN, ou recherche par nom → colis en attente → « Remettre tout » | Nouveau | M | L2 |
 | F41 | Vérification hors ligne du QR et du PIN (empreintes synchronisées à l'avance) | Nouveau | M | L2 |
-| F42 | Signature tactile et photo de remise facultatives, en secours (D6 : jamais obligatoires, recommandés compris) ; gardées sur l'iPhone (D8) | Nouveau | S | L2 |
+| F42 | Signature tactile et photo de remise facultatives, en secours (D6), ou obligatoires si le profil le dit (D30) ; gardées sur l'iPhone (D8) | Nouveau | S | L2 |
 | F43 | Journal de remise : qui, quand, quel agent, quelle méthode | Nouveau | M | L2 |
 | F44 | Annulation d'une remise par erreur (avec trace) | Nouveau | S | L2 |
 
@@ -267,22 +267,134 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F46 | Synchronisation entre appareils (iPhone et ordinateur) | Nouveau (hors périmètre v1) | M | L0-L1 |
 | F47 | Pastille d'état de synchronisation, « N en attente », alerte au-delà de 24 h, export de secours en JSON | Nouveau | M | L1 |
 | F48 | Mise à jour de l'app non bloquante (bandeau, jamais en plein lot) et « Forcer la mise à jour » | Nouveau | M | L0 |
-| F49 | Comptes agents, rôles agent et admin, connexion | Nouveau | M | L0 |
-| F50 | Import de l'annuaire en CSV par un admin, hors du code, dédoublonné par e-mail | Repris (F22, jamais fait en v1) | M | L1 |
+| F49 | Comptes et connexion ; les quatre rôles sont au §3.7.2 | Nouveau | M | L0 |
+| F50 | Import de l'annuaire en CSV par l'admin entreprise, hors du code, dédoublonné par e-mail | Repris (F22, jamais fait en v1) | M | L1 |
 | F51 | Export CSV lisible dans Excel (`;`, BOM, cellules neutralisées contre les formules) | Repris (F20) | M | L1 |
 | F52 | Import de l'historique v1 (format CSV v1), avec revalidation des trackings par les clés de contrôle | Nouveau | M | L1 |
 | F53 | Purge automatique selon les durées de conservation | Nouveau (point ouvert v1) | M | L2 |
 | F54 | Emplacement de stockage du colis (étagère, casier) | Nouveau | S | L3 |
 | F55 | Étiquette interne imprimable (nom, service, emplacement, code-barres) | Nouveau | C | L3 |
 | F56 | Lettres recommandées : type dédié, n° d'AR, signature facultative (D6) | Nouveau | S | L3 |
-| F57 | Vues ordinateur : tableau des colis, revue, annuaire, rapports (délai de retrait, volumes par transporteur et par jour) | Nouveau | S | L3 |
+| F57 | Vues ordinateur : tableau des colis, revue, annuaire, rapports (délai de retrait, volumes par transporteur et par jour) ; en L2 pour le département et l'admin entreprise (§3.7.7, §3.7.8) | Nouveau | S | L2 |
 | F58 | Synchronisation de l'annuaire depuis Entra ID (Graph delta), CSV conservé en secours | Nouveau | S | L4 |
 | F59 | Envoi depuis la boîte partagée « Service Courrier » via Microsoft Graph | Nouveau | S | L4 |
 | F60 | Connexion des agents via Entra ID | Nouveau | S | L4 |
 | F61 | Suivi transporteur via un agrégateur (statut ; expéditeur seulement s'il est fourni) | Nouveau | C | L4 |
 | F62 | Résumé quotidien dans un canal Teams (webhook Workflows) | Nouveau | C | L4 |
 | F63 | Mode sombre suivant le système, avec bascule manuelle | Nouveau | S | L1 |
-| W1 | Casiers, kiosque, SMS, push aux salariés, multi-sites, app native | — | W | — |
+| W1 | Casiers, kiosque, SMS, push aux salariés, gestion de plusieurs sites, app native, facturation (D29) | — | W | — |
+
+### 3.7 Modèle multi-entreprises
+
+Ces exigences sont toutes de lot L2 et priorité M, sauf mention contraire. Chaque fonctionnalité du plan a sa section.
+
+| Fonctionnalité du plan | Section | Tickets |
+| --- | --- | --- |
+| F35 Envoi des e-mails par le serveur | §3.7.1 | YSL-112 à YSL-115 |
+| F36 Départements et rôles | §3.7.2 | YSL-116 à YSL-119, YSL-83 |
+| F37 Plateforme et entreprises | §3.7.3 | YSL-120 à YSL-123 |
+| F38 Profil de fonctionnement et réglages | §3.7.4 | YSL-124 à YSL-127 |
+| F39 Annuaire partagé | §3.7.5 | YSL-128 à YSL-130 |
+| F40 Tournée et dépôt | §3.7.6 | YSL-131 à YSL-135 |
+| F41 Espace département | §3.7.7 | YSL-136, YSL-82 |
+| F42 Vue d'ensemble de l'admin entreprise | §3.7.8 | YSL-137, YSL-88 |
+
+#### 3.7.1 Envoi des e-mails par le serveur (F35, D2 révisée, D28)
+
+| ID | Exigence |
+| --- | --- |
+| ME01 | Adaptateur Brevo derrière l'interface `Mailer`, remplaçable par Scaleway TEM ou Graph sans toucher aux appelants ; file d'envoi avec reprises espacées et idempotence par message |
+| ME02 | Webhook signé : délivré, rebond, plainte, désinscription. Statut réel sur la fiche colis et dans le suivi ; un rebond propose de corriger l'adresse |
+| ME03 | Nom et adresse d'expédition par entreprise ; enregistrements SPF et DKIM affichés pour la DSI du client, vérification par Brevo ; repli sur le domaine de la plateforme tant que le domaine n'est pas vérifié |
+| ME04 | Un e-mail par destinataire avec QR et code de retrait, modèles par entreprise, relances envoyées par le serveur, messagerie du téléphone gardée en repli |
+
+#### 3.7.2 Départements et rôles (F36, D7 révisée, D21 à D23)
+
+| ID | Exigence |
+| --- | --- |
+| ME05 | Département : nom, point de réception, lieu, horaires, consignes ; plusieurs comptes par département ; le service courrier est un département comme un autre |
+| ME06 | Quatre rôles (§2.1) contrôlés côté serveur |
+| ME07 | Synchronisation et API filtrées selon le tableau du §2.1 : aucune fuite entre départements ni entre entreprises |
+| ME08 | Le serveur garde les colis pour que le département et l'admin entreprise les voient ; les photos d'étiquettes n'en font pas partie (D8) |
+| ME09 | Conversion de la prod : organisation → entreprise, département par défaut « Service courrier », texte `department` → départements, admin → admin entreprise, agent → navette ; répétée sur une copie, avec un plan de retour arrière |
+| ME10 | Navigation et accueil par rôle, sur mobile et sur ordinateur ; un rôle n'atteint aucune route d'un autre |
+| ME11 | L'admin entreprise crée, rattache à un département, suspend et révoque les comptes navette et département |
+
+#### 3.7.3 Plateforme et entreprises (F37, D26, D27, D29)
+
+| ID | Exigence |
+| --- | --- |
+| ME12 | Compte de plateforme sans entreprise, procédures séparées ; il ne lit aucune donnée nominative d'une entreprise |
+| ME13 | Back-office : liste, création avec un modèle de profil, renommage, suspension (plus de connexion ni de synchronisation), suppression avec purge des données |
+| ME14 | Invitation par e-mail à durée limitée, mot de passe à changer à la première connexion ; lien expiré ou réutilisé refusé. `auth:create-user` ne sert plus qu'au premier admin de l'app |
+| ME15 | Chiffres par entreprise (comptes, départements, colis du mois, dernière activité) et journal des actions de l'admin de l'app |
+
+#### 3.7.4 Profil de fonctionnement et réglages (F38, D28, D30, D31)
+
+Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèle est choisi par l'admin de l'app à la création ; l'admin entreprise modifie ensuite librement, sans verrou.
+
+| Paramètre | Valeurs |
+| --- | --- |
+| Navette = département | Oui ou non : la navette remet elle-même |
+| Revue du lot | Trois états |
+| Confirmation du dépôt | Désactivée, au nombre, colis par colis |
+| Preuve de remise | QR ou code, trois états |
+| Scan du colis à la remise, signature, photo | Trois états chacun |
+| Moment de l'e-mail | Au scan ou au dépôt |
+| Relances | Trois états |
+
+| ID | Exigence |
+| --- | --- |
+| ME16 | Règle du profil partagée entre l'iPhone et le serveur (`@repo/contract`) |
+| ME17 | Un changement s'applique à tous les colis, tout de suite ; l'écran annonce avant d'enregistrer les colis touchés (« 12 colis prêts devront être signés ») |
+| ME18 | Trois modèles à la création : « Petit site, la navette remet », « Multi-départements », « Traçabilité stricte » |
+| ME19 | Réglages : nom et logo dans l'app et les e-mails, interface neutre sinon (D14) ; expéditeur ; durées de conservation propres à l'entreprise |
+| ME20 | Les étapes livrées suivent le profil : revue du lot, preuve, signature et photo, destinataire sans e-mail, retrait par un collègue, réserves |
+
+#### 3.7.5 Annuaire partagé (F39, D15 révisée)
+
+| ID | Exigence |
+| --- | --- |
+| ME21 | L'admin entreprise tient tous les départements : ajout, modification, déplacement d'un salarié, import CSV. Salarié déplacé : ses colis à venir suivent, ses colis déposés passent « À régulariser » |
+| ME22 | Chaque département tient le sien ; il ne voit ni ne modifie les salariés d'un autre |
+| ME23 | La navette lit tout l'annuaire ; la suggestion de destinataire ramène le département ; destinataire inconnu : « À compléter » |
+
+#### 3.7.6 Tournée et dépôt (F40, D24, D25)
+
+| ID | Exigence |
+| --- | --- |
+| ME24 | Statuts En route, Déposé et À régulariser (§8.3), réversibles comme les autres, règle partagée entre l'iPhone et le serveur |
+| ME25 | Département pris du destinataire à la revue du lot, modifiable ; colis sans département bloqué à « À compléter » |
+| ME26 | Écran « À déposer » groupé par département, hors ligne compris |
+| ME27 | QR imprimable de chaque département ; la navette le scanne ou choisit le département, l'app affiche le nombre ; le département confirme le nombre reçu |
+| ME28 | Écart au dépôt : colis « À régulariser », visible par la navette et l'admin entreprise, qui réaffecte |
+| ME29 | E-mail au scan ou au dépôt selon le profil, avec les lieu, horaires et consignes du département ; relances comptées à partir du dépôt |
+
+#### 3.7.7 Espace département (F41, D23)
+
+| ID | Exigence |
+| --- | --- |
+| ME30 | Sur ordinateur et sur mobile : colis à venir, présents, historique, recherche ; confirmation du dépôt et déclaration d'écart |
+| ME31 | Remise sur mobile : QR ou code du salarié, puis scan du colis selon le profil ; code d'un autre département refusé ; hors ligne compris |
+
+#### 3.7.8 Vue d'ensemble de l'admin entreprise (F42)
+
+| ID | Exigence |
+| --- | --- |
+| ME32 | Tableau de bord par département : en route, en attente de retrait, en souffrance, à régulariser, avec accès direct aux colis à régulariser |
+| ME33 | Rapports par département et export ; l'admin de l'app n'en voit que les chiffres agrégés |
+
+#### 3.7.9 Points ouverts du modèle
+
+Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au ticket indiqué, qui le confirme ou le corrige.
+
+| Point | Choix provisoire | Ticket |
+| --- | --- | --- |
+| Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Celui qui déclare l'écart désigne les colis concernés | YSL-134 |
+| Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » au dépôt et ne se remet qu'à partir de là | YSL-131, YSL-135 |
+| L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Le serveur tire le code à l'envoi et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
+| Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
+| La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | La synchronisation filtrée par rôle reste sur Dexie ; à revoir si les volumes le demandent | YSL-117 |
 
 ---
 
