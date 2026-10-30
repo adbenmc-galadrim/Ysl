@@ -2,15 +2,11 @@ import type { ReactNode } from 'react';
 
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  PLATFORM_NAV,
-} from '#fixtures/multi-entreprises';
+import { DeskChoice, DeskField } from '#components/desk-form';
+import { DeskPanel } from '#components/desk-panel';
+import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import { DeskPanel } from '#screens/multi-entreprises/03-accueil/company-parts';
 import { STEP_GROUPS } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
 
 const STEPS = [
@@ -219,32 +215,6 @@ export function NouvelleEntrepriseModeleDesktop() {
   );
 }
 
-function DeskChoice({
-  options,
-  value,
-}: {
-  options: readonly string[];
-  value: string;
-}) {
-  return (
-    <div className="flex h-7 shrink-0 rounded-[6px] bg-fill p-0.5 text-12">
-      {options.map((option) => (
-        <span
-          key={option}
-          className={cn(
-            'flex h-6 w-[100px] items-start justify-center rounded-[4px] pt-[3px]',
-            option === value
-              ? 'bg-surface font-semibold shadow-[inset_0_0_0_1px_var(--color-border)]'
-              : 'text-ink-2',
-          )}
-        >
-          {option}
-        </span>
-      ))}
-    </div>
-  );
-}
-
 /** Step 2 on the computer: each step of the model, and what was changed. */
 export function NouvelleEntrepriseFonctionnementDesktop() {
   return (
@@ -307,34 +277,6 @@ export function NouvelleEntrepriseFonctionnementDesktop() {
         ))}
       </div>
     </WizardShell>
-  );
-}
-
-function DeskInput({
-  label,
-  value,
-  focused = false,
-  className,
-}: {
-  label: string;
-  value: string;
-  focused?: boolean;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <p className="text-13 font-semibold">{label}</p>
-      <div
-        className={cn(
-          'mt-2 h-9 rounded-[6px] pt-[9px] pl-3 text-14',
-          focused
-            ? 'shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)]'
-            : 'shadow-[inset_0_0_0_1px_var(--color-border)]',
-        )}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
 
@@ -401,16 +343,21 @@ export function NouvelleEntrepriseAdministrateurDesktop() {
           <p className="mt-[3px] text-13 text-muted">
             Il gère ensuite comptes, départements, annuaire et fonctionnement.
           </p>
-          <DeskInput
+          <DeskField
             label="Prénom et nom"
             value="Claire Bonnet"
             className="mt-[22px]"
+            labelClassName="top-0"
+            boxClassName="shadow-[inset_0_0_0_1px_var(--color-border)]"
+            inputClassName="pb-px"
           />
-          <DeskInput
+          <DeskField
             label="E-mail professionnel"
             value="claire.bonnet@atelier-lumen.fr"
             focused
             className="mt-4"
+            labelClassName="top-0"
+            inputClassName="pb-px"
           />
           <p className="mt-[7px] text-12 text-muted">
             Elle recevra un lien valable 7 jours.

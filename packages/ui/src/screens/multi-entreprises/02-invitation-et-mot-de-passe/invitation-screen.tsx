@@ -1,14 +1,11 @@
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanyLogo, DeskAuthPage } from '#components/company-parts';
+import { DeskField } from '#components/desk-form';
+import { PhoneField } from '#components/phone-parts';
 import { Screen } from '#components/screen';
+import { SAMPLE_PASSWORD } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
-import {
-  DeskAuthPage,
-  DeskField,
-  LogoTile,
-  PhoneField,
-  SAMPLE_PASSWORD,
-} from '#screens/multi-entreprises/01-premier-lancement-et-connexion/auth-parts';
 
 function Rule({ children }: { children: string }) {
   return (
@@ -48,7 +45,7 @@ export function InvitationEmailDesktop() {
       </header>
       <article className="absolute top-[152px] left-[420px] h-[418px] w-[600px] rounded-[12px] bg-surface px-10 pt-10 shadow-[0_2px_8px_rgb(0_0_0/0.06)]">
         <div className="flex items-center gap-3">
-          <LogoTile className="size-10 rounded-[8px] text-16">AL</LogoTile>
+          <CompanyLogo initials="AL" className="size-10 rounded-[8px] text-16" />
           <span className="text-15 font-semibold">Atelier Lumen</span>
         </div>
         <h2 className="relative -top-px mt-8 text-28 font-bold tracking-[-0.3px]">
@@ -97,7 +94,7 @@ export function InvitationEmailMobile() {
       </div>
       <article className="px-6">
         <div className="mt-[35px] flex items-center gap-3">
-          <LogoTile className="size-11 rounded-[11px] text-18">AL</LogoTile>
+          <CompanyLogo initials="AL" className="size-11 rounded-[11px] text-18" />
           <span className="relative -top-px text-15 font-semibold">Atelier Lumen</span>
         </div>
         <h2 className="relative -top-px mt-7 text-24 font-bold">Bienvenue sur Courrier</h2>
@@ -142,12 +139,18 @@ export function CreerMotDePasseDesktop() {
       <p className="mt-1.5 text-14 text-muted">
         Julie Perrin · département Studio
       </p>
-      <DeskField label="Mot de passe" value={SAMPLE_PASSWORD} className="mt-[34px]" />
+      <DeskField
+        label="Mot de passe"
+        value={SAMPLE_PASSWORD}
+        className="mt-[34px]"
+        type="password"
+      />
       <DeskField
         label="Confirmer le mot de passe"
         value={SAMPLE_PASSWORD}
         focused
         className="mt-4"
+        type="password"
       />
       <ul className="mt-[19px] flex flex-col gap-2">
         <DeskRule>12 caractères au moins</DeskRule>
@@ -174,13 +177,25 @@ export function CreerMotDePasseMobile() {
         </BottomBar>
       }
     >
-      <LogoTile className="ml-36 size-16 rounded-[16px] text-26">AL</LogoTile>
+      <CompanyLogo initials="AL" className="ml-36 size-16 rounded-[16px] text-26" />
       <h1 className="relative -top-px mt-5 text-center text-28 font-bold">Bienvenue, Karim</h1>
       <p className="mx-auto mt-1.5 w-[320px] text-center text-15 whitespace-break-spaces text-muted">
         Navette chez Atelier Lumen · karim.daoud@atelier-lumen.fr
       </p>
-      <PhoneField label="Mot de passe" value={SAMPLE_PASSWORD} className="mt-7" />
-      <PhoneField label="Confirmer" value={SAMPLE_PASSWORD} className="mt-4" />
+      <PhoneField
+        label="Mot de passe"
+        value={SAMPLE_PASSWORD}
+        className="mt-7"
+        type="password"
+        boxClassName="bg-fill"
+      />
+      <PhoneField
+        label="Confirmer"
+        value={SAMPLE_PASSWORD}
+        className="mt-4"
+        type="password"
+        boxClassName="bg-fill"
+      />
       <ul className="mt-[19px] flex flex-col gap-[9px]">
         <Rule>12 caractères au moins</Rule>
         <Rule>Les deux mots de passe sont identiques</Rule>

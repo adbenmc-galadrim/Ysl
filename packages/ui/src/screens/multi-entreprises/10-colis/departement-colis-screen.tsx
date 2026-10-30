@@ -7,31 +7,27 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskFilterButton } from '#components/desk-filter';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
 import { IconButton } from '#components/icon-button';
 import { IconTile, type IconTileProps } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
 import { NavBar, NavBarAction } from '#components/nav-bar';
-import { Screen } from '#components/screen';
-import { SearchField } from '#components/search-field';
-import { StatusDot, type StatusDotProps } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  DEPARTMENT_NAV,
-} from '#fixtures/multi-entreprises';
-import { Icon, type IconName } from '#icons';
-import { cn } from '#lib/tv';
 import {
   KraftThumb,
   PhoneBanner,
   PhoneRow,
   PhoneSection,
-} from '#screens/multi-entreprises/10-colis/phone-parts';
+  TickMark,
+} from '#components/phone-parts';
+import { Screen } from '#components/screen';
+import { SearchField } from '#components/search-field';
+import { StatusDot, type StatusDotProps } from '#components/status-dot';
+import { ACCOUNT, COMPANY, crumbs, DEPARTMENT_NAV } from '#fixtures/multi-entreprises';
+import { Icon, type IconName } from '#icons';
+import { cn } from '#lib/tv';
 
 type Handover = {
   id: string;
@@ -497,7 +493,7 @@ export function SelectionMobile() {
             leading={<KraftThumb />}
             title={name}
             lines={[line]}
-            trailing="tick"
+            mark={<TickMark />}
             separator
           />
         ))}

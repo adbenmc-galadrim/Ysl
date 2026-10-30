@@ -4,14 +4,14 @@ import {
   NouvelleEntrepriseAdministrateurDesktop,
   NouvelleEntrepriseFonctionnementDesktop,
   NouvelleEntrepriseModeleDesktop,
-} from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-desktop';
+} from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-desktop-screen';
 import {
   NouvelleEntrepriseAdministrateurMobile,
   NouvelleEntrepriseCreeeMobile,
   NouvelleEntrepriseErreurAdresseMobile,
   NouvelleEntrepriseFonctionnementMobile,
   NouvelleEntrepriseModeleMobile,
-} from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-mobile';
+} from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-mobile-screen';
 
 const meta = {
   title: 'Écrans/Multi-entreprises/04 Nouvelle entreprise/Parcours',

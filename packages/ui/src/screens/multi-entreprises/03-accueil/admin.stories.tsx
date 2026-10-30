@@ -5,7 +5,9 @@ import {
   EntreprisesErreurDesktop,
   EntreprisesMobile,
 } from '#screens/multi-entreprises/03-accueil/entreprises-screen';
-import { NavetteTourneeMobile } from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
+import {
+  NavetteTourneeMobile,
+} from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
 import {
   VueDEnsembleDesktop,
   VueDEnsembleMobile,

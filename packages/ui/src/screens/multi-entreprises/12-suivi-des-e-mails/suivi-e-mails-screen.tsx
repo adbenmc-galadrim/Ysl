@@ -1,19 +1,18 @@
-import type { ReactNode } from 'react';
 
-import { Avatar } from '#components/avatar';
+
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
 import { GroupedFootnote, GroupedHeader, GroupedList } from '#components/grouped-list';
-import { ListRow } from '#components/list-row';
 import { NavBar } from '#components/nav-bar';
+import { KraftThumb, PersonAvatar, PhoneRow, RoundTile } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SegmentedControl } from '#components/segmented-control';
 import {
@@ -296,39 +295,6 @@ export function SuiviEmailsDesktop({ mails }: { mails: SentMail[] }) {
   );
 }
 
-function PhoneRow({
-  leading,
-  title,
-  line,
-  state,
-  separator = false,
-}: {
-  leading: ReactNode;
-  title: string;
-  line: string;
-  state?: ReactNode;
-  separator?: boolean;
-}) {
-  return (
-    <div className="relative h-16 pt-[11px]">
-      <ListRow
-        leading={<span className="-mt-1.5 flex">{leading}</span>}
-        title={title}
-        lines={[{ text: <span className="relative -top-px">{line}</span> }]}
-        trailing={
-          <span className="-mt-0.5 flex items-center gap-2">
-            {state}
-            <Icon name="chevron" size={16} className="text-faint" />
-          </span>
-        }
-      />
-      {separator && (
-        <div className="absolute inset-x-0 bottom-0 ml-[52px] h-px bg-separator" />
-      )}
-    </div>
-  );
-}
-
 function PhoneStatePill({ state }: { state: SentState }) {
   const { label, tone, phoneIcon } = STATE[state];
   return (
@@ -362,14 +328,10 @@ export function SuiviEmailsMobile({ mails }: { mails: SentMail[] }) {
         {mails.map((mail) => (
           <PhoneRow
             key={mail.id}
-            leading={
-              <span className="flex size-10 items-center justify-center rounded-full bg-fill">
-                <Icon name="mail" size={20} />
-              </span>
-            }
+            leading={<RoundTile icon="mail" />}
             title={mail.recipient}
-            line={`${mail.message} · ${mail.sentAt}`}
-            state={<PhoneStatePill state={mail.state} />}
+            lines={[`${mail.message} · ${mail.sentAt}`]}
+            before={<PhoneStatePill state={mail.state} />}
             separator
           />
         ))}
@@ -378,20 +340,6 @@ export function SuiviEmailsMobile({ mails }: { mails: SentMail[] }) {
         Statuts donnés par le serveur d’envoi.
       </p>
     </Screen>
-  );
-}
-
-function ParcelVignette() {
-  return (
-    <span
-      aria-hidden="true"
-      className="relative block size-10 rounded-[8px] bg-kraft"
-    >
-      <span className="absolute top-[8.8px] left-[7.2px] h-5 w-[25.6px] rounded-[2px] bg-paper" />
-      <span className="absolute top-3 left-[10.4px] h-[1.5px] w-4 bg-[#666666]" />
-      <span className="absolute top-[16.8px] left-[10.4px] h-[1.5px] w-4 bg-[#666666]" />
-      <span className="absolute top-[22px] left-[10.4px] h-1 w-[19.2px] bg-[#111111]" />
-    </span>
   );
 }
 
@@ -450,9 +398,9 @@ export function ColisEnSouffranceMobile() {
         {STRANDED.map((row, i) => (
           <PhoneRow
             key={row.name}
-            leading={<ParcelVignette />}
+            leading={<KraftThumb />}
             title={row.name}
-            line={row.line}
+            lines={[row.line]}
             separator={i < STRANDED.length - 1}
           />
         ))}
@@ -575,15 +523,9 @@ export function ReponsesSalariesMobile() {
         {REPLIES.map((row, i) => (
           <PhoneRow
             key={row.name}
-            leading={
-              <Avatar
-                initials={row.initials}
-                tone="fill"
-                className="rounded-full bg-fill-2 text-14"
-              />
-            }
+            leading={<PersonAvatar initials={row.initials} />}
             title={row.name}
-            line={row.quote}
+            lines={[row.quote]}
             separator={i < REPLIES.length - 1}
           />
         ))}

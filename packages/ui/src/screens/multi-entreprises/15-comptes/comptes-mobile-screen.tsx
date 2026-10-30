@@ -1,32 +1,17 @@
 import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
+import {
+  PersonAvatar,
+  PhoneField,
+  PhoneRow,
+  PhoneSection,
+  PhoneSegments,
+} from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  PhoneDirectoryRow,
-  PhoneField,
-  PhoneSegments,
-} from '#screens/multi-entreprises/14-annuaire/directory-parts';
-
-function PhoneSection({
-  title,
-  count,
-  className,
-}: {
-  title: string;
-  count: number;
-  className?: string;
-}) {
-  return (
-    <h2 className={cn('flex h-6 gap-1.5 text-20 font-bold', className)}>
-      {title}
-      <span className="font-medium text-muted">{count}</span>
-    </h2>
-  );
-}
 
 function RowState({
   label,
@@ -40,7 +25,7 @@ function RowState({
   return (
     <span
       className={cn(
-        'absolute top-5 right-6 flex h-6 items-center gap-1.5 rounded-[12px] pl-[9px] text-13 font-semibold',
+        'flex h-6 items-center gap-1.5 rounded-[12px] pl-[9px] text-13 font-semibold',
         tone === 'blue' ? 'bg-fill' : 'bg-orange-soft text-orange-strong',
       )}
       style={{ width }}
@@ -69,25 +54,52 @@ export function AdminComptesMobile() {
       <SearchField placeholder="Nom ou e-mail" className="mt-4" />
       <PhoneSection title="Navettes" count={2} className="mt-5" />
       <div className="mt-2.5">
-        <PhoneDirectoryRow initials="KD" name="Karim Daoud" detail="Service courrier" />
-        <PhoneDirectoryRow initials="SL" name="Sophie Lambert" detail="Service courrier" />
+        <PhoneRow
+          leading={<PersonAvatar initials="KD" raised />}
+          title="Karim Daoud"
+          lines={['Service courrier']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="SL" raised />}
+          title="Sophie Lambert"
+          lines={['Service courrier']}
+          separator
+        />
       </div>
       <PhoneSection title="Départements" count={5} className="mt-2.5" />
       <div className="mt-2.5">
-        <PhoneDirectoryRow initials="JP" name="Julie Perrin" detail="Studio" />
-        <PhoneDirectoryRow initials="TM" name="Thomas Moreau" detail="Studio" />
-        <PhoneDirectoryRow
-          initials="NK"
-          name="Nadia Kessler"
-          detail="Finance"
-          trailing={<RowState label="Invitation envoyée" tone="blue" width={140} />}
+        <PhoneRow
+          leading={<PersonAvatar initials="JP" raised />}
+          title="Julie Perrin"
+          lines={['Studio']}
+          separator
         />
-        <PhoneDirectoryRow initials="BV" name="Bruno Vidal" detail="Juridique" />
-        <PhoneDirectoryRow
-          initials="ÉG"
-          name="Élise Garnier"
-          detail="Finance"
-          trailing={<RowState label="Suspendu" tone="orange" width={93} />}
+        <PhoneRow
+          leading={<PersonAvatar initials="TM" raised />}
+          title="Thomas Moreau"
+          lines={['Studio']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="NK" raised />}
+          title="Nadia Kessler"
+          lines={['Finance']}
+          before={<RowState label="Invitation envoyée" tone="blue" width={140} />}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="BV" raised />}
+          title="Bruno Vidal"
+          lines={['Juridique']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="ÉG" raised />}
+          title="Élise Garnier"
+          lines={['Finance']}
+          before={<RowState label="Suspendu" tone="orange" width={93} />}
+          separator
         />
       </div>
     </Screen>

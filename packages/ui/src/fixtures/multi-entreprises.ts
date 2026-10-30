@@ -283,7 +283,7 @@ function person(name: string, place?: string, department?: string): Person {
     email: `${name
       .toLowerCase()
       .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
+      .replace(/\p{M}/gu, '')
       .replace(' ', '.')}@atelier-lumen.fr`,
     place,
     department,
@@ -372,3 +372,21 @@ export const STUDIO_PARCELS: StudioParcel[] = [
     arrived: 'Hier',
   },
 ];
+
+export const SAMPLE_PASSWORD = 'motdepasse12';
+
+export const RECIPIENT_RESULTS = [
+  { name: 'Léa Fontaine', initials: 'LF', detail: 'Finance · 4e étage' },
+  { name: 'Louis Fontaine', initials: 'LF', detail: 'Studio · 2e étage' },
+  { name: 'Lise Fontan', initials: 'LF', detail: 'Juridique · 5e étage' },
+];
+
+/** The shell of the company settings pages, open on the tab named `crumb`. */
+export function companySettingsShell(crumb: string, company: CompanyShellCompany = COMPANY.admin) {
+  return {
+    company,
+    nav: COMPANY_ADMIN_NAV,
+    account: ACCOUNT.companyAdmin,
+    breadcrumb: crumbs('Atelier Lumen', 'Entreprise', crumb),
+  };
+}

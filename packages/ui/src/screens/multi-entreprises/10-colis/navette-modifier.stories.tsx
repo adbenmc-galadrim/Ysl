@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { NavetteModifierMobile } from '#screens/multi-entreprises/10-colis/navette-modifier-screen';
+import {
+  NavetteModifierMobile,
+} from '#screens/multi-entreprises/10-colis/navette-modifier-screen';
 
 const meta = {
   title: 'Écrans/Multi-entreprises/10 Colis/Navette',

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { AdminColisDesktop } from '#screens/multi-entreprises/10-colis/admin-colis-screen';
+import {
+  AdminColisDesktop,
+} from '#screens/multi-entreprises/10-colis/admin-colis-screen';
 
 const meta = {
   title: 'Écrans/Multi-entreprises/10 Colis/Admin entreprise',

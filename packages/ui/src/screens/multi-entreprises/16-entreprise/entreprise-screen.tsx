@@ -2,24 +2,21 @@ import { Avatar } from '#components/avatar';
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanySettingsDesk } from '#components/company-parts';
+import { DeskFormRow, DeskInput, DeskSectionTitle } from '#components/desk-form';
+import { DeskPanel } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
-import { StatusDot } from '#components/status-dot';
-import { StatusPill } from '#components/status-pill';
-import { COMPANY } from '#fixtures/multi-entreprises';
-import { Icon } from '#icons';
-import { cn } from '#lib/tv';
-
 import {
-  DeskBlock,
-  DeskFormRow,
-  DeskInput,
-  DeskSectionTitle,
-  EntrepriseDesk,
   PhoneGroup,
   PhoneGroupTitle,
-  PhoneRow,
+  PhoneSettingRow,
   PhoneSettings,
-} from '#screens/multi-entreprises/16-entreprise/settings-parts';
+} from '#components/phone-parts';
+import { StatusDot } from '#components/status-dot';
+import { StatusPill } from '#components/status-pill';
+import { COMPANY, companySettingsShell } from '#fixtures/multi-entreprises';
+import { Icon } from '#icons';
+import { cn } from '#lib/tv';
 
 type DnsRecord = {
   name: string;
@@ -69,7 +66,7 @@ const DKIM = 'k=rsa; p=MIGfMA0GCSqGSIb3DQEB…QIDAQAB';
 /** Identity and sender of a company whose domain still has to be verified. */
 export function IdentiteDomaineAVerifierDesktop() {
   return (
-    <EntrepriseDesk tab="identite">
+    <CompanySettingsDesk tab="identity" shell={companySettingsShell('Identité et e-mails')}>
       <DeskSectionTitle
         className="mt-[19px]"
         title="Identité"
@@ -175,14 +172,17 @@ export function IdentiteDomaineAVerifierDesktop() {
           Envoyer à la DSI
         </Button>
       </div>
-    </EntrepriseDesk>
+    </CompanySettingsDesk>
   );
 }
 
 /** The same tab once the domain is verified, for a company without a logo. */
 export function IdentiteDomaineVerifieDesktop() {
   return (
-    <EntrepriseDesk tab="identite" company={COMPANY.ferrand}>
+    <CompanySettingsDesk
+      tab="identity"
+      shell={companySettingsShell('Identité et e-mails', COMPANY.ferrand)}
+    >
       <DeskSectionTitle className="mt-[19px]" title="Identité" />
       <DeskFormRow label="Nom" className="mt-[22px]">
         <DeskInput label="Nom" defaultValue="Maison Ferrand" />
@@ -234,7 +234,7 @@ export function IdentiteDomaineVerifieDesktop() {
           },
         ]}
       />
-    </EntrepriseDesk>
+    </CompanySettingsDesk>
   );
 }
 
@@ -298,7 +298,7 @@ const PURGE = [
 /** How long the company keeps each kind of data, and what the next night erases. */
 export function ConservationDesktop() {
   return (
-    <EntrepriseDesk tab="conservation">
+    <CompanySettingsDesk tab="retention" shell={companySettingsShell('Conservation')}>
       <DeskSectionTitle
         className="mt-[19px]"
         title="Durées de conservation"
@@ -312,7 +312,7 @@ export function ConservationDesktop() {
             rows={RETENTION}
             rowKey={(r) => r.data}
           />
-          <DeskBlock title="Modifier « Colis remis »" className="h-[140px]">
+          <DeskPanel overlayStroke title="Modifier « Colis remis »" className="h-[140px]">
             <div className="mt-[15px] flex items-start px-4">
               <p className="relative -top-px w-[280px] pt-[7px] text-13 font-semibold">
                 Durée
@@ -329,9 +329,9 @@ export function ConservationDesktop() {
               Réduire la durée efface tout de suite les colis plus anciens : 112
               colis cette nuit.
             </p>
-          </DeskBlock>
+          </DeskPanel>
         </div>
-        <DeskBlock
+        <DeskPanel overlayStroke
           title="Prochaine purge"
           subtitle="Cette nuit à 3:00"
           className="h-[210px] w-[356px]"
@@ -355,9 +355,9 @@ export function ConservationDesktop() {
               Exporter avant la purge
             </Button>
           </div>
-        </DeskBlock>
+        </DeskPanel>
       </div>
-    </EntrepriseDesk>
+    </CompanySettingsDesk>
   );
 }
 
@@ -389,14 +389,14 @@ export function EntrepriseMobile() {
       </PhoneGroup>
       <PhoneGroupTitle className="mt-[22px]">E-mails</PhoneGroupTitle>
       <PhoneGroup className="mt-1.5">
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'send', tone: 'ink' }}
           title="Expéditeur"
           value="courrier@…"
           separator
           raised
         />
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'globe', tone: 'orange' }}
           title="Domaine"
           value={
@@ -412,13 +412,13 @@ export function EntrepriseMobile() {
       </PhoneGroup>
       <PhoneGroupTitle className="mt-[22px]">Fonctionnement</PhoneGroupTitle>
       <PhoneGroup className="mt-1.5">
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'sliders', tone: 'ink' }}
           title="Étapes"
           value="Multi-départ."
           separator
         />
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'building', tone: 'grey' }}
           title="Départements"
           value="4"
@@ -426,7 +426,7 @@ export function EntrepriseMobile() {
       </PhoneGroup>
       <PhoneGroupTitle className="mt-[22px]">Données</PhoneGroupTitle>
       <PhoneGroup className="mt-1.5">
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'shield', tone: 'green' }}
           title="Conservation"
           value="12 mois"
@@ -527,7 +527,7 @@ export function DomaineVerificationEchoueeMobile() {
         {...DOMAIN_BANNER}
       />
       <PhoneGroup className="mt-[37px]">
-        <PhoneRow
+        <PhoneSettingRow
           title="SPF"
           chevron={false}
           separator
@@ -541,7 +541,7 @@ export function DomaineVerificationEchoueeMobile() {
             />
           }
         />
-        <PhoneRow
+        <PhoneSettingRow
           title="DKIM"
           chevron={false}
           value={
@@ -564,10 +564,10 @@ export function ConservationMobile() {
   return (
     <PhoneSettings title="Conservation">
       <PhoneGroup className="mt-4">
-        <PhoneRow title="Photos d’étiquettes" value="90 jours" separator />
-        <PhoneRow title="Colis remis" value="12 mois" separator />
-        <PhoneRow title="Signatures et photos" value="12 mois" separator />
-        <PhoneRow title="Historique des e-mails" value="6 mois" raised />
+        <PhoneSettingRow title="Photos d’étiquettes" value="90 jours" separator />
+        <PhoneSettingRow title="Colis remis" value="12 mois" separator />
+        <PhoneSettingRow title="Signatures et photos" value="12 mois" separator />
+        <PhoneSettingRow title="Historique des e-mails" value="6 mois" raised />
       </PhoneGroup>
       <p className="relative -top-px mt-2 px-4 text-13 leading-4 text-muted">
         Les photos d’étiquettes restent sur l’iPhone de la navette (D8).

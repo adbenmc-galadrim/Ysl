@@ -1,25 +1,16 @@
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskPanel, DeskStats } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { SettingsIcon } from '#components/grouped-list';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
+import { PhoneGroupTitle, PhoneStat } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { StatusDot } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  COMPANY_ADMIN_NAV,
-  crumbs,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  DeskPanel,
-  DeskStats,
-  PhoneGroupTitle,
-  PhoneStat,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 
 const TO_RESOLVE = [
   {

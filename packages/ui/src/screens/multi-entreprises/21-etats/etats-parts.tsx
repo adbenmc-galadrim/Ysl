@@ -1,13 +1,11 @@
 import type { ReactNode } from 'react';
 
-import { Avatar } from '#components/avatar';
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { IconTile, type IconTileProps } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
-import { ListRow, type ListRowLine } from '#components/list-row';
 import { SearchTrigger } from '#components/search-field';
 import { Skeleton } from '#components/skeleton';
 import { StatusPill, SYNC_PILL } from '#components/status-pill';
@@ -205,63 +203,6 @@ export function SkeletonRows({
   );
 }
 
-/** A 16 px chevron, and what comes before it: a state, a count. */
-function RowEnd({ before, top }: { before?: ReactNode; top: number }) {
-  return (
-    <span className="flex items-center gap-2" style={{ marginTop: top }}>
-      {before && <span className="flex h-4 items-center">{before}</span>}
-      <Icon name="chevron" size={16} className="text-faint" />
-    </span>
-  );
-}
-
-const ROW_TITLE_TOP: Record<number, number> = { 64: 11, 68: 11, 72: 11, 76: 12 };
-
-/** A list row at a measured height, its tile and chevron centred on it. */
-export function PhoneRow({
-  height,
-  leading,
-  title,
-  lines,
-  before,
-  separator = false,
-}: {
-  height: 64 | 68 | 72 | 76;
-  leading: ReactNode;
-  title: ReactNode;
-  lines: string[];
-  before?: ReactNode;
-  separator?: boolean;
-}) {
-  const top = ROW_TITLE_TOP[height]!;
-  const raised: ListRowLine[] = lines.map((text) => ({
-    text: <span className="relative -top-px">{text}</span>,
-  }));
-  return (
-    <div className="relative" style={{ height, paddingTop: top }}>
-      <ListRow
-        leading={
-          <span className="flex" style={{ marginTop: (height - 40) / 2 - top - 7 }}>
-            {leading}
-          </span>
-        }
-        title={title}
-        lines={raised}
-        trailing={<RowEnd before={before} top={(height - 16) / 2 - top - 11} />}
-      />
-      {separator && (
-        <div className="absolute inset-x-0 bottom-0 ml-[52px] h-px bg-separator" />
-      )}
-    </div>
-  );
-}
-
-export function PersonAvatar({ initials }: { initials: string }) {
-  return (
-    <Avatar initials={initials} tone="fill" className="rounded-full bg-fill-2 text-14" />
-  );
-}
-
 export function RowTile({
   icon,
   className,
@@ -306,7 +247,7 @@ export function DockToast({ message }: { message: string }) {
   return (
     <Toast
       message={message}
-      className="absolute inset-x-5 top-[676px] rounded-[14px] bg-[#1c1c1e] px-4 pb-0.5"
+      className="absolute inset-x-5 top-[676px] rounded-[14px] bg-night px-4 pb-0.5"
     />
   );
 }

@@ -6,6 +6,7 @@ import {
   RapportsMobile,
 } from '#screens/multi-entreprises/19-rapports/rapports-screen';
 
+
 const meta = {
   title: 'Écrans/Multi-entreprises/19 Rapports/Admin entreprise · Rapports',
   parameters: { layout: 'fullscreen' },

@@ -1,9 +1,9 @@
+import { PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SectionHeader } from '#components/section-header';
 import {
   DockToast,
   PhoneDock,
-  PhoneRow,
   ProgressTrack,
   RootHeader,
   RowTile,

@@ -141,11 +141,6 @@ const preview: Preview = {
           styles: { width: '1440px', height: '900px' },
           type: 'desktop',
         },
-        desktop: {
-          name: 'Poste ordinateur',
-          styles: { width: '1280px', height: '800px' },
-          type: 'desktop',
-        },
       },
     },
     options: {

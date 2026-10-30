@@ -5,26 +5,24 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
+import {
+  KraftThumb,
+  PhoneBanner,
+  PhoneRow,
+  RoundTile,
+  TickMark,
+} from '#components/phone-parts';
 import { ProgressBar } from '#components/progress-bar';
 import { Screen } from '#components/screen';
 import { StatusDot } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  DEPARTMENT_NAV,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, crumbs, DEPARTMENT_NAV } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-
 import {
-  DepotBanner,
-  DepotBottom,
-  DepotCounter,
-  DepotGroup,
-  DepotInfoTile,
-  DepotRow,
-} from '#screens/multi-entreprises/09-depot-au-departement/depot-parts';
+  DepositBottom,
+  DepositCounter,
+  DepositGroup,
+} from '#screens/multi-entreprises/09-depot-au-departement/deposit-parts';
 
 const CLOSE = <IconButton icon="x" label="Fermer" size="lg" iconSize={22} />;
 const CLOSE_BAR = '[&>div:first-child]:pl-0';
@@ -34,19 +32,19 @@ export function DepartementConfirmerMobile() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Confirmer 6 colis</Button>
           <Button variant="secondary">Le compte n’y est pas</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} title="Dépôt de Karim" className={CLOSE_BAR} />
       <p className="mt-4 text-center text-15 text-muted">
         Posé à 10:56 · 6 colis annoncés
       </p>
-      <DepotCounter value={6} className="mt-[46px]" />
+      <DepositCounter value={6} className="mt-[46px]" />
       <p className="mt-2 text-center text-17 font-semibold">colis comptés</p>
-      <DepotGroup
+      <DepositGroup
         className="mt-9"
         items={[
           { icon: 'list', title: 'Voir les 6 colis', chevron: true },
@@ -70,20 +68,23 @@ export function DepartementConfirmerEcartMobile() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Confirmer 5 et signaler</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} title="Dépôt de Karim" className={CLOSE_BAR} />
       <p className="mt-4 text-center text-15 text-muted">
         Posé à 10:56 · 6 colis annoncés
       </p>
-      <DepotCounter value={5} alert className="mt-[46px]" />
-      <DepotBanner
+      <DepositCounter value={5} alert className="mt-[46px]" />
+      <PhoneBanner
+        tone="red"
+        icon="warning"
         className="mt-3.5"
         title="Il manque 1 colis"
         description="Désignez-le si vous savez lequel."
+        height={67}
       />
       <div
         role="radiogroup"
@@ -106,12 +107,18 @@ export function DepartementConfirmerEcartMobile() {
         ))}
       </div>
       <div className="mt-4">
-        <DepotRow title="Inès Garnier" detail="FedEx ···3338" checked separator />
-        <DepotRow
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Inès Garnier"
+          lines={['FedEx ···3338']}
+          mark={<TickMark />}
+          separator
+        />
+        <PhoneRow
+          leading={<RoundTile icon="info" />}
           title="Je ne sais pas"
-          detail="Les 6 colis passent à régulariser"
-          leading={<DepotInfoTile />}
-          checked={false}
+          lines={['Les 6 colis passent à régulariser']}
+          mark={<TickMark checked={false} chevron />}
         />
       </div>
     </Screen>
@@ -126,12 +133,12 @@ export function DepartementColisParColisMobile() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button icon="scan" iconSize={20} className="gap-2">
             Scanner le suivant
           </Button>
           <Button variant="secondary">Terminer à 4 colis</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} title="Dépôt de Karim" className={CLOSE_BAR} />
@@ -143,14 +150,23 @@ export function DepartementColisParColisMobile() {
       />
       <div className="mt-[18px]">
         {SCANNED.map((name) => (
-          <DepotRow key={name} title={name} detail="Scanné" checked height={60} separator />
+          <PhoneRow
+            key={name}
+            leading={<KraftThumb />}
+            title={name}
+            lines={['Scanné']}
+            mark={<TickMark />}
+            height={60}
+            separator
+          />
         ))}
         {TO_SCAN.map((name) => (
-          <DepotRow
+          <PhoneRow
             key={name}
+            leading={<KraftThumb />}
             title={name}
-            detail="À scanner"
-            checked={false}
+            lines={['À scanner']}
+            mark={<TickMark checked={false} chevron />}
             height={60}
             separator
           />
@@ -165,9 +181,9 @@ export function DepartementEmplacementMobile() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Ranger les 6 colis</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar title="Dépôt · 6 colis" />
@@ -175,7 +191,7 @@ export function DepartementEmplacementMobile() {
       <p className="mt-1.5 text-14 text-muted">
         Choisi au dépôt, plus à la réception du service courrier
       </p>
-      <DepotGroup
+      <DepositGroup
         tone="surface"
         className="mt-[29px]"
         items={[
@@ -211,9 +227,9 @@ export function DepartementDepotConfirmeMobile() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Terminé</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <span className="mx-auto mt-[102px] flex size-[88px] items-center justify-center rounded-full bg-green-solid text-white">
@@ -223,7 +239,7 @@ export function DepartementDepotConfirmeMobile() {
       <p className="mt-1.5 text-center text-15 text-muted">
         Rangés étagère A · 10:58
       </p>
-      <DepotGroup
+      <DepositGroup
         className="mt-10"
         items={[
           {
@@ -347,7 +363,7 @@ export function DepartementConfirmerDesktop() {
         <DepositDialog
           body={
             <>
-              <DepotCounter value={6} className="mt-3" />
+              <DepositCounter value={6} className="mt-3" />
               <p className="mt-1 text-center text-15 font-semibold">
                 colis comptés
               </p>
@@ -414,7 +430,7 @@ export function DepartementConfirmerEcartDesktop() {
         <DepositDialog
           body={
             <>
-              <DepotCounter value={5} alert className="mt-3" />
+              <DepositCounter value={5} alert className="mt-3" />
               <div className="mt-2 flex h-10 items-start gap-2.5 rounded-[6px] bg-red-soft pt-[11px] pl-3 text-red">
                 <Icon name="warning" size={16} className="mt-px" />
                 <span className="relative -top-px text-13 font-semibold">Il manque 1 colis</span>

@@ -2,10 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import {
   ChoisirDepartementMobile,
+  ChoisirDestinataireMobile,
   DestinataireInconnuMobile,
   PourQuiMobile,
 } from '#screens/multi-entreprises/08-rapprochement-du-destinataire/navette-rapprochement-screen';
-import { ChoisirDestinataireMobile } from '#screens/multi-entreprises/08-rapprochement-du-destinataire/navette-parts';
 
 const PAGE =
   'multi-entreprises/08-rapprochement-du-destinataire/rapprochement--navette';

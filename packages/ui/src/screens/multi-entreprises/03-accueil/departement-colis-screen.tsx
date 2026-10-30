@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+
 
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
@@ -7,15 +7,15 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskFilterButton } from '#components/desk-filter';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
 import { DetailsList } from '#components/details-list';
 import { IconButton } from '#components/icon-button';
-import { IconTile, type IconTileProps } from '#components/icon-tile';
+import { IconTile } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
-import { ListRow, type ListRowLine } from '#components/list-row';
+import { PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
@@ -29,7 +29,6 @@ import {
   type StudioParcel,
 } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
-import { cn } from '#lib/tv';
 
 const COLUMNS: DeskTableColumn<StudioParcel>[] = [
   {
@@ -211,55 +210,6 @@ export function DepartementColisDesktop({
   );
 }
 
-function PhoneRow({
-  tile,
-  tileClass,
-  title,
-  lines,
-  separator = false,
-}: {
-  tile: IconTileProps['icon'];
-  tileClass?: string;
-  title: ReactNode;
-  lines: ListRowLine[];
-  separator?: boolean;
-}) {
-  const tall = lines.length > 1;
-  const raised = lines.map((line) => ({
-    ...line,
-    text: <span className="relative -top-px">{line.text}</span>,
-  }));
-  return (
-    <div
-      className={
-        tall ? 'relative h-[76px] pt-3' : 'relative h-[60px] pt-[11px]'
-      }
-    >
-      <ListRow
-        leading={
-          <IconTile
-            icon={tile}
-            tone="fill"
-            className={cn(tall ? '-mt-px' : '-mt-2', tileClass)}
-          />
-        }
-        title={title}
-        lines={raised}
-        trailing={
-          <Icon
-            name="chevron"
-            size={16}
-            className={tall ? 'mt-[7px] text-faint' : 'text-faint'}
-          />
-        }
-      />
-      {separator && (
-        <div className="absolute inset-x-0 bottom-0 ml-[52px] h-px bg-separator" />
-      )}
-    </div>
-  );
-}
-
 /** The same home on the phone: the deposit, then who has a parcel waiting. */
 export function DepartementColisMobile() {
   return (
@@ -314,29 +264,26 @@ export function DepartementColisMobile() {
       />
       <div className="mt-3.5">
         <PhoneRow
-          tile="clock"
-          tileClass="bg-orange-soft text-orange-strong"
+          leading={
+            <IconTile icon="clock" tone="fill" className="bg-orange-soft text-orange-strong" />
+          }
           title="Inès Garnier"
           lines={[
-            { text: 'FedEx ···3338' },
-            {
-              text: (
-                <span className="text-orange">En souffrance, relancée hier</span>
-              ),
-            },
+            'FedEx ···3338',
+            <span key="state" className="text-orange">En souffrance, relancée hier</span>,
           ]}
           separator
         />
         <PhoneRow
-          tile="mail"
+          leading={<IconTile icon="mail" tone="fill" />}
           title="Camille Morel"
-          lines={[{ text: 'UPS ···0622' }, { text: 'Prévenue à 10:58' }]}
+          lines={['UPS ···0622', 'Prévenue à 10:58']}
           separator
         />
         <PhoneRow
-          tile="mail"
+          leading={<IconTile icon="mail" tone="fill" />}
           title="Samuel Petit"
-          lines={[{ text: '2 colis Amazon' }, { text: 'A ouvert l’e-mail à 11:02' }]}
+          lines={['2 colis Amazon', 'A ouvert l’e-mail à 11:02']}
         />
       </div>
       <SectionHeader
@@ -347,9 +294,10 @@ export function DepartementColisMobile() {
       />
       <div className="mt-3.5">
         <PhoneRow
-          tile="truck"
+          leading={<IconTile icon="truck" tone="fill" />}
           title="Jules Perret"
-          lines={[{ text: 'DPD · en route' }]}
+          lines={['DPD · en route']}
+          height={60}
         />
       </div>
     </Screen>

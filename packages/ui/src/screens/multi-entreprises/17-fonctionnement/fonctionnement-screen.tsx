@@ -2,49 +2,17 @@ import type { ReactNode } from 'react';
 
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanySettingsDesk } from '#components/company-parts';
+import { DeskChoice } from '#components/desk-form';
+import { DeskPanel } from '#components/desk-panel';
+import { PhoneGroup, PhoneGroupTitle, PhoneSettings } from '#components/phone-parts';
 import { Sheet } from '#components/sheet';
 import { Toast } from '#components/toast';
+import { companySettingsShell } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  DeskBlock,
-  EntrepriseDesk,
-  PhoneGroup,
-  PhoneGroupTitle,
-  PhoneSettings,
-} from '#screens/multi-entreprises/16-entreprise/settings-parts';
 
 const STATES = ['Désactivée', 'Facultative', 'Obligatoire'];
-
-function DeskChoice({ options, chosen }: { options: string[]; chosen: string }) {
-  return (
-    <div
-      role="radiogroup"
-      className="flex h-7 shrink-0 rounded-[6px] bg-fill p-0.5"
-    >
-      {options.map((option) => {
-        const on = option === chosen;
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            className={cn(
-              'h-6 w-[100px] cursor-pointer rounded-[4px] pb-1 text-12 outline-none',
-              'focus-visible:ring-2 focus-visible:ring-blue',
-              on
-                ? 'border border-border bg-surface font-semibold text-ink'
-                : 'text-ink-2',
-            )}
-          >
-            {option}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 type Step = {
   title: string;
@@ -84,13 +52,13 @@ function DeskStep({
             Modifié
           </span>
         )}
-        <DeskChoice options={step.options ?? STATES} chosen={step.chosen} />
+        <DeskChoice options={step.options ?? STATES} value={step.chosen} />
       </div>
     </div>
   );
 }
 
-const REMISE_STEPS: Step[] = [
+const HANDOVER_STEPS: Step[] = [
   {
     title: 'Preuve par QR ou code',
     description: 'Le salarié présente le QR ou le code de son e-mail',
@@ -149,7 +117,7 @@ const SECTIONS: { title: string; steps: Step[] }[] = [
   },
   {
     title: 'Remise',
-    steps: REMISE_STEPS,
+    steps: HANDOVER_STEPS,
   },
   {
     title: 'E-mails',
@@ -171,7 +139,7 @@ const SECTIONS: { title: string; steps: Step[] }[] = [
   },
 ];
 
-function FonctionnementDesk({
+function OperationDesk({
   showModified,
   aside,
   overlay,
@@ -183,14 +151,18 @@ function FonctionnementDesk({
   footer?: ReactNode;
 }) {
   return (
-    <EntrepriseDesk tab="fonctionnement" overlay={overlay}>
+    <CompanySettingsDesk
+      tab="operation"
+      shell={companySettingsShell('Fonctionnement')}
+      overlay={overlay}
+    >
       <p className="relative -top-px mt-[19px] h-4 text-13 text-muted">
         Modèle de départ : Multi-départements · 2 étapes changées depuis
       </p>
       <div className="mt-3 flex h-[600px] shrink-0 items-start gap-4 overflow-y-auto [scrollbar-width:none]">
         <div className="flex w-[760px] shrink-0 flex-col gap-4">
           {SECTIONS.map((section) => (
-            <DeskBlock key={section.title} title={section.title}>
+            <DeskPanel overlayStroke key={section.title} title={section.title}>
               {section.steps.map((step, i) => (
                 <DeskStep
                   key={step.title}
@@ -199,13 +171,13 @@ function FonctionnementDesk({
                   last={i === section.steps.length - 1}
                 />
               ))}
-            </DeskBlock>
+            </DeskPanel>
           ))}
         </div>
         {aside}
       </div>
       {footer}
-    </EntrepriseDesk>
+    </CompanySettingsDesk>
   );
 }
 
@@ -217,7 +189,7 @@ const STATE_HELP = [
 
 function StateHelp() {
   return (
-    <DeskBlock title="Ce que règle chaque état" className="h-[236px] w-[376px]">
+    <DeskPanel overlayStroke title="Ce que règle chaque état" className="h-[236px] w-[376px]">
       <div className="mt-[15px] flex flex-col gap-[17px] px-4">
         {STATE_HELP.map(([title, text]) => (
           <div key={title} className="h-[35px]">
@@ -226,19 +198,19 @@ function StateHelp() {
           </div>
         ))}
       </div>
-    </DeskBlock>
+    </DeskPanel>
   );
 }
 
 /** The steps with two unsaved changes, and the bar that saves them. */
 export function FonctionnementModificationsDesktop() {
   return (
-    <FonctionnementDesk
+    <OperationDesk
       showModified
       aside={<StateHelp />}
       footer={
         <div className="absolute inset-x-0 bottom-0 flex h-16 items-start border-t border-separator bg-surface px-8 pt-[15px]">
-          <span className="mt-3 size-2 rounded-full bg-[#2563eb]" />
+          <span className="mt-3 size-2 rounded-full bg-blue-solid" />
           <p className="mt-1.5 ml-2 flex-1 text-13 font-semibold">
             2 changements non enregistrés
           </p>
@@ -287,7 +259,7 @@ function ImpactLine({
 /** The confirmation that shows which parcels on their way the change will touch. */
 export function ColisTouchesDesktop() {
   return (
-    <FonctionnementDesk
+    <OperationDesk
       showModified
       aside={null}
       overlay={
@@ -349,10 +321,10 @@ const HISTORY = [
 /** The saved state: the history of the changes and the toast that can undo. */
 export function FonctionnementEnregistreDesktop() {
   return (
-    <FonctionnementDesk
+    <OperationDesk
       showModified={false}
       aside={
-        <DeskBlock title="Historique" className="h-[300px] w-[376px]">
+        <DeskPanel overlayStroke title="Historique" className="h-[300px] w-[376px]">
           <div className="mt-[15px] flex flex-col gap-6 px-4">
             {HISTORY.map((entry) => (
               <div key={entry.when} className="h-[52px]">
@@ -364,7 +336,7 @@ export function FonctionnementEnregistreDesktop() {
               </div>
             ))}
           </div>
-        </DeskBlock>
+        </DeskPanel>
       }
       footer={
         <Toast
@@ -414,7 +386,7 @@ function PhoneSteps({ showModified }: { showModified: boolean }) {
     <>
       <PhoneGroupTitle className="mt-4">Remise</PhoneGroupTitle>
       <PhoneGroup className="relative mt-1.5 h-[590px]">
-        {REMISE_STEPS.map((step, i) => (
+        {HANDOVER_STEPS.map((step, i) => (
           <div
             key={step.title}
             className="absolute inset-x-4"
@@ -425,7 +397,7 @@ function PhoneSteps({ showModified }: { showModified: boolean }) {
               {step.description}
             </p>
             <PhoneChoice chosen={step.chosen} />
-            {i < REMISE_STEPS.length - 1 && (
+            {i < HANDOVER_STEPS.length - 1 && (
               <span className="absolute inset-x-0 top-[103px] h-px bg-separator" />
             )}
             {showModified && step.modified && (
@@ -506,7 +478,7 @@ export function ColisTouchesMobile() {
       behind={<PhoneSettings title="Fonctionnement" />}
       scrimClassName="bg-black/32"
       descriptionClassName="mt-1.5"
-      className="relative h-[552px] rounded-t-[24px] [&_h2]:mt-[19px] [&>div>span]:w-9 [&>div>span]:bg-[#c7c7cc]"
+      className="relative h-[552px] rounded-t-[24px] [&_h2]:mt-[19px] [&>div>span]:w-9 [&>div>span]:bg-faint"
     >
       <div className="mt-[22px]">
         <ImpactRow

@@ -31,7 +31,7 @@ const PICKUP_QR = [
 
 const PARCELS = ['Amazon ···4471', 'Amazon ···4472'];
 
-export type SalarieMail = {
+export type EmployeeMail = {
   company: { name: string; initials: string; ownLogo: boolean };
   sender: string;
   subject: string;
@@ -49,7 +49,7 @@ export type SalarieMail = {
 const LUMEN = { name: 'Atelier Lumen', initials: 'AL', ownLogo: true };
 const HOURS = 'Lun.–ven. 9:00–12:30, 14:00–18:00';
 
-export const NOTICE_MAIL: SalarieMail = {
+export const NOTICE_MAIL: EmployeeMail = {
   company: LUMEN,
   sender: 'Courrier Atelier Lumen',
   subject: '2 colis vous attendent au Studio',
@@ -61,9 +61,9 @@ export const NOTICE_MAIL: SalarieMail = {
   hours: HOURS,
 };
 
-export const CODE_ONLY_MAIL: SalarieMail = { ...NOTICE_MAIL, codeOnly: true };
+export const CODE_ONLY_MAIL: EmployeeMail = { ...NOTICE_MAIL, codeOnly: true };
 
-export const NO_LOGO_MAIL: SalarieMail = {
+export const NO_LOGO_MAIL: EmployeeMail = {
   ...NOTICE_MAIL,
   company: { name: 'Maison Ferrand', initials: 'MF', ownLogo: false },
   sender: 'Accueil Maison Ferrand',
@@ -72,7 +72,7 @@ export const NO_LOGO_MAIL: SalarieMail = {
   hours: undefined,
 };
 
-export const REMINDER_MAIL: SalarieMail = {
+export const REMINDER_MAIL: EmployeeMail = {
   company: LUMEN,
   sender: 'Courrier Atelier Lumen',
   subject: 'Rappel : vos 2 colis attendent',
@@ -135,7 +135,7 @@ function PracticalRow({
   );
 }
 
-function MailBody({ mail, desk = false }: { mail: SalarieMail; desk?: boolean }) {
+function MailBody({ mail, desk = false }: { mail: EmployeeMail; desk?: boolean }) {
   const pitch = desk ? 'h-[30px]' : 'h-11';
   return (
     <>
@@ -214,7 +214,7 @@ function MailBody({ mail, desk = false }: { mail: SalarieMail; desk?: boolean })
 }
 
 /** A pickup e-mail open in the employee's mail client, on the computer. */
-export function SalarieMailDesktop({ mail }: { mail: SalarieMail }) {
+export function EmployeeMailDesktop({ mail }: { mail: EmployeeMail }) {
   return (
     <div className="min-h-dvh bg-fill-2 text-ink">
       <header className="h-[120px] border-b border-separator bg-surface pt-6 pl-10">
@@ -243,7 +243,7 @@ export function SalarieMailDesktop({ mail }: { mail: SalarieMail }) {
 }
 
 /** The same e-mail in the phone's mail client, cut by the screen as it scrolls. */
-export function SalarieMailMobile({ mail }: { mail: SalarieMail }) {
+export function EmployeeMailMobile({ mail }: { mail: EmployeeMail }) {
   return (
     <Screen className="pt-[calc(var(--safe-top)+6px)]">
       <div className="flex h-11 items-center">

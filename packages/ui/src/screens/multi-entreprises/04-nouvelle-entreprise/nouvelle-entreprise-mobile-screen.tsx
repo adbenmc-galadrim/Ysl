@@ -3,14 +3,15 @@ import type { ReactNode } from 'react';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { SettingsIcon } from '#components/grouped-list';
+import {
+  PhoneField,
+  PhoneGroupTitle,
+  PhoneNav,
+  PhoneSettingRow,
+} from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  PhoneGroupRow,
-  PhoneGroupTitle,
-  PhoneNav,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 import { STEP_GROUPS } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
 
 function Bar({ children }: { children: ReactNode }) {
@@ -31,43 +32,6 @@ function StepOf({ step }: { step: number }) {
     >
       {step} sur 3
     </span>
-  );
-}
-
-function PhoneField({
-  label,
-  value,
-  error = false,
-  className,
-  labelClassName,
-}: {
-  label: string;
-  value: string;
-  error?: boolean;
-  className?: string;
-  labelClassName?: string;
-}) {
-  return (
-    <div className={className}>
-      <p className={cn('relative -top-px text-13 font-medium text-muted', labelClassName)}>
-        {label}
-      </p>
-      <div
-        className={cn(
-          'relative mt-1.5 h-12 rounded-[12px] bg-surface pt-3.5 pl-3.5 text-17',
-          error && 'shadow-[0_0_0_0.75px_var(--color-red),inset_0_0_0_0.75px_var(--color-red)]',
-        )}
-      >
-        {value}
-        {error && (
-          <Icon
-            name="alert"
-            size={20}
-            className="absolute top-[13px] right-2 text-red"
-          />
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -214,7 +178,7 @@ export function NouvelleEntrepriseFonctionnementMobile() {
   );
 }
 
-function AdministrateurLayout({ error = false }: { error?: boolean }) {
+function AdminStepLayout({ error = false }: { error?: boolean }) {
   return (
     <Screen
       tone="fill"
@@ -254,9 +218,9 @@ function AdministrateurLayout({ error = false }: { error?: boolean }) {
             Un lien valable 7 jours lui sera envoyé.
           </p>
           <div className="mt-[37px] h-[156px] rounded-[14px] bg-surface">
-            <PhoneGroupRow first title="Entreprise" value="Atelier Lumen" />
-            <PhoneGroupRow title="Modèle" value="Multi-départements" />
-            <PhoneGroupRow title="Étape modifiée" value="Signature" />
+            <PhoneSettingRow title="Entreprise" value="Atelier Lumen" raised chevron={false} separator />
+            <PhoneSettingRow title="Modèle" value="Multi-départements" chevron={false} separator />
+            <PhoneSettingRow title="Étape modifiée" value="Signature" chevron={false} />
           </div>
         </>
       )}
@@ -266,12 +230,12 @@ function AdministrateurLayout({ error = false }: { error?: boolean }) {
 
 /** Step 3 on the phone: who will administer the company. */
 export function NouvelleEntrepriseAdministrateurMobile() {
-  return <AdministrateurLayout />;
+  return <AdminStepLayout />;
 }
 
 /** Step 3 when the address already has an account with another client. */
 export function NouvelleEntrepriseErreurAdresseMobile() {
-  return <AdministrateurLayout error />;
+  return <AdminStepLayout error />;
 }
 
 /** The end of the journey: the company exists, its invitation has left. */
@@ -296,16 +260,18 @@ export function NouvelleEntrepriseCreeeMobile() {
         7 jours.
       </p>
       <div className="mt-[54px] h-[104px] rounded-[14px] bg-fill">
-        <PhoneGroupRow
-          first
+        <PhoneSettingRow
           leading={<SettingsIcon icon="mail" color="ink" />}
           title="Invitation"
           value="Envoyée"
+          chevron={false}
+          separator
         />
-        <PhoneGroupRow
+        <PhoneSettingRow
           leading={<SettingsIcon icon="sliders" color="ink" />}
           title="Modèle"
           value="Multi-départements"
+          chevron={false}
         />
       </div>
     </Screen>

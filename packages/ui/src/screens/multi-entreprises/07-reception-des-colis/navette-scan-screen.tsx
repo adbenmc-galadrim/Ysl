@@ -14,11 +14,7 @@ import {
   type ViewfinderTone,
 } from '#components/camera-viewport';
 import { IconButton } from '#components/icon-button';
-import {
-  ParcelBox,
-  ParcelLabel,
-  type ParcelLabelProps,
-} from '#components/parcel-label';
+import { ParcelBox, ParcelLabel, type ParcelLabelProps } from '#components/parcel-label';
 import { PieceDots } from '#components/piece-dots';
 import { ScanFields } from '#components/scan-fields';
 import { SegmentedControl } from '#components/segmented-control';
@@ -31,7 +27,7 @@ const UPS_LABEL: ParcelLabelProps = {
   tracking: '1Z E63 44W 04 9923 0622',
 };
 
-const RECOMMANDE_LABEL: ParcelLabelProps = {
+const REGISTERED_LABEL: ParcelLabelProps = {
   carrier: 'LA POSTE',
   recipient: 'Direction juridique',
   address: ['SAINT LAURENT, 37 RUE DE BELLECHASSE', '75007 PARIS FR'],
@@ -55,7 +51,7 @@ function Subject({
     <div className="relative h-[370px] w-[393px]">
       <div className="absolute left-12 translate-x-[0.5px]">
         <ParcelBox tone={envelope ? 'envelope' : 'kraft'}>
-          <ParcelLabel {...label} className="bg-[#f6f5f0]" />
+          <ParcelLabel {...label} className="bg-scan-paper" />
         </ParcelBox>
       </div>
       {dim && (
@@ -220,7 +216,7 @@ export function ScanPlusieursPiecesMobile() {
 /** Registered mail through the same scanner: number, sender, department. */
 export function ScanRecommandeMobile() {
   return (
-    <CameraScene count={4} label={RECOMMANDE_LABEL} envelope>
+    <CameraScene count={4} label={REGISTERED_LABEL} envelope>
       <SegmentedControl
         tone="night"
         label="Type d’envoi"
@@ -299,7 +295,7 @@ export function ScanLectureMobile() {
   return (
     <div
       data-tone="camera"
-      className="relative h-[852px] w-full overflow-hidden bg-[#2b2622] text-white"
+      className="relative h-[852px] w-full overflow-hidden bg-scan-desk text-white"
     >
       <div className="absolute inset-x-0 top-0 h-[520px] bg-scene" />
       <div className="absolute inset-x-0 top-0 h-[98px] bg-linear-to-b from-black/100 from-50% to-transparent" />
@@ -340,8 +336,8 @@ export function ScanLectureMobile() {
           Annuler
         </At>
       </div>
-      <div className="absolute top-[200px] left-14 h-[330px] w-[280px] rounded-[8px] bg-[#b89b78]">
-        <div className="absolute top-6 left-5 h-[250px] w-60 rounded-[4px] bg-paper text-[#111111]">
+      <div className="absolute top-[200px] left-14 h-[330px] w-[280px] rounded-[8px] bg-kraft">
+        <div className="absolute top-6 left-5 h-[250px] w-60 rounded-[4px] bg-paper text-label-ink">
           <At x={14} y={12} className="font-label text-20 font-bold">
             UPS
           </At>
@@ -351,7 +347,7 @@ export function ScanLectureMobile() {
           <At x={14} y={114} className="font-label text-15 font-bold">
             CAMILLE MOREL
           </At>
-          <At x={14} y={180} className="h-[50px] w-[212px] bg-[#111111]" />
+          <At x={14} y={180} className="h-[50px] w-[212px] bg-label-ink" />
         </div>
       </div>
       <div className="absolute top-[190px] left-[46px] h-[300px] w-[300px]">

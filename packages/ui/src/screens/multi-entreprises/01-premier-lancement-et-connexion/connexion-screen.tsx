@@ -1,14 +1,11 @@
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanyLogo, DeskAuthPage } from '#components/company-parts';
+import { DeskField } from '#components/desk-form';
+import { PhoneField } from '#components/phone-parts';
 import { Screen } from '#components/screen';
+import { SAMPLE_PASSWORD } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
-import {
-  DeskAuthPage,
-  DeskField,
-  LogoTile,
-  PhoneField,
-  SAMPLE_PASSWORD,
-} from '#screens/multi-entreprises/01-premier-lancement-et-connexion/auth-parts';
 
 /** Sign-in on the computer, before any company is known. */
 export function ConnexionDesktop() {
@@ -34,6 +31,7 @@ export function ConnexionDesktop() {
         value={SAMPLE_PASSWORD}
         focused
         className="mt-4"
+        type="password"
       />
       <p className="relative -top-px mt-5 text-13 font-medium">Mot de passe oublié ?</p>
       <Button className="mt-6 h-10 w-full rounded-[6px] text-14">
@@ -64,9 +62,10 @@ export function ConnexionMobile() {
         </BottomBar>
       }
     >
-      <LogoTile className="ml-36 size-16 rounded-[16px]">
-        <Icon name="package" size={30} />
-      </LogoTile>
+      <CompanyLogo
+        initials={<Icon name="package" size={30} />}
+        className="ml-36 size-16 rounded-[16px]"
+      />
       <h1 className="relative -top-px mt-5 text-center text-28 font-bold">Courrier</h1>
       <p className="mx-auto mt-1.5 w-[300px] text-center text-15 text-muted">
         Connectez-vous avec le compte reçu par e-mail.
@@ -76,11 +75,14 @@ export function ConnexionMobile() {
         type="email"
         value="karim.daoud@atelier-lumen.fr"
         className="mt-5"
+        boxClassName="bg-fill"
       />
       <PhoneField
         label="Mot de passe"
         value={SAMPLE_PASSWORD}
         className="mt-4"
+        type="password"
+        boxClassName="bg-fill"
       />
       <p className="mt-6 text-center text-15 font-semibold">
         Mot de passe oublié ?
@@ -125,7 +127,7 @@ export function PremiereConnexionMobile() {
         </BottomBar>
       }
     >
-      <LogoTile className="size-12 rounded-[12px] text-[19px]">AL</LogoTile>
+      <CompanyLogo initials="AL" className="size-12 rounded-[12px] text-[19px]" />
       <h1 className="relative -top-px mt-4 text-28 font-bold">Choisissez votre mot de passe</h1>
       <p className="mt-2 text-15 leading-[1.4] text-muted">
         Vous vous êtes connecté avec un mot de passe provisoire. Remplacez-le
@@ -136,6 +138,8 @@ export function PremiereConnexionMobile() {
         value="motdep"
         error
         className="mt-[26px]"
+        type="password"
+        boxClassName="bg-fill"
       />
       <p className="relative -top-px mt-1.5 text-13 text-red">
         Encore 6 caractères : 12 au moins.
@@ -144,6 +148,8 @@ export function PremiereConnexionMobile() {
         label="Confirmer"
         placeholder="Retapez-le"
         className="mt-[18px]"
+        type="password"
+        boxClassName="bg-fill"
       />
     </Screen>
   );

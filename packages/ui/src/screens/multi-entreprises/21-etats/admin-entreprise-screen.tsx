@@ -4,6 +4,7 @@ import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
+import { PersonAvatar, PhoneRow, PhoneStat } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SegmentedControl } from '#components/segmented-control';
 import { Skeleton } from '#components/skeleton';
@@ -11,12 +12,9 @@ import { StatusPill } from '#components/status-pill';
 import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import { PhoneFigure } from '#screens/multi-entreprises/19-rapports/rapports-screen';
 import {
   HeroButton,
   OfflineBanner,
-  PersonAvatar,
-  PhoneRow,
   ProgressTrack,
   RetryHero,
   RootHeader,
@@ -358,10 +356,10 @@ export function VueErreurMobile() {
         action="Réessayer"
       />
       <div className="mt-[27px] grid grid-cols-[171px_171px] gap-x-[11px] gap-y-3">
-        <PhoneFigure value="12" label="En route" className="bg-surface opacity-60" />
-        <PhoneFigure value="35" label="En attente" className="bg-surface opacity-60" />
-        <PhoneFigure value="5" label="En souffrance" className="bg-surface opacity-60" />
-        <PhoneFigure value="2" label="À régulariser" className="bg-surface opacity-60" />
+        <PhoneStat value="12" label="En route" className="bg-surface opacity-60" />
+        <PhoneStat value="35" label="En attente" className="bg-surface opacity-60" />
+        <PhoneStat value="5" label="En souffrance" className="bg-surface opacity-60" />
+        <PhoneStat value="2" label="À régulariser" className="bg-surface opacity-60" />
       </div>
     </Screen>
   );

@@ -7,6 +7,7 @@ import { DeskFilterButton } from '#components/desk-filter';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
 import { NavBar } from '#components/nav-bar';
+import { PhoneStat } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SegmentedControl } from '#components/segmented-control';
 import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
@@ -189,26 +190,6 @@ export function RapportsDesktop() {
   );
 }
 
-/** One figure on a grey tile: the phone reports show four of them. */
-export function PhoneFigure({
-  value,
-  label,
-  valueClass,
-  className,
-}: {
-  value: string;
-  label: string;
-  valueClass?: string;
-  className?: string;
-}) {
-  return (
-    <div className={cn('h-20 rounded-[14px] bg-fill pt-[11px] pl-4', className)}>
-      <p className={cn('text-28 font-bold', valueClass)}>{value}</p>
-      <p className="mt-1 text-13 text-muted">{label}</p>
-    </div>
-  );
-}
-
 function PhoneFigures({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn('grid grid-cols-[171px_171px] gap-x-[11px] gap-y-3', className)}>
@@ -241,10 +222,10 @@ export function RapportsMobile() {
       />
       <p className="mt-5 text-15 text-muted">Octobre 2026</p>
       <PhoneFigures className="mt-3.5">
-        <PhoneFigure value="1 284" label="reçus" />
-        <PhoneFigure value="1 241" label="remis" />
-        <PhoneFigure value="1,4 j" label="délai moyen" />
-        <PhoneFigure value="9" label="en souffrance" valueClass="text-orange" />
+        <PhoneStat value="1 284" label="reçus" className="bg-fill" />
+        <PhoneStat value="1 241" label="remis" className="bg-fill" />
+        <PhoneStat value="1,4 j" label="délai moyen" className="bg-fill" />
+        <PhoneStat value="9" label="en souffrance" tone="orange" className="bg-fill" />
       </PhoneFigures>
       <h2 className="relative -top-px mt-6 text-13 font-medium text-muted">Par département</h2>
       <div className="mt-1.5 rounded-[14px] bg-fill">
@@ -274,10 +255,10 @@ export function RapportsDepartementMobile() {
       <NavBar title="Studio" />
       <p className="mt-4 text-15 text-muted">Octobre 2026</p>
       <PhoneFigures className="mt-3.5">
-        <PhoneFigure value="548" label="reçus" />
-        <PhoneFigure value="532" label="remis" />
-        <PhoneFigure value="1,2 j" label="délai moyen" />
-        <PhoneFigure value="2" label="écarts au dépôt" valueClass="text-red" />
+        <PhoneStat value="548" label="reçus" className="bg-fill" />
+        <PhoneStat value="532" label="remis" className="bg-fill" />
+        <PhoneStat value="1,2 j" label="délai moyen" className="bg-fill" />
+        <PhoneStat value="2" label="écarts au dépôt" tone="red" className="bg-fill" />
       </PhoneFigures>
       <h2 className="mt-6 text-17 font-semibold">Colis reçus par jour</h2>
       <div role="img" aria-label="Colis reçus sur les dix derniers jours" className="mt-[15px] flex h-[140px] items-end gap-2">

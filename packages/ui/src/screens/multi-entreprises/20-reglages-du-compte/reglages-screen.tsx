@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Avatar } from '#components/avatar';
 import { SettingsIcon, type SettingsIconProps } from '#components/grouped-list';
 import { NavBar } from '#components/nav-bar';
+import { PhoneGroupTitle } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Switch } from '#components/switch';
 import { Icon } from '#icons';
@@ -10,14 +11,6 @@ import { cn } from '#lib/tv';
 
 function Card({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn('rounded-[14px] bg-surface', className)}>{children}</div>;
-}
-
-function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <h2 className={cn('relative -top-px px-4 text-13 font-medium text-muted', className)}>
-      {children}
-    </h2>
-  );
 }
 
 function Row({
@@ -82,17 +75,17 @@ export function ReglagesMobile() {
         </span>
         <Icon name="chevron" size={16} className="mt-7 mr-3.5 ml-auto text-faint" />
       </Card>
-      <CardHeader className="mt-[22px]">Données</CardHeader>
+      <PhoneGroupTitle className="mt-[22px]">Données</PhoneGroupTitle>
       <Card className="mt-1.5">
         <Row icon="cloud" color="green" title="Synchronisation" value="À jour" chevron textTop={16} separator="bottom" />
         <Row icon="download" color="ink" title="Hors ligne" value="31 Mo" chevron textTop={17} />
       </Card>
-      <CardHeader className="mt-5">Studio</CardHeader>
+      <PhoneGroupTitle className="mt-5">Studio</PhoneGroupTitle>
       <Card className="mt-1.5">
         <Row icon="users" color="orange" title="Annuaire du Studio" value="84" chevron textTop={17} separator="bottom" />
         <Row icon="pin" color="red" title="Lieu et horaires" value="Lecture" chevron textTop={17} />
       </Card>
-      <CardHeader className="mt-5">App</CardHeader>
+      <PhoneGroupTitle className="mt-5">App</PhoneGroupTitle>
       <Card className="mt-1.5">
         <Row
           icon="volume"
@@ -127,7 +120,7 @@ export function SynchronisationMobile() {
           Synchroniser maintenant
         </p>
       </Card>
-      <CardHeader className="mt-6">Sur cet iPhone</CardHeader>
+      <PhoneGroupTitle className="mt-6">Sur cet iPhone</PhoneGroupTitle>
       <Card className="mt-1.5">
         <Row icon="package" color="ink" title="Colis" value="418" textTop={15} />
         <Row icon="image" color="ink" title="Photos d’étiquettes" value="22 Mo" textTop={15} separator="top" />
@@ -138,7 +131,7 @@ export function SynchronisationMobile() {
         Stockage protégé : iOS ne supprimera pas ces données, même si l’app n’est pas ouverte
         pendant longtemps.
       </p>
-      <CardHeader className="mt-[26px]">Mise à jour</CardHeader>
+      <PhoneGroupTitle className="mt-[26px]">Mise à jour</PhoneGroupTitle>
       <Card className="mt-1.5">
         <Row icon="download" color="ink" title="Version 2.0.3" value="À jour" textTop={15} />
         <Row icon="refresh" color="grey" title="Rechercher une mise à jour" chevron textTop={15} separator="top" />

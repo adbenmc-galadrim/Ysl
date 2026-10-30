@@ -3,24 +3,17 @@ import type { ReactNode } from 'react';
 import { Avatar } from '#components/avatar';
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskSidePanel } from '#components/desk-panel';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
+import { DetailsList } from '#components/details-list';
 import { StatusDot } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  COMPANY_ADMIN_NAV,
-  crumbs,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  DeskPanel,
-  DeskPanelFacts,
-} from '#screens/multi-entreprises/14-annuaire/directory-parts';
 
 type Role = 'navette' | 'departement' | 'admin';
 
@@ -369,7 +362,7 @@ export function AdminCompteDetailDesktop() {
       <AccountsToolbar />
       <div className="mt-4 flex items-start gap-4">
         <SplitTable activeRow="julie.perrin@atelier-lumen.fr" />
-        <DeskPanel className="h-[580px] w-[376px]">
+        <DeskSidePanel className="h-[580px] w-[376px]">
           <PanelClose />
           <Avatar
             initials="JP"
@@ -384,14 +377,15 @@ export function AdminCompteDetailDesktop() {
           </p>
           <PanelRule top={71} />
           <div className="absolute inset-x-[15px] top-[86px]">
-            <DeskPanelFacts
-              valueLeft={140}
-              facts={[
-                ['Rôle', 'Département'],
-                ['État', 'Actif'],
-                ['Invité par', 'Claire Bonnet'],
-                ['Dernière connexion', 'Aujourd’hui, 10:51'],
-                ['Appareils', 'iPhone, ordinateur'],
+            <DetailsList
+              variant="desk"
+              labelWidth={140}
+              items={[
+                { label: 'Rôle', value: 'Département' },
+                { label: 'État', value: 'Actif' },
+                { label: 'Invité par', value: 'Claire Bonnet' },
+                { label: 'Dernière connexion', value: 'Aujourd’hui, 10:51' },
+                { label: 'Appareils', value: 'iPhone, ordinateur' },
               ]}
             />
           </div>
@@ -422,7 +416,7 @@ export function AdminCompteDetailDesktop() {
           >
             Suspendre le compte
           </Button>
-        </DeskPanel>
+        </DeskSidePanel>
       </div>
     </AccountsLayout>
   );
@@ -454,7 +448,7 @@ const ROLE_OPTIONS = [
 
 function InvitePanel({ taken }: { taken: boolean }) {
   return (
-    <DeskPanel className="h-[580px] w-[376px]">
+    <DeskSidePanel className="h-[580px] w-[376px]">
       <PanelClose />
       <h2 className="absolute top-4 left-[15px] text-15 font-semibold">
         Inviter un compte
@@ -557,7 +551,7 @@ function InvitePanel({ taken }: { taken: boolean }) {
           Envoyer l’invitation
         </Button>
       </div>
-    </DeskPanel>
+    </DeskSidePanel>
   );
 }
 

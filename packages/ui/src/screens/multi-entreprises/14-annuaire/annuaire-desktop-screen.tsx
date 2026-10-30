@@ -1,13 +1,16 @@
+import { Avatar } from '#components/avatar';
 import { Banner } from '#components/banner';
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskPanelField } from '#components/desk-form';
+import { DeskSidePanel } from '#components/desk-panel';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
-import { Avatar } from '#components/avatar';
+import { DetailsList } from '#components/details-list';
 import {
   ACCOUNT,
   COMPANY,
@@ -16,11 +19,6 @@ import {
   DEPARTMENT_NAV,
 } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
-import {
-  DeskPanel,
-  DeskPanelFacts,
-  DeskPanelField,
-} from '#screens/multi-entreprises/14-annuaire/directory-parts';
 
 type DirectoryEntry = {
   name: string;
@@ -143,7 +141,7 @@ export function DepartementAnnuaireDesktop() {
           rowKey={(e) => e.email}
           footer={<DeskTablePagination range="1–8 sur 84" />}
         />
-        <DeskPanel className="h-[520px] w-[360px]">
+        <DeskSidePanel className="h-[520px] w-[360px]">
           <h2 className="mt-3 ml-[15px] text-14 font-semibold">
             Ajouter un salarié
           </h2>
@@ -188,7 +186,7 @@ export function DepartementAnnuaireDesktop() {
               </Button>
             </div>
           </div>
-        </DeskPanel>
+        </DeskSidePanel>
       </div>
     </CompanyShell>
   );
@@ -254,7 +252,7 @@ export function AdminAnnuaireDeplacerDesktop() {
           activeRow="camille.morel@atelier-lumen.fr"
           footer={<DeskTablePagination range="1–10 sur 312" />}
         />
-        <DeskPanel className="h-[640px] w-[360px]">
+        <DeskSidePanel className="h-[640px] w-[360px]">
           <Avatar
             initials="CM"
             tone="fill"
@@ -304,17 +302,18 @@ export function AdminAnnuaireDeplacerDesktop() {
           </div>
           <div className="absolute inset-x-0 top-[355px] h-px bg-separator" />
           <div className="absolute inset-x-[15px] top-[370px]">
-            <DeskPanelFacts
-              valueLeft={130}
-              facts={[
-                ['Lieu', 'poste 214'],
-                ['Colis en cours', '1'],
-                ['Ajouté', 'Import du 18 oct.'],
-                ['Dernier retrait', 'Lun., 12:40'],
+            <DetailsList
+              variant="desk"
+              labelWidth={130}
+              items={[
+                { label: 'Lieu', value: 'poste 214' },
+                { label: 'Colis en cours', value: '1' },
+                { label: 'Ajouté', value: 'Import du 18 oct.' },
+                { label: 'Dernier retrait', value: 'Lun., 12:40' },
               ]}
             />
           </div>
-        </DeskPanel>
+        </DeskSidePanel>
       </div>
     </CompanyShell>
   );

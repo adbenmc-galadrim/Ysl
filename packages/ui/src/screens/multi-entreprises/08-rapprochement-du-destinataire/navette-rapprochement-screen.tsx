@@ -1,18 +1,42 @@
+import {
+  PersonAvatar,
+  PhoneRow,
+  PhoneSettingRow,
+  RoundTile,
+  TickMark,
+} from '#components/phone-parts';
+import {
+  RecipientPicker,
+  ShuttleBar,
+  ShuttleBottom,
+  ShuttleScreen,
+} from '#components/shuttle-parts';
+import { RECIPIENT_RESULTS } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 
-import {
-  BuildingTile,
-  Chevron,
-  Coche,
-  FillGroupRow,
-  KraftLabel,
-  ListPhoneRow,
-  NavetteBar,
-  NavetteBottom,
-  NavetteScreen,
-  RoundAvatar,
-} from '#screens/multi-entreprises/08-rapprochement-du-destinataire/navette-parts';
+function KraftLabel({ name }: { name: string }) {
+  return (
+    <div className="relative mt-3 h-[150px] shrink-0 rounded-[16px] bg-kraft">
+      <div className="absolute top-3.5 left-5 h-[122px] w-[313px] rounded-[4px] bg-paper">
+        <p className="absolute top-[9px] left-3 text-[10px] font-semibold text-label-ink-3">
+          Destinataire :
+        </p>
+        <p className="absolute top-[26px] left-3 font-label text-24 font-bold text-label-ink">
+          {name}
+        </p>
+        <p className="absolute top-[59px] left-3 text-[9px] leading-3 text-label-line">
+          12 RUE DES ATELIERS
+          <br />
+          75011 PARIS FR
+        </p>
+      </div>
+      <span className="absolute top-[110px] left-[313px] flex size-7 items-center justify-center rounded-full bg-white text-black">
+        <Icon name="zoom" size={14} />
+      </span>
+    </div>
+  );
+}
 
 const SUGGESTIONS = [
   { name: 'Léa Fontaine', detail: 'Finance · 4e étage', selected: true },
@@ -27,10 +51,15 @@ const DEPARTMENTS = [
 ];
 
 /** An uncertain name: the label as evidence, and who it could be. */
+/** The whole directory, searched from the review of one label. */
+export function ChoisirDestinataireMobile() {
+  return <RecipientPicker query="fonta" results={RECIPIENT_RESULTS} />;
+}
+
 export function PourQuiMobile() {
   return (
-    <NavetteScreen bottom={<NavetteBottom>Valider : Finance</NavetteBottom>}>
-      <NavetteBar title="1 sur 2" skip />
+    <ShuttleScreen bottom={<ShuttleBottom>Valider : Finance</ShuttleBottom>}>
+      <ShuttleBar title="1 sur 2" skip />
       <KraftLabel name="L. FONTAIN" />
       <h2 className="mt-[22px] text-22 font-bold">Pour qui est ce colis ?</h2>
       <p className="mt-[3px] text-14 text-muted">
@@ -48,7 +77,7 @@ export function PourQuiMobile() {
             )}
           >
             <span className="absolute top-2.5 left-3">
-              <RoundAvatar initials="LF" inverted={person.selected} />
+              <PersonAvatar raised initials="LF" inverted={person.selected} />
             </span>
             <span className="absolute top-2.5 left-16 text-16 font-semibold">
               {person.name}
@@ -58,7 +87,7 @@ export function PourQuiMobile() {
               {person.detail}
             </span>
             <span className="absolute top-[18px] right-3">
-              <Coche checked={person.selected} />
+              <TickMark checked={person.selected} />
             </span>
           </div>
         ))}
@@ -67,65 +96,62 @@ export function PourQuiMobile() {
         <Icon name="search" size={18} className="text-blue" />
         Chercher dans l’annuaire
       </p>
-    </NavetteScreen>
+    </ShuttleScreen>
   );
 }
 
 /** Nobody of that name: another search, the department alone, or later. */
 export function DestinataireInconnuMobile() {
   return (
-    <NavetteScreen
-      bottom={<NavetteBottom variant="secondary">Garder à compléter</NavetteBottom>}
+    <ShuttleScreen
+      bottom={<ShuttleBottom variant="secondary">Garder à compléter</ShuttleBottom>}
     >
-      <NavetteBar title="2 sur 2" skip />
+      <ShuttleBar title="2 sur 2" skip />
       <KraftLabel name="M. ROUSSEL" />
       <h2 className="mt-[22px] text-22 font-bold">Personne de ce nom</h2>
       <p className="mt-[3px] text-14 text-muted">
         Ni dans l’annuaire, ni dans les noms déjà vus.
       </p>
       <div className="mt-5 overflow-hidden rounded-[14px] bg-fill">
-        <FillGroupRow icon="search" tileClass="bg-black" trailing={<span className="relative top-px"><Chevron /></span>}>
-          Chercher un autre nom
-        </FillGroupRow>
-        <FillGroupRow
-          icon="building"
-          tileClass="bg-muted"
-          trailing={<span className="relative top-px"><Chevron /></span>}
-          separator={false}
-        >
-          Choisir seulement le département
-        </FillGroupRow>
+        <PhoneSettingRow
+          icon={{ name: 'search', tone: 'ink' }}
+          title="Chercher un autre nom"
+          separator
+        />
+        <PhoneSettingRow
+          icon={{ name: 'building', tone: 'grey' }}
+          title="Choisir seulement le département"
+        />
       </div>
       <p className="mt-[15px] text-13 leading-[15.6px] text-muted">
         Sans département, le colis reste au service courrier, « À compléter ».
         Aucun e-mail ne part.
       </p>
-    </NavetteScreen>
+    </ShuttleScreen>
   );
 }
 
 /** The department alone: it finds the person in its own directory. */
 export function ChoisirDepartementMobile() {
   return (
-    <NavetteScreen bottom={<NavetteBottom>Envoyer à Juridique</NavetteBottom>}>
-      <NavetteBar title="Département" close />
+    <ShuttleScreen bottom={<ShuttleBottom>Envoyer à Juridique</ShuttleBottom>}>
+      <ShuttleBar title="Département" close />
       <p className="mt-3 h-[34px] text-14 leading-[17px] text-muted">
         Le département retrouvera « M. Roussel » dans son annuaire.
       </p>
       <div className="mt-2.5">
         {DEPARTMENTS.map((department) => (
-          <ListPhoneRow
+          <PhoneRow
             key={department.name}
             height={72}
-            leadingTop={16}
-            leading={<BuildingTile selected={department.selected} />}
+            leading={<RoundTile icon="building" selected={department.selected} />}
             title={department.name}
-            detail={department.detail}
-            trailingTop={24}
-            trailing={<Coche checked={department.selected} />}
+            lines={[department.detail]}
+            mark={<TickMark checked={department.selected} />}
+            separator
           />
         ))}
       </div>
-    </NavetteScreen>
+    </ShuttleScreen>
   );
 }

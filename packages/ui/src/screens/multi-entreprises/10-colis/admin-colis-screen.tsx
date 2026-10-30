@@ -3,16 +3,11 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskFilterButton } from '#components/desk-filter';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { StatusDot, type StatusDotProps } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  COMPANY_ADMIN_NAV,
-  crumbs,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
 
 const FIGURES = [
   { label: 'En route', value: '14', left: 16 },

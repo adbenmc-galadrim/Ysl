@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 
-import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import {
   GroupedList,
@@ -8,86 +7,12 @@ import {
   type SettingsIconProps,
 } from '#components/grouped-list';
 import { IconButton } from '#components/icon-button';
-import { ListRow } from '#components/list-row';
+import { RowChevron } from '#components/phone-parts';
 import { QrCode } from '#components/qr-code';
-import { Icon, type IconName } from '#icons';
+import type { IconName } from '#icons';
 import { cn } from '#lib/tv';
 
-/** The 40 px kraft thumbnail of a parcel, with its paper label. */
-export function DepotThumb() {
-  return (
-    <span aria-hidden="true" className="relative block size-10 shrink-0 rounded-[8px] bg-kraft">
-      <span className="absolute top-[8.8px] left-[7.2px] h-5 w-[25.6px] rounded-[2px] bg-paper" />
-      <span className="absolute top-3 left-[10.4px] h-[1.5px] w-4 bg-label-line" />
-      <span className="absolute top-[16.8px] left-[10.4px] h-[1.5px] w-4 bg-label-line" />
-      <span className="absolute top-[22px] left-[10.4px] h-1 w-[19.2px] bg-label-ink" />
-    </span>
-  );
-}
-
-/** The 40 px round tile of the row that says nobody knows which parcel it is. */
-export function DepotInfoTile() {
-  return (
-    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-fill">
-      <Icon name="info" size={20} />
-    </span>
-  );
-}
-
-/** The 24 px mark of a row: a ticked disc, or a ring holding the chevron. */
-export function DepotMark({ checked }: { checked: boolean }) {
-  return checked ? (
-    <span className="flex size-6 items-center justify-center rounded-full bg-ink text-on-ink">
-      <Icon name="tick" size={14} />
-    </span>
-  ) : (
-    <span className="relative block size-6 rounded-full border-[1.5px] border-border">
-      <Icon name="chevron" size={16} className="absolute top-[2.5px] left-[6.5px] text-faint" />
-    </span>
-  );
-}
-
-export type DepotRowProps = {
-  title: ReactNode;
-  detail: ReactNode;
-  leading?: ReactNode;
-  /** The ticked or open mark; left out, the row has none. */
-  checked?: boolean;
-  /** The pitch of the list: 60 when it is scanned, 64 otherwise. */
-  height?: 60 | 64;
-  separator?: boolean;
-};
-
-/** One parcel of a deposit on the phone. */
-export function DepotRow({
-  title,
-  detail,
-  leading = <DepotThumb />,
-  checked,
-  height = 64,
-  separator = false,
-}: DepotRowProps) {
-  const tall = height === 64;
-  return (
-    <div className={cn('relative pt-[11px]', tall ? 'h-16' : 'h-[60px]')}>
-      <ListRow
-        leading={<span className={tall ? '-mt-1.5' : '-mt-2'}>{leading}</span>}
-        title={title}
-        lines={[{ text: <span className="relative -top-px">{detail}</span> }]}
-        trailing={
-          checked === undefined ? null : (
-            <span className={tall ? '-mt-0.5' : '-mt-1'}>
-              <DepotMark checked={checked} />
-            </span>
-          )
-        }
-      />
-      {separator && <div className="absolute right-0 bottom-0 left-[52px] h-px bg-separator" />}
-    </div>
-  );
-}
-
-export type DepotGroupItem = {
+export type DepositGroupItem = {
   icon?: IconName;
   iconColor?: SettingsIconProps['color'];
   iconClassName?: string;
@@ -100,12 +25,7 @@ export type DepotGroupItem = {
   textTop?: number;
 };
 
-/** The chevron of a grouped row, on the mockup's 14 px margin. */
-export function DepotChevron() {
-  return <Icon name="chevron" size={16} strokeWidth={2.2} className="text-faint" />;
-}
-
-function DepotGroupRow({ item, first }: { item: DepotGroupItem; first: boolean }) {
+function DepositGroupRow({ item, first }: { item: DepositGroupItem; first: boolean }) {
   const top = item.textTop ?? (item.subtitle ? 12 : first ? 16 : 17);
   return (
     <div className={cn('relative flex items-start pr-3.5', item.subtitle ? 'h-16' : 'h-[52px]', item.icon ? 'pl-3.5' : 'pl-4')}>
@@ -129,7 +49,7 @@ function DepotGroupRow({ item, first }: { item: DepotGroupItem; first: boolean }
       )}
       {(item.chevron || item.trailing) && (
         <span className={cn('flex h-full items-center', item.value !== undefined && 'ml-1.5')}>
-          {item.trailing ?? <DepotChevron />}
+          {item.trailing ?? <RowChevron strokeWidth={2.2} />}
         </span>
       )}
       {!first && (
@@ -145,26 +65,26 @@ function DepotGroupRow({ item, first }: { item: DepotGroupItem; first: boolean }
 }
 
 /** A card of settings-like rows, grey unless told otherwise. */
-export function DepotGroup({
+export function DepositGroup({
   items,
   tone = 'fill',
   className,
 }: {
-  items: DepotGroupItem[];
+  items: DepositGroupItem[];
   tone?: 'fill' | 'surface';
   className?: string;
 }) {
   return (
     <GroupedList className={cn(tone === 'fill' && 'bg-fill', className)}>
       {items.map((item, i) => (
-        <DepotGroupRow key={i} item={item} first={i === 0} />
+        <DepositGroupRow key={i} item={item} first={i === 0} />
       ))}
     </GroupedList>
   );
 }
 
 /** The thumb zone of the flow: one or two 52 px actions, 36 px off the bottom. */
-export function DepotBottom({ children }: { children: ReactNode }) {
+export function DepositBottom({ children }: { children: ReactNode }) {
   return (
     <BottomBar surface="plain" className="flex-col pt-6 pb-9">
       {children}
@@ -172,40 +92,8 @@ export function DepotBottom({ children }: { children: ReactNode }) {
   );
 }
 
-/** The red notice of a deposit that does not add up, on the phone. */
-export function DepotBanner({
-  title,
-  description,
-  height = 67,
-  className,
-}: {
-  title: ReactNode;
-  description: ReactNode;
-  height?: 67 | 98;
-  className?: string;
-}) {
-  return (
-    <Banner
-      tone="red"
-      icon="warning"
-      title={title}
-      description={description}
-      className={cn(
-        'shrink-0 items-start gap-2.5 rounded-control py-0 pr-4 pl-4',
-        height === 67 ? 'h-[67px]' : 'h-[98px]',
-        className,
-      )}
-      classNames={{
-        icon: 'mt-4',
-        title: 'mt-[15px] text-15',
-        description: cn('mt-0.5 text-13', height === 67 ? 'leading-4' : 'leading-[15.6px]'),
-      }}
-    />
-  );
-}
-
 /** The big count and its two round buttons, on the phone and in the dialog. */
-export function DepotCounter({
+export function DepositCounter({
   value,
   alert = false,
   className,
@@ -237,15 +125,15 @@ export function DepotCounter({
   );
 }
 
-export type DepotStep = { title: string; detail: string; alert?: boolean };
+export type DepositStep = { title: string; detail: string; alert?: boolean };
 
 /** What happened to the parcel: dots on a rail, `phone` or `desk` sized. */
-export function DepotTimeline({
+export function DepositTimeline({
   steps,
   size,
   className,
 }: {
-  steps: DepotStep[];
+  steps: DepositStep[];
   size: 'phone' | 'desk';
   className?: string;
 }) {
@@ -331,7 +219,7 @@ const CORNERS = [
 ];
 
 /** The camera aimed at the poster of a department: its QR in the viewfinder. */
-export function DepotQrScene({
+export function DepositQrScene({
   department,
   wrong = false,
   children,

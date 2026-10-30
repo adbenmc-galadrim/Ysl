@@ -3,20 +3,19 @@ import type { ReactNode } from 'react';
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanyLogo, CompanyPill } from '#components/company-parts';
 import { SettingsIcon } from '#components/grouped-list';
 import { IconButton } from '#components/icon-button';
+import {
+  PhoneGroupTitle,
+  PhoneNav,
+  PhoneSettingRow,
+  PhoneStat,
+} from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Sheet } from '#components/sheet';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  CompanyLogo,
-  CompanyPill,
-  PhoneGroupRow,
-  PhoneGroupTitle,
-  PhoneNav,
-  PhoneStat,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 
 function More() {
   return (
@@ -150,9 +149,14 @@ export function FicheEntrepriseMobile() {
       </div>
       <PhoneGroupTitle className="mt-[22px]">Fonctionnement</PhoneGroupTitle>
       <div className="mt-1.5 h-[104px] rounded-[14px] bg-surface">
-        <PhoneGroupRow first title="Modèle de départ" value="Multi-départements" />
-        <PhoneGroupRow title="Étapes modifiées"
-          value="2" />
+        <PhoneSettingRow
+          title="Modèle de départ"
+          value="Multi-départements"
+          raised
+          chevron={false}
+          separator
+        />
+        <PhoneSettingRow title="Étapes modifiées" value="2" chevron={false} />
       </div>
     </Screen>
   );
@@ -182,13 +186,13 @@ export function FicheEntrepriseInvitationMobile() {
         }}
       />
       <div className="mt-[25px] h-[104px] rounded-[14px] bg-surface">
-        <PhoneGroupRow
-          first
+        <PhoneSettingRow
           leading={<SettingsIcon icon="send" color="ink" />}
           title="Renvoyer l’invitation"
           chevron
+          separator
         />
-        <PhoneGroupRow
+        <PhoneSettingRow
           leading={<SettingsIcon icon="edit" color="grey" />}
           title={<span className="relative -top-px">Changer l’adresse</span>}
           chevron

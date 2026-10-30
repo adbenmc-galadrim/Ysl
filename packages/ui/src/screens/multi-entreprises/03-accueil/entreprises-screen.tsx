@@ -2,14 +2,18 @@ import type { ReactNode } from 'react';
 
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanyLogo, CompanyPill } from '#components/company-parts';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskSelect } from '#components/desk-form';
+import { DeskStats } from '#components/desk-panel';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
+import { PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
@@ -18,19 +22,12 @@ import {
   ACCOUNT,
   COMPANIES,
   COMPANY,
+  type Company,
   crumbs,
   PLATFORM_NAV,
-  type Company,
 } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  CompanyLogo,
-  CompanyPill,
-  DeskSelect,
-  DeskStats,
-  PhoneListRow,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 
 const STATUS_DOT = {
   active: 'green',
@@ -252,7 +249,7 @@ function CompanyRow({
   lines: string[];
 }) {
   return (
-    <PhoneListRow
+    <PhoneRow
       height={80}
       leading={<CompanyLogo initials={company.initials} size={40} />}
       title={company.name}
@@ -327,20 +324,20 @@ export function EntreprisesMobile() {
         className="mt-[15px] h-[27px]"
       />
       <div className="mt-3.5">
-        <PhoneListRow
+        <PhoneRow
           height={76}
           leading={<CompanyLogo initials={novalis.initials} size={40} muted />}
           title={novalis.name}
           lines={[novalis.profile]}
-          trailing={<CompanyPill tone="blue" label={novalis.statusLabel} className="relative -top-px w-[140px]" />}
+          before={<CompanyPill tone="blue" label={novalis.statusLabel} className="relative -top-px w-[140px]" />}
           separator
         />
-        <PhoneListRow
+        <PhoneRow
           height={76}
           leading={<CompanyLogo initials={kerval.initials} size={40} muted />}
           title={kerval.name}
           lines={[kerval.profile]}
-          trailing={<CompanyPill tone="orange" label={kerval.statusLabel} className="relative -top-px w-[100px]" />}
+          before={<CompanyPill tone="orange" label={kerval.statusLabel} className="relative -top-px w-[100px]" />}
         />
       </div>
     </Screen>

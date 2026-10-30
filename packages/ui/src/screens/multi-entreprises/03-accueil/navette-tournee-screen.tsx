@@ -4,11 +4,11 @@ import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { IconTile } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
+import { PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
 import { StatusPill, SYNC_PILL } from '#components/status-pill';
-import { PhoneListRow } from '#screens/multi-entreprises/03-accueil/company-parts';
 
 const TO_DEPOSIT = [
   { name: 'Studio', place: 'Bât. A, 2e étage, accueil', parcels: '6 colis' },
@@ -68,13 +68,13 @@ export function NavetteTourneeMobile() {
       />
       <div className="mt-3.5">
         {TO_DEPOSIT.map((department, i) => (
-          <PhoneListRow
+          <PhoneRow
             key={department.name}
             height={68}
             leading={<IconTile icon="building" tone="fill" />}
             title={department.name}
             lines={[department.place]}
-            trailing={
+            before={
               <span className="text-17 font-semibold">{department.parcels}</span>
             }
             separator={i < TO_DEPOSIT.length - 1}
@@ -88,7 +88,7 @@ export function NavetteTourneeMobile() {
         className="mt-[11px] h-[27px]"
       />
       <div className="mt-3.5">
-        <PhoneListRow
+        <PhoneRow
           height={64}
           leading={
             <IconTile

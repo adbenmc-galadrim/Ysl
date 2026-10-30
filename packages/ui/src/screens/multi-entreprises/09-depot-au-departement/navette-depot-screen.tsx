@@ -2,19 +2,22 @@ import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
 import { NavBar } from '#components/nav-bar';
+import {
+  KraftThumb,
+  PhoneBanner,
+  PhoneRow,
+  RoundTile,
+  TickMark,
+} from '#components/phone-parts';
 import { ProgressBar } from '#components/progress-bar';
 import { Screen } from '#components/screen';
 import { Icon } from '#icons';
-
 import {
-  DepotBanner,
-  DepotBottom,
-  DepotGroup,
-  DepotInfoTile,
-  DepotQrScene,
-  DepotRow,
-  DepotTimeline,
-} from '#screens/multi-entreprises/09-depot-au-departement/depot-parts';
+  DepositBottom,
+  DepositGroup,
+  DepositQrScene,
+  DepositTimeline,
+} from '#screens/multi-entreprises/09-depot-au-departement/deposit-parts';
 
 const CLOSE = (
   <IconButton icon="x" label="Fermer" size="lg" iconSize={22} />
@@ -25,11 +28,11 @@ export function NavetteDepartementADeposer() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button icon="qr" iconSize={20} className="gap-2">
             Déposer au Studio
           </Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar />
@@ -39,11 +42,40 @@ export function NavetteDepartementADeposer() {
         className="mt-2 gap-[5px]"
       />
       <div className="mt-6">
-        <DepotRow title="Camille Morel" detail="UPS ···0622" separator />
-        <DepotRow title="Hugo Lefèvre" detail="DHL ···7112" separator />
-        <DepotRow title="Inès Garnier" detail="FedEx ···3338" separator />
-        <DepotRow title="Axelle Bernard" detail="UPS ···2210" separator />
-        <DepotRow title="Samuel Petit" detail="Amazon, 2 colis" />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Camille Morel"
+          lines={['UPS ···0622']}
+          chevron={false}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Hugo Lefèvre"
+          lines={['DHL ···7112']}
+          chevron={false}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Inès Garnier"
+          lines={['FedEx ···3338']}
+          chevron={false}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Axelle Bernard"
+          lines={['UPS ···2210']}
+          chevron={false}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Samuel Petit"
+          lines={['Amazon, 2 colis']}
+          chevron={false}
+        />
       </div>
     </Screen>
   );
@@ -52,7 +84,7 @@ export function NavetteDepartementADeposer() {
 /** The camera looking for the poster of the department. */
 export function NavetteScannerQr() {
   return (
-    <DepotQrScene department="Studio">
+    <DepositQrScene department="Studio">
       <p className="absolute top-[560px] left-[47px] w-[300px] text-center text-17 leading-[20.4px] font-semibold">
         Visez le QR affiché au point de&nbsp;
         <br />
@@ -67,14 +99,14 @@ export function NavetteScannerQr() {
       >
         Choisir dans la liste
       </Button>
-    </DepotQrScene>
+    </DepositQrScene>
   );
 }
 
 /** The poster read belongs to another department the shuttle also serves. */
 export function NavetteQrAutreDepartement() {
   return (
-    <DepotQrScene department="Finance" wrong>
+    <DepositQrScene department="Finance" wrong>
       <div className="absolute top-[540px] left-5 h-[150px] w-[353px] rounded-[18px] bg-night">
         <Icon name="alert" size={20} className="absolute top-[18px] left-4 text-ios-red" />
         <p className="absolute top-4 left-[46px] text-17 font-semibold">
@@ -91,7 +123,7 @@ export function NavetteQrAutreDepartement() {
           Déposer à Finance
         </Button>
       </div>
-    </DepotQrScene>
+    </DepositQrScene>
   );
 }
 
@@ -100,9 +132,9 @@ export function NavetteNombreDeColis() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>J’ai posé 6 colis</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} className="[&>div:first-child]:pl-0" />
@@ -121,7 +153,7 @@ export function NavetteNombreDeColis() {
         <br />
         compte.
       </p>
-      <DepotGroup
+      <DepositGroup
         className="mt-[26px]"
         items={[
           { icon: 'list', title: 'Voir les 6 colis', chevron: true },
@@ -136,9 +168,9 @@ export function NavetteAttenteConfirmation() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Continuer la tournée</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} className="[&>div:first-child]:pl-0" />
@@ -153,7 +185,7 @@ export function NavetteAttenteConfirmation() {
         <br />
         sur son poste ou son iPhone.
       </p>
-      <DepotGroup
+      <DepositGroup
         className="mt-[54px]"
         items={[
           { icon: 'truck', title: 'Posé à 10:56', value: '6 colis' },
@@ -177,11 +209,11 @@ export function NavetteDepotConfirme() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button icon="arrowRight" iconSize={20} className="gap-2">
             Aller à Finance · 5 colis
           </Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <span className="mx-auto mt-[102px] flex size-[88px] items-center justify-center rounded-full bg-green-solid text-white">
@@ -193,7 +225,7 @@ export function NavetteDepotConfirme() {
       <p className="mt-[9px] text-center text-15 text-muted">
         Confirmé par Julie Perrin à 10:58
       </p>
-      <DepotGroup
+      <DepositGroup
         className="mt-10"
         items={[
           {
@@ -215,28 +247,55 @@ export function NavetteEcartDeclare() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button>Signaler · Inès Garnier</Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar leading={CLOSE} className="[&>div:first-child]:pl-0" />
-      <DepotBanner
+      <PhoneBanner
+        tone="red"
+        icon="warning"
         className="mt-3"
         title="Le Studio a compté 5 colis sur 6"
         description="Déclaré par Julie Perrin à 10:58."
+        height={67}
       />
       <h1 className="mt-[27px] text-22 font-bold">Lequel manque ?</h1>
       <div className="mt-3.5">
-        <DepotRow title="Camille Morel" detail="UPS ···0622" checked={false} separator />
-        <DepotRow title="Hugo Lefèvre" detail="DHL ···7112" checked={false} separator />
-        <DepotRow title="Inès Garnier" detail="FedEx ···3338" checked separator />
-        <DepotRow title="Axelle Bernard" detail="UPS ···2210" checked={false} separator />
-        <DepotRow
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Camille Morel"
+          lines={['UPS ···0622']}
+          mark={<TickMark checked={false} chevron />}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Hugo Lefèvre"
+          lines={['DHL ···7112']}
+          mark={<TickMark checked={false} chevron />}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Inès Garnier"
+          lines={['FedEx ···3338']}
+          mark={<TickMark />}
+          separator
+        />
+        <PhoneRow
+          leading={<KraftThumb />}
+          title="Axelle Bernard"
+          lines={['UPS ···2210']}
+          mark={<TickMark checked={false} chevron />}
+          separator
+        />
+        <PhoneRow
+          leading={<RoundTile icon="info" />}
           title="Je ne sais pas"
-          detail="Les 6 colis passent à régulariser"
-          leading={<DepotInfoTile />}
-          checked={false}
+          lines={['Les 6 colis passent à régulariser']}
+          mark={<TickMark checked={false} chevron />}
         />
       </div>
     </Screen>
@@ -248,11 +307,11 @@ export function NavetteColisARegulariser() {
   return (
     <Screen
       bottom={
-        <DepotBottom>
+        <DepositBottom>
           <Button icon="qr" iconSize={20} className="gap-2">
             Redéposer au Studio
           </Button>
-        </DepotBottom>
+        </DepositBottom>
       }
     >
       <NavBar
@@ -268,13 +327,16 @@ export function NavetteColisARegulariser() {
       />
       <h1 className="mt-3 text-30 font-bold">Inès Garnier</h1>
       <p className="mt-1 text-15 text-muted">Studio · FedEx ···3338</p>
-      <DepotBanner
-        height={98}
+      <PhoneBanner
+        tone="red"
+        icon="warning"
         className="mt-5"
         title="À régulariser"
         description="Le Studio ne l’a pas compté au dépôt de 10:56. Ni le salarié ni personne n’est prévenu tant que ce n’est pas réglé."
+        height={98}
+        descriptionClassName="leading-[15.6px]"
       />
-      <DepotTimeline
+      <DepositTimeline
         size="phone"
         className="mt-[26px]"
         steps={[
@@ -287,7 +349,7 @@ export function NavetteColisARegulariser() {
           },
         ]}
       />
-      <DepotGroup
+      <DepositGroup
         className="mt-5"
         items={[
           {

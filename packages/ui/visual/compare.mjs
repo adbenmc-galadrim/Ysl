@@ -12,7 +12,8 @@
  * the share of pixels that differ. Exports are 2x, so captures are too.
  *
  * The run fails (exit code 1) when a screen differs by more than `--max`
- * percent, or when no screen was compared at all. In GitHub Actions the table
+ * percent, when no screen was compared at all, or, on a full run, when a
+ * mockup has no story. In GitHub Actions the table
  * also lands in the job summary.
  */
 import fs from 'node:fs';

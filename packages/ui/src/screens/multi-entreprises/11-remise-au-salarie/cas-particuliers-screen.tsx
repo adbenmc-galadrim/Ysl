@@ -1,25 +1,17 @@
-import { Avatar } from '#components/avatar';
 import { Button } from '#components/button';
 import { Chip } from '#components/chip';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
+import { PersonAvatar, PhoneBanner, PhoneRow, TickMark } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { Sheet } from '#components/sheet';
 import { Icon, type IconName } from '#icons';
 import {
-  PhoneBanner,
-  PhoneRow,
-} from '#screens/multi-entreprises/10-colis/phone-parts';
-import {
   DoneDisc,
   PhoneAction,
   ProofCard,
 } from '#screens/multi-entreprises/11-remise-au-salarie/remise-parts';
-
-const Initials = ({ initials }: { initials: string }) => (
-  <Avatar initials={initials} tone="fill" className="rounded-full bg-fill-2 text-14" />
-);
 
 /** Someone else collects: the employee or a colleague of the department. */
 export function QuiRetireMobile() {
@@ -35,9 +27,9 @@ export function QuiRetireMobile() {
         className="mt-[18px] shrink-0 gap-2 rounded-[12px] pl-3"
       />
       <div className="mt-4">
-        <PhoneRow leading={<Initials initials="NH" />} title="Nora Haddad" lines={['Destinataire']} trailing="tick" separator />
-        <PhoneRow leading={<Initials initials="JF" />} title="Julien Faure" lines={['Studio · collègue']} separator />
-        <PhoneRow leading={<Initials initials="CR" />} title="Camille Roux" lines={['Studio · collègue']} />
+        <PhoneRow leading={<PersonAvatar initials="NH" />} title="Nora Haddad" lines={['Destinataire']} mark={<TickMark />} separator />
+        <PhoneRow leading={<PersonAvatar initials="JF" />} title="Julien Faure" lines={['Studio · collègue']} separator />
+        <PhoneRow leading={<PersonAvatar initials="CR" />} title="Camille Roux" lines={['Studio · collègue']} />
       </div>
       <PhoneBanner
         icon="lock"

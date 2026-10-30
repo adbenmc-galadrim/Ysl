@@ -1,4 +1,4 @@
-# @repo/ui — Courrier YSL
+# @repo/ui
 
 The design system of the Courrier YSL PWA and the Storybook that documents it.
 Every screen of the Penpot mockups has a story, and every story is checked

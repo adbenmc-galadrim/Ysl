@@ -4,14 +4,14 @@ import {
   FicheEntrepriseDesktop,
   SupprimerDesktop,
   SuspendreDesktop,
-} from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-desktop';
+} from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-desktop-screen';
 import {
   FicheEntrepriseInvitationMobile,
   FicheEntrepriseMobile,
   FicheEntrepriseSuspendueMobile,
   SupprimerMobile,
   SuspendreMobile,
-} from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-mobile';
+} from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-mobile-screen';
 
 const meta = {
   title: 'Écrans/Multi-entreprises/05 Fiche d’une entreprise/Parcours',

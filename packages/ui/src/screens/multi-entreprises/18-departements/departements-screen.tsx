@@ -1,31 +1,29 @@
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskFormRow, DeskInput, DeskSectionTitle } from '#components/desk-form';
+import { DeskPanel } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
 import { IconTile } from '#components/icon-tile';
 import { ListRow } from '#components/list-row';
 import { NavBarAction } from '#components/nav-bar';
+import {
+  PhoneBarButton,
+  PhoneGroup,
+  PhoneSettingRow,
+  PhoneSettings,
+} from '#components/phone-parts';
 import { QrCode } from '#components/qr-code';
 import {
   ACCOUNT,
   COMPANY,
   COMPANY_ADMIN_NAV,
   crumbs,
-  DEPARTMENTS,
   type Department,
+  DEPARTMENTS,
 } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  DeskBlock,
-  DeskFormRow,
-  DeskInput,
-  DeskSectionTitle,
-  PhoneBarButton,
-  PhoneGroup,
-  PhoneRow,
-  PhoneSettings,
-} from '#screens/multi-entreprises/16-entreprise/settings-parts';
 
 const DEPARTMENT_QR = [
   '#######.###.#.#######',
@@ -292,13 +290,13 @@ export function FicheDepartementDesktop() {
             <Button
               variant="outline"
               size="desk"
-              className="w-[120px] text-[#d92d20]"
+              className="w-[120px] text-red"
             >
               Supprimer…
             </Button>
           </div>
         </div>
-        <DeskBlock
+        <DeskPanel overlayStroke
           title="QR du département"
           subtitle="La navette le scanne au dépôt"
           className="h-[420px] w-[336px]"
@@ -326,7 +324,7 @@ export function FicheDepartementDesktop() {
               Régénérer
             </Button>
           </div>
-        </DeskBlock>
+        </DeskPanel>
       </div>
     </CompanyShell>
   );
@@ -384,32 +382,32 @@ export function FicheDepartementMobile() {
   return (
     <PhoneSettings title="Studio" trailing={<NavBarAction>OK</NavBarAction>}>
       <PhoneGroup className="mt-4">
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'pin', tone: 'red' }}
           title="Lieu"
           value="Bât. A, 2e ét."
           separator
         />
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'clock', tone: 'orange' }}
           title="Horaires"
           value="Lun.–ven."
           separator
         />
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'info', tone: 'grey' }}
           title="Consignes"
           value="1 ligne"
         />
       </PhoneGroup>
       <PhoneGroup className="mt-6">
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'users', tone: 'ink' }}
           title="Comptes"
           value="12"
           separator
         />
-        <PhoneRow
+        <PhoneSettingRow
           icon={{ name: 'users', tone: 'ink' }}
           title="Annuaire"
           value="84"
@@ -436,7 +434,7 @@ export function HorairesDepartementMobile() {
     <PhoneSettings title="Horaires" trailing={<NavBarAction>OK</NavBarAction>}>
       <PhoneGroup className="mt-4">
         {WEEK.map(({ day, slots }, i) => (
-          <PhoneRow
+          <PhoneSettingRow
             key={day}
             title={day}
             chevron={false}

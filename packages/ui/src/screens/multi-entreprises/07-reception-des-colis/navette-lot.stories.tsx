@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { Button } from '#components/button';
 import { LabelThumb } from '#components/label-thumb';
+import { PARCELS } from '#fixtures/parcels';
 import { ColisScreen } from '#screens/colis/colis-screen';
-import { Accueil } from '#screens/colis/colis-screen.stories';
 import {
   ChoisirDestinataireMobile,
   LotEnRouteMobile,
@@ -32,7 +33,7 @@ export const RevueDuLot: Story = {
 export const ChoisirDestinataire: Story = {
   name: 'Choisir le destinataire · mobile',
   parameters: { reference: `${PAGE}-choisir-le-destinataire-mobile` },
-  render: () => <ChoisirDestinataireMobile queryRaised />,
+  render: () => <ChoisirDestinataireMobile />,
 };
 
 export const LotEnRoute: Story = {
@@ -65,7 +66,37 @@ export const ReprendreLeLot: Story = {
   render: () => (
     <div className="h-full [&_ul]:grid-cols-[repeat(6,52px)]">
       <ReprendreLotScreen
-        behind={<ColisScreen {...Accueil.args} />}
+        behind={
+          <ColisScreen
+            sync="synced"
+            summary="18 colis, dont 6 à traiter"
+            sections={[
+              {
+                title: 'À compléter',
+                parcels: [PARCELS.unknown],
+                rowAction: () => (
+                  <Button variant="danger" size="xs" className="w-[81px]">
+                    Choisir
+                  </Button>
+                ),
+              },
+              {
+                title: 'À notifier',
+                parcels: [PARCELS.camille],
+                action: (
+                  <Button size="xs" className="w-[84px]">
+                    Notifier
+                  </Button>
+                ),
+              },
+              {
+                title: 'En attente de retrait',
+                parcels: [PARCELS.ines, PARCELS.hugo, PARCELS.nora],
+              },
+              { title: 'Remis aujourd’hui', count: 12, parcels: [PARCELS.malik] },
+            ]}
+          />
+        }
         startedAt="de 10 h 31"
         parcels={['a', 'b', 'c', 'd', 'e', 'f', 'g'].map((id) => ({ id }))}
         thumbnail={(_, i) => (

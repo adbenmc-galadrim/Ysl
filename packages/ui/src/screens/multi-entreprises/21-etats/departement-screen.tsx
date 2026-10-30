@@ -4,6 +4,7 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskTabs } from '#components/desk-tabs';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
+import { PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Skeleton } from '#components/skeleton';
 import { ACCOUNT, COMPANY, crumbs, DEPARTMENT_NAV } from '#fixtures/multi-entreprises';
@@ -11,7 +12,6 @@ import { Icon } from '#icons';
 import {
   OfflineBanner,
   PhoneDock,
-  PhoneRow,
   RetryHero,
   RootHeader,
   RowTile,

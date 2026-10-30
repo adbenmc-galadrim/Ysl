@@ -1,17 +1,29 @@
 import { Banner } from '#components/banner';
 import { Button } from '#components/button';
+import type { ReactNode } from 'react';
+
 import { IconButton } from '#components/icon-button';
 import { NavBar, NavBarAction } from '#components/nav-bar';
+import {
+  PersonAvatar,
+  PhoneField,
+  PhoneRow,
+  PhoneSegments,
+} from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  PhoneDirectoryRow,
-  PhoneField,
-  PhoneLetter,
-  PhoneSegments,
-} from '#screens/multi-entreprises/14-annuaire/directory-parts';
+
+function PhoneLetter({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <h2 className={cn('h-6 text-20 font-bold', className)}>{children}</h2>;
+}
 
 function AddButton() {
   return <IconButton icon="plus" label="Ajouter" size="lg" iconSize={22} />;
@@ -25,12 +37,27 @@ export function DepartementAnnuaireMobile() {
       <SearchField placeholder="Nom ou e-mail" className="mt-4" />
       <PhoneLetter className="mt-4">A</PhoneLetter>
       <div className="mt-1.5">
-        <PhoneDirectoryRow initials="AM" name="Antoine Martin" detail="2e étage" />
-        <PhoneDirectoryRow initials="AB" name="Axelle Bernard" detail="2e étage" />
+        <PhoneRow
+          leading={<PersonAvatar initials="AM" raised />}
+          title="Antoine Martin"
+          lines={['2e étage']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="AB" raised />}
+          title="Axelle Bernard"
+          lines={['2e étage']}
+          separator
+        />
       </div>
       <PhoneLetter className="mt-3.5">C</PhoneLetter>
       <div className="mt-1.5">
-        <PhoneDirectoryRow initials="CM" name="Camille Morel" detail="poste 214" />
+        <PhoneRow
+          leading={<PersonAvatar initials="CM" raised />}
+          title="Camille Morel"
+          lines={['poste 214']}
+          separator
+        />
       </div>
     </Screen>
   );
@@ -128,13 +155,33 @@ export function AdminAnnuaireMobile() {
       />
       <PhoneLetter className="mt-5">C</PhoneLetter>
       <div className="mt-1.5">
-        <PhoneDirectoryRow initials="CM" name="Camille Morel" detail="Studio" />
-        <PhoneDirectoryRow initials="CR" name="Claire Robin" detail="Finance" />
+        <PhoneRow
+          leading={<PersonAvatar initials="CM" raised />}
+          title="Camille Morel"
+          lines={['Studio']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="CR" raised />}
+          title="Claire Robin"
+          lines={['Finance']}
+          separator
+        />
       </div>
       <PhoneLetter className="mt-3.5">H</PhoneLetter>
       <div className="mt-1.5">
-        <PhoneDirectoryRow initials="HD" name="Hélène Dubois" detail="Finance" />
-        <PhoneDirectoryRow initials="HL" name="Hugo Lefèvre" detail="Studio" />
+        <PhoneRow
+          leading={<PersonAvatar initials="HD" raised />}
+          title="Hélène Dubois"
+          lines={['Finance']}
+          separator
+        />
+        <PhoneRow
+          leading={<PersonAvatar initials="HL" raised />}
+          title="Hugo Lefèvre"
+          lines={['Studio']}
+          separator
+        />
       </div>
     </Screen>
   );

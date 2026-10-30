@@ -1,21 +1,13 @@
 import type { ReactNode } from 'react';
 
 import { Button } from '#components/button';
+import { CompanyLogo } from '#components/company-parts';
 import { CompanyShell } from '#components/company-shell';
+import { DeskPanel, DeskStats } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { StatusDot } from '#components/status-dot';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  PLATFORM_NAV,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
-import {
-  CompanyLogo,
-  DeskPanel,
-  DeskStats,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 
 type Admin = {
   name: string;
@@ -79,7 +71,7 @@ const JOURNAL = [
   ['3 sept., 10:15', 'Entreprise créée, modèle Multi-départements'],
 ];
 
-function Fiche({ overlay }: { overlay?: ReactNode }) {
+function CompanySheet({ overlay }: { overlay?: ReactNode }) {
   return (
     <CompanyShell
       company={COMPANY.platform}
@@ -194,7 +186,7 @@ function Fiche({ overlay }: { overlay?: ReactNode }) {
 
 /** A client seen by the platform: figures, its admins, nothing of its content. */
 export function FicheEntrepriseDesktop() {
-  return <Fiche />;
+  return <CompanySheet />;
 }
 
 function Dialog({
@@ -228,7 +220,7 @@ function Dialog({
 /** The record under the question of suspending the company. */
 export function SuspendreDesktop() {
   return (
-    <Fiche
+    <CompanySheet
       overlay={
         <Dialog
           top={240}
@@ -266,7 +258,7 @@ export function SuspendreDesktop() {
 /** The record under the question of deleting the company for good. */
 export function SupprimerDesktop() {
   return (
-    <Fiche
+    <CompanySheet
       overlay={
         <Dialog
           top={200}

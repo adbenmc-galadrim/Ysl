@@ -1,10 +1,10 @@
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
+import { CompanyLogo } from '#components/company-parts';
 import { HeroTile } from '#components/hero-tile';
 import { Screen } from '#components/screen';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import { LogoTile } from '#screens/multi-entreprises/01-premier-lancement-et-connexion/auth-parts';
 
 /** The camera request, with what the permission is used for. */
 export function AutoriserCameraMobile() {
@@ -59,8 +59,7 @@ export function CameraRefuseeMobile() {
         </BottomBar>
       }
     >
-      <HeroTile icon="camera" tone="red" size="lg" className="ml-[126px] self-start" />
-      <span className="absolute top-[158.5px] left-[169px] h-[3px] w-[72px] -rotate-45 rounded-[2px] bg-red" />
+      <HeroTile icon="camera" tone="red" size="lg" crossed className="ml-[126px] self-start" />
       <h1 className="mt-[26px] text-center text-26 font-bold">
         La caméra est bloquée
       </h1>
@@ -187,7 +186,7 @@ const DOWNLOADS: {
 export function PreparationHorsLigneMobile() {
   return (
     <Screen className="pt-[120px]">
-      <LogoTile className="ml-36 size-16 rounded-[16px] text-26">AL</LogoTile>
+      <CompanyLogo initials="AL" className="ml-36 size-16 rounded-[16px] text-26" />
       <h1 className="mt-5 text-center text-26 font-bold">
         Préparation hors ligne
       </h1>

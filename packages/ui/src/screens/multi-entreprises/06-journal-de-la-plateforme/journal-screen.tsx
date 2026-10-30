@@ -1,26 +1,18 @@
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import { DeskSelect } from '#components/desk-form';
 import {
   DeskTable,
-  DeskTablePagination,
   type DeskTableColumn,
+  DeskTablePagination,
 } from '#components/desk-table';
 import { IconTile } from '#components/icon-tile';
+import { PhoneNav, PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Skeleton } from '#components/skeleton';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  PLATFORM_NAV,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import {
-  DeskSelect,
-  PhoneListRow,
-  PhoneNav,
-} from '#screens/multi-entreprises/03-accueil/company-parts';
 
 const KIND = {
   invitation: {
@@ -240,7 +232,7 @@ function JournalRow({
   detail: string;
 }) {
   return (
-    <PhoneListRow
+    <PhoneRow
       height={80}
       chevron={false}
       separator

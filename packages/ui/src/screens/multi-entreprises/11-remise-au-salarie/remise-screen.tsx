@@ -1,21 +1,22 @@
 import type { ReactNode } from 'react';
 
+import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CameraTopBar } from '#components/camera-controls';
 import { CameraViewport } from '#components/camera-viewport';
 import { IconButton } from '#components/icon-button';
 import { NavBar, NavBarAction } from '#components/nav-bar';
-import { Screen } from '#components/screen';
-import { Toast } from '#components/toast';
-import { BottomBar } from '#components/bottom-bar';
-import { Icon, type IconName } from '#icons';
-import { cn } from '#lib/tv';
 import {
   KraftThumb,
   PhoneBanner,
   PhoneRow,
   PhoneSection,
-} from '#screens/multi-entreprises/10-colis/phone-parts';
+  TickMark,
+} from '#components/phone-parts';
+import { Screen } from '#components/screen';
+import { Toast } from '#components/toast';
+import { Icon, type IconName } from '#icons';
+import { cn } from '#lib/tv';
 import {
   CounterScene,
   DoneDisc,
@@ -170,8 +171,8 @@ export function SesColisMobile() {
       </div>
       <PhoneSection title="Ses colis" count={2} className="mt-5" />
       <div className="mt-2.5">
-        <PhoneRow leading={<KraftThumb />} title="Amazon ···4471" lines={['À scanner']} trailing="tick" separator />
-        <PhoneRow leading={<KraftThumb />} title="Amazon ···4472" lines={['À scanner']} trailing="tick" />
+        <PhoneRow leading={<KraftThumb />} title="Amazon ···4471" lines={['À scanner']} mark={<TickMark />} separator />
+        <PhoneRow leading={<KraftThumb />} title="Amazon ···4472" lines={['À scanner']} mark={<TickMark />} />
       </div>
       <PhoneBanner
         icon="scan"
@@ -206,7 +207,7 @@ export function NavetteRemiseMobile() {
       />
       <PhoneSection title="Ses colis" count={1} className="mt-[27px]" />
       <div className="mt-2.5">
-        <PhoneRow leading={<KraftThumb />} title="UPS ···8810" lines={['Reçu hier']} trailing="tick" />
+        <PhoneRow leading={<KraftThumb />} title="UPS ···8810" lines={['Reçu hier']} mark={<TickMark />} />
       </div>
     </Screen>
   );

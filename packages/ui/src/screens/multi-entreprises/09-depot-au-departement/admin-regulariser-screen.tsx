@@ -4,17 +4,15 @@ import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { GroupedHeader } from '#components/grouped-list';
 import { NavBar } from '#components/nav-bar';
+import { PhoneBanner } from '#components/phone-parts';
 import { Screen } from '#components/screen';
-import {
-  ACCOUNT,
-  COMPANY,
-  COMPANY_ADMIN_NAV,
-  crumbs,
-} from '#fixtures/multi-entreprises';
+import { ACCOUNT, COMPANY, COMPANY_ADMIN_NAV, crumbs } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
-
-import { DepotBanner, DepotGroup, DepotTimeline } from '#screens/multi-entreprises/09-depot-au-departement/depot-parts';
+import {
+  DepositGroup,
+  DepositTimeline,
+} from '#screens/multi-entreprises/09-depot-au-departement/deposit-parts';
 
 type Blocked = {
   id: string;
@@ -108,7 +106,7 @@ export function AdminRegulariserDesktop() {
               Finance a compté 4 colis sur 5 (Nadia Kessler).
             </p>
           </div>
-          <DepotTimeline
+          <DepositTimeline
             size="desk"
             className="mt-5"
             steps={[
@@ -162,13 +160,16 @@ export function AdminRegulariserMobile() {
       }
     >
       <NavBar title="Léa Fontaine" />
-      <DepotBanner
+      <PhoneBanner
+        tone="red"
+        icon="warning"
         className="mt-3"
         title="Manquant au dépôt de 9:40"
         description="Finance a compté 4 colis sur 5."
+        height={67}
       />
       <GroupedHeader className="relative -top-px mt-[27px]">Que faire ?</GroupedHeader>
-      <DepotGroup
+      <DepositGroup
         tone="surface"
         className="mt-1.5"
         items={[
