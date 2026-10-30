@@ -22,7 +22,7 @@ describe('annexOf', () => {
     );
     expect(annex).toEqual({
       pieces: { index: 2, total: 3, level: 'sure' },
-      weightKg: { value: 1.361, level: 'sure' },
+      weightKg: { value: 3, level: 'sure' },
       service: { code: '02', label: '2nd Day Air', level: 'sure' },
       reference: { value: 'SHP-1', level: 'sure' },
     });

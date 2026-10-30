@@ -13,7 +13,7 @@ export const CARRIER_FORMATS: Partial<
   colissimo: ['Code128', 'Aztec'],
   chronopost: ['Code128', 'Aztec'],
   dpd: ['Code128', 'Aztec'],
-  'dhl-express': ['Code128', 'DataMatrix'],
+  'dhl-express': ['Code39', 'Code128', 'DataMatrix'],
   'dhl-paket': ['Code128', 'DataMatrix'],
   'deutsche-post': ['Code128', 'DataMatrix'],
   'la-poste': ['DataMatrix'],

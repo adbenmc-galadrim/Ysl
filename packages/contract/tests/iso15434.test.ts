@@ -163,9 +163,14 @@ describe('ISO 15434 transport envelope (format 01)', () => {
       carrier: 'ups',
       trackings: [{ value: '1ZE6344W0499230622', context: 'ups' }],
       shipperAccount: 'E6344W',
-      weightKg: 1.361,
+      weightKg: 3,
       recipient: { city: 'PARIS', postalCode: '75007', country: 'FR' },
     });
+  });
+
+  it('reads the UPS weight in pounds only towards the United States', () => {
+    const toUs = ups('1Z99230622').replace(`${GS}250${GS}`, `${GS}840${GS}`);
+    expect(parseIso15434(toUs)?.weightKg).toBe(1.361);
   });
 
   it('drops a rebuilt 1Z whose key fails but still names UPS', () => {

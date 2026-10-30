@@ -21,6 +21,41 @@ const DPD = '01234567890128';
 const UPS = '1Z12345E0205271686';
 const FEDEX = '794644790131';
 
+describe('DHL Express and FedEx labels', () => {
+  const symbols = (...reads: [string, string][]) =>
+    reads.map(([format, text]) => ({ format, text }));
+
+  it('makes the WAYBILL sure beside a JD plate, never the plate', () => {
+    const { tracking, carrier } = extractFields({
+      symbols: symbols(
+        ['Code39', '1234567891'],
+        ['Code128', '2LFR75007+48000001'],
+        ['Code128', 'JJD014600000000000001'],
+      ),
+    });
+    expect(tracking).toMatchObject({ value: '1234567891', level: 'sure' });
+    expect(carrier?.value).toBe('dhl-express');
+  });
+
+  it('proposes no tracking when only the JD and 2L codes are read', () => {
+    const { tracking, carrier } = extractFields({
+      symbols: symbols(
+        ['Code128', '2LFR75007+48000001'],
+        ['Code128', 'JJD014600000000000001'],
+      ),
+    });
+    expect(tracking).toBeNull();
+    expect(carrier?.value).toBe('dhl-express');
+  });
+
+  it('keeps the last 12 digits of a 34-digit FedEx code', () => {
+    const { tracking } = extractFields({
+      symbols: symbols(['Code128', `1000000000000000000000${FEDEX}`]),
+    });
+    expect(tracking?.value).toBe(FEDEX);
+  });
+});
+
 describe('confidence', () => {
   it('combines independent sources and caps at 0.99', () => {
     expect(combine([0.97, 0.95])).toBe(0.99);
@@ -106,7 +141,7 @@ describe('extractFields — tracking', () => {
     expect(tracking).toBeNull();
     expect(carrier).toMatchObject({ value: 'ups', level: 'sure' });
     expect(pieces).toMatchObject({ value: { index: 1, total: 2 } });
-    expect(weightKg?.value).toBeCloseTo(1.36, 2);
+    expect(weightKg?.value).toBe(3);
   });
 
   it('raises an agreeing 2D and 1D pair to the cap', () => {

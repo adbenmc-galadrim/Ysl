@@ -53,8 +53,8 @@ Jaro-Winkler ≥ 0,92, bonus 0,10 ; nom OCR à ≥ 0,92 du nom d'un code, même 
 identifiant d'application `00` est le même numéro ; une annotation peut citer d'autres
 numéros valides imprimés sur l'étiquette, `otherTrackings`) ; transporteur à
 l'identique ; noms aux mêmes mots quel que soit l'ordre, accents et ponctuation ignorés,
-ou l'un contenu dans l'autre ; n/N à l'identique ; poids à ± 0,25 kg (le MaxiCode UPS
-porte des livres entières). Un **faux « sûr »** est une valeur à ≥ 0,90 différente de
+ou l'un contenu dans l'autre ; n/N à l'identique ; poids à ± 0,25 kg (le MaxiCode UPS porte
+des unités entières, kilos vers la France, livres vers les États-Unis). Un **faux « sûr »** est une valeur à ≥ 0,90 différente de
 l'annotation.
 
 **Les bases.** Comme au spike S2 : le critère se compte sur les étiquettes **web et

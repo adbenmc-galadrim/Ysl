@@ -4,8 +4,6 @@ import type { Planned } from '#synthetic/plan';
 
 const HEADER = `[)>${RS}01${GS}`;
 
-const KG_PER_POUND = 0.45359237;
-
 const pieces = (p: Planned) =>
   `${String(p.pieces.index).padStart(3, '0')}/${String(p.pieces.total).padStart(3, '0')}`;
 
@@ -93,7 +91,7 @@ export const upsMaxiCode = (p: Planned) => {
       julianDay(p),
       '',
       `${p.pieces.index}/${p.pieces.total}`,
-      String(Math.max(1, Math.round(p.weightKg / KG_PER_POUND))),
+      p.weightKg.toFixed(1),
       'N',
       '',
       recipientAddress.city,

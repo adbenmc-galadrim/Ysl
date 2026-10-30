@@ -81,6 +81,10 @@ describe('missingFormats', () => {
     expect(
       missingFormats('ups', [{ format: 'Code128' }, { format: 'MaxiCode' }]),
     ).toEqual([]);
+    expect(missingFormats('dhl-express', [{ format: 'Code128' }])).toEqual([
+      'Code39',
+      'DataMatrix',
+    ]);
     expect(missingFormats(null, [])).toEqual([]);
     expect(missingFormats('gls', [{ format: 'Code128' }])).toEqual([]);
   });

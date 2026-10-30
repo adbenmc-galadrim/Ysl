@@ -148,7 +148,7 @@ describe('extractFields — codes and OCR together', () => {
   it('raises a 2D field the OCR confirms', () => {
     const { pieces, weightKg } = extractFields({
       symbols: [{ format: 'MaxiCode', text: maxicode('1/3') }],
-      ocr: { text: 'PKG 1 OF 3  WT 3.0 LBS' },
+      ocr: { text: 'PKG 1 OF 3  WT 3.0 KG' },
     });
     expect(pieces).toMatchObject({
       value: { index: 1, total: 3 },

@@ -257,8 +257,7 @@ export const fr = {
   'selection.delete.title': 'Supprimer {{count}} colis ?',
   'selection.delete.description':
     'Ils quittent la liste, ici et sur le serveur ; leur historique est gardé.',
-  'selection.delete.kept.one':
-    '1 colis déjà notifié ou remis reste en place.',
+  'selection.delete.kept.one': '1 colis déjà notifié ou remis reste en place.',
   'selection.delete.kept.many':
     '{{count}} colis déjà notifiés ou remis restent en place.',
   'selection.delete.none':
@@ -455,6 +454,7 @@ export const fr = {
   'reading.code.scheme.iso15434': 'ISO 15434',
   'reading.code.scheme.gs1': 'GS1',
   'reading.code.scheme.la-poste': 'Data Matrix La Poste',
+  'reading.code.scheme.dhl-routing': 'routage DHL',
   'reading.fact.codes': 'Codes',
   'reading.fact.ocr': 'Texte',
   'reading.fact.fusion': 'Fusion',
