@@ -102,14 +102,14 @@ quel que soit l'auteur de l'écriture ; `sync.push` reconnaît chaque garde-fou 
 trigger lève (`packages/api/src/features/sync/errors.ts`, `GUARDS`) et répond avec un
 message propre.
 
-| Garde-fou                   | Règle                                                                                                                                                                                                                                                              | Réponse |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `parcel_status_transition`  | en avant : `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne`. En arrière : `recu → a_completer` ; `notifie → recu` ; `remis → notifie, recu` ; `retourne → notifie, recu`. Rester sur place est toujours permis               | 409     |
-| `parcel_status_stale`       | un changement de statut porte `status_seq` + 1 ; sans compteur (version de l'app d'avant YSL-43), seul un pas en avant passe et le serveur incrémente ; tout autre compteur vient d'une copie qui a manqué un changement                                           | 409     |
-| `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne repasse `notifie` que par une remise (`handover`) annulée qui le liste, et sans remise vivante qui le liste (une remise supprimée logiquement compte comme vivante tant qu'elle n'est pas annulée) | 409     |
-| `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                                                                                                                                         | 409     |
-| `handover_parcels_sticky`   | une `handover` garde ses `parcel_ids` : on annule une remise, on n'en retire pas un colis                                                                                                                                                                          | 409     |
-| `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                                                                                                                                           | 400     |
+| Garde-fou                   | Règle                                                                                                                                                                                                                                                                                      | Réponse |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `parcel_status_transition`  | en avant : `a_completer → recu` ; `recu → notifie, remis, retourne` ; `notifie → remis, retourne`. En arrière : `recu → a_completer` ; `notifie → recu` ; `remis → notifie, recu` ; `retourne → notifie, recu`. Rester sur place est toujours permis                                       | 409     |
+| `parcel_status_stale`       | un changement de statut porte `status_seq` + 1 ; sans compteur (version de l'app d'avant YSL-43), seul un pas en avant passe et le serveur incrémente ; tout autre compteur vient d'une copie qui a manqué un changement                                                                   | 409     |
+| `parcel_delivery_protected` | un colis `remis` garde `delivered_at` et `delivered_by` ; il ne quitte `remis` que si la remise (`handover`) dont `at` vaut son `delivered_at` est annulée ; une remise perdante qui le liste ne compte pas, une remise supprimée logiquement reste vivante tant qu'elle n'est pas annulée | 409     |
+| `handover_cancel_sticky`    | `handover.cancelled_at` posé ne se retire ni ne se déplace                                                                                                                                                                                                                                 | 409     |
+| `handover_parcels_sticky`   | une `handover` garde ses `parcel_ids` : on annule une remise, on n'en retire pas un colis                                                                                                                                                                                                  | 409     |
+| `parcel_recipient_check`    | `notifie` et `remis` exigent `person_id` ou `contact_id`                                                                                                                                                                                                                                   | 400     |
 
 Le graphe vit dans `@repo/contract/parcel-status` (`FORWARD_TRANSITIONS`,
 `BACKWARD_TRANSITIONS`, `canTransition(from, to)` ; `canTransition` et `PARCEL_STATUSES`
@@ -130,23 +130,29 @@ Ce que cela donne entre deux appareils :
 - **Remise écrasée.** L'appareil A remet le colis (`handover` + colis `remis`). L'appareil
   B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : `remis → recu`
   (ou `remis → notifie` si la copie date d'un colis déjà notifié) est refusée en 409
-  (`parcel_delivery_protected`) tant qu'aucune remise annulée ne liste le colis, que la
-  `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement ; la ligne du
+  (`parcel_delivery_protected`) tant que la remise dont `at` vaut son `delivered_at` n'est
+  pas annulée, que la `handover` de A soit vivante, pas encore arrivée ou supprimée
+  logiquement ; la ligne du
   serveur ne bouge pas, l'opération de B part en « Corriger ».
 - **Même colis remis sur deux appareils.** A et B, hors ligne, remettent le même colis.
   A envoie le premier ; la `handover` de B passe, mais son colis est refusé en 409
   (`parcel_delivery_protected`, la preuve de remise ne change pas). Après le pull, B
   range sa copie sur celle du serveur (une opération refusée ne protège pas sa ligne),
   retire l'opération refusée de l'outbox et, quand aucun colis de sa `handover` n'est
-  plus remis par elle, l'annule (`cancelled_at`, jamais supprimée : une `handover`
-  vivante bloquerait l'annulation de celle de A) ; Colis affiche « Déjà remis à … par un
+  plus remis par elle, l'annule (`cancelled_at`, jamais supprimée, sans motif : personne
+  ne l'a défaite) ; Colis affiche « Déjà remis à … par un
   collègue » (`settleDeliveryConflicts`, appelé par `afterPull` du moteur). Une
   `handover` qui garde une partie de ses colis reste vivante ; la ligne, la fiche et
   l'historique d'un colis suivent la `handover` dont l'heure est son `delivered_at`.
-- **Annulation tracée.** Annuler une remise, c'est poser `cancelled_at` sur la
-  `handover` **puis** repasser le colis `notifie` (`delivered_at` et `delivered_by` à
-  nul, `status_seq` + 1, sinon 409 `parcel_status_stale`), dans cet ordre dans
-  l'outbox. La `handover` reste, annulée : c'est la trace.
+- **Annulation tracée (F44, `cancelHandover`).** Annuler une remise, c'est poser
+  `cancelled_at`, `cancel_reason`, `cancel_note` et `cancelled_by_name` sur la
+  `handover` **puis** repasser ses colis `notifie`, ou `recu` s'ils n'ont jamais été
+  notifiés (`delivered_at` et `delivered_by` à nul, `status_seq` + 1, sinon 409
+  `parcel_status_stale`), dans cet ordre dans l'outbox, avec un
+  `parcel.handover_cancelled` par colis. La `handover` reste, annulée : c'est la trace.
+  Toute la remise s'annule, jamais un colis seul ; un colis perdu au profit d'un autre
+  iPhone reste à la remise gagnante. Le code de retrait reste consommé. Deux annulations
+  croisées passent sans refus : la première et son motif restent.
   Une copie en retard qui la renverrait sans `cancelled_at` est refusée.
 - **Modification ordinaire.** Changer l'emplacement ou les notes d'un colis remis passe,
   tant que le statut et la preuve de remise ne bougent pas.
@@ -319,8 +325,8 @@ La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le rest
   un contact (`parcel_recipient_check`). Le numéro de suivi n'est jamais bloquant ;
   il est revalidé contre le transporteur choisi (`validateTracking`).
 - **Retour arrière** depuis la fiche : « Annuler la notification » et « Annuler le
-  retour » (`changeParcelStatus`). « Annuler la remise » attend l'annulation de la
-  remise : il faut annuler la `handover` avec son motif dans le même commit.
+  retour » (`changeParcelStatus`). « Annuler la remise » passe par la feuille de motif
+  et `cancelHandover`, comme depuis la confirmation et le journal.
 - **Remise** (`recordHandover`) : en un seul commit, la `handover` (méthode de la voie :
   `qr`, `pin`, ou `manuel` pour un nom choisi sans preuve), chaque colis coché `remis`
   (`delivered_at`, `delivered_by`, `status_seq` + 1), un `parcel.delivered` par colis
@@ -332,6 +338,7 @@ La fiche (`/colis/<id>`, F29) et « Modifier le colis » écrivent comme le rest
   `type` `parcel.edited` (`detail.fields`, les champs changés), `parcel.status`
   (`detail.from`, `detail.to`), `parcel.deleted` ou `parcel.delivered`
   (`detail.handoverId`, `detail.method` : `qr`, `pin`, `signature`, `manuel`),
+  `parcel.handover_cancelled` (`detail.handoverId`, `detail.reason`, `detail.note`),
   `actor_id` = l'agent. La
   réception n'a pas d'événement : la ligne la porte (`received_at`). Un appareil
   ignore un type ou un `detail` qu'il ne sait pas lire. L'historique de la fiche y

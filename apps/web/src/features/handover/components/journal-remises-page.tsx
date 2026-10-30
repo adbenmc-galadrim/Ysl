@@ -8,6 +8,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
+import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
+import { canCancelHandover } from '#/features/handover/cancel-handover';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { proofLabels } from '#/features/handover/confirmation';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
@@ -72,6 +74,7 @@ export function RemiseDetailPage({
   );
   const urls = useProofUrls(handoverId);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   useEffect(() => {
     if (entry === null) onBack();
   }, [entry, onBack]);
@@ -85,7 +88,21 @@ export function RemiseDetailPage({
         }}
         onBack={onBack}
         onParcel={(parcel) => onParcel(parcel.id)}
+        cancelAction={
+          canCancelHandover(entry)
+            ? {
+                label: t('handover.cancel.action'),
+                onClick: () => setCancelling(true),
+              }
+            : undefined
+        }
       />
+      {cancelling && (
+        <AnnulerRemiseSheet
+          handoverId={handoverId}
+          onClose={() => setCancelling(false)}
+        />
+      )}
       {viewing && (
         <PhotoViewer
           src={viewing}

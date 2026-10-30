@@ -16,6 +16,7 @@ import {
 } from '@repo/contract/sync';
 import {
   emailTemplate,
+  handover,
   notification,
   pickupCode,
   syncOp as syncOpTable,
@@ -87,7 +88,9 @@ function valuesOf(table: SyncTable, op: SyncOp): Values {
  * the stale copy would bring a deleted row back (§8.4: deletes are logical).
  * A pickup code's use stays too, as first received: two iPhones that both
  * handed over on the same code offline keep the use of the one whose
- * handover won, and a later reminder does not reopen it (F41).
+ * handover won, and a later reminder does not reopen it (F41). Two iPhones
+ * that undo the same handover agree: the first cancellation and its reason
+ * stay. A copy that says it is not cancelled still meets the trigger.
  */
 function updatesOf(table: SyncTable, values: Values): Values {
   const set: Values = {};
@@ -100,6 +103,20 @@ function updatesOf(table: SyncTable, values: Values): Values {
   }
   if (table === pickupCode && 'usedAt' in set) {
     set.usedAt = sql`coalesce(${pickupCode.usedAt}, excluded.used_at)`;
+  }
+  if (table === handover) {
+    if (set.cancelledAt) {
+      set.cancelledAt = sql`coalesce(${handover.cancelledAt}, excluded.cancelled_at)`;
+    }
+    if ('cancelReason' in set) {
+      set.cancelReason = sql`coalesce(${handover.cancelReason}, excluded.cancel_reason)`;
+    }
+    if ('cancelNote' in set) {
+      set.cancelNote = sql`case when ${handover.cancelReason} is null then excluded.cancel_note else ${handover.cancelNote} end`;
+    }
+    if ('cancelledByName' in set) {
+      set.cancelledByName = sql`case when ${handover.cancelReason} is null then excluded.cancelled_by_name else ${handover.cancelledByName} end`;
+    }
   }
   return set;
 }

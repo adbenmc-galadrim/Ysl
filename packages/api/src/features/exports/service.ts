@@ -43,6 +43,7 @@ export const PARCELS_CSV_HEADER = [
   'remise_annulee',
   'signature',
   'photo_remise',
+  'motif_annulation',
 ] as const;
 
 /** The v1 vocabulary, so an export still reads as one to the v1 import. */
@@ -122,6 +123,8 @@ async function readHandovers(db: AnyDb, organizationId: string) {
       agentName: handover.agentName,
       at: handover.at,
       cancelledAt: handover.cancelledAt,
+      cancelReason: handover.cancelReason,
+      cancelNote: handover.cancelNote,
       hasSignature: handover.hasSignature,
       hasPhoto: handover.hasPhoto,
     })
@@ -139,10 +142,11 @@ type ExportedHandover = Awaited<ReturnType<typeof readHandovers>>[number];
 
 /**
  * The handover each parcel's line tells (F43): the standing one that wrote
- * its `delivered_at`, else the latest standing one, else the latest
+ * its `delivered_at`, else the latest an agent undid (a loser still standing
+ * never gave the parcel), else the latest standing one, else the latest
  * cancelled one — a parcel handed back after a cancellation says so.
  */
-function handoverByParcel(
+export function handoverByParcel(
   rows: ExportedParcel[],
   handovers: ExportedHandover[],
 ): Map<string, ExportedHandover> {
@@ -151,9 +155,11 @@ function handoverByParcel(
   );
   const rank = (row: ExportedHandover, parcelId: string) =>
     row.cancelledAt
-      ? 0
-      : row.at.getTime() === deliveredAt.get(parcelId)
+      ? row.cancelReason
         ? 2
+        : 0
+      : row.at.getTime() === deliveredAt.get(parcelId)
+        ? 3
         : 1;
   const byParcel = new Map<string, ExportedHandover>();
   for (const row of handovers) {
@@ -170,8 +176,15 @@ function handoverByParcel(
 /** « oui » or « non »: the file says a proof exists, the proof stays on the iPhone (D8). */
 const yesNo = (value: boolean) => translate(value ? 'export.yes' : 'export.no');
 
+/** « Mauvais colis : celui de M. Bernard », empty when nobody undid it. */
+function cancelReasonCell({ cancelReason, cancelNote }: ExportedHandover) {
+  if (!cancelReason) return '';
+  const reason = translate(`handover.cancel.reason.${cancelReason}`);
+  return cancelNote ? `${reason} : ${cancelNote}` : reason;
+}
+
 function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
-  if (!row) return ['', '', '', '', '', '', ''];
+  if (!row) return ['', '', '', '', '', '', '', ''];
   return [
     formatExportDate(row.at),
     row.delegateName
@@ -185,6 +198,7 @@ function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
     formatExportDate(row.cancelledAt),
     yesNo(row.hasSignature),
     yesNo(row.hasPhoto),
+    cancelReasonCell(row),
   ];
 }
 

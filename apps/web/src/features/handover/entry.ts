@@ -1,4 +1,8 @@
 import type { HandoverMethod } from '@repo/contract/handover';
+import {
+  PARCEL_EVENT_ENTITY,
+  readParcelEvent,
+} from '@repo/contract/parcel-event';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { IconName } from '@repo/ui';
 import type {
@@ -41,21 +45,49 @@ export function handoverSyncOf(ops: readonly OutboxOp[]): HandoverSync {
 }
 
 /**
- * The parcels a handover did hand over: all it lists once cancelled, else
- * those whose `deliveredAt` it wrote — a handover kept after losing one of
- * its parcels to another iPhone does not count that one.
+ * The parcels an agent undid this handover for, told by their events: a
+ * handover that lost one to another iPhone wrote none for that one.
+ */
+export async function undoneParcelIds(
+  db: CourrierDatabase,
+  handover: LocalHandover,
+): Promise<Set<string>> {
+  if (!handover.cancelReason) return new Set();
+  const events = await db.event
+    .where('[entity+entityId]')
+    .anyOf(handover.parcelIds.map((id) => [PARCEL_EVENT_ENTITY, id]))
+    .toArray();
+  return new Set(
+    events.flatMap((row) => {
+      const event = readParcelEvent(row.type, row.detail);
+      return event?.type === 'parcel.handover_cancelled' &&
+        event.handoverId === handover.id
+        ? [row.entityId]
+        : [];
+    }),
+  );
+}
+
+/**
+ * The parcels a handover did hand over: those an agent undid it for, all it
+ * lists when the synchronisation cancelled it, else those whose `deliveredAt`
+ * it wrote — a handover kept after losing one of its parcels to another
+ * iPhone does not count that one.
  */
 export function handedOf(
   handover: LocalHandover,
   parcels: readonly (LocalParcel | undefined)[],
+  undone?: ReadonlySet<string>,
 ): LocalParcel[] {
   return parcels.filter(
     (parcel): parcel is LocalParcel =>
       !!parcel &&
       !parcel.deletedAt &&
-      (!!handover.cancelledAt ||
-        (parcel.status === 'remis' &&
-          parcel.deliveredAt?.getTime() === handover.at.getTime())),
+      (handover.cancelReason && undone
+        ? undone.has(parcel.id)
+        : !!handover.cancelledAt ||
+          (parcel.status === 'remis' &&
+            parcel.deliveredAt?.getTime() === handover.at.getTime())),
   );
 }
 
@@ -66,8 +98,9 @@ export async function loadHandoverEntry(
 ): Promise<HandoverEntry | null> {
   const handover = await db.handover.get(handoverId);
   if (!handover || handover.deletedAt) return null;
-  const [parcels, ops, proofs] = await Promise.all([
+  const [parcels, undone, ops, proofs] = await Promise.all([
     db.parcel.bulkGet(handover.parcelIds),
+    undoneParcelIds(db, handover),
     db.outbox
       .where('[entity+entityId]')
       .equals(['handover', handover.id])
@@ -76,7 +109,7 @@ export async function loadHandoverEntry(
   ]);
   return {
     handover,
-    parcels: handedOf(handover, parcels),
+    parcels: handedOf(handover, parcels, undone),
     sync: handoverSyncOf(ops),
     proofs,
   };

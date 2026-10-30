@@ -198,6 +198,9 @@ Table "handover" {
   "agent_id" text [not null]
   "at" timestamptz [not null]
   "cancelled_at" timestamptz
+  "cancel_reason" text
+  "cancel_note" text
+  "cancelled_by_name" text
 
   Checks {
     `coalesce(uuid_extract_version("handover"."id"), 0) = 7` [name: 'handover_id_v7']
@@ -206,6 +209,8 @@ Table "handover" {
     `btrim("handover"."recipient_name") <> ''` [name: 'handover_recipient_name_check']
     `cardinality("handover"."parcel_ids") >= 1` [name: 'handover_parcels_check']
     `"handover"."cancelled_at" is null or "handover"."cancelled_at" >= "handover"."at"` [name: 'handover_cancel_check']
+    `"handover"."cancel_reason" in ('wrong_parcel', 'wrong_person', 'entry_error')` [name: 'handover_cancel_reason_check']
+    `"handover"."cancel_reason" is null or "handover"."cancelled_at" is not null` [name: 'handover_cancel_reason_cancelled']
   }
 
   Indexes {

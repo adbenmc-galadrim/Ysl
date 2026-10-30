@@ -296,6 +296,52 @@ describe('parcel status transitions', () => {
     expect(await statusOf(id)).toBe('notifie');
   });
 
+  it('ignore a handover that lost the parcel to another iPhone', async () => {
+    const id = await insertParcel('remis', personId);
+    const winner = await insertHandover(id, personId);
+    await db.insert(schema.handover).values({
+      id: newId(),
+      organizationId,
+      parcelIds: [id],
+      personId,
+      recipientName: 'Camille Martin',
+      method: 'qr',
+      agentId,
+      at: new Date(AT.getTime() + 1_000),
+    });
+    await db
+      .update(schema.handover)
+      .set({ cancelledAt: new Date('2026-10-24T11:00:00Z') })
+      .where(eq(schema.handover.id, winner));
+
+    expect(await setStatus(id, 'notifie')).toBeNull();
+  });
+
+  it('keep a parcel handed over again while an older handover is cancelled', async () => {
+    const id = await insertParcel('remis', personId);
+    await insertCancelledHandover(id, personId);
+    const again = new Date(AT.getTime() + 2_000);
+    await setStatus(id, 'notifie');
+    await db
+      .update(schema.parcel)
+      .set({ status: 'remis', deliveredAt: again, deliveredBy: agentId })
+      .where(eq(schema.parcel.id, id));
+    await db.insert(schema.handover).values({
+      id: newId(),
+      organizationId,
+      parcelIds: [id],
+      personId,
+      recipientName: 'Camille Martin',
+      method: 'pin',
+      agentId,
+      at: again,
+    });
+
+    expect(await setStatus(id, 'notifie')).toMatchObject({
+      constraint: 'parcel_delivery_protected',
+    });
+  });
+
   it('undo a delivery never notified back to received', async () => {
     const id = await insertParcel('remis', personId);
     const handoverId = await insertHandover(id, personId);

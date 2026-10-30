@@ -1,4 +1,7 @@
-import { HANDOVER_METHODS } from '@repo/contract/handover';
+import {
+  HANDOVER_CANCEL_REASONS,
+  HANDOVER_METHODS,
+} from '@repo/contract/handover';
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
@@ -29,6 +32,10 @@ export const handover = pgTable(
     agentName: text('agent_name'),
     at: timestamp('at', { withTimezone: true }).notNull(),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
+    /** Why an agent undid it (F44); none when the synchronisation cancelled it. */
+    cancelReason: text('cancel_reason', { enum: HANDOVER_CANCEL_REASONS }),
+    cancelNote: text('cancel_note'),
+    cancelledByName: text('cancelled_by_name'),
     /**
      * A signature or a photo was taken at the handover. The files stay on the
      * iPhone that took them (D8): the server only knows they exist.
@@ -51,6 +58,15 @@ export const handover = pgTable(
     check(
       'handover_cancel_check',
       sql`${table.cancelledAt} is null or ${table.cancelledAt} >= ${table.at}`,
+    ),
+    oneOf(
+      'handover_cancel_reason_check',
+      table.cancelReason,
+      HANDOVER_CANCEL_REASONS,
+    ),
+    check(
+      'handover_cancel_reason_cancelled',
+      sql`${table.cancelReason} is null or ${table.cancelledAt} is not null`,
     ),
     index('handover_parcel_ids_idx').using('gin', table.parcelIds),
     index('handover_person_id_idx')

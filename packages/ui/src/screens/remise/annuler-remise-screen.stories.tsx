@@ -25,7 +25,7 @@ export const MotifChoisi: Story = {
     parcel: PARCELS.malik,
     handedOver: 'Remis hier à 9 h 12',
     proof: 'À Malik Benali, QR code vérifié, par Karim',
-    reason: 'Mauvais colis',
+    reason: 'wrong_parcel',
     note: 'Le colis remis était celui de M. Bernard',
   },
 };

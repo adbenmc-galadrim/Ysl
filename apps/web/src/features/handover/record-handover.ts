@@ -158,6 +158,9 @@ export async function recordHandover(
     agentName: agentName?.trim() || null,
     at: now,
     cancelledAt: null,
+    cancelReason: null,
+    cancelNote: null,
+    cancelledByName: null,
     hasSignature: !!signed,
     hasPhoto: false,
   };

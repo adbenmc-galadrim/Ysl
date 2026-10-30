@@ -10,6 +10,8 @@ import {
   describeConfirmation,
   proofLabels,
 } from '#/features/handover/confirmation';
+import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
+import { announceHandover } from '#/features/handover/done-toast';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { addHandoverProof, type ProofInput } from '#/features/handover/proofs';
@@ -37,8 +39,10 @@ export type RemiseConfirmeePageProps = {
   handoverId: string;
   /** The signature drawn before « Remettre » could not be kept: said at once. */
   signatureLost?: boolean;
-  /** « Terminé », or the handover is not here to show: back to Colis. */
+  /** « Terminé »: back to Colis. */
   onDone: () => void;
+  /** The handover is not here to show, or was just cancelled. */
+  onGone: () => void;
   onAnother: () => void;
   /** The next handover of a selection's queue, in place of « Remettre un autre ». */
   next?: { label: string; onClick: () => void };
@@ -56,6 +60,7 @@ export function RemiseConfirmeePage({
   handoverId,
   signatureLost = false,
   onDone,
+  onGone,
   onAnother,
   next,
 }: RemiseConfirmeePageProps) {
@@ -67,14 +72,18 @@ export function RemiseConfirmeePage({
   const urls = useProofUrls(handoverId);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [failed, setFailed] = useState<HandoverProofKind | null>(
     signatureLost ? 'signature' : null,
   );
   const input = useRef<HTMLInputElement>(null);
   const missing = confirmationGone(entry);
+  const left = useRef(false);
   useEffect(() => {
-    if (missing) onDone();
-  }, [missing, onDone]);
+    if (!missing || left.current) return;
+    left.current = true;
+    onGone();
+  }, [missing, onGone]);
 
   const keep = async (proof: Promise<ProofInput>, kind: HandoverProofKind) => {
     setFailed(null);
@@ -142,10 +151,19 @@ export function RemiseConfirmeePage({
             items: proofMediaItems(urls, PROOF_LABELS, setViewing),
           }}
           undoLabel={t('handover.done.undo')}
-          undoDisabled
+          onUndo={() => setCancelling(true)}
           onAnother={onAnother}
           next={next}
           onDone={onDone}
+        />
+      )}
+      {cancelling && !draft && (
+        <AnnulerRemiseSheet
+          handoverId={handoverId}
+          onClose={() => setCancelling(false)}
+          onCancelled={(count) =>
+            announceHandover({ kind: 'cancelled', count })
+          }
         />
       )}
       {photoInput}

@@ -74,7 +74,7 @@ describe('0013_preuves_remise', () => {
 
     await migrate(db, { migrationsFolder });
 
-    expect(await row()).toEqual({
+    expect(await row()).toMatchObject({
       ...old,
       has_signature: false,
       has_photo: false,
