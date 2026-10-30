@@ -4,14 +4,21 @@ import { useEffect, useSyncExternalStore } from 'react';
 export const HANDOVER_TOAST_MS = 5_000;
 
 /**
- * A handover another iPhone had recorded first, found by the
- * synchronisation. The one written here has its own screen (YSL-76).
+ * What Colis says of a handover: another iPhone had recorded it first, found
+ * by the synchronisation, or it was just undone. The one written here has its
+ * own screen (YSL-76).
  */
-export type HandoverToast = {
-  kind: 'conflict';
-  firstName: string | null;
-  byMe: boolean;
-};
+export type HandoverToast =
+  | {
+      kind: 'conflict';
+      firstName: string | null;
+      byMe: boolean;
+    }
+  | {
+      /** Undone from its confirmation, which has just closed (F44). */
+      kind: 'cancelled';
+      count: number;
+    };
 
 let current: HandoverToast | undefined;
 const listeners = new Set<() => void>();
@@ -21,7 +28,7 @@ function publish(next: HandoverToast | undefined) {
   for (const listener of listeners) listener();
 }
 
-/** Called once a handover is found beaten by another iPhone: Colis says so for a few seconds. */
+/** Called once a handover is found beaten or has been undone: Colis says so for a few seconds. */
 export function announceHandover(toast: HandoverToast): void {
   publish(toast);
 }

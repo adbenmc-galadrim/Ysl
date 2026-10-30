@@ -1,5 +1,5 @@
 {
-  "id": "50dc6873-883c-4ceb-9064-0f4584263679",
+  "id": "1821297d-aa35-4882-90a0-008b2442ce30",
   "prevId": "f05a9072-3ba4-49a7-bb22-081dd85f04b3",
   "version": "7",
   "dialect": "postgresql",
@@ -1057,191 +1057,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.email_outbox": {
-      "name": "email_outbox",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "idempotency_key": {
-          "name": "idempotency_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "recipient": {
-          "name": "recipient",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "recipient_name": {
-          "name": "recipient_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "subject": {
-          "name": "subject",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "text_body": {
-          "name": "text_body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "html_body": {
-          "name": "html_body",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'queued'"
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "next_attempt_at": {
-          "name": "next_attempt_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "lease_until": {
-          "name": "lease_until",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "provider_message_id": {
-          "name": "provider_message_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "finished_at": {
-          "name": "finished_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "email_outbox_idempotency_key_idx": {
-          "name": "email_outbox_idempotency_key_idx",
-          "columns": [
-            {
-              "expression": "idempotency_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "email_outbox_due_idx": {
-          "name": "email_outbox_due_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "next_attempt_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "email_outbox_finished_at_idx": {
-          "name": "email_outbox_finished_at_idx",
-          "columns": [
-            {
-              "expression": "finished_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "email_outbox_organization_id_organization_id_fk": {
-          "name": "email_outbox_organization_id_organization_id_fk",
-          "tableFrom": "email_outbox",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "email_outbox_status_check": {
-          "name": "email_outbox_status_check",
-          "value": "\"email_outbox\".\"status\" in ('queued', 'sending', 'sent', 'failed')"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.event": {
       "name": "event",
       "schema": "",
@@ -1522,6 +1337,24 @@
           "primaryKey": false,
           "notNull": false
         },
+        "cancel_reason": {
+          "name": "cancel_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancel_note": {
+          "name": "cancel_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by_name": {
+          "name": "cancelled_by_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "has_signature": {
           "name": "has_signature",
           "type": "boolean",
@@ -1676,6 +1509,14 @@
         "handover_cancel_check": {
           "name": "handover_cancel_check",
           "value": "\"handover\".\"cancelled_at\" is null or \"handover\".\"cancelled_at\" >= \"handover\".\"at\""
+        },
+        "handover_cancel_reason_check": {
+          "name": "handover_cancel_reason_check",
+          "value": "\"handover\".\"cancel_reason\" in ('wrong_parcel', 'wrong_person', 'entry_error')"
+        },
+        "handover_cancel_reason_cancelled": {
+          "name": "handover_cancel_reason_cancelled",
+          "value": "\"handover\".\"cancel_reason\" is null or \"handover\".\"cancelled_at\" is not null"
         }
       },
       "isRLSEnabled": false

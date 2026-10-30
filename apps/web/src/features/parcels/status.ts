@@ -23,8 +23,8 @@ export async function liveParcel(
 /**
  * Moves a parcel along §8.3, forward or back, and queues it for `sync.push`
  * (`commitLocal`); the counter it carries lets the server tell an undo from a
- * stale copy, a pull landing in between included. Leaving `remis` also needs
- * its handover cancelled first in the outbox (the handover screen, YSL-75).
+ * stale copy, a pull landing in between included. Leaving `remis` goes through
+ * `cancelHandover`, which cancels the handover first in the outbox.
  * The record's history gets the change in the same write. Returns the op id
  * of the parcel.
  */

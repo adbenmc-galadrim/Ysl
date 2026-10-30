@@ -128,4 +128,4 @@ Orientation globale et redressement de perspective (§4.2, étapes 4 et 5), gaba
 transporteur et ancres positionnées, rapprochement avec l'annuaire et trois suggestions
 (YSL-46), banc de mesure de la chaîne complète (YSL-27), écran « Voir ce qui a été lu »
 (F22), gabarit du bloc expéditeur par transporteur et adresse de l'expéditeur (seul le nom
-est lu, YSL-40). Le prototype `apps/spike-ocr` se retire dans une prochaine PR.
+est lu, YSL-40).

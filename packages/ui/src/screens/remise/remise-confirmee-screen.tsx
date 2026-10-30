@@ -30,8 +30,6 @@ export type RemiseConfirmeeScreenProps = {
   /** Shows the undo toast while the handover can still be cancelled. */
   undoable?: boolean;
   undoLabel?: string;
-  /** The undo is shown but cannot be used yet. */
-  undoDisabled?: boolean;
   onUndo?: () => void;
   /** A grey button beside "Terminé": straight back to the viewfinder. */
   onAnother?: () => void;
@@ -57,7 +55,6 @@ export function RemiseConfirmeeScreen({
   offline = false,
   undoable = true,
   undoLabel = 'Annuler',
-  undoDisabled = false,
   onUndo,
   onAnother,
   next,
@@ -72,7 +69,6 @@ export function RemiseConfirmeeScreen({
             <Toast
               message="Remise enregistrée"
               actionLabel={undoLabel}
-              actionDisabled={undoDisabled}
               onAction={onUndo}
             />
           )}

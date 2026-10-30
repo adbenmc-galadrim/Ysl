@@ -1,4 +1,8 @@
 import type { HandoverMethod } from '@repo/contract/handover';
+import {
+  PARCEL_EVENT_ENTITY,
+  readParcelEvent,
+} from '@repo/contract/parcel-event';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type {
   CourrierDatabase,
@@ -56,34 +60,63 @@ export async function handoversOf(
 }
 
 /**
- * The handovers that list a parcel `remis` by another one: those that lost
- * it to another iPhone, cancelled by the synchronisation or kept for the
- * parcels they did hand over. Their `parcel.delivered` events for it tell a
- * handover that never happened.
+ * The handovers an agent undid for this parcel, told by its own events: only
+ * the parcels a handover did hand over get one, so they are the handovers
+ * that truly gave it, whatever else they list.
+ */
+async function undoneHandoverIds(
+  db: CourrierDatabase,
+  parcelId: string,
+): Promise<Set<string>> {
+  const events = await db.event
+    .where('[entity+entityId]')
+    .equals([PARCEL_EVENT_ENTITY, parcelId])
+    .toArray();
+  return new Set(
+    events.flatMap((row) => {
+      const event = readParcelEvent(row.type, row.detail);
+      return event?.type === 'parcel.handover_cancelled'
+        ? [event.handoverId]
+        : [];
+    }),
+  );
+}
+
+/**
+ * The handovers that list a parcel without having given it: they lost it to
+ * another iPhone, cancelled by the synchronisation or kept for the parcels
+ * they did hand over. Their `parcel.delivered` events for it tell a handover
+ * that never happened. One undone for this parcel did happen, and the one
+ * that wrote its `deliveredAt` holds it.
  */
 export async function lostHandoverIds(
   db: CourrierDatabase,
   parcel: LocalParcel,
 ): Promise<Set<string>> {
-  if (parcel.status !== 'remis' || !parcel.deliveredAt) return new Set();
   const field = parcel.personId ? 'personId' : 'contactId';
   const id = parcel.personId ?? parcel.contactId;
   if (!id) return new Set();
-  const at = parcel.deliveredAt.getTime();
-  const lost = await db.handover
-    .where(field)
-    .equals(id)
-    .filter(
-      (handover) =>
-        handover.parcelIds.includes(parcel.id) && handover.at.getTime() !== at,
-    )
-    .toArray();
-  return new Set(lost.map((handover) => handover.id));
+  const at = parcel.deliveredAt?.getTime();
+  const [listing, undone] = await Promise.all([
+    db.handover
+      .where(field)
+      .equals(id)
+      .filter((handover) => handover.parcelIds.includes(parcel.id))
+      .toArray(),
+    undoneHandoverIds(db, parcel.id),
+  ]);
+  return new Set(
+    listing
+      .filter(
+        (handover) => handover.at.getTime() !== at && !undone.has(handover.id),
+      )
+      .map((handover) => handover.id),
+  );
 }
 
 /**
- * The last cancelled handover that listed a parcel: what its record says
- * once no handover stands for it any more.
+ * The cancelled handover a parcel's record tells once none stands for it: the
+ * last one an agent undid for this parcel, else the last that listed it.
  */
 export async function cancelledHandoverOf(
   db: CourrierDatabase,
@@ -92,17 +125,23 @@ export async function cancelledHandoverOf(
   const field = parcel.personId ? 'personId' : 'contactId';
   const id = parcel.personId ?? parcel.contactId;
   if (!id) return undefined;
-  const cancelled = await db.handover
-    .where(field)
-    .equals(id)
-    .filter(
-      (handover) =>
-        !!handover.cancelledAt &&
-        !handover.deletedAt &&
-        handover.parcelIds.includes(parcel.id),
-    )
-    .sortBy('at');
-  return cancelled.at(-1);
+  const [cancelled, undone] = await Promise.all([
+    db.handover
+      .where(field)
+      .equals(id)
+      .filter(
+        (handover) =>
+          !!handover.cancelledAt &&
+          !handover.deletedAt &&
+          handover.parcelIds.includes(parcel.id),
+      )
+      .sortBy('at'),
+    undoneHandoverIds(db, parcel.id),
+  ]);
+  return (
+    cancelled.filter((handover) => undone.has(handover.id)).at(-1) ??
+    cancelled.at(-1)
+  );
 }
 
 /** « QR vérifié », « code vérifié », « sans vérification ». */

@@ -27,6 +27,7 @@ vi.mock('@repo/auth', () => ({ auth: { api: {} }, isAPIError: () => false }));
 
 const { appRouter, createTRPCContext } = await import('@repo/api');
 const { commitLocal } = await import('#/features/db/commit');
+const { cancelHandover } = await import('#/features/handover/cancel-handover');
 const { settleDeliveryConflicts } =
   await import('#/features/handover/conflicts');
 const { lookupPickupPin, lookupPickupText } =
@@ -417,6 +418,157 @@ describe('a handover between two iPhones', () => {
         (title) => typeof title === 'string' && title.startsWith('Remis'),
       ),
     ).toEqual(['Remis à Nora Haddad par Karim (sans vérification)']);
+  });
+});
+
+describe('a handover undone between two iPhones (F44)', () => {
+  const handOver = (db: Db, agentId: string) =>
+    recordHandover(
+      db,
+      {
+        kind: 'person',
+        id: nora.id,
+        via: 'manuel',
+        at: Date.now(),
+        parcelIds: parcels.map((parcel) => parcel.id),
+      },
+      { agentId, agentName: agentId },
+    );
+
+  it('reaches the server and the other iPhone with its reason', async () => {
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    const done = await handOver(first, KARIM);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+
+    await cancelHandover(
+      second,
+      done.handoverId,
+      { reason: 'wrong_person', note: 'Homonyme' },
+      { agentId: LINA, agentName: 'Lina' },
+    );
+    const run = await other.syncNow({ force: true });
+    await desk.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 0 });
+    expect((await serverParcel(parcels[0]!.id))?.status).toBe('recu');
+    expect(await first.handover.get(done.handoverId)).toMatchObject({
+      cancelReason: 'wrong_person',
+      cancelNote: 'Homonyme',
+      cancelledByName: 'Lina',
+    });
+    expect((await first.parcel.get(parcels[1]!.id))?.status).toBe('recu');
+  });
+
+  it('goes through when undone before the handover ever left', async () => {
+    const desk = iphone(first, KARIM);
+    await desk.syncNow({ force: true });
+    const done = await handOver(first, KARIM);
+
+    await cancelHandover(
+      first,
+      done.handoverId,
+      { reason: 'entry_error' },
+      { agentId: KARIM },
+    );
+    const run = await desk.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 0 });
+    expect(await first.outbox.count()).toBe(0);
+    expect((await serverParcel(parcels[0]!.id))?.status).toBe('recu');
+  });
+
+  it('settles two iPhones undoing the same handover, the first reason kept', async () => {
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    const done = await handOver(first, KARIM);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+
+    await cancelHandover(
+      first,
+      done.handoverId,
+      { reason: 'wrong_parcel' },
+      { agentId: KARIM },
+    );
+    await cancelHandover(
+      second,
+      done.handoverId,
+      { reason: 'entry_error' },
+      { agentId: LINA },
+    );
+    await desk.syncNow({ force: true });
+    const run = await other.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 0 });
+    expect(await second.outbox.count()).toBe(0);
+    expect((await second.handover.get(done.handoverId))?.cancelReason).toBe(
+      'wrong_parcel',
+    );
+  });
+
+  it('lets the parcels be handed over again', async () => {
+    const desk = iphone(first, KARIM);
+    await desk.syncNow({ force: true });
+    const done = await handOver(first, KARIM);
+    await desk.syncNow({ force: true });
+    await cancelHandover(
+      first,
+      done.handoverId,
+      { reason: 'wrong_person' },
+      { agentId: KARIM },
+    );
+    await desk.syncNow({ force: true });
+
+    const again = await handOver(first, KARIM);
+    const run = await desk.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 0 });
+    expect(again.handoverId).not.toBe(done.handoverId);
+    expect((await serverParcel(parcels[0]!.id))?.status).toBe('remis');
+  });
+
+  it('undoes the winner of a parcel despite the handover that lost it', async () => {
+    const desk = iphone(first, KARIM);
+    const other = iphone(second, LINA);
+    await desk.syncNow({ force: true });
+    await other.syncNow({ force: true });
+    const lostOne = parcels[0]!.id;
+    const keptOne = parcels[1]!.id;
+    const person = {
+      kind: 'person' as const,
+      id: nora.id,
+      via: 'manuel' as const,
+      at: Date.now(),
+    };
+    const winner = await recordHandover(
+      first,
+      { ...person, parcelIds: [lostOne] },
+      { agentId: KARIM },
+    );
+    await desk.syncNow({ force: true });
+    await recordHandover(
+      second,
+      { ...person, parcelIds: [lostOne, keptOne] },
+      { agentId: LINA },
+    );
+    await other.syncNow({ force: true });
+    await desk.syncNow({ force: true });
+
+    await cancelHandover(
+      first,
+      winner.handoverId,
+      { reason: 'wrong_parcel' },
+      { agentId: KARIM },
+    );
+    const run = await desk.syncNow({ force: true });
+
+    expect(run).toMatchObject({ rejected: 0 });
+    expect((await serverParcel(lostOne))?.status).toBe('recu');
+    expect((await serverParcel(keptOne))?.status).toBe('remis');
   });
 });
 
