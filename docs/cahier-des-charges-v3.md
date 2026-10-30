@@ -399,6 +399,12 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Durées de conservation d'une entreprise neuve (D28) | Celles du §9.2 par défaut | YSL-126 |
 | Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
+| Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Le serveur tire un nouveau code à chaque relance et retire l'ancien : le §8.7 dit déjà « remplacé » ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
+| Conversion de la prod : profil de l'entreprise convertie et colis en cours | Profil qui reproduit l'agent unique (la navette remet, « Petit site ») ; les colis gardent leur statut | YSL-118 |
+| Cycle de vie d'une tournée : ouverture, clôture, colis « À compléter » | Un colis entre dans la tournée de la navette qui l'a validé ; la tournée se clôt quand tous sont déposés ; un colis « À compléter » reste visible de cette navette | YSL-133 |
+| Un même code de retrait couvre des colis de deux départements, ou un contact hors annuaire | Un code par personne et par département ; un contact prend le département du colis | YSL-117, YSL-136 |
+| Second admin d'une entreprise, ou remplacement du seul | L'admin entreprise invite un autre admin ; s'il n'y en a plus, l'admin de l'app réinvite, sans voir de donnée nominative | YSL-122 |
+| Trois états sur une étape sans geste humain ou sans objet | Relances : désactivées, à la main (facultatives), automatiques (obligatoires). Preuve désactivée : remise par le nom, tracée `manuel` | YSL-124, YSL-127 |
 | La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | La synchronisation filtrée par rôle reste sur Dexie ; à revoir si les volumes le demandent | YSL-117 |
 
 ---
