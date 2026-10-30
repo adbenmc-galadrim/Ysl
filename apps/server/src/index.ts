@@ -130,6 +130,11 @@ function startMailerJob(apiKey: string, fromAddress: string): () => void {
   });
 }
 
+function mailJobOff(): () => void {
+  logger.warn('mail job off: BREVO_API_KEY or MAIL_FROM_ADDRESS is missing');
+  return () => undefined;
+}
+
 const stopPurge = startPurgeJob({
   intervalMinutes: env.PURGE_INTERVAL_MINUTES,
   run: () => withConnection((conn) => runPurge(conn, { trigger: 'auto' })),
@@ -138,7 +143,7 @@ const stopPurge = startPurgeJob({
 const stopMail =
   env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
     ? startMailerJob(env.BREVO_API_KEY, env.MAIL_FROM_ADDRESS)
-    : () => undefined;
+    : mailJobOff();
 
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
