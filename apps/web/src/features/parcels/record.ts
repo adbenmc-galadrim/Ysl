@@ -382,6 +382,32 @@ function replyDetails(
 }
 
 /**
+ * « Remise annulée : mauvais colis »: the reason the handover kept, the first
+ * when two iPhones undid it at once.
+ */
+function cancelledTitle(
+  event: Extract<ParcelEvent, { type: 'parcel.handover_cancelled' }>,
+  record: ParcelRecord,
+  t: TranslateFn,
+): string {
+  const kept =
+    record.cancelledHandover?.id === event.handoverId &&
+    record.cancelledHandover.cancelReason
+      ? {
+          reason: record.cancelledHandover.cancelReason,
+          note: record.cancelledHandover.cancelNote,
+        }
+      : event;
+  return t(
+    kept.note ? 'history.handoverCancelled.note' : 'history.handoverCancelled',
+    {
+      reason: t(`handover.cancel.reason.${kept.reason}`).toLowerCase(),
+      note: kept.note ?? '',
+    },
+  );
+}
+
+/**
  * « Remis à Nora Haddad par Karim (code vérifié) »: the handover the event
  * names, when this iPhone holds it.
  */
@@ -476,15 +502,7 @@ function eventTitle(
     case 'parcel.delivered':
       return deliveredTitle(event, record, t);
     case 'parcel.handover_cancelled':
-      return t(
-        event.note
-          ? 'history.handoverCancelled.note'
-          : 'history.handoverCancelled',
-        {
-          reason: t(`handover.cancel.reason.${event.reason}`).toLowerCase(),
-          note: event.note ?? '',
-        },
-      );
+      return cancelledTitle(event, record, t);
     case 'parcel.reply':
       return event.reply === 'colleague'
         ? t('history.reply.colleague', { name: event.delegate })
@@ -514,9 +532,14 @@ function history(
   const opsOf = (id: string) => ops.filter((op) => op.entityId === id);
   const entries: Dated[] = [];
   const reached = new Set<ParcelStatus>();
+  const undone = new Set<string>();
   for (const row of events) {
     const event = readParcelEvent(row.type, row.detail);
     if (!event) continue;
+    if (event.type === 'parcel.handover_cancelled') {
+      if (undone.has(event.handoverId)) continue;
+      undone.add(event.handoverId);
+    }
     if (
       event.type === 'parcel.delivered' &&
       record.lostHandovers?.has(event.handoverId)
@@ -701,8 +724,9 @@ export function handoverItems(
 function action(parcel: LocalParcel): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
   if (awaitsNotice(parcel)) return { kind: 'notify' };
-  // A handover is undone with its reason, by its own sheet (F44). A received parcel goes back to "À compléter" from the form,
-  // once it lacks a number or anyone to tell, a name read included.
+  // A handover is undone with its reason, by its own sheet (F44). A received
+  // parcel goes back to "À compléter" from the form, once it lacks a number
+  // or anyone to tell, a name read included.
   if (parcel.status !== 'notifie' && parcel.status !== 'retourne') return;
   const to = stepBackOf(parcel);
   return to && { kind: 'stepBack', from: parcel.status, to };

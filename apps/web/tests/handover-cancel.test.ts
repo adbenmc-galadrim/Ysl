@@ -11,9 +11,14 @@ import {
   HandoverCancelRefusedError,
   reasonOfLabel,
 } from '#/features/handover/cancel-handover';
-import { lostHandoverIds } from '#/features/handover/delivered';
+import { commitLocal } from '#/features/db/commit';
+import {
+  cancelledHandoverOf,
+  lostHandoverIds,
+} from '#/features/handover/delivered';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
+import { parcelEvent } from '#/features/parcels/events';
 import { describeRecord } from '#/features/parcels/record';
 import { recordHandover } from '#/features/handover/record-handover';
 import {
@@ -25,6 +30,7 @@ import {
 } from './helpers/local-rows';
 
 const LATER = new Date(NOW.getTime() + 5 * 60 * 1000);
+const LATER_STILL = new Date(NOW.getTime() + 7 * 60 * 1000);
 const LATEST = new Date(NOW.getTime() + 10 * 60 * 1000);
 const AGENT = { agentId: 'agent-1', agentName: 'Karim Benali' };
 
@@ -201,24 +207,81 @@ describe('cancelHandover', () => {
     );
   });
 
-  it('keeps the story of a handover undone, not of one that lost', async () => {
+  it('keeps the story of a handover undone, masks the one that lost', async () => {
+    const loser = {
+      ...(await db.handover.get(handoverId))!,
+      id: 'lost-one',
+      at: LATER_STILL,
+    };
+    await db.handover.add(loser);
     await cancel();
-    const parcel = (await db.parcel.get(received.id))!;
-    const handedAgain = {
-      ...parcel,
-      status: 'remis' as const,
+    const back = (await db.parcel.get(received.id))!;
+
+    const whileWaiting = await lostHandoverIds(db, back);
+    const handedAgain = await lostHandoverIds(db, {
+      ...back,
+      status: 'remis',
       deliveredAt: new Date(LATEST.getTime() + 1000),
       deliveredBy: 'agent-1',
-    };
+    });
+
+    expect(whileWaiting.has(handoverId)).toBe(false);
+    expect(whileWaiting.has('lost-one')).toBe(true);
+    expect(handedAgain.has(handoverId)).toBe(false);
+    expect(handedAgain.has('lost-one')).toBe(true);
+  });
+
+  it('masks a handover undone for its other parcels on the parcel it lost', async () => {
+    await db.parcel.update(received.id, {
+      deliveredAt: LATEST,
+      deliveredBy: 'agent-2',
+    });
+    await cancel();
+
+    const stillRemis = (await db.parcel.get(received.id))!;
+
+    expect((await lostHandoverIds(db, stillRemis)).has(handoverId)).toBe(true);
+  });
+
+  it('tells the handover undone, not a later one that lost the parcel', async () => {
     await db.handover.add({
       ...(await db.handover.get(handoverId))!,
       id: 'lost-one',
-      cancelReason: null,
+      at: LATER_STILL,
+      cancelledAt: LATER_STILL,
+    });
+    await cancel();
+    const back = (await db.parcel.get(received.id))!;
+
+    expect((await cancelledHandoverOf(db, back))?.id).toBe(handoverId);
+  });
+
+  it('tells one cancellation, with the reason kept, when two iPhones undid it', async () => {
+    await cancel();
+    await commitLocal(db, {
+      upserts: [
+        parcelEvent(
+          received.id,
+          {
+            type: 'parcel.handover_cancelled',
+            handoverId,
+            reason: 'entry_error',
+            note: null,
+          },
+          { agentId: 'agent-2', now: LATEST },
+        ),
+      ],
     });
 
-    const lost = await lostHandoverIds(db, handedAgain);
+    const record = (await loadParcelRecord(db, received.id))!;
+    const titles = describeRecord(record, {
+      now: LATEST,
+      t,
+      showUnsent: true,
+    }).history?.map((entry) => entry.title);
 
-    expect(lost.has(handoverId)).toBe(false);
-    expect(lost.has('lost-one')).toBe(true);
+    expect(
+      titles?.filter((title) => String(title).startsWith('Remise annulée')),
+    ).toEqual(['Remise annulée : mauvais colis (Celui de M. Bernard)']);
   });
 });

@@ -68,8 +68,6 @@ export const fr = {
   'handover.cancel.reason.wrong_parcel': 'Mauvais colis',
   'handover.cancel.reason.wrong_person': 'Mauvaise personne',
   'handover.cancel.reason.entry_error': 'Erreur de saisie',
-  'history.handoverCancelled': 'Remise annulée : {{reason}}',
-  'history.handoverCancelled.note': 'Remise annulée : {{reason}} ({{note}})',
   'handover.confirm.title': '{{count}} colis remis',
   'handover.agent.me': 'Vous',
   'handover.agent.unknown': 'Un agent',
@@ -254,7 +252,8 @@ export const fr = {
   'selection.delete.title': 'Supprimer {{count}} colis ?',
   'selection.delete.description':
     'Ils quittent la liste, ici et sur le serveur ; leur historique est gardé.',
-  'selection.delete.kept.one': '1 colis déjà notifié ou remis reste en place.',
+  'selection.delete.kept.one':
+    '1 colis déjà notifié ou remis reste en place.',
   'selection.delete.kept.many':
     '{{count}} colis déjà notifiés ou remis restent en place.',
   'selection.delete.none':
@@ -505,6 +504,8 @@ export const fr = {
   'history.status.recu': 'Complété',
   'history.status.notifie': 'Notifié',
   'history.status.remis': 'Remis',
+  'history.handoverCancelled': 'Remise annulée : {{reason}}',
+  'history.handoverCancelled.note': 'Remise annulée : {{reason}} ({{note}})',
   'history.delivered.qr': 'Remis, QR code vérifié',
   'history.delivered.pin': 'Remis, code vérifié',
   'history.delivered.signature': 'Remis contre signature',
