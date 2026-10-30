@@ -57,7 +57,7 @@ même chose sans connaître le tracking.
 ## Résultats du banc (corpus, 23/10/2026)
 
 Mac, Node, un fil. Les temps comparent les variantes entre elles ; ceux de l'iPhone sont à
-mesurer avec la PWA. Commande et sorties : voir le README du spike.
+mesurer avec la PWA. Commande et sorties : voir le README du spike (lien en tête de page).
 
 ### Taux de tracking lu
 
@@ -239,7 +239,7 @@ test iPhone.
 
 ## PWA iPhone
 
-`/spike-barcode/`, servie par l'image de `apps/web`.
+`/spike-barcode/`, servie alors par l'image de `apps/web` (retirée depuis, YSL-138).
 
 - **Scan** : « Démarrer la caméra » ouvre le flux plein format (3024×4032 selon S1) ;
   « Lire » prend une image par `grabFrame` et la décode. « Photo native » ouvre l'appareil

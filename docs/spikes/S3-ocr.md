@@ -106,15 +106,14 @@ sur de vraies photos de la photothèque (pas de colis sous la main).
 
 - **YSL-26 (OCR sur le téléphone)**, livré dans `packages/ocr`
   (`docs/architecture/ocr.md`) : PP-OCRv6 tiny en WASM, sessions préchauffées,
-  pas de WebGPU. Reprendre de `apps/spike-ocr` le worker, l'hébergement des modèles
-  (URL et sha256 épinglés), COOP/COEP et la sonde de mémoire. Garder Tesseract v7 comme
+  pas de WebGPU. Repris de `apps/spike-ocr` : le worker, l'hébergement des modèles
+  (URL et sha256 épinglés), COOP/COEP et la sonde de mémoire. Tesseract v7 comme
   repli derrière la même interface.
 - **Exactitude** : le destinataire passe d'abord par les codes 2D (YSL-25 : Aztec GeoPost,
   PDF417 FedEx, MaxiCode UPS portent le destinataire), puis par l'OCR guidé par le
   gabarit du transporteur et les ancres (`DESTINATAIRE`, `SHIP TO`…). Viser DPD et
   DHL Express en priorité.
-- **YSL-27 (banc d'essai)** : partir du banc Mac du spike (`pnpm --filter @repo/spike-ocr
-bench`) pour mesurer la chaîne complète, pas l'OCR seul.
+- **YSL-27 (banc d'essai)** : parti du banc Mac du spike, retiré depuis, pour mesurer la chaîne complète, pas l'OCR seul.
 - **À vérifier dans YSL-26** : le vrai pic mémoire (inspecteur web, iPhone branché) et
   les temps sur de vraies photos d'iPhone (12 à 48 Mpx, HEIC), dont le décodage coûte
   plus que les JPEG du pack ; un test en PWA installée.
