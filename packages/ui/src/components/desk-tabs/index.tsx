@@ -1,9 +1,11 @@
+import type { ReactNode } from 'react';
+
 import { cn } from '#lib/tv';
 
 export type DeskTab = {
   id: string;
-  /** With its count, as drawn: "Présents 12". */
-  label: string;
+  /** With its count, as drawn: "Présents 12", or a badge beside the word. */
+  label: ReactNode;
   /** Penpot's estimate of the label's width, which places the next tab. */
   width?: number;
 };
