@@ -25,7 +25,7 @@ Tant que ces fonctionnalités ne sont pas livrées, l'app marche comme en v2 : u
 4. **L'expéditeur s'apprend.** Les codes contiennent un n° de compte expéditeur ; une fois l'expéditeur confirmé, il est prérempli automatiquement les fois suivantes. C'était le point faible de la v1 (2 bordereaux sur 6).
 5. **Un OCR neuronal qui lit dans tous les sens** (famille PaddleOCR), sur le téléphone, y compris le texte vertical que la v1 ratait.
 6. **Une confiance qui veut dire quelque chose.** Trois niveaux : sûr, à vérifier, vide avec suggestions. Fini l'orange partout. Et rien ne bloque le scan : un cas douteux est enregistré « À compléter ».
-7. **Les e-mails partent du serveur, avec une trace.** Envoi automatique à la validation du lot, reprises en cas d'échec, statut visible. Brevo au MVP, depuis l'expéditeur de chaque entreprise ; la messagerie du téléphone reste en repli.
+7. **Les e-mails partent du serveur, avec une trace.** Envoi automatique au scan ou au dépôt selon le profil de l'entreprise, reprises en cas d'échec, statut visible. Brevo au MVP, depuis l'expéditeur de chaque entreprise ; la messagerie du téléphone reste en repli.
 8. **Une remise prouvée.** QR ou PIN reçu par e-mail, scanné même hors ligne, signature en secours. Relances automatiques, colis « en souffrance » mis en évidence.
 9. **Des données synchronisées et protégées.** iPhone et ordinateur partagent les mêmes données. Annuaire retiré du code public et tenu par l'admin et les départements, durées de conservation par entreprise et purge automatique.
 10. **Une app fluide et accessible.** Hors ligne garanti (modèles en cache), affichage immédiat des écritures, skeletons seulement là où l'on attend vraiment le réseau, zoom autorisé, cibles de 44 px, design sobre en noir et blanc.
@@ -43,7 +43,7 @@ E-mail : Brevo pour le MVP, derrière une interface qui permet de passer à Scal
 
 ## Décisions
 
-Le détail et le suivi sont au §12 du cahier des charges et dans `kibo-notes/pilotage/decisions.md`.
+Le détail et le suivi sont au §12 du cahier des charges et dans le carnet de projet, hors dépôt.
 
 | # | Décision | Recommandation |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Le détail et le suivi sont au §12 du cahier des charges et dans `kibo-notes/pi
 
 ## Prochaines étapes
 
-1. Dessiner et mettre en stories les écrans multi-entreprises, retirer les apps de spike (F34).
-2. Livrer dans l'ordre l'envoi serveur, les départements et les rôles, la plateforme, le profil, l'annuaire, la tournée et le dépôt, l'espace département et la vue d'ensemble (F35 à F42).
-3. Recette par rôle sur un vrai lot et mise en production pilote (F28).
+1. Dessiner et mettre en stories les écrans multi-entreprises, retirer les apps de spike (F34 du plan).
+2. Livrer dans l'ordre l'envoi serveur, les départements et les rôles, la plateforme, le profil, l'annuaire, la tournée et le dépôt, l'espace département et la vue d'ensemble (F35 à F42 du plan).
+3. Recette par rôle sur un vrai lot et mise en production pilote (F28 du plan).
 4. En parallèle, ouvrir la demande à la DSI pour Graph et Entra ID.

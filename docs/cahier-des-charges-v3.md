@@ -8,8 +8,8 @@ Ce document décrit Courrier, l'app de réception et de remise des colis d'une e
 
 - **Ce qui est livré.** Le document décrit le produit visé. Tant que les fonctionnalités F35 à F42 du plan ne sont pas livrées, l'app fonctionne comme en v2 : un agent, un service, des e-mails envoyés depuis la messagerie du téléphone.
 - **Deux séries de F.** Les exigences F01 à F63 (§3) ne sont pas les fonctionnalités F1 à F42 du plan (`kibo-notes/pilotage/plan.md`). Pour éviter la collision, les exigences du modèle multi-entreprises s'appellent ME01, ME02… et le §3.7 les range par fonctionnalité du plan.
-- **« L'agent ».** Dans les §3 à §8, le mot désigne le compte qui fait le geste : la navette à la réception, le département à la remise.
-- **« Le service ».** Dans ces mêmes sections, il se lit « l'entreprise », sauf quand le §2.1 distingue les départements.
+- **« L'agent ».** Partout où il reste, le mot désigne le compte qui fait le geste : la navette à la réception, le département à la remise.
+- **« Le service ».** De même, il se lit « l'entreprise », sauf quand le §2.1 distingue les départements.
 
 **Comment lire les chiffres.** Chaque chiffre porte l'étiquette de son rapport d'origine :
 
@@ -36,7 +36,7 @@ La v1, écrite pour un seul service courrier, est une page HTML unique (2 286 li
 - **Données.** Elles vivent sur un seul téléphone, sans synchronisation ni purge. L'annuaire de 101 personnes est écrit dans le code d'un dépôt public.
 - **Hors ligne.** Il est annoncé mais pas garanti : le moteur OCR et ses fichiers de langue ne sont pas mis en cache par le service worker (rapport 02, §3.3).
 
-**Du service unique à la chaîne (v3).** La v2 faisait tout faire à un agent sur son iPhone, pour un service. Le produit devient une chaîne navette → département → salarié, pour plusieurs entreprises clientes : la navette scanne les colis reçus et les dépose aux départements, le département confirme le nombre reçu et remet au salarié, l'admin entreprise voit l'ensemble, l'admin de l'app gère les entreprises sans voir leurs colis.
+**Une chaîne, plusieurs entreprises.** Le produit est une chaîne navette → département → salarié, pour plusieurs entreprises clientes : la navette scanne les colis reçus et les dépose aux départements, le département confirme le nombre reçu et remet au salarié, l'admin entreprise voit l'ensemble, l'admin de l'app gère les entreprises sans voir leurs colis.
 
 ### 1.2 Objectifs mesurables
 
@@ -57,7 +57,7 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 
 ### 1.3 Périmètre : ce qui change par rapport à la v1
 
-| Sujet | v1 | v2 |
+| Sujet | v1 | Aujourd'hui |
 | --- | --- | --- |
 | Architecture | Une page statique, aucun serveur | PWA et petit serveur (API, base de données, envoi d'e-mails), sur la même stack qu'Emis |
 | Saisie | Un colis à la fois, formulaire long | **Scan en rafale** : un geste par colis, revue en fin de lot |
@@ -96,13 +96,13 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 
 | Donnée ou action | Admin de l'app | Admin entreprise | Département | Navette |
 | --- | --- | --- | --- | --- |
-| Entreprises : créer, suspendre, supprimer | Oui | Non | Non | Non |
+| Entreprises : créer, renommer, suspendre, supprimer | Oui | Non | Non | Non |
 | Chiffres d'usage de la plateforme | Oui, chiffres seulement (D26) | Ceux de son entreprise (rapports) | Non | Non |
 | Colis | Aucun | Tous ceux de l'entreprise | Les siens : à venir, présents, passés | Ceux de ses tournées |
 | Annuaire | Aucun | Tous les départements, lecture et écriture | Le sien, lecture et écriture | Tout, en lecture |
-| Comptes | Invite le premier admin d'une entreprise | Invite, rattache, suspend navettes et comptes département | Non | Non |
+| Comptes | Invite le premier admin d'une entreprise | Crée par invitation, rattache, suspend et révoque navettes et comptes département | Non | Non |
 | Profil de fonctionnement | Le choisit à la création | Le modifie librement (D30) | Non | Non |
-| Réglages de l'entreprise (D28) | Non | Oui | Lieu, horaires, consignes du département | Non |
+| Réglages de l'entreprise (D28) | Non | Oui | Lieu, horaires, consignes du département (provisoire, §3.7.9) | Non |
 | Dépôt | Non | Non | Confirme le nombre, déclare un écart | Dépose |
 | Colis « À régulariser » (D25) | Non | Voit et réaffecte | Déclare | Voit |
 | Remise au salarié | Non | Non | Oui, avec un code de son département seulement | Si elle fait office de département |
@@ -141,7 +141,7 @@ Ces parcours décrivent les gestes ; le §2.3 dit qui les enchaîne selon le rô
 **P4. Remise avec preuve**
 1. Onglet **Remise** : l'agent scanne le QR affiché sur le téléphone du salarié, tape le PIN, ou cherche son nom.
 2. L'app liste tous les colis en attente de cette personne, tous cochés. « Remettre tout » ou une sélection.
-3. La preuve est le QR ou le PIN validé. Sans eux, ou pour un recommandé, le salarié signe sur l'écran.
+3. La preuve est le QR ou le PIN validé. Sans eux, le salarié peut signer sur l'écran, selon le profil.
 4. Le colis passe à **Remis**, avec l'heure, l'agent et la méthode. Toast « Annuler ». Tout cela fonctionne hors ligne.
 
 **P5. Relance**
@@ -187,7 +187,7 @@ Ces parcours décrivent les gestes ; le §2.3 dit qui les enchaîne selon le rô
 ## 3. Exigences fonctionnelles
 
 Origine : **Nouveau** = absent de la v1 ; **Repris** = repris tel quel ; **Amélioré** = idée v1 refaite (référence v1 entre parenthèses).
-Priorité MoSCoW : M = Must, S = Should, C = Could, W = Won't (pas en v2).
+Priorité MoSCoW : M = Must, S = Should, C = Could, W = Won't (hors périmètre).
 Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 
 ### 3.1 Installation, capture et lots
@@ -350,6 +350,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ME18 | Trois modèles à la création : « Petit site, la navette remet », « Multi-départements », « Traçabilité stricte » |
 | ME19 | Réglages : nom et logo dans l'app et les e-mails, interface neutre sinon (D14) ; expéditeur ; durées de conservation propres à l'entreprise |
 | ME20 | Les étapes livrées suivent le profil : revue du lot, preuve, signature et photo, destinataire sans e-mail, retrait par un collègue, réserves |
+| ME34 | Nom et adresse de réception réglés par entreprise, qui remplacent les ancres d'extraction et le code postal aujourd'hui écrits en dur pour le premier client (`packages/contract/src/extract/recipient.ts`, `packages/contract/src/recipient/words.ts`) ; sans eux, le colis d'une autre entreprise prend un malus et le drapeau « réexpédition ? » |
 
 #### 3.7.5 Annuaire partagé (F39, D15 révisée)
 
@@ -391,9 +392,13 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Point | Choix provisoire | Ticket |
 | --- | --- | --- |
 | Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Celui qui déclare l'écart désigne les colis concernés | YSL-134 |
-| Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » au dépôt et ne se remet qu'à partir de là | YSL-131, YSL-135 |
+| Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là | YSL-131, YSL-135 |
 | L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Le serveur tire le code à l'envoi et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
+| Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise | YSL-116 |
+| Durées de conservation d'une entreprise neuve (D28) | Celles du §9.2 par défaut | YSL-126 |
+| Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
+| Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
 | La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | La synchronisation filtrée par rôle reste sur Dexie ; à revoir si les volumes le demandent | YSL-117 |
 
 ---
@@ -470,7 +475,7 @@ Les confiances de base viennent du rapport 03, §4.2. Elles seront recalibrées 
 - **Deux sources indépendantes concordent** (tracking 2D = tracking 1D ; code postal du 2D = code postal lu par OCR ; n/N du 2D = « 1 OF 3 » lu par OCR) : confiance = 1 − (1 − c1)(1 − c2), plafonnée à 0,99.
 - **Deux sources se contredisent :** on garde la source la mieux classée, avec un malus de 0,15 et la mention « À vérifier ».
 - **Cohérence métier :**
-  - le destinataire doit être à Paris (code postal 75007, pays 250/FR). Sinon, malus et drapeau « réexpédition ? » ;
+  - le destinataire doit être à l'adresse de réception de l'entreprise (code postal et pays, ME34). Sinon, malus et drapeau « réexpédition ? » ;
   - un nom présent dans l'annuaire avec une similarité Jaro-Winkler ≥ 0,92 donne un bonus de 0,10 ;
   - le poids doit être plausible (0,01 à 70 kg ; conversion depuis les livres pour les étiquettes d'origine US) ;
   - n ≤ N.
@@ -493,7 +498,7 @@ Les seuils sont des points de départ. Ils seront recalés sur le corpus pour qu
 | --- | --- | --- | --- |
 | Tracking | 1D validé par clé, ou 2D | OCR + format + clé | Égalité 1D/2D ; unicité en base |
 | Transporteur | Vote pondéré : SCAC du 2D (1,0), format + clé du tracking (0,9), logo ou mot-clé OCR (0,6), mise en page (0,4) | Question posée si égalité | Cohérence avec le format du tracking |
-| Destinataire (personne) | 2D : FedEx `G61`, DPD `RecContact` / `PERSNAME`, GS1 4300-4301 | OCR du bloc `SHIP TO` / `À` / `DESTINATAIRE` / `CONTACT`, autour des ancres Saint Laurent / Bellechasse (heuristiques v1 reprises) | Annuaire, puis contacts hors annuaire |
+| Destinataire (personne) | 2D : FedEx `G61`, DPD `RecContact` / `PERSNAME`, GS1 4300-4301 | OCR du bloc `SHIP TO` / `À` / `DESTINATAIRE` / `CONTACT`, autour des ancres de l'entreprise, son nom et son adresse (ME34) | Annuaire, puis contacts hors annuaire |
 | Service / étage | 2D DPD `RecCompName2`, `PERSDEPARTMENT`, `PERSFLOOR` | OCR (« Attn », « c/o », « Service ») | Liste des services de l'annuaire |
 | Expéditeur | 2D DPD `S01` / `NotifSender*`, GS1 4310+ | Dictionnaire n° de compte → expéditeur, puis OCR du bloc `FROM` / `SHIPPER` / `EXPÉDITEUR`, puis expéditeurs déjà vus | Correspondance approximative avec les expéditeurs connus |
 | Colis n/N | 2D (UPS, FedEx, DPD) | OCR « 1 OF 3 », « 1/3 », « Colis 1 sur 3 », en ignorant les dates (règles v1) | n ≤ N ; regroupement par n° d'expédition |
@@ -661,7 +666,7 @@ Les erreurs `QuotaExceededError` sont gérées. L'écran Réglages > Diagnostic 
 | iPhone, Safari iOS 26, installé sur l'écran d'accueil | **Cible principale** (WebGPU actif par défaut, `ImageCapture.grabFrame`) |
 | iOS 18.4 à 25 | Support dégradé à confirmer au spike : WASM sans WebGPU (Wake Lock corrigé depuis 18.4) |
 | Onglet Safari non installé | Lecture seule et invitation à installer ; aucune saisie hors ligne |
-| Ordinateur : Chrome, Edge, Safari récents | Supporté (lot L3 pour les vues dédiées) |
+| Ordinateur : Chrome, Edge, Safari récents | Supporté (vues dédiées en L2) |
 | Paysage | Acceptable : le blocage en portrait n'est pas fiable sur iOS |
 | Navigation privée | Message clair : OPFS n'y est pas disponible |
 
@@ -699,7 +704,7 @@ Navigation par 4 onglets en bas. L'app s'ouvre sur **Scanner**, à l'état « pr
 | **Scanner** | Prêt → Lot en cours → Revue du lot → Récapitulatif | Viseur plein écran, obturateur, lampe, import photothèque, saisie manuelle, bandeau du lot ; revue triée par confiance ; récapitulatif avec les e-mails prêts |
 | **Colis** | Liste → Fiche colis | Compteurs cliquables (À compléter, À retirer, En souffrance, Aujourd'hui), recherche, puces de filtre, groupement par destinataire ou par date, sélection multiple ; fiche avec photo, champs, historique, synchronisation, actions |
 | **Remise** | Identifier → Panier de remise → Preuve → Confirmation | Scanner le QR, pavé PIN, recherche par nom ; colis en attente de la personne ; signature et photo facultatives (D6) |
-| **Réglages** | Sections | Synchronisation et file d'attente, diagnostic du stockage, version et « Forcer la mise à jour », sons, thème, aide à l'installation, annuaire (admin), lieu et horaires de retrait (admin), compte |
+| **Réglages** | Sections | Synchronisation et file d'attente, diagnostic du stockage, version et « Forcer la mise à jour », sons, thème, aide à l'installation, annuaire et lieu et horaires de retrait (selon le rôle, §2.1), compte |
 
 Éléments communs à tous les écrans :
 - pastille d'état (hors ligne, synchronisation, N en attente) dans l'en-tête ;
@@ -713,12 +718,12 @@ Sur ordinateur : même app en mise en page large, avec tableau des colis, revue,
 
 **Ce que deviennent les onglets de la v1 :**
 
-| Onglet v1 | En v2 |
+| Onglet v1 | Aujourd'hui |
 | --- | --- |
 | Accueil | Compteurs en tête de l'onglet Colis (cliquables, contrairement à la v1) |
 | Nouveau | Scanner |
 | Historique | Colis |
-| Employés | Réglages > Annuaire (admin), plus la recherche de destinataires partout |
+| Employés | Réglages > Annuaire (selon le rôle), plus la recherche de destinataires partout |
 
 ### 6.2 Principes
 
@@ -731,7 +736,7 @@ Sur ordinateur : même app en mise en page large, avec tableau des colis, revue,
 
 Sobriété éditoriale : le luxe par la retenue, la typographie et l'espace.
 
-- **Marque.** Ni logo ni lettrage reproduisant la marque, tant que l'accord n'est pas obtenu (décision D14).
+- **Marque.** Interface neutre, sans marque par défaut (D14) ; le nom et le logo d'une entreprise sont un réglage (D28).
 - **Couleurs.**
   - Base : noir `#0A0A0A` et blanc cassé `#FAFAF8`.
   - Gris : `#6B6B6B` pour le texte secondaire, `#E7E7E4` pour les filets (`#262626` en mode sombre).
@@ -952,11 +957,16 @@ stateDiagram-v2
     Brouillon --> Recu: validation, champs sûrs
     A_completer --> Recu: complété par l'agent
     Recu --> En_route: département affecté
-    En_route --> Depose: dépôt confirmé
+    En_route --> Recu: tournée annulée
+    En_route --> Depose: dépôt confirmé, ou enregistré si le profil désactive la confirmation
+    Depose --> En_route: dépôt annulé (tracé)
     En_route --> A_regulariser: écart au dépôt
     Depose --> A_regulariser: écart ou salarié déplacé
     A_regulariser --> En_route: réaffecté
+    Notifie --> A_regulariser: écart ou salarié déplacé
     Depose --> Notifie: e-mail envoyé
+    Depose --> Retourne: retour à l'expéditeur
+    A_regulariser --> Retourne: retour à l'expéditeur
     Recu --> Notifie: navette = département, e-mail envoyé
     Recu --> Remis: navette = département, retrait sans notification
     Depose --> Remis: retrait sans notification
@@ -970,7 +980,7 @@ stateDiagram-v2
 
 « En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3).
 
-La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt.
+La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt, ou de la réception si la navette fait office de département (§3.7.9).
 
 ### 8.4 Synchronisation et outbox
 
@@ -1000,7 +1010,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 | --- | --- | --- |
 | `/api/auth/*` | Better Auth | Connexion, session, déconnexion ; Entra ID en cible |
 | `sync.pull`, `sync.push` | tRPC | Synchronisation (§8.4) |
-| `directory.importCsv`, `directory.list` | tRPC (admin) | Annuaire |
+| `directory.importCsv`, `directory.list` | tRPC | Annuaire, selon le rôle (§2.1) |
 | `platform.*` | tRPC (admin de l'app) | Entreprises, invitation du premier admin, chiffres d'usage, journal ; aucune donnée nominative |
 | `company.*`, `departments.*`, `accounts.*` | tRPC (admin entreprise) | Réglages, profil, départements, comptes, invitations |
 | `deposit.*` | tRPC | Dépôt : nombre attendu, confirmation, écart, réaffectation |
@@ -1008,7 +1018,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 | `notifications.retry`, `notifications.sendNow` | tRPC | Actions sur la file |
 | `pickup.verify` | tRPC | Vérification en ligne d'une empreinte (QR ou PIN) : état du code et destinataire, sans rien consommer ; appelée par le viseur seulement quand le réseau est là (la vérification hors ligne se fait sur les empreintes synchronisées, §8.7) |
 | `exports.parcelsCsv`, `imports.v1Csv` | tRPC | Export CSV, import de l'historique v1 |
-| `reports.summary` | tRPC (admin) | Rapports (L3) |
+| `reports.summary` | tRPC (admin entreprise) | Rapports par département (L2) |
 | `tracking.lookup` | tRPC | Suivi transporteur (L4, optionnel) |
 | `extraction.cloudAssist` | tRPC | Renfort cloud (L4, désactivé par défaut) |
 | `POST /api/webhooks/mail` | Hono | Statuts de Brevo (D2 révisée) : signature vérifiée, idempotent |
@@ -1024,7 +1034,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 - **Modèles** : par agent, synchronisés ; création, renommage, modification, copie, choix du modèle par défaut, suppression (sauf le modèle par défaut et le modèle livré, qui se rétablit) ; liste fermée de variables affichée sous l'éditeur, aperçu rempli.
 - **Code de retrait** : un QR et un PIN par personne, couvrant tous ses colis en attente. Le QR porte un jeton long `YSL:RETRAIT:<32 caractères base32>` (`@repo/contract/pickup`, 160 bits) ; le PIN a 4 chiffres. L'iPhone qui prépare l'e-mail tire les deux et n'écrit que leurs empreintes (`tokenHash`, `pinHash`), synchronisées vers les appareils pour vérifier un code hors ligne (F40, F41). Le jeton vit dans l'image partagée ; un e-mail envoyé par « Envoyer à … » n'a que le PIN.
 - **QR** : « Partager avec le QR » sur l'écran Notifier ouvre la feuille de partage avec le texte et le QR en PNG (inséré en pied dans Mail, en pièce jointe dans Outlook, S5) ; l'adresse se saisit dans la messagerie. L'image est dessinée en mémoire, jamais conservée.
-- **Vérification hors ligne (F41, YSL-73)** : la remise vérifie le QR et le PIN sur les empreintes de l'iPhone, sans réseau. Tous les codes du service arrivent au pull, sans horizon : actifs, utilisés, expirés et remplacés, jusqu'à la purge (§9), pour dire hors ligne « déjà servi », « expiré » ou « remplacé ». Un code émis sur un iPhone part au serveur 0,5 s après l'écriture et arrive sur les autres à leur synchro suivante : au plus 60 s app ouverte, au retour au premier plan ou du réseau (§5.3). Réseau présent, le viseur demande aussi `pickup.verify` (réponse attendue 1,5 s au plus) : un code inconnu ici mais actif au serveur est tiré tout de suite par une synchro (5 s de plus au plus), un code déjà utilisé sur un autre iPhone est refusé ; hors ligne, lent ou en erreur, l'iPhone décide seul.
+- **Vérification hors ligne (F41, YSL-73)** : la remise vérifie le QR et le PIN sur les empreintes de l'iPhone, sans réseau. Tous les codes du département arrivent au pull (ceux de l'entreprise pour une navette faisant office de département), sans horizon : actifs, utilisés, expirés et remplacés, jusqu'à la purge (§9), pour dire hors ligne « déjà servi », « expiré » ou « remplacé ». Un code émis sur un iPhone part au serveur 0,5 s après l'écriture et arrive sur les autres à leur synchro suivante : au plus 60 s app ouverte, au retour au premier plan ou du réseau (§5.3). Réseau présent, le viseur demande aussi `pickup.verify` (réponse attendue 1,5 s au plus) : un code inconnu ici mais actif au serveur est tiré tout de suite par une synchro (5 s de plus au plus), un code déjà utilisé sur un autre iPhone est refusé ; hors ligne, lent ou en erreur, l'iPhone décide seul.
 - **Code utilisé** : la remise qui couvre tous les colis en attente consomme le code (`usedAt`). Deux iPhone hors ligne peuvent remettre sur le même code : au retour du réseau la remise arrivée la seconde est refusée (409, colis déjà remis) et annulée sur son iPhone, et le serveur garde le premier `usedAt` reçu (un `usedAt` posé ne change plus, une relance ne rouvre pas un code utilisé).
 - **Relance et rattachement** : une relance avec le QR garde le PIN et l'échéance mais pose un nouveau code (nouveau jeton) et retire l'ancien : l'ancien QR dit « remplacé ». Au rattachement d'un contact à une personne, le code ouvert le plus récent des deux passe sur la personne, l'autre est retiré.
 - **Horloge** : l'expiration est jugée à l'horloge de l'iPhone, sans tolérance ; sur une validité de 30 jours un décalage de quelques minutes ne change rien. En ligne, `pickup.verify` juge à l'horloge du serveur.
@@ -1063,7 +1073,7 @@ La navette faisant office de département saute En route et Déposé. Pour le pr
 
 ### 9.2 Durées de conservation
 
-Durées validées par le premier client (décision D7, YSL-55), valeurs par défaut d'une nouvelle entreprise, qui les règle ensuite (D28). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
+Durées validées par le premier client (décision D7, YSL-55). Chaque entreprise a les siennes (D28) ; celles-ci servent de valeurs par défaut, à titre provisoire (§3.7.9). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
 
 | Donnée | Durée | Fondement |
 | --- | --- | --- |
@@ -1092,7 +1102,6 @@ Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une lig
 7. Usage du nom et de l'identité visuelle de chaque entreprise (nom et logo, D28).
 8. Durées de conservation (§9.2) et politique sur les signatures : validées (D7), signatures à 12 mois.
 9. Sort du dépôt public v1 et de son historique (annuaire, `worker.js`, procédure IA périmée).
-
 10. Répartition des rôles RGPD entre l'entreprise cliente et l'éditeur de l'app (responsable de traitement, sous-traitant), avec un DPA par client.
 
 Ce document n'est pas un avis juridique.
@@ -1118,10 +1127,10 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 
 | Lot | Contenu | Critères d'acceptation |
 | --- | --- | --- |
-| **L0 Fondations** | Monorepo (stack §7), CI, déploiement UE, PWA installable (manifest, icônes, `apple-touch-icon`, SW en mode prompt, `/version.json`), auth agent/admin, jetons de design, Dexie + `sync.push` / `sync.pull` + outbox, pastille de synchronisation (F01, F45, F46, F48, F49) | App installée sur l'iPhone ; relance en mode avion → l'app s'ouvre ; une écriture faite hors ligne arrive sur l'ordinateur au retour du réseau ; mise à jour proposée sans réinstallation ; aucune donnée personnelle dans le dépôt |
+| **L0 Fondations** | Monorepo (stack §7), CI, déploiement UE, PWA installable (manifest, icônes, `apple-touch-icon`, SW en mode prompt, `/version.json`), auth, jetons de design, Dexie + `sync.push` / `sync.pull` + outbox, pastille de synchronisation (F01, F45, F46, F48, F49) | App installée sur l'iPhone ; relance en mode avion → l'app s'ouvre ; une écriture faite hors ligne arrive sur l'ordinateur au retour du réseau ; mise à jour proposée sans réinstallation ; aucune donnée personnelle dans le dépôt |
 | **L1 Réception** (MVP, partie 1) | Mode rafale, chaîne d'extraction complète (§4), revue de lot, À compléter, journal et fiche, annuaire CSV, contacts, doublons, apprentissage, diagnostic, export CSV, import v1, mode sombre (F02 à F14, F16 à F23, F25 à F30, F47, F50 à F52, F63) | Corpus : objectifs O1 à O4 et O6 atteints ; 50 colis en rafale sans plantage ; tous les cas de non-régression du §4.6 passent en CI ; l'import v1 signale les trackings invalides, dont `7185713569` ; parcours P1, P2 et P6 faits par l'agent sur un vrai lot |
-| **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | Envoi par le serveur (Brevo, D2 révisée) et messagerie du téléphone en repli, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge, modèle multi-entreprises (F31 à F37, F40 à F44, F53, F57, ME01 à ME33) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 et R1 à R6 faits par chaque rôle → **mise en production pilote** |
-| **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, statut Retourné (F06, F15, F38, F39, F54 à F56) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) |
+| **L2 Notification et remise** (MVP, partie 2, **sans Graph** ; SPF et DKIM demandent le DNS du client) | Envoi par le serveur (Brevo, D2 révisée) et messagerie du téléphone en repli, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge, modèle multi-entreprises (F31 à F37, F40 à F44, F53, F57, ME01 à ME34) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 et R1 à R6 faits par chaque rôle → **mise en production pilote** |
+| **L3 Confort** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, statut Retourné (F06, F15, F38, F39, F54 à F56) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) |
 | **L4 Cible avec DSI** | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
 
 Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ordre que permettent les réponses de la DSI. Aucune durée n'est donnée ici : elle sera estimée après les spikes.
@@ -1156,7 +1165,7 @@ Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ord
 
 ## 12. Décisions
 
-D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/2026. Le suivi vit dans `kibo-notes/pilotage/decisions.md`, qui prime en cas d'écart.
+D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/2026. Le suivi vit dans le carnet de projet, hors dépôt (`kibo-notes/pilotage/decisions.md`), qui prime en cas d'écart.
 
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
@@ -1171,7 +1180,7 @@ D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/20
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |
-| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte ; jours fériés comptés comme ouvrés (YSL-67). **Revu avec D2 révisée :** le serveur envoie et relance, au moment fixé par le profil (D30), à partir du dépôt |
+| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne ; relances à J+2 et J+5 ouvrés, puis alerte ; jours fériés comptés comme ouvrés (YSL-67). **Revu avec D2 révisée :** le serveur envoie et relance, au moment fixé par le profil (D30), à partir du dépôt |
 | D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | Rien d'imposé par le client ; portés par chaque département depuis le modèle multi-entreprises (ME05) |
 | D14 | Usage du nom et de l'identité visuelle du client | Entreprise | Non pour le premier client : interface sobre, sans marque. Le nom et le logo d'une entreprise sont un réglage (D28), neutre par défaut |
 | D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | **Révisée le 29/10/2026 :** annuaire tenu par l'admin entreprise (tous les départements) et par chaque département (le sien), import CSV possible ; la navette le lit en entier ; Entra en cible |
