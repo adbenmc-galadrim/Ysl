@@ -11,10 +11,12 @@ import {
 import { formatWhen, type WhenKeys } from '#/features/parcels/record';
 
 /**
- * Where a mail stands for the agent who wrote it (D2: the app knows it
- * opened the mail app, never that the mail left). `waiting`: prepared or
- * opened, and nobody answered "did it leave?"; `failed`: the agent said no
- * and nothing replaced it; `sent`: the agent said yes; `closed`: a failure
+ * Where a mail stands for the agent who wrote it. Through the mail app, the
+ * app only knows it opened (D2); the provider's webhook, for a mail sent by the
+ * server, says what became of it. `waiting`: prepared or opened, and nobody
+ * answered "did it leave?"; `failed`: the agent said no, or the provider
+ * bounced it, and nothing replaced it; `sent`: the agent said yes, and no bounce
+ * says otherwise; `closed`: a failure
  * that a later mail of the same parcels took over, or whose parcels all
  * moved on, so there is nothing left to resend.
  */
@@ -39,9 +41,22 @@ function newestFirst(a: LocalNotification, b: LocalNotification): number {
   return b.preparedAt.getTime() - a.preparedAt.getTime();
 }
 
-/** Still at the desk, waiting for a first notice. */
-function stillToNotify(parcel: LocalParcel | undefined): parcel is LocalParcel {
-  return !!parcel && !parcel.deletedAt && parcel.status === 'recu';
+/** The provider refused the address, whatever the agent declared. */
+function bounced(notification: LocalNotification): boolean {
+  return notification.deliveryStatus === 'bounced';
+}
+
+/**
+ * What a new mail could still tell: the parcels waiting for a first notice,
+ * and after a bounce those marked notified, whose recipient heard nothing.
+ */
+function stillToTell(
+  notification: LocalNotification,
+  parcel: LocalParcel | undefined,
+): parcel is LocalParcel {
+  if (!parcel || parcel.deletedAt) return false;
+  if (parcel.status === 'recu') return true;
+  return bounced(notification) && parcel.status === 'notifie';
 }
 
 /**
@@ -63,17 +78,20 @@ export function trackMails(
     .sort(newestFirst);
   return mine.map((notification) => {
     const status = statusOf(notification);
-    if (status === 'sent')
+    if (status === 'sent' && !bounced(notification))
       return { notification, status, state: 'sent', resentAt: null };
-    if (status !== 'failed')
+    if (status !== 'failed' && !bounced(notification))
       return { notification, status, state: 'waiting', resentAt: null };
     const later = mine.find(
       (other) =>
         other.preparedAt > notification.preparedAt &&
-        other.parcelIds.some((id) => notification.parcelIds.includes(id)),
+        other.parcelIds.some((id) => notification.parcelIds.includes(id)) &&
+        // A reminder to the same address would bounce too: it fixes nothing.
+        (!bounced(notification) ||
+          other.recipients[0] !== notification.recipients[0]),
     );
     const settled = !notification.parcelIds.some((id) =>
-      stillToNotify(parcels.get(id)),
+      stillToTell(notification, parcels.get(id)),
     );
     return {
       notification,
@@ -134,8 +152,8 @@ export function staleMails(
 }
 
 /**
- * The parcels whose latest mail, whoever wrote it, was declared not sent:
- * they stay "À notifier" (a failure never notifies) and say why.
+ * The parcels whose latest mail, whoever wrote it, was declared not sent or
+ * bounced: they say why (a declared failure leaves them "À notifier").
  */
 export function lastMailFailed(
   rows: readonly LocalNotification[],
@@ -151,7 +169,7 @@ export function lastMailFailed(
   }
   return new Set(
     [...latest]
-      .filter(([, row]) => statusOf(row) === 'failed')
+      .filter(([, row]) => statusOf(row) === 'failed' || bounced(row))
       .map(([parcelId]) => parcelId),
   );
 }
@@ -172,6 +190,7 @@ export function lastMailLine(
   now: Date,
   t: TranslateFn,
 ): string {
+  if (bounced(notification)) return t('mails.status.bounced');
   switch (statusOf(notification)) {
     case 'sent':
       return sentLine(notification, now, t);
@@ -200,6 +219,12 @@ function sentLine(
   now: Date,
   t: TranslateFn,
 ): string {
+  const { deliveryStatus, deliveryAt } = notification;
+  if (deliveryStatus && deliveryStatus !== 'bounced' && deliveryAt) {
+    return t(`mails.status.${deliveryStatus}`, {
+      when: when(deliveryAt, now, t),
+    });
+  }
   return t('mails.status.sent', {
     when: when(notification.sentAt ?? notification.preparedAt, now, t),
   });
@@ -242,7 +267,9 @@ export function mailStatusLine(
             when: when(notification.preparedAt, now, t),
           });
     case 'failed':
-      return notification.failedReason ?? t('mails.status.failed');
+      return bounced(notification)
+        ? t('mails.status.bounced')
+        : (notification.failedReason ?? t('mails.status.failed'));
     case 'closed':
       return mail.resentAt
         ? t('mails.status.resent', { when: when(mail.resentAt, now, t) })
@@ -262,7 +289,7 @@ export function mailOf(
 ): RecipientMail {
   const waiting = notification.parcelIds.flatMap((id) => {
     const parcel = parcels.get(id);
-    return stillToNotify(parcel) ? [parcel] : [];
+    return stillToTell(notification, parcel) ? [parcel] : [];
   });
   const person = notification.personId
     ? context.people.get(notification.personId)

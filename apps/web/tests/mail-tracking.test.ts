@@ -2,7 +2,11 @@ import 'fake-indexeddb/auto';
 import { newPickupToken, pickupPinHash } from '@repo/contract/pickup';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  LocalNotification,
+  LocalParcel,
+} from '#/features/db/schema';
 import {
   markFailed,
   markOpened,
@@ -15,6 +19,7 @@ import {
   lastMailFailed,
   lastMailLine,
   latestMail,
+  mailOf,
   mailStatusLine,
   mailSummary,
   STALE_OPEN_MS,
@@ -215,4 +220,120 @@ describe('the sending log', () => {
     );
     expect(latestMail(rows, parcelRow().id)).toBeUndefined();
   });
+});
+
+describe('what the provider says of a mail', () => {
+  const parcel = (status: LocalParcel['status']) => ({
+    ...parcelRow(),
+    status,
+  });
+  async function sentMail(
+    parcels: LocalParcel[],
+    delivery: Pick<LocalNotification, 'deliveryStatus' | 'deliveryAt'>,
+  ) {
+    const row = await prepare(parcels);
+    await markSent(db, row.id, options);
+    const sent = (await db.notification.get(row.id))!;
+    return { ...sent, ...delivery };
+  }
+  const track = (row: LocalNotification, parcels: LocalParcel[]) =>
+    trackMails([row], {
+      userId: 'agent-1',
+      parcels: new Map(parcels.map((one) => [one.id, one])),
+    })[0]!;
+
+  it('dates a delivered mail by the provider, not by the agent', async () => {
+    const parcels = [parcel('notifie')];
+    const row = await sentMail(parcels, {
+      deliveryStatus: 'delivered',
+      deliveryAt: minutes(12),
+    });
+
+    const line = mailStatusLine(track(row, parcels), minutes(20), t);
+
+    expect(line).toMatch(/^Délivré /);
+    expect(lastMailLine(row, minutes(20), t)).toBe(line);
+  });
+
+  it('turns a bounce into a failure to fix, though the agent said sent', async () => {
+    const parcels = [parcel('notifie')];
+    const row = await sentMail(parcels, {
+      deliveryStatus: 'bounced',
+      deliveryAt: minutes(1),
+    });
+    const tracked = track(row, parcels);
+
+    expect(tracked.state).toBe('failed');
+    expect(mailStatusLine(tracked, minutes(2), t)).toBe(
+      'Échec : adresse refusée',
+    );
+    expect(lastMailFailed([row]).has(parcels[0]!.id)).toBe(true);
+  });
+
+  it('keeps the notified parcels of a bounce in the mail to send again', async () => {
+    const parcels = [parcel('notifie'), parcel('remis')];
+    const row = await sentMail(parcels, {
+      deliveryStatus: 'bounced',
+      deliveryAt: minutes(1),
+    });
+
+    const mail = mailOf(row, new Map(parcels.map((one) => [one.id, one])), {
+      people: new Map(),
+      contacts: new Map(),
+    });
+
+    expect(mail.parcels.map(({ id }) => id)).toEqual([parcels[0]!.id]);
+  });
+
+  it('keeps a bounce to fix until a mail goes to another address', async () => {
+    const parcels = [parcel('notifie')];
+    const row = await sentMail(parcels, {
+      deliveryStatus: 'bounced',
+      deliveryAt: minutes(1),
+    });
+    const later = (recipient: string): LocalNotification => ({
+      ...row,
+      id: '0199f000-0000-7000-8000-0000000000bb',
+      recipients: [recipient],
+      preparedAt: minutes(5),
+      deliveryStatus: null,
+      deliveryAt: null,
+    });
+    const stateWith = (other: LocalNotification) =>
+      trackMails([row, other], {
+        userId: 'agent-1',
+        parcels: new Map(parcels.map((one) => [one.id, one])),
+      }).find(({ notification }) => notification.id === row.id)?.state;
+
+    expect(stateWith(later(row.recipients[0]!))).toBe('failed');
+    expect(stateWith(later('autre@example.com'))).toBe('closed');
+  });
+
+  it('closes a bounce once its parcels are all handed over', async () => {
+    const parcels = [parcel('remis')];
+    const row = await sentMail(parcels, {
+      deliveryStatus: 'bounced',
+      deliveryAt: minutes(1),
+    });
+
+    expect(track(row, parcels).state).toBe('closed');
+  });
+
+  it.each([
+    ['complained', /^Signalé /],
+    ['unsubscribed', /^Désinscrit /],
+  ] as const)(
+    'leaves %s among the sent mails, with its own line',
+    async (deliveryStatus, line) => {
+      const parcels = [parcel('notifie')];
+      const row = await sentMail(parcels, {
+        deliveryStatus,
+        deliveryAt: minutes(1),
+      });
+      const tracked = track(row, parcels);
+
+      expect(tracked.state).toBe('sent');
+      expect(mailStatusLine(tracked, minutes(2), t)).toMatch(line);
+    },
+  );
 });
