@@ -28,13 +28,15 @@ Aucune donnée nominative de l'annuaire n'apparaît dans ce document.
 
 ### 1.1 Contexte
 
-La v1 est une page HTML unique (2 286 lignes, ES5) hébergée sur GitHub Pages. Elle tourne sur l'iPhone de l'agent, sans serveur, et ses données sont stockées dans `localStorage`. Elle a prouvé l'idée : photographier un bordereau, préremplir les champs, prévenir les destinataires par e-mail. Mais elle bute sur des limites de fond :
+La v1, écrite pour un seul service courrier, est une page HTML unique (2 286 lignes, ES5) hébergée sur GitHub Pages. Elle tourne sur l'iPhone de l'agent, sans serveur, et ses données sont stockées dans `localStorage`. Elle a prouvé l'idée : photographier un bordereau, préremplir les champs, prévenir les destinataires par e-mail. Mais elle bute sur des limites de fond :
 
 - **Lecture.** Tesseract lit mal les étiquettes en cases et le texte vertical. Les codes-barres sont rarement lus sur photo (1 sur 5 en test). L'expéditeur n'est trouvé que 2 fois sur 6. Toutes ces mesures ont été faites dans un émulateur Chrome, jamais sur iPhone.
 - **Fiabilité.** Un faux tracking (`7185713569`) a été enregistré sans alerte. La cause : un repli qui accepte « n'importe quel nombre de 10 ou 12 chiffres ». À l'inverse, presque tous les champs sont affichés en orange, si bien que le signal ne veut plus rien dire.
 - **Notification.** Elle passe par `mailto:` : un e-mail à la fois, envoyé depuis le compte configuré dans l'app Mail (un Gmail personnel lors des tests), sans aucune trace de l'envoi.
 - **Données.** Elles vivent sur un seul téléphone, sans synchronisation ni purge. L'annuaire de 101 personnes est écrit dans le code d'un dépôt public.
 - **Hors ligne.** Il est annoncé mais pas garanti : le moteur OCR et ses fichiers de langue ne sont pas mis en cache par le service worker (rapport 02, §3.3).
+
+**Du service unique à la chaîne (v3).** La v2 faisait tout faire à un agent sur son iPhone, pour un service. Le produit devient une chaîne navette → département → salarié, pour plusieurs entreprises clientes : la navette scanne les colis reçus et les dépose aux départements, le département confirme le nombre reçu et remet au salarié, l'admin entreprise voit l'ensemble, l'admin de l'app gère les entreprises sans voir leurs colis.
 
 ### 1.2 Objectifs mesurables
 
@@ -66,12 +68,13 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 | Remise | Bouton « Marquer comme remis » | QR ou PIN scanné, signature en secours, journal |
 | Relance | Aucune | Relances automatiques, puis alerte à l'agent |
 | Données | `localStorage`, un seul téléphone | Base locale (IndexedDB) synchronisée avec le serveur, photos dans OPFS restées sur l'iPhone, plusieurs appareils dont un ordinateur |
-| Annuaire | Écrit dans le code public | Import CSV par un admin (MVP), puis synchronisation Entra ID (cible) |
-| Conservation | Aucune règle | Durées fixées avec le DPO, purge automatique |
+| Annuaire | Écrit dans le code public | Tenu par l'admin entreprise et par chaque département, import CSV (D15 révisée), puis synchronisation Entra ID (cible) |
+| Conservation | Aucune règle | Durées réglées par entreprise (D28), purge automatique |
+| Clients et rôles | Un téléphone, pas de compte | Plusieurs entreprises, quatre rôles, département à plusieurs comptes, profil de fonctionnement par entreprise (D21, D22, D30) |
 
-**Dans le périmètre de la v2 :** réception en rafale, extraction du bordereau, revue de lot, journal et recherche, annuaire, notification par e-mail avec relances, remise avec preuve, synchronisation hors ligne, export CSV, import de l'historique v1, administration de base sur ordinateur.
+**Dans le périmètre :** comptes par invitation, entreprises et départements, tournée et dépôt, profil de fonctionnement, réception en rafale, extraction du bordereau, revue de lot, journal et recherche, annuaire, notification par e-mail avec relances, remise avec preuve, synchronisation hors ligne, export CSV, import de l'historique v1, espace département et administration sur ordinateur.
 
-**Hors périmètre de la v2 :** casiers connectés, kiosque en libre-service, SMS, notifications push aux salariés, application native, multi-sites, suivi temps réel de tous les transporteurs en direct (seulement via un agrégateur, en option), IA de vision embarquée comme moteur principal.
+**Hors périmètre :** facturation et abonnements (D29), casiers connectés, kiosque en libre-service, SMS, notifications push aux salariés, application native, gestion de plusieurs sites (le point de réception est porté par le département), suivi temps réel de tous les transporteurs en direct (seulement via un agrégateur, en option), IA de vision embarquée comme moteur principal.
 
 ---
 
@@ -81,13 +84,32 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 
 | Rôle | Ce qu'il fait | Accès |
 | --- | --- | --- |
-| Agent courrier | Réceptionne en rafale, revoit les lots, remet les colis, relance | PWA sur iPhone (principal), ordinateur |
-| Administrateur (responsable du service) | Tout ce que fait l'agent, plus : annuaire, comptes, réglages des e-mails, exports, rapports, purge | Ordinateur surtout |
+| Admin de l'app | Crée, suspend et supprime les entreprises, invite leur premier admin, suit les chiffres d'usage. Hors de toute entreprise | Ordinateur |
+| Admin entreprise | Gère départements, comptes, annuaire, réglages et profil de son entreprise ; voit tous ses colis, réaffecte les colis à régulariser | Ordinateur surtout |
+| Département | Entité à plusieurs comptes (D22), avec son point de réception, ses horaires et ses consignes. Confirme les dépôts, remet aux salariés, tient son annuaire. Le service courrier est un département comme un autre | Ordinateur pour le suivi, mobile pour le scan (D23) |
+| Navette | Réceptionne en rafale, revoit les lots, fait sa tournée et dépose aux départements. Peut faire office de département si le profil le dit | PWA sur iPhone |
 | Destinataire (salarié) | Reçoit l'e-mail avec son QR et son PIN, vient retirer son colis | Aucun accès à l'app |
 | Délégué (assistant, collègue) | Retire un colis pour le compte d'un salarié (lot L3) | Aucun accès, il reçoit une copie de l'e-mail |
 | DSI / DPO | Valident l'hébergement, l'envoi d'e-mails, l'annuaire, la conservation | Hors app |
 
-### 2.2 Parcours
+**Droits par rôle** (D21 à D27, D15 révisée).
+
+| Donnée ou action | Admin de l'app | Admin entreprise | Département | Navette |
+| --- | --- | --- | --- | --- |
+| Entreprises : créer, suspendre, supprimer | Oui | Non | Non | Non |
+| Chiffres d'usage de la plateforme | Oui, chiffres seulement (D26) | Ceux de son entreprise (rapports) | Non | Non |
+| Colis | Aucun | Tous ceux de l'entreprise | Les siens : à venir, présents, passés | Ceux de ses tournées |
+| Annuaire | Aucun | Tous les départements, lecture et écriture | Le sien, lecture et écriture | Tout, en lecture |
+| Comptes | Invite le premier admin d'une entreprise | Invite, rattache, suspend navettes et comptes département | Non | Non |
+| Profil de fonctionnement | Le choisit à la création | Le modifie librement (D30) | Non | Non |
+| Réglages de l'entreprise (D28) | Non | Oui | Lieu, horaires, consignes du département | Non |
+| Dépôt | Non | Non | Confirme le nombre, déclare un écart | Dépose |
+| Colis « À régulariser » (D25) | Non | Voit et réaffecte | Déclare | Voit |
+| Remise au salarié | Non | Non | Oui, avec un code de son département seulement | Si elle fait office de département |
+
+### 2.2 Parcours d'un colis
+
+Ces parcours décrivent les gestes ; le §2.3 dit qui les enchaîne selon le rôle. Le profil de fonctionnement (§3.7.4) peut désactiver ou rendre facultative une étape.
 
 **P0. Premier lancement (une seule fois)**
 1. L'agent ouvre l'adresse dans Safari. L'app détecte qu'elle n'est pas installée et affiche « Ajouter à l'écran d'accueil », avec un mode d'emploi illustré. Sans installation, Safari peut effacer les données après 7 jours d'inactivité **[vérifié]**.
@@ -110,11 +132,11 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 
 **P3. Notification**
 
-> **Périmé sur l'envoi (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** l'app ouvre un e-mail prérempli par destinataire dans la messagerie de l'iPhone, l'agent l'envoie depuis son adresse et confirme l'envoi ; il n'y a ni file d'envoi serveur ni reprises.
+> **D2 révisée le 29/10/2026 :** le serveur envoie. L'état livré, un e-mail prérempli dans la messagerie du téléphone ([`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)), reste en repli ; rien n'en est retiré (précision du 30/10/2026).
 
-1. À la validation, l'app prépare un e-mail par destinataire, qui regroupe tous ses colis en attente. Ces e-mails partent dans la file d'envoi, en ligne ou hors ligne.
-2. Le serveur envoie, avec des reprises en cas d'échec. Chaque colis affiche « E-mail envoyé à 10:42 » ou « Échec : adresse refusée · Corriger ».
-3. Si le serveur d'envoi est indisponible, l'agent peut utiliser le repli `mailto:`, colis par colis.
+1. Au moment choisi par le profil (au scan ou au dépôt), l'app demande un e-mail par destinataire, qui regroupe tous ses colis en attente. La demande part dans la file d'envoi, en ligne ou hors ligne.
+2. Le serveur envoie par Brevo, avec des reprises en cas d'échec et depuis l'expéditeur de l'entreprise. Les webhooks remontent le statut réel : chaque colis affiche « E-mail délivré à 10:42 » ou « Échec : adresse refusée · Corriger ».
+3. Si le serveur d'envoi est indisponible, l'agent peut utiliser le repli par la messagerie du téléphone.
 
 **P4. Remise avec preuve**
 1. Onglet **Remise** : l'agent scanne le QR affiché sur le téléphone du salarié, tape le PIN, ou cherche son nom.
@@ -123,13 +145,42 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 4. Le colis passe à **Remis**, avec l'heure, l'agent et la méthode. Toast « Annuler ». Tout cela fonctionne hors ligne.
 
 **P5. Relance**
-1. Un colis notifié et non retiré appelle une relance à J+2 puis à J+5 jours ouvrés (D12, lundi à vendredi ; les jours fériés ne sont pas connus et comptent comme ouvrés). Aucun envoi automatique (D2 révisée) : l'app calcule qui relancer, prépare un e-mail par personne avec le modèle de relance et le même code de retrait, et le signale par un bandeau « N personnes à relancer » sur Colis et le compteur « À relancer ». L'agent envoie chaque relance d'un toucher depuis l'écran « Colis en souffrance » (« Relancer », « Relancer les N »).
+1. Un colis notifié et non retiré est relancé à J+2 puis à J+5 jours ouvrés (D12, lundi à vendredi ; les jours fériés ne sont pas connus et comptent comme ouvrés), comptés à partir du dépôt. Le serveur envoie un e-mail par personne, avec le modèle de relance de l'entreprise et le même code de retrait, si le profil active les relances. Le bandeau « N personnes à relancer » et l'écran « Colis en souffrance » (« Relancer », « Relancer les N ») restent pour relancer à la main.
 2. Deux jours ouvrés après la seconde relance (ou dès J+5 si les deux relances ne sont pas parties), le colis est « En souffrance » (compteur cliquable). L'agent décide : relancer encore à la main, appeler, ou retourner à l'expéditeur (L3).
 
 **P6. Recherche**
 1. Onglet **Colis** : barre de recherche instantanée, insensible aux accents, sur le tracking, le nom, le service, l'expéditeur et le transporteur, avec résultats à chaque frappe.
 2. Filtres en puces : À compléter, En attente de retrait, En souffrance, Remis, Aujourd'hui.
 3. Liste groupée par destinataire ou par date. La fiche colis montre la photo, tous les champs modifiables, l'historique des événements et l'état de synchronisation.
+
+### 2.3 Parcours par rôle
+
+**R1. Création d'une entreprise (admin de l'app)**
+1. Dans le back-office, l'admin de l'app crée l'entreprise et choisit un modèle de profil : « Petit site, la navette remet », « Multi-départements » ou « Traçabilité stricte ». Il ajuste le profil paramètre par paramètre.
+2. Il invite le premier admin de l'entreprise. Il suit ensuite les chiffres d'usage, et peut suspendre ou supprimer l'entreprise. Il ne voit jamais un colis ni un salarié.
+
+**R2. Invitation (admin de l'app, admin entreprise)**
+1. L'admin entreprise crée les départements, puis invite navettes et comptes département.
+2. L'invité reçoit par e-mail un lien à durée limitée. Il change son mot de passe à la première connexion (D27) ; la connexion reste bloquée tant que ce n'est pas fait.
+
+**R3. Tournée (navette)**
+1. La navette réceptionne en rafale (P1) et revoit le lot (P2). Le destinataire est cherché dans tout l'annuaire ; sa suggestion ramène son département, modifiable. Un colis sans département reste « À compléter ».
+2. Le colis passe « En route ». L'écran « À déposer » groupe les colis par département, avec leur nombre, hors ligne compris.
+
+**R4. Dépôt (navette, département)**
+1. Au département, la navette scanne le QR imprimé du département ou le choisit. L'app affiche le nombre de colis à déposer.
+2. Le département confirme le nombre reçu, pas forcément le détail (D24). Les colis passent « Déposé » des deux côtés.
+3. En cas d'écart (manquant, en trop, salarié parti), le colis passe « À régulariser », visible par la navette et l'admin entreprise, qui le réaffecte (D25). Il reste bloqué jusque-là.
+4. Si le profil envoie l'e-mail au dépôt, aucun salarié n'est prévenu avant cette confirmation.
+
+**R5. Remise au département (département)**
+1. Le salarié vient au point de réception de son département. Sur mobile, le compte département scanne son QR ou tape son code, puis scanne le colis si le profil le demande (P4).
+2. Le code n'est valable qu'au département du colis. Le colis passe « Remis », avec un journal de remise, hors ligne compris.
+3. Sur ordinateur, le département suit ses colis à venir, présents et passés, avec une recherche.
+
+**R6. Vue d'ensemble (admin entreprise)**
+1. Le tableau de bord donne, par département, les colis en route, en attente de retrait, en souffrance et à régulariser, avec un accès direct à ces derniers.
+2. Les rapports par département s'exportent. Un changement de profil s'applique à tous les colis tout de suite ; l'écran annonce les colis touchés avant d'enregistrer (D31).
 
 ---
 
