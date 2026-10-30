@@ -23,6 +23,12 @@ export const env = createEnv({
     TRUST_PROXY: z.stringbool().default(false),
     /** Minutes between two retention purges (§9.2); 0 turns the job off. */
     PURGE_INTERVAL_MINUTES: z.coerce.number().int().min(0).default(1440),
+    /** Without the key or the sender address, the mail job stays off. */
+    BREVO_API_KEY: z.string().optional(),
+    MAIL_FROM_ADDRESS: z.email().optional(),
+    MAIL_FROM_NAME: z.string().default('Courrier'),
+    /** Seconds between two drains of the e-mail queue; 0 turns the job off. */
+    MAIL_POLL_SECONDS: z.coerce.number().int().min(0).default(30),
     LOG_LEVEL: z
       .enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
       .default('info'),

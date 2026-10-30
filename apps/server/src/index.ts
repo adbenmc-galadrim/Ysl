@@ -1,9 +1,15 @@
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { trpcServer } from '@hono/trpc-server';
-import { appRouter, createTRPCContext, runPurge } from '@repo/api';
+import {
+  appRouter,
+  brevoMailer,
+  createTRPCContext,
+  drainEmailOutbox,
+  runPurge,
+} from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
-import { closeDb, pingDb, withConnection } from '@repo/db';
+import { closeDb, db, pingDb, withConnection } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
@@ -11,6 +17,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { clientIp } from '#client-ip';
+import { startMailJob } from '#mail-job';
 import { startPurgeJob } from '#purge-job';
 import { requestLog } from '#request-log';
 
@@ -117,10 +124,27 @@ const stopPurge = startPurgeJob({
   run: () => withConnection((conn) => runPurge(conn, { trigger: 'auto' })),
 });
 
+const mailer =
+  env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
+    ? brevoMailer({
+        apiKey: env.BREVO_API_KEY,
+        from: { email: env.MAIL_FROM_ADDRESS, name: env.MAIL_FROM_NAME },
+      })
+    : null;
+
+const stopMail = startMailJob({
+  intervalSeconds: mailer ? env.MAIL_POLL_SECONDS : 0,
+  run: () =>
+    mailer
+      ? drainEmailOutbox(db, mailer)
+      : Promise.resolve({ sent: 0, retry: 0, failed: 0 }),
+});
+
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     logger.info({ signal }, 'shutting down');
     stopPurge();
+    stopMail();
 
     server.close((error) => {
       if (error) logger.error({ err: error }, 'server did not close cleanly');
