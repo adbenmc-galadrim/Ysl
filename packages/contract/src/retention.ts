@@ -32,6 +32,8 @@ export const RETENTION = {
   tombstone: { amount: 30, unit: 'day' },
   /** The log of pushed operations: it answers a resent operation, and keeps the conflicts. */
   syncOp: { amount: 90, unit: 'day' },
+  /** A server e-mail once sent or given up: its address and text (not in D7, to validate). */
+  emailOutbox: { amount: 30, unit: 'day' },
 } as const satisfies Record<string, RetentionDuration>;
 
 export type RetentionKey = keyof typeof RETENTION;

@@ -1,3 +1,4 @@
+import { cutoff, RETENTION } from '@repo/contract/retention';
 import type { AnyDb } from '@repo/db';
 import { emailOutbox } from '@repo/db/schema';
 import { and, eq, inArray, lt, sql } from 'drizzle-orm';
@@ -16,8 +17,6 @@ export const MAX_ATTEMPTS = RETRY_DELAYS_MS.length + 1;
 /** Far above one send's timeout: an expired lease means the worker died. */
 const LEASE_MS = 2 * 60_000;
 const DRAIN_LIMIT = 20;
-/** Finished rows hold an address and a message: they do not stay. */
-export const FINISHED_RETENTION_MS = 30 * 24 * 60 * 60_000;
 
 export type EnqueueEmail = EmailMessage & { organizationId?: string | null };
 
@@ -144,10 +143,7 @@ async function eraseFinished(db: AnyDb, now: Date): Promise<void> {
     .where(
       and(
         inArray(emailOutbox.status, ['sent', 'failed']),
-        lt(
-          emailOutbox.finishedAt,
-          new Date(now.getTime() - FINISHED_RETENTION_MS),
-        ),
+        lt(emailOutbox.finishedAt, cutoff(now, RETENTION.emailOutbox)),
       ),
     );
 }

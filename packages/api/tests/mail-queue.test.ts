@@ -1,4 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite';
+import { cutoff, RETENTION } from '@repo/contract/retention';
 import { emailOutbox } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -6,7 +7,6 @@ import type { EmailMessage, SendResult } from '#features/mail/mailer';
 import {
   drainEmailOutbox,
   enqueueEmail,
-  FINISHED_RETENTION_MS,
   MAX_ATTEMPTS,
   RETRY_DELAYS_MS,
 } from '#features/mail/queue';
@@ -146,7 +146,7 @@ describe('email queue', () => {
     expect((await rowOf('invite:2'))?.status).toBe('failed');
   });
 
-  it('sends each message once when two drains run together', async () => {
+  it('sends each message once when two drains interleave', async () => {
     const db = asAnyDb(testDb);
     await enqueueEmail(db, message('invite:2'));
     await testDb.update(emailOutbox).set({ nextAttemptAt: T0 });
@@ -189,24 +189,24 @@ describe('email queue', () => {
 
   it('erases finished rows past their retention, and only those', async () => {
     const db = asAnyDb(testDb);
+    const now = after(90 * 24 * 3_600_000);
+    const limit = cutoff(now, RETENTION.emailOutbox).getTime();
     await enqueueEmail(db, message('old'));
     await enqueueEmail(db, message('recent'));
     await testDb
       .update(emailOutbox)
-      .set({ status: 'sent', finishedAt: T0 })
+      .set({ status: 'sent', finishedAt: new Date(limit - 1_000) })
       .where(eq(emailOutbox.idempotencyKey, 'old'));
     await testDb
       .update(emailOutbox)
-      .set({ status: 'sent', finishedAt: after(1_000) })
+      .set({ status: 'sent', finishedAt: new Date(limit + 1_000) })
       .where(eq(emailOutbox.idempotencyKey, 'recent'));
     await testDb
       .update(emailOutbox)
-      .set({ nextAttemptAt: after(FINISHED_RETENTION_MS * 2) })
+      .set({ nextAttemptAt: new Date(now.getTime() + 1_000) })
       .where(eq(emailOutbox.idempotencyKey, 'invite:1'));
 
-    await drainEmailOutbox(db, scripted(), {
-      now: () => after(FINISHED_RETENTION_MS + 500),
-    });
+    await drainEmailOutbox(db, scripted(), { now: () => now });
 
     const keys = (await testDb.select().from(emailOutbox))
       .map((row) => row.idempotencyKey)
