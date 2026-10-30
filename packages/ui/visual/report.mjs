@@ -44,3 +44,9 @@ export function markdown(results, max) {
   if (!results.length) lines.push('| _aucun écran comparé_ | | ❌ |');
   return lines.join('\n') + '\n';
 }
+
+/** The mockups no compared story points at: nothing would catch them drifting. */
+export function uncovered(results, mockups) {
+  const compared = new Set(results.map((r) => r.ref));
+  return mockups.filter((m) => !compared.has(m));
+}

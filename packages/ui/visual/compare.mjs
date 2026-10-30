@@ -25,7 +25,7 @@ import pixelmatch from 'pixelmatch';
 import { chromium } from 'playwright';
 import { PNG } from 'pngjs';
 
-import { markdown, parseMax, verdict } from './report.mjs';
+import { markdown, parseMax, uncovered, verdict } from './report.mjs';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const { values: args } = parseArgs({
@@ -136,4 +136,17 @@ if (!ok) {
   for (const r of failed)
     console.error(`✗ ${r.ref}: ${r.pct.toFixed(2)} % > ${max} %`);
   process.exitCode = 1;
+}
+
+// A filtered run compares a subset on purpose: only the full run can tell.
+if (!args.filter) {
+  const dir = path.join(root, 'reference');
+  const mockups = fs
+    .readdirSync(path.join(dir, 'multi-entreprises'), { recursive: true })
+    .filter((file) => file.endsWith('.png'))
+    .map((file) => `multi-entreprises/${file.slice(0, -'.png'.length)}`);
+  for (const ref of uncovered(results, mockups)) {
+    console.error(`✗ ${ref}: aucune story`);
+    process.exitCode = 1;
+  }
 }

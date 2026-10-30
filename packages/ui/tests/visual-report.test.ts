@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { markdown, parseMax, verdict } from '../visual/report.mjs';
+import { markdown, parseMax, uncovered, verdict } from '../visual/report.mjs';
 
 const under = {
   story: 'ecrans-colis--colis',
@@ -53,5 +53,14 @@ describe('markdown', () => {
 
   it('says so when nothing was compared', () => {
     expect(markdown([], 0.6)).toContain('aucun écran comparé');
+  });
+});
+
+describe('uncovered', () => {
+  it('lists the mockups no compared story points at', () => {
+    const results = [{ ref: 'multi-entreprises/a', pct: 0, story: 'a' }];
+    expect(
+      uncovered(results, ['multi-entreprises/a', 'multi-entreprises/b']),
+    ).toEqual(['multi-entreprises/b']);
   });
 });
