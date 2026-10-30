@@ -979,7 +979,8 @@ stateDiagram-v2
     Notifie --> Notifie: relance
     Notifie --> Remis: QR, PIN ou signature
     Remis --> Notifie: remise annulée (tracée, motif)
-    Remis --> Recu: remise annulée, jamais notifié
+    Remis --> Recu: remise annulée, jamais notifié, navette = département
+    Remis --> Depose: remise annulée, déposé, jamais notifié
     Recu --> Retourne: retour à l'expéditeur
     Notifie --> Retourne: retour à l'expéditeur
 ```
