@@ -23,8 +23,11 @@ function mailerAnswering(answer: Response | Error) {
   };
 }
 
-const json = (status: number, body: unknown, headers?: Record<string, string>) =>
-  new Response(JSON.stringify(body), { status, headers });
+const json = (
+  status: number,
+  body: unknown,
+  headers?: Record<string, string>,
+) => new Response(JSON.stringify(body), { status, headers });
 
 describe('brevo mailer', () => {
   it('posts the message with its key and returns the provider id', async () => {
@@ -49,13 +52,15 @@ describe('brevo mailer', () => {
     });
   });
 
-  it.each([401, 402, 403, 429, 500, 503])(
-    'retries on a %i: not the message’s fault',
-    async (status) => {
-      const { mailer } = mailerAnswering(json(status, { code: 'x' }));
-      expect((await mailer.send(message)).status).toBe('retry');
-    },
-  );
+  it.each([429, 500, 503])('retries on a %i', async (status) => {
+    const { mailer } = mailerAnswering(json(status, { code: 'x' }));
+    expect((await mailer.send(message)).status).toBe('retry');
+  });
+
+  it.each([401, 402, 403])('is blocked on a %i', async (status) => {
+    const { mailer } = mailerAnswering(json(status, { code: 'x' }));
+    expect((await mailer.send(message)).status).toBe('blocked');
+  });
 
   it('retries when Brevo cannot be reached', async () => {
     const { mailer } = mailerAnswering(new TypeError('fetch failed'));

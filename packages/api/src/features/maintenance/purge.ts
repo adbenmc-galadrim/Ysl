@@ -10,6 +10,7 @@ import {
 import { organization, purgeRun } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
+import { eraseOldEmails } from '#features/mail/queue';
 
 /** Rows per transaction: short enough never to hold back a pull (YSL-28). */
 export const PURGE_BATCH = 500;
@@ -438,6 +439,7 @@ export async function runPurge(
         failure ??= error instanceof Error ? error : new Error(String(error));
       }
     }
+    if (!organizationId) await eraseOldEmails(db, now);
     if (failure) throw failure;
     return { status: 'done', runs };
   } finally {

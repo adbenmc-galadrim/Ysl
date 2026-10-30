@@ -3,8 +3,10 @@ import { cutoff, RETENTION } from '@repo/contract/retention';
 import { emailOutbox } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { runPurge } from '#features/maintenance/purge';
 import type { EmailMessage, SendResult } from '#features/mail/mailer';
 import {
+  BLOCKED_DELAY_MS,
   drainEmailOutbox,
   enqueueEmail,
   MAX_ATTEMPTS,
@@ -81,6 +83,7 @@ describe('email queue', () => {
     expect(await drainEmailOutbox(db, mailer, { now: () => T0 })).toEqual({
       sent: 0,
       retry: 1,
+      blocked: 0,
       failed: 0,
     });
     expect((await rowOf())?.lastError).toBe('brevo 503');
@@ -187,30 +190,61 @@ describe('email queue', () => {
     expect((await rowOf('invite:2'))?.status).toBe('failed');
   });
 
-  it('erases finished rows past their retention, and only those', async () => {
+  it('spends no attempt while the account is refused, and stops the drain', async () => {
+    const db = asAnyDb(testDb);
+    await enqueueEmail(db, message('invite:2'));
+    await testDb.update(emailOutbox).set({ nextAttemptAt: T0 });
+    const mailer = scripted({ status: 'blocked', reason: 'brevo 401' });
+
+    const counts = await drainEmailOutbox(db, mailer, { now: () => T0 });
+    expect(counts.blocked).toBe(1);
+    expect(mailer.seen).toHaveLength(1);
+    expect(await rowOf(mailer.seen[0]?.idempotencyKey)).toMatchObject({
+      status: 'queued',
+      attempts: 0,
+      lastError: 'brevo 401',
+      nextAttemptAt: after(BLOCKED_DELAY_MS),
+    });
+  });
+
+  it('sends nothing more once stopped', async () => {
+    const stopped = AbortSignal.abort();
+    const mailer = scripted();
+    await drainEmailOutbox(asAnyDb(testDb), mailer, {
+      now: () => T0,
+      signal: stopped,
+    });
+    expect(mailer.seen).toHaveLength(0);
+  });
+
+  it('erases old rows with the retention purge, mail job or not', async () => {
     const db = asAnyDb(testDb);
     const now = after(90 * 24 * 3_600_000);
     const limit = cutoff(now, RETENTION.emailOutbox).getTime();
-    await enqueueEmail(db, message('old'));
-    await enqueueEmail(db, message('recent'));
-    await testDb
-      .update(emailOutbox)
-      .set({ status: 'sent', finishedAt: new Date(limit - 1_000) })
-      .where(eq(emailOutbox.idempotencyKey, 'old'));
-    await testDb
-      .update(emailOutbox)
-      .set({ status: 'sent', finishedAt: new Date(limit + 1_000) })
-      .where(eq(emailOutbox.idempotencyKey, 'recent'));
-    await testDb
-      .update(emailOutbox)
-      .set({ nextAttemptAt: new Date(now.getTime() + 1_000) })
-      .where(eq(emailOutbox.idempotencyKey, 'invite:1'));
+    const early = new Date(limit - 1_000);
+    const late = new Date(limit + 1_000);
+    for (const key of ['old', 'recent', 'never-sent', 'just-queued']) {
+      await enqueueEmail(db, message(key));
+    }
+    const set = (
+      key: string,
+      values: Partial<typeof emailOutbox.$inferInsert>,
+    ) =>
+      testDb
+        .update(emailOutbox)
+        .set(values)
+        .where(eq(emailOutbox.idempotencyKey, key));
+    await set('old', { status: 'sent', finishedAt: early });
+    await set('recent', { status: 'sent', finishedAt: late });
+    await set('never-sent', { createdAt: early });
+    await set('just-queued', { createdAt: late });
+    await set('invite:1', { createdAt: late });
 
-    await drainEmailOutbox(db, scripted(), { now: () => now });
+    await runPurge(db, { now, trigger: 'auto' });
 
     const keys = (await testDb.select().from(emailOutbox))
       .map((row) => row.idempotencyKey)
       .sort();
-    expect(keys).toEqual(['invite:1', 'recent']);
+    expect(keys).toEqual(['invite:1', 'just-queued', 'recent']);
   });
 });

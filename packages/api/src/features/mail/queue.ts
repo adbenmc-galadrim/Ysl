@@ -1,7 +1,7 @@
 import { cutoff, RETENTION } from '@repo/contract/retention';
 import type { AnyDb } from '@repo/db';
 import { emailOutbox } from '@repo/db/schema';
-import { and, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import type { EmailMessage, Mailer, SendResult } from '#features/mail/mailer';
 
 /** Waits after the 1st, 2nd… failed attempt; one attempt more, then `failed`. */
@@ -17,6 +17,8 @@ export const MAX_ATTEMPTS = RETRY_DELAYS_MS.length + 1;
 /** Far above one send's timeout: an expired lease means the worker died. */
 const LEASE_MS = 2 * 60_000;
 const DRAIN_LIMIT = 20;
+/** Until the next look at an account the provider refuses. */
+export const BLOCKED_DELAY_MS = 5 * 60_000;
 
 export type EnqueueEmail = EmailMessage & { organizationId?: string | null };
 
@@ -71,7 +73,7 @@ async function record(
   row: OutboxRow,
   result: SendResult,
   now: Date,
-): Promise<'sent' | 'retry' | 'failed'> {
+): Promise<'sent' | 'retry' | 'blocked' | 'failed'> {
   const mine = and(
     eq(emailOutbox.id, row.id),
     eq(emailOutbox.status, 'sending'),
@@ -89,6 +91,19 @@ async function record(
       })
       .where(mine);
     return 'sent';
+  }
+  if (result.status === 'blocked') {
+    await db
+      .update(emailOutbox)
+      .set({
+        status: 'queued',
+        attempts: row.attempts - 1,
+        lastError: result.reason,
+        leaseUntil: null,
+        nextAttemptAt: new Date(now.getTime() + BLOCKED_DELAY_MS),
+      })
+      .where(mine);
+    return 'blocked';
   }
   if (result.status === 'rejected' || row.attempts >= MAX_ATTEMPTS) {
     await db
@@ -137,18 +152,35 @@ async function failAbandoned(db: AnyDb, now: Date): Promise<void> {
     );
 }
 
-async function eraseFinished(db: AnyDb, now: Date): Promise<void> {
+/**
+ * Rows hold an address and a text: finished ones do not stay, nor do those
+ * that never left (no key, account refused). Part of the retention purge, so
+ * it runs even when the mail job is off.
+ */
+export async function eraseOldEmails(db: AnyDb, now: Date): Promise<void> {
+  const before = cutoff(now, RETENTION.emailOutbox);
   await db
     .delete(emailOutbox)
     .where(
-      and(
-        inArray(emailOutbox.status, ['sent', 'failed']),
-        lt(emailOutbox.finishedAt, cutoff(now, RETENTION.emailOutbox)),
+      or(
+        and(
+          inArray(emailOutbox.status, ['sent', 'failed']),
+          lt(emailOutbox.finishedAt, before),
+        ),
+        and(
+          eq(emailOutbox.status, 'queued'),
+          lt(emailOutbox.createdAt, before),
+        ),
       ),
     );
 }
 
-export type DrainCounts = { sent: number; retry: number; failed: number };
+export type DrainCounts = {
+  sent: number;
+  retry: number;
+  blocked: number;
+  failed: number;
+};
 
 /**
  * Sends what is due, one claim at a time: a row is leased only while its own
@@ -157,12 +189,15 @@ export type DrainCounts = { sent: number; retry: number; failed: number };
 export async function drainEmailOutbox(
   db: AnyDb,
   mailer: Mailer,
-  { now = () => new Date(), limit = DRAIN_LIMIT } = {},
+  {
+    now = () => new Date(),
+    limit = DRAIN_LIMIT,
+    signal,
+  }: { now?: () => Date; limit?: number; signal?: AbortSignal } = {},
 ): Promise<DrainCounts> {
-  const counts: DrainCounts = { sent: 0, retry: 0, failed: 0 };
+  const counts: DrainCounts = { sent: 0, retry: 0, blocked: 0, failed: 0 };
   await failAbandoned(db, now());
-  await eraseFinished(db, now());
-  for (let index = 0; index < limit; index += 1) {
+  for (let index = 0; index < limit && !signal?.aborted; index += 1) {
     const row = await claimOne(db, now());
     if (!row) break;
     const result = await mailer
@@ -179,6 +214,10 @@ export async function drainEmailOutbox(
         reason: error instanceof Error ? error.name : 'unknown error',
       }));
     const outcome = await record(db, row, result, now());
+    if (outcome === 'blocked') {
+      counts.blocked += 1;
+      break;
+    }
     if (outcome === 'sent') counts.sent += 1;
     else if (outcome === 'retry') counts.retry += 1;
     else counts.failed += 1;

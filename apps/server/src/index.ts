@@ -119,20 +119,23 @@ const server = serve({ fetch: app.fetch, port: env.SERVER_PORT }, (info) => {
   logger.info({ port: info.port }, 'server listening');
 });
 
-function startMailerJob(apiKey: string, fromAddress: string): () => void {
+function startMailerJob(
+  apiKey: string,
+  fromAddress: string,
+): () => Promise<void> {
   const mailer = brevoMailer({
     apiKey,
     from: { email: fromAddress, name: env.MAIL_FROM_NAME },
   });
   return startMailJob({
     intervalSeconds: env.MAIL_POLL_SECONDS,
-    run: () => drainEmailOutbox(db, mailer),
+    run: (signal) => drainEmailOutbox(db, mailer, { signal }),
   });
 }
 
-function mailJobOff(): () => void {
+function mailJobOff(): () => Promise<void> {
   logger.warn('mail job off: BREVO_API_KEY or MAIL_FROM_ADDRESS is missing');
-  return () => undefined;
+  return () => Promise.resolve();
 }
 
 const stopPurge = startPurgeJob({
@@ -149,11 +152,13 @@ for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
     logger.info({ signal }, 'shutting down');
     stopPurge();
-    stopMail();
+    // A send cut short would leave a mail accepted but not recorded: sent twice.
+    const mailStopped = stopMail();
 
     server.close((error) => {
       if (error) logger.error({ err: error }, 'server did not close cleanly');
-      void closeDb()
+      void mailStopped
+        .then(() => closeDb())
         .catch((cause: unknown) => {
           logger.error({ err: cause }, 'database pool did not close cleanly');
         })

@@ -42,11 +42,13 @@ async function readResult(response: Response): Promise<SendResult> {
     return { status: 'sent', providerMessageId: null };
   }
   if (response.status === 400) return { status: 'rejected', reason };
-  // A bad key or a suspended account is not this message's fault.
+  if ([401, 402, 403].includes(response.status)) {
+    return { status: 'blocked', reason };
+  }
   return { status: 'retry', reason, retryAfterMs: waitAsked(response) };
 }
 
-/** Brevo's transactional API (D2 revised), one implementation of `Mailer`. */
+/** Brevo's transactional API, one implementation of `Mailer`. */
 export function brevoMailer({
   apiKey,
   from,

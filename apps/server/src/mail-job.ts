@@ -4,7 +4,8 @@ import { logger } from '@repo/shared/logger';
 export type MailJobOptions = {
   /** Seconds between two runs; 0 turns the job off. */
   intervalSeconds: number;
-  run: () => Promise<DrainCounts>;
+  /** `signal` aborts when the server stops: no new message after it. */
+  run: (signal: AbortSignal) => Promise<DrainCounts>;
 };
 
 /**
@@ -15,29 +16,35 @@ export type MailJobOptions = {
 export function startMailJob({
   intervalSeconds,
   run,
-}: MailJobOptions): () => void {
+}: MailJobOptions): () => Promise<void> {
   if (intervalSeconds <= 0) {
     logger.info('mail job off');
-    return () => undefined;
+    return () => Promise.resolve();
   }
-  let running = false;
-  const tick = async () => {
-    if (running) return;
-    running = true;
+  const stopping = new AbortController();
+  let current: Promise<void> | null = null;
+  const drain = async () => {
     try {
-      const counts = await run();
+      const counts = await run(stopping.signal);
+      if (counts.blocked > 0) {
+        logger.error('mail job blocked: the provider refuses the account');
+      }
       if (counts.sent + counts.retry + counts.failed > 0) {
         logger.info(counts, 'mail queue drained');
       }
     } catch (error) {
       logger.error({ err: error }, 'mail job failed');
     } finally {
-      running = false;
+      current = null;
     }
   };
-  const interval = setInterval(() => void tick(), intervalSeconds * 1_000);
+  const interval = setInterval(() => {
+    current ??= drain();
+  }, intervalSeconds * 1_000);
   interval.unref();
-  return () => {
+  return async () => {
     clearInterval(interval);
+    stopping.abort();
+    await current;
   };
 }

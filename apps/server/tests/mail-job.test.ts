@@ -5,7 +5,7 @@ vi.mock('@repo/shared/logger', () => ({
   logger: { info: vi.fn(), error: vi.fn() },
 }));
 
-const DONE = { sent: 0, retry: 0, failed: 0 };
+const DONE = { sent: 0, retry: 0, blocked: 0, failed: 0 };
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -40,9 +40,17 @@ describe('mail job', () => {
     await vi.advanceTimersByTimeAsync(30_000);
     expect(run).toHaveBeenCalledTimes(3);
 
-    stop();
-    finish(DONE);
+    let stopped = false;
+    void stop().then(() => {
+      stopped = true;
+    });
     await vi.advanceTimersByTimeAsync(120_000);
+    expect(stopped).toBe(false);
+    expect((run.mock.lastCall?.[0] as AbortSignal).aborted).toBe(true);
+
+    finish(DONE);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stopped).toBe(true);
     expect(run).toHaveBeenCalledTimes(3);
   });
 

@@ -13,7 +13,7 @@ import { organization } from '#schema/organization';
 import { oneOf } from '#schema/sync';
 
 /**
- * The server's e-mails on their way out (D2 revised). Not synced. A row is
+ * The server's e-mails on their way out. Not synced. A row is
  * one message: `idempotency_key` keeps a retried caller from queueing it twice.
  */
 export const emailOutbox = pgTable(
