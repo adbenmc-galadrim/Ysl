@@ -1,3 +1,7 @@
+import {
+  HANDOVER_CANCEL_REASONS,
+  type HandoverCancelReason,
+} from '@repo/contract/handover';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { AnnulerRemiseScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -8,12 +12,16 @@ import {
   cancelHandover,
   canCancelHandover,
   describeCancelSheet,
-  reasonOfLabel,
 } from '#/features/handover/cancel-handover';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 
 const t = createTranslator(DEFAULT_LOCALE);
+
+const REASONS = HANDOVER_CANCEL_REASONS.map((value) => ({
+  value,
+  label: t(`handover.cancel.reason.${value}`),
+}));
 
 /** Long enough for a sentence; the note is read on a line of the record. */
 const NOTE_MAX = 200;
@@ -42,9 +50,10 @@ export function AnnulerRemiseSheet({
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
   );
-  const [label, setLabel] = useState<string>();
+  const [reason, setReason] = useState<HandoverCancelReason>();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   const gone = entry === null || (!!entry && !canCancelHandover(entry));
   useEffect(() => {
     if (gone && !busy) onClose();
@@ -52,9 +61,9 @@ export function AnnulerRemiseSheet({
   if (!entry || gone) return null;
 
   const confirm = async () => {
-    const reason = label && reasonOfLabel(label, t);
     if (!reason || busy) return;
     setBusy(true);
+    setFailed(false);
     try {
       const { count } = await cancelHandover(
         db,
@@ -63,10 +72,12 @@ export function AnnulerRemiseSheet({
         { agentId: session.user.id, agentName: session.user.name },
       );
       onCancelled?.(count);
+      onClose();
     } catch (error) {
       console.warn('Handover not cancelled', error);
+      setFailed(true);
+      setBusy(false);
     }
-    onClose();
   };
 
   return (
@@ -74,8 +85,10 @@ export function AnnulerRemiseSheet({
       fixed
       onDismiss={onClose}
       {...describeCancelSheet(entry, now, t, session.user.id)}
-      reason={label}
-      onReasonChange={setLabel}
+      reasons={REASONS}
+      reason={reason}
+      onReasonChange={(value) => setReason(value as HandoverCancelReason)}
+      error={failed ? t('handover.cancel.failed') : undefined}
       note={note}
       onNoteChange={(value) => setNote(value.slice(0, NOTE_MAX))}
       onConfirm={() => void confirm()}

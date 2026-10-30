@@ -7,11 +7,13 @@ import { Screen } from '#components/screen';
 import { Sheet } from '#components/sheet';
 import type { Parcel } from '#fixtures/parcels';
 
-export const CANCEL_REASONS = [
-  'Mauvais colis',
-  'Mauvaise personne',
-  'Erreur de saisie',
-] as const;
+export type CancelReasonOption = { value: string; label: string };
+
+const CANCEL_REASONS: readonly CancelReasonOption[] = [
+  { value: 'wrong_parcel', label: 'Mauvais colis' },
+  { value: 'wrong_person', label: 'Mauvaise personne' },
+  { value: 'entry_error', label: 'Erreur de saisie' },
+];
 
 export type AnnulerRemiseScreenProps = {
   /** The handed-over parcel whose record the sheet opens on, drawn behind it. */
@@ -23,6 +25,8 @@ export type AnnulerRemiseScreenProps = {
   handedOver: string;
   /** "À Malik Benali, QR code vérifié, par Karim". */
   proof: string;
+  reasons?: readonly CancelReasonOption[];
+  /** The `value` of the reason picked. */
   reason?: string;
   onReasonChange?: (reason: string) => void;
   note?: string;
@@ -30,6 +34,8 @@ export type AnnulerRemiseScreenProps = {
   onConfirm?: () => void;
   /** "Le colis repasse en attente de retrait": a handover may hold several. */
   backTitle?: string;
+  /** The cancellation could not be written: said here, the sheet stays open. */
+  error?: string;
 };
 
 /**
@@ -44,12 +50,14 @@ export function AnnulerRemiseScreen({
   onDismiss,
   handedOver,
   proof,
+  reasons = CANCEL_REASONS,
   reason,
   onReasonChange,
   note,
   onNoteChange,
   onConfirm,
   backTitle = 'Le colis repasse en attente de retrait',
+  error,
 }: AnnulerRemiseScreenProps) {
   return (
     <Sheet
@@ -86,14 +94,14 @@ export function AnnulerRemiseScreen({
       />
       <Field label="Pourquoi ?" className="mt-5">
         <ChipGroup label="Motif">
-          {CANCEL_REASONS.map((r) => (
+          {reasons.map((r) => (
             <Chip
-              key={r}
-              selected={r === reason}
-              onClick={() => onReasonChange?.(r)}
+              key={r.value}
+              selected={r.value === reason}
+              onClick={() => onReasonChange?.(r.value)}
               className="px-5"
             >
-              {r}
+              {r.label}
             </Chip>
           ))}
         </ChipGroup>
@@ -120,6 +128,9 @@ export function AnnulerRemiseScreen({
         }}
         className="mt-6"
       />
+      {error && (
+        <Banner tone="red" icon="alert" title={error} className="mt-3" />
+      )}
       <Button
         variant="destructive"
         block

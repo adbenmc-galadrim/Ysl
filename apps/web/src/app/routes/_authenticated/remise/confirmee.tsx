@@ -48,6 +48,11 @@ function RemiseConfirmeeRoute() {
       });
     },
   };
+  // Undone under the screen: the rest of a selection still waits its turn.
+  const gone = () => {
+    if (next) next.onClick();
+    else done();
+  };
   const another = useCallback(
     () => void navigate({ to: '/remise', replace: true }),
     [navigate],
@@ -58,6 +63,7 @@ function RemiseConfirmeeRoute() {
       handoverId={handover}
       signatureLost={signature === 'lost'}
       onDone={done}
+      onGone={gone}
       onAnother={another}
       next={next}
     />

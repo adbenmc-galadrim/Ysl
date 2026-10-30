@@ -19,6 +19,7 @@ import {
   handoverSyncOf,
   METHOD_ICON,
   methodLabel,
+  undoneParcelIds,
 } from '#/features/handover/entry';
 import { formatTime, startOfDay } from '#/features/parcels/model';
 import { formatWhen, handoverItems } from '#/features/parcels/record';
@@ -52,16 +53,20 @@ export async function loadJournal(
   for (const op of ops) {
     opsOf.set(op.entityId, [...(opsOf.get(op.entityId) ?? []), op]);
   }
+  const undone = await Promise.all(
+    handovers.map((handover) => undoneParcelIds(db, handover)),
+  );
   return handovers
-    .sort((a, b) => b.at.getTime() - a.at.getTime())
-    .map((handover) => ({
+    .map((handover, index) => ({
       handover,
       count: handedOf(
         handover,
         handover.parcelIds.map((id) => parcels.get(id)),
+        undone[index],
       ).length,
       sync: handoverSyncOf(opsOf.get(handover.id) ?? []),
-    }));
+    }))
+    .sort((a, b) => b.handover.at.getTime() - a.handover.at.getTime());
 }
 
 /** Found by the employee who collected, the colleague who did for them, or the agent. */

@@ -1,11 +1,8 @@
-import {
-  HANDOVER_CANCEL_REASONS,
-  type HandoverCancelReason,
-} from '@repo/contract/handover';
+import type { HandoverCancelReason } from '@repo/contract/handover';
 import { statusPatch, stepBackOf } from '@repo/contract/parcel-status';
 import type { TranslateFn } from '@repo/shared/i18n';
 import { commitLocal, type Upsert } from '#/features/db/commit';
-import type { CourrierDatabase } from '#/features/db/schema';
+import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import {
   agentNameOf,
   type HandoverEntry,
@@ -45,6 +42,22 @@ export function canCancelHandover(entry: HandoverEntry): boolean {
   );
 }
 
+/** Where the parcels go back: only a parcel already notified awaits its pickup. */
+function backTitle(parcels: readonly LocalParcel[], t: TranslateFn): string {
+  const count = parcels.length;
+  const notified = parcels.filter((parcel) => parcel.notifiedAt).length;
+  if (count === 1) {
+    return t(
+      notified ? 'handover.cancel.back.one' : 'handover.cancel.notify.one',
+    );
+  }
+  if (notified === count) return t('handover.cancel.back.many', { count });
+  return t(
+    notified ? 'handover.cancel.mixed.many' : 'handover.cancel.notify.many',
+    { count },
+  );
+}
+
 /** What the sheet says it is undoing: « Remis hier à 9 h 12 », and how. */
 export function describeCancelSheet(
   { handover, parcels }: HandoverEntry,
@@ -62,21 +75,8 @@ export function describeCancelSheet(
       how: methodLabel(handover.method, t),
       agent: agentNameOf(handover, t, me),
     }),
-    backTitle:
-      parcels.length > 1
-        ? t('handover.cancel.back.many', { count: parcels.length })
-        : t('handover.cancel.back.one'),
+    backTitle: backTitle(parcels, t),
   };
-}
-
-/** The reason a chip of the sheet stands for. */
-export function reasonOfLabel(
-  label: string,
-  t: TranslateFn,
-): HandoverCancelReason | undefined {
-  return HANDOVER_CANCEL_REASONS.find(
-    (reason) => t(`handover.cancel.reason.${reason}`) === label,
-  );
 }
 
 /**

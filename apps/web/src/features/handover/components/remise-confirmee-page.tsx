@@ -39,8 +39,10 @@ export type RemiseConfirmeePageProps = {
   handoverId: string;
   /** The signature drawn before « Remettre » could not be kept: said at once. */
   signatureLost?: boolean;
-  /** « Terminé », or the handover is not here to show: back to Colis. */
+  /** « Terminé »: back to Colis. */
   onDone: () => void;
+  /** The handover is not here to show, or was just cancelled. */
+  onGone: () => void;
   onAnother: () => void;
   /** The next handover of a selection's queue, in place of « Remettre un autre ». */
   next?: { label: string; onClick: () => void };
@@ -58,6 +60,7 @@ export function RemiseConfirmeePage({
   handoverId,
   signatureLost = false,
   onDone,
+  onGone,
   onAnother,
   next,
 }: RemiseConfirmeePageProps) {
@@ -75,9 +78,12 @@ export function RemiseConfirmeePage({
   );
   const input = useRef<HTMLInputElement>(null);
   const missing = confirmationGone(entry);
+  const left = useRef(false);
   useEffect(() => {
-    if (missing) onDone();
-  }, [missing, onDone]);
+    if (!missing || left.current) return;
+    left.current = true;
+    onGone();
+  }, [missing, onGone]);
 
   const keep = async (proof: Promise<ProofInput>, kind: HandoverProofKind) => {
     setFailed(null);

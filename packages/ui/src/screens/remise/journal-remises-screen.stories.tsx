@@ -109,6 +109,16 @@ export const Detail: StoryObj<typeof RemiseDetailScreen> = {
   },
 };
 
+/** Still standing: it can be undone from here. */
+export const DetailAnnulable: StoryObj<typeof RemiseDetailScreen> = {
+  name: 'Détail annulable',
+  render: (args) => <RemiseDetailScreen {...args} />,
+  args: {
+    ...Detail.args,
+    cancelAction: { label: 'Annuler la remise', onClick: () => {} },
+  },
+};
+
 export const DetailAnnulee: StoryObj<typeof RemiseDetailScreen> = {
   name: 'Détail annulée',
   render: (args) => <RemiseDetailScreen {...args} />,

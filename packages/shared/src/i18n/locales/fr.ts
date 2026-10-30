@@ -62,9 +62,14 @@ export const fr = {
   'handover.cancel.back.one': 'Le colis repasse en attente de retrait',
   'handover.cancel.back.many':
     'Les {{count}} colis repassent en attente de retrait',
-  'handover.cancel.done.one': 'Remise annulée, le colis attend son retrait',
+  'handover.cancel.notify.one': 'Le colis repasse à notifier',
+  'handover.cancel.notify.many': 'Les {{count}} colis repassent à notifier',
+  'handover.cancel.mixed.many': 'Les {{count}} colis repassent dans la liste',
+  'handover.cancel.failed':
+    'Annulation non enregistrée sur cet iPhone. Réessayez.',
+  'handover.cancel.done.one': 'Remise annulée, le colis revient dans la liste',
   'handover.cancel.done.many':
-    'Remise annulée, les {{count}} colis attendent leur retrait',
+    'Remise annulée, les {{count}} colis reviennent dans la liste',
   'handover.cancel.reason.wrong_parcel': 'Mauvais colis',
   'handover.cancel.reason.wrong_person': 'Mauvaise personne',
   'handover.cancel.reason.entry_error': 'Erreur de saisie',
