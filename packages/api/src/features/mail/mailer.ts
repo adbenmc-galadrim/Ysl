@@ -10,8 +10,8 @@ export type EmailMessage = {
 
 /**
  * `retry`: the provider is out of reach or refuses for now, the same message
- * may pass later. `rejected`: this message will never pass. Reasons go to the
- * database and the logs: no address or content in them.
+ * may pass later. `rejected`: this message will never pass. Reasons are stored
+ * on the row: no address or content in them.
  */
 export type SendResult =
   | { status: 'sent'; providerMessageId: string | null }

@@ -1,9 +1,10 @@
+import type { DrainCounts } from '@repo/api';
 import { logger } from '@repo/shared/logger';
 
 export type MailJobOptions = {
   /** Seconds between two runs; 0 turns the job off. */
   intervalSeconds: number;
-  run: () => Promise<{ sent: number; retry: number; failed: number }>;
+  run: () => Promise<DrainCounts>;
 };
 
 /**

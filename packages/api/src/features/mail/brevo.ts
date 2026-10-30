@@ -41,8 +41,8 @@ async function readResult(response: Response): Promise<SendResult> {
   if (code === 'duplicate_request') {
     return { status: 'sent', providerMessageId: null };
   }
-  // A bad key or a suspended account is not this message's fault.
   if (response.status === 400) return { status: 'rejected', reason };
+  // A bad key or a suspended account is not this message's fault.
   return { status: 'retry', reason, retryAfterMs: waitAsked(response) };
 }
 

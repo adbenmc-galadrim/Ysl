@@ -119,26 +119,26 @@ const server = serve({ fetch: app.fetch, port: env.SERVER_PORT }, (info) => {
   logger.info({ port: info.port }, 'server listening');
 });
 
+function startMailerJob(apiKey: string, fromAddress: string): () => void {
+  const mailer = brevoMailer({
+    apiKey,
+    from: { email: fromAddress, name: env.MAIL_FROM_NAME },
+  });
+  return startMailJob({
+    intervalSeconds: env.MAIL_POLL_SECONDS,
+    run: () => drainEmailOutbox(db, mailer),
+  });
+}
+
 const stopPurge = startPurgeJob({
   intervalMinutes: env.PURGE_INTERVAL_MINUTES,
   run: () => withConnection((conn) => runPurge(conn, { trigger: 'auto' })),
 });
 
-const mailer =
+const stopMail =
   env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
-    ? brevoMailer({
-        apiKey: env.BREVO_API_KEY,
-        from: { email: env.MAIL_FROM_ADDRESS, name: env.MAIL_FROM_NAME },
-      })
-    : null;
-
-const stopMail = startMailJob({
-  intervalSeconds: mailer ? env.MAIL_POLL_SECONDS : 0,
-  run: () =>
-    mailer
-      ? drainEmailOutbox(db, mailer)
-      : Promise.resolve({ sent: 0, retry: 0, failed: 0 }),
-});
+    ? startMailerJob(env.BREVO_API_KEY, env.MAIL_FROM_ADDRESS)
+    : () => undefined;
 
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
