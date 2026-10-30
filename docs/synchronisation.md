@@ -130,16 +130,17 @@ Ce que cela donne entre deux appareils :
 - **Remise écrasée.** L'appareil A remet le colis (`handover` + colis `remis`). L'appareil
   B, hors ligne depuis le matin, renvoie sa copie entière en `recu` : `remis → recu`
   (ou `remis → notifie` si la copie date d'un colis déjà notifié) est refusée en 409
-  (`parcel_delivery_protected`) tant qu'aucune remise annulée ne liste le colis, que la
-  `handover` de A soit vivante, pas encore arrivée ou supprimée logiquement ; la ligne du
+  (`parcel_delivery_protected`) tant que la remise dont `at` vaut son `delivered_at` n'est
+  pas annulée, que la `handover` de A soit vivante, pas encore arrivée ou supprimée
+  logiquement ; la ligne du
   serveur ne bouge pas, l'opération de B part en « Corriger ».
 - **Même colis remis sur deux appareils.** A et B, hors ligne, remettent le même colis.
   A envoie le premier ; la `handover` de B passe, mais son colis est refusé en 409
   (`parcel_delivery_protected`, la preuve de remise ne change pas). Après le pull, B
   range sa copie sur celle du serveur (une opération refusée ne protège pas sa ligne),
   retire l'opération refusée de l'outbox et, quand aucun colis de sa `handover` n'est
-  plus remis par elle, l'annule (`cancelled_at`, jamais supprimée : une `handover`
-  vivante bloquerait l'annulation de celle de A) ; Colis affiche « Déjà remis à … par un
+  plus remis par elle, l'annule (`cancelled_at`, jamais supprimée, sans motif : personne
+  ne l'a défaite) ; Colis affiche « Déjà remis à … par un
   collègue » (`settleDeliveryConflicts`, appelé par `afterPull` du moteur). Une
   `handover` qui garde une partie de ses colis reste vivante ; la ligne, la fiche et
   l'historique d'un colis suivent la `handover` dont l'heure est son `delivered_at`.
