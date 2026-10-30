@@ -707,7 +707,9 @@ Navigation par 4 onglets en bas. L'app s'ouvre sur **Scanner**, à l'état « pr
 - toasts « Annuler » ;
 - parcours d'accueil au premier lancement : installation, compte, téléchargement des modèles.
 
-Sur ordinateur (lot L3) : même app en mise en page large, avec tableau des colis, revue, annuaire, exports et rapports.
+Sur ordinateur : même app en mise en page large, avec tableau des colis, revue, annuaire, exports et rapports (L2 pour le département et les admins).
+
+**Selon le rôle (§3.7.2).** Les onglets ci-dessus sont ceux de la navette et de l'agent d'aujourd'hui. La navigation et l'accueil changent selon le compte : navette (Scan, tournée), département (à venir, présents), admins (tableau de bord). Le mobile sert au scan, l'ordinateur au suivi et à l'administration.
 
 **Ce que deviennent les onglets de la v1 :**
 
@@ -812,20 +814,20 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | OCR | onnxruntime-web + ppu-paddle-ocr, modèles PP-OCRv5 mobile (ou v6 tiny/small) et PP-LCNet | à figer après le spike S3 | Multi-orientation, ~12 à 30 Mo, MIT et Apache-2.0 |
 | OCR (plan B) | Tesseract.js v7 | à figer | Si Paddle ne tient pas sur iPhone ; Scribe.js écarté (licence AGPL-3.0) |
 | Redressement (à la demande) | jscanify / OpenCV.js | à figer | Seulement pour les prises très en biais |
-| Styles | Tailwind CSS 4 + tailwind-variants + tailwind-merge | `^4.3.3` ; `^3.3.1` ; `^3.6.0` | Identique ; nouveaux jetons de design pour YSL |
+| Styles | Tailwind CSS 4 + tailwind-variants + tailwind-merge | `^4.3.3` ; `^3.3.1` ; `^3.6.0` | Identique ; nouveaux jetons de design pour Courrier |
 | Composants | Composants maison (comme Emis), plus des primitives Radix **à la carte** (Dialog) et vaul (feuilles du bas) | à figer | Voir l'arbitrage du §7.4 |
 | Icônes | Lucide | à figer | Trait fin |
 | API | Hono + tRPC 11 | `^4.13.1` ; `11.18.0` | Identique ; routes Hono hors tRPC pour l'envoi des photos et les webhooks |
 | Auth | Better Auth (email + mot de passe) ; Microsoft Entra en cible | `^1.6.26` | Identique ; plugin `jwt()` inutile sans PowerSync |
 | Base de données | PostgreSQL + drizzle-orm / drizzle-kit + `pg` | 17 (image épinglée) ; `^0.45.2` ; `^0.31.10` ; `^8.22.0` | Identique ; `wal_level=logical` n'est plus nécessaire |
 | File de tâches | Table Postgres + `SELECT … FOR UPDATE SKIP LOCKED`, worker dans le process serveur | — | Volume faible (20 à 100 colis par jour **[estimation]**) : pas de Redis ni de BullMQ |
-| E-mail | Interface `Mailer` : messagerie du téléphone par `mailto:` (MVP, D2 révisée), Microsoft Graph `sendMail` (cible) | — | Rapport 05 et spike S5 ; Scaleway TEM abandonné ; changer de voie ne demande pas de réécriture |
+| E-mail | Interface `Mailer` : Brevo (MVP, D2 révisée), Scaleway TEM ou Microsoft Graph `sendMail` ensuite ; messagerie du téléphone en repli | — | Rapport 05 et spike S5 ; changer de voie ne demande pas de réécriture |
 | Suivi transporteur | Interface `TrackingProvider` : agrégateur (Ship24 ou 17TRACK) + API La Poste Okapi | — | Optionnel (L4) |
 | Env, logs, i18n | `@t3-oss/env-core`, pino, i18n maison | `^0.13.1` ; `^10.3.1` | Identique ; fusionnés dans `@repo/shared` |
 | Tests | Vitest, Playwright | `^4.1.10` ; `^1.57.0` | Identique ; 2 ou 3 tests e2e de base + banc d'essai d'extraction |
 | Qualité | ESLint 9 + typescript-eslint, Prettier | `^9.39.1`, `^8.66.0` ; `^3.7.4` | Identique (`--max-warnings 0`) |
 | CI | GitHub Actions (3 jobs parallèles) | `checkout@v5`, `pnpm/action-setup@v6`, `setup-node@v6` | Identique |
-| Hébergement | Conteneurs Docker du serveur et de l'app + Postgres, sur Coolify, **en UE** (Hetzner) | — | Décision D1. Pas de stockage objet : le serveur ne garde que les comptes et leurs annuaires (D7), les photos restent sur l'iPhone (D8). En-têtes COOP/COEP sur toute l'app pour le WASM multithread |
+| Hébergement | Conteneurs Docker du serveur et de l'app + Postgres, sur Coolify, **en UE** (Hetzner) | — | Décision D1. Pas de stockage objet : le serveur garde les comptes, les annuaires et les colis (D7 révisée), les photos restent sur l'iPhone (D8). En-têtes COOP/COEP sur toute l'app pour le WASM multithread |
 
 ### 7.2 Choix du hors ligne : PowerSync ou alternative légère
 
@@ -854,7 +856,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 
 ### 7.3 Ce qu'on allège par rapport à Emis
 
-| Emis | Courrier YSL |
+| Emis | Courrier |
 | --- | --- |
 | 12 packages | 6 : `apps/web`, `apps/server`, `packages/api`, `packages/db`, `packages/contract`, `packages/shared` (env + logger + i18n) ; le module d'extraction est isolé dans `packages/extraction` (pur TypeScript, testable sous Node) |
 | PowerSync + TanStack DB + wa-sqlite + `vite-plugin-wasm` pour SQLite | Dexie ; le WASM ne sert qu'à zxing et onnxruntime |
@@ -875,7 +877,7 @@ Versions : celles d'Emis relevées dans le rapport 01 (version déclarée / vers
 | Lecture des QR de remise | 05 : jsQR ou zxing-wasm | zxing-wasm seul (déjà embarqué) |
 | Taille de zxing-wasm | 03 et 04 : ~1,04 Mio · 06 : ~2 Mo | ~1 Mo pour le lecteur seul ; à mesurer dans le build |
 | OCR dans le cloud | v1 : « la photo n'est jamais envoyée » (mais `worker.js` envoyait vers l'API d'Anthropic) · 04 : renfort cloud hybride | Désactivé par défaut. Activable seulement après avis du DPO, en envoyant **uniquement le recadrage** de l'étiquette (sans EXIF), vers une région UE (Mistral, Vertex UE, Azure France), via un proxy serveur. Le tracking ne vient **jamais** d'un LLM |
-| Envoi des e-mails | v1 : jamais d'envoi sans action de l'agent · 05 : envoi serveur automatique | **Périmé (D2 révisée)** : l'agent envoie chaque e-mail depuis la messagerie de l'iPhone, prérempli par l'app, et confirme l'envoi ; pas d'envoi serveur |
+| Envoi des e-mails | v1 : jamais d'envoi sans action de l'agent · 05 : envoi serveur automatique | **D2 révisée le 29/10/2026** : envoi serveur automatique par Brevo, la messagerie de l'iPhone reste en repli |
 
 ---
 
@@ -904,32 +906,36 @@ flowchart LR
         WK <--> PG
     end
     DX -- "sync.push / sync.pull" --> API
-    WK --> MAIL[Mailer serveur<br/>Graph sendMail, cible D20]
+    WK --> MAIL[Mailer serveur<br/>Brevo, puis TEM ou Graph]
     WK --> DIR[Annuaire<br/>CSV puis Entra ID delta]
     WK -.-> TRK[TrackingProvider<br/>agrégateur, La Poste]
     MAIL --> EMP[Salarié<br/>e-mail + QR / PIN]
+    MAIL -. webhooks .-> API
 ```
 
 ### 8.2 Modèle de données
 
-Clés primaires : UUID v7 générés par le client. Chaque table synchronisée porte `created_at`, `updated_at`, `deleted_at` (suppression logique) et `server_seq`, un compteur serveur monotone qui sert de curseur de synchronisation.
+Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont indicatifs : les tickets de F36 à F40 les fixent. Clés primaires : UUID v7 générés par le client. Chaque table synchronisée porte `created_at`, `updated_at`, `deleted_at` (suppression logique) et `server_seq`, un compteur serveur monotone qui sert de curseur de synchronisation.
 
 | Table | Champs principaux | Notes |
 | --- | --- | --- |
-| `user` (Better Auth) | id, email, nom, rôle (`agent`, `admin`), actif | Comptes agents |
-| `directory_person` | id, nom, prénom, email, service, site, source (`csv`, `entra`), actif | Minimisation : pas de téléphone ni de manager |
+| `user` (Better Auth) | id, email, nom, rôle (admin de l'app, admin entreprise, département, navette), actif, mot de passe à changer | Un compte est rattaché à une entreprise, sauf l'admin de l'app, et à un département pour le rôle département |
+| `organization` | id, nom, logo, expéditeur, domaine vérifié, profil de fonctionnement, durées de conservation, statut | L'entreprise. Toutes les autres tables y sont rattachées |
+| `department` | id, organization_id, nom, point de réception, lieu, horaires, consignes, QR de dépôt | Le service courrier est un département comme un autre |
+| `directory_person` | id, nom, prénom, email, department_id, site, source (`manuel`, `csv`, `entra`), actif | Minimisation : pas de téléphone ni de manager |
 | `contact` | id, nom, email?, créé par, nb_utilisations | Destinataires hors annuaire |
 | `batch` | id, agent_id, started_at, ended_at, nb_colis | Lot de réception |
-| `parcel` | id, batch_id, type (`colis`, `recommande`, `sans_suivi`), statut, transporteur, tracking, tracking_norm, destinataire (`person_id` ou `contact_id`), nom_lu, email_notification, service, sender_id, sender_libre, piece_n, piece_total, poids_kg, service_transporteur, reference, emplacement, notes, received_at, received_by, validated_at, delivered_at, delivered_by | `tracking_norm` est indexé (doublons) |
+| `parcel` | id, batch_id, type (`colis`, `recommande`, `sans_suivi`), statut, transporteur, tracking, tracking_norm, destinataire (`person_id` ou `contact_id`), nom_lu, email_notification, service, sender_id, sender_libre, piece_n, piece_total, poids_kg, service_transporteur, reference, emplacement, notes, department_id, tour_id, deposited_at, received_at, received_by, validated_at, delivered_at, delivered_by | `tracking_norm` est indexé (doublons) |
 | `extraction` | parcel_id, version (modèles et règles), champs (valeur, source, confiance) en JSON, codes décodés (texte brut), texte OCR, durées par étape, rotation, provenance (`device`, `cloud`) | Diagnostic et corpus ; purge courte |
 | `photo` | id, parcel_id, type (`etiquette`, `dommage`), chemin OPFS, sha256, largeur, hauteur, octets, statut d'envoi | Le blob n'est jamais dans la base |
 | `sender` | id, nom_affiche, nom_norm, adresse?, nb_vues, last_seen | Expéditeurs déjà vus |
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
-| `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, statut (`prepared`, `opened`, `sent`, `failed`), messagerie (`mailto`, `outlook`, `gmail`), prepared_at/by, opened_at, sent_at, failed_reason | Suivi déclaratif (D2 révisée, S5) : l'app sait qu'elle a ouvert la messagerie, l'agent confirme l'envoi ; le texte de l'e-mail n'est pas stocké |
+| `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, voie (`serveur`, `mailto`, `outlook`, `gmail`), statut, tentatives, identifiant du fournisseur, dates, failed_reason | Voie `serveur` : statut réel remonté par les webhooks (délivré, rebond, plainte, désinscription). Voies de repli : suivi déclaratif, l'agent confirme l'envoi. Le texte de l'e-mail n'est pas stocké |
 | `pickup_code` | id, person_id ou contact_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne, qui couvre tous ses colis en attente |
 | `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
-| `setting` | clé, valeur | Lieu et horaires de retrait, relances, conservation |
+| `tour`, `deposit` | Tournée : navette, dates. Dépôt : département, navette, nombre attendu, nombre confirmé, écart, confirmé par, à | Le nombre confirmé suffit ; le détail dépend du profil |
+| `setting` | clé, valeur | Réglages restants par entreprise ; lieu et horaires passent au département |
 
 **Côté client (Dexie)**, on retrouve les mêmes tables, à l'exception de `user`, ainsi que :
 - `outbox` : op_id, entité, entité_id, type (`upsert`, `delete`), patch, client_ts, tentatives, dernière_erreur ;
@@ -945,8 +951,15 @@ stateDiagram-v2
     Brouillon --> A_completer: validation, tracking ou destinataire incertain
     Brouillon --> Recu: validation, champs sûrs
     A_completer --> Recu: complété par l'agent
-    Recu --> Notifie: e-mail envoyé
-    Recu --> Remis: retrait sans notification
+    Recu --> En_route: département affecté
+    En_route --> Depose: dépôt confirmé
+    En_route --> A_regulariser: écart au dépôt
+    Depose --> A_regulariser: écart ou salarié déplacé
+    A_regulariser --> En_route: réaffecté
+    Depose --> Notifie: e-mail envoyé
+    Recu --> Notifie: navette = département, e-mail envoyé
+    Recu --> Remis: navette = département, retrait sans notification
+    Depose --> Remis: retrait sans notification
     Notifie --> Notifie: relance
     Notifie --> Remis: QR, PIN ou signature
     Remis --> Notifie: remise annulée (tracée, motif)
@@ -957,13 +970,15 @@ stateDiagram-v2
 
 « En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3).
 
+La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt.
+
 ### 8.4 Synchronisation et outbox
 
 1. **Écriture locale d'abord** : chaque action écrit dans Dexie et ajoute une opération dans `outbox`, dans la même transaction.
 2. **`sync.push`** envoie les opérations par paquets. Le serveur les applique de façon **idempotente** (une opération déjà appliquée, reconnue à son `op_id`, est ignorée) et répond opération par opération.
    - 400, 403, 404, 409 : l'opération est abandonnée, l'élément est marqué « Corriger ».
    - 401 et erreurs réseau : nouvelle tentative avec délai croissant.
-3. **`sync.pull({ since: server_seq })`** renvoie tout ce qui a changé depuis le curseur, pour les tables du service. Il n'y a pas de cloisonnement par agent : tous les agents du service voient tout.
+3. **`sync.pull({ since: server_seq })`** renvoie tout ce qui a changé depuis le curseur, filtré par entreprise et par rôle selon le tableau du §2.1 : le département ne reçoit que ses colis et son annuaire, la navette les colis de ses tournées et tout l'annuaire, l'admin de l'app rien de nominatif.
 4. **Conflits** : le dernier écrit gagne, champ par champ, dans l'ordre de réception par le serveur. Trois garde-fous côté serveur :
    - une remise ne peut pas être écrasée par une modification ordinaire ;
    - une suppression est logique ;
@@ -986,6 +1001,9 @@ stateDiagram-v2
 | `/api/auth/*` | Better Auth | Connexion, session, déconnexion ; Entra ID en cible |
 | `sync.pull`, `sync.push` | tRPC | Synchronisation (§8.4) |
 | `directory.importCsv`, `directory.list` | tRPC (admin) | Annuaire |
+| `platform.*` | tRPC (admin de l'app) | Entreprises, invitation du premier admin, chiffres d'usage, journal ; aucune donnée nominative |
+| `company.*`, `departments.*`, `accounts.*` | tRPC (admin entreprise) | Réglages, profil, départements, comptes, invitations |
+| `deposit.*` | tRPC | Dépôt : nombre attendu, confirmation, écart, réaffectation |
 | `notifications.preview` | tRPC | Aperçu des e-mails avant validation du lot |
 | `notifications.retry`, `notifications.sendNow` | tRPC | Actions sur la file |
 | `pickup.verify` | tRPC | Vérification en ligne d'une empreinte (QR ou PIN) : état du code et destinataire, sans rien consommer ; appelée par le viseur seulement quand le réseau est là (la vérification hors ligne se fait sur les empreintes synchronisées, §8.7) |
@@ -993,12 +1011,12 @@ stateDiagram-v2
 | `reports.summary` | tRPC (admin) | Rapports (L3) |
 | `tracking.lookup` | tRPC | Suivi transporteur (L4, optionnel) |
 | `extraction.cloudAssist` | tRPC | Renfort cloud (L4, désactivé par défaut) |
-| ~~`POST /api/webhooks/mail`~~ | Hono | **Périmé (D2 révisée)** : pas de fournisseur d'envoi, pas de statut remonté |
+| `POST /api/webhooks/mail` | Hono | Statuts de Brevo (D2 révisée) : signature vérifiée, idempotent |
 | `/health`, `/ready`, `/version.json` | Hono | Sondes, détection de nouvelle version |
 
 ### 8.7 E-mail et retrait
 
-> **Révisé (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md), YSL-66) :** l'e-mail est en texte brut, envoyé depuis la messagerie de l'agent à partir de ses modèles ; pas de version HTML, le code de retrait s'écrit en clair en tête du message. Le QR ne passe pas par `mailto:` : il part en image par la feuille de partage.
+> **D2 révisée le 29/10/2026 :** le serveur envoie par Brevo, en HTML et en texte, depuis l'expéditeur de l'entreprise, avec des modèles par entreprise et le QR en image. Les points ci-dessous décrivent l'état livré (`mailto:` et modèles par agent, [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md), YSL-66) : il reste la voie de repli, et ce que disent ces points du contenu, du code et de sa vérification vaut pour les deux voies, sauf le tirage du code (§3.7.9). Un code n'est valable qu'au département du colis ; lieu, horaires et consignes sont ceux du département.
 
 - **Objet** (modèle par défaut) : « Colis en attente de retrait – Service Courrier », « N colis en attente… » s'il y en a plusieurs (variable `{nombre_colis}`).
 - **Corps** : code de retrait en tête ; une ligne par colis (transporteur, fin du numéro, expéditeur, pièces « 2 pièces sur 3 », heure ou jour de réception) ; réserve ; lieu, horaires et consignes de retrait, ceux des Réglages (D13 : choisis par le service, rien d'imposé par le client), ligne retirée quand la valeur est vide ; « répondez à ce mail » pour « pas à moi » ou « un collègue passera ».
@@ -1018,9 +1036,10 @@ stateDiagram-v2
 
 ### 9.1 Mesures
 
+- **Cloisonnement.** Chaque entreprise ne voit que ses données ; le serveur applique le tableau du §2.1 sur chaque procédure et à la synchronisation. L'admin de l'app ne lit aucune donnée nominative (D26), et ses actions sont journalisées.
 - **Annuaire hors du code.** Le dépôt v1 est à archiver et à purger (historique, forks), et aucune donnée nominative n'entre dans le nouveau dépôt. Les fixtures de test sont floutées ou fictives.
 - **Authentification obligatoire.**
-  - Rôles : agent et admin.
+  - Quatre rôles (§2.1) ; comptes créés par invitation, mot de passe à changer à la première connexion (D27).
   - Sessions révocables depuis l'admin, en cas d'appareil perdu.
   - À la reconnexion d'un appareil révoqué, les données locales sont effacées.
 - **Aucun secret dans la PWA.** Clés d'e-mail, de suivi et de cloud restent sur le serveur, dans le gestionnaire de secrets de l'hébergeur. Côté Graph : un certificat plutôt qu'un secret client.
@@ -1044,7 +1063,7 @@ stateDiagram-v2
 
 ### 9.2 Durées de conservation
 
-Durées validées par le client (décision D7, YSL-55). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
+Durées validées par le premier client (décision D7, YSL-55), valeurs par défaut d'une nouvelle entreprise, qui les règle ensuite (D28). Les photos ne quittent pas l'iPhone (D8) : « après l'envoi confirmé » se lit « après la sortie du colis (remise ou retour), une fois sa ligne reçue par le serveur ». Signatures : 12 mois.
 
 | Donnée | Durée | Fondement |
 | --- | --- | --- |
@@ -1053,7 +1072,7 @@ Durées validées par le client (décision D7, YSL-55). Les photos ne quittent p
 | Photo de remise (YSL-75) | 7 jours après la remise, une fois la remise reçue par le serveur | Même règle que la photo locale |
 | Données d'extraction (texte OCR, codes bruts) | 30 jours, sauf échantillons versés au corpus avec accord | Diagnostic |
 | Ligne de colis et journal de remise | 12 mois après la remise | Proposition ; plafond légal de prescription de 5 ans (art. 2224 du Code civil), qui n'est pas un objectif |
-| Annuaire | Tant que la personne est active ; supprimée à son départ (CSV ou Entra delta) | Minimisation |
+| Annuaire | Tant que la personne est active ; supprimée à son départ (admin, département, CSV ou Entra delta) | Minimisation |
 | Contacts hors annuaire | 12 mois après la dernière utilisation | Proposition |
 
 La purge est automatique (job serveur) et s'applique aussi aux appareils au moment de la synchronisation.
@@ -1066,13 +1085,15 @@ Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une lig
 2. Hébergement en UE et contrats de sous-traitance (DPA) avec l'hébergeur, le fournisseur d'e-mail et, le cas échéant, l'agrégateur de suivi et le service OCR cloud.
 3. Nécessité ou non d'une analyse d'impact (AIPD), à évaluer par le DPO.
 4. Envoi d'e-mails :
-   - MVP : domaine d'expédition externe ; ou SPF/DKIM pour le domaine de l'entreprise (modification DNS) ;
+   - MVP : Brevo, avec SPF et DKIM pour le domaine de chaque entreprise (modification DNS) ; domaine de la plateforme tant qu'il n'est pas vérifié ;
    - cible : application Entra ID avec consentement administrateur pour `Mail.Send` (application), restreinte par **RBAC for Applications** à la seule boîte « Service Courrier », et `User.Read.All` pour l'annuaire.
 5. SMTP AUTH Basic : désactivé par défaut fin décembre 2026 **[source tierce]**. Aucune dépendance prévue de notre côté.
 6. Déploiement MDM : web clip, autorisation de la caméra pour le domaine, code de verrouillage imposé (non vérifié).
-7. Usage du nom et de l'identité visuelle Saint Laurent.
+7. Usage du nom et de l'identité visuelle de chaque entreprise (nom et logo, D28).
 8. Durées de conservation (§9.2) et politique sur les signatures : validées (D7), signatures à 12 mois.
 9. Sort du dépôt public v1 et de son historique (annuaire, `worker.js`, procédure IA périmée).
+
+10. Répartition des rôles RGPD entre l'entreprise cliente et l'éditeur de l'app (responsable de traitement, sous-traitant), avec un DPA par client.
 
 Ce document n'est pas un avis juridique.
 
@@ -1090,7 +1111,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | **S2 Codes-barres** | zxing-wasm sur le corpus : taux de lecture par format et par transporteur, en mode viseur et en mode photo native ; MaxiCode avec ou sans recadrage maison ; contenu réel des Aztec Colissimo et Chronopost, des PDF417 FedEx Express et des Data Matrix GLS et La Poste | Tracking lu par code-barres sur ≥ 90 % du corpus **[cible]** | Le mode photo native devient le défaut pour les transporteurs à 2D ; essai de Dynamsoft si le MaxiCode manque (décision D11) |
 | **S3 OCR** | PaddleOCR v5 mobile, v6 tiny et v6 small, et Tesseract v7, en WASM et en WebGPU : p50 et p95, pic mémoire, exactitude destinataire et expéditeur | p95 ≤ 5 s, pic < 250 Mo, aucun plantage sur 50 photos d'affilée, destinataire ≥ 90 % (top 3) avant l'apprentissage **[cible]** | Plan B Tesseract v7 par zones ; renfort cloud à arbitrer (décision D9) |
 | **S4 Stockage et mises à jour** | Dexie + OPFS en PWA installée : mode avion, app tuée, relance, `persist()`, verrouillage pendant une écriture ; déploiement v1 puis v2 et prise en compte de la mise à jour au retour au premier plan | Aucune perte sur les scénarios ; mise à jour détectée sans réinstallation | Ajustement de la stratégie de mise à jour ; réexamen de PowerSync seulement si IndexedDB échoue |
-| **S5 E-mail** | ~~Envoi via Scaleway TEM vers 5 boîtes Saint Laurent : spam, rendu Outlook et Mail iOS, QR lisible~~ **Périmé, remplacé par la messagerie du téléphone (D2 révisée), voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md) :** e-mail prérempli ouvert dans Mail, Outlook et Gmail depuis la PWA ; accents, sauts de ligne, longueur ; modèles gérés par l'agent | Brouillon complet dans Mail iOS et Outlook, rendu intact (verdict go du 23/10/2026) | `mailto:` seul, en texte brut, code de retrait écrit en clair |
+| **S5 E-mail** | **Joué sur la messagerie du téléphone, aujourd'hui voie de repli ; l'envoi par Brevo se vérifie avec YSL-112 (D2 révisée, voir [`docs/spikes/S5-email-messagerie.md`](spikes/S5-email-messagerie.md)) :** e-mail prérempli ouvert dans Mail, Outlook et Gmail depuis la PWA ; accents, sauts de ligne, longueur ; modèles gérés par l'agent | Brouillon complet dans Mail iOS et Outlook, rendu intact (verdict go du 23/10/2026) | `mailto:` seul, en texte brut, code de retrait écrit en clair |
 | S6 (optionnel) | 20 vrais colis passés dans Ship24 et 17TRACK (essai) : quels champs reviennent réellement | — | Le suivi reste hors du MVP |
 
 ### 10.2 Lots
@@ -1099,8 +1120,8 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | --- | --- | --- |
 | **L0 Fondations** | Monorepo (stack §7), CI, déploiement UE, PWA installable (manifest, icônes, `apple-touch-icon`, SW en mode prompt, `/version.json`), auth agent/admin, jetons de design, Dexie + `sync.push` / `sync.pull` + outbox, pastille de synchronisation (F01, F45, F46, F48, F49) | App installée sur l'iPhone ; relance en mode avion → l'app s'ouvre ; une écriture faite hors ligne arrive sur l'ordinateur au retour du réseau ; mise à jour proposée sans réinstallation ; aucune donnée personnelle dans le dépôt |
 | **L1 Réception** (MVP, partie 1) | Mode rafale, chaîne d'extraction complète (§4), revue de lot, À compléter, journal et fiche, annuaire CSV, contacts, doublons, apprentissage, diagnostic, export CSV, import v1, mode sombre (F02 à F14, F16 à F23, F25 à F30, F47, F50 à F52, F63) | Corpus : objectifs O1 à O4 et O6 atteints ; 50 colis en rafale sans plantage ; tous les cas de non-régression du §4.6 passent en CI ; l'import v1 signale les trackings invalides, dont `7185713569` ; parcours P1, P2 et P6 faits par l'agent sur un vrai lot |
-| **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | E-mail prérempli dans la messagerie du téléphone (D2 révisée) et suivi déclaratif, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge (F31 à F37, F40 à F44, F53) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 faits par l'agent → **mise en production pilote** |
-| **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, vues ordinateur et rapports, statut Retourné (F06, F15, F38, F39, F54 à F57) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) ; rapports exacts sur un jeu de test |
+| **L2 Notification et remise** (MVP, partie 2, **sans DSI**) | Envoi par le serveur (Brevo, D2 révisée) et messagerie du téléphone en repli, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge, modèle multi-entreprises (F31 à F37, F40 à F44, F53, F57, ME01 à ME33) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 et R1 à R6 faits par chaque rôle → **mise en production pilote** |
+| **L3 Confort et ordinateur** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, statut Retourné (F06, F15, F38, F39, F54 à F56) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) |
 | **L4 Cible avec DSI** | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
 
 Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ordre que permettent les réponses de la DSI. Aucune durée n'est donnée ici : elle sera estimée après les spikes.
@@ -1117,11 +1138,15 @@ Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ord
 | Permission caméra redemandée à chaque lancement | Friction | Bouton « Démarrer un lot » ; flux unique ; repli photo native ; réglage MDM à demander |
 | Stockage effacé par Safari | Perte de saisies non synchronisées | Installation obligatoire, `persist()`, synchronisation fréquente, alerte au-delà de 24 h, export de secours |
 | Ancienne version de l'app qui reste en mémoire sur iOS | Agent bloqué sur un vieux code | `update()` au retour au premier plan, `/version.json`, « Forcer la mise à jour » |
-| E-mails du MVP classés en spam (domaine externe) | Salariés non prévenus | Spike S5 ; SPF/DKIM ; message de lancement ; Graph en cible |
-| DSI indisponible ou refus de Graph | Pas d'envoi depuis l'adresse du service | MVP entièrement conçu sans DSI ; interface `Mailer` interchangeable |
+| E-mails du MVP classés en spam (domaine non vérifié) | Salariés non prévenus | SPF et DKIM par entreprise (ME03), statuts remontés par webhook, message de lancement, repli par la messagerie du téléphone |
+| DSI indisponible ou refus de Graph | Pas d'envoi depuis l'adresse du service | Le MVP n'attend pas Graph, mais SPF et DKIM demandent le DNS du client ; interface `Mailer` interchangeable |
 | Annuaire incomplet | Destinataires sans e-mail | Contacts hors annuaire mémorisés ; « À compléter » ; synchronisation Entra en cible |
 | Faux « sûrs » sur des transporteurs sans clé | Erreurs silencieuses | Confiance plafonnée sans clé ; contexte exigé (DHL, Chronopost) ; suivi des faux sûrs sur le corpus |
 | Corpus insuffisant ou non autorisé | Seuils mal calibrés | Décision D4 au plus tôt ; fixtures texte issues du diagnostic ; enrichissement continu |
+| Fuite de données entre entreprises ou départements | Atteinte à la confidentialité, perte de confiance d'un client | Filtrage côté serveur sur chaque procédure et au pull, tests par rôle (ME07), admin de l'app sans données nominatives |
+| Domaine d'un client non vérifié ou DSI lente | E-mails depuis le domaine de la plateforme | Repli affiché clairement (ME03), messagerie du téléphone en dernier recours |
+| Changement de profil sur des colis en cours | Colis soudain soumis à une étape nouvelle | L'écran annonce les colis touchés avant d'enregistrer (D31) |
+| Écart de dépôt non régularisé | Colis bloqué, salarié non prévenu | Compteur sur le tableau de bord, accès direct (ME32) |
 | Conflits entre appareils | Écrasement d'une modification | Dernier écrit gagne par champ, transitions de statut contrôlées, remise protégée, journal |
 | Perte ou vol de l'iPhone | Exposition des données | Code de l'appareil, MDM, révocation de session et effacement, purge des données locales |
 | Contradictions non tranchées entre les sources (licence de zxing, clé Chronopost, taille de zxing) | Mauvaise hypothèse dans le code | Vérification au démarrage ; tests de non-régression ; aucun rejet sur une clé non confirmée |
@@ -1129,29 +1154,40 @@ Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ord
 
 ---
 
-## 12. Décisions à prendre
+## 12. Décisions
 
-Chaque décision est accompagnée d'une recommandation.
+D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/2026. Le suivi vit dans `kibo-notes/pilotage/decisions.md`, qui prime en cas d'écart.
 
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
 | D1 | Hébergeur du serveur et domaine de l'app | Utilisateur + DSI | Hébergeur en UE (conteneurs, Postgres), domaine maîtrisé par l'entreprise ; plus de GitHub Pages personnel |
-| D2 | E-mail pour le MVP | Utilisateur | **Révisée :** l'e-mail part de l'adresse de l'agent, prérempli dans la messagerie du téléphone (`mailto:`), depuis des modèles qu'il crée et gère ; plus de Scaleway TEM ni d'envoi serveur (spike S5, go) ; Graph en cible (D20) |
+| D2 | E-mail pour le MVP | Utilisateur | **Révisée le 29/10/2026 :** e-mails envoyés par le serveur, Brevo au MVP, Scaleway TEM ou Graph ensuite, derrière `Mailer` ; messagerie du téléphone en repli, livrée et gardée (spike S5, précision du 30/10/2026) |
 | D3 | Base hors ligne | Utilisateur | Dexie + outbox (§7.2) ; PowerSync seulement en cas de multi-sites ou de forte concurrence |
 | D4 | Autoriser la constitution d'un corpus de 100 à 200 photos d'étiquettes réelles (versions floutées dans le dépôt) | Utilisateur + DPO | Oui, c'est indispensable pour calibrer ; à lancer immédiatement |
 | D5 | iPhone du service : modèle et version d'iOS ; version minimale supportée | Utilisateur | iOS 26 recommandé ; iOS 18.4+ en mode dégradé si nécessaire |
-| D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou code par défaut ; signature et photo des colis facultatives, en secours, jamais obligatoires, même pour les recommandés (réponse du client, appliqué par YSL-75) ; pas de photo du salarié |
-| D7 | Durées de conservation | DPO | Validé : le tableau du §9.2 tel quel, signatures à 12 mois (réponse du client, appliqué par YSL-55) |
-| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone, jamais envoyées au serveur (réponse du client du 22/10/2026) |
+| D6 | Preuve de remise | Utilisateur + RH/DPO | QR ou code par défaut ; signature et photo des colis facultatives, en secours, jamais obligatoires, même pour les recommandés (réponse du client, appliqué par YSL-75) ; pas de photo du salarié. Le profil d'une entreprise peut désormais les rendre obligatoires (D30) |
+| D7 | Durées de conservation et données gardées par le serveur | DPO | Validé : le tableau du §9.2 tel quel, signatures à 12 mois (réponse du client, appliqué par YSL-55), réglable par entreprise (D28). **Révisée le 29/10/2026 :** le serveur garde aussi les colis, que le département et l'admin entreprise doivent voir |
+| D8 | Envoyer les photos d'étiquettes au serveur | Utilisateur + DPO | Non : les photos restent sur l'iPhone de la navette, jamais envoyées au serveur (réponse du client du 22/10/2026, maintenue le 29/10/2026) |
 | D9 | Renfort OCR dans le cloud | Utilisateur + DPO | Non au MVP ; à réexaminer selon les mesures du spike S3 ; si oui, région UE (Mistral, Vertex UE ou Azure France) avec DPA |
 | D10 | Suivi transporteur via un agrégateur | Utilisateur | Pas au MVP ; spike S6 sur 20 colis, puis décision (quelques centaines d'euros par an **[source tierce]**) |
 | D11 | MaxiCode : détecteur maison ou achat de Dynamsoft | Utilisateur | Maison d'abord ; Dynamsoft seulement si le spike S2 montre un manque réel |
-| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte à l'agent ; le rythme reste à la main de l'agent : l'app propose, rien ne part seul (YSL-67, jours fériés comptés comme ouvrés) |
-| D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | À fournir par le service |
-| D14 | Usage du nom et de l'identité visuelle Saint Laurent | Entreprise | Demander l'accord ; en attendant, interface sobre sans logo |
-| D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | Export CSV (nom, prénom, e-mail, service, site) fourni par les RH ou la DSI ; Entra en cible |
+| D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne, envoyé à la validation du lot ; relances à J+2 et J+5 ouvrés, puis alerte ; jours fériés comptés comme ouvrés (YSL-67). **Revu avec D2 révisée :** le serveur envoie et relance, au moment fixé par le profil (D30), à partir du dépôt |
+| D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | Rien d'imposé par le client ; portés par chaque département depuis le modèle multi-entreprises (ME05) |
+| D14 | Usage du nom et de l'identité visuelle du client | Entreprise | Non pour le premier client : interface sobre, sans marque. Le nom et le logo d'une entreprise sont un réglage (D28), neutre par défaut |
+| D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | **Révisée le 29/10/2026 :** annuaire tenu par l'admin entreprise (tous les départements) et par chaque département (le sien), import CSV possible ; la navette le lit en entier ; Entra en cible |
 | D16 | Sort du dépôt public v1 | Utilisateur | Archiver, purger l'historique (annuaire, `worker.js`), migrer les données par l'export CSV v1 |
 | D17 | Connexion des agents au MVP | Utilisateur | E-mail + mot de passe (Better Auth) ; Entra ID en cible |
 | D18 | Déploiement par MDM (web clip, autorisation caméra, code de verrouillage) | DSI | Tranchée : non, installation manuelle depuis Safari ([guide](installation-iphone.md)) |
 | D19 | Chiffrement applicatif des données locales (code propre à l'app) | DPO | Tranchée : non au MVP, sans MDM (D18) ; le code de verrouillage d'iOS reste exigé sur chaque iPhone |
 | D20 | Interlocuteurs DSI et calendrier pour la cible (Graph, Entra, RBAC) | DSI | Ouvrir la demande dès maintenant, en parallèle du MVP |
+| D21 | Rôles | Utilisateur | Quatre : admin de l'app, admin entreprise, département, navette |
+| D22 | Département | Utilisateur | Entité à plusieurs comptes ; le service courrier est un département comme un autre |
+| D23 | Support du département | Utilisateur | Suivi sur ordinateur, scan sur mobile ; ordinateur et mobile dès le MVP, rendu selon le rôle |
+| D24 | Confirmation du dépôt | Utilisateur | Par le département, au nombre de colis, pas forcément le détail |
+| D25 | Écart au dépôt | Utilisateur | Signalé : colis « À régulariser », visible par la navette et l'admin entreprise |
+| D26 | Vue de l'admin de l'app | Utilisateur | Chiffres seulement, ni colis ni annuaire |
+| D27 | Création des comptes | Utilisateur | Invitation par e-mail, mot de passe à changer à la première connexion |
+| D28 | Réglages par entreprise | Utilisateur | Nom et logo, expéditeur des e-mails (domaine vérifié), durées de conservation |
+| D29 | Facturation et abonnements | Utilisateur | Hors périmètre |
+| D30 | Profil de fonctionnement | Utilisateur | Étapes désactivées, facultatives ou obligatoires ; modèle choisi par l'admin de l'app à la création puis ajusté ; l'admin entreprise le modifie librement, sans verrou |
+| D31 | Changement de profil | Utilisateur | S'applique à tous les colis, tout de suite ; l'écran annonce les colis touchés avant d'enregistrer |
