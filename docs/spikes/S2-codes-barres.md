@@ -2,7 +2,7 @@
 
 Ticket YSL-11 (cahier des charges v2, §10.1 S2). Mesurer zxing-wasm sur le corpus
 d'étiquettes (`@repo/corpus`, YSL-5) et relever le contenu réel des codes 2D. Prototype :
-[`apps/spike-barcode`](../../apps/spike-barcode) : un banc d'essai Node sur le corpus et une
+[`apps/spike-barcode`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-barcode) (retiré, YSL-138) : un banc d'essai Node sur le corpus et une
 PWA iPhone qui compare le viseur et la photo native sur les mêmes colis.
 
 | Critère  | Seuil                                                                           |
@@ -29,7 +29,7 @@ connu, y compris des déclarations douanières sans code. Le rapport donne donc 
 **70,8 %** sur ces 130 étiquettes, **86,8 %** sur les 106 où au moins un code est lu.
 
 Une étiquette compte comme lue quand le tracking de sa vérité terrain se retrouve dans le
-contenu d'au moins un code (`src/decode/match.ts`) : en clair, sans séparateurs, sans sa
+contenu d'au moins un code (`src/decode/match.ts` du prototype) : en clair, sans séparateurs, sans sa
 clé de contrôle (Colissimo dans l'Aztec), ou recomposé (UPS dans le MaxiCode).
 
 ## Lecteur
@@ -56,8 +56,8 @@ même chose sans connaître le tracking.
 
 ## Résultats du banc (corpus, 23/10/2026)
 
-Mac, Node, un fil. Les temps comparent les variantes entre elles ; ceux de l'iPhone sont à
-mesurer avec la PWA. Commande et sorties : voir le README du spike.
+Mac, Node, un fil. Les temps comparent les variantes entre elles ; ceux de l'iPhone n'ont pas été
+mesurés ici. Commande et sorties : voir le README du spike (lien en tête de page).
 
 ### Taux de tracking lu
 
@@ -219,7 +219,7 @@ Tracking en clair, destinataire et **expéditeur** (`11Z`) présents.
 Le tracking n'est pas en clair : `1Z` + n° d'expéditeur + service + n° de colis se
 recomposent à partir de trois champs : `1Z` + n° d'expéditeur (champ après `UPSN`) +
 2 derniers chiffres de la classe de service (`068` → `68`) + les 8 caractères qui suivent
-`1Z` (`recomposeUps` dans `match.ts`). Pas de nom de
+`1Z` (`recomposeUps` dans le `match.ts` du prototype). Pas de nom de
 destinataire.
 
 ### Data Matrix
@@ -239,7 +239,7 @@ test iPhone.
 
 ## PWA iPhone
 
-https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
+`/spike-barcode/`, servie alors par l'image de `apps/web` (retirée depuis, YSL-138).
 
 - **Scan** : « Démarrer la caméra » ouvre le flux plein format (3024×4032 selon S1) ;
   « Lire » prend une image par `grabFrame` et la décode. « Photo native » ouvre l'appareil
@@ -257,7 +257,7 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
 
 ## Protocole
 
-1. Ouvrir https://ysl.shinseo.fr/spike-barcode/ dans Safari, l'installer sur l'écran
+1. Ouvrir `/spike-barcode/` dans Safari, l'installer sur l'écran
    d'accueil, l'ouvrir depuis l'icône.
 2. Au service, sur **30 colis au moins** couvrant Colissimo, Chronopost, La Poste, DHL,
    UPS (MaxiCode), FedEx (PDF417), GLS et DPD. Pour chaque colis : choisir le
@@ -274,7 +274,7 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
 
 ## Résultats sur l'iPhone
 
-À remplir après le test.
+Jamais rempli : la PWA a été retirée (YSL-138) sans que ce test soit consigné ici.
 
 | Mesure                          | Viseur | Photo native |
 | ------------------------------- | -----: | -----------: |
@@ -287,16 +287,16 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
 
 ## Verdict
 
-À rendre après le test iPhone. Sur le corpus : critère non atteint (70,8 %), à cause d'images
+Non rendu sur iPhone, faute de test consigné avant le retrait de la PWA (YSL-138). Sur le corpus : critère non atteint (70,8 %), à cause d'images
 web inexploitables plus que du lecteur ; Aztec et Code 128 fiables ; MaxiCode lisible en
 synthèse grâce au recadrage maison, pas encore sur une photo de biais.
 
 ## Conséquences
 
-- **YSL-20 (lecture en Worker)** : reprendre `src/decode/` : `.wasm` auto-hébergé, cascade
+- **YSL-20 (lecture en Worker)** : reprendre `src/decode/` du prototype : `.wasm` auto-hébergé, cascade
   entière réduite puis tuiles, tuiles sous 16,7 Mpx, une image à la fois. Lire **tous** les
   codes de l'étiquette, pas le premier : le tracking n'est pas toujours dans le premier lu.
-- **YSL-21 (validation du tracking)** : règles de `match.ts` (clé Colissimo absente de
+- **YSL-21 (validation du tracking)** : règles de `src/decode/match.ts` du prototype (clé Colissimo absente de
   l'Aztec, UPS recomposé), clé de contrôle à recalculer.
 - **YSL-25 (parseurs 2D)** : un parseur ISO 15434 couvre l'Aztec GeoPost (Colissimo,
   Chronopost, DPD), le PDF417 FedEx et le MaxiCode UPS ; il donne destinataire, adresse,

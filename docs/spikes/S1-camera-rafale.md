@@ -1,7 +1,7 @@
 # Spike S1 · caméra et rafale
 
 Ticket YSL-6. Cahier des charges v2, §10.1 : vérifier sur iPhone, en PWA installée, qu'un
-flux caméra unique tient la rafale. Prototype : [`apps/spike-camera`](../../apps/spike-camera).
+flux caméra unique tient la rafale. Prototype : [`apps/spike-camera`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-camera) (retiré, YSL-138).
 
 | Critère      | Seuil                                                                                                     |
 | ------------ | --------------------------------------------------------------------------------------------------------- |
@@ -13,11 +13,11 @@ flux caméra unique tient la rafale. Prototype : [`apps/spike-camera`](../../app
 ## Appareil
 
 iPhone (D5 : iOS 26), PWA installée sur l'écran d'accueil depuis
-https://ysl.shinseo.fr/spike-camera/.
+`/spike-camera/`.
 
 ## Protocole
 
-1. Sur l'iPhone, ouvrir https://ysl.shinseo.fr/spike-camera/ dans Safari, puis
+1. Sur l'iPhone, ouvrir `/spike-camera/` dans Safari, puis
    Partager › Sur l'écran d'accueil. Fermer Safari, lancer **Spike S1** depuis l'icône.
 2. Journal : vérifier `standalone true`, noter `imageCapture` et `opfs`.
 3. Capture › Démarrer la caméra, autoriser. Noter si iOS redemande l'autorisation aux

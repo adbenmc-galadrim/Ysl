@@ -149,7 +149,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/spike-/, /^\/version\.json$/],
+          navigateFallbackDenylist: [/^\/version\.json$/],
           cleanupOutdatedCaches: true,
           clientsClaim: true,
         },

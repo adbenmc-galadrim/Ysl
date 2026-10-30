@@ -3,7 +3,7 @@
 Ticket YSL-8. D2 révisée : l'e-mail part de l'adresse de l'utilisateur, par la messagerie du
 téléphone, prérempli par l'app ; pas de fournisseur d'envoi côté serveur (Scaleway TEM
 abandonné, le §10.1 S5 du cahier des charges v2 est périmé sur ce point). L'utilisateur gère
-et crée ses propres modèles. Prototype : [`apps/spike-email`](../../apps/spike-email).
+et crée ses propres modèles. Prototype : [`apps/spike-email`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-email) (retiré, YSL-138).
 
 | Critère   | Seuil                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------- |
@@ -15,7 +15,7 @@ et crée ses propres modèles. Prototype : [`apps/spike-email`](../../apps/spike
 
 ## Appareil
 
-iPhone (D5 : iOS 26), PWA installée depuis https://ysl.shinseo.fr/spike-email/, Mail
+iPhone (D5 : iOS 26), PWA installée depuis `/spike-email/`, Mail
 configuré avec le compte de l'utilisateur ; Outlook et Gmail installés et connectés si
 possible.
 
@@ -44,7 +44,7 @@ possible.
 
 ## Protocole
 
-1. Sur l'iPhone, ouvrir https://ysl.shinseo.fr/spike-email/ dans Safari, puis Partager ›
+1. Sur l'iPhone, ouvrir `/spike-email/` dans Safari, puis Partager ›
    Sur l'écran d'accueil. Lancer **Spike S5** depuis l'icône. Journal : noter `standalone`,
    `share`, `canShareFiles`.
 2. Composer : **À** = sa propre adresse ; **Adresse de réponse** = une seconde adresse à
@@ -202,5 +202,4 @@ l'utilisateur, est la voie principale du MVP.
   de variables avec signalement des inconnues, modèle par défaut rétablissable.
 - **QR par la feuille de partage** : bonus possible, jamais la voie principale (destinataire
   à ressaisir, objet non maîtrisé).
-- **Spike** : `apps/spike-email` reste déployé jusqu'à YSL-66, puis se retire (procédure
-  dans son README).
+- **Spike** : `apps/spike-email` retiré du dépôt et de l'image par YSL-138.

@@ -2,7 +2,7 @@
 
 Ticket YSL-7. Cahier des charges v2, §10.1 (avec §5.4 et §5.7) : vérifier sur iPhone, en
 PWA installée, que Dexie et OPFS ne perdent rien et qu'une nouvelle version est vue sans
-réinstaller. Prototype : [`apps/spike-storage`](../../apps/spike-storage).
+réinstaller. Prototype : [`apps/spike-storage`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-storage) (retiré, YSL-138).
 
 | Critère     | Seuil                                                                                    |
 | ----------- | ---------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@ entre les deux écritures.
 ## Appareil
 
 iPhone (D5 : iOS 26), PWA installée sur l'écran d'accueil depuis
-https://ysl.shinseo.fr/spike-storage/.
+`/spike-storage/`.
 
 ## Ce que fait le prototype
 
@@ -61,7 +61,7 @@ Noter à chaque étape le nombre de colis attendu avant, puis le nombre de colis
 et le verdict du contrôle affichés dans l'écran État, et les comparer. Le contrôle
 compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localStorage`).
 
-1. Sur l'iPhone, ouvrir https://ysl.shinseo.fr/spike-storage/ dans Safari, puis
+1. Sur l'iPhone, ouvrir `/spike-storage/` dans Safari, puis
    Partager › Sur l'écran d'accueil. Fermer Safari, lancer **Spike S4** depuis l'icône.
 2. État : noter `standalone`, `persisté`, usage / quota et la version. Toucher
    **Demander le stockage persistant**, noter le résultat.
@@ -125,7 +125,7 @@ met en pause pendant le verrouillage (34 s) et reprend seule au retour, colis 25
 le geste : « Forcer la mise à jour » supprime le service worker du spike et son cache
 (1 et 1), recharge en v3, contrôle sans perte, app de nouveau prête hors ligne.
 
-**Éviction.** Non observée : l'étape 10 (plusieurs jours sans ouvrir l'app) reste à faire.
+**Éviction.** Non observée : l'étape 10 (plusieurs jours sans ouvrir l'app) n'a pas été consignée avant le retrait du prototype (YSL-138).
 
 ## Verdict
 
@@ -136,7 +136,7 @@ le geste : « Forcer la mise à jour » supprime le service worker du spike et s
 | Aucune perte, verrouillage      | **go**  | pause de 34 s puis reprise seule, lot complet, contrôle sans perte       |
 | `persist()`                     | **go**  | accordé sans invite en PWA installée                                     |
 | Mise à jour sans réinstallation | **go**  | v2 détectée en moins de 0,4 s au retour et appliquée ; v3 par « Forcer » |
-| Éviction après inactivité       | à voir  | observation de plusieurs jours, rapportée plus tard                      |
+| Éviction après inactivité       | à voir  | non observée avant le retrait du prototype                               |
 
 **Conséquence.** Dexie et OPFS tiennent les scénarios : D3 (Dexie + outbox) est
 confirmée, PowerSync n'a pas à être réexaminé. À reporter dans l'app :

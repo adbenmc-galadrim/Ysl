@@ -8,9 +8,6 @@ Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
 | --- | --- |
 | `apps/web` | Application Vite, React 19, TanStack Router, Query et Form |
 | `apps/server` | API Hono qui sert le routeur tRPC |
-| `apps/spike-camera` | Prototype jetable du spike S1 (caméra et rafale), servi sous `/spike-camera/` |
-| `apps/spike-storage` | Prototype jetable du spike S4 (stockage et mises à jour), servi sous `/spike-storage/` |
-| `apps/spike-email` | Prototype jetable du spike S5 (e-mail par la messagerie du téléphone), servi sous `/spike-email/` |
 | `packages/api` | Routeur tRPC ; l'app web n'en importe que le type |
 | `packages/auth` | Better Auth : comptes, rôles agent et admin, client web |
 | `packages/contract` | Schémas zod partagés entre l'app et l'API |
@@ -95,14 +92,11 @@ Il n'y a pas de stockage objet : le serveur ne garde que les comptes et leurs an
 
 nginx pose `Cross-Origin-Opener-Policy: same-origin` et
 `Cross-Origin-Embedder-Policy: require-corp` sur toute l'app
-(`apps/web/nginx/isolation.conf`), pour le WASM multithread. Parmi les spikes, seul celui
-de l'OCR les reçoit ; les autres gardent leurs en-têtes d'origine. Toute ressource chargée
+(`apps/web/nginx/isolation.conf`), pour le WASM multithread. Toute ressource chargée
 depuis une autre origine doit donc être servie en CORS ou avec un en-tête
 `Cross-Origin-Resource-Policy`.
 
-Les deux images se construisent depuis la racine du dépôt. L'image de l'app sert aussi les
-prototypes des spikes : https://ysl.shinseo.fr/spike-camera/ (S1),
-https://ysl.shinseo.fr/spike-storage/ (S4) et https://ysl.shinseo.fr/spike-email/ (S5).
+Les deux images se construisent depuis la racine du dépôt.
 L'API applique les migrations Drizzle à chaque démarrage, avant d'ouvrir son port.
 
 Chaque push sur `main` ou sur `prod` lance `.github/workflows/deploy.yml` : lint, types
@@ -205,8 +199,8 @@ l'écran d'accueil »). Sur ordinateur, elle s'ouvre normalement.
   jamais pendant un lot (Scan, Remise), et « Mettre à jour » recharge l'app sur la
   nouvelle version. Hors ligne, rien ne s'affiche.
 - Réglages › App › « Forcer la mise à jour » : désinscrit le service worker de l'app, vide
-  ses caches (ceux des spikes sont gardés) et recharge ; les données de l'iPhone ne sont
-  pas touchées. C'est le recours quand le toast n'apparaît pas.
+  ses caches (ceux laissés par les anciens spikes sont gardés) et recharge ; les données de
+  l'iPhone ne sont pas touchées. C'est le recours quand le toast n'apparaît pas.
 - Essayer en local : lancer `preview` sur un premier build, ouvrir http://localhost:3100,
   puis relancer `pnpm --filter @repo/web build` dans un autre terminal : au retour sur
   l'onglet (ou après un rechargement), le toast s'affiche.

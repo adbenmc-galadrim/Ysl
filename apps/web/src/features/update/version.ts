@@ -15,8 +15,8 @@ export function compareVersion(local: string, payload: unknown): VersionCheck {
 }
 
 /**
- * The spikes register their own service workers under `/spike-…/`: their
- * Workbox caches carry that scope, the app's carry the bare origin.
+ * The retired spikes left service workers under `/spike-…/` on the iPhones that
+ * ran them: their Workbox caches carry that scope, the app's the bare origin.
  */
 export function isAppCache(key: string, scope: string): boolean {
   const at = key.indexOf(scope);
