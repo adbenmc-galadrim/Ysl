@@ -7,7 +7,7 @@ Ce document décrit Courrier, l'app de réception et de remise des colis d'une e
 **Comment lire la v3.**
 
 - **Ce qui est livré.** Le document décrit le produit visé. Tant que les fonctionnalités F35 à F42 du plan ne sont pas livrées, l'app fonctionne comme en v2 : un agent, un service, des e-mails envoyés depuis la messagerie du téléphone.
-- **Deux séries de F.** Les exigences F01 à F63 (§3) ne sont pas les fonctionnalités F1 à F42 du plan (`kibo-notes/pilotage/plan.md`). Pour éviter la collision, les exigences du modèle multi-entreprises s'appellent ME01, ME02… et le §3.7 les range par fonctionnalité du plan.
+- **Deux séries de F.** Les exigences F01 à F63 (§3) ne sont pas les fonctionnalités F1 à F42 du plan de projet (hors dépôt). Pour éviter la collision, les exigences du modèle multi-entreprises s'appellent ME01, ME02… et le §3.7 les range par fonctionnalité du plan.
 - **« L'agent ».** Partout où il reste, le mot désigne le compte qui fait le geste : la navette à la réception, le département à la remise.
 - **« Le service ».** De même, il se lit « l'entreprise », sauf quand le §2.1 distingue les départements.
 
@@ -1171,7 +1171,7 @@ Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ord
 
 ## 12. Décisions
 
-D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/2026. Le suivi vit dans le carnet de projet, hors dépôt (`kibo-notes/pilotage/decisions.md`), qui prime en cas d'écart.
+D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/2026. Le suivi vit dans le carnet de projet, hors dépôt, qui prime en cas d'écart.
 
 | # | Décision | Qui | Recommandation |
 | --- | --- | --- | --- |
