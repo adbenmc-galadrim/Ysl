@@ -1,7 +1,7 @@
 import type { BarcodeTracking } from '../tracking/barcode';
 import type { TrackingContext } from '../tracking/rules';
 
-export type CodeScheme = 'iso15434' | 'gs1' | 'la-poste';
+export type CodeScheme = 'iso15434' | 'gs1' | 'la-poste' | 'dhl-routing';
 
 export type Party = {
   name?: string;

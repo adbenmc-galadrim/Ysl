@@ -167,7 +167,7 @@ describe('toScanReading with a structured 2D code', () => {
         { label: 'Transporteur', value: 'UPS' },
         { label: 'Suivi', value: '1ZE6344W0499230622' },
         { label: 'Destinataire', status: 'warning' },
-        { label: 'Poids', value: '1,36 kg' },
+        { label: 'Poids', value: '3 kg' },
       ],
     });
   });

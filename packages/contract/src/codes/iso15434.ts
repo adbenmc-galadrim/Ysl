@@ -151,7 +151,11 @@ const transport = (fields: string[]): Omit<ParsedCode, 'scheme'> | null => {
     postalCode: postalCode(raw.postalCode),
     country: country(raw.country),
   });
-  const weight = weightKg(raw.weight, carrier === 'ups' ? 'LB' : 'KG');
+  // Real UPS labels to France encode the kilograms they print, without a unit.
+  const weight = weightKg(
+    raw.weight,
+    carrier === 'ups' && recipient?.country === 'US' ? 'LB' : 'KG',
+  );
   const shipperAccount = text(raw.shipperAccount);
   const parsedPieces = pieces(raw.pieces);
   return {

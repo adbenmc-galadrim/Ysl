@@ -62,6 +62,19 @@ describe('parseCode routes a symbol to its parser', () => {
     expect(parseCode('FR00A0013Y004321547890001', 'Code128')).toBeNull();
   });
 
+  it('names DHL Express from its routing codes, without a tracking', () => {
+    for (const text of [
+      'JJD014600000000000001',
+      'JD014600000000000001',
+      '2LFR75007+48000001',
+    ]) {
+      expect(parseCode(text, 'Code128')).toMatchObject({
+        carrier: 'dhl-express',
+        trackings: [],
+      });
+    }
+  });
+
   it('returns null on plain text', () => {
     expect(parseCode('1ZE6344W0499230622', 'Code128')).toBeNull();
     expect(parseCode('877974873338')).toBeNull();
