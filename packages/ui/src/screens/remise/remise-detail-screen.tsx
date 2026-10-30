@@ -1,4 +1,5 @@
 import { Banner } from '#components/banner';
+import { Button } from '#components/button';
 import { DetailsList, type DetailsItem } from '#components/details-list';
 import { IconTile } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
@@ -25,6 +26,8 @@ export type RemiseDetailScreenProps = {
   parcels: RemiseDetailParcel[];
   onBack?: () => void;
   onParcel?: (parcel: RemiseDetailParcel) => void;
+  /** « Annuler la remise », while it can still be undone (F44). */
+  cancelAction?: { label: string; onClick: () => void };
 };
 
 /** One handover of the journal: its proof, then each parcel it lists. */
@@ -37,6 +40,7 @@ export function RemiseDetailScreen({
   parcels,
   onBack,
   onParcel,
+  cancelAction,
 }: RemiseDetailScreenProps) {
   return (
     <Screen>
@@ -73,6 +77,16 @@ export function RemiseDetailScreen({
             ))}
           </div>
         </section>
+      )}
+      {cancelAction && (
+        <Button
+          variant="secondary"
+          block
+          onClick={cancelAction.onClick}
+          className="mt-7 mb-6"
+        >
+          {cancelAction.label}
+        </Button>
       )}
     </Screen>
   );

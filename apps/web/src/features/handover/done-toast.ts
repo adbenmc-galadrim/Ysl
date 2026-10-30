@@ -7,11 +7,17 @@ export const HANDOVER_TOAST_MS = 5_000;
  * A handover another iPhone had recorded first, found by the
  * synchronisation. The one written here has its own screen (YSL-76).
  */
-export type HandoverToast = {
-  kind: 'conflict';
-  firstName: string | null;
-  byMe: boolean;
-};
+export type HandoverToast =
+  | {
+      kind: 'conflict';
+      firstName: string | null;
+      byMe: boolean;
+    }
+  | {
+      /** Undone from its confirmation, which has just closed (F44). */
+      kind: 'cancelled';
+      count: number;
+    };
 
 let current: HandoverToast | undefined;
 const listeners = new Set<() => void>();

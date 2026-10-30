@@ -55,7 +55,16 @@ export const fr = {
   'handover.how.manuel': 'sans vérification',
   'handover.to': 'À {{name}}, {{how}}',
   'handover.toDelegate': 'À {{name}} (retiré par {{delegate}}), {{how}}',
-  'handover.done.undo': 'Annuler · bientôt',
+  'handover.done.undo': 'Annuler',
+  'handover.cancel.action': 'Annuler la remise',
+  'handover.cancel.handedOver': 'Remis {{when}}',
+  'handover.cancel.proof': 'À {{name}}, {{how}}, par {{agent}}',
+  'handover.cancel.back.one': 'Le colis repasse en attente de retrait',
+  'handover.cancel.back.many':
+    'Les {{count}} colis repassent en attente de retrait',
+  'handover.cancel.done.one': 'Remise annulée, le colis attend son retrait',
+  'handover.cancel.done.many':
+    'Remise annulée, les {{count}} colis attendent leur retrait',
   'handover.cancel.reason.wrong_parcel': 'Mauvais colis',
   'handover.cancel.reason.wrong_person': 'Mauvaise personne',
   'handover.cancel.reason.entry_error': 'Erreur de saisie',
@@ -244,8 +253,7 @@ export const fr = {
   'selection.delete.title': 'Supprimer {{count}} colis ?',
   'selection.delete.description':
     'Ils quittent la liste, ici et sur le serveur ; leur historique est gardé.',
-  'selection.delete.kept.one':
-    '1 colis déjà notifié ou remis reste en place.',
+  'selection.delete.kept.one': '1 colis déjà notifié ou remis reste en place.',
   'selection.delete.kept.many':
     '{{count}} colis déjà notifiés ou remis restent en place.',
   'selection.delete.none':

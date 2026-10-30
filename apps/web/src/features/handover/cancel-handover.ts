@@ -1,12 +1,19 @@
-import type { HandoverCancelReason } from '@repo/contract/handover';
+import {
+  HANDOVER_CANCEL_REASONS,
+  type HandoverCancelReason,
+} from '@repo/contract/handover';
 import { statusPatch, stepBackOf } from '@repo/contract/parcel-status';
+import type { TranslateFn } from '@repo/shared/i18n';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
+  agentNameOf,
   type HandoverEntry,
   loadHandoverEntry,
+  methodLabel,
 } from '#/features/handover/entry';
 import { parcelEvent } from '#/features/parcels/events';
+import { formatWhen } from '#/features/parcels/record';
 
 export type CancelHandoverInput = {
   reason: HandoverCancelReason;
@@ -35,6 +42,40 @@ export function canCancelHandover(entry: HandoverEntry): boolean {
     !entry.handover.cancelledAt &&
     entry.sync !== 'rejected' &&
     entry.parcels.length > 0
+  );
+}
+
+/** What the sheet says it is undoing: « Remis hier à 9 h 12 », and how. */
+export function describeCancelSheet(
+  { handover, parcels }: HandoverEntry,
+  now: Date,
+  t: TranslateFn,
+  me?: string,
+) {
+  const when = formatWhen(handover.at, now, t);
+  return {
+    handedOver: t('handover.cancel.handedOver', {
+      when: when.charAt(0).toLowerCase() + when.slice(1),
+    }),
+    proof: t('handover.cancel.proof', {
+      name: handover.recipientName,
+      how: methodLabel(handover.method, t),
+      agent: agentNameOf(handover, t, me),
+    }),
+    backTitle:
+      parcels.length > 1
+        ? t('handover.cancel.back.many', { count: parcels.length })
+        : t('handover.cancel.back.one'),
+  };
+}
+
+/** The reason a chip of the sheet stands for. */
+export function reasonOfLabel(
+  label: string,
+  t: TranslateFn,
+): HandoverCancelReason | undefined {
+  return HANDOVER_CANCEL_REASONS.find(
+    (reason) => t(`handover.cancel.reason.${reason}`) === label,
   );
 }
 

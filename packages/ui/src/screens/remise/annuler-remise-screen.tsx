@@ -14,8 +14,11 @@ export const CANCEL_REASONS = [
 ] as const;
 
 export type AnnulerRemiseScreenProps = {
-  /** The handed-over parcel whose record the sheet opens on. */
-  parcel: Parcel;
+  /** The handed-over parcel whose record the sheet opens on, drawn behind it. */
+  parcel?: Parcel;
+  /** Over the app: the screen it opened from stays mounted under the sheet. */
+  fixed?: boolean;
+  onDismiss?: () => void;
   /** "Remis hier à 9 h 12". */
   handedOver: string;
   /** "À Malik Benali, QR code vérifié, par Karim". */
@@ -25,6 +28,8 @@ export type AnnulerRemiseScreenProps = {
   note?: string;
   onNoteChange?: (note: string) => void;
   onConfirm?: () => void;
+  /** "Le colis repasse en attente de retrait": a handover may hold several. */
+  backTitle?: string;
 };
 
 /**
@@ -35,6 +40,8 @@ export type AnnulerRemiseScreenProps = {
  */
 export function AnnulerRemiseScreen({
   parcel,
+  fixed = false,
+  onDismiss,
   handedOver,
   proof,
   reason,
@@ -42,20 +49,25 @@ export function AnnulerRemiseScreen({
   note,
   onNoteChange,
   onConfirm,
+  backTitle = 'Le colis repasse en attente de retrait',
 }: AnnulerRemiseScreenProps) {
   return (
     <Sheet
       title="Annuler la remise ?"
       scrimClassName="bg-black/35"
       className="pb-[calc(var(--safe-bottom)-2px)]"
+      fixed={fixed}
+      onDismiss={onDismiss}
       behind={
-        <Screen>
-          <NavBar />
-          <h1 className="mt-3.5 text-32 font-bold">{parcel.recipient}</h1>
-          <p className="mt-1 text-15 text-muted">
-            {parcel.department}, {parcel.carrier} ···{parcel.last4}
-          </p>
-        </Screen>
+        parcel && (
+          <Screen>
+            <NavBar />
+            <h1 className="mt-3.5 text-32 font-bold">{parcel.recipient}</h1>
+            <p className="mt-1 text-15 text-muted">
+              {parcel.department}, {parcel.carrier} ···{parcel.last4}
+            </p>
+          </Screen>
+        )
       }
     >
       <Banner
@@ -99,7 +111,7 @@ export function AnnulerRemiseScreen({
       <Banner
         tone="blue"
         icon="info"
-        title="Le colis repasse en attente de retrait"
+        title={backTitle}
         description="L’annulation reste dans l’historique, avec son motif."
         classNames={{
           root: 'h-[72px] items-start pb-0',

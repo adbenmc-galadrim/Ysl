@@ -10,6 +10,8 @@ import {
   describeConfirmation,
   proofLabels,
 } from '#/features/handover/confirmation';
+import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
+import { announceHandover } from '#/features/handover/done-toast';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { addHandoverProof, type ProofInput } from '#/features/handover/proofs';
@@ -67,6 +69,7 @@ export function RemiseConfirmeePage({
   const urls = useProofUrls(handoverId);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const [failed, setFailed] = useState<HandoverProofKind | null>(
     signatureLost ? 'signature' : null,
   );
@@ -142,10 +145,19 @@ export function RemiseConfirmeePage({
             items: proofMediaItems(urls, PROOF_LABELS, setViewing),
           }}
           undoLabel={t('handover.done.undo')}
-          undoDisabled
+          onUndo={() => setCancelling(true)}
           onAnother={onAnother}
           next={next}
           onDone={onDone}
+        />
+      )}
+      {cancelling && !draft && (
+        <AnnulerRemiseSheet
+          handoverId={handoverId}
+          onClose={() => setCancelling(false)}
+          onCancelled={(count) =>
+            announceHandover({ kind: 'cancelled', count })
+          }
         />
       )}
       {photoInput}

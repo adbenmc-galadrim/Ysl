@@ -1,11 +1,15 @@
 import 'fake-indexeddb/auto';
 import { readParcelEvent } from '@repo/contract/parcel-event';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { CANCEL_REASONS } from '@repo/ui';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import {
   cancelHandover,
   canCancelHandover,
+  describeCancelSheet,
   HandoverCancelRefusedError,
+  reasonOfLabel,
 } from '#/features/handover/cancel-handover';
 import { lostHandoverIds } from '#/features/handover/delivered';
 import { loadHandoverEntry } from '#/features/handover/entry';
@@ -64,6 +68,31 @@ const cancel = (now = LATEST) =>
     { reason: 'wrong_parcel', note: '  Celui de M. Bernard ' },
     { ...AGENT, now },
   );
+
+const t = createTranslator(DEFAULT_LOCALE);
+
+describe('the sheet', () => {
+  it('says which handover it undoes, and how many parcels go back', async () => {
+    const entry = (await loadHandoverEntry(db, handoverId))!;
+
+    const sheet = describeCancelSheet(entry, LATEST, t);
+
+    expect(sheet.proof).toBe('À Nora Haddad, Code vérifié, par Karim Benali');
+    expect(sheet.backTitle).toBe('Les 2 colis repassent en attente de retrait');
+    expect(
+      describeCancelSheet({ ...entry, parcels: [notified] }, LATEST, t)
+        .backTitle,
+    ).toBe('Le colis repasse en attente de retrait');
+  });
+
+  it('maps each chip of the design system to its reason', () => {
+    expect(CANCEL_REASONS.map((label) => reasonOfLabel(label, t))).toEqual([
+      'wrong_parcel',
+      'wrong_person',
+      'entry_error',
+    ]);
+  });
+});
 
 describe('canCancelHandover', () => {
   it('holds back a handover the server refused or left without parcels', async () => {

@@ -14,6 +14,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
+import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
 import { proofLabels } from '#/features/handover/confirmation';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { liftDamage } from '#/features/damage/report';
@@ -109,6 +110,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     (record?.handover ?? record?.cancelledHandover)?.id ?? '',
   );
   const [viewingProof, setViewingProof] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
   const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [completing, setCompleting] = useState(false);
@@ -271,6 +273,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
 
   const { action, damage, ...shown } = view;
   const handoverId = (record.handover ?? record.cancelledHandover)?.id;
+  const cancellable = !record.ops.some(
+    (op) =>
+      op.entity === 'handover' &&
+      op.entityId === record.handover?.id &&
+      op.state === 'rejected',
+  );
   // « Sans e-mail »: the address goes on the contact, for this parcel and
   // the next ones, and the record shows it at once. A directory card left
   // without one is only said: Notifier offers its ways (YSL-72).
@@ -379,15 +387,20 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
             : edit
       }
       secondaryAction={
-        action?.kind === 'stepBack'
+        record.handover && cancellable
           ? {
-              label: stepBackLabel(action.from, t),
-              onClick: () => {
-                setFailed(false);
-                setConfirm(action);
-              },
+              label: t('handover.cancel.action'),
+              onClick: () => setCancelling(true),
             }
-          : undefined
+          : action?.kind === 'stepBack'
+            ? {
+                label: stepBackLabel(action.from, t),
+                onClick: () => {
+                  setFailed(false);
+                  setConfirm(action);
+                },
+              }
+            : undefined
       }
       replyAction={
         answered?.length
@@ -406,6 +419,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       overlay={
         <>
           {sheet}
+          {cancelling && record.handover && (
+            <AnnulerRemiseSheet
+              handoverId={record.handover.id}
+              onClose={() => setCancelling(false)}
+            />
+          )}
           {addingEmail && record.contact && (
             <ContactSheet
               contact={record.contact}
