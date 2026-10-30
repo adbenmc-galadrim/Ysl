@@ -1,6 +1,6 @@
 # @repo/ui
 
-The design system of the Courrier YSL PWA and the Storybook that documents it.
+The design system of the Courrier PWA and the Storybook that documents it.
 Every screen of the Penpot mockups has a story, and every story is checked
 pixel by pixel against its reference: the Penpot export, except for the
 landing (`reference/10-landing`), whose animated relief has no Penpot board
