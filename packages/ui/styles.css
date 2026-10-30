@@ -119,11 +119,6 @@
   --color-scene-counter: #2b2622;
   --color-scene-phone: #111111;
 
-  /* macOS window buttons, drawn by the desktop mockup's browser frame only */
-  --color-mac-close: #ff5f57;
-  --color-mac-minimize: #febc2e;
-  --color-mac-zoom: #28c840;
-
   /* The landing page (page 10 of Penpot). It is a product page, not an app
    * screen, so it borrows Apple's marketing greys: a softer near-black ink,
    * #f5f5f7 panels, and the light-appearance system colours darkened for

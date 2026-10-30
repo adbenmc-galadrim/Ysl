@@ -50,9 +50,9 @@ function DeskTableBox({ checked = false }: { checked?: boolean }) {
 
 /**
  * The bordered table of the multi-company desktop: a 32 px grey head, rows in
- * 13 px on a measured pitch, an optional column of boxes and a footer. Unlike
- * `DataTable`, whose columns share the width, its columns have the mockup's
- * px: a record often opens beside it, and the table then keeps its grid.
+ * 13 px on a measured pitch, an optional column of boxes and a footer. Its
+ * columns have the mockup's px: a record often opens beside it, and the table
+ * then keeps its grid.
  */
 export function DeskTable<T>({
   columns,
