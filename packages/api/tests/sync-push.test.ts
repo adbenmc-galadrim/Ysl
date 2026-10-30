@@ -1088,6 +1088,37 @@ describe('sync.push', () => {
         message: 'Cet e-mail a changé d’état depuis un autre appareil.',
       });
     });
+
+    it('keeps what the provider said out of reach of the devices', async () => {
+      const [{ id: parcelId } = { id: '' }] = await db
+        .select({ id: schema.parcel.id })
+        .from(schema.parcel)
+        .limit(1);
+      const mail = op('notification', prepared(parcelId));
+      await push(sync, writer, { ops: [mail] });
+      await db
+        .update(schema.notification)
+        .set({ deliveryStatus: 'bounced', deliveryAt: NOW })
+        .where(eq(schema.notification.id, mail.entityId));
+
+      const { results } = await push(sync, writer, {
+        ops: [
+          op('notification', {
+            ...mail.patch,
+            id: mail.entityId,
+            deliveryStatus: 'delivered',
+            deliveryAt: null,
+          }),
+        ],
+      });
+
+      expect(results[0]?.status).toBe(200);
+      const [row] = await db
+        .select()
+        .from(schema.notification)
+        .where(eq(schema.notification.id, mail.entityId));
+      expect(row).toMatchObject({ deliveryStatus: 'bounced', deliveryAt: NOW });
+    });
   });
 
   it('stops the batch when the server could not take an operation', async () => {
