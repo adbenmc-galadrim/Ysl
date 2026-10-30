@@ -78,4 +78,4 @@ Le détail et le suivi sont au §12 du cahier des charges et dans le carnet de p
 1. Dessiner et mettre en stories les écrans multi-entreprises, retirer les apps de spike (F34 du plan).
 2. Livrer dans l'ordre l'envoi serveur, les départements et les rôles, la plateforme, le profil, l'annuaire, la tournée et le dépôt, l'espace département et la vue d'ensemble (F35 à F42 du plan).
 3. Recette par rôle sur un vrai lot et mise en production pilote (F28 du plan).
-4. En parallèle, ouvrir la demande à la DSI pour Graph et Entra ID.
+4. En parallèle, ouvrir la demande à la DSI du premier client pour Graph et Entra ID ; les autres entreprises la font si elles veulent cette cible.

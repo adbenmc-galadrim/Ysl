@@ -276,9 +276,9 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F55 | Étiquette interne imprimable (nom, service, emplacement, code-barres) | Nouveau | C | L3 |
 | F56 | Lettres recommandées : type dédié, n° d'AR, signature facultative (D6) | Nouveau | S | L3 |
 | F57 | Vues ordinateur : tableau des colis, revue, annuaire, rapports (délai de retrait, volumes par transporteur et par jour) ; en L2 pour le département et l'admin entreprise (§3.7.7, §3.7.8) | Nouveau | S | L2 |
-| F58 | Synchronisation de l'annuaire depuis Entra ID (Graph delta), CSV conservé en secours | Nouveau | S | L4 |
-| F59 | Envoi depuis la boîte partagée « Service Courrier » via Microsoft Graph | Nouveau | S | L4 |
-| F60 | Connexion des agents via Entra ID | Nouveau | S | L4 |
+| F58 | Synchronisation de l'annuaire depuis Entra ID (Graph delta), par entreprise qui le demande, CSV conservé en secours | Nouveau | S | L4 |
+| F59 | Envoi depuis la boîte partagée de l'entreprise via Microsoft Graph, pour celle qui le demande | Nouveau | S | L4 |
+| F60 | Connexion des comptes via Entra ID, par entreprise qui le demande | Nouveau | S | L4 |
 | F61 | Suivi transporteur via un agrégateur (statut ; expéditeur seulement s'il est fourni) | Nouveau | C | L4 |
 | F62 | Résumé quotidien dans un canal Teams (webhook Workflows) | Nouveau | C | L4 |
 | F63 | Mode sombre suivant le système, avec bascule manuelle | Nouveau | S | L1 |
@@ -1102,7 +1102,7 @@ Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une lig
 3. Nécessité ou non d'une analyse d'impact (AIPD), à évaluer par le DPO.
 4. Envoi d'e-mails :
    - MVP : Brevo, avec SPF et DKIM pour le domaine de chaque entreprise (modification DNS) ; domaine de la plateforme tant qu'il n'est pas vérifié ;
-   - cible : application Entra ID avec consentement administrateur pour `Mail.Send` (application), restreinte par **RBAC for Applications** à la seule boîte « Service Courrier », et `User.Read.All` pour l'annuaire.
+   - cible : application Entra ID avec consentement administrateur pour `Mail.Send` (application), restreinte par **RBAC for Applications** à la seule boîte du service, et `User.Read.All` pour l'annuaire.
 5. SMTP AUTH Basic : désactivé par défaut fin décembre 2026 **[source tierce]**. Aucune dépendance prévue de notre côté.
 6. Déploiement MDM : web clip, autorisation de la caméra pour le domaine, code de verrouillage imposé (non vérifié).
 7. Usage du nom et de l'identité visuelle de chaque entreprise (nom et logo, D28).
@@ -1137,7 +1137,7 @@ Prérequis : l'iPhone du service (décision D5) et un premier corpus de 100 phot
 | **L1 Réception** (MVP, partie 1) | Mode rafale, chaîne d'extraction complète (§4), revue de lot, À compléter, journal et fiche, annuaire CSV, contacts, doublons, apprentissage, diagnostic, export CSV, import v1, mode sombre (F02 à F14, F16 à F23, F25 à F30, F47, F50 à F52, F63) | Corpus : objectifs O1 à O4 et O6 atteints ; 50 colis en rafale sans plantage ; tous les cas de non-régression du §4.6 passent en CI ; l'import v1 signale les trackings invalides, dont `7185713569` ; parcours P1, P2 et P6 faits par l'agent sur un vrai lot |
 | **L2 Notification et remise** (MVP, partie 2, **sans Graph** ; SPF et DKIM demandent le DNS du client) | Envoi par le serveur (Brevo, D2 révisée) et messagerie du téléphone en repli, regroupement par personne, QR et PIN, relances, onglet Remise, vérification hors ligne, signature, journal de remise, annulation, compteurs, actions groupées, purge, modèle multi-entreprises (F31 à F37, F40 à F44, F53, F57, ME01 à ME34) | E-mails reçus dans les boîtes de test ; statut visible pour chaque envoi ; remise par QR **en mode avion** ; PIN refusé après usage ; relance envoyée à l'échéance ; purge vérifiée sur des données de test ; parcours P3, P4 et P5 et R1 à R6 faits par chaque rôle → **mise en production pilote** |
 | **L3 Confort** | MaxiCode maison, capture automatique, emplacements, étiquette interne, recommandés, CC et délégué, créneaux d'envoi, statut Retourné (F06, F15, F38, F39, F54 à F56) | Lecture MaxiCode mesurée en hausse sur le corpus ; un recommandé est remis avec son n° d'AR, signé si l'agent le propose (D6) |
-| **L4 Cible avec DSI** | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
+| **L4 Cible avec la DSI d'une entreprise** (par entreprise qui le demande, Brevo pour les autres) | Connexion Entra ID, Graph `sendMail` depuis la boîte partagée (restreinte par RBAC), annuaire Graph delta, résumé Teams, suivi transporteur, renfort cloud si le DPO l'accepte (F24, F58 à F62) | E-mails envoyés depuis l'adresse du service, visibles dans Éléments envoyés ; un départ dans Entra désactive le salarié dans l'app sous 24 h ; le transactionnel reste en secours |
 
 Ordre : spikes → L0 → L1 → L2 (MVP en production) → L3 et L4, dans l'ordre que permettent les réponses de la DSI. Aucune durée n'est donnée ici : elle sera estimée après les spikes.
 
@@ -1194,7 +1194,7 @@ D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/20
 | D17 | Connexion des agents au MVP | Utilisateur | E-mail + mot de passe (Better Auth) ; Entra ID en cible |
 | D18 | Déploiement par MDM (web clip, autorisation caméra, code de verrouillage) | DSI | Tranchée : non, installation manuelle depuis Safari ([guide](installation-iphone.md)) |
 | D19 | Chiffrement applicatif des données locales (code propre à l'app) | DPO | Tranchée : non au MVP, sans MDM (D18) ; le code de verrouillage d'iOS reste exigé sur chaque iPhone |
-| D20 | Interlocuteurs DSI et calendrier pour la cible (Graph, Entra, RBAC) | DSI | Ouvrir la demande dès maintenant, en parallèle du MVP |
+| D20 | Interlocuteurs DSI et calendrier pour la cible (Graph, Entra, RBAC) | DSI de chaque entreprise | Pour le premier client : ouvrir la demande en parallèle du MVP. Les autres entreprises la font si elles veulent cette cible |
 | D21 | Rôles | Utilisateur | Quatre : admin de l'app, admin entreprise, département, navette |
 | D22 | Département | Utilisateur | Entité à plusieurs comptes ; le service courrier est un département comme un autre |
 | D23 | Support du département | Utilisateur | Suivi sur ordinateur, scan sur mobile ; ordinateur et mobile dès le MVP, rendu selon le rôle |
