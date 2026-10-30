@@ -33,8 +33,8 @@ export type AnnulerRemiseScreenProps = {
 };
 
 /**
- * Undoing a handover after the toast is gone. It is a sheet over the parcel
- * record, not a screen of its own: the agent sees which handover is being
+ * Undoing a handover, from its toast, the parcel record or the journal. It
+ * is a sheet over them, not a screen of its own: the agent sees which handover is being
  * undone, picks a reason in one tap, and the red button says it plainly.
  * The record keeps the cancellation, so nothing is erased.
  */

@@ -281,7 +281,10 @@ describe('cancelHandover', () => {
     }).history?.map((entry) => entry.title);
 
     expect(
-      titles?.filter((title) => String(title).startsWith('Remise annulée')),
+      titles?.filter(
+        (title) =>
+          typeof title === 'string' && title.startsWith('Remise annulée'),
+      ),
     ).toEqual(['Remise annulée : mauvais colis (Celui de M. Bernard)']);
   });
 });
