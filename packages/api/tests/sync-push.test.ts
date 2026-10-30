@@ -681,6 +681,61 @@ describe('sync.push', () => {
       });
     });
 
+    it('keeps the first of two cancellations and its reason', async () => {
+      const row = delivered();
+      const handover = handoverRow(row.id);
+      const notified = {
+        ...row,
+        status: 'notifie',
+        statusSeq: 1,
+        deliveredAt: null,
+        deliveredBy: null,
+      };
+      await push(sync, writer, {
+        ops: [op('handover', handover), op('parcel', row)],
+      });
+      const later = new Date(NOW.getTime() + 60_000);
+
+      const first = await push(sync, writer, {
+        ops: [
+          op('handover', {
+            ...handover,
+            cancelledAt: NOW,
+            cancelReason: 'wrong_parcel',
+            cancelNote: 'Celui de M. Bernard',
+            cancelledByName: 'Karim',
+          }),
+          op('parcel', notified),
+        ],
+      });
+      const second = await push(sync, writer, {
+        ops: [
+          op('handover', {
+            ...handover,
+            cancelledAt: later,
+            cancelReason: 'entry_error',
+            cancelNote: null,
+            cancelledByName: 'Nadia',
+          }),
+          op('parcel', notified),
+        ],
+      });
+      const [kept] = await db
+        .select()
+        .from(schema.handover)
+        .where(eq(schema.handover.id, handover.id));
+
+      expect(first.results.map((result) => result.status)).toEqual([200, 200]);
+      expect(second.results.map((result) => result.status)).toEqual([200, 200]);
+      expect(kept).toMatchObject({
+        cancelledAt: NOW,
+        cancelReason: 'wrong_parcel',
+        cancelNote: 'Celui de M. Bernard',
+        cancelledByName: 'Karim',
+      });
+      expect((await parcel(row.id))?.status).toBe('notifie');
+    });
+
     it('keeps the proof of a delivery against an ordinary edit', async () => {
       const row = delivered();
       await push(sync, writer, { ops: [op('parcel', row)] });

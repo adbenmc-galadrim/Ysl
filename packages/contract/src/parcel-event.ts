@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { HANDOVER_METHODS, type HandoverMethod } from './handover';
+import {
+  HANDOVER_CANCEL_REASONS,
+  HANDOVER_METHODS,
+  type HandoverCancelReason,
+  type HandoverMethod,
+} from './handover';
 import { IMPORT_FLAGS, type ImportFlag } from './imports';
 import { DAMAGE_REASONS, type DamageReason } from './parcel-damage';
 import { NOTIFICATION_TYPES, type NotificationType } from './mail/templates';
@@ -63,6 +68,13 @@ export type ParcelEvent =
       handoverId: string;
       method: HandoverMethod;
     }
+  | {
+      /** A handover undone by an agent (F44): the parcel is waiting again. */
+      type: 'parcel.handover_cancelled';
+      handoverId: string;
+      reason: HandoverCancelReason;
+      note: string | null;
+    }
   | ParcelReplyEvent;
 
 /**
@@ -119,6 +131,14 @@ const details = {
     handoverId: z.string(),
     method: z.enum(HANDOVER_METHODS),
   }),
+  'parcel.handover_cancelled': z.object({
+    handoverId: z.string(),
+    reason: z.enum(HANDOVER_CANCEL_REASONS),
+    note: z
+      .string()
+      .nullish()
+      .transform((note) => note ?? null),
+  }),
   'parcel.reply': z.discriminatedUnion('reply', [
     z.object({
       reply: z.literal(REPLY_KINDS[0]),
@@ -171,6 +191,15 @@ export function eventColumns(event: ParcelEvent): {
         type: event.type,
         detail: { handoverId: event.handoverId, method: event.method },
       };
+    case 'parcel.handover_cancelled':
+      return {
+        type: event.type,
+        detail: {
+          handoverId: event.handoverId,
+          reason: event.reason,
+          note: event.note,
+        },
+      };
     case 'parcel.reply': {
       const { type, ...detail } = event;
       return { type, detail };
@@ -221,6 +250,10 @@ export function readParcelEvent(
       return read.success ? { type, kind: read.data.kind } : undefined;
     }
     case 'parcel.delivered': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.handover_cancelled': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
     }
