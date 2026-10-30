@@ -15,8 +15,12 @@ const { callerFor, sessionFor } = await import('./helpers/caller');
 const { AGENT_ID, OTHER_ORGANIZATION_ID, ORGANIZATION_ID, parcelRow } =
   await import('./helpers/pglite');
 const { parseCsv } = await import('./helpers/csv');
-const { PARCELS_CSV_HEADER, exportParcelsCsv, formatExportDate } =
-  await import('#features/exports/service');
+const {
+  PARCELS_CSV_HEADER,
+  exportParcelsCsv,
+  formatExportDate,
+  handoverByParcel,
+} = await import('#features/exports/service');
 
 function memberSession(userId: string): Session {
   const session = sessionFor('agent');
@@ -244,9 +248,9 @@ describe('exportParcelsCsv', () => {
       remis_par: 'Karim Benali',
       methode_remise: 'QR code vérifié',
       remise_annulee: '',
-      motif_annulation: '',
       signature: 'oui',
       photo_remise: 'non',
+      motif_annulation: '',
     });
   });
 
@@ -277,9 +281,9 @@ describe('exportParcelsCsv', () => {
       'remis_par',
       'methode_remise',
       'remise_annulee',
-      'motif_annulation',
       'signature',
       'photo_remise',
+      'motif_annulation',
     ]);
     expect(cells(second!)).toEqual([
       '24/10/2026 11:20',
@@ -287,11 +291,42 @@ describe('exportParcelsCsv', () => {
       '',
       'Code vérifié',
       '24/10/2026 11:25',
+      'non',
+      'non',
       'Mauvais colis : Celui de M. Bernard',
-      'non',
-      'non',
     ]);
     expect(cells(third!)).toEqual(['', '', '', '', '', '', '', '']);
+  });
+
+  it('tells the handover undone, not a loser still standing', () => {
+    const undone = {
+      id: 'undone',
+      parcelIds: ['p'],
+      recipientName: 'Nora',
+      delegateName: null,
+      method: 'pin' as const,
+      agentName: null,
+      at: new Date('2026-10-24T09:00:00Z'),
+      cancelledAt: new Date('2026-10-24T09:10:00Z'),
+      cancelReason: 'wrong_person' as const,
+      cancelNote: null,
+      hasSignature: false,
+      hasPhoto: false,
+    };
+    const loser = {
+      ...undone,
+      id: 'loser',
+      at: new Date('2026-10-24T09:05:00Z'),
+      cancelledAt: null,
+      cancelReason: null,
+    };
+
+    const held = handoverByParcel(
+      [{ parcel: { id: 'p', deliveredAt: null } }] as never,
+      [undone, loser],
+    );
+
+    expect(held.get('p')?.id).toBe('undone');
   });
 
   it('writes a winter date in Paris winter time', () => {
