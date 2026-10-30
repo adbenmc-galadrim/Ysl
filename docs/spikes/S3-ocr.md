@@ -114,7 +114,7 @@ sur de vraies photos de la photothèque (pas de colis sous la main).
   gabarit du transporteur et les ancres (`DESTINATAIRE`, `SHIP TO`…). Viser DPD et
   DHL Express en priorité.
 - **YSL-27 (banc d'essai)** : parti du banc Mac du spike, retiré depuis, pour mesurer la chaîne complète, pas l'OCR seul.
-- **À vérifier dans YSL-26** : le vrai pic mémoire (inspecteur web, iPhone branché) et
+- **À vérifier dans YSL-26**, sur `packages/ocr` : le vrai pic mémoire (inspecteur web, iPhone branché) et
   les temps sur de vraies photos d'iPhone (12 à 48 Mpx, HEIC), dont le décodage coûte
   plus que les JPEG du pack ; un test en PWA installée.
 - **D9 (cloud)** : rien dans ces mesures ne justifie de rouvrir l'OCR dans le cloud.

@@ -125,7 +125,7 @@ met en pause pendant le verrouillage (34 s) et reprend seule au retour, colis 25
 le geste : « Forcer la mise à jour » supprime le service worker du spike et son cache
 (1 et 1), recharge en v3, contrôle sans perte, app de nouveau prête hors ligne.
 
-**Éviction.** Non observée : l'étape 10 (plusieurs jours sans ouvrir l'app) reste à faire.
+**Éviction.** Non observée : l'étape 10 (plusieurs jours sans ouvrir l'app) n'a pas été consignée avant le retrait du prototype (YSL-138).
 
 ## Verdict
 
@@ -136,7 +136,7 @@ le geste : « Forcer la mise à jour » supprime le service worker du spike et s
 | Aucune perte, verrouillage      | **go**  | pause de 34 s puis reprise seule, lot complet, contrôle sans perte       |
 | `persist()`                     | **go**  | accordé sans invite en PWA installée                                     |
 | Mise à jour sans réinstallation | **go**  | v2 détectée en moins de 0,4 s au retour et appliquée ; v3 par « Forcer » |
-| Éviction après inactivité       | à voir  | observation de plusieurs jours, rapportée plus tard                      |
+| Éviction après inactivité       | à voir  | non observée avant le retrait du prototype                               |
 
 **Conséquence.** Dexie et OPFS tiennent les scénarios : D3 (Dexie + outbox) est
 confirmée, PowerSync n'a pas à être réexaminé. À reporter dans l'app :
