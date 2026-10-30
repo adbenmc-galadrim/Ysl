@@ -2,7 +2,7 @@
 
 Ticket YSL-7. Cahier des charges v2, §10.1 (avec §5.4 et §5.7) : vérifier sur iPhone, en
 PWA installée, que Dexie et OPFS ne perdent rien et qu'une nouvelle version est vue sans
-réinstaller. Prototype : [`apps/spike-storage`](../../apps/spike-storage).
+réinstaller. Prototype : [`apps/spike-storage`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-storage) (retiré, YSL-138).
 
 | Critère     | Seuil                                                                                    |
 | ----------- | ---------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@ entre les deux écritures.
 ## Appareil
 
 iPhone (D5 : iOS 26), PWA installée sur l'écran d'accueil depuis
-https://ysl.shinseo.fr/spike-storage/.
+`/spike-storage/`.
 
 ## Ce que fait le prototype
 
@@ -61,7 +61,7 @@ Noter à chaque étape le nombre de colis attendu avant, puis le nombre de colis
 et le verdict du contrôle affichés dans l'écran État, et les comparer. Le contrôle
 compare Dexie et OPFS au registre des colis validés tenu hors de Dexie (`localStorage`).
 
-1. Sur l'iPhone, ouvrir https://ysl.shinseo.fr/spike-storage/ dans Safari, puis
+1. Sur l'iPhone, ouvrir `/spike-storage/` dans Safari, puis
    Partager › Sur l'écran d'accueil. Fermer Safari, lancer **Spike S4** depuis l'icône.
 2. État : noter `standalone`, `persisté`, usage / quota et la version. Toucher
    **Demander le stockage persistant**, noter le résultat.

@@ -2,7 +2,7 @@
 
 Ticket YSL-11 (cahier des charges v2, §10.1 S2). Mesurer zxing-wasm sur le corpus
 d'étiquettes (`@repo/corpus`, YSL-5) et relever le contenu réel des codes 2D. Prototype :
-[`apps/spike-barcode`](../../apps/spike-barcode) : un banc d'essai Node sur le corpus et une
+[`apps/spike-barcode`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-barcode) (retiré, YSL-138) : un banc d'essai Node sur le corpus et une
 PWA iPhone qui compare le viseur et la photo native sur les mêmes colis.
 
 | Critère  | Seuil                                                                           |
@@ -239,7 +239,7 @@ test iPhone.
 
 ## PWA iPhone
 
-https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
+`/spike-barcode/`, servie par l'image de `apps/web`.
 
 - **Scan** : « Démarrer la caméra » ouvre le flux plein format (3024×4032 selon S1) ;
   « Lire » prend une image par `grabFrame` et la décode. « Photo native » ouvre l'appareil
@@ -257,7 +257,7 @@ https://ysl.shinseo.fr/spike-barcode/, servie par l'image de `apps/web`.
 
 ## Protocole
 
-1. Ouvrir https://ysl.shinseo.fr/spike-barcode/ dans Safari, l'installer sur l'écran
+1. Ouvrir `/spike-barcode/` dans Safari, l'installer sur l'écran
    d'accueil, l'ouvrir depuis l'icône.
 2. Au service, sur **30 colis au moins** couvrant Colissimo, Chronopost, La Poste, DHL,
    UPS (MaxiCode), FedEx (PDF417), GLS et DPD. Pour chaque colis : choisir le

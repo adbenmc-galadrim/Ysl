@@ -3,7 +3,7 @@
 Ticket YSL-12. Cahier des charges v2, §4.2 et §10.1 ; rapport
 [`04-ocr-ia-embarquee`](../research/04-ocr-ia-embarquee.md), §1 et §5. Vérifier que
 PaddleOCR tient en mémoire et en temps sur l'iPhone, sinon basculer sur Tesseract v7.
-Prototype : [`apps/spike-ocr`](../../apps/spike-ocr).
+Prototype : [`apps/spike-ocr`](https://github.com/adbenmc-galadrim/Ysl/tree/6d15167a09ca8bc9052ab18a218e6b5d52af2a77/apps/spike-ocr) (retiré, YSL-138).
 
 | Critère      | Seuil                                                   |
 | ------------ | ------------------------------------------------------- |
@@ -56,7 +56,7 @@ onglet et en navigation privée ; `crossOriginIsolated`, WebGPU (adaptateur `app
 
 ## Protocole
 
-1. Ouvrir https://ysl.shinseo.fr/spike-ocr/ dans Safari.
+1. Ouvrir `/spike-ocr/` dans Safari.
 2. Pour chaque configuration : recharger la page, lancer « Pack synthétique, 50
    premières », laisser finir ; un plantage s'affiche au rechargement.
 3. Exporter le JSON.
@@ -119,5 +119,4 @@ bench`) pour mesurer la chaîne complète, pas l'OCR seul.
   les temps sur de vraies photos d'iPhone (12 à 48 Mpx, HEIC), dont le décodage coûte
   plus que les JPEG du pack ; un test en PWA installée.
 - **D9 (cloud)** : rien dans ces mesures ne justifie de rouvrir l'OCR dans le cloud.
-- **Retrait** : supprimer `apps/spike-ocr` une fois YSL-26 livré ; procédure dans son
-  README.
+- **Retrait** : `apps/spike-ocr` retiré du dépôt et de l'image par YSL-138.
