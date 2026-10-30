@@ -71,17 +71,16 @@ les réglages d'iPhone recommandés, la marche à suivre en cas de perte ou de v
 ## Déploiement
 
 L'app tourne sur Coolify, sur un serveur Hetzner situé dans l'UE : les données y restent.
-Deux environnements, chacun avec son app, son API et sa base Postgres 17 gérée par Coolify :
+Un seul environnement, avec son app, son API et sa base Postgres 17 gérée par Coolify :
 
 | Environnement | App | API | Branche |
 | --- | --- | --- | --- |
 | Production | https://ysl.shinseo.fr | https://ysl-api.shinseo.fr | `prod` |
-| Staging | https://ysl-staging.shinseo.fr | https://ysl-api-staging.shinseo.fr | `main` |
 
 | Ressource | Build | Variables |
 | --- | --- | --- |
 | API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` ; pour l'envoi d'e-mails : `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` (facultatif) |
-| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` (adresse de l'API de l'environnement) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr` en production, `https://ysl-staging.shinseo.fr` en staging) au build |
+| App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` (adresse de l'API) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr`) au build |
 
 `TRUST_PROXY=true` fait lire l'IP du client dans la dernière entrée de `X-Forwarded-For`,
 celle qu'ajoute le proxy de Coolify : sans elle, le rate limit de connexion verrait tous
@@ -99,13 +98,13 @@ depuis une autre origine doit donc être servie en CORS ou avec un en-tête
 Les deux images se construisent depuis la racine du dépôt.
 L'API applique les migrations Drizzle à chaque démarrage, avant d'ouvrir son port.
 
-Chaque push sur `main` ou sur `prod` lance `.github/workflows/deploy.yml` : lint, types
-et tests, puis déploiement via l'API Coolify, sur staging pour `main` et en production pour
-`prod`. Mettre en production revient à avancer `prod` sur `main`
+Chaque push sur `main` lance les vérifications de `.github/workflows/ci.yml`, sans déployer.
+Chaque push sur `prod` lance `.github/workflows/deploy.yml` : lint, types et tests, puis
+déploiement via l'API Coolify. Mettre en production revient à avancer `prod` sur `main`
 (`git push origin main:prod`). L'auto-deploy de Coolify reste coupé pour ne pas déployer
-deux fois. Le workflow se relance à la main depuis l'onglet Actions, en choisissant
-l'environnement. Les UUID des ressources Coolify sont une variable
-`COOLIFY_RESOURCE_UUIDS` de chaque environnement GitHub (`staging`, `production`).
+deux fois. Le workflow se relance à la main depuis l'onglet Actions. Les UUID des
+ressources Coolify sont une variable `COOLIFY_RESOURCE_UUIDS` de l'environnement GitHub
+`production`.
 
 Pour créer un compte en production, depuis le terminal du conteneur de l'API dans Coolify :
 
