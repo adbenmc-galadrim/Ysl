@@ -48,6 +48,14 @@ export function cardEditable(card: AddressCard): boolean {
   );
 }
 
+/** The card can take the address from this account: a shuttle only reads the directory (§2.1). */
+export function cardWritable(
+  card: AddressCard,
+  writesDirectory: boolean,
+): boolean {
+  return cardEditable(card) && (card.kind === 'contact' || writesDirectory);
+}
+
 export type AddressCheck =
   | { kind: 'ok'; address: string }
   | { kind: 'invalid' }

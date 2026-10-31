@@ -31,6 +31,10 @@ const COPY: LandingCopy = {
     scanText: t('landing.hero.scanText'),
     scanLink: t('landing.hero.scanLink'),
     scanLinkLabel: t('landing.hero.scanLinkLabel', { host }),
+    computer: {
+      text: t('landing.hero.computer.text'),
+      link: t('landing.hero.computer.link'),
+    },
     perks: [
       t('landing.hero.perk1'),
       t('landing.hero.perk2'),

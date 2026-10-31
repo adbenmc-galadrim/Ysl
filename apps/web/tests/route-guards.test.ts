@@ -1,30 +1,15 @@
-import type { Session } from '@repo/auth/client';
 import type { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/auth/client', () => ({ authClient: { getSession: vi.fn() } }));
 
-const { requireAdmin, requireDirectoryKeeper, requireSession } = await import(
-  '#/features/auth/guards',
-);
+const { requireSession } = await import('#/features/auth/guards');
 const { safeRedirect } = await import('#/features/auth/redirect');
 
 const queryClientWith = (session: unknown) =>
   ({
     fetchQuery: () => Promise.resolve(session),
   }) as unknown as QueryClient;
-
-const sessionWithRole = (role: string) =>
-  ({ user: { role } }) as unknown as Session;
-
-function thrownBy(run: () => void): unknown {
-  try {
-    run();
-  } catch (error) {
-    return error;
-  }
-  return undefined;
-}
 
 describe('requireSession', () => {
   it('sends a visitor without session to the sign-in page, remembering where they were going', async () => {
@@ -60,23 +45,6 @@ describe('requireSession', () => {
   });
 });
 
-describe('requireAdmin', () => {
-  it.each(['shuttle', 'department', 'platform_admin', 'admin', 'agent'])(
-    'sends a %s back to the home page',
-    (role) => {
-      expect(
-        thrownBy(() => requireAdmin({ session: sessionWithRole(role) })),
-      ).toMatchObject({ options: { to: '/' } });
-    },
-  );
-
-  it('lets a company admin through', () => {
-    expect(() =>
-      requireAdmin({ session: sessionWithRole('company_admin') }),
-    ).not.toThrow();
-  });
-});
-
 describe('safeRedirect', () => {
   it.each([
     '//evil.example',
@@ -89,23 +57,5 @@ describe('safeRedirect', () => {
 
   it('keeps an internal path', () => {
     expect(safeRedirect('/colis?tri=date')).toBe('/colis?tri=date');
-  });
-});
-
-describe('requireDirectoryKeeper', () => {
-  it.each(['company_admin', 'department'])('lets %s in', (role) => {
-    expect(
-      thrownBy(() =>
-        requireDirectoryKeeper({ session: sessionWithRole(role) }),
-      ),
-    ).toBeUndefined();
-  });
-
-  it.each(['agent', 'admin', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
-    expect(
-      thrownBy(() =>
-        requireDirectoryKeeper({ session: sessionWithRole(role) }),
-      ),
-    ).toMatchObject({ options: { to: '/' } });
   });
 });

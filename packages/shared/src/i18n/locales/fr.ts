@@ -236,8 +236,6 @@ export const fr = {
   'devices.revoke.cancel': 'Annuler',
   'devices.revoke.done': 'Appareil déconnecté.',
   'devices.revoke.failed': 'L’appareil n’a pas été déconnecté. Réessayez.',
-  'auth.signIn.title': 'Service courrier',
-  'auth.signIn.description': 'Connectez-vous avec votre compte personnel.',
   'auth.signIn.email': 'Adresse e-mail',
   'auth.signIn.password': 'Mot de passe',
   'auth.signIn.submit': 'Se connecter',
@@ -267,6 +265,30 @@ export const fr = {
   'auth.role.company_admin': 'Admin entreprise',
   'auth.role.department': 'Département',
   'auth.role.shuttle': 'Navette',
+  'auth.role.unknown': 'À confirmer en ligne',
+  'shell.nav.home': 'Accueil',
+  'shell.nav.dashboard': 'Tableau de bord',
+  'shell.search': 'Rechercher un colis',
+  'home.action.parcels': 'Voir les colis',
+  'home.stat.coming': 'À venir',
+  'home.stat.present': 'Présents',
+  'home.stat.waiting': 'Colis en attente',
+  'home.tour.title': 'Tournée',
+  'home.tour.notice.title': 'La tournée arrive dans une prochaine version',
+  'home.tour.notice.description':
+    'Le scan et le suivi de vos colis restent dans Colis, comme aujourd’hui.',
+  'home.department.title': 'À venir et présents',
+  'home.department.notice.title': 'Les colis à venir arrivent avec la tournée',
+  'home.department.notice.description':
+    'Dès que la navette annoncera ses dépôts, leur détail s’affichera ici. Les colis reçus et notifiés sont déjà dans Colis.',
+  'home.dashboard.title': 'Tableau de bord',
+  'home.dashboard.notice.title':
+    'Le tableau de bord arrive dans une prochaine version',
+  'home.dashboard.notice.description':
+    'Les retards et les chiffres par département s’afficheront ici. Les colis, l’annuaire et les réglages sont déjà ouverts.',
+  'home.platform.title': 'L’espace plateforme arrive',
+  'home.platform.description':
+    'Il réunira les entreprises et leurs chiffres d’usage. Ce compte n’a accès à aucun colis ni à aucun annuaire.',
   'colis.summary': '{{count}} colis, dont {{todo}} à traiter',
   'colis.summary.empty': 'Aucun colis en attente',
   'colis.summary.loading': 'Chargement…',
@@ -282,6 +304,9 @@ export const fr = {
   'colis.empty.title': 'Tout est remis',
   'colis.empty.description':
     'Les colis scannés apparaîtront ici, rangés par ce qu’il reste à faire.',
+  'colis.empty.description.department':
+    'Les colis déposés pour votre département apparaîtront ici.',
+  'colis.handover': 'Remettre',
   'colis.empty.scan': 'Scanner des colis',
   'colis.empty.handover': 'Remettre un colis',
   'colis.pending.title.one': '1 changement en attente',
@@ -638,6 +663,7 @@ export const fr = {
   'edit.recipient.use': 'Utiliser ce nom',
   'edit.recipient.clear': 'Retirer le destinataire',
   'settings.group.steering': 'Pilotage',
+  'settings.group.space': 'Mon espace',
   'settings.export': 'Rapports et export',
   'settings.handovers': 'Journal des remises',
   'export.handover.delegate': '{{name}} (retiré par {{delegate}})',
@@ -1357,10 +1383,6 @@ export const fr = {
   'settings.corners.tiles': 'Pastilles toujours rondes',
   'settings.corners.tilesFooter':
     'Icônes de réglages, avatars et boutons ronds, quel que soit l’arrondi.',
-  'settings.account.platform_admin': 'Admin de l’app',
-  'settings.account.company_admin': 'Admin entreprise',
-  'settings.account.department': 'Département',
-  'settings.account.shuttle': 'Navette',
   'settings.account.title': 'Compte',
   'sync.title': 'Synchronisation',
   'sync.state.synced': 'Tout est à jour',
@@ -1562,6 +1584,9 @@ export const fr = {
   'landing.hero.lineTwo': 'Tout tient dans l’iPhone.',
   'landing.hero.install': 'Installer l’app',
   'landing.hero.howItWorks': 'Comment ça marche',
+  'landing.hero.computer.text':
+    'Compte département ou administrateur ? Sur ordinateur, rien à installer.',
+  'landing.hero.computer.link': 'Se connecter',
   'landing.hero.scanTitle': 'Scannez. Installez. C’est parti.',
   'landing.hero.scanText': 'Avec l’appareil photo de l’iPhone.',
   'landing.hero.scanLink': 'Comment ça marche ↓',

@@ -7,6 +7,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
 import { canCancelHandover } from '#/features/handover/cancel-handover';
@@ -68,6 +69,7 @@ export function RemiseDetailPage({
 }: RemiseDetailPageProps) {
   const now = useMinuteClock();
   const session = useSession();
+  const access = useAccess();
   const entry = useLiveQuery(
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
@@ -89,7 +91,7 @@ export function RemiseDetailPage({
         onBack={onBack}
         onParcel={(parcel) => onParcel(parcel.id)}
         cancelAction={
-          canCancelHandover(entry)
+          canCancelHandover(entry) && access.handsOver
             ? {
                 label: t('handover.cancel.action'),
                 onClick: () => setCancelling(true),

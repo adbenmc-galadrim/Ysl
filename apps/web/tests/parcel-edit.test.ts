@@ -353,6 +353,34 @@ describe('saveParcelEdit', () => {
         ?.id,
     });
   });
+
+  it('teaches nothing for a department, whose learning the server refuses', async () => {
+    const person = personRow({ firstName: 'Léa', lastName: 'Fontaine' });
+    const row = parcelRow({ senderName: 'Metalworks' });
+    await db.directoryPerson.put(person);
+    await db.parcel.put(row);
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      {
+        ...editOf(row),
+        sender: 'Zalando',
+        recipient: { kind: 'person', id: person.id },
+      },
+      { ...options, learns: false },
+    );
+
+    const entities = new Set(
+      (await db.outbox.toArray()).map((op) => op.entity),
+    );
+    expect(entities).toEqual(new Set(['parcel', 'event']));
+    expect(await db.parcel.get(row.id)).toMatchObject({
+      senderName: 'Zalando',
+      senderId: null,
+      personId: person.id,
+    });
+  });
 });
 
 describe('parseWeight', () => {

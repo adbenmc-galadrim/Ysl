@@ -1,5 +1,3 @@
-import type { Session } from '@repo/auth/client';
-import { isCompanyAdmin, toUserRole } from '@repo/contract/auth';
 import type { QueryClient } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import { sessionQueryOptions } from '#/features/auth/api/session';
@@ -28,18 +26,4 @@ export async function redirectIfSignedIn(
   if (!session) return;
   const href = safeRedirect(target);
   throw href ? redirect({ href }) : redirect({ to: '/' });
-}
-
-export function requireAdmin({ session }: { session: Session }) {
-  if (!isCompanyAdmin(toUserRole(session.user.role))) {
-    throw redirect({ to: '/' });
-  }
-}
-
-/** The directory (D15 révisée): the company admin's, or a department's own. */
-export function requireDirectoryKeeper({ session }: { session: Session }) {
-  const role = toUserRole(session.user.role);
-  if (role !== 'department' && !isCompanyAdmin(role)) {
-    throw redirect({ to: '/' });
-  }
 }

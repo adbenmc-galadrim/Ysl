@@ -8,7 +8,6 @@ import {
   OfflinePrepScreen,
   type OfflinePrepScreenProps,
 } from '#screens/demarrage/offline-prep-screen';
-import { SignInScreen } from '#screens/demarrage/sign-in-screen';
 import * as Reglages from '#screens/reglages/reglages-screen.stories';
 import { ReglagesScreen } from '#screens/reglages/reglages-screen';
 import * as Synchronisation from '#screens/reglages/synchronisation-screen.stories';
@@ -55,11 +54,6 @@ export const SynchronisationAJour: Story = {
   render: () => (
     <SynchronisationScreen {...Synchronisation.Synchronisation.args} />
   ),
-};
-
-export const Connexion: Story = {
-  parameters: { reference: '11-sombre/sombre--connexion' },
-  render: () => <SignInScreen {...Demarrage.Connexion.args} />,
 };
 
 export const PreparationHorsLigne: Story = {

@@ -1,12 +1,10 @@
 import { authClient } from '@repo/auth/client';
 import { queryOptions } from '@tanstack/react-query';
 import {
+  readSessionAnswer,
   settleSession,
   type SessionLookup,
 } from '#/features/auth/session-cache';
-
-/** Only a clear "no session" signs the device out; anything else is noise. */
-const SIGNED_OUT_STATUSES = new Set([401, 403]);
 
 /** Loaded on demand: the guards stay free of the database and the service worker. */
 async function wipeLocalData(): Promise<void> {
@@ -16,11 +14,7 @@ async function wipeLocalData(): Promise<void> {
 
 async function lookupSession(): Promise<SessionLookup> {
   try {
-    const { data, error } = await authClient.getSession();
-    if (data) return { kind: 'session', session: data };
-    if (!error || SIGNED_OUT_STATUSES.has(error.status))
-      return { kind: 'none' };
-    return { kind: 'unreachable' };
+    return readSessionAnswer(await authClient.getSession());
   } catch {
     return { kind: 'unreachable' };
   }

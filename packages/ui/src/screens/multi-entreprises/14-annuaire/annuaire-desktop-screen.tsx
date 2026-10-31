@@ -61,6 +61,7 @@ const DEPARTMENT_COLUMNS: DeskTableColumn<AnnuairePerson>[] = [
   {
     key: 'open',
     header: 'Colis en cours',
+    minWidth: 104,
     cell: (e) => <span className="w-24 text-right">{e.open}</span>,
   },
 ];
@@ -78,6 +79,7 @@ const COMPANY_COLUMNS: DeskTableColumn<AnnuairePerson>[] = [
   {
     key: 'open',
     header: 'En cours',
+    minWidth: 64,
     cell: (e) => <span className="w-14 text-right">{e.open}</span>,
   },
 ];
@@ -198,6 +200,7 @@ export function AnnuaireDesktop({
             rows={people}
             rowKey={(e) => e.id}
             selectable={wholeCompany}
+            shrink
             activeRow={activePerson}
             onRowClick={onSelect && ((e) => onSelect(e.id))}
             footer={

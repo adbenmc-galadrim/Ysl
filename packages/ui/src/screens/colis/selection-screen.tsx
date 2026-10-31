@@ -31,6 +31,8 @@ export type SelectionScreenProps = {
   remindLabel?: string;
   onRemind?: () => void;
   onHandover?: () => void;
+  /** This account gives nothing to an employee: no button for it. */
+  noHandover?: boolean;
   /** A « ⋯ » beside « OK »: the actions the bar has no room for. */
   onMore?: () => void;
   /** A toast over the bar, e.g. what an action left out. */
@@ -58,6 +60,7 @@ export function SelectionScreen({
   remindLabel = 'Relancer',
   onRemind,
   onHandover,
+  noHandover = false,
   onMore,
   toast,
   children,
@@ -87,13 +90,15 @@ export function SelectionScreen({
             >
               {remindLabel}
             </Button>
-            <Button
-              disabled={count === 0}
-              onClick={onHandover}
-              className="min-w-0 flex-1"
-            >
-              {`Remettre ${count} colis`}
-            </Button>
+            {!noHandover && (
+              <Button
+                disabled={count === 0}
+                onClick={onHandover}
+                className="min-w-0 flex-1"
+              >
+                {`Remettre ${count} colis`}
+              </Button>
+            )}
           </BottomBar>
         </div>
       }

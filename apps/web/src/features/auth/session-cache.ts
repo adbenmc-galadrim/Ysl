@@ -10,6 +10,33 @@ export type SessionLookup =
   | { kind: 'none' }
   | { kind: 'unreachable' };
 
+/** What `getSession` gave, the way the client returns it. */
+export type SessionAnswer = {
+  data?: unknown;
+  error?: { status: number } | null;
+};
+
+const isSession = (data: unknown): data is Session =>
+  typeof data === 'object' && data !== null && 'user' in data;
+
+/**
+ * Only the auth server saying so ends a session: it answers `null` or 401. A
+ * proxy's error or page during a deployment says nothing of the session, and
+ * answering "none" would empty the device (§9.1). A proxy's 401 cannot be told
+ * from the server's and still counts.
+ */
+export function readSessionAnswer({
+  data,
+  error,
+}: SessionAnswer): SessionLookup {
+  if (isSession(data)) return { kind: 'session', session: data };
+  if (error)
+    return error.status === 401 ? { kind: 'none' } : { kind: 'unreachable' };
+  return data === null || data === undefined
+    ? { kind: 'none' }
+    : { kind: 'unreachable' };
+}
+
 function readCached(store: SessionStore): Session | null {
   try {
     const raw = store.getItem(SESSION_KEY);

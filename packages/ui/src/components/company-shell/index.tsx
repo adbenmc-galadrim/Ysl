@@ -52,6 +52,8 @@ export type CompanyShellProps = {
   onNavigate?: (id: string) => void;
   /** Drawn over the whole window, sidebar included: a dialog and its scrim. */
   overlay?: ReactNode;
+  /** The page brings its own scrolling and gutters: a phone screen, on a computer. */
+  flush?: boolean;
   children: ReactNode;
   className?: string;
 };
@@ -194,6 +196,7 @@ export function CompanyShell({
   search,
   onNavigate,
   overlay,
+  flush = false,
   children,
   className,
 }: CompanyShellProps) {
@@ -254,9 +257,16 @@ export function CompanyShell({
           searchPlaceholder={searchPlaceholder}
           search={search}
         />
-        <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-6 pb-8">
-          {children}
-        </main>
+        {flush ? (
+          // A phone screen asks for the whole viewport: here it has what the bar leaves.
+          <div className="relative flex min-h-0 flex-1 flex-col [&_.min-h-dvh]:min-h-0">
+            {children}
+          </div>
+        ) : (
+          <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-6 pb-8">
+            {children}
+          </main>
+        )}
       </div>
       {overlay}
     </div>

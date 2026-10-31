@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CompanyLogo, DeskAuthPage } from '#components/company-parts';
@@ -7,36 +9,43 @@ import { Screen } from '#components/screen';
 import { SAMPLE_PASSWORD } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 
-/** Sign-in on the computer, before any company is known. */
-export function ConnexionDesktop() {
+/** Sign-in on the computer, before any company is known. `form` is the app's, the mockup's sample otherwise. */
+export function ConnexionDesktop({ form }: { form?: ReactNode }) {
   return (
     <DeskAuthPage
       logo="C"
       logoClass="bg-fill-2 text-ink"
       brand="Courrier"
       footer="Courrier · gestion du courrier d’entreprise"
+      fluid={form !== undefined}
     >
       <h1 className="text-26 font-bold tracking-[-0.3px]">Se connecter</h1>
       <p className="mt-1.5 text-14 text-muted">
         Avec l’e-mail de votre entreprise
       </p>
-      <DeskField
-        label="E-mail professionnel"
-        type="email"
-        value="julie.perrin@atelier-lumen.fr"
-        className="mt-[34px]"
-      />
-      <DeskField
-        label="Mot de passe"
-        value={SAMPLE_PASSWORD}
-        focused
-        className="mt-4"
-        type="password"
-      />
-      <p className="relative -top-px mt-5 text-13 font-medium">Mot de passe oublié ?</p>
-      <Button className="mt-6 h-10 w-full rounded-[6px] text-14">
-        <span className="relative -top-0.5">Se connecter</span>
-      </Button>
+      {form ?? (
+        <>
+          <DeskField
+            label="E-mail professionnel"
+            type="email"
+            value="julie.perrin@atelier-lumen.fr"
+            className="mt-[34px]"
+          />
+          <DeskField
+            label="Mot de passe"
+            value={SAMPLE_PASSWORD}
+            focused
+            className="mt-4"
+            type="password"
+          />
+          <p className="relative -top-px mt-5 text-13 font-medium">
+            Mot de passe oublié ?
+          </p>
+          <Button className="mt-6 h-10 w-full rounded-[6px] text-14">
+            <span className="relative -top-0.5">Se connecter</span>
+          </Button>
+        </>
+      )}
       <div className="mt-8 h-px bg-separator" />
       <p className="mt-[15px] text-13 leading-[1.2] text-muted">
         Vous avez reçu une invitation ? Ouvrez le lien de l’e-mail pour créer
@@ -46,8 +55,14 @@ export function ConnexionDesktop() {
   );
 }
 
-/** Sign-in on the phone, the same for every role. */
-export function ConnexionMobile() {
+/** Sign-in on the phone, the same for every role. `form` and `submit` are the app's, the mockup's sample otherwise. */
+export function ConnexionMobile({
+  form,
+  submit,
+}: {
+  form?: ReactNode;
+  submit?: ReactNode;
+}) {
   return (
     <Screen
       className="pt-[120px]"
@@ -56,9 +71,11 @@ export function ConnexionMobile() {
           <p className="relative -top-px text-center text-13 text-muted">
             Pas de compte ? Votre administrateur vous invite.
           </p>
-          <Button block className="mt-12">
-            Se connecter
-          </Button>
+          {submit ?? (
+            <Button block className="mt-12">
+              Se connecter
+            </Button>
+          )}
         </BottomBar>
       }
     >
@@ -70,23 +87,27 @@ export function ConnexionMobile() {
       <p className="mx-auto mt-1.5 w-[300px] text-center text-15 text-muted">
         Connectez-vous avec le compte reçu par e-mail.
       </p>
-      <PhoneField
-        label="E-mail"
-        type="email"
-        value="karim.daoud@atelier-lumen.fr"
-        className="mt-5"
-        boxClassName="bg-fill"
-      />
-      <PhoneField
-        label="Mot de passe"
-        value={SAMPLE_PASSWORD}
-        className="mt-4"
-        type="password"
-        boxClassName="bg-fill"
-      />
-      <p className="mt-6 text-center text-15 font-semibold">
-        Mot de passe oublié ?
-      </p>
+      {form ?? (
+        <>
+          <PhoneField
+            label="E-mail"
+            type="email"
+            value="karim.daoud@atelier-lumen.fr"
+            className="mt-5"
+            boxClassName="bg-fill"
+          />
+          <PhoneField
+            label="Mot de passe"
+            value={SAMPLE_PASSWORD}
+            className="mt-4"
+            type="password"
+            boxClassName="bg-fill"
+          />
+          <p className="mt-6 text-center text-15 font-semibold">
+            Mot de passe oublié ?
+          </p>
+        </>
+      )}
     </Screen>
   );
 }

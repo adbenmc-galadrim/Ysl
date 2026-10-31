@@ -121,8 +121,11 @@ export function DeskAuthPage({
   brand,
   product,
   footer,
+  fluid = false,
   children,
 }: {
+  /** Centres the form in any window; the mockup places it for 1440 × 900. */
+  fluid?: boolean;
   logo: string;
   logoClass?: string;
   brand: string;
@@ -140,10 +143,22 @@ export function DeskAuthPage({
         <span className="relative -top-0.5 ml-2.5 text-14 font-semibold">{brand}</span>
         {product && <span className="relative -top-0.5 ml-1.5 text-14 text-muted">{product}</span>}
       </header>
-      <main className="absolute top-[216px] left-[520px] w-[400px]">
+      <main
+        className={cn(
+          'absolute w-[400px]',
+          fluid
+            ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+            : 'top-[216px] left-[520px]',
+        )}
+      >
         {children}
       </main>
-      <footer className="absolute inset-x-0 top-[852px] border-t border-separator pt-[15px] text-center text-12 text-muted">
+      <footer
+        className={cn(
+          'absolute inset-x-0 border-t border-separator pt-[15px] pb-[15px] text-center text-12 text-muted',
+          fluid ? 'bottom-0' : 'top-[852px]',
+        )}
+      >
         {footer}
       </footer>
     </div>

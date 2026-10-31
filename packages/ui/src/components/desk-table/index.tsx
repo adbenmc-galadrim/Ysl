@@ -9,6 +9,8 @@ export type DeskTableColumn<T> = {
   header: ReactNode;
   /** In px, as measured on the mockup. Left out, the column takes what remains. */
   width?: number;
+  /** What a column without `width` keeps when a narrower table has nothing left. */
+  minWidth?: number;
   cell: (row: T) => ReactNode;
 };
 
@@ -29,6 +31,11 @@ export type DeskTableProps<T> = {
   onRowClick?: (row: T) => void;
   /** Under the rows: `DeskTablePagination`, usually. */
   footer?: ReactNode;
+  /**
+   * The columns give way under their measured px instead of being cut at the
+   * edge, when a record opened beside the table leaves it less than the mockup.
+   */
+  shrink?: boolean;
   className?: string;
 };
 
@@ -65,13 +72,17 @@ export function DeskTable<T>({
   activeRow,
   onRowClick,
   footer,
+  shrink = false,
   className,
 }: DeskTableProps<T>) {
   const template = [
     ...(selectable ? ['28px'] : []),
-    ...columns.map((column) =>
-      column.width === undefined ? 'minmax(0, 1fr)' : `${column.width}px`,
-    ),
+    ...columns.map((column) => {
+      if (column.width === undefined) {
+        return `minmax(${column.minWidth ?? 0}px, 1fr)`;
+      }
+      return shrink ? `minmax(0, ${column.width}px)` : `${column.width}px`;
+    }),
   ].join(' ');
   return (
     <div

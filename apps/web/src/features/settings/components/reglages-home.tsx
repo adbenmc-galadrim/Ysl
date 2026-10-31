@@ -10,6 +10,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
+import { hasDesk } from '#/features/auth/route-access';
+import { useCompanyName } from '#/features/directory/components/use-company-name';
+import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
+import { accountLine, roleSpace } from '#/features/shell/role-nav';
+import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { useCornerSetting } from '#/features/settings/corners';
 import { setScanSound, useScanSound } from '#/features/settings/sound';
@@ -67,6 +72,9 @@ export function ReglagesHome() {
   const navigate = useNavigate();
   const session = useSession();
   const role = toUserRole(session.user.role);
+  const company = useCompanyName();
+  const department = useOwnDepartmentName();
+  const desk = useMediaQuery(DESK_WIDTH);
   const server = useServerState();
   const storage = useStorageStatus();
   const sync = useSync();
@@ -85,6 +93,24 @@ export function ReglagesHome() {
   const cornersTitle = CORNER_RADII.find(
     (preset) => preset.value === corners.radius,
   )?.title;
+
+  // On a computer, the sidebar already leads there.
+  const space = desk && hasDesk(role) ? null : roleSpace(role, t);
+  const own: SettingsGroup[] = space
+    ? [
+        {
+          header: t('settings.group.space'),
+          items: [
+            {
+              icon: space.icon,
+              color: 'blue',
+              label: space.label,
+              onPress: () => void navigate({ to: space.to }),
+            },
+          ],
+        },
+      ]
+    : [];
 
   const steering: SettingsGroup = {
     header: t('settings.group.steering'),
@@ -277,16 +303,17 @@ export function ReglagesHome() {
       account={{
         name: session.user.name,
         initials: initialsOf(session.user.name),
-        description: role ? t(`settings.account.${role}`) : '',
+        description: accountLine(role, { company, department }, t),
         onPress: () => void navigate({ to: '/reglages/compte' }),
       }}
-      groups={
-        isCompanyAdmin(role)
+      groups={[
+        ...own,
+        ...(isCompanyAdmin(role)
           ? [steering, data, mail, service, app]
           : role === 'department'
             ? [steering, data, mail, ownDirectory, app]
-            : [steering, data, mail, app]
-      }
+            : [steering, data, mail, app]),
+      ]}
       onBack={() => void navigate({ to: '/' })}
     />
   );
