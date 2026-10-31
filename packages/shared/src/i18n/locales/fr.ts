@@ -160,6 +160,53 @@ export const fr = {
   'sender.error.platform':
     'Ce domaine est celui de la plateforme : indiquez le domaine de votre entreprise.',
   'sender.error.invalid': 'Ce domaine n’est pas accepté. Vérifiez l’adresse.',
+  'sender.error.saveFailed': 'Enregistrement impossible. Réessayez.',
+  'sender.error.checkFailed': 'Vérification impossible. Réessayez.',
+  'sender.title': 'Expéditeur des e-mails',
+  'sender.loading': 'Chargement…',
+  'sender.offline': 'Disponible avec une connexion.',
+  'sender.failed': 'Impossible de lire l’expéditeur.',
+  'sender.name': 'Nom affiché',
+  'sender.email': 'Adresse',
+  'sender.email.help':
+    'Avis de retrait, relances et invitations partent du serveur avec cette adresse.',
+  'sender.save': 'Enregistrer',
+  'sender.saved': 'Expéditeur enregistré',
+  'sender.check': 'Vérifier maintenant',
+  'sender.pending.title': 'Domaine {{domain}} pas encore vérifié',
+  'sender.pending.platform':
+    'En attendant, les e-mails partent de {{address}} au nom de « {{name}} ».',
+  'sender.pending.noPlatform':
+    'En attendant, les e-mails ne partent pas de cette adresse.',
+  'sender.verified.title': '{{domain}} vérifié le {{date}}',
+  'sender.verified.description': 'Les e-mails partent de {{address}}.',
+  'sender.unconfigured.title': 'Envoi par le serveur pas encore activé',
+  'sender.unconfigured.description':
+    'L’expéditeur est gardé. La vérification du domaine ouvrira à l’activation ; d’ici là, la messagerie du téléphone reste utilisable.',
+  'sender.unavailable.title': 'Service d’envoi injoignable',
+  'sender.unavailable.description':
+    'Le domaine n’a pas pu être vérifié. Réessayez plus tard.',
+  'sender.taken.title': 'Domaine déjà utilisé',
+  'sender.invalid.title': 'Domaine refusé',
+  'sender.records.header': 'À ajouter chez votre hébergeur DNS',
+  'sender.records.headerVerified': 'Enregistrements DNS',
+  'sender.records.footer':
+    'À transmettre à votre DSI. La propagation peut prendre jusqu’à 48 h.',
+  'sender.records.spf':
+    'Un domaine n’a qu’un seul enregistrement SPF : s’il en existe un, il se complète au lieu d’être doublé.',
+  'sender.records.pending':
+    'Les enregistrements s’afficheront une fois le domaine déclaré.',
+  'sender.record.code': 'Code de vérification',
+  'sender.record.spf': 'SPF',
+  'sender.record.dkim': 'DKIM',
+  'sender.record.dmarc': 'DMARC',
+  'sender.record.line': '{{label}} · {{type}} sur {{host}}',
+  'sender.record.configured': 'Trouvé',
+  'sender.record.missing': 'À ajouter',
+  'sender.copy': 'Copier {{label}}',
+  'sender.copyAll': 'Copier les enregistrements',
+  'sender.copied': 'Copié',
+  'sender.copyFailed': 'Copie impossible : sélectionnez le texte à la main.',
   'devices.title': 'Appareils connectés',
   'devices.header': 'Sessions ouvertes',
   'devices.footer':
@@ -1004,6 +1051,7 @@ export const fr = {
   'mails.last.opened': 'Messagerie ouverte, sans réponse',
   'mails.last.prepared': 'Préparé, sans réponse',
   'settings.sentMails': 'E-mails envoyés',
+  'settings.sender': 'Expéditeur des e-mails',
   'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',
