@@ -4,6 +4,16 @@ export const fr = {
   'error.forbidden': 'Vous n’avez pas accès à cette fonction.',
   'sync.error.noDepartment':
     'Ce compte n’est rattaché à aucun département. Demandez à l’administrateur de votre entreprise de le rattacher.',
+  'company.suspended.refused': 'Votre entreprise est suspendue.',
+  'company.suspended.title': 'Votre entreprise est suspendue',
+  'company.suspended.description':
+    'La connexion et la synchronisation sont arrêtées. Vos colis, photos et preuves restent sur ce téléphone : rien n’est effacé. Tout repartira quand l’entreprise sera réactivée.',
+  'company.suspended.pending': 'Modifications en attente sur ce téléphone : {{count}}',
+  'company.suspended.retry': 'Vérifier à nouveau',
+  'platform.error.notFound': 'Cette entreprise n’existe plus.',
+  'platform.error.nameTaken': 'Une entreprise porte déjà ce nom.',
+  'platform.error.confirmName':
+    'Le nom saisi ne correspond pas : rien n’a été supprimé.',
   'sync.error.noOrganization':
     'Ce compte n’est rattaché à aucun service courrier.',
   'sync.op.badRequest': 'Données invalides, à corriger sur l’appareil.',
@@ -325,6 +335,8 @@ export const fr = {
   'auth.signIn.forgotNotice':
     'Demandez à votre administrateur de réinitialiser votre mot de passe.',
   'auth.signIn.error.invalid': 'E-mail ou mot de passe incorrect.',
+  'auth.signIn.error.suspended':
+    'Votre entreprise est suspendue. Contactez votre administrateur.',
   'auth.signIn.error.rateLimited':
     'Trop de tentatives, réessayez dans une minute.',
   'auth.signIn.error.network':

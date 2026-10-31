@@ -180,6 +180,21 @@ export async function attachToOrganization(
   await db.insert(organizationMember).values({ userId, organizationId });
 }
 
+export async function isInSuspendedCompany(
+  db: AnyDb,
+  userId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ suspendedAt: organization.suspendedAt })
+    .from(organizationMember)
+    .innerJoin(
+      organization,
+      eq(organization.id, organizationMember.organizationId),
+    )
+    .where(eq(organizationMember.userId, userId));
+  return Boolean(row?.suspendedAt);
+}
+
 export async function findUserByEmail(
   db: AnyDb,
   email: string,
