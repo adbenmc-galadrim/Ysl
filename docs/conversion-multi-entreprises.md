@@ -24,31 +24,50 @@ Le statut d'un colis ne change pas. Les sessions restent valables : le rôle est
 chaque requête. Les anciennes colonnes texte restent jusqu'à une migration ultérieure.
 Sur une base vide, ou jouée deux fois, elle ne change rien.
 
+État de la prod relevé le 31/10/2026 : 3 comptes, tous `admin`, aucun `agent`.
+
 `0022_departement_archive.sql`, jouée juste avant, refuse qu'un colis ou une personne
 rejoigne un département archivé.
 
 ## Après le déploiement
 
 1. `/ready` répond 200, le SHA déployé est le bon, une synchro d'un compte converti passe.
-2. **Créer un compte navette.** Un `company_admin` ne remet pas (§2.1) et l'écran d'équipe
-   n'existe pas encore (YSL-83) : tant qu'aucun compte `shuttle` n'existe, personne ne peut
-   remettre un colis. Depuis le terminal du conteneur de l'API :
+2. **Remettre une navette en place.** Un `company_admin` ne remet pas (§2.1) et l'écran
+   d'équipe n'existe pas encore (YSL-83) : tant qu'aucun compte `shuttle` n'existe, personne
+   ne peut remettre un colis. La route `/remise` reste ouverte à l'admin jusqu'à YSL-119 : sa
+   remise, faite hors ligne ou encore en file au déploiement, part en « Corriger » (403).
+
+   **Ne pas se déconnecter de l'iPhone qui reçoit les colis** : la déconnexion efface sa base
+   locale et ses fichiers, seule copie des photos d'étiquettes et des preuves de remise (D8).
+   Passer plutôt son compte en navette, sans changer de session, puis créer l'admin à part :
+
+   ```sql
+   UPDATE "user" SET role = 'shuttle' WHERE email = '<e-mail de l''opérateur>';
+   ```
+
+   Depuis le terminal du conteneur de l'API, pour tout nouveau compte (`--role company_admin`
+   ou `--role shuttle`) :
 
    ```bash
    cd /app/packages/auth
    AUTH_USER_PASSWORD='…' ./node_modules/.bin/tsx src/scripts/create-user.ts --email <e-mail> --name "<nom>" --role shuttle
    ```
 
-3. Un appareil déjà connecté garde son ancien rôle en cache jusqu'à sa prochaine lecture
-   de session en ligne.
+   Un ancien `agent` devenu `shuttle` n'écrit plus l'annuaire (D15 révisée). Une navette n'a pas
+   les réglages d'administration.
+
+3. Un appareil déjà connecté garde son ancien rôle en cache jusqu'à sa prochaine lecture de
+   session en ligne : hors ligne, un `admin` en cache se lit comme un rôle inconnu, sans
+   réglages d'administration et sans libellé de rôle.
 
 ## Retour arrière
 
-**Avant le merge** : sauvegarde de la base (`pg_dump -Fc`), hors du dépôt.
+**Avant le push sur `prod`**, qui déploie : sauvegarde de la base (`pg_dump -Fc`), hors du dépôt.
 
 ### Aucune écriture à garder
 
-Redéployer l'image précédente et restaurer la sauvegarde.
+Dans cet ordre : arrêter l'API, `pg_restore --clean --if-exists` de la sauvegarde, redéployer
+le commit d'avant le merge (`git push --force-with-lease origin <sha>:prod`), contrôler `/ready`.
 
 ### Des écritures à garder depuis le déploiement
 
