@@ -6,6 +6,7 @@ import {
   type PullOutput,
   type PullPage,
 } from '@repo/contract/sync';
+import { TOUR_STATUSES } from '@repo/contract/parcel-status';
 import {
   department,
   emailTemplate,
@@ -97,6 +98,23 @@ function withoutServerColumns(row: Row): PullChange['row'] {
 }
 
 /**
+ * A PWA of before has no screen for the statuses of a tour and would take a
+ * stale copy for true: the parcel leaves it as a removed row would, and comes
+ * back with its next write. Its copy is refused by `parcel_status_guard`.
+ */
+function forReader(
+  name: (typeof SYNCED_ENTITIES)[number],
+  row: Row,
+  input: PullInput,
+  now: Date,
+): Row {
+  if (name !== 'parcel' || input.tourStatuses || row.deletedAt) return row;
+  return (TOUR_STATUSES as readonly unknown[]).includes(row.status)
+    ? { ...row, deletedAt: now }
+    : row;
+}
+
+/**
  * Where a device must have read past to keep its copy: a purge's horizon, or
  * the last time a row left the reader's department.
  */
@@ -181,7 +199,10 @@ export async function pull(
     );
     const kept = page.slice(0, room);
     rows.push(
-      ...kept.map((row) => ({ entity: name, row: withoutServerColumns(row) })),
+      ...kept.map((row) => ({
+        entity: name,
+        row: withoutServerColumns(forReader(name, row, input, now)),
+      })),
     );
     if (page.length > room) {
       const last = kept[kept.length - 1];

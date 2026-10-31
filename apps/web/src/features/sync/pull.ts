@@ -155,7 +155,13 @@ async function readFrom(
   limit: number,
   progress: (rows: number) => void,
 ): Promise<Read> {
-  let output = await client({ cursor, page: null, limit, departments: true });
+  let output = await client({
+    cursor,
+    page: null,
+    limit,
+    departments: true,
+    tourStatuses: true,
+  });
   await db.syncState.put({
     key: SYNC_STATE_KEYS.serverMail,
     value: output.serverMail === true,
@@ -178,6 +184,7 @@ async function readFrom(
       page: output.next,
       limit,
       departments: true,
+      tourStatuses: true,
     });
   }
   return { generation, reset, rows, bound: output.cursor, seen };
