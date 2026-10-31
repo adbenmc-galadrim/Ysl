@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import type { LocalDepartment } from '#/features/db/schema';
+import { decodeCsv } from '#/features/directory/decode-csv';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { initialsOf } from '#/features/settings/initials';
 import { syncNow } from '#/features/sync/sync';
@@ -93,9 +94,10 @@ export function DirectoryImport({
       return;
     }
     void file
-      .text()
-      .then((text) => {
+      .arrayBuffer()
+      .then((bytes) => {
         if (!current) return;
+        const text = decodeCsv(bytes);
         if (!text.trim()) setMessage(t('directory.import.empty'));
         else setCsv(text);
       })
@@ -128,6 +130,7 @@ export function DirectoryImport({
   const unknown = data?.unknownDepartments[0];
   const toImport = (data?.toAdd ?? 0) + (data?.toUpdate ?? 0);
   const ignored = data?.errors.length ?? 0;
+  const toMove = data?.toMove ?? 0;
   const missing = data?.missing.length ? data.missing : null;
 
   const choose = (departmentId: string) => {
@@ -163,7 +166,9 @@ export function DirectoryImport({
     setMessage(undefined);
     try {
       await trpcClient.directory.applyImport.mutate({ csv, choices });
+      // A pass already running may have pulled before the import: one more after it.
       await syncNow({ force: true });
+      void syncNow({ force: true });
       onClose();
     } catch {
       setMessage(t('directory.import.failed'));
@@ -241,7 +246,7 @@ export function DirectoryImport({
           creating,
         }
       }
-      summary={t('directory.import.summary', {
+      summary={`${t('directory.import.summary', {
         people:
           toImport === 1
             ? t('directory.import.summary.one')
@@ -250,7 +255,7 @@ export function DirectoryImport({
           ignored === 1
             ? t('directory.import.ignored.one')
             : t('directory.import.ignored.many', { count: ignored }),
-      })}
+      })}${toMove ? ` · ${t(toMove === 1 ? 'directory.import.moves.one' : 'directory.import.moves.many', { count: toMove })}` : ''}`}
       submitLabel={
         toImport === 1
           ? t('directory.import.submit.one')
