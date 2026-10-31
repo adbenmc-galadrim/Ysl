@@ -19,7 +19,7 @@ vi.mock('@repo/auth', () => ({
 }));
 
 const { appRouter } = await import('#root');
-const { callerFor, sessionFor } = await import('./helpers/caller');
+const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
 const { AGENT_ID, ORGANIZATION_ID, parcelRow } =
   await import('./helpers/pglite');
 
@@ -49,15 +49,6 @@ function procedureAt(caller: unknown, path: string): Callable {
       (node, key) => (node as Record<string, unknown>)[key],
       caller,
     ) as Callable;
-}
-
-async function codeOf(run: Promise<unknown>): Promise<string | undefined> {
-  try {
-    await run;
-    return undefined;
-  } catch (error) {
-    return (error as { code?: string }).code;
-  }
 }
 
 beforeAll(async () => {

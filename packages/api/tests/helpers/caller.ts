@@ -33,3 +33,14 @@ export function callerFor(session: Session | null) {
     createTRPCContext({ headers: HEADERS, session }),
   );
 }
+
+export async function codeOf(
+  run: Promise<unknown>,
+): Promise<string | undefined> {
+  try {
+    await run;
+    return undefined;
+  } catch (error) {
+    return (error as { code?: string }).code;
+  }
+}
