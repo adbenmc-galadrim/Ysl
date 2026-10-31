@@ -47,9 +47,10 @@ describe('0011_reponses_salaries', () => {
     await migrate(db, { migrationsFolder: before });
     const organizationId = newId();
     const parcelId = newId();
-    await db
-      .insert(schema.organization)
-      .values({ id: organizationId, name: 'Service courrier' });
+    await client.query('insert into organization (id, name) values ($1, $2)', [
+      organizationId,
+      'Service courrier',
+    ]);
     await db
       .insert(schema.user)
       .values({ id: 'agent-1', name: 'Agent', email: 'agent@example.test' });

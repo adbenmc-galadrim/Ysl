@@ -45,9 +45,10 @@ describe('0010_service_contact', () => {
     await migrate(db, { migrationsFolder: before });
     const organizationId = newId();
     const contactId = newId();
-    await db
-      .insert(schema.organization)
-      .values({ id: organizationId, name: 'Service courrier' });
+    await client.query('insert into organization (id, name) values ($1, $2)', [
+      organizationId,
+      'Service courrier',
+    ]);
     await client.query(
       `insert into contact (id, organization_id, name, name_norm, email, usage_count) values ($1, $2, 'Marc Petit', 'marc petit', 'marc@interim.fr', 3)`,
       [contactId, organizationId],

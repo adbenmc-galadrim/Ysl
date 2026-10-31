@@ -1,9 +1,46 @@
+import {
+  OPERATING_PROFILE_KEY,
+  PROFILE_OF_MODEL,
+  type ProfileModel,
+} from '@repo/contract/operating-profile';
 import type { AnyDb } from '@repo/db';
-import { organization, organizationMember, user } from '@repo/db/schema';
+import {
+  department,
+  organization,
+  organizationMember,
+  setting,
+  user,
+} from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
 
 export const DEFAULT_ORGANIZATION_NAME = 'Service courrier';
+
+/** D22: every company has it from its first day; the department nothing else claims. */
+export const MAIL_DEPARTMENT_NAME = 'Service courrier';
+
+/** What a company needs to work: a saved profile, or its shuttle sees a handover the server refuses. */
+export async function createCompany(
+  db: AnyDb,
+  { name, profileModel }: { name: string; profileModel: ProfileModel },
+): Promise<string> {
+  const id = newId();
+  await db.transaction(async (tx) => {
+    await tx.insert(organization).values({ id, name, profileModel });
+    await tx.insert(department).values({
+      id: newId(),
+      organizationId: id,
+      name: MAIL_DEPARTMENT_NAME,
+    });
+    await tx.insert(setting).values({
+      id: newId(),
+      organizationId: id,
+      key: OPERATING_PROFILE_KEY,
+      value: PROFILE_OF_MODEL[profileModel],
+    });
+  });
+  return id;
+}
 
 export class OrganizationChoiceError extends Error {
   constructor(names: string[]) {
@@ -82,8 +119,11 @@ export async function ensureOrganization(
   if (choice.kind === 'existing') {
     return { id: choice.id, name: choice.name, created: false };
   }
-  const id = newId();
-  await db.insert(organization).values({ id, name: choice.name });
+  // A script's company is a small site until someone says otherwise, as the conversion does.
+  const id = await createCompany(db, {
+    name: choice.name,
+    profileModel: 'small_site',
+  });
   return { id, name: choice.name, created: true };
 }
 
