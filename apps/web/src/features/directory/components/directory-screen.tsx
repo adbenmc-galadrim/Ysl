@@ -404,14 +404,14 @@ function DirectoryDesktop({
       <AnnuaireDesktop
         company={{
           name: company,
-          subtitle: t('auth.role.admin'),
+          subtitle: t('auth.role.company_admin'),
           initials: initialsOf(company),
         }}
         nav={DESK_NAV}
         account={{
           initials: initialsOf(session.user.name),
           name: session.user.name,
-          role: t('auth.role.admin'),
+          role: t('auth.role.company_admin'),
         }}
         companyCrumb={company}
         onNavigate={(id) => {

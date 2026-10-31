@@ -22,7 +22,7 @@ const sample = readFileSync(
   'utf8',
 );
 
-function sessionOf(userId: string, role: 'admin' | 'agent'): Session {
+function sessionOf(userId: string, role: 'company_admin' | 'shuttle'): Session {
   const session = sessionFor(role);
   return {
     session: { ...session.session, userId },
@@ -30,7 +30,7 @@ function sessionOf(userId: string, role: 'admin' | 'agent'): Session {
   };
 }
 
-const admin = () => callerFor(sessionOf(AGENT_ID, 'admin'));
+const admin = () => callerFor(sessionOf(AGENT_ID, 'company_admin'));
 
 const HELENE_ID = newId();
 const SCANNED_ID = newId();
@@ -66,12 +66,14 @@ const parcelsOf = (organizationId: string) =>
     .where(eq(schema.parcel.organizationId, organizationId));
 
 describe('imports.v1Csv', () => {
-  it('turns away an agent and an admin of no mailroom', async () => {
+  it('turns away a shuttle and an admin of no mailroom', async () => {
     await expect(
-      callerFor(sessionOf(AGENT_ID, 'agent')).imports.v1Csv({ csv: sample }),
+      callerFor(sessionOf(AGENT_ID, 'shuttle')).imports.v1Csv({ csv: sample }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
     await expect(
-      callerFor(sessionOf('nobody', 'admin')).imports.v1Csv({ csv: sample }),
+      callerFor(sessionOf('nobody', 'company_admin')).imports.v1Csv({
+        csv: sample,
+      }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
   });
 
@@ -289,7 +291,7 @@ describe('imports.v1Csv', () => {
     expect(await parcelsOf(OTHER_ORGANIZATION_ID)).toEqual([]);
 
     const report = await callerFor(
-      sessionOf(STRANGER_ID, 'admin'),
+      sessionOf(STRANGER_ID, 'company_admin'),
     ).imports.v1Csv({ csv: sample });
 
     expect(report).toMatchObject({ imported: 8, contactsCreated: 4 });

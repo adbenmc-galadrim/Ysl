@@ -1,4 +1,3 @@
-import { DEFAULT_USER_ROLE } from '@repo/contract/auth';
 import { db } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { betterAuth } from 'better-auth';
@@ -42,8 +41,10 @@ export const auth = betterAuth({
     admin({
       ac,
       roles,
-      defaultRole: DEFAULT_USER_ROLE,
-      adminRoles: ['admin'],
+      // Accounts always name their role; a department attached nowhere reaches nothing.
+      defaultRole: 'department',
+      // The plugin wants one; `platform_admin` holds no admin statement (`roles.ts`), and the HTTP API is closed.
+      adminRoles: ['platform_admin'],
     }),
   ],
 });

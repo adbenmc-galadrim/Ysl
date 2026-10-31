@@ -5,7 +5,6 @@
   "type": "module",
   "exports": {
     "./account": "./src/account.ts",
-    "./agents": "./src/agents.ts",
     "./auth": "./src/auth.ts",
     "./codes": "./src/codes/index.ts",
     "./departments": "./src/departments.ts",

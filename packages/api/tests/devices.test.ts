@@ -38,7 +38,7 @@ function sessionRow(id: string, userId: string, offsetDays: number) {
   };
 }
 
-function adminOn(sessionId: string, role = 'admin'): Session {
+function adminOn(sessionId: string, role = 'company_admin'): Session {
   const base = sessionFor(role);
   return {
     session: { ...base.session, id: sessionId, userId: AGENT_ID },
@@ -60,13 +60,15 @@ beforeEach(async () => {
 
 describe('devices router', () => {
   it('keeps the list and the revocation to admins', async () => {
-    const agent = callerFor(adminOn('mine', 'agent'));
-    await expect(agent.devices.list()).rejects.toMatchObject({
+    const shuttle = callerFor(adminOn('mine', 'shuttle'));
+    await expect(shuttle.devices.list()).rejects.toMatchObject({
       code: 'FORBIDDEN',
     });
-    await expect(agent.devices.revoke({ id: 'phone' })).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
+    await expect(shuttle.devices.revoke({ id: 'phone' })).rejects.toMatchObject(
+      {
+        code: 'FORBIDDEN',
+      },
+    );
   });
 
   it('lists the live sessions of the mailroom only, the current one marked', async () => {

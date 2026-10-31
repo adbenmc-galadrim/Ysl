@@ -196,14 +196,14 @@ export function DirectoryImport({
     <ImportCsvDesktop
       company={{
         name,
-        subtitle: t('auth.role.admin'),
+        subtitle: t('auth.role.company_admin'),
         initials: initialsOf(name),
       }}
       nav={NAV}
       account={{
         initials: initialsOf(session.user.name),
         name: session.user.name,
-        role: t('auth.role.admin'),
+        role: t('auth.role.company_admin'),
       }}
       onNavigate={onClose}
       companyCrumb={name}

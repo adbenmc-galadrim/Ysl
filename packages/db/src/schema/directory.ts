@@ -25,7 +25,7 @@ export const directoryPerson = pgTable(
     nameNorm: text('name_norm').notNull(),
     email: text('email').notNull(),
     department: text('department'),
-    /** The department that holds this person; the text above goes with the conversion (YSL-118). */
+    /** The department that holds this person; the text above stays until a later migration, for the way back. */
     departmentId: uuid('department_id'),
     site: text('site'),
     source: text('source', { enum: DIRECTORY_SOURCES })

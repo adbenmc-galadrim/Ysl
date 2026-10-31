@@ -31,7 +31,7 @@ import {
 const READER = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
-  role: 'agent',
+  role: 'shuttle',
   departmentId: null,
 } as const;
 

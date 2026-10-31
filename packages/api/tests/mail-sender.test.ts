@@ -223,7 +223,7 @@ describe('who may claim a domain', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it.each(['agent', 'shuttle', 'department', 'platform_admin'])(
+  it.each(['shuttle', 'department', 'platform_admin'])(
     'is closed to the role %s',
     async (role) => {
       const caller = callerAs(AGENT_ID, role);
@@ -239,9 +239,9 @@ describe('who may claim a domain', () => {
     },
   );
 
-  it('stays open to the former admin role', async () => {
+  it('is open to a company admin', async () => {
     expect(
-      (await callerAs(AGENT_ID, 'admin').mailSender.get()).sender,
+      (await callerAs(AGENT_ID, 'company_admin').mailSender.get()).sender,
     ).toBeNull();
   });
 });

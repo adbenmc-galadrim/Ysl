@@ -1,10 +1,6 @@
 import type { Session } from '@repo/auth';
 import { db } from '@repo/db';
-import {
-  isCompanyAdmin,
-  toUserRole,
-  type UserRole,
-} from '@repo/contract/auth';
+import { isCompanyAdmin, toUserRole, type UserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
@@ -45,7 +41,9 @@ export function forbidden(): TRPCError {
 }
 
 export function roleOf(session: Session): UserRole {
-  return toUserRole(session.user.role);
+  const role = toUserRole(session.user.role);
+  if (!role) throw forbidden();
+  return role;
 }
 
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
@@ -56,12 +54,6 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     });
   }
   return next({ ctx: { ...ctx, session: ctx.session } });
-});
-
-/** Better Auth's admin API, which ignores companies: closed to `company_admin`. */
-export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (roleOf(ctx.session) !== 'admin') throw forbidden();
-  return next();
 });
 
 /** The app admin: outside every company, so a company account promoted by mistake stays refused (D26). */

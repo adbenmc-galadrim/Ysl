@@ -16,21 +16,15 @@ describe('protectedProcedure', () => {
   });
 });
 
-describe('adminProcedure', () => {
-  it('turns away an agent', async () => {
-    await expect(
-      callerFor(sessionFor('agent')).agents.list(),
-    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
-  });
-});
-
 describe('account.me', () => {
   it('returns the role carried by the session', async () => {
-    await expect(callerFor(sessionFor('admin')).account.me()).resolves.toEqual({
+    await expect(
+      callerFor(sessionFor('company_admin')).account.me(),
+    ).resolves.toEqual({
       id: 'user-1',
       name: 'Test User',
       email: 'user@example.com',
-      role: 'admin',
+      role: 'company_admin',
     });
   });
 });

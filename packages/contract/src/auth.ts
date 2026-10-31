@@ -2,28 +2,24 @@ import { z } from 'zod';
 import type { OperatingProfile } from './operating-profile';
 
 export const USER_ROLES = [
-  'agent',
-  'admin',
   'platform_admin',
   'company_admin',
   'department',
   'shuttle',
 ] as const;
 
-export const DEFAULT_USER_ROLE = 'agent';
-
 export const userRole = z.enum(USER_ROLES);
 
 export type UserRole = z.infer<typeof userRole>;
 
-export function toUserRole(value: unknown): UserRole {
+/** Nothing for a role this version does not know: it reaches nothing, it does not get a default. */
+export function toUserRole(value: unknown): UserRole | null {
   const parsed = userRole.safeParse(value);
-  return parsed.success ? parsed.data : DEFAULT_USER_ROLE;
+  return parsed.success ? parsed.data : null;
 }
 
-/** `admin` is the account of before the conversion: it stays a company admin until then. */
-export function isCompanyAdmin(role: UserRole): boolean {
-  return role === 'company_admin' || role === 'admin';
+export function isCompanyAdmin(role: UserRole | null): boolean {
+  return role === 'company_admin';
 }
 
 /** Reaches the data of the whole company; a department only ever gets its own. */
@@ -31,16 +27,13 @@ export function seesWholeCompany(role: UserRole): boolean {
   return role !== 'department' && role !== 'platform_admin';
 }
 
-/**
- * Gives a parcel to an employee (§2.1): the shuttle when the profile makes it
- * act as a department; `admin` and `agent` still do, until the conversion.
- */
+/** Gives a parcel to an employee (§2.1): the shuttle when the profile makes it act as a department. */
 export function canHandOver(
   role: UserRole,
   profile: Pick<OperatingProfile, 'shuttleActsAsDepartment'>,
 ): boolean {
   if (role === 'shuttle') return profile.shuttleActsAsDepartment;
-  return role === 'department' || role === 'admin' || role === 'agent';
+  return role === 'department';
 }
 
 /** Writes the directory (D15 révisée): the shuttle only reads it. */

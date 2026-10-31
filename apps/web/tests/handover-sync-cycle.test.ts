@@ -4,6 +4,10 @@ import { newPickupToken } from '@repo/contract/pickup';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { client, server } = await vi.hoisted(async () => {
@@ -67,6 +71,13 @@ await server.insert(schema.organizationMember).values([
   { userId: KARIM, organizationId: ORGANIZATION_ID },
   { userId: LINA, organizationId: ORGANIZATION_ID },
 ]);
+// The desk of these iPhones: the shuttle hands over, as on a converted site.
+await server.insert(schema.setting).values({
+  id: newId(),
+  organizationId: ORGANIZATION_ID,
+  key: OPERATING_PROFILE_KEY,
+  value: SMALL_SITE_OPERATING_PROFILE,
+});
 
 afterAll(async () => {
   await client.close();
@@ -90,7 +101,7 @@ function sessionOf(userId: string): Session {
       emailVerified: false,
       createdAt: now,
       updatedAt: now,
-      role: 'agent',
+      role: 'shuttle',
       banned: false,
     },
   };
@@ -139,11 +150,13 @@ beforeEach(async () => {
     parcelRow({ personId: nora.id, receivedBy: KARIM }),
     parcelRow({ personId: nora.id, receivedBy: KARIM }),
   ];
+  // The directory is written by others: the shuttle only reads it.
+  await server
+    .insert(schema.directoryPerson)
+    .values({ ...nora, organizationId: ORGANIZATION_ID });
+  await first.table('directory_person').put(nora);
   await commitLocal(first, {
-    upserts: [
-      { entity: 'directory_person', row: nora },
-      ...parcels.map((row) => ({ entity: 'parcel' as const, row })),
-    ],
+    upserts: parcels.map((row) => ({ entity: 'parcel' as const, row })),
   });
 });
 

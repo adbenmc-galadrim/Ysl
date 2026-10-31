@@ -177,7 +177,7 @@ describe('a person who changes department', () => {
 
     const {
       results: [result],
-    } = await push(any, accessOf('admin'), {
+    } = await push(any, accessOf('company_admin'), {
       ops: [
         {
           opId: newId(),

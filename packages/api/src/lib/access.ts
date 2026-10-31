@@ -15,11 +15,7 @@ export type ParcelScope =
 /** Matches no row: a department account attached nowhere reaches nothing. */
 const UNATTACHED = '00000000-0000-0000-0000-000000000000';
 
-/**
- * `admin`, `agent` and a null role keep every parcel of their company until
- * the conversion (YSL-118). So does the shuttle until `tour` exists: YSL-133
- * narrows it to its tours here.
- */
+/** The shuttle keeps every parcel of its company until `tour` exists: YSL-133 narrows it to its tours here. */
 export function parcelScope({ role, departmentId }: Access): ParcelScope {
   if (seesWholeCompany(role)) return { kind: 'company' };
   return { kind: 'department', departmentId: departmentId ?? UNATTACHED };
