@@ -93,7 +93,7 @@ describe('safeRedirect', () => {
 });
 
 describe('requireDirectoryKeeper', () => {
-  it.each(['admin', 'company_admin', 'department'])('lets %s in', (role) => {
+  it.each(['company_admin', 'department'])('lets %s in', (role) => {
     expect(
       thrownBy(() =>
         requireDirectoryKeeper({ session: sessionWithRole(role) }),
@@ -101,7 +101,7 @@ describe('requireDirectoryKeeper', () => {
     ).toBeUndefined();
   });
 
-  it.each(['agent', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
+  it.each(['agent', 'admin', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
     expect(
       thrownBy(() =>
         requireDirectoryKeeper({ session: sessionWithRole(role) }),
