@@ -12,11 +12,13 @@ import {
   AnnuaireDesktop,
   type AnnuairePerson,
   ImportCsvDesktop,
+  MoveRequestPanel,
   PersonFormPanel,
   PersonRecordPanel,
 } from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 import {
   AnnuaireMobile,
+  MoveRequestSheetMobile,
   MoveSheetMobile,
   PersonFormMobile,
 } from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';
@@ -365,4 +367,28 @@ export const AdminDeplacerSheetMobile: Story = {
       submitLabel="Déplacer vers Finance"
     />
   ),
+};
+
+const REQUEST = {
+  name: 'Hugo Lefèvre',
+  note: 'Parti à la Finance',
+};
+
+export const DemandeOrdinateur: Story = {
+  name: 'Demander le déplacement · ordinateur',
+  globals: DESKTOP,
+  render: () => <MoveRequestPanel {...REQUEST} />,
+};
+
+export const DemandeEnvoyeeOrdinateur: Story = {
+  name: 'Demande envoyée · ordinateur',
+  globals: DESKTOP,
+  render: () => <MoveRequestPanel {...REQUEST} sent="Demandé le 31 oct. 2026" />,
+};
+
+export const DemandeMobile: Story = {
+  name: 'Demander le déplacement · mobile',
+  parameters: { device: { tone: 'light' } },
+  globals: MOBILE,
+  render: () => <MoveRequestSheetMobile {...REQUEST} />,
 };
