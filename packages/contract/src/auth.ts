@@ -30,6 +30,23 @@ export function seesWholeCompany(role: UserRole): boolean {
   return role !== 'department' && role !== 'platform_admin';
 }
 
+/**
+ * A shuttle hands over only when the profile makes it act as a department
+ * (§2.1). The profile comes with YSL-124, which replaces this answer.
+ */
+const SHUTTLE_ACTS_AS_DEPARTMENT = false;
+
+/** Gives a parcel to an employee (§2.1); `admin` and `agent` still do, until the conversion. */
+export function canHandOver(role: UserRole): boolean {
+  if (role === 'shuttle') return SHUTTLE_ACTS_AS_DEPARTMENT;
+  return role === 'department' || role === 'admin' || role === 'agent';
+}
+
+/** Writes the directory (D15 révisée): the shuttle only reads it. */
+export function canWriteDirectory(role: UserRole): boolean {
+  return role !== 'shuttle' && role !== 'platform_admin';
+}
+
 export const MIN_PASSWORD_LENGTH = 8;
 
 export const MAX_PASSWORD_LENGTH = 128;
