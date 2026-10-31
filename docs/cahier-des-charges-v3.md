@@ -357,7 +357,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ID | Exigence |
 | --- | --- |
 | ME21 | L'admin entreprise tient tous les départements : ajout, modification, déplacement d'un salarié, import CSV. Salarié déplacé : ses colis à venir suivent, ses colis déposés passent « À régulariser » |
-| ME22 | Chaque département tient le sien ; il ne voit ni ne modifie les salariés d'un autre |
+| ME22 | Chaque département tient le sien ; il ne voit ni ne modifie les salariés d'un autre. L'adresse e-mail est unique par département : une adresse présente ailleurs n'est ni refusée ni signalée, et l'admin entreprise voit les fiches à même adresse. Le département demande le déplacement d'un salarié depuis sa fiche ; seul l'admin déplace |
 | ME23 | La navette lit tout l'annuaire ; la suggestion de destinataire ramène le département ; destinataire inconnu : « À compléter » |
 
 #### 3.7.6 Tournée et dépôt (F40, D24, D25)

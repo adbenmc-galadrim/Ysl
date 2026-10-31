@@ -81,7 +81,7 @@ export const directoryMoveRequest = pgTable(
       name: 'directory_move_request_person_fk',
       columns: [table.organizationId, table.personId],
       foreignColumns: [directoryPerson.organizationId, directoryPerson.id],
-    }),
+    }).onDelete('cascade'),
     foreignKey({
       name: 'directory_move_request_department_fk',
       columns: [table.organizationId, table.departmentId],

@@ -1,5 +1,5 @@
 {
-  "id": "48871cc8-5600-4340-b019-0c1b4166f10e",
+  "id": "1f5f8ed6-1a71-4373-8ad3-4b0aa3da3945",
   "prevId": "de94459b-8555-4828-9035-0ca233c1de91",
   "version": "7",
   "dialect": "postgresql",
@@ -1000,7 +1000,7 @@
             "organization_id",
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
         "directory_move_request_department_fk": {

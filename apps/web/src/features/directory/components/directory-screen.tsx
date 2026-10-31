@@ -202,6 +202,7 @@ function DeskRecord({
   person,
   directory,
   request,
+  dismissFailed,
   onDismissRequest,
   onEdit,
   onClose,
@@ -209,6 +210,7 @@ function DeskRecord({
   person: LocalDirectoryPerson;
   directory: Directory;
   request?: MoveRequest;
+  dismissFailed: boolean;
   onDismissRequest: () => void;
   onEdit: () => void;
   onClose: () => void;
@@ -245,7 +247,10 @@ function DeskRecord({
       ]}
       moving={move.moving}
       canMove={move.canMove}
-      message={move.message}
+      message={
+        move.message ??
+        (dismissFailed ? t('directory.request.failed') : undefined)
+      }
       onMove={() => void move.move()}
       onCancelMove={move.reset}
       onEdit={onEdit}
@@ -387,6 +392,7 @@ function DirectoryDesktop({
         person={selected}
         directory={directory}
         request={byPerson.get(selected.id)}
+        dismissFailed={close.isError}
         onDismissRequest={() => close.mutate(selected.id)}
         onEdit={() => setPanel({ kind: 'edit', id: selected.id })}
         onClose={() => setPanel(null)}
@@ -476,6 +482,7 @@ function MobileForm({
   query,
   directory,
   request,
+  dismissFailed,
   onDismissRequest,
   onDone,
   onShow,
@@ -486,6 +493,7 @@ function MobileForm({
   query?: string;
   directory: Directory;
   request?: MoveRequest;
+  dismissFailed?: boolean;
   onDismissRequest?: () => void;
   onDone: () => void;
   onShow: (person: LocalDirectoryPerson) => void;
@@ -510,7 +518,10 @@ function MobileForm({
       onChange={form.onChange}
       errors={form.errors}
       saving={form.saving}
-      message={form.message}
+      message={
+        form.message ??
+        (dismissFailed ? t('directory.request.failed') : undefined)
+      }
       departments={
         person ? undefined : departmentOptions(directory.departments, true)
       }
@@ -635,6 +646,7 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
           query={editing.kind === 'add' ? editing.query : undefined}
           directory={directory}
           request={selected && byPerson.get(selected.id)}
+          dismissFailed={close.isError}
           onDismissRequest={() => {
             if (selected) close.mutate(selected.id);
           }}

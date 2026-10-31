@@ -539,6 +539,17 @@ describe('a request to move someone', () => {
     expect(await openFor(accessOf('admin'), person)).toEqual([]);
   });
 
+  it('goes with a person the purge erases', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Parti' });
+
+    await db
+      .delete(schema.directoryPerson)
+      .where(eq(schema.directoryPerson.id, person));
+
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+  });
+
   it('a department closes its own request only, the admin any', async () => {
     const person = await addPerson(db, studio);
     await requestMove(any, mine(), { personId: person, note: null });

@@ -237,6 +237,38 @@ describe('imports.v1Csv', () => {
     });
   });
 
+  it('attaches no parcel to either card of an address two departments hold', async () => {
+    const twins = ['Finance', 'Studio'];
+    for (const name of twins) {
+      const departmentId = newId();
+      await db.insert(schema.department).values({
+        id: departmentId,
+        organizationId: ORGANIZATION_ID,
+        name,
+      });
+      await db.insert(schema.directoryPerson).values({
+        id: newId(),
+        organizationId: ORGANIZATION_ID,
+        lastName: 'Lefèvre',
+        firstName: 'Hugo',
+        nameNorm: 'hugo lefevre',
+        email: 'hugo@example.com',
+        departmentId,
+      });
+    }
+
+    await admin().imports.v1Csv({
+      csv: 'id;date_reception;statut;transporteur;tracking;destinataire;email\n9002;2026-04-02T09:00:00Z;Notifie;UPS;1ZE6344W0499230622;Hugo Lefèvre;hugo@example.com\n',
+    });
+
+    const [row] = await db
+      .select()
+      .from(schema.parcel)
+      .where(eq(schema.parcel.receivedAt, new Date('2026-04-02T09:00:00Z')));
+    expect(row?.personId).toBeNull();
+    expect(row?.contactId).not.toBeNull();
+  });
+
   it('finds every parcel already there in its own CSV export (#60)', async () => {
     const parcels = await parcelsOf(ORGANIZATION_ID);
     const { csv } = await admin().exports.parcelsCsv();
