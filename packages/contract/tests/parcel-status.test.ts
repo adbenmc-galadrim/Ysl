@@ -42,7 +42,9 @@ describe('the status graph', () => {
     for (const from of PARCEL_STATUSES) {
       for (const to of BACKWARD_TRANSITIONS[from]) {
         expect(FORWARD_TRANSITIONS[to], `${from} → ${to}`).toContain(from);
-        expect(isStepBack(from, to)).toBe(true);
+        expect(isStepBack(from, to)).toBe(
+          !FORWARD_TRANSITIONS[from].includes(to),
+        );
       }
     }
   });
@@ -89,9 +91,27 @@ describe('stepBackOf a deposited parcel', () => {
   });
 });
 
+describe('a parcel going on tour', () => {
+  it('needs a department', () => {
+    expect(() => statusPatch(fields(), 'en_route', context)).toThrow(
+      StatusTransitionError,
+    );
+    expect(
+      statusPatch(fields({ departmentId: 'finance' }), 'en_route', context)
+        .status,
+    ).toBe('en_route');
+  });
+
+  it('reads a gap as a step forward, not as an undo', () => {
+    expect(isStepBack('en_route', 'a_regulariser')).toBe(false);
+    expect(isStepBack('a_regulariser', 'en_route')).toBe(false);
+    expect(isStepBack('depose', 'en_route')).toBe(true);
+  });
+});
+
 describe('the deposit of a parcel on tour (§3.7.9)', () => {
   const onTour = (lastNotifiedAt: Date | null) =>
-    fields({ status: 'en_route', lastNotifiedAt });
+    fields({ status: 'en_route', lastNotifiedAt, departmentId: 'finance' });
 
   it('is « Déposé » when no e-mail has left', () => {
     expect(depositedStatus(onTour(null))).toBe('depose');
@@ -120,6 +140,7 @@ describe('the deposit of a parcel on tour (§3.7.9)', () => {
       notifiedAt: NOW,
       lastNotifiedAt: EARLIER,
       depositedAt: NOW,
+      departmentId: 'finance',
     });
     expect(stepBackOf(deposited)).toBe('en_route');
     const back = statusPatch(deposited, 'en_route', context);
@@ -130,7 +151,7 @@ describe('the deposit of a parcel on tour (§3.7.9)', () => {
   it('keeps the e-mail through a gap that is settled', () => {
     const settled = statusPatch(onTour(EARLIER), 'a_regulariser', context);
     const back = statusPatch(
-      fields({ ...settled, status: 'a_regulariser' }),
+      fields({ ...settled, departmentId: 'finance' }),
       'en_route',
       context,
     );

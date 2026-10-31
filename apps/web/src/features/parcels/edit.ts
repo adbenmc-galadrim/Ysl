@@ -258,21 +258,26 @@ function changedFields(
 /**
  * A notified parcel keeps someone to answer for it (the server's
  * `parcel_recipient_check`), and so does a returned one that was notified:
- * undoing the return brings it back to `notifie`.
+ * undoing the return brings it back to `notifie`. A parcel told on its tour
+ * needs one too: its deposit makes it `notifie`.
  */
 function keepsRecipient(
-  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'>,
+  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'> &
+    Partial<Pick<LocalParcel, 'lastNotifiedAt'>>,
 ): boolean {
   return (
     parcel.status === 'notifie' ||
     parcel.status === 'remis' ||
-    (parcel.status === 'retourne' && parcel.notifiedAt !== null)
+    (parcel.status === 'retourne' && parcel.notifiedAt !== null) ||
+    ((parcel.status === 'en_route' || parcel.status === 'a_regulariser') &&
+      (parcel.notifiedAt != null || parcel.lastNotifiedAt != null))
   );
 }
 
 export function validateEdit(
   edit: ParcelEdit,
-  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'>,
+  parcel: Pick<LocalParcel, 'status' | 'notifiedAt'> &
+    Partial<Pick<LocalParcel, 'lastNotifiedAt'>>,
 ): EditErrors {
   const errors: EditErrors = {};
   const email = normalizeEmail(edit.notificationEmail);

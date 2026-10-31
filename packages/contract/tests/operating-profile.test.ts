@@ -83,10 +83,10 @@ describe('operatingImpact on the parcels under way', () => {
     ['shuttleActsAsDepartment', { shuttleActsAsDepartment: true }, 18],
     ['batchReview', { batchReview: 'required' }, 3],
     ['depositConfirmation', { depositConfirmation: 'count' }, 4],
-    ['handoverProof', { handoverProof: 'required' }, 14],
-    ['handoverScan', { handoverScan: 'required' }, 14],
-    ['signature', { signature: 'required' }, 14],
-    ['photo', { photo: 'disabled' }, 14],
+    ['handoverProof', { handoverProof: 'required' }, 18],
+    ['handoverScan', { handoverScan: 'required' }, 18],
+    ['signature', { signature: 'required' }, 18],
+    ['photo', { photo: 'disabled' }, 18],
     ['emailMoment', { emailMoment: 'deposit' }, 6],
     ['reminders', { reminders: 'required' }, 7],
   ] satisfies [string, Partial<OperatingProfile>, number][])(
@@ -106,14 +106,14 @@ describe('operatingImpact on the parcels under way', () => {
       photo: 'required',
       reminders: 'disabled',
     });
-    expect(impact.changes.map((change) => change.parcels)).toEqual([14, 14, 7]);
-    expect(impact.parcels).toBe(14);
+    expect(impact.changes.map((change) => change.parcels)).toEqual([18, 18, 7]);
+    expect(impact.parcels).toBe(18);
   });
 
   it('adds up parcels at different stages', () => {
     expect(
       impactOf({ batchReview: 'disabled', signature: 'required' }).parcels,
-    ).toBe(17);
+    ).toBe(21);
   });
 
   it('finds nothing when nothing changed', () => {

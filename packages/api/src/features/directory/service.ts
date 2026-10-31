@@ -167,10 +167,7 @@ export async function requestMove(
     .insert(directoryMoveRequest)
     .values({ id: newId(), organizationId, personId, ...values })
     .onConflictDoUpdate({
-      target: [
-        directoryMoveRequest.organizationId,
-        directoryMoveRequest.personId,
-      ],
+      target: [directoryMoveRequest.organizationId, directoryMoveRequest.personId],
       targetWhere: isNull(directoryMoveRequest.closedAt),
       set: values,
     });

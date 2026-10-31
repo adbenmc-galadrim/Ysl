@@ -55,8 +55,12 @@ export function canTransition(from: ParcelStatus, to: ParcelStatus): boolean {
   );
 }
 
+/** A gap and its reassignment go both ways: each is a step forward first. */
 export function isStepBack(from: ParcelStatus, to: ParcelStatus): boolean {
-  return BACKWARD_TRANSITIONS[from].includes(to);
+  return (
+    BACKWARD_TRANSITIONS[from].includes(to) &&
+    !FORWARD_TRANSITIONS[from].includes(to)
+  );
 }
 
 /** The statuses the home list follows until the parcel leaves the desk. */
@@ -135,6 +139,7 @@ export type StatusFields = {
   deliveredBy: string | null;
   /** Missing on a row pulled before the column existed: read as not deposited. */
   depositedAt?: Date | null;
+  departmentId?: string | null;
 };
 
 /** Where undoing the last step leads: a parcel never notified goes back to its deposit, else to `recu`; one whose e-mail left on tour goes back on tour. */
@@ -184,7 +189,10 @@ export class StatusTransitionError extends Error {
   }
 }
 
-export type StatusWrite = Omit<StatusFields, 'statusSeq' | 'depositedAt'> & {
+export type StatusWrite = Omit<
+  StatusFields,
+  'statusSeq' | 'depositedAt' | 'departmentId'
+> & {
   statusSeq: number;
   depositedAt: Date | null;
 };
@@ -246,6 +254,9 @@ export function statusPatch(
   { now, agentId }: StatusChangeContext,
 ): StatusWrite {
   if (parcel.status === to || !canTransition(parcel.status, to)) {
+    throw new StatusTransitionError(parcel.status, to);
+  }
+  if (to === 'en_route' && !parcel.departmentId) {
     throw new StatusTransitionError(parcel.status, to);
   }
   return {

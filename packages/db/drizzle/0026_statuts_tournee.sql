@@ -2,12 +2,14 @@ ALTER TABLE "parcel" DROP CONSTRAINT "parcel_status_check";--> statement-breakpo
 ALTER TABLE "parcel" ADD COLUMN "deposited_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "parcel" ADD CONSTRAINT "parcel_status_check" CHECK ("parcel"."status" in ('a_completer', 'recu', 'en_route', 'depose', 'a_regulariser', 'notifie', 'remis', 'retourne'));--> statement-breakpoint
 -- A person who moves: what is on tour follows; a parcel already deposited stays
--- with its department and is marked, with its line in the history (D25).
+-- with its department and is marked, with its line in the history (D25). The
+-- e-mail of a parcel on tour named the old department: the deposit tells again (ME29).
 CREATE OR REPLACE FUNCTION "public"."directory_person_moved"() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
 BEGIN
   UPDATE "public"."parcel"
-     SET department_id = NEW.department_id, updated_at = now()
+     SET department_id = NEW.department_id, updated_at = now(),
+         last_notified_at = CASE WHEN status = 'en_route' THEN NULL ELSE last_notified_at END
    WHERE organization_id = NEW.organization_id
      AND person_id = NEW.id
      AND deleted_at IS NULL
@@ -87,9 +89,9 @@ DECLARE
 BEGIN
   IF NEW.status IS DISTINCT FROM OLD.status THEN
     step_back := (OLD.status = 'recu' AND NEW.status = 'a_completer')
-      OR (OLD.status = 'en_route' AND NEW.status IN ('recu', 'a_regulariser'))
+      OR (OLD.status = 'en_route' AND NEW.status = 'recu')
       OR (OLD.status = 'depose' AND NEW.status = 'en_route')
-      OR (OLD.status = 'a_regulariser' AND NEW.status IN ('en_route', 'depose', 'notifie'))
+      OR (OLD.status = 'a_regulariser' AND NEW.status IN ('depose', 'notifie'))
       OR (OLD.status = 'notifie' AND NEW.status IN ('recu', 'en_route', 'depose'))
       OR (OLD.status = 'remis' AND NEW.status IN ('notifie', 'depose', 'recu'))
       OR (OLD.status = 'retourne' AND NEW.status IN ('notifie', 'depose', 'a_regulariser', 'recu'));
@@ -128,7 +130,18 @@ BEGIN
       RAISE EXCEPTION 'parcel % is handed over: cancel the handover first', OLD.id
         USING ERRCODE = 'check_violation', CONSTRAINT = 'parcel_delivery_protected';
     END IF;
-    IF NEW.status_seq = OLD.status_seq AND NOT step_back THEN
+    -- A deposited parcel does not go back to before its deposit, not even by an old PWA's undo.
+    IF NEW.status IN ('a_completer', 'recu') AND OLD.deposited_at IS NOT NULL THEN
+      RAISE EXCEPTION 'parcel % is deposited: cancel the deposit first', OLD.id
+        USING ERRCODE = 'check_violation', CONSTRAINT = 'parcel_status_transition';
+    END IF;
+    IF NEW.status = 'depose' OR (OLD.status = 'en_route' AND NEW.status = 'notifie') THEN
+      NEW.deposited_at := coalesce(NEW.deposited_at, now());
+    END IF;
+    -- Only an app that knows the tour writes from it, always with the counter: the
+    -- leniency for an app without one would let a stale copy of an old PWA through.
+    IF NEW.status_seq = OLD.status_seq AND NOT step_back
+       AND OLD.status NOT IN ('en_route', 'depose', 'a_regulariser') THEN
       NEW.status_seq := OLD.status_seq + 1;
     ELSIF NEW.status_seq IS DISTINCT FROM OLD.status_seq + 1 THEN
       RAISE EXCEPTION 'parcel % changed status since this copy (status_seq % sent, % expected)',

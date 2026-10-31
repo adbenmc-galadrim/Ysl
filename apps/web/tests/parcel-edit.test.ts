@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
   editOf,
+  validateEdit,
   type ParcelEdit,
   parseWeight,
   saveParcelEdit,
@@ -405,5 +406,29 @@ describe('deleteParcels', () => {
     ]);
     expect(await events(incomplete.id)).toEqual([{ type: 'parcel.deleted' }]);
     expect(await deleteParcels(db, [notified.id], options)).toEqual([]);
+  });
+});
+
+describe('validateEdit on tour', () => {
+  const edit = { ...editOf(parcelRow()), recipient: { kind: 'none' as const } };
+  const told = { notifiedAt: null, lastNotifiedAt: NOW };
+
+  it('keeps the recipient of a parcel whose e-mail already left', () => {
+    expect(validateEdit(edit, { status: 'en_route', ...told }).recipient).toBe(
+      'recipientRequired',
+    );
+    expect(
+      validateEdit(edit, { status: 'a_regulariser', ...told }).recipient,
+    ).toBe('recipientRequired');
+  });
+
+  it('lets a parcel nobody was told about go without one', () => {
+    expect(
+      validateEdit(edit, {
+        status: 'en_route',
+        notifiedAt: null,
+        lastNotifiedAt: null,
+      }).recipient,
+    ).toBeUndefined();
   });
 });

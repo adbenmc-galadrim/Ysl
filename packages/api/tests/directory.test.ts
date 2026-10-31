@@ -175,6 +175,22 @@ describe('a person who changes department', () => {
     });
   });
 
+  it('forgets the e-mail of a parcel on tour: it named the old department', async () => {
+    const person = await addPerson(db, finance);
+    const parcel = await addParcel(person);
+    await client.exec(
+      `update parcel set status = 'en_route', status_seq = 1, last_notified_at = now() where id = '${parcel}';`,
+    );
+
+    await move(person, studio);
+
+    expect(await parcelOf(parcel)).toMatchObject({
+      status: 'en_route',
+      departmentId: studio,
+      lastNotifiedAt: null,
+    });
+  });
+
   it('says beforehand what will follow', async () => {
     const person = await addPerson(db, finance);
     await addParcel(person);

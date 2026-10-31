@@ -203,10 +203,31 @@ describe('parcel status transitions', () => {
     expect(await setStatus(id, 'recu', 'unsent')).toMatchObject({
       constraint: 'parcel_status_stale',
     });
-    expect(await setStatus(id, 'notifie', 0)).toMatchObject({
+    expect(await setStatus(id, 'notifie', 1)).toMatchObject({
       constraint: 'parcel_status_stale',
     });
     expect(await statusOf(id)).toBe('en_route');
+  });
+
+  it('stamp the deposit, and refuse an old undo from before it', async () => {
+    const id = await insertParcel('notifie', personId);
+    await client.query('update parcel set department_id = $1 where id = $2', [
+      departmentId,
+      id,
+    ]);
+    await setStatus(id, 'a_regulariser');
+    await setStatus(id, 'en_route');
+    await setStatus(id, 'depose');
+    const [row] = await db
+      .select({ depositedAt: schema.parcel.depositedAt })
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, id));
+    expect(row?.depositedAt).toBeInstanceOf(Date);
+
+    await setStatus(id, 'notifie');
+    expect(await setStatus(id, 'recu')).toMatchObject({
+      constraint: 'parcel_status_transition',
+    });
   });
 
   it('take a step back only from a copy that saw the status it leaves', async () => {
