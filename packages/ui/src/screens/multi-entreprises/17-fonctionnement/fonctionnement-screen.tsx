@@ -5,7 +5,12 @@ import { Button } from '#components/button';
 import { CompanySettingsDesk } from '#components/company-parts';
 import { DeskChoice } from '#components/desk-form';
 import { DeskPanel } from '#components/desk-panel';
-import { PhoneGroup, PhoneGroupTitle, PhoneSettings } from '#components/phone-parts';
+import {
+  PhoneGroup,
+  PhoneGroupTitle,
+  PhoneSegments,
+  PhoneSettings,
+} from '#components/phone-parts';
 import { Sheet } from '#components/sheet';
 import { Toast } from '#components/toast';
 import { companySettingsShell } from '#fixtures/multi-entreprises';
@@ -354,33 +359,6 @@ export function FonctionnementEnregistreDesktop() {
   );
 }
 
-function PhoneChoice({ chosen }: { chosen: string }) {
-  return (
-    <div
-      role="radiogroup"
-      className="mt-[7px] flex h-11 w-[321px] rounded-full bg-fill-2 p-0.5"
-    >
-      {STATES.map((option) => {
-        const on = option === chosen;
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            className={cn(
-              'h-10 flex-1 cursor-pointer rounded-full pb-[3px] text-14 font-semibold outline-none',
-              on ? 'bg-ink text-on-ink' : 'text-ink-2',
-            )}
-          >
-            {option}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function PhoneSteps({ showModified }: { showModified: boolean }) {
   return (
     <>
@@ -396,7 +374,13 @@ function PhoneSteps({ showModified }: { showModified: boolean }) {
             <p className="relative -top-px mt-1 text-13 text-muted">
               {step.description}
             </p>
-            <PhoneChoice chosen={step.chosen} />
+            <PhoneSegments
+              options={STATES}
+              value={step.chosen}
+              label={step.title}
+              className="mt-[7px] h-11 w-[321px] rounded-full"
+              optionClassName="h-10 rounded-full pb-[3px] text-14"
+            />
             {i < HANDOVER_STEPS.length - 1 && (
               <span className="absolute inset-x-0 top-[103px] h-px bg-separator" />
             )}
