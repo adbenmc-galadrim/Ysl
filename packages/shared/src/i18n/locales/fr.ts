@@ -32,7 +32,8 @@ export const fr = {
   'sync.op.notificationOwner': 'Cet e-mail a été préparé par un autre agent.',
   'sync.op.outOfScope': 'Cette donnée n’est pas celle de votre département.',
   'sync.op.readOnly': 'Cette donnée n’est pas modifiable depuis l’appareil.',
-  'sync.op.directoryReadOnly': 'L’annuaire est en lecture seule pour ce compte.',
+  'sync.op.directoryReadOnly':
+    'L’annuaire est en lecture seule pour ce compte.',
   'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
@@ -722,7 +723,8 @@ export const fr = {
   'settings.offline.notPersisted': 'Non persistant',
   'settings.group.service': 'Service courrier',
   'settings.directory': 'Annuaire',
-  'directory.error.personNotFound': 'Cette personne n’est plus dans l’annuaire.',
+  'directory.error.personNotFound':
+    'Cette personne n’est plus dans l’annuaire.',
   'directory.error.name': 'Indiquez le prénom et le nom.',
   'directory.error.emailMissing': 'Indiquez l’adresse e-mail.',
   'directory.error.emailInvalid': 'Adresse e-mail incomplète.',
@@ -746,7 +748,8 @@ export const fr = {
   'directory.contacts.detail':
     'Intérimaires et visiteurs, gardés à la réception d’un colis.',
   'directory.empty.title': 'L’annuaire est vide',
-  'directory.empty.description': 'Ajoutez un salarié, ou importez un CSV sur ordinateur.',
+  'directory.empty.description':
+    'Ajoutez un salarié, ou importez un CSV sur ordinateur.',
   'directory.empty.search': 'Aucun résultat pour « {{query}} »',
   'directory.add.title': 'Ajouter un salarié',
   'directory.add.titleMobile': 'Nouveau salarié',
@@ -762,7 +765,8 @@ export const fr = {
   'directory.move.action': 'Déplacer vers un autre département',
   'directory.move.submit': 'Déplacer vers {{department}}',
   'directory.move.follows.one': '1 colis à venir ira à {{department}}',
-  'directory.move.follows.many': '{{count}} colis à venir iront à {{department}}',
+  'directory.move.follows.many':
+    '{{count}} colis à venir iront à {{department}}',
   'directory.move.toSettle.one':
     '1 colis déposé à {{department}} passera « À régulariser »',
   'directory.move.toSettle.many':
@@ -790,6 +794,10 @@ export const fr = {
   'directory.import.summary.many': '{{count}} salariés seront importés',
   'directory.import.ignored.one': '1 ligne ignorée',
   'directory.import.ignored.many': '{{count}} lignes ignorées',
+  'directory.import.moves.one':
+    '1 change de département, ses colis à venir suivent',
+  'directory.import.moves.many':
+    '{{count}} changent de département, leurs colis à venir suivent',
   'directory.import.submit.one': 'Importer 1 salarié',
   'directory.import.submit.many': 'Importer {{count}} salariés',
   'directory.import.missing': 'Colonnes manquantes : {{columns}}.',

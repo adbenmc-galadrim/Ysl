@@ -145,6 +145,7 @@ async function plan(
   const changes: Change[] = [];
   let toAdd = 0;
   let toUpdate = 0;
+  let toMove = 0;
   let unchanged = 0;
 
   for (const row of rows) {
@@ -216,6 +217,7 @@ async function plan(
       continue;
     }
     toUpdate += 1;
+    if (target && person.departmentId !== target.id) toMove += 1;
     changes.push({
       kind: 'update',
       row,
@@ -229,6 +231,7 @@ async function plan(
   return {
     toAdd,
     toUpdate,
+    toMove,
     unchanged,
     errors,
     unknownDepartments: [...unknown.values()],
@@ -248,6 +251,7 @@ export async function previewDirectoryImport(
       ...file,
       toAdd: 0,
       toUpdate: 0,
+      toMove: 0,
       unchanged: 0,
       errors: [],
       unknownDepartments: [],

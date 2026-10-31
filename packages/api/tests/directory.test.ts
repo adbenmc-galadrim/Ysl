@@ -289,9 +289,21 @@ describe('the CSV import', () => {
       'ines@example.test,Garnier,Inès,',
     ].join('\n');
 
-    const report = await applyDirectoryImport(any, ORGANIZATION_ID, file, [
-      { name: 'Marketing', departmentId: studio },
-    ]);
+    const choices = [{ name: 'Marketing', departmentId: studio }];
+    const preview = await previewDirectoryImport(
+      any,
+      ORGANIZATION_ID,
+      file,
+      choices,
+    );
+    expect(preview.toMove).toBe(1);
+
+    const report = await applyDirectoryImport(
+      any,
+      ORGANIZATION_ID,
+      file,
+      choices,
+    );
 
     expect(report).toEqual({ added: 2, updated: 1, unchanged: 0, ignored: 0 });
     expect((await parcelOf(parcel)).departmentId).toBe(studio);

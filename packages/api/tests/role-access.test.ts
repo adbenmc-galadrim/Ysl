@@ -80,6 +80,7 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
     caller.departments.archive({ id: newId() }),
   'departments.attachAccount': (caller) =>
     caller.departments.attachAccount({ userId: 'x', departmentId: null }),
+  'account.company': (caller) => caller.account.company(),
   'directory.moveEffects': (caller) =>
     caller.directory.moveEffects({ personId: newId() }),
   'directory.move': (caller) =>
@@ -121,7 +122,7 @@ const AGENTS = [
   'agents.setActive',
   'agents.resetPassword',
 ];
-const READ_DEPARTMENTS = ['departments.list'];
+const READ_DEPARTMENTS = ['departments.list', 'account.company'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
 const WITHOUT_HANDOVER = OPERATIONS.filter(
   (route) => route !== 'pickup.verify',

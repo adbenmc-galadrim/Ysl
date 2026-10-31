@@ -81,6 +81,8 @@ export const directoryImportPreview = z.object({
   missing: z.array(z.enum(DIRECTORY_COLUMNS)),
   toAdd: z.number().int().min(0),
   toUpdate: z.number().int().min(0),
+  /** Among the updates, those who change department: their parcels follow. */
+  toMove: z.number().int().min(0),
   unchanged: z.number().int().min(0),
   errors: z.array(
     z.object({
