@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
+import { department, departmentMember } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -20,7 +21,7 @@ vi.mock('@repo/db', () => ({
 vi.mock('@repo/auth', () => ({ auth: { api }, isAPIError: () => false }));
 
 const { callerFor, sessionFor } = await import('./helpers/caller');
-const { AGENT_ID } = await import('./helpers/pglite');
+const { AGENT_ID, ORGANIZATION_ID } = await import('./helpers/pglite');
 
 afterAll(async () => {
   await client.close();
@@ -104,13 +105,17 @@ const AGENTS = [
 ];
 const READ_DEPARTMENTS = ['departments.list'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
+const WITHOUT_HANDOVER = OPERATIONS.filter(
+  (route) => route !== 'pickup.verify',
+);
 
 const ALLOWED: Record<string, string[]> = {
   agent: OPERATIONS,
   none: OPERATIONS,
   admin: [...OPERATIONS, ...ADMIN, ...AGENTS],
-  company_admin: [...OPERATIONS, ...ADMIN],
-  shuttle: OPERATIONS,
+  company_admin: [...WITHOUT_HANDOVER, ...ADMIN],
+  shuttle: WITHOUT_HANDOVER,
+  // Attached nowhere: the attached account has its own test below.
   department: READ_DEPARTMENTS,
   platform_admin: [],
 };
@@ -131,6 +136,33 @@ describe.each(Object.keys(ALLOWED))('role %s', (role) => {
     const caller = callerFor(sessionOf(role === 'none' ? null : role));
     const code = await codeOf(ROUTES[route]!(caller));
     if (allowed.includes(route)) {
+      expect(code).not.toBe('FORBIDDEN');
+    } else {
+      expect(code).toBe('FORBIDDEN');
+    }
+  });
+});
+
+describe('a department account attached to a department', () => {
+  it.each(Object.keys(ROUTES))('on %s', async (route) => {
+    const departmentId = newId();
+    await db
+      .insert(department)
+      .values({
+        id: departmentId,
+        organizationId: ORGANIZATION_ID,
+        name: route,
+      });
+    await db.insert(departmentMember).values({
+      userId: AGENT_ID,
+      organizationId: ORGANIZATION_ID,
+      departmentId,
+    });
+    const code = await codeOf(
+      ROUTES[route]!(callerFor(sessionOf('department'))),
+    );
+    await db.delete(departmentMember);
+    if (OPERATIONS.includes(route)) {
       expect(code).not.toBe('FORBIDDEN');
     } else {
       expect(code).toBe('FORBIDDEN');

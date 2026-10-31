@@ -104,12 +104,6 @@ export const scopedProcedure = memberProcedure.use(({ ctx, next }) => {
   return next({ ctx: { ...ctx, access } });
 });
 
-/** Closed to a department until its reads and writes are held to its own. */
-export const wholeCompanyProcedure = scopedProcedure.use(({ ctx, next }) => {
-  if (ctx.access.role === 'department') throw forbidden();
-  return next();
-});
-
 /** An admin of the company: the screens of Réglages › Service courrier. */
 export const adminMemberProcedure = memberProcedure.use(({ ctx, next }) => {
   if (!isCompanyAdmin(roleOf(ctx.session))) throw forbidden();

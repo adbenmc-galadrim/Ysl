@@ -9,6 +9,7 @@ import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
 import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { and, asc, eq, isNull } from 'drizzle-orm';
+import type { ParcelScope } from '#lib/access';
 import { textCell, toCsv, type CsvCell } from '#features/exports/csv';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -77,7 +78,11 @@ export function formatExportDate(date: Date | null): string {
   return date ? dateTime.format(date) : '';
 }
 
-async function readParcels(db: AnyDb, organizationId: string) {
+async function readParcels(
+  db: AnyDb,
+  organizationId: string,
+  scope: ParcelScope,
+) {
   return db
     .select({
       parcel,
@@ -105,7 +110,13 @@ async function readParcels(db: AnyDb, organizationId: string) {
       ),
     )
     .where(
-      and(eq(parcel.organizationId, organizationId), isNull(parcel.deletedAt)),
+      and(
+        eq(parcel.organizationId, organizationId),
+        isNull(parcel.deletedAt),
+        scope.kind === 'department'
+          ? eq(parcel.departmentId, scope.departmentId)
+          : undefined,
+      ),
     )
     .orderBy(asc(parcel.receivedAt), asc(parcel.id));
 }
@@ -250,9 +261,10 @@ export async function exportParcelsCsv(
   organizationId: string,
   now = new Date(),
   parcelIds?: readonly string[],
+  scope: ParcelScope = { kind: 'company' },
 ): Promise<ParcelsCsvOutput> {
   const [all, handovers] = await Promise.all([
-    readParcels(db, organizationId),
+    readParcels(db, organizationId, scope),
     readHandovers(db, organizationId),
   ]);
   const only = parcelIds && new Set(parcelIds);

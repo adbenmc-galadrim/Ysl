@@ -139,3 +139,56 @@ describe('pickup.verify', () => {
     });
   });
 });
+
+describe('pickup.verify by department', () => {
+  async function departmentCode(departmentId: string | null) {
+    const token = newPickupToken();
+    await db.insert(schema.pickupCode).values({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      personId: await person(),
+      departmentId,
+      tokenHash: await pickupTokenHash(token),
+      pinHash: await pickupPinHash('1234'),
+      expiresAt: new Date(NOW.getTime() + PICKUP_CODE_TTL_MS),
+    });
+    return pickupTokenHash(token);
+  }
+
+  async function addDepartment(name: string) {
+    const id = newId();
+    await db
+      .insert(schema.department)
+      .values({ id, organizationId: ORGANIZATION_ID, name });
+    return id;
+  }
+
+  const verifyAs = (departmentId: string, hash: string) =>
+    verifyPickup(
+      asAnyDb(db),
+      ORGANIZATION_ID,
+      { kind: 'token', hash },
+      NOW,
+      { kind: 'department', departmentId },
+    );
+
+  it('opens a code in its own department, and names nobody in another', async () => {
+    const finance = await addDepartment('Finance');
+    const legal = await addDepartment('Juridique');
+    const hash = await departmentCode(finance);
+
+    expect((await verifyAs(finance, hash)).status).toBe('active');
+    expect(await verifyAs(legal, hash)).toEqual({
+      status: 'unknown',
+      codeId: null,
+      recipient: null,
+    });
+  });
+
+  it('does not open a code of no department for a department', async () => {
+    const finance = await addDepartment('Finance 2');
+    const hash = await departmentCode(null);
+
+    expect((await verifyAs(finance, hash)).status).toBe('unknown');
+  });
+});
