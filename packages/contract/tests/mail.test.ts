@@ -7,6 +7,7 @@ import {
   formatPickupHours,
   mailValues,
   notifyParcel,
+  reachedNobody,
   renderMail,
   renderText,
   RELAY_TEMPLATES,
@@ -468,5 +469,45 @@ describe('parcels of a confirmed mail', () => {
     } as const;
     const { type, detail } = eventColumns(event);
     expect(readParcelEvent(type, detail)).toEqual(event);
+  });
+});
+
+describe('reachedNobody', () => {
+  const sentAt = new Date('2026-10-20T08:00:00Z');
+  const mail = (deliveryStatus: 'bounced' | 'delivered' | null) => ({
+    parcelIds: ['p'],
+    sentAt,
+    deliveryStatus,
+  });
+
+  it('holds only when every mail that left bounced', () => {
+    expect(reachedNobody('p', [mail('bounced')])).toBe(true);
+    expect(reachedNobody('p', [mail('bounced'), mail('delivered')])).toBe(false);
+    expect(reachedNobody('p', [mail('bounced'), mail(null)])).toBe(false);
+    expect(reachedNobody('p', [{ ...mail('bounced'), sentAt: null }])).toBe(
+      false,
+    );
+    expect(reachedNobody('other', [mail('bounced')])).toBe(false);
+  });
+
+  it('makes the next mail the notice, not the first reminder', () => {
+    const later = new Date('2026-10-22T08:00:00Z');
+    const change = notifyParcel(
+      {
+        id: 'p',
+        personId: 'x',
+        contactId: null,
+        deletedAt: null,
+        status: 'notifie',
+        statusSeq: 1,
+        notifiedAt: sentAt,
+        lastNotifiedAt: sentAt,
+      } as Parameters<typeof notifyParcel>[0],
+      { sentAt: later, agentId: 'a', firstRead: true },
+    );
+    expect(change).toMatchObject({
+      reminder: false,
+      patch: { notifiedAt: later, lastNotifiedAt: later },
+    });
   });
 });

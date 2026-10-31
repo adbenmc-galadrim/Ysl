@@ -1,6 +1,8 @@
 import {
   damageNotice,
   mailValues,
+  parcelMailLine,
+  parcelMailName,
   type MailValues,
   replyReference,
 } from '@repo/contract/mail';
@@ -14,7 +16,6 @@ import type {
 } from '#/features/db/schema';
 import { fullName } from '#/features/directory/people';
 import {
-  carrierLabel,
   formatTime,
   recipientOf,
   shortDate,
@@ -188,41 +189,27 @@ export function mailsOfBatch(
 
 /** "UPS ···0622", as the desk names a parcel. */
 export function parcelName(parcel: LocalParcel, t: TranslateFn): string {
-  const carrier = carrierLabel(parcel, t);
-  return parcel.tracking
-    ? `${carrier} ···${parcel.tracking.slice(-4)}`
-    : carrier;
+  return parcelMailName(parcel, t);
 }
 
 /**
  * One parcel as the mail lists it (§8.7): carrier and number, sender and
- * pieces when known, then when it came — "UPS ···0622, de Zalando, 2 pièces
- * sur 3, reçu à 10 h 15" today, "…, reçu le 14 oct." before.
+ * pieces, "2 pièces sur 3, reçu à 10 h 15" today, "…, reçu le 14 oct." before.
  */
 export function parcelLine(
   parcel: LocalParcel,
   now: Date,
   t: TranslateFn,
 ): string {
-  const sender = parcel.senderName?.trim();
-  const { pieceN, pieceTotal } = parcel;
-  return [
-    parcelName(parcel, t),
-    sender && t('mail.parcel.sender', { sender }),
-    pieceN && pieceTotal && pieceTotal > 1
-      ? t(pieceN === 1 ? 'mail.parcel.piece' : 'mail.parcel.pieces', {
-          n: pieceN,
-          total: pieceTotal,
-        })
-      : undefined,
-    parcel.receivedAt >= startOfDay(now)
-      ? t('mail.parcel.today', { time: formatTime(parcel.receivedAt) })
-      : t('mail.parcel.before', {
-          date: shortDate(parcel.receivedAt, now),
-        }),
-  ]
-    .filter(Boolean)
-    .join(', ');
+  return parcelMailLine(
+    parcel,
+    {
+      today: parcel.receivedAt >= startOfDay(now),
+      time: formatTime(parcel.receivedAt),
+      date: shortDate(parcel.receivedAt, now),
+    },
+    t,
+  );
 }
 
 export type MailContext = {

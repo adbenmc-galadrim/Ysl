@@ -1,4 +1,4 @@
-import type { DeliveryStatus } from '@repo/contract/mail';
+import type { DeliveryStatus, MailChannel } from '@repo/contract/mail';
 import type { DamageInput } from '#/features/damage/report';
 import type { DraftAnnex } from '#/features/scan/annex';
 import type { OcrLine } from '@repo/ocr/worker';
@@ -89,8 +89,9 @@ export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
  */
 export type LocalNotification = Omit<
   LocalRow<typeof notification.$inferSelect>,
-  'relayName' | 'deliveryStatus' | 'deliveryAt'
+  'relayName' | 'deliveryStatus' | 'deliveryAt' | 'channel'
 > & {
+  channel?: MailChannel;
   relayName?: string | null;
   deliveryStatus?: DeliveryStatus | null;
   deliveryAt?: Date | null;
@@ -197,6 +198,8 @@ export const SYNC_STATE_KEYS = {
   cursor: 'cursor',
   /** `Date` of the last push and pull that both went through. */
   lastSyncAt: 'lastSyncAt',
+  /** Whether the server sends the mails, as the last pull said (YSL-115). */
+  serverMail: 'serverMail',
 } as const;
 
 /** What the reader made of a draft's photo so far; `typed` came by hand. */

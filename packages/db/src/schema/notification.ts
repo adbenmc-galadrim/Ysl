@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import {
   DELIVERY_STATUSES,
+  MAIL_CHANNELS,
   MAIL_TARGETS,
   NOTIFICATION_STATUSES,
   NOTIFICATION_TYPES,
@@ -69,12 +70,17 @@ export const notification = pgTable(
     // Told by the provider's webhook (YSL-113), never by a device.
     deliveryStatus: text('delivery_status', { enum: DELIVERY_STATUSES }),
     deliveryAt: timestamp('delivery_at', { withTimezone: true }),
+    // `server`: a request written by a device, moved by the server only (YSL-115).
+    channel: text('channel', { enum: MAIL_CHANNELS })
+      .default('phone')
+      .notNull(),
   },
   (table) => [
     ...syncConstraints('notification', table),
     oneOf('notification_type_check', table.type, NOTIFICATION_TYPES),
     oneOf('notification_status_check', table.status, NOTIFICATION_STATUSES),
     oneOf('notification_target_check', table.target, MAIL_TARGETS),
+    oneOf('notification_channel_check', table.channel, MAIL_CHANNELS),
     oneOf(
       'notification_delivery_status_check',
       table.deliveryStatus,
@@ -100,6 +106,9 @@ export const notification = pgTable(
       'notification_recipients_check',
       sql`cardinality(${table.recipients}) >= 1`,
     ),
+    index('notification_server_request_idx')
+      .on(table.preparedAt)
+      .where(sql`${table.channel} = 'server' and ${table.status} = 'prepared'`),
     index('notification_parcel_ids_idx').using('gin', table.parcelIds),
     index('notification_person_id_idx')
       .on(table.personId)

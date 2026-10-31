@@ -31,7 +31,9 @@ export async function loadReminderDates(
   };
   const sent = await db.notification.where('sentAt').above(since).toArray();
   for (const mail of sent) {
-    if (mail.deletedAt || !mail.sentAt) continue;
+    // A bounced mail reached nobody: it reminded no one.
+    if (mail.deletedAt || !mail.sentAt || mail.deliveryStatus === 'bounced')
+      continue;
     for (const parcelId of mail.parcelIds) add(parcelId, mail.sentAt);
   }
   const told = await db.event.where('at').above(since).toArray();

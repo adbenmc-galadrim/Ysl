@@ -19,7 +19,8 @@ export type OutcomeRow = Omit<LotOutcome, 'onClick'> & {
  * complete, then what is worth knowing. `ready` is what the button sends.
  */
 export function lotOutcomes(
-  summary: Pick<BatchSummary, 'mails' | 'toComplete' | 'damaged' | 'pieces'>,
+  summary: Pick<BatchSummary, 'mails' | 'toComplete' | 'damaged' | 'pieces'> &
+    Partial<Pick<BatchSummary, 'serverMails'>>,
   { online, t }: { online: boolean; t: TranslateFn },
 ): { rows: OutcomeRow[]; ready: number } {
   const ready = summary.mails.filter((mail) => mail.address);
@@ -27,6 +28,16 @@ export function lotOutcomes(
   const parcels = ready.reduce((sum, mail) => sum + mail.parcels.length, 0);
   const { toComplete } = summary;
   const rows: OutcomeRow[] = [];
+  const serverMails = summary.serverMails ?? 0;
+  if (serverMails > 0)
+    rows.push({
+      icon: 'mail',
+      tone: 'blue',
+      title: t(serverMails === 1 ? 'lot.server.one' : 'lot.server.many', {
+        count: serverMails,
+      }),
+      detail: t('lot.server.detail'),
+    });
   if (ready.length > 0)
     rows.push({
       icon: 'mail',

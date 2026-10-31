@@ -22,6 +22,7 @@ import {
   fixAddress,
   type AddressCard,
 } from '#/features/mail/fix-address';
+import { requestServerMails, useServerMail } from '#/features/mail/server-mail';
 import { useAddressEntry } from '#/features/mail/use-address-entry';
 import { MailFallback } from '#/features/mail/components/mail-fallback';
 import { needsFallback } from '#/features/mail/fallback';
@@ -148,6 +149,7 @@ function FixSheet({
     message: MailMessage;
   } | null>(null);
   const target = useMailTarget();
+  const serverMail = useServerMail();
   const busy = useRef(false);
   const entry = useAddressEntry(draft?.card ?? null, mail.address ?? '');
   const { address, onCard } = entry;
@@ -181,7 +183,37 @@ function FixSheet({
       : undefined;
   const prepared = message && MAILERS[target].prepare(message);
 
+  const resendByServer = async () => {
+    if (!draft || !address || busy.current) return;
+    busy.current = true;
+    setFailed(false);
+    try {
+      const parcelIds = mail.parcels.map(({ id }) => id);
+      await fixAddress(
+        db,
+        { card: draft.card, parcelIds, address, onCard },
+        { agentId: userId },
+      );
+      await requestServerMails(
+        db,
+        [{ ...mail, address }],
+        notification.type === 'relance' ? 'relance' : 'avis',
+        { userId },
+      );
+      onDismiss();
+    } catch {
+      setFailed(true);
+    } finally {
+      busy.current = false;
+    }
+  };
+
   const resend = (event: MouseEvent) => {
+    if (serverMail) {
+      event.preventDefault();
+      void resendByServer();
+      return;
+    }
     if (!draft || !prepared || !message || !address || busy.current) {
       event.preventDefault();
       return;

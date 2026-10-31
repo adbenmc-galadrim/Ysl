@@ -12,7 +12,10 @@ export {
   MAIL_VARIABLES,
   mailValues,
   parcelBullets,
+  parcelCarrierName,
   parcelCount,
+  parcelMailLine,
+  parcelMailName,
   pickupValues,
   renderMail,
   renderText,
@@ -51,6 +54,7 @@ export {
   FAILED_REASON_MAX,
   NOTIFICATION_STATUSES,
   notificationRow,
+  reachedNobody,
   RELAY_NAME_MAX,
   notifyParcel,
 } from './notification';
@@ -61,8 +65,19 @@ export type {
   NotifyChange,
   NotifySkip,
 } from './notification';
-export { DELIVERY_STATUSES, EMAIL_OUTBOX_STATUSES } from './outbox';
-export type { DeliveryStatus, EmailOutboxStatus } from './outbox';
+export {
+  DELIVERY_STATUSES,
+  EMAIL_OUTBOX_STATUSES,
+  MAIL_CHANNELS,
+  SERVER_MAIL_WAIT_MS,
+  SUPPRESSION_REASONS,
+} from './outbox';
+export type {
+  DeliveryStatus,
+  EmailOutboxStatus,
+  MailChannel,
+  SuppressionReason,
+} from './outbox';
 export {
   DNS_RECORD_KINDS,
   MAIL_DOMAIN_STATUSES,

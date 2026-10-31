@@ -77,6 +77,7 @@ describe('0017_statut_reel_envoi', () => {
       ...old,
       delivery_status: null,
       delivery_at: null,
+      channel: 'phone',
     });
   }, 30_000);
 });

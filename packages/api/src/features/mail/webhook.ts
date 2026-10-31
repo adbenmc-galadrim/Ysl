@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { DELIVERY_STATUSES, type DeliveryStatus } from '@repo/contract/mail';
 import type { AnyDb } from '@repo/db';
-import { emailOutbox, notification } from '@repo/db/schema';
+import { emailOutbox, emailSuppression, notification } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 
@@ -88,11 +88,30 @@ export async function receiveMailEvent(
   try {
     const outcome = await db.transaction(async (tx) => {
       const [row] = await tx
-        .select({ id: emailOutbox.id })
+        .select({
+          id: emailOutbox.id,
+          organizationId: emailOutbox.organizationId,
+          recipient: emailOutbox.recipient,
+        })
         .from(emailOutbox)
         .where(eq(emailOutbox.providerMessageId, messageId))
         .limit(1);
       if (!row) return 'unknown';
+      // Whoever asked for no more mail gets none: the queue forgets in 30 days, this does not.
+      if (
+        row.organizationId &&
+        (status === 'unsubscribed' || status === 'complained')
+      ) {
+        await tx
+          .insert(emailSuppression)
+          .values({
+            organizationId: row.organizationId,
+            email: row.recipient.toLowerCase(),
+            reason: status,
+            at,
+          })
+          .onConflictDoNothing();
+      }
       const weaker = weakerThan(status);
       const [moved] = await tx
         .update(emailOutbox)

@@ -393,13 +393,13 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | --- | --- | --- |
 | Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Celui qui déclare l'écart désigne les colis concernés | YSL-134 |
 | Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là | YSL-131, YSL-135 |
-| L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Le serveur tire le code à l'envoi et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
+| L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Confirmé : le serveur tire le code quand il met le mail en file et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
 | Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise (confirmé) | YSL-116 |
 | Durées de conservation d'une entreprise neuve (D28) | Celles du §9.2 par défaut | YSL-126 |
 | Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
-| Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Le serveur tire un nouveau code à chaque relance et retire l'ancien : le §8.7 dit déjà « remplacé » ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
+| Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Confirmé : le serveur tire un nouveau code à chaque relance et retire l'ancien, rétabli si le mail échoue ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
 | Conversion de la prod : profil de l'entreprise convertie et colis en cours | Profil qui reproduit l'agent unique (la navette remet, « Petit site ») ; les colis gardent leur statut | YSL-118 |
 | Cycle de vie d'une tournée : ouverture, clôture, colis « À compléter » | Un colis entre dans la tournée de la navette qui l'a validé ; la tournée se clôt quand tous sont déposés ; un colis « À compléter » reste visible de cette navette | YSL-133 |
 | Un même code de retrait couvre des colis de deux départements, ou un contact hors annuaire | Un code par personne et par département ; un contact prend le département du colis | YSL-117, YSL-136 |

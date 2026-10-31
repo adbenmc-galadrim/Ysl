@@ -1,3 +1,4 @@
+import type { TranslateFn } from '@repo/shared/i18n';
 import { PICKUP_DAYS, type PickupSetting } from '../settings';
 import { buildMailUrl } from './urls';
 
@@ -248,6 +249,64 @@ export function damageNotice(
 ): string {
   const note = damage.note?.trim();
   return `Arrivé abîmé : ${parcel}, ${damage.label.toLowerCase()}${note ? ` (${note})` : ''}`;
+}
+
+type MailParcel = {
+  carrier: string | null;
+  type: string;
+  tracking: string | null;
+  senderName?: string | null;
+  pieceN?: number | null;
+  pieceTotal?: number | null;
+};
+
+/** "UPS", or what stands for a carrier when no label named one. */
+export function parcelCarrierName(
+  parcel: Pick<MailParcel, 'carrier' | 'type'>,
+  t: TranslateFn,
+): string {
+  if (parcel.carrier) return parcel.carrier;
+  return t(
+    parcel.type === 'sans_suivi'
+      ? 'parcel.carrier.none'
+      : 'parcel.carrier.unknown',
+  );
+}
+
+/** "UPS ···0622", as the desk names a parcel. */
+export function parcelMailName(parcel: MailParcel, t: TranslateFn): string {
+  const carrier = parcelCarrierName(parcel, t);
+  return parcel.tracking
+    ? `${carrier} ···${parcel.tracking.slice(-4)}`
+    : carrier;
+}
+
+/**
+ * One parcel as the mail lists it (§8.7). When it came is worded by the caller,
+ * on the clock of the iPhone or of the server.
+ */
+export function parcelMailLine(
+  parcel: MailParcel,
+  received: { today: boolean; time: string; date: string },
+  t: TranslateFn,
+): string {
+  const sender = parcel.senderName?.trim();
+  const { pieceN, pieceTotal } = parcel;
+  return [
+    parcelMailName(parcel, t),
+    sender && t('mail.parcel.sender', { sender }),
+    pieceN && pieceTotal && pieceTotal > 1
+      ? t(pieceN === 1 ? 'mail.parcel.piece' : 'mail.parcel.pieces', {
+          n: pieceN,
+          total: pieceTotal,
+        })
+      : undefined,
+    received.today
+      ? t('mail.parcel.today', { time: received.time })
+      : t('mail.parcel.before', { date: received.date }),
+  ]
+    .filter(Boolean)
+    .join(', ');
 }
 
 /** What one recipient's e-mail is made of, as the app knows it. */

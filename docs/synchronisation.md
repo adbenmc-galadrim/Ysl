@@ -322,6 +322,35 @@ Cette durée ne fait pas partie du §9.2 : elle reste à valider par le DPO. Job
 dans `apps/server` (`MAIL_POLL_SECONDS`, 30 par défaut, 0 le coupe), éteint sans
 `BREVO_API_KEY` ou `MAIL_FROM_ADDRESS`.
 
+**Envoi par le serveur** (YSL-115, ME04) : `sync.pull` dit `serverMail` (clé Brevo, jeton du webhook,
+adresse d'expédition, job actif). Sans ce oui, l'iPhone n'écrit aucune demande et le job ne tourne
+pas : la messagerie du téléphone reste le seul parcours, sans tirage ni file. Avec lui, la
+validation d'un lot écrit une `notification` `channel = 'server'`, `prepared`, par destinataire
+ayant une adresse ; elle voyage par la synchro, donc tient hors ligne. Un iPhone d'avant
+n'écrit jamais `server`, et une fois écrite, une copie d'appareil ne change plus la ligne
+(`sync.push` répond 200 sans écrire). Le job relit colis, adresse et département, tire le
+code (un par personne et par département, l'ancien retiré), rend le modèle et met en file,
+dans une transaction. À l'envoi : `sent`, colis `notifie`, événement, dans la transaction de
+la file. Pendant 15 minutes l'iPhone considère ces colis partis ; passé ce délai ils lui
+reviennent en repli. Avant d'envoyer, le serveur revérifie : des colis déjà notifiés par le
+téléphone annulent le mail. Un échec passe la ligne en `failed`, rétablit l'ancien code et
+laisse les colis à notifier. Une demande de plus de 3 jours n'est plus envoyée, préparée ou en file (compte refusé) : l'ancien code revient. Le corps,
+qui porte le code, est effacé dès la fin de l'envoi ou de l'échec ; restent l'adresse et le
+statut, 30 jours. Si Brevo refuse l'expéditeur d'une entreprise (400, 401, 402, 403), le mail
+repart de l'adresse de la plateforme ; un second refus décide seul (compte refusé : file
+bloquée). `Répondre à` : le plus ancien compte du département du colis, sinon l'agent qui a
+validé. Une désinscription ou une plainte s'inscrit dans `email_suppression`, sans
+expiration ni levée pour l'instant (à valider par le DPO) : plus aucun mail du serveur à cette adresse, la ligne passe en `failed` et le
+colis reste à prévenir par un autre moyen.
+
+**Relances par le serveur** : profil `reminders = required` (`automatic`) : le job demande
+J+2 et J+5 (D12), du lundi au vendredi de 8 h à 18 h à Paris, pour les colis dont l'avis est
+parti par le serveur ; les colis avisés par le téléphone restent aux relances du téléphone.
+Un mail en cours, un échec depuis le dernier envoi ou un rebond retiennent la relance : elle
+part une fois. `optional` (`manual`) : « Relancer » écrit une demande. `disabled` : rien.
+Chaque relance du serveur tire un nouveau code et retire l'ancien, dont le QR répond
+« remplacé » ; « même code » ne vaut que pour le repli.
+
 **Statuts réels** (`POST /api/webhooks/mail`, YSL-113) : Brevo ne signe pas ses
 événements, il renvoie le jeton donné à la création du webhook
 (`Authorization: Bearer`, `BREVO_WEBHOOK_TOKEN`, 32 caractères au moins ; sans lui la

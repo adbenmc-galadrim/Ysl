@@ -5,6 +5,7 @@ import {
   type StatusFields,
   type StatusWrite,
 } from '../parcel-status';
+import { MAIL_CHANNELS, type DeliveryStatus } from './outbox';
 import { MAIL_TARGETS } from './urls';
 import { NOTIFICATION_TYPES } from './templates';
 
@@ -59,6 +60,8 @@ export const notificationRow = z.object({
   failedReason: z.string().max(FAILED_REASON_MAX).nullable(),
   /** Told through this colleague or assistant, at `recipients` (YSL-72). */
   relayName: z.string().trim().min(1).max(RELAY_NAME_MAX).nullish(),
+  /** Absent from an iPhone of before: the phone. */
+  channel: z.enum(MAIL_CHANNELS).optional(),
 });
 
 export type NotificationRow = z.infer<typeof notificationRow>;
@@ -86,14 +89,42 @@ export type NotifyChange =
   | { parcelId: string; skip: NotifySkip };
 
 /**
+ * Every mail that left about this parcel bounced: the next one is the first
+ * the recipient reads, whatever the parcel's status says (YSL-113).
+ */
+export function reachedNobody(
+  parcelId: string,
+  mails: readonly {
+    parcelIds: readonly string[];
+    sentAt: Date | null;
+    deliveryStatus?: DeliveryStatus | null;
+    deletedAt?: Date | null;
+  }[],
+): boolean {
+  const left = mails.filter(
+    (mail) =>
+      !mail.deletedAt && mail.sentAt && mail.parcelIds.includes(parcelId),
+  );
+  return (
+    left.length > 0 && left.every((mail) => mail.deliveryStatus === 'bounced')
+  );
+}
+
+/**
  * What a confirmed e-mail does to each of its parcels (§8.3): a received one
  * becomes notified, a notified one records the reminder in `lastNotifiedAt`,
- * keeping its first notice. A parcel already handed over, returned, deleted,
- * still to complete or with nobody on it stays as it is.
+ * keeping its first notice. `firstRead`: nothing reached the recipient before
+ * (`reachedNobody`), so this mail is the notice, and J+2 runs from it. A parcel
+ * already handed over, returned, deleted, still to complete or with nobody on
+ * it stays as it is.
  */
 export function notifyParcel(
   parcel: NotifiableParcel,
-  { sentAt, agentId }: { sentAt: Date; agentId: string },
+  {
+    sentAt,
+    agentId,
+    firstRead = false,
+  }: { sentAt: Date; agentId: string; firstRead?: boolean },
 ): NotifyChange {
   const parcelId = parcel.id;
   if (
@@ -111,11 +142,11 @@ export function notifyParcel(
     return {
       parcelId,
       from: parcel.status,
-      reminder: true,
+      reminder: !firstRead,
       patch: {
         status: 'notifie',
         statusSeq: parcel.statusSeq ?? 0,
-        notifiedAt: parcel.notifiedAt ?? sentAt,
+        notifiedAt: firstRead ? sentAt : (parcel.notifiedAt ?? sentAt),
         lastNotifiedAt: sentAt,
         deliveredAt: null,
         deliveredBy: null,

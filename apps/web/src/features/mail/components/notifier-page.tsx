@@ -112,7 +112,7 @@ const addressedFirst = (mails: RecipientMail[]) => [
  */
 async function openSession(
   userId: string,
-  { parcelId, batchId, reminder, selection }: NotifierScope,
+  { parcelId, batchId, reminder, selection, otherWay }: NotifierScope,
 ): Promise<Session> {
   const now = new Date();
   if (selection) {
@@ -155,9 +155,13 @@ async function openSession(
     };
   }
   const all = await loadPendingMails(db);
+  const about = parcelId ? mailsAbout(all, parcelId) : [];
   const mails = addressedFirst(
     parcelId
-      ? mailsAbout(all, parcelId)
+      ? // Told through a colleague whose mail bounced: notified, still to tell.
+        about.length > 0 || !otherWay
+        ? about
+        : await loadSelectionMails(db, [parcelId], false)
       : batchId
         ? mailsOfBatch(all, batchId)
         : all,

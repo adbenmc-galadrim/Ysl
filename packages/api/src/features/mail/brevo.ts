@@ -84,6 +84,15 @@ export function brevoMailer({
             subject: message.subject,
             textContent: message.text,
             ...(message.html ? { htmlContent: message.html } : {}),
+            ...(message.replyTo ? { replyTo: { email: message.replyTo } } : {}),
+            ...(message.attachments?.length
+              ? {
+                  attachment: message.attachments.map((file) => ({
+                    name: file.name,
+                    content: file.contentBase64,
+                  })),
+                }
+              : {}),
             headers: { IdempotencyKey: message.idempotencyKey },
           }),
           signal: AbortSignal.timeout(SEND_TIMEOUT_MS),

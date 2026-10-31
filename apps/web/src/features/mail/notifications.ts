@@ -2,6 +2,7 @@ import {
   canMoveNotification,
   FAILED_REASON_MAX,
   notifyParcel,
+  reachedNobody,
   type MailTarget,
   type NotificationStatus,
   type NotificationType,
@@ -222,10 +223,17 @@ export async function markSent(
       now,
       also: async (row) => {
         const parcels = await db.parcel.bulkGet(row.parcelIds);
+        const others = (await db.notification.toArray()).filter(
+          (mail) => mail.id !== row.id,
+        );
         changes = row.parcelIds.map((parcelId, index) => {
           const parcel = parcels[index];
           return parcel
-            ? notifyParcel(parcel, { sentAt: now, agentId: userId })
+            ? notifyParcel(parcel, {
+                sentAt: now,
+                agentId: userId,
+                firstRead: reachedNobody(parcelId, others),
+              })
             : { parcelId, skip: 'missing' };
         });
         return changes.flatMap((change, index): Upsert[] => {
@@ -238,7 +246,11 @@ export async function markSent(
               {
                 type: 'parcel.notified',
                 notificationId: row.id,
-                kind: change.reminder ? 'relance' : row.type,
+                kind: change.reminder
+                  ? 'relance'
+                  : row.type === 'relance'
+                    ? 'avis'
+                    : row.type,
               },
               { agentId: userId, now },
             ),

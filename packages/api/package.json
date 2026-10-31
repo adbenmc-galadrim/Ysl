@@ -25,7 +25,8 @@
     "@repo/shared": "workspace:*",
     "@trpc/server": "catalog:",
     "drizzle-orm": "catalog:",
-    "superjson": "catalog:"
+    "superjson": "catalog:",
+    "uqr": "^0.1.3"
   },
   "devDependencies": {
     "@electric-sql/pglite": "catalog:",

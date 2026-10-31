@@ -3,6 +3,7 @@ export { createTRPCContext } from '#lib/trpc';
 export { runPurge } from '#features/maintenance/purge';
 export { brevoMailer } from '#features/mail/brevo';
 export { drainEmailOutbox, enqueueEmail } from '#features/mail/queue';
+export { mailRound } from '#features/mail/round';
 export type { DrainCounts } from '#features/mail/queue';
 export {
   isWebhookAuthorized,
