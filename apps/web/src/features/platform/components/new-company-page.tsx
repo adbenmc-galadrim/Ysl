@@ -19,7 +19,33 @@ import { trpcClient } from '#/lib/trpc';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const ICON = { small_site: 'truck', multi_departments: 'building' } as const;
+const ICON = {
+  small_site: 'truck',
+  multi_departments: 'building',
+  strict_traceability: 'shield',
+} as const;
+
+/** What each card promises: the test of the model's profile holds it to its word. */
+const FEATURES = {
+  small_site: [
+    { text: t('platform.model.small_site.feature.handover'), on: true },
+    { text: t('platform.model.small_site.feature.deposit'), on: false },
+    { text: t('platform.model.small_site.feature.email'), on: true },
+    { text: t('platform.model.small_site.feature.reminders'), on: true },
+  ],
+  multi_departments: [
+    { text: t('platform.model.multi_departments.feature.deposit'), on: true },
+    { text: t('platform.model.multi_departments.feature.email'), on: true },
+    { text: t('platform.model.multi_departments.feature.proof'), on: true },
+    { text: t('platform.model.multi_departments.feature.reminders'), on: true },
+  ],
+  strict_traceability: [
+    { text: t('platform.model.strict_traceability.feature.deposit'), on: true },
+    { text: t('platform.model.strict_traceability.feature.handover'), on: true },
+    { text: t('platform.model.strict_traceability.feature.photo'), on: true },
+    { text: t('platform.model.strict_traceability.feature.proof'), on: true },
+  ],
+} as const;
 
 /** A name and a model (D30): the steps after it come with YSL-125 and YSL-122. */
 export function NewCompanyPage() {
@@ -63,12 +89,7 @@ export function NewCompanyPage() {
           name: t(`platform.model.${id}.title`),
           description: t(`platform.model.${id}.description`),
           selected: id === model,
-          features: [
-            { text: t(`platform.model.${id}.feature.handover`), on: true },
-            { text: t('platform.model.feature.deposit'), on: false },
-            { text: t('platform.model.feature.email'), on: true },
-            { text: t('platform.model.feature.reminders'), on: true },
-          ],
+          features: [...FEATURES[id]],
         }))}
       />
     );

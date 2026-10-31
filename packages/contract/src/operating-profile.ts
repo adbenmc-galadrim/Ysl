@@ -55,14 +55,45 @@ export const SMALL_SITE_OPERATING_PROFILE: OperatingProfile = {
   shuttleActsAsDepartment: true,
 };
 
-/** The models offered when a company is created (D30); YSL-125 details them. */
-export const PROFILE_MODELS = ['small_site', 'multi_departments'] as const;
+/** « Multi-départements » (ME18): the parcels go on tour, each department hands them over. */
+export const MULTI_DEPARTMENTS_OPERATING_PROFILE: OperatingProfile = {
+  shuttleActsAsDepartment: false,
+  batchReview: 'optional',
+  depositConfirmation: 'count',
+  handoverProof: 'required',
+  handoverScan: 'optional',
+  signature: 'optional',
+  photo: 'disabled',
+  emailMoment: 'deposit',
+  reminders: 'required',
+};
+
+/** « Traçabilité stricte » (ME18): on tour too, every gesture proved from the deposit on. */
+export const STRICT_TRACEABILITY_OPERATING_PROFILE: OperatingProfile = {
+  shuttleActsAsDepartment: false,
+  batchReview: 'required',
+  depositConfirmation: 'each',
+  handoverProof: 'required',
+  handoverScan: 'required',
+  signature: 'required',
+  photo: 'optional',
+  emailMoment: 'deposit',
+  reminders: 'required',
+};
+
+/** The models offered when a company is created (D30). */
+export const PROFILE_MODELS = [
+  'small_site',
+  'multi_departments',
+  'strict_traceability',
+] as const;
 
 export type ProfileModel = (typeof PROFILE_MODELS)[number];
 
 export const PROFILE_OF_MODEL: Record<ProfileModel, OperatingProfile> = {
   small_site: SMALL_SITE_OPERATING_PROFILE,
-  multi_departments: DEFAULT_OPERATING_PROFILE,
+  multi_departments: MULTI_DEPARTMENTS_OPERATING_PROFILE,
+  strict_traceability: STRICT_TRACEABILITY_OPERATING_PROFILE,
 };
 
 /** A stored value this version cannot read counts as no profile. Unknown fields are a later version's. */

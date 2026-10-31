@@ -343,6 +343,18 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | Moment de l'e-mail | Au scan ou au dépôt |
 | Relances | Trois états |
 
+| Paramètre | Petit site, la navette remet | Multi-départements | Traçabilité stricte |
+| --- | --- | --- | --- |
+| Navette = département | Oui | Non | Non |
+| Revue du lot | Facultative | Facultative | Obligatoire |
+| Confirmation du dépôt | Désactivée | Au nombre | Colis par colis |
+| Preuve de remise | Facultative | Obligatoire | Obligatoire |
+| Scan du colis à la remise | Désactivé | Facultatif | Obligatoire |
+| Signature | Facultative | Facultative | Obligatoire |
+| Photo | Facultative | Désactivée | Facultative |
+| Moment de l'e-mail | Au scan | Au dépôt | Au dépôt |
+| Relances | À la main | Automatiques | Automatiques |
+
 | ID | Exigence |
 | --- | --- |
 | ME16 | Règle du profil partagée entre l'iPhone et le serveur (`@repo/contract`) |
