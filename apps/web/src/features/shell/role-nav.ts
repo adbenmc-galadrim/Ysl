@@ -65,7 +65,12 @@ export type RoleSpace = {
 };
 
 /** On the phone, Colis stays the home: the role's own space opens from Réglages. */
-export function roleSpace(role: AccountRole, t: TranslateFn): RoleSpace | null {
+export function roleSpace(
+  role: AccountRole,
+  t: TranslateFn,
+  /** The company runs tours: no tour to open otherwise. */
+  tour = true,
+): RoleSpace | null {
   switch (role) {
     case 'company_admin':
       return {
@@ -82,7 +87,9 @@ export function roleSpace(role: AccountRole, t: TranslateFn): RoleSpace | null {
     case 'platform_admin':
       return null;
     default:
-      return { to: '/tournee', icon: 'truck', label: t('home.tour.title') };
+      return tour
+        ? { to: '/tournee', icon: 'truck', label: t('home.tour.title') }
+        : null;
   }
 }
 

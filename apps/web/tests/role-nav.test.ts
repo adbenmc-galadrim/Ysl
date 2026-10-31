@@ -87,3 +87,10 @@ describe('accountLine', () => {
     );
   });
 });
+
+describe('the shuttle without tours', () => {
+  it('has no tour to open', () => {
+    expect(roleSpace('shuttle', t, false)).toBeNull();
+    expect(roleSpace('shuttle', t, true)?.to).toBe('/tournee');
+  });
+});

@@ -44,6 +44,10 @@ export type TourScreenProps = {
   /** Replaces the two lists: nothing to deposit, or everything deposited. */
   hero?: { icon: 'scan' | 'check'; title: string; text: string };
   allParcels?: { label: string; onClick: () => void };
+  /** A banner under the title, e.g. changes left to send. */
+  notice?: ReactNode;
+  /** Floating over the bottom bar, e.g. a new version. */
+  toast?: ReactNode;
   onStop?: (id: string) => void;
   onDone?: (id: string) => void;
   onMenu?: () => void;
@@ -82,6 +86,8 @@ export function TourScreen({
   done = [],
   hero,
   allParcels,
+  notice,
+  toast,
   onStop,
   onDone,
   onMenu,
@@ -93,17 +99,24 @@ export function TourScreen({
     <Screen
       className="pt-[calc(var(--safe-top)+6px)]"
       bottom={
-        <BottomBar className="pt-[34px] pb-[26px]">
-          <SearchTrigger size="dock" onClick={onSearch} />
-          <Button
-            icon="scan"
-            iconSize={20}
-            className="w-[171px] gap-2"
-            onClick={onScan}
+        <div className="flex flex-col">
+          {toast && <div className="px-5">{toast}</div>}
+          <BottomBar
+            className={
+              toast ? '-mt-2 pt-[34px] pb-[26px]' : 'pt-[34px] pb-[26px]'
+            }
           >
-            Scanner
-          </Button>
-        </BottomBar>
+            <SearchTrigger size="dock" onClick={onSearch} />
+            <Button
+              icon="scan"
+              iconSize={20}
+              className="w-[171px] gap-2"
+              onClick={onScan}
+            >
+              Scanner
+            </Button>
+          </BottomBar>
+        </div>
       }
     >
       <div className="flex h-11 items-center justify-between">
@@ -134,6 +147,7 @@ export function TourScreen({
           />
         </div>
       )}
+      {notice && <div className="mt-4 shrink-0">{notice}</div>}
       {alert && (
         <Banner
           tone="red"
@@ -186,7 +200,9 @@ export function TourScreen({
           {stops.length > 0 && (
             <>
               <SectionHeader
-                title={<span className="inline-block w-[105px]">À déposer</span>}
+                title={
+                  <span className="inline-block w-[105px]">À déposer</span>
+                }
                 count={stops.length}
                 size="lg"
                 className="mt-6 h-[27px]"
@@ -297,7 +313,11 @@ export function NavetteTourneeMobile() {
       stops={TO_DEPOSIT}
       onDone={() => undefined}
       done={[
-        { id: 'courrier', name: 'Service courrier', line: '4 colis · confirmé à 8:40' },
+        {
+          id: 'courrier',
+          name: 'Service courrier',
+          line: '4 colis · confirmé à 8:40',
+        },
       ]}
     />
   );

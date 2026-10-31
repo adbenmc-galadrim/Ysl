@@ -11,7 +11,9 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useSession } from '#/features/auth/api/use-session';
 import { hasDesk } from '#/features/auth/route-access';
 import { db } from '#/features/db/database';
+import { useGoesOnTour } from '#/features/parcels/api/use-tour';
 import { ColisPage } from '#/features/parcels/components/colis-page';
+import { TourPage } from '#/features/parcels/components/tour-page';
 import { goesOnTour } from '#/features/parcels/tour';
 import { CompaniesPage } from '#/features/platform/components/companies-page';
 import { homeCounts, type HomeCounts } from '#/features/shell/home-counts';
@@ -71,23 +73,6 @@ function useParcelsAction(desk: boolean): RoleHomeProps['action'] {
   };
 }
 
-/** Until YSL-133: the shuttle's work stays on Colis. */
-export function TourHome() {
-  const action = useParcelsAction(false);
-  const navigate = useNavigate();
-  return (
-    <RoleHomeMobile
-      title={t('home.tour.title')}
-      notice={{
-        title: t('home.tour.notice.title'),
-        description: t('home.tour.notice.description'),
-      }}
-      action={action}
-      onBack={() => void navigate({ to: '/reglages' })}
-    />
-  );
-}
-
 /** Until YSL-82 and YSL-136: the parcels really here, and what is still to come. */
 export function DepartmentHome() {
   const counts = useCounts();
@@ -138,6 +123,13 @@ export function DashboardHome() {
   );
 }
 
+/** With tours, the shuttle opens on its round; acting as department, on Colis as ever. */
+function ShuttleHome() {
+  const tour = useGoesOnTour();
+  if (tour === undefined) return null;
+  return tour ? <TourPage /> : <ColisPage />;
+}
+
 /** `/`, by role: a computer role on a computer opens on its space, everyone else on the work. */
 export function HomePage() {
   const session = useSession();
@@ -147,5 +139,5 @@ export function HomePage() {
   if (desk && hasDesk(role)) {
     return role === 'department' ? <DepartmentHome /> : <DashboardHome />;
   }
-  return <ColisPage />;
+  return role === 'shuttle' ? <ShuttleHome /> : <ColisPage />;
 }
