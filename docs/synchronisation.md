@@ -54,9 +54,11 @@ Ces statuts valent par opération. Un compte `platform_admin`, ou `department` r
 | --- | --- | --- | --- |
 | `admin`, `agent`, rôle nul (jusqu'à YSL-118) | toute l'entreprise | lecture, écriture | oui |
 | `company_admin` | toute l'entreprise | lecture, écriture | non |
-| `shuttle` | toute l'entreprise, jusqu'à YSL-133 (`parcelScope`) | lecture | non, jusqu'au profil (YSL-124, `canHandOver`) |
+| `shuttle` | toute l'entreprise, jusqu'à YSL-133 (`parcelScope`) | lecture | selon le profil : « Navette = département » (`canHandOver`, relu à chaque écriture) |
 | `department` | les siens | le sien, lecture et écriture | les siens |
 | `platform_admin` | aucun | aucun | non |
+
+Le profil de fonctionnement est la ligne `setting` de clé `operatingProfile`. Le serveur seul l'écrit (`operating.save`) : `sync.push` refuse cette clé, même d'un admin. Il descend à tous les appareils ; sans ligne, l'entreprise garde `DEFAULT_OPERATING_PROFILE`, le comportement d'avant le profil. Une remise faite hors ligne par une navette dont le profil vient de changer est refusée au push (403) et part en « Corriger ».
 
 Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal, e-mails, remises), ses codes, les réglages et ses modèles ; ni les lots, ni les expéditeurs, ni les alias. Un colis sans département lui reste invisible. En écriture il ne crée pas de colis et n'en donne aucun à un autre département : 403 `sync.op.outOfScope`.
 
