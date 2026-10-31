@@ -43,7 +43,7 @@ export const fr = {
     'Ce réglage a déjà été enregistré depuis un autre appareil : rouvrez-le avant de le modifier.',
   'sync.op.retry':
     'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
-  'agents.error.notFound': 'Ce compte n’existe pas.',
+  'departments.error.accountNotFound': 'Ce compte n’existe pas.',
   'departments.error.nameTaken': 'Un département porte déjà ce nom.',
   'departments.error.notFound': 'Ce département n’existe pas.',
   'departments.error.inUse':
