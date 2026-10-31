@@ -3,6 +3,7 @@ import { db } from '@repo/db';
 import {
   COMPANY_SUSPENDED,
   isCompanyAdmin,
+  mustChangePassword,
   toUserRole,
   type UserRole,
 } from '@repo/contract/auth';
@@ -57,7 +58,8 @@ export function roleOf(session: Session): UserRole {
   return role;
 }
 
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+/** Signed in and not suspended; what is left to a session that must first change its password. */
+export const signedInProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
@@ -72,6 +74,16 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     });
   }
   return next({ ctx: { ...ctx, session: ctx.session } });
+});
+
+export const protectedProcedure = signedInProcedure.use(({ ctx, next }) => {
+  if (mustChangePassword(ctx.session)) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('accounts.error.passwordChange'),
+    });
+  }
+  return next();
 });
 
 /** The app admin: outside every company, so a company account promoted by mistake stays refused (D26). */

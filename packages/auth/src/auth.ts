@@ -23,6 +23,12 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: 'pg' }),
   trustedOrigins: [env.CORS_ORIGIN],
+  user: {
+    additionalFields: {
+      // Read at every request by `mustChangePassword`; no one writes it through the API.
+      passwordChangeRequiredAt: { type: 'date', required: false, input: false },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     disableSignUp: true,

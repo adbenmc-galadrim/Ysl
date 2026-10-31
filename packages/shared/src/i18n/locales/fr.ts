@@ -218,6 +218,8 @@ export const fr = {
   'accounts.error.suspended':
     'Ce compte est suspendu. Les données de ce téléphone sont gardées.',
   'accounts.error.notFound': 'Ce compte n’existe pas dans votre entreprise.',
+  'accounts.error.passwordChange':
+    'Changez d’abord votre mot de passe provisoire.',
   'accounts.error.emailTaken':
     'Cette adresse a déjà un compte ou une invitation en attente.',
   'accounts.error.lastAdmin':
