@@ -42,8 +42,6 @@ export type VerifierColisScreenProps = {
   selectedId?: string;
   /** What the scanner did read, all settled. */
   fields: ScanField[];
-  /** Shown when the scanner proposes nobody: a new card, from the name read. */
-  addPerson?: { name: string | null; onClick: () => void };
   submitLabel?: string;
   onBack?: () => void;
   onSkip?: () => void;
@@ -176,7 +174,6 @@ export function VerifierColisScreen({
   readName,
   candidates,
   selectedId,
-  addPerson,
   submitLabel = 'Valider et suivant',
   onSelect,
   onSearch,
@@ -207,27 +204,7 @@ export function VerifierColisScreen({
             />
           ))}
         </PersonOptionGroup>
-      ) : (
-        addPerson && (
-          <button
-            type="button"
-            onClick={addPerson.onClick}
-            className="mt-[18px] flex h-16 cursor-pointer items-center gap-[15px] rounded-card border border-dashed border-border pb-0.5 pl-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-blue"
-          >
-            <Icon name="user" size={22} className="shrink-0" />
-            <span className="flex min-w-0 flex-col pr-4">
-              <span className="truncate text-16 font-semibold">
-                {addPerson.name
-                  ? `Ajouter « ${addPerson.name} » à l’annuaire`
-                  : 'Ajouter une personne à l’annuaire'}
-              </span>
-              <span className="mt-[3px] truncate text-13 text-muted">
-                Personne pas encore dans l’annuaire
-              </span>
-            </span>
-          </button>
-        )
-      )}
+      ) : null}
 
       <button
         type="button"

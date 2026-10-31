@@ -99,7 +99,7 @@ export const ChoisirLeDestinataire: Story = {
   ),
 };
 
-/** D15: the directory grows at the desk, so a name read may match nobody yet. */
+/** A name read may match nobody: the search and the contact outside the directory remain. */
 export const VerifierPersonneInconnue: Story = {
   name: 'Vérifier un colis, personne inconnue',
   render: () => (
@@ -112,7 +112,6 @@ export const VerifierPersonneInconnue: Story = {
       }}
       readName="Nora Haddad"
       candidates={[]}
-      addPerson={{ name: 'Nora Haddad', onClick: () => {} }}
       submitLabel="Valider et terminer"
       fields={[
         { label: 'Transporteur', value: UNCERTAIN_LABEL.carrier },

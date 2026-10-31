@@ -6,8 +6,6 @@ import { useSession } from '#/features/auth/api/use-session';
 import { updateDraft } from '#/features/batch/store';
 import { db } from '#/features/db/database';
 import type { LocalContact, LocalDirectoryPerson } from '#/features/db/schema';
-import { PersonSheet } from '#/features/directory/components/person-sheet';
-import { draftFromQuery } from '#/features/directory/people';
 import {
   nameLine,
   preselection,
@@ -21,17 +19,11 @@ import {
 } from '#/features/recipient/components/recipient-chooser';
 import { saveOutsideContact } from '#/features/recipient/contacts';
 import type { MatchEngine } from '#/features/recipient/matcher';
-import {
-  type Choice,
-  optionOf,
-  personOption,
-} from '#/features/recipient/options';
+import { type Choice, optionOf } from '#/features/recipient/options';
 import type { StepProps } from '#/features/review/components/step';
 import { checkFields } from '#/features/scan/reading';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-type Sheet = { initial: string; key: number };
 
 type RecipientStepProps = StepProps & {
   matcher: MatchEngine;
@@ -43,8 +35,9 @@ type RecipientStepProps = StepProps & {
  * Who the parcel is for (F18): the three closest people of YSL-46, then
  * « Chercher dans l'annuaire » for « Choisir le destinataire », where the
  * label's suggestions head the directory and someone outside it becomes a
- * contact (F27); a new card from the name read. The card chosen settles
- * the recipient, which F26 needs to notify.
+ * contact (F27). The directory is kept by the admin and the departments
+ * (D15 révisée), not here. The card chosen settles the recipient, which F26
+ * needs to notify.
  */
 export function RecipientStep({
   draft,
@@ -58,7 +51,6 @@ export function RecipientStep({
   const [result, setResult] = useState<RecipientResult | null>(null);
   const [chosen, setChosen] = useState<Choice>();
   const [picking, setPicking] = useState(false);
-  const [sheet, setSheet] = useState<Sheet | null>(null);
   const submitting = useRef(false);
   const session = useSession();
 
@@ -119,15 +111,6 @@ export function RecipientStep({
     }
   };
 
-  const openSheet = (initial: string) =>
-    setSheet((previous) => ({ initial, key: (previous?.key ?? 0) + 1 }));
-
-  const onPerson = (person: LocalDirectoryPerson) => {
-    setChosen(personOption(person));
-    setSheet(null);
-    setPicking(false);
-  };
-
   const onPick = async (pick: RecipientPick) => {
     const chosen =
       pick.kind === 'card'
@@ -144,44 +127,28 @@ export function RecipientStep({
     setPicking(false);
   };
 
-  return (
-    <>
-      {picking ? (
-        <RecipientChooser
-          suggestions={candidates}
-          readName={shownName}
-          onClose={() => setPicking(false)}
-          onPick={onPick}
-        />
-      ) : (
-        <VerifierColisScreen
-          {...frame}
-          photo={photo && { ...photo, focus: line?.box ?? photo.focus }}
-          readName={shownName}
-          candidates={candidates}
-          selectedId={selected?.id}
-          fields={checkFields(draft, t)}
-          addPerson={{
-            name: shownName,
-            onClick: () => openSheet(shownName ?? ''),
-          }}
-          submitLabel={submitLabel}
-          onSelect={(id) => {
-            const option = candidates.find((c) => c.id === id);
-            if (option) setChosen(option);
-          }}
-          onSearch={() => setPicking(true)}
-          onSubmit={() => void onSubmit()}
-        />
-      )}
-      {sheet && (
-        <PersonSheet
-          key={sheet.key}
-          initial={draftFromQuery(sheet.initial)}
-          onDone={onPerson}
-          onDismiss={() => setSheet(null)}
-        />
-      )}
-    </>
+  return picking ? (
+    <RecipientChooser
+      suggestions={candidates}
+      readName={shownName}
+      onClose={() => setPicking(false)}
+      onPick={onPick}
+    />
+  ) : (
+    <VerifierColisScreen
+      {...frame}
+      photo={photo && { ...photo, focus: line?.box ?? photo.focus }}
+      readName={shownName}
+      candidates={candidates}
+      selectedId={selected?.id}
+      fields={checkFields(draft, t)}
+      submitLabel={submitLabel}
+      onSelect={(id) => {
+        const option = candidates.find((c) => c.id === id);
+        if (option) setChosen(option);
+      }}
+      onSearch={() => setPicking(true)}
+      onSubmit={() => void onSubmit()}
+    />
   );
 }
