@@ -6,7 +6,7 @@ export function isClosedAuthPath(pathname: string): boolean {
   return path === '/api/auth/admin' || path.startsWith('/api/auth/admin/');
 }
 
-/** The session lookup answers "suspended" to the device; a new sign-in is refused by the admin plugin. */
+/** The session lookup answers "suspended" to the device; a new sign-in is refused by the admin plugin, or for a company by the session hook. */
 const OPEN_WHEN_SUSPENDED = new Set([
   '/api/auth/get-session',
   '/api/auth/sign-in/email',
@@ -14,19 +14,17 @@ const OPEN_WHEN_SUSPENDED = new Set([
 
 export function authRoutes(
   handle: (c: Context) => Response | Promise<Response>,
-  isSuspended: (headers: Headers) => Promise<boolean> = () =>
-    Promise.resolve(false),
+  suspensionOf: (headers: Headers) => Promise<string | null> = () =>
+    Promise.resolve(null),
 ): Hono {
   const routes = new Hono();
   routes.on(['GET', 'POST'], '/*', async (c) => {
     if (isClosedAuthPath(c.req.path)) return c.notFound();
     // Signing out or closing its sessions would also empty the suspended phone.
     const path = c.req.path.replace(/\/{2,}/g, '/').toLowerCase();
-    if (
-      !OPEN_WHEN_SUSPENDED.has(path) &&
-      (await isSuspended(c.req.raw.headers))
-    ) {
-      return c.json({ code: 'ACCOUNT_SUSPENDED' }, 403);
+    if (!OPEN_WHEN_SUSPENDED.has(path)) {
+      const code = await suspensionOf(c.req.raw.headers);
+      if (code) return c.json({ code }, 403);
     }
     return handle(c);
   });

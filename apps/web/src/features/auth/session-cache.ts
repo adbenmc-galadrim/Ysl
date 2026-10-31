@@ -89,7 +89,7 @@ export function resolveSession(
 
 /** The server's word on an account that lost its session; `unknown` when it cannot be reached. */
 export type AccountSuspension = {
-  standing: 'suspended' | 'active' | 'gone' | 'unknown';
+  standing: 'suspended' | 'account_suspended' | 'active' | 'gone' | 'unknown';
   reactivatedAt?: Date | null;
 };
 
@@ -133,6 +133,10 @@ export async function settleSession(
     if (standing === 'suspended') {
       markCompanySuspended(store, kept.user.id);
       return kept;
+    }
+    // The kept copy may predate the suspension: the layout reads this to say so.
+    if (standing === 'account_suspended') {
+      return { ...kept, user: { ...kept.user, banned: true } };
     }
     if (
       standing === 'active' &&

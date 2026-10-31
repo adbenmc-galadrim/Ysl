@@ -11,6 +11,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  accountStanding,
   AlreadyAttachedError,
   attachToOrganization,
   chooseOrganization,
@@ -241,5 +242,37 @@ describe('createCompany', () => {
     const created = await resolveOrganization(db, 'Par script');
     expect((await posted(created.id)).departments).toHaveLength(1);
     expect((await posted(created.id)).settings).toHaveLength(1);
+  });
+});
+
+describe('accountStanding', () => {
+  const standing = async (id: string) =>
+    (await accountStanding(db, id)).standing;
+  const setBan = (banned: boolean, banReason: string | null) =>
+    db
+      .update(schema.user)
+      .set({ banned, banReason })
+      .where(eq(schema.user.id, 'u1'));
+
+  it('tells a phone what to keep', async () => {
+    const id = await createCompany(db, {
+      name: 'Atelier',
+      profileModel: 'small_site',
+    });
+    await attachToOrganization(db, 'u1', id);
+    expect(await standing('nobody')).toBe('gone');
+    expect(await standing('u1')).toBe('active');
+
+    await setBan(true, 'suspended');
+    expect(await standing('u1')).toBe('account_suspended');
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: new Date() })
+      .where(eq(schema.organization.id, id));
+    expect(await standing('u1')).toBe('suspended');
+
+    await setBan(true, 'revoked');
+    expect(await standing('u1')).toBe('gone');
+    await setBan(false, null);
   });
 });

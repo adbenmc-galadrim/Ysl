@@ -181,6 +181,17 @@ describe('a phone of a suspended company that lost its session', () => {
     expect(wipe).toHaveBeenCalledOnce();
   });
 
+  it('keeps everything for a suspended account, and says it is one', async () => {
+    const store = keptStore();
+    const wipe = vi.fn(() => Promise.resolve());
+    const answer = await settleSession({ kind: 'none' }, store, wipe, () =>
+      Promise.resolve({ standing: 'account_suspended' as const }),
+    );
+    expect(wipe).not.toHaveBeenCalled();
+    expect(answer?.user.banned).toBe(true);
+    expect(isCompanySuspended(store)).toBe(false);
+  });
+
   it('empties itself when another account signs in', async () => {
     const store = memoryStore();
     markCompanySuspended(store, 'someone-else');

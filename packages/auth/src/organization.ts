@@ -1,3 +1,4 @@
+import { accountStateOf } from '@repo/contract/accounts';
 import {
   OPERATING_PROFILE_KEY,
   PROFILE_OF_MODEL,
@@ -13,6 +14,8 @@ import {
 } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
+
+export { COMPANY_SUSPENDED } from '@repo/contract/auth';
 
 export const DEFAULT_ORGANIZATION_NAME = 'Service courrier';
 
@@ -196,19 +199,21 @@ export async function isInSuspendedCompany(
 }
 
 /**
- * `gone` once its company was deleted or the account deactivated: its phone
- * empties itself. An account with no company yet counts as active.
+ * What a phone that lost its session must do. `gone`, it empties itself: the
+ * company was deleted or the account revoked. Suspended, the company or the
+ * account alone, it keeps everything. An account with no company yet is active.
  */
 export async function accountStanding(
   db: AnyDb,
   userId: string,
 ): Promise<{
-  standing: 'suspended' | 'active' | 'gone';
+  standing: 'suspended' | 'account_suspended' | 'active' | 'gone';
   reactivatedAt: Date | null;
 }> {
   const [row] = await db
     .select({
       banned: user.banned,
+      banReason: user.banReason,
       suspendedAt: organization.suspendedAt,
       reactivatedAt: organization.reactivatedAt,
     })
@@ -219,10 +224,14 @@ export async function accountStanding(
       eq(organization.id, organizationMember.organizationId),
     )
     .where(eq(user.id, userId));
-  if (!row || row.banned) return { standing: 'gone', reactivatedAt: null };
+  const reactivatedAt = row?.reactivatedAt ?? null;
+  if (!row) return { standing: 'gone', reactivatedAt };
+  const state = accountStateOf(row);
+  if (state === 'revoked') return { standing: 'gone', reactivatedAt };
+  if (row.suspendedAt) return { standing: 'suspended', reactivatedAt };
   return {
-    standing: row.suspendedAt ? 'suspended' : 'active',
-    reactivatedAt: row.reactivatedAt,
+    standing: state === 'suspended' ? 'account_suspended' : 'active',
+    reactivatedAt,
   };
 }
 

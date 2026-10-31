@@ -56,7 +56,12 @@ export const deleteCompanyInput = z.strictObject({
   confirmName: z.string(),
 });
 
-export const ACCOUNT_STANDINGS = ['suspended', 'active', 'gone'] as const;
+export const ACCOUNT_STANDINGS = [
+  'suspended',
+  'account_suspended',
+  'active',
+  'gone',
+] as const;
 
 /** Whether a phone that lost its session must keep what it holds, and nothing else of the account. */
 export const accountSuspensionInput = z.strictObject({
