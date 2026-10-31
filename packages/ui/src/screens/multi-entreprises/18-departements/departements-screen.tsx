@@ -1,6 +1,10 @@
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
-import { DeskFormRow, DeskInput, DeskSectionTitle } from '#components/desk-form';
+import {
+  DeskFormRow,
+  DeskInput,
+  DeskSectionTitle,
+} from '#components/desk-form';
 import { DeskPanel } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { DeskTabs } from '#components/desk-tabs';
@@ -49,7 +53,13 @@ const DEPARTMENT_QR = [
   '#######.#..#..#.#.#.#',
 ];
 
-function DepartmentQr({ size, className }: { size: number; className?: string }) {
+function DepartmentQr({
+  size,
+  className,
+}: {
+  size: number;
+  className?: string;
+}) {
   return (
     <QrCode
       matrix={DEPARTMENT_QR}
@@ -113,9 +123,7 @@ const COLUMNS: DeskTableColumn<Department>[] = [
   {
     key: 'qr',
     header: 'QR',
-    cell: () => (
-      <Icon name="qr" size={16} className="mt-[2.5px] text-muted" />
-    ),
+    cell: () => <Icon name="qr" size={16} className="mt-[2.5px] text-muted" />,
   },
 ];
 
@@ -157,8 +165,8 @@ export function DepartementsDesktop() {
         activeRow="studio"
       />
       <p className="mt-[29px] text-12 text-muted">
-        Le service courrier reçoit les colis des transporteurs ; ses comptes sont
-        les navettes. Il peut aussi remettre, si le profil le permet.
+        Le service courrier reçoit les colis des transporteurs ; ses comptes
+        sont les navettes. Il peut aussi remettre, si le profil le permet.
       </p>
     </CompanyShell>
   );
@@ -227,7 +235,11 @@ export function FicheDepartementDesktop() {
             description="Repris dans l’avis de retrait envoyé aux salariés."
           />
           <DeskFormRow label="Nom" className="mt-3.5">
-            <DeskInput label="Nom" className="w-[420px]" defaultValue="Studio" />
+            <DeskInput
+              label="Nom"
+              className="w-[420px]"
+              defaultValue="Studio"
+            />
           </DeskFormRow>
           <DeskFormRow
             label="Lieu"
@@ -296,7 +308,8 @@ export function FicheDepartementDesktop() {
             </Button>
           </div>
         </div>
-        <DeskPanel overlayStroke
+        <DeskPanel
+          overlayStroke
           title="QR du département"
           subtitle="La navette le scanne au dépôt"
           className="h-[420px] w-[336px]"
@@ -306,12 +319,7 @@ export function FicheDepartementDesktop() {
             Studio · Atelier Lumen
           </p>
           <div className="mt-4 flex flex-col gap-2 px-4">
-            <Button
-              size="desk"
-              icon="printer"
-              block
-              className="justify-start"
-            >
+            <Button size="desk" icon="printer" block className="justify-start">
               Imprimer l’affiche
             </Button>
             <Button
@@ -416,7 +424,13 @@ export function FicheDepartementMobile() {
       <PhoneGroup className="mt-8 h-[300px] pt-5">
         <DepartmentQr size={160} className="mx-auto flex w-fit" />
         <div className="mt-5 px-5">
-          <Button block variant="secondary" icon="share" iconSize={20} className="gap-2">
+          <Button
+            block
+            variant="secondary"
+            icon="share"
+            iconSize={20}
+            className="gap-2"
+          >
             Imprimer ou partager
           </Button>
         </div>
@@ -438,7 +452,11 @@ export function HorairesDepartementMobile() {
             key={day}
             title={day}
             chevron={false}
-            value={<span className="shrink-0 text-16 text-muted">{slots.join(', ') || 'Fermé'}</span>}
+            value={
+              <span className="shrink-0 text-16 text-muted">
+                {slots.join(', ') || 'Fermé'}
+              </span>
+            }
             separator={i < WEEK.length - 1}
             raised={day === 'Vendredi'}
           />
@@ -451,7 +469,6 @@ export function HorairesDepartementMobile() {
   );
 }
 
-/** The A4 poster that the shuttle scans at the department's door. */
 export type DepartmentPosterProps = {
   initials: string;
   company: string;
@@ -463,7 +480,7 @@ export type DepartmentPosterProps = {
   code: string;
 };
 
-/** The poster at the reception point: `print:` strips the app around it. */
+/** The poster at the reception point, printed on its own by the page that holds it. */
 export function DepartmentPoster({
   initials,
   company,
@@ -485,9 +502,7 @@ export function DepartmentPoster({
       <h1 className="absolute top-[150px] left-12 text-[56px] leading-[1.2] font-bold tracking-[-1px]">
         {name}
       </h1>
-      {place && (
-        <p className="absolute top-[222px] left-12 text-20">{place}</p>
-      )}
+      {place && <p className="absolute top-[222px] left-12 text-20">{place}</p>}
       <QrCode
         matrix={matrix}
         module={300 / matrix.length}
@@ -510,6 +525,7 @@ export function DepartmentPoster({
   );
 }
 
+/** The A4 poster that the shuttle scans at the department's door. */
 export function AfficheQrA4() {
   return (
     <div className="relative h-[842px] w-[595px] bg-white text-black after:pointer-events-none after:absolute after:inset-0 after:border after:border-separator">

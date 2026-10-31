@@ -117,8 +117,7 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
         .filter(({ parcelIds }) => parcelIds.length > 0),
     };
   }, []);
-  const stops = useRef(data?.stops);
-  stops.current = data?.stops;
+  const posting = useRef(false);
   const [unknown, setUnknown] = useState(false);
   const scanning = opening === 'scan' && step.kind === 'scan';
 
@@ -188,22 +187,28 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
         actionLabel={t('deposit.count.action', {
           parcels: parcelsLabel(parcelIds.length, t),
         })}
-        onAction={() =>
+        onAction={() => {
+          if (posting.current || parcelIds.length === 0) return;
+          posting.current = true;
           void postDeposit(db, {
             departmentId: step.departmentId,
             parcelIds,
             shuttleId: session.user.id,
             shuttleName: session.user.name,
-          }).then(() =>
-            data.confirms
-              ? navigate({
-                  to: '/tournee/$departmentId',
-                  params: { departmentId: step.departmentId },
-                  replace: true,
-                })
-              : navigate({ to: '/', replace: true }),
-          )
-        }
+          })
+            .then(() =>
+              data.confirms
+                ? navigate({
+                    to: '/tournee/$departmentId',
+                    params: { departmentId: step.departmentId },
+                    replace: true,
+                  })
+                : navigate({ to: '/', replace: true }),
+            )
+            .finally(() => {
+              posting.current = false;
+            });
+        }}
         onClose={back}
         onList={() =>
           void navigate({

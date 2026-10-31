@@ -12,7 +12,8 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 /**
  * In a frame of its own: printing narrows the window, which swaps the computer's
- * layout for the phone's and takes the page away from under the printer.
+ * layout for the phone's and takes the page away from under the printer. The zoom
+ * brings the poster's 595 px up to the 794 of a sheet.
  */
 function printAlone(poster: HTMLElement) {
   const frame = document.createElement('iframe');

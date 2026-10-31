@@ -151,6 +151,15 @@ export async function confirmDeposit(
     throw refused('BAD_REQUEST', 'deposit.error.count');
   }
   const settled = new Set(parcelsToSettle(liveIds, gap));
+  // A count of 3 out of 5 with one parcel named would declare the other missing one deposited.
+  if (
+    !each &&
+    gap?.kind === 'missing' &&
+    gap.parcelIds &&
+    settled.size !== live.length - counted
+  ) {
+    throw refused('BAD_REQUEST', 'deposit.error.count');
+  }
   for (const one of live) {
     if (!settled.has(one.id)) {
       await moveParcel(tx, one, depositedStatus(one), actor, now);

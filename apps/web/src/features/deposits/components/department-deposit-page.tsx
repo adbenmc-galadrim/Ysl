@@ -131,7 +131,11 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
 
   const short = live - count;
   const gapReady =
-    gapKind === 'extra' ? count > live : unknown || picked.length > 0;
+    gapKind === 'extra'
+      ? count > live
+      : gapKind === 'missing'
+        ? short > 0 && (unknown || picked.length === short)
+        : unknown || picked.length > 0;
   const by = deposit.shuttleName ?? t('deposits.shuttle');
   return (
     <DepartmentDepositMobile

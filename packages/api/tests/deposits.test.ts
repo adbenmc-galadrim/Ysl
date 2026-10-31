@@ -189,6 +189,24 @@ describe('a deposit', () => {
     expect((await parcelOf(short)).depositedAt).toBeNull();
     expect((await parcelOf(there)).status).toBe('depose');
 
+    const named3 = await onRoute();
+    const silent = await onRoute();
+    const kept = await onRoute();
+    const miscounted = await announced([named3, silent, kept]);
+    await expect(
+      confirmDeposit(sync, actor, finance, {
+        depositId: miscounted,
+        counted: 1,
+        gap: { kind: 'missing', parcelIds: [named3] },
+      }),
+    ).rejects.toThrow();
+    expect((await parcelOf(silent)).status).toBe('en_route');
+    await confirmDeposit(sync, actor, finance, {
+      depositId: miscounted,
+      counted: 1,
+      gap: { kind: 'missing', parcelIds: [named3, silent] },
+    });
+
     const a = await onRoute();
     const b = await onRoute();
     const unknown = await announced([a, b]);

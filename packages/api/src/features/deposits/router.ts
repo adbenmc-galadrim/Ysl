@@ -8,13 +8,7 @@ import {
 import { confirmsEachParcel } from '@repo/contract/operating-profile';
 import { tourParcelsOutput } from '@repo/contract/tour';
 import { db } from '@repo/db';
-import {
-  adminMemberProcedure,
-  forbidden,
-  memberProcedure,
-  roleOf,
-  router,
-} from '#lib/trpc';
+import { adminMemberProcedure, departmentProcedure, router } from '#lib/trpc';
 import {
   confirmDeposit,
   entrustParcels,
@@ -22,14 +16,6 @@ import {
   settlementOf,
 } from '#features/deposits/service';
 import { readOperatingProfile } from '#features/operating/service';
-
-/** The count is the department's own (§2.1): no other role confirms. */
-const departmentProcedure = memberProcedure.use(({ ctx, next }) => {
-  if (roleOf(ctx.session) !== 'department' || !ctx.departmentId) {
-    throw forbidden();
-  }
-  return next();
-});
 
 const actorOf = (ctx: {
   organizationId: string;
@@ -41,6 +27,7 @@ const actorOf = (ctx: {
 });
 
 export const depositsRouter = router({
+  /** The count is the department's own (§2.1): no other role confirms. */
   confirm: departmentProcedure
     .input(confirmDepositInput)
     .output(confirmDepositOutput)

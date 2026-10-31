@@ -132,10 +132,11 @@ export async function saveOperatingProfile(
   const before = await getOperatingSettings(db, organizationId);
   const impact = operatingImpact(before.profile, profile, before.counts);
   if (impact.changes.length === 0) return { ...before, applied: 0 };
-  await writeOperatingProfile(db, organizationId, profile, updatedBy);
-  // The step just turned off holds for what already waits on it (D31).
-  if (!departmentConfirmsDeposit(profile)) {
-    const waiting = await db
+  await db.transaction(async (tx) => {
+    await writeOperatingProfile(tx, organizationId, profile, updatedBy);
+    // The step just turned off holds for what already waits on it (D31).
+    if (departmentConfirmsDeposit(profile)) return;
+    const waiting = await tx
       .select({ id: deposit.id })
       .from(deposit)
       .where(
@@ -144,16 +145,17 @@ export async function saveOperatingProfile(
           isNull(deposit.confirmedAt),
           isNull(deposit.deletedAt),
         ),
-      );
+      )
+      .for('update');
     for (const { id } of waiting) {
       await confirmDeposit(
-        db,
+        tx,
         { organizationId, userId: updatedBy, name: null },
         null,
         { depositId: id, counted: 0, gap: null },
         { asAnnounced: true },
       );
     }
-  }
+  });
   return { ...before, profile, applied: impact.parcels };
 }
