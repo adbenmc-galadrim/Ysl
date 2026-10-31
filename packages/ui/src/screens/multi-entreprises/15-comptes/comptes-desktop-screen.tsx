@@ -148,7 +148,7 @@ const NARROW_COLUMNS: DeskTableColumn<CompteRow>[] = [
   NAME,
   { ...ROLE, width: 170 },
   DEPARTMENT,
-  STATE,
+  { ...STATE, minWidth: 110 },
 ];
 
 const TAB_TEXT_WIDTH: Record<string, number> = {

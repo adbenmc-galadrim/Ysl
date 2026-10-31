@@ -246,6 +246,12 @@ export function ReglagesHome() {
         onPress: () => void navigate({ to: '/reglages/import-v1' }),
       },
       {
+        icon: 'key',
+        color: 'grey',
+        label: t('accounts.title'),
+        onPress: () => void navigate({ to: '/reglages/comptes' }),
+      },
+      {
         icon: 'phone',
         color: 'grey',
         label: t('settings.devices'),

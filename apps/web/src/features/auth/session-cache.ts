@@ -85,8 +85,8 @@ export function resolveSession(
 
 /**
  * A device that kept a session and is now told there is none was signed out
- * from elsewhere: revoked by an admin, account deactivated, password reset,
- * or expired. It empties itself as "Effacer les données de cet iPhone" does
+ * from elsewhere: account revoked by an admin, device or sessions closed, or
+ * expired. A suspended account keeps its session and never gets here. It empties itself as "Effacer les données de cet iPhone" does
  * (§9.1) before showing sign-in. A sign-out from this device forgets the
  * kept session before asking the server, so it is not taken for one; an
  * unreachable server changes nothing.

@@ -2,19 +2,20 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import type { CompanyShellNavSection, IconName } from '@repo/ui';
 import type { AccountRole } from '#/features/auth/route-access';
 
-export type DeskEntry = 'home' | 'colis' | 'annuaire' | 'reglages';
+export type DeskEntry = 'home' | 'colis' | 'annuaire' | 'comptes' | 'reglages';
 
 /** Where each entry of the computer's sidebar leads. */
 export const DESK_PATH = {
   home: '/',
   colis: '/colis',
   annuaire: '/reglages/annuaire',
+  comptes: '/reglages/comptes',
   reglages: '/reglages',
 } as const satisfies Record<DeskEntry, string>;
 
 /**
  * The sidebar of the two computer roles (D23), limited to what exists: the
- * mockups' deposits, accounts and reports join it with their tickets.
+ * mockups' deposits and reports join it with their tickets.
  */
 export function deskNav(
   role: AccountRole,
@@ -33,6 +34,9 @@ export function deskNav(
         { id: 'home', ...home },
         { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
         { id: 'annuaire', label: t('directory.nav.directory'), icon: 'users' },
+        ...(role === 'company_admin'
+          ? [{ id: 'comptes', label: t('accounts.title'), icon: 'key' } as const]
+          : []),
         { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
       ],
     },
@@ -45,6 +49,7 @@ const SPACE_PATHS = ['/tableau-de-bord', '/departement'];
 export function activeDeskEntry(pathname: string): DeskEntry {
   if (pathname === '/' || SPACE_PATHS.includes(pathname)) return 'home';
   if (pathname.startsWith(DESK_PATH.annuaire)) return 'annuaire';
+  if (pathname.startsWith(DESK_PATH.comptes)) return 'comptes';
   if (pathname.startsWith(DESK_PATH.reglages)) return 'reglages';
   return 'colis';
 }

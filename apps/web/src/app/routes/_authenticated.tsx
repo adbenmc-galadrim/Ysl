@@ -1,3 +1,5 @@
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { CompteSuspenduScreen } from '@repo/ui';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createFileRoute,
@@ -26,6 +28,8 @@ import { readKeptProfile } from '#/features/settings/operating-profile';
 import { startSync } from '#/features/sync/sync';
 import { DESK_WIDTH } from '#/lib/use-media-query';
 
+const t = createTranslator(DEFAULT_LOCALE);
+
 const PREP_PATH = '/preparation';
 
 /**
@@ -46,6 +50,18 @@ function AuthenticatedLayout() {
     void navigate({ to: '/connexion', search: {} });
   }, [ended, navigate, queryClient]);
 
+  // The session is kept on purpose: its absence would empty the device.
+  if (session?.user.banned) {
+    return (
+      <CompteSuspenduScreen
+        title={t('accounts.suspended.title')}
+        lines={[t('accounts.suspended.data'), t('accounts.suspended.action')]}
+        retryLabel={t('accounts.suspended.retry')}
+        onRetry={() => location.reload()}
+      />
+    );
+  }
+
   return (
     <RoleFrame>
       <Outlet />
@@ -58,6 +74,7 @@ export const Route = createFileRoute('/_authenticated')({
     const session = await requireSession(context.queryClient, location.href, {
       installed: isInstalledApp(currentDisplayContext()),
     });
+    if (session.user.banned) return { session };
     const role = toUserRole(session.user.role);
     const area = areaOf(location.pathname);
     const profile =
