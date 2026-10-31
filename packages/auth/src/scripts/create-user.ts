@@ -52,7 +52,10 @@ async function main(): Promise<void> {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
 
-  const choice = await chooseOrganization(db, values.organization);
+  const platformAccount = role.data === 'platform_admin';
+  const choice = platformAccount
+    ? null
+    : await chooseOrganization(db, values.organization);
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,
@@ -61,6 +64,10 @@ async function main(): Promise<void> {
       role: role.data,
     },
   });
+  if (!choice) {
+    console.log(`Created ${role.data} ${user.email} (${user.id})`);
+    return;
+  }
   const organization = await ensureOrganization(db, choice);
   await attachToOrganization(db, user.id, organization.id);
 
