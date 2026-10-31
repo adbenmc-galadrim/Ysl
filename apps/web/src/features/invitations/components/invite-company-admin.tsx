@@ -35,9 +35,10 @@ export function InviteCompanyAdmin({
         organizationId,
         ...typed,
       }),
-    onSuccess: (sent) => {
-      setDelivery(sent);
-      void queryClient.invalidateQueries({ queryKey: ['platform', 'journal'] });
+    onSuccess: setDelivery,
+    // A refusal too: it leaves its line in the journal.
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['platform'] });
     },
   });
   if (delivery) {

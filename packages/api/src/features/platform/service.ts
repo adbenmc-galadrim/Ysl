@@ -11,13 +11,10 @@ import { rowsOf } from '#features/maintenance/purge';
 import { readOperatingProfile } from '#features/operating/service';
 import { type JournalActor, recordPlatformAction } from '#features/platform/journal';
 
-/** The month's bounds where the client is: a parcel at 23:30 UTC on the last day counts next month. */
-function monthBounds(now: Date): { from: SQL; to: SQL } {
+/** Where the client is: a parcel at 23:30 UTC on the last day already counts next month. */
+function monthStart(now: Date): SQL {
   const at = sql`${now.toISOString()}::timestamptz at time zone 'Europe/Paris'`;
-  return {
-    from: sql`(date_trunc('month', ${at}) at time zone 'Europe/Paris')`,
-    to: sql`((date_trunc('month', ${at}) + interval '1 month') at time zone 'Europe/Paris')`,
-  };
+  return sql`(date_trunc('month', ${at}) at time zone 'Europe/Paris')`;
 }
 
 /** Aggregates only: not one row of a company leaves this query (D26). */
@@ -25,7 +22,8 @@ export async function getPlatformOverview(
   db: AnyDb,
   now = new Date(),
 ): Promise<PlatformOverviewOutput> {
-  const { from, to } = monthBounds(now);
+  const from = monthStart(now);
+  const asOf = sql`${now.toISOString()}::timestamptz`;
   const [row] = await rowsOf<PlatformOverviewOutput>(
     db,
     sql`select
@@ -34,13 +32,14 @@ export async function getPlatformOverview(
           (select count(*)::int from organization_member) as "accounts",
           (select count(*)::int from department where deleted_at is null) as "departments",
           (select count(*)::int from parcel
-            where deleted_at is null and received_at >= ${from} and received_at < ${to}) as "parcelsThisMonth"`,
+            where deleted_at is null and received_at >= ${from} and received_at <= ${asOf}) as "parcelsThisMonth"`,
   );
   return row!;
 }
 
+/** A phone's clock may run ahead: nothing counts or dates after the server's now. */
 const companyColumns = (now: Date) => {
-  const { from, to } = monthBounds(now);
+  const from = monthStart(now);
   const asOf = sql`${now.toISOString()}::timestamptz`;
   return {
     id: organization.id,
@@ -50,8 +49,7 @@ const companyColumns = (now: Date) => {
     profileModel: organization.profileModel,
     departments: sql<number>`(select count(*)::int from department d where d.organization_id = "organization"."id" and d.deleted_at is null)`,
     accounts: sql<number>`(select count(*)::int from organization_member m where m.organization_id = "organization"."id")`,
-    parcelsThisMonth: sql<number>`(select count(*)::int from parcel p where p.organization_id = "organization"."id" and p.deleted_at is null and p.received_at >= ${from} and p.received_at < ${to})`,
-    // A phone's clock may run ahead: nothing is dated after the server's now.
+    parcelsThisMonth: sql<number>`(select count(*)::int from parcel p where p.organization_id = "organization"."id" and p.deleted_at is null and p.received_at >= ${from} and p.received_at <= ${asOf})`,
     lastActivityAt: sql<Date | null>`greatest(
       (select max(e.at) from event e where e.organization_id = "organization"."id" and e.at <= ${asOf}),
       (select max(p.received_at) from parcel p where p.organization_id = "organization"."id" and p.deleted_at is null and p.received_at <= ${asOf})

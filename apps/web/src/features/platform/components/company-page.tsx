@@ -240,6 +240,11 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
               title: t('platform.nav.journal'),
               allLabel: t('platform.journal.all'),
               onAll: openJournal,
+              message: journal.isError
+                ? platformErrorMessage(journal.error)
+                : journal.data?.total === 0
+                  ? t('platform.journal.empty')
+                  : undefined,
               lines: (journal.data?.entries ?? []).map((entry) => ({
                 id: entry.id,
                 when: journalWhen(entry.at, new Date(), t),

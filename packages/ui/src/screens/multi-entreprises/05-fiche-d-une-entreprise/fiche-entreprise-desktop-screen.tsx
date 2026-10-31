@@ -89,6 +89,8 @@ export type CompanySheetData = {
     allLabel: string;
     onAll?: () => void;
     lines: { id: string; when: string; what: string }[];
+    /** Instead of the lines: nothing yet, or the server's refusal. */
+    message?: string;
   };
 };
 
@@ -204,6 +206,9 @@ function CompanySheet({
               className="h-[180px]"
             >
               <div className="mt-3.5 flex flex-col gap-[18px] px-[15px] text-13">
+                {data.journal.message && (
+                  <p className="text-muted">{data.journal.message}</p>
+                )}
                 {data.journal.lines.map((line) => (
                   <p key={line.id} className="flex">
                     <span className="w-[124px] shrink-0 text-muted">

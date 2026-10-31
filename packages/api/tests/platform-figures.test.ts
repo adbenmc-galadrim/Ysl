@@ -19,7 +19,7 @@ const { asAnyDb, AGENT_ID, ORGANIZATION_ID, OTHER_ORGANIZATION_ID, parcelRow } =
 const { getPlatformOverview, listCompanies } =
   await import('#features/platform/service');
 
-const NOW = new Date('2026-10-31T12:00:00Z');
+const NOW = new Date('2026-10-31T22:59:30Z');
 const COMPANIES = 25;
 const PARCELS = 868;
 
@@ -68,7 +68,7 @@ beforeAll(async () => {
     parcelAt(ORGANIZATION_ID, '2026-10-31T23:00:00Z'),
   ]);
   await db.insert(schema.event).values([
-    eventAt(ORGANIZATION_ID, '2026-10-28T10:00:00Z'),
+    eventAt(ORGANIZATION_ID, '2026-10-31T22:59:10Z'),
     eventAt(ORGANIZATION_ID, '2027-01-01T10:00:00Z'),
   ]);
   const rest = PARCELS - 7;
@@ -87,7 +87,7 @@ describe('the figures, on a known set', () => {
   it('counts a month in Paris time, without deleted parcels', async () => {
     const companies = await listCompanies(asAnyDb(db), NOW);
     const first = companies.find((row) => row.id === ORGANIZATION_ID);
-    // 30/09 22:00Z, 20/10, 22/10, 31/10 22:59Z: 31/10 23:00Z is November in Paris.
+    // 30/09 22:00Z, 20/10, 22/10, 31/10 22:59Z; 31/10 23:00Z is ahead of now.
     expect(first?.parcelsThisMonth).toBe(4);
     expect(first?.departments).toBe(2);
     expect(first?.accounts).toBe(1);
@@ -96,7 +96,7 @@ describe('the figures, on a known set', () => {
   it('dates the last activity from events and parcels, never after now', async () => {
     const companies = await listCompanies(asAnyDb(db), NOW);
     const first = companies.find((row) => row.id === ORGANIZATION_ID);
-    expect(first?.lastActivityAt).toEqual(new Date('2026-10-28T10:00:00Z'));
+    expect(first?.lastActivityAt).toEqual(new Date('2026-10-31T22:59:10Z'));
     const other = companies.find((row) => row.id === OTHER_ORGANIZATION_ID);
     expect(other?.lastActivityAt).toEqual(new Date('2026-10-09T08:00:00Z'));
   });
