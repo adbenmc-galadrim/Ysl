@@ -16,6 +16,7 @@ import {
   type RecipientOption,
   VerifierChampScreen,
   VerifierColisScreen,
+  VerifierDepartementScreen,
   VerifierSourceLink,
   VerifierSuiviScreen,
 } from '#screens/reception/verifier-colis-screen';
@@ -42,6 +43,23 @@ const option = (entry: DirectoryEntry): RecipientOption => ({
   ...entry,
   detail: whereabouts(entry),
 });
+
+export const VerifierDepartement: Story = {
+  name: 'Vérifier, département',
+  render: () => (
+    <VerifierDepartementScreen
+      step={{ index: 1, total: 2 }}
+      recipientDepartment="Finance"
+      departments={[
+        { id: 'finance', name: 'Finance' },
+        { id: 'juridique', name: 'Juridique' },
+        { id: 'presse', name: 'Presse' },
+      ]}
+      selectedId="finance"
+      fields={[{ label: 'Destinataire', value: 'Camille Morel' }]}
+    />
+  ),
+};
 
 export const RevueDuLot: Story = {
   name: 'Revue du lot',
