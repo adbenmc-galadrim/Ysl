@@ -67,6 +67,7 @@ export async function enqueueEmail(
 }
 
 const SUPERSEDED = 'superseded';
+const EXPIRED = 'expired';
 
 async function claimOne(db: AnyDb, now: Date): Promise<OutboxRow | undefined> {
   const due = sql`(
@@ -101,7 +102,13 @@ async function failNotification(
   await settleFailed(
     tx,
     row.notificationId,
-    t(reason === SUPERSEDED ? 'mail.server.superseded' : 'mail.server.failed'),
+    t(
+      reason === SUPERSEDED
+        ? 'mail.server.superseded'
+        : reason === EXPIRED
+          ? 'mail.server.expired'
+          : 'mail.server.failed',
+    ),
     row,
     now,
   );
@@ -223,18 +230,20 @@ async function superseded(
   db: AnyDb,
   row: OutboxRow,
   now: Date,
-): Promise<boolean> {
-  if (!row.notificationId) return false;
+): Promise<typeof SUPERSEDED | typeof EXPIRED | null> {
+  if (!row.notificationId) return null;
   const [request] = await db
     .select()
     .from(notification)
     .where(eq(notification.id, row.notificationId));
-  if (!request || request.channel !== 'server') return false;
-  if (request.status !== 'prepared') return true;
+  if (!request || request.channel !== 'server') return null;
+  if (request.status !== 'prepared') return SUPERSEDED;
   // Held back by a refused account: its text is out of date, and the former code goes back.
-  if (now.getTime() - row.createdAt.getTime() > REQUEST_MAX_AGE_MS) return true;
+  if (now.getTime() - request.preparedAt.getTime() > REQUEST_MAX_AGE_MS) {
+    return EXPIRED;
+  }
   const { parcels } = await parcelsToTell(db, request);
-  return parcels.length === 0;
+  return parcels.length === 0 ? SUPERSEDED : null;
 }
 
 /**
@@ -308,7 +317,7 @@ export async function drainEmailOutbox(
     if (!row) break;
     const result = await superseded(db, row, now())
       .then(async (over): Promise<SendResult> => {
-        if (over) return { status: 'rejected', reason: SUPERSEDED };
+        if (over) return { status: 'rejected', reason: over };
         return sendFrom(
           mailer,
           {

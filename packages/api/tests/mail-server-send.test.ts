@@ -368,7 +368,10 @@ describe('a request written by the iPhone', () => {
     await drainEmailOutbox(any(), mailer, { now: () => later });
 
     expect(brevo.sent).toHaveLength(0);
-    expect(await mailOf(mail)).toMatchObject({ status: 'failed' });
+    expect(await mailOf(mail)).toMatchObject({
+      status: 'failed',
+      failedReason: 'Envoi abandonné : demande trop ancienne',
+    });
     expect((await liveCodes(person)).map((c) => c.id)).toEqual([held!.id]);
   });
 

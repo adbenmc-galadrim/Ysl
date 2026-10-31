@@ -1,4 +1,5 @@
 import type { AnyDb } from '@repo/db';
+import { serverMailEnabled } from '#features/mail/config';
 import type { Mailer } from '#features/mail/mailer';
 import { drainEmailOutbox, type DrainCounts } from '#features/mail/queue';
 import { requestDueReminders } from '#features/mail/server-reminders';
@@ -15,7 +16,10 @@ export function mailRound(db: AnyDb, mailer: Mailer) {
   let remindersAt = 0;
   return async (signal: AbortSignal): Promise<DrainCounts> => {
     const now = new Date();
-    if (now.getTime() - remindersAt >= REMINDERS_EVERY_MS) {
+    if (
+      serverMailEnabled() &&
+      now.getTime() - remindersAt >= REMINDERS_EVERY_MS
+    ) {
       remindersAt = now.getTime();
       await requestDueReminders(db, now);
     }
