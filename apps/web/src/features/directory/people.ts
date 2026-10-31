@@ -206,6 +206,8 @@ export function toEntry(person: LocalDirectoryPerson): DirectoryEntry {
 /** Departments by id, for the people who name one. */
 export type DepartmentNames = ReadonlyMap<string, string>;
 
+export const NO_DEPARTMENT_NAMES: DepartmentNames = new Map();
+
 /** Where a person belongs: their department, or the word they came with until that column goes. */
 export function departmentLabel(
   person: Pick<LocalDirectoryPerson, 'department' | 'departmentId'>,

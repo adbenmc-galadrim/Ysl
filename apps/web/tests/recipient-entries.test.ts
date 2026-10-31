@@ -6,7 +6,12 @@ describe('recipientEntries', () => {
   it('lists the active cards, then the contacts, a contact split on its last word with its uses', () => {
     const entries = recipientEntries(
       [
-        personRow({ id: 'lea', firstName: 'Léa', lastName: 'Fontaine' }),
+        personRow({
+          id: 'lea',
+          firstName: 'Léa',
+          lastName: 'Fontaine',
+          department: null,
+        }),
         personRow({ id: 'gone', active: false }),
         personRow({ id: 'deleted', deletedAt: NOW }),
       ],
@@ -26,5 +31,26 @@ describe('recipientEntries', () => {
         uses: 3,
       },
     ]);
+  });
+
+  it('carries the department of a card by its name, and stays whole without one', () => {
+    const names = new Map([['finance', 'Finance']]);
+    const entries = recipientEntries(
+      [
+        personRow({ id: 'a', departmentId: 'finance', department: null }),
+        personRow({ id: 'b', departmentId: null, department: 'Presse' }),
+        personRow({ id: 'c', departmentId: null, department: null }),
+      ],
+      [],
+      names,
+    );
+
+    expect(entries[0]).toMatchObject({
+      departmentId: 'finance',
+      department: 'Finance',
+    });
+    expect(entries[1]).toMatchObject({ department: 'Presse' });
+    expect(entries[1]?.departmentId).toBeUndefined();
+    expect(entries[2]?.department).toBeUndefined();
   });
 });

@@ -16,6 +16,10 @@ export type RecipientEntry = {
   lastName: string;
   /** How many parcels the mailroom gave a contact (F27): a visitor who comes back rises on a tie. */
   uses?: number;
+  /** The department that holds a card; none before the conversion. Tells two cards of one name apart. */
+  departmentId?: string | null;
+  /** Its name, as the agent reads it. */
+  department?: string;
 };
 
 /** A contact given this many parcels comes back: it passes a card on a tie (F27). */
@@ -206,7 +210,9 @@ const KIND_ORDER: Record<RecipientKind, number> = { person: 0, contact: 1 };
  * The recipient chain of F18 after the reading: the names a code or the OCR
  * gave, mended, weighed against every card; without any name, the whole
  * printed text, exact words only (v1 strict mode). The best ranked first;
- * on a tie, a contact who keeps coming back, then a card before a contact.
+ * on a tie, a contact who keeps coming back, then a card before a contact,
+ * then twins by department: nothing stands out among them (no `best`), so
+ * the agent chooses, the department telling them apart.
  * An empty directory proposes nobody and still returns the name read, for
  * a new card.
  */
@@ -258,7 +264,9 @@ export function matchRecipient(
       b.score - a.score ||
       comesBack(b.entry) - comesBack(a.entry) ||
       KIND_ORDER[a.entry.kind] - KIND_ORDER[b.entry.kind] ||
-      order.get(a.entry)!.localeCompare(order.get(b.entry)!),
+      order.get(a.entry)!.localeCompare(order.get(b.entry)!) ||
+      (a.entry.department ?? '').localeCompare(b.entry.department ?? '') ||
+      a.entry.id.localeCompare(b.entry.id),
   );
   const [first, second] = scored;
   return {
