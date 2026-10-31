@@ -80,3 +80,10 @@ export function jaroWinkler(a: string, b: string): number {
   }
   return base + prefix * PREFIX_SCALE * (1 - base);
 }
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** An address that can take a message: something, an at sign, a domain with a dot. */
+export function isEmail(email: string): boolean {
+  return EMAIL.test(email);
+}

@@ -341,7 +341,31 @@ describe('sync.push by role', () => {
       ).toBe(403);
     });
 
-    it('still writes a parcel whose person has moved away, naming the same person', async () => {
+    it('still writes a returned parcel, which stayed when its person moved away', async () => {
+      const personId = await addPerson(db, finance);
+      const parcelId = await addParcel({ personId, status: 'retourne' });
+      await db
+        .update(schema.directoryPerson)
+        .set({ departmentId: legal })
+        .where(eq(schema.directoryPerson.id, personId));
+
+      expect(
+        await statusOf(
+          own(),
+          op(
+            'parcel',
+            parcelId,
+            newParcel({ personId, status: 'retourne', notes: 'en rayon' }),
+          ),
+        ),
+      ).toBe(200);
+      expect(await storedParcel(parcelId)).toMatchObject({
+        notes: 'en rayon',
+        departmentId: finance,
+      });
+    });
+
+    it('no longer writes a parcel that followed its person away', async () => {
       const personId = await addPerson(db, finance);
       const parcelId = await addParcel({ personId });
       await db
@@ -354,11 +378,8 @@ describe('sync.push by role', () => {
           own(),
           op('parcel', parcelId, newParcel({ personId, notes: 'en rayon' })),
         ),
-      ).toBe(200);
-      expect(await storedParcel(parcelId)).toMatchObject({
-        notes: 'en rayon',
-        departmentId: finance,
-      });
+      ).toBe(403);
+      expect((await storedParcel(parcelId))?.departmentId).toBe(legal);
     });
 
     it('does not write a parcel of another, one without a department, nor a new one', async () => {

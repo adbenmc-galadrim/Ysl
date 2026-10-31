@@ -302,7 +302,8 @@ const withoutDepartment = ({ departmentId: _dropped, ...rest }: Values) => {
  * The department a row gets. A department stamps its own and cannot give a
  * parcel away. A parcel for a person follows that person (the trigger of
  * drizzle/0020): a copy's department, perhaps stale, says nothing; one
- * without a person takes what the company's accounts say.
+ * without a person takes what the company's accounts say. A card keeps its
+ * department: a copy may predate a move, and only `directory.move` moves anyone.
  */
 export async function departmentWrite(
   tx: AnyDb,
@@ -317,7 +318,24 @@ export async function departmentWrite(
     }
     return op.entity === 'parcel' ? withoutDepartment(values) : values;
   }
-  if (op.entity !== 'parcel' || !('departmentId' in values)) return values;
+  if (!('departmentId' in values)) return values;
+  if (op.entity === 'directory_person') {
+    const [row] = await tx
+      .select({ departmentId: directoryPerson.departmentId })
+      .from(directoryPerson)
+      .where(
+        and(
+          eq(directoryPerson.organizationId, access.organizationId),
+          eq(directoryPerson.id, op.entityId),
+        ),
+      );
+    if (!row) return values;
+    const kept = withoutDepartment(values);
+    // The word goes with the department: a stale one would name the old one on every parcel.
+    if (row.departmentId) delete kept.department;
+    return kept;
+  }
+  if (op.entity !== 'parcel') return values;
   let personId = values.personId;
   if (personId === undefined) {
     const [row] = await tx
