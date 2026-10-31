@@ -1,10 +1,8 @@
 import {
-  DEPOSIT_CONFIRMATIONS,
-  EMAIL_MOMENTS,
   operatingImpact,
-  STEP_STATES,
-  type OperatingParam,
+  stepsChangedFromModel,
   type OperatingProfile,
+  type ProfileModel,
 } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -25,6 +23,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { impactLine } from '#/features/settings/operating-impact';
+import {
+  choiceOf,
+  OPTIONS,
+  SECTIONS,
+  withChoice,
+} from '#/features/settings/operating-steps';
 import { trpcClient } from '#/lib/trpc';
 import { useOnline } from '#/lib/use-online';
 
@@ -35,68 +39,14 @@ const OPERATING_KEY = ['operating', 'get'] as const;
 /** Undoing skips the announcement: only while it is still the one just read. */
 const UNDO_MS = 10_000;
 
-const stepOptions = STEP_STATES.map((value) => ({
-  value,
-  label: t(`operating.state.${value}`),
-}));
-
-const OPTIONS: {
-  [Param in OperatingParam]: readonly {
-    value: OperatingProfile[Param] extends boolean
-      ? 'yes' | 'no'
-      : OperatingProfile[Param];
-    label: string;
-  }[];
-} = {
-  shuttleActsAsDepartment: [
-    { value: 'no', label: t('operating.no') },
-    { value: 'yes', label: t('operating.yes') },
-  ],
-  batchReview: stepOptions,
-  depositConfirmation: DEPOSIT_CONFIRMATIONS.map((value) => ({
-    value,
-    label: t(`operating.deposit.${value}`),
-  })),
-  handoverProof: stepOptions,
-  handoverScan: stepOptions,
-  signature: stepOptions,
-  photo: stepOptions,
-  emailMoment: EMAIL_MOMENTS.map((value) => ({
-    value,
-    label: t(`operating.email.${value}`),
-  })),
-  reminders: STEP_STATES.map((value) => ({
-    value,
-    label: t(`operating.reminders.${value}`),
-  })),
-};
-
-const SECTIONS = [
-  { id: 'reception', params: ['batchReview'] },
-  { id: 'deposit', params: ['shuttleActsAsDepartment', 'depositConfirmation'] },
-  {
-    id: 'handover',
-    params: ['handoverProof', 'handoverScan', 'signature', 'photo'],
-  },
-  { id: 'mail', params: ['emailMoment', 'reminders'] },
-] as const satisfies { id: string; params: OperatingParam[] }[];
-
-type Choice = string;
-
-const choiceOf = (profile: OperatingProfile, param: OperatingParam): Choice => {
-  const value = profile[param];
-  if (typeof value !== 'boolean') return value;
-  return value ? 'yes' : 'no';
-};
-
-const withChoice = (
-  profile: OperatingProfile,
-  param: OperatingParam,
-  choice: Choice,
-): OperatingProfile => ({
-  ...profile,
-  [param]: param === 'shuttleActsAsDepartment' ? choice === 'yes' : choice,
-});
+function startModelLine(model: ProfileModel, profile: OperatingProfile) {
+  const count = stepsChangedFromModel(model, profile);
+  const name = t(`platform.model.${model}`);
+  if (count === 0) return t('operating.startModel.none', { model: name });
+  return count === 1
+    ? t('operating.startModel.one', { model: name })
+    : t('operating.startModel.many', { model: name, count });
+}
 
 /**
  * Réglages › Fonctionnement (admin): every step of the company, freely (D30).
@@ -128,8 +78,12 @@ export function OperatingScreen() {
   const save = useMutation({
     mutationFn: (profile: OperatingProfile) =>
       trpcClient.operating.save.mutate({ profile }),
-    onSuccess: ({ profile, counts }) => {
-      queryClient.setQueryData(OPERATING_KEY, { profile, counts });
+    onSuccess: ({ profile, counts, profileModel }) => {
+      queryClient.setQueryData(OPERATING_KEY, {
+        profile,
+        counts,
+        profileModel,
+      });
       setDraft(null);
       setConfirming(false);
     },
@@ -228,6 +182,11 @@ export function OperatingScreen() {
       ) : (
         value && (
           <>
+            {settings?.profileModel && (
+              <p className="mt-3 text-13 text-muted">
+                {startModelLine(settings.profileModel, settings.profile)}
+              </p>
+            )}
             <Banner
               tone="orange"
               icon="info"

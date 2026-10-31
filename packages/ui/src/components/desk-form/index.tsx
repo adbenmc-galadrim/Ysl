@@ -187,23 +187,33 @@ export function DeskSelect({
 export function DeskChoice({
   options,
   value,
+  label,
+  onChange,
 }: {
-  options: readonly string[];
+  options: readonly (string | { value: string; label: string })[];
   value: string;
+  label?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div
       role="radiogroup"
+      aria-label={label}
       className="flex h-7 shrink-0 rounded-[6px] bg-fill p-0.5"
     >
       {options.map((option) => {
-        const on = option === value;
+        const { value: id, label: word } =
+          typeof option === 'string'
+            ? { value: option, label: option }
+            : option;
+        const on = id === value;
         return (
           <button
-            key={option}
+            key={id}
             type="button"
             role="radio"
             aria-checked={on}
+            onClick={() => onChange?.(id)}
             className={cn(
               'h-6 w-[100px] cursor-pointer rounded-[4px] pb-1 text-12 outline-none',
               'focus-visible:ring-2 focus-visible:ring-blue',
@@ -212,7 +222,7 @@ export function DeskChoice({
                 : 'text-ink-2',
             )}
           >
-            {option}
+            {word}
           </button>
         );
       })}

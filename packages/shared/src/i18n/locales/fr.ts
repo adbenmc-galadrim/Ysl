@@ -35,17 +35,39 @@ export const fr = {
     'Un seul lieu de retrait : la navette scanne et remet elle-même.',
   'platform.model.small_site.feature.handover':
     'La navette fait office de département',
+  'platform.model.small_site.feature.deposit': 'Pas de confirmation de dépôt',
+  'platform.model.small_site.feature.email': 'E-mail dès le scan',
+  'platform.model.small_site.feature.reminders': 'Relances à la main',
   'platform.model.multi_departments': 'Multi-départements',
   'platform.model.multi_departments.title': 'Multi-départements',
   'platform.model.multi_departments.description':
-    'Plusieurs départements : chacun remet ses colis aux salariés.',
-  'platform.model.multi_departments.feature.handover':
-    'La navette ne remet pas : le département le fait',
-  'platform.model.feature.deposit': 'Pas de confirmation de dépôt',
-  'platform.model.feature.email': 'E-mail dès le scan',
-  'platform.model.feature.reminders': 'Relances facultatives',
+    'Plusieurs départements, chacun avec son point de réception.',
+  'platform.model.multi_departments.feature.deposit':
+    'Dépôt confirmé au nombre',
+  'platform.model.multi_departments.feature.email': 'E-mail au dépôt',
+  'platform.model.multi_departments.feature.proof': 'QR ou code obligatoire',
+  'platform.model.multi_departments.feature.reminders':
+    'Relances automatiques',
+  'platform.model.strict_traceability': 'Traçabilité stricte',
+  'platform.model.strict_traceability.title': 'Traçabilité stricte',
+  'platform.model.strict_traceability.description':
+    'Chaque geste est prouvé, du dépôt à la remise.',
+  'platform.model.strict_traceability.feature.deposit':
+    'Dépôt colis par colis',
+  'platform.model.strict_traceability.feature.handover':
+    'Scan et signature obligatoires',
+  'platform.model.strict_traceability.feature.photo': 'Photo facultative',
+  'platform.model.strict_traceability.feature.proof': 'QR ou code obligatoire',
   'platform.new.confirm': 'Créer',
-  'platform.new.note': 'L’entreprise pourra tout modifier ensuite',
+  'platform.new.continue': 'Continuer',
+  'platform.new.note': 'Étape 1 sur 2',
+  'platform.new.note.adjust':
+    'Étape 2 sur 2 · l’entreprise pourra tout modifier ensuite',
+  'platform.new.summary': '{{model}} · {{changed}}',
+  'platform.new.summary.desk': 'Modèle « {{model}} » · {{changed}}',
+  'platform.new.changed.none': 'aucune étape modifiée',
+  'platform.new.changed.one': '1 étape modifiée',
+  'platform.new.changed.many': '{{count}} étapes modifiées',
   'platform.sheet.status.active': 'Active · créée le {{date}} · modèle {{model}}',
   'platform.sheet.status.suspended':
     'Suspendue depuis le {{since}} · créée le {{date}} · modèle {{model}}',
@@ -53,6 +75,7 @@ export const fr = {
   'platform.sheet.stat.departments': 'Départements',
   'platform.sheet.stat.parcels': 'Colis',
   'platform.sheet.model': 'Modèle de départ',
+  'platform.sheet.changedSteps': 'Étapes modifiées',
   'platform.sheet.suspend': 'Suspendre',
   'platform.sheet.reactivate': 'Réactiver',
   'platform.sheet.rename': 'Renommer',
@@ -1377,6 +1400,12 @@ export const fr = {
   'operating.failed': 'Fonctionnement indisponible pour le moment.',
   'operating.saveFailed': 'Enregistrement impossible. Réessayez.',
   'operating.modified': 'Modifié',
+  'operating.startModel.none':
+    'Modèle de départ : {{model}} · aucune étape changée depuis',
+  'operating.startModel.one':
+    'Modèle de départ : {{model}} · 1 étape changée depuis',
+  'operating.startModel.many':
+    'Modèle de départ : {{model}} · {{count}} étapes changées depuis',
   'operating.section.reception': 'Réception',
   'operating.section.deposit': 'Dépôt',
   'operating.section.handover': 'Remise',
@@ -1447,7 +1476,7 @@ export const fr = {
   'operating.saved': 'Appliqué à {{count}} colis',
   'operating.undo': 'Annuler',
   'operating.notYet':
-    'Pour l’instant, seul « Navette = département » agit sur les colis. Les autres réglages sont gardés et prendront effet avec les prochaines versions.',
+    'Pour l’instant, seuls « Navette = département » et les relances automatiques agissent sur les colis. Les autres réglages sont gardés et prendront effet avec les prochaines versions.',
   'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',

@@ -2,6 +2,7 @@ import { accountStateOf } from '@repo/contract/accounts';
 import {
   OPERATING_PROFILE_KEY,
   PROFILE_OF_MODEL,
+  type OperatingProfile,
   type ProfileModel,
 } from '@repo/contract/operating-profile';
 import type { AnyDb } from '@repo/db';
@@ -25,7 +26,11 @@ export const MAIL_DEPARTMENT_NAME = 'Service courrier';
 /** What a company needs to work: a saved profile, or its shuttle sees a handover the server refuses. */
 export async function createCompany(
   db: AnyDb,
-  { name, profileModel }: { name: string; profileModel: ProfileModel },
+  {
+    name,
+    profileModel,
+    profile = PROFILE_OF_MODEL[profileModel],
+  }: { name: string; profileModel: ProfileModel; profile?: OperatingProfile },
 ): Promise<string> {
   const id = newId();
   await db.transaction(async (tx) => {
@@ -39,7 +44,7 @@ export async function createCompany(
       id: newId(),
       organizationId: id,
       key: OPERATING_PROFILE_KEY,
-      value: PROFILE_OF_MODEL[profileModel],
+      value: profile,
     });
   });
   return id;

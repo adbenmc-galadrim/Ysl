@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
-import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
+import {
+  OPERATING_PROFILE_KEY,
+  PROFILE_MODELS,
+  PROFILE_OF_MODEL,
+  type OperatingProfile,
+} from '@repo/contract/operating-profile';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { logger } from '@repo/shared/logger';
@@ -243,6 +248,73 @@ describe('the back-office', () => {
         ),
       );
     expect(profile?.value).toMatchObject({ shuttleActsAsDepartment: false });
+  });
+
+  const savedProfile = async (id: string) => {
+    const rows = await db
+      .select({ value: schema.setting.value })
+      .from(schema.setting)
+      .where(
+        and(
+          eq(schema.setting.organizationId, id),
+          eq(schema.setting.key, OPERATING_PROFILE_KEY),
+        ),
+      );
+    expect(rows).toHaveLength(1);
+    return rows[0]?.value;
+  };
+
+  it.each(PROFILE_MODELS)('writes the whole profile of %s', async (model) => {
+    const { id } = await platform().platform.createCompany({
+      name: `Modèle ${model}`,
+      profileModel: model,
+    });
+    expect(await savedProfile(id)).toEqual(PROFILE_OF_MODEL[model]);
+  });
+
+  it('writes the model as adjusted, and keeps the model it started from', async () => {
+    const profile = {
+      ...PROFILE_OF_MODEL.multi_departments,
+      signature: 'required' as const,
+    };
+    const { id } = await platform().platform.createCompany({
+      name: 'Ajustée',
+      profileModel: 'multi_departments',
+      profile,
+    });
+    expect(await savedProfile(id)).toEqual(profile);
+    expect(await platform().platform.company({ id })).toMatchObject({
+      profileModel: 'multi_departments',
+      changedSteps: 1,
+    });
+  });
+
+  it('counts no changed step for a company without a model', async () => {
+    const { id } = await platform().platform.createCompany({
+      name: 'Sans modèle',
+      profileModel: 'small_site',
+    });
+    await db
+      .update(schema.organization)
+      .set({ profileModel: null })
+      .where(eq(schema.organization.id, id));
+    expect(await platform().platform.company({ id })).toMatchObject({
+      profileModel: null,
+      changedSteps: null,
+    });
+  });
+
+  it('creates nothing from a partial profile', async () => {
+    const partial = { ...PROFILE_OF_MODEL.small_site, signature: undefined };
+    await expect(
+      platform().platform.createCompany({
+        name: 'Partielle',
+        profileModel: 'small_site',
+        profile: partial as unknown as OperatingProfile,
+      }),
+    ).rejects.toThrow();
+    const companies = await platform().platform.companies();
+    expect(companies.map((company) => company.name)).not.toContain('Partielle');
   });
 
   it('refuses a second company of the same name, whatever its case', async () => {

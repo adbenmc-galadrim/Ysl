@@ -12,7 +12,11 @@ import {
 import { Screen } from '#components/screen';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import { STEP_GROUPS } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
+import {
+  optionOf,
+  STEP_GROUPS,
+  type WizardStepGroup,
+} from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
 
 function Bar({ children }: { children: ReactNode }) {
   return (
@@ -22,7 +26,7 @@ function Bar({ children }: { children: ReactNode }) {
   );
 }
 
-function StepOf({ step }: { step: number }) {
+function StepOf({ step, total = 3 }: { step: number; total?: number }) {
   return (
     <span
       className={cn(
@@ -30,7 +34,7 @@ function StepOf({ step }: { step: number }) {
         step === 1 ? 'w-[42px]' : 'w-[45px]',
       )}
     >
-      {step} sur 3
+      {step} sur {total}
     </span>
   );
 }
@@ -72,7 +76,7 @@ export function NouvelleEntrepriseModeleMobile({
   confirmDisabled = false,
   onConfirm,
   onCancel,
-  withStep = true,
+  totalSteps,
   error,
 }: {
   name?: string;
@@ -83,7 +87,7 @@ export function NouvelleEntrepriseModeleMobile({
   confirmDisabled?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
-  withStep?: boolean;
+  totalSteps?: number;
   error?: string;
 } = {}) {
   return (
@@ -101,7 +105,7 @@ export function NouvelleEntrepriseModeleMobile({
       <PhoneNav
         icon="x"
         title="Nouvelle entreprise"
-        trailing={withStep ? <StepOf step={1} /> : undefined}
+        trailing={<StepOf step={1} total={totalSteps} />}
         onBack={onCancel}
       />
       <PhoneField
@@ -167,22 +171,58 @@ export function NouvelleEntrepriseModeleMobile({
 }
 
 /** Step 2 on the phone: the same steps, one segmented control each. */
-export function NouvelleEntrepriseFonctionnementMobile() {
+export function NouvelleEntrepriseFonctionnementMobile({
+  totalSteps,
+  groups = STEP_GROUPS,
+  summary = 'Multi-départements · 1 étape modifiée',
+  notice,
+  onChoose,
+  onRevert,
+  onBack,
+  confirmLabel = 'Continuer',
+  confirmDisabled = false,
+  onConfirm,
+}: {
+  totalSteps?: number;
+  groups?: WizardStepGroup[];
+  summary?: string;
+  notice?: string;
+  onChoose?: (step: string, value: string) => void;
+  onRevert?: () => void;
+  onBack?: () => void;
+  confirmLabel?: string;
+  confirmDisabled?: boolean;
+  onConfirm?: () => void;
+} = {}) {
   return (
     <Screen
       tone="fill"
       className="pt-[calc(var(--safe-top)+6px)]"
       bottom={
         <Bar>
-          <Button block>Continuer</Button>
+          <Button block disabled={confirmDisabled} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
         </Bar>
       }
     >
-      <PhoneNav title="Fonctionnement" trailing={<StepOf step={2} />} />
-      <p className="mt-4 text-15 text-muted">
-        Multi-départements · 1 étape modifiée
-      </p>
-      {STEP_GROUPS.map((group, g) => (
+      <PhoneNav
+        title="Fonctionnement"
+        trailing={<StepOf step={2} total={totalSteps} />}
+        onBack={onBack}
+      />
+      <p className="mt-4 text-15 text-muted">{summary}</p>
+      {onRevert && (
+        <button
+          type="button"
+          onClick={onRevert}
+          className="mt-1 cursor-pointer self-start text-15 font-semibold"
+        >
+          Revenir au modèle
+        </button>
+      )}
+      {notice && <p className="mt-2 text-13 text-orange-strong">{notice}</p>}
+      {groups.map((group, g) => (
         <section key={group.title}>
           <PhoneGroupTitle className={cn('top-0', g === 0 ? 'mt-[17px]' : 'mt-5')}>{group.title}</PhoneGroupTitle>
           <div className="mt-1.5 rounded-[14px] bg-surface px-4">
@@ -198,19 +238,29 @@ export function NouvelleEntrepriseFonctionnementMobile() {
                     Modifié
                   </span>
                 )}
-                <div className="absolute top-[60px] flex h-11 w-full rounded-full bg-fill-2 p-0.5">
-                  {step.options.map((option) => (
-                    <span
-                      key={option}
+                <div
+                  role="radiogroup"
+                  aria-label={step.title}
+                  className="absolute top-[60px] flex h-11 w-full rounded-full bg-fill-2 p-0.5"
+                >
+                  {step.options.map(optionOf).map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={option.value === step.value}
+                      onClick={() =>
+                        step.id && onChoose?.(step.id, option.value)
+                      }
                       className={cn(
-                        'flex h-10 flex-1 items-center justify-center rounded-full text-14 font-semibold',
-                        option === step.value
+                        'flex h-10 flex-1 cursor-pointer items-center justify-center rounded-full text-14 font-semibold',
+                        option.value === step.value
                           ? 'bg-ink text-on-ink'
                           : 'text-ink-2',
                       )}
                     >
-                      {option}
-                    </span>
+                      {option.label}
+                    </button>
                   ))}
                 </div>
               </div>

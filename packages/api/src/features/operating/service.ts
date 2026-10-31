@@ -9,7 +9,7 @@ import {
   type ParcelCounts,
 } from '@repo/contract/operating-profile';
 import type { AnyDb } from '@repo/db';
-import { parcel, setting } from '@repo/db/schema';
+import { organization, parcel, setting } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
 import type { Access } from '#lib/access';
@@ -63,11 +63,15 @@ export async function getOperatingSettings(
   db: AnyDb,
   organizationId: string,
 ): Promise<OperatingSettings> {
-  const [profile, counts] = await Promise.all([
+  const [profile, counts, [company]] = await Promise.all([
     readOperatingProfile(db, organizationId),
     countParcels(db, organizationId),
+    db
+      .select({ profileModel: organization.profileModel })
+      .from(organization)
+      .where(eq(organization.id, organizationId)),
   ]);
-  return { profile, counts };
+  return { profile, counts, profileModel: company?.profileModel ?? null };
 }
 
 /** Writes the one row of the company; the synchronisation takes it to the devices. */
@@ -107,5 +111,5 @@ export async function saveOperatingProfile(
   const impact = operatingImpact(before.profile, profile, before.counts);
   if (impact.changes.length === 0) return { ...before, applied: 0 };
   await writeOperatingProfile(db, organizationId, profile, updatedBy);
-  return { profile, counts: before.counts, applied: impact.parcels };
+  return { ...before, profile, applied: impact.parcels };
 }

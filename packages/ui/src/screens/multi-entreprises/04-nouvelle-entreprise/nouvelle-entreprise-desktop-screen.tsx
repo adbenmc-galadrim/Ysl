@@ -8,7 +8,10 @@ import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entrepri
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 import type { PlatformChrome } from '#screens/multi-entreprises/03-accueil/entreprises-screen';
-import { STEP_GROUPS } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
+import {
+  STEP_GROUPS,
+  type WizardStepGroup,
+} from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
 
 const STEPS = [
   { label: 'Modèle', width: 90.4 },
@@ -16,10 +19,10 @@ const STEPS = [
   { label: 'Administrateur' },
 ];
 
-function Stepper({ current }: { current: number }) {
+function Stepper({ current, total }: { current: number; total: number }) {
   return (
     <ol className="mt-[17px] flex h-[22px] shrink-0 items-start">
-      {STEPS.map((step, i) => {
+      {STEPS.slice(0, total).map((step, i) => {
         const done = i < current;
         const active = i === current;
         return (
@@ -48,7 +51,7 @@ function Stepper({ current }: { current: number }) {
                 {step.label}
               </span>
             </span>
-            {i < STEPS.length - 1 && (
+            {i < total - 1 && (
               <span className="mt-[11px] mr-4 h-px w-8 bg-border" />
             )}
           </li>
@@ -71,14 +74,14 @@ function WizardShell({
   current,
   footer,
   chrome,
-  steps = true,
+  totalSteps = STEPS.length,
   children,
 }: {
   current: number;
   footer: ReactNode;
   chrome?: PlatformChrome;
-  /** The app has one step until the invitation and the profile's detail exist. */
-  steps?: boolean;
+  /** The app stops before the last step until the invitation exists. */
+  totalSteps?: number;
   children: ReactNode;
 }) {
   return (
@@ -92,7 +95,7 @@ function WizardShell({
       {...chrome}
     >
       <DeskPageHeader title="Nouvelle entreprise" />
-      {steps && <Stepper current={current} />}
+      <Stepper current={current} total={totalSteps} />
       <div className="mt-[18px] h-px shrink-0 bg-separator" />
       {children}
     </CompanyShell>
@@ -144,7 +147,7 @@ const MODELS: ProfileModelCard[] = [
 /** Step 1 on the computer: the company's name and the model it starts from. */
 export function NouvelleEntrepriseModeleDesktop({
   chrome,
-  steps,
+  totalSteps,
   name,
   onName,
   models = MODELS,
@@ -157,7 +160,7 @@ export function NouvelleEntrepriseModeleDesktop({
   error,
 }: {
   chrome?: PlatformChrome;
-  steps?: boolean;
+  totalSteps?: number;
   name?: string;
   onName?: (name: string) => void;
   models?: ProfileModelCard[];
@@ -173,7 +176,7 @@ export function NouvelleEntrepriseModeleDesktop({
     <WizardShell
       current={0}
       chrome={chrome}
-      steps={steps}
+      totalSteps={totalSteps}
       footer={
         <Footer note={note}>
           <Button
@@ -295,36 +298,78 @@ export function NouvelleEntrepriseModeleDesktop({
 }
 
 /** Step 2 on the computer: each step of the model, and what was changed. */
-export function NouvelleEntrepriseFonctionnementDesktop() {
+export function NouvelleEntrepriseFonctionnementDesktop({
+  chrome,
+  totalSteps,
+  groups = STEP_GROUPS,
+  summary = 'Modèle « Multi-départements » · 1 étape modifiée',
+  notice,
+  note = 'Étape 2 sur 3 · l’entreprise pourra tout modifier ensuite',
+  onChoose,
+  onRevert,
+  hideRevert = false,
+  onBack,
+  confirmLabel = 'Continuer',
+  confirmDisabled = false,
+  onConfirm,
+}: {
+  chrome?: PlatformChrome;
+  totalSteps?: number;
+  groups?: WizardStepGroup[];
+  summary?: string;
+  notice?: string;
+  note?: string;
+  onChoose?: (step: string, value: string) => void;
+  onRevert?: () => void;
+  hideRevert?: boolean;
+  onBack?: () => void;
+  confirmLabel?: string;
+  confirmDisabled?: boolean;
+  onConfirm?: () => void;
+} = {}) {
   return (
     <WizardShell
       current={1}
+      chrome={chrome}
+      totalSteps={totalSteps}
       footer={
-        <Footer note="Étape 2 sur 3 · l’entreprise pourra tout modifier ensuite">
-          <Button variant="outline" size="desk" className="h-9 w-[75.2px]">
+        <Footer note={note}>
+          <Button
+            variant="outline"
+            size="desk"
+            className="h-9 w-[75.2px]"
+            onClick={onBack}
+          >
             Retour
           </Button>
-          <Button size="desk" className="h-9 w-[120px]">
-            Continuer
+          <Button
+            size="desk"
+            className="h-9 w-[120px]"
+            disabled={confirmDisabled}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
           </Button>
         </Footer>
       }
     >
       <div className="mt-[19px] flex h-8 shrink-0 items-start justify-between">
-        <p className="mt-1.5 text-13 text-muted">
-          Modèle « Multi-départements » · 1 étape modifiée
-        </p>
-        <Button
-          size="desk"
-          variant="secondary"
-          icon="undo"
-          className="relative top-[1.5px] left-px w-[150px] justify-start bg-transparent text-ink-2"
-        >
-          Revenir au modèle
-        </Button>
+        <p className="mt-1.5 text-13 text-muted">{summary}</p>
+        {!hideRevert && (
+          <Button
+            size="desk"
+            variant="secondary"
+            icon="undo"
+            className="relative top-[1.5px] left-px w-[150px] justify-start bg-transparent text-ink-2"
+            onClick={onRevert}
+          >
+            Revenir au modèle
+          </Button>
+        )}
       </div>
+      {notice && <p className="mt-2 shrink-0 text-13 text-orange-strong">{notice}</p>}
       <div className="mt-2 flex shrink-0 flex-col gap-4">
-        {STEP_GROUPS.map((group) => (
+        {groups.map((group) => (
           <DeskPanel key={group.title} title={group.title}>
             {group.steps.map((step, i) => (
               <div
@@ -348,13 +393,24 @@ export function NouvelleEntrepriseFonctionnementDesktop() {
                       Modifié
                     </span>
                   )}
-                  <DeskChoice options={step.options} value={step.value} />
+                  <DeskChoice
+                    options={step.options}
+                    value={step.value}
+                    label={step.title}
+                    onChange={
+                      step.id
+                        ? (value) => onChoose?.(step.id as string, value)
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             ))}
           </DeskPanel>
         ))}
       </div>
+      {/* The footer floats over the page: the last row must scroll out from under it. */}
+      <div aria-hidden className="h-20 shrink-0" />
     </WizardShell>
   );
 }
@@ -463,3 +519,5 @@ export function NouvelleEntrepriseAdministrateurDesktop() {
     </WizardShell>
   );
 }
+
+export type { WizardStepGroup } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';

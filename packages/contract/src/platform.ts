@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PROFILE_MODELS } from './operating-profile';
+import { operatingProfile, PROFILE_MODELS } from './operating-profile';
 
 /** Figures only (D26): nothing here may name a company, an account or a recipient. */
 export const platformOverviewOutput = z.strictObject({
@@ -34,6 +34,8 @@ export const platformCompanies = z.array(platformCompany);
 /** The record adds what a deletion would erase, as a figure. */
 export const platformCompanyDetail = platformCompany.extend({
   parcels: z.number().int().nonnegative(),
+  /** How far it moved from its model, as a figure; none without a model. */
+  changedSteps: z.number().int().nonnegative().nullable(),
 });
 
 export type PlatformCompanyDetail = z.infer<typeof platformCompanyDetail>;
@@ -43,6 +45,8 @@ export const companyInput = z.strictObject({ id: companyId });
 export const createCompanyInput = z.strictObject({
   name: companyName,
   profileModel: z.enum(PROFILE_MODELS),
+  /** The model as adjusted; complete or refused. A page of before sends none: the model's own. */
+  profile: operatingProfile.optional(),
 });
 
 export const renameCompanyInput = z.strictObject({

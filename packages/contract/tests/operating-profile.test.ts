@@ -2,9 +2,13 @@ import { canHandOver, toUserRole } from '@repo/contract/auth';
 import {
   DEFAULT_OPERATING_PROFILE,
   operatingImpact,
+  operatingProfile,
+  PROFILE_MODELS,
+  PROFILE_OF_MODEL,
   parseOperatingProfile,
   reminderMode,
   SMALL_SITE_OPERATING_PROFILE,
+  stepsChangedFromModel,
   type OperatingProfile,
 } from '@repo/contract/operating-profile';
 import { describe, expect, it } from 'vitest';
@@ -26,6 +30,87 @@ const impactOf = (change: Partial<OperatingProfile>) =>
     { ...DEFAULT_OPERATING_PROFILE, ...change },
     COUNTS,
   );
+
+describe('profile models', () => {
+  it('gives each model the profile of ME18', () => {
+    expect(PROFILE_OF_MODEL).toEqual({
+      small_site: {
+        shuttleActsAsDepartment: true,
+        batchReview: 'optional',
+        depositConfirmation: 'disabled',
+        handoverProof: 'optional',
+        handoverScan: 'disabled',
+        signature: 'optional',
+        photo: 'optional',
+        emailMoment: 'scan',
+        reminders: 'optional',
+      },
+      multi_departments: {
+        shuttleActsAsDepartment: false,
+        batchReview: 'optional',
+        depositConfirmation: 'count',
+        handoverProof: 'required',
+        handoverScan: 'optional',
+        signature: 'optional',
+        photo: 'disabled',
+        emailMoment: 'deposit',
+        reminders: 'required',
+      },
+      strict_traceability: {
+        shuttleActsAsDepartment: false,
+        batchReview: 'required',
+        depositConfirmation: 'each',
+        handoverProof: 'required',
+        handoverScan: 'required',
+        signature: 'required',
+        photo: 'optional',
+        emailMoment: 'deposit',
+        reminders: 'required',
+      },
+    });
+  });
+
+  it('writes only complete profiles', () => {
+    for (const model of PROFILE_MODELS) {
+      expect(operatingProfile.safeParse(PROFILE_OF_MODEL[model]).success).toBe(
+        true,
+      );
+    }
+  });
+
+  it('sends only the small site without a tour: its shuttle hands over, the others do not', () => {
+    expect(canHandOver('shuttle', PROFILE_OF_MODEL.small_site)).toBe(true);
+    expect(canHandOver('shuttle', PROFILE_OF_MODEL.multi_departments)).toBe(
+      false,
+    );
+    expect(canHandOver('shuttle', PROFILE_OF_MODEL.strict_traceability)).toBe(
+      false,
+    );
+  });
+
+  it('counts the steps moved away from the model', () => {
+    const start = PROFILE_OF_MODEL.multi_departments;
+    expect(stepsChangedFromModel('multi_departments', start)).toBe(0);
+    expect(
+      stepsChangedFromModel('multi_departments', {
+        ...start,
+        signature: 'required',
+        shuttleActsAsDepartment: true,
+      }),
+    ).toBe(2);
+    expect(
+      stepsChangedFromModel('multi_departments', DEFAULT_OPERATING_PROFILE),
+    ).toBe(6);
+  });
+
+  it('leaves a company without a profile as it was', () => {
+    expect(DEFAULT_OPERATING_PROFILE).toMatchObject({
+      depositConfirmation: 'disabled',
+      emailMoment: 'scan',
+      reminders: 'optional',
+    });
+  });
+});
 
 describe('toUserRole', () => {
   it('gives nothing for a role this version does not know, or a null one', () => {
