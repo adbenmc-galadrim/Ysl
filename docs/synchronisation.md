@@ -316,6 +316,18 @@ journalisés. Brevo abandonne un événement sur tout 5xx et tout 4xx sauf 429 :
 de notre côté, ou un message inconnu de moins de 5 minutes, répond 429 (reprises à
 10 min, 1 h, 2 h, 8 h).
 
+**Expéditeur par entreprise** (`mail_sender`, YSL-114, non synchronisée) : l'admin règle
+un nom et une adresse (`mailSender.save`), le domaine est déclaré chez Brevo, ses
+enregistrements DNS s'affichent, « Vérifier maintenant » (`mailSender.check`) lit
+`authenticated`. L'expéditeur se lit à l'envoi : domaine vérifié, l'adresse de
+l'entreprise ; sinon `MAIL_FROM_ADDRESS` au nom de l'entreprise. Toutes les entreprises
+partagent un compte Brevo, où `authenticated` ne dit pas à qui est le domaine : un
+domaine n'appartient qu'à une entreprise, et un domaine déjà authentifié chez Brevo sans
+propriétaire ici est refusé, comme celui de la plateforme. Changer de domaine retire
+l'ancien chez Brevo, s'il a été déclaré ou prouvé par cette entreprise. Sans `BREVO_API_KEY`, l'expéditeur s'enregistre et la vérification
+reste indisponible ; le domaine se déclare à la première vérification après la pose de
+la clé.
+
 Mise en service : poser `BREVO_WEBHOOK_TOKEN` sur l'API,
 puis `POST https://api.brevo.com/v3/webhooks` avec `type: "transactional"`, l'URL de la
 route, `events: ["delivered", "hardBounce", "invalid", "blocked", "spam", "unsubscribed"]`
