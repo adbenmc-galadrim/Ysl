@@ -3,6 +3,7 @@
  * the callbacks, the screen draws. The other screens stay Storybook-only
  * until a ticket mounts them.
  */
+export * from '#screens/accueil-role/role-home-screen';
 export * from '#screens/colis/colis-screen';
 export * from '#screens/colis/fiche-colis-screen';
 export * from '#screens/colis/lecture-screen';
