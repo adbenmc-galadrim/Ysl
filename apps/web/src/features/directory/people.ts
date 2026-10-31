@@ -1,26 +1,24 @@
+import type { MoveEffects } from '@repo/contract/directory';
+import { OPEN_STATUSES } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { newId } from '@repo/shared/id';
-import { normalizeName } from '@repo/shared/text';
+import { isEmail, normalizeName } from '@repo/shared/text';
 import type {
-  ContactDraft,
-  ContactDraftErrors,
-  DirectoryEntry,
+  MoveEffectLine,
+  PersonFormErrors,
+  PersonFormValue,
 } from '@repo/ui';
 import { commitLocal } from '#/features/db/commit';
 import type {
   CourrierDatabase,
   LocalDirectoryPerson,
+  LocalParcel,
 } from '#/features/db/schema';
 import { initialsOf } from '#/features/settings/initials';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** An address that can take a message: something, an at sign, a domain with a dot. */
-export function isEmail(email: string): boolean {
-  return EMAIL.test(email);
-}
+export { isEmail };
 
 /** The key the directory is deduplicated on (F50): the e-mail, trimmed, in lower case. */
 export function normalizeEmail(email: string): string {
@@ -36,11 +34,19 @@ export function fullName(
 export const listed = (person: LocalDirectoryPerson) =>
   person.active && !person.deletedAt;
 
-export function validatePerson(draft: ContactDraft): ContactDraftErrors {
-  const errors: ContactDraftErrors = {};
-  if (!draft.firstName.trim())
-    errors.firstName = t('directory.error.firstName');
-  if (!draft.lastName.trim()) errors.lastName = t('directory.error.lastName');
+/** "Prénom et nom" in one field: the first word, and all the rest. */
+export function splitName(name: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const [firstName = '', ...rest] = name.trim().split(/\s+/);
+  return { firstName, lastName: rest.join(' ') };
+}
+
+export function validatePerson(draft: PersonFormValue): PersonFormErrors {
+  const errors: PersonFormErrors = {};
+  const { firstName, lastName } = splitName(draft.name);
+  if (!firstName || !lastName) errors.name = t('directory.error.name');
   const email = normalizeEmail(draft.email);
   if (!email) errors.email = t('directory.error.emailMissing');
   else if (!isEmail(email)) errors.email = t('directory.error.emailInvalid');
@@ -73,7 +79,7 @@ export async function findByEmail(
 export type SaveResult =
   | { kind: 'saved'; person: LocalDirectoryPerson }
   | { kind: 'duplicate'; person: LocalDirectoryPerson }
-  | { kind: 'invalid'; errors: ContactDraftErrors };
+  | { kind: 'invalid'; errors: PersonFormErrors };
 
 export type SaveOptions = {
   /** The card to update; a new one otherwise. */
@@ -86,11 +92,12 @@ export type SaveOptions = {
  * `sync.push`. An e-mail the directory already has never makes a second
  * card: the person already there comes back instead, for the caller to use.
  * The server holds the same rule (`directory_person_email_idx`) for cards
- * added on two iPhone before they synced.
+ * added on two iPhone before they synced. A department is chosen once, on a
+ * new card: after that only `directory.move` changes it.
  */
 export async function savePerson(
   db: CourrierDatabase,
-  draft: ContactDraft,
+  draft: PersonFormValue,
   { id, now = new Date() }: SaveOptions = {},
 ): Promise<SaveResult> {
   const errors = validatePerson(draft);
@@ -99,16 +106,23 @@ export async function savePerson(
   if (duplicate) return { kind: 'duplicate', person: duplicate };
 
   const existing = id ? await db.directoryPerson.get(id) : undefined;
-  const firstName = draft.firstName.trim();
-  const lastName = draft.lastName.trim();
+  const typed = draft.name.trim().replace(/\s+/g, ' ');
+  // Untouched, a compound first name stays as it is: splitting would cut it wrongly.
+  const { firstName, lastName } =
+    existing && typed === fullName(existing) ? existing : splitName(typed);
+  const departmentId = draft.departmentId || null;
+  const chosen =
+    !existing && departmentId
+      ? await db.department.get(departmentId)
+      : undefined;
   const person: LocalDirectoryPerson = {
     ...(existing ?? {
       id: id ?? newId(),
       createdAt: now,
       deletedAt: null,
-      site: null,
       source: 'manuel',
-      active: true,
+      department: chosen?.name ?? null,
+      departmentId,
     }),
     updatedAt: now,
     active: true,
@@ -116,7 +130,7 @@ export async function savePerson(
     lastName,
     nameNorm: normalizeName(`${firstName} ${lastName}`),
     email: normalizeEmail(draft.email),
-    department: draft.department.trim() || null,
+    site: draft.site.trim() || null,
   };
   await commitLocal(
     db,
@@ -127,24 +141,28 @@ export async function savePerson(
 }
 
 /** A new card prefilled from a search that found nobody: an e-mail, or a name. */
-export function draftFromQuery(query: string): Partial<ContactDraft> {
+export function draftFromQuery(query: string): Partial<PersonFormValue> {
   const text = query.trim();
   if (!text) return {};
-  if (text.includes('@')) return { email: text };
-  const [firstName = '', ...rest] = text.split(/\s+/);
-  return rest.length
-    ? { firstName, lastName: rest.join(' ') }
-    : { lastName: firstName };
+  return text.includes('@') ? { email: text } : { name: text };
 }
 
-export function toDraft(person: LocalDirectoryPerson): ContactDraft {
+export function toDraft(person: LocalDirectoryPerson): PersonFormValue {
   return {
-    firstName: person.firstName,
-    lastName: person.lastName,
+    name: fullName(person),
     email: person.email,
-    department: person.department ?? '',
+    site: person.site ?? '',
+    departmentId: person.departmentId ?? '',
   };
 }
+
+/** A person as lists show them: the detail is the department, else the e-mail. */
+export type DirectoryEntry = {
+  id: string;
+  name: string;
+  initials: string;
+  detail?: string;
+};
 
 export function toEntry(person: LocalDirectoryPerson): DirectoryEntry {
   const name = fullName(person);
@@ -156,31 +174,117 @@ export function toEntry(person: LocalDirectoryPerson): DirectoryEntry {
   };
 }
 
+/** Departments by id, for the people who name one. */
+export type DepartmentNames = ReadonlyMap<string, string>;
+
+/** Where a person belongs: their department, or the word they came with until the conversion. */
+export function departmentLabel(
+  person: Pick<LocalDirectoryPerson, 'department' | 'departmentId'>,
+  names: DepartmentNames,
+): string {
+  const id = person.departmentId;
+  return (id ? names.get(id) : undefined) ?? person.department ?? '';
+}
+
+export const NO_DEPARTMENT = 'sans';
+export const ALL_DEPARTMENTS = 'tous';
+
 /**
- * The directory as the Annuaire screen lists it: active people only, in
- * alphabetical order of their name, narrowed by a search on the name, the
- * department or the e-mail, accents and case aside.
+ * Who the directory lists: active people, alphabetically, narrowed by a tab
+ * (`tous`, `sans`, a department id) and a search on the name, the department
+ * or the e-mail, accents and case aside.
  */
-export function directoryEntries(
+export function directoryPeople(
   people: readonly LocalDirectoryPerson[],
+  names: DepartmentNames,
   query = '',
-): DirectoryEntry[] {
+  tab = ALL_DEPARTMENTS,
+): LocalDirectoryPerson[] {
   const needle = normalizeName(query);
   const mail = normalizeEmail(query);
   return people
     .filter(listed)
+    .filter((person) =>
+      tab === ALL_DEPARTMENTS
+        ? true
+        : tab === NO_DEPARTMENT
+          ? !person.departmentId
+          : person.departmentId === tab,
+    )
     .filter(
       (person) =>
         !needle ||
         normalizeName(fullName(person)).includes(needle) ||
-        normalizeName(person.department ?? '').includes(needle) ||
+        normalizeName(departmentLabel(person, names)).includes(needle) ||
         (mail !== '' && person.email.toLowerCase().includes(mail)),
     )
-    .sort((a, b) => a.nameNorm.localeCompare(b.nameNorm))
-    .map(toEntry);
+    .sort((a, b) => a.nameNorm.localeCompare(b.nameNorm));
 }
 
-/** How many people the directory lists. */
-export function directorySize(people: readonly LocalDirectoryPerson[]) {
-  return people.filter(listed).length;
+/** The directory as the recipient search lists it: same order, same search. */
+export function directoryEntries(
+  people: readonly LocalDirectoryPerson[],
+  query = '',
+): DirectoryEntry[] {
+  return directoryPeople(people, new Map(), query).map(toEntry);
+}
+
+/** The section letter of a name: its first letter, without accent. */
+export function letterOf(name: string): string {
+  const letter = name
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .charAt(0)
+    .toUpperCase();
+  return /[A-Z]/.test(letter) ? letter : '#';
+}
+
+/** Those still at the desk, by person: the « Colis en cours » of the table. */
+export function openParcelsByPerson(
+  parcels: readonly Pick<LocalParcel, 'personId' | 'status' | 'deletedAt'>[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const { personId, status, deletedAt } of parcels) {
+    if (!personId || deletedAt) continue;
+    if (!(OPEN_STATUSES as readonly string[]).includes(status)) continue;
+    counts.set(personId, (counts.get(personId) ?? 0) + 1);
+  }
+  return counts;
+}
+
+/** What the record lists about a move, from the server's count (ME21). */
+export function moveEffectLines(
+  { follows, toSettle }: MoveEffects,
+  target: string,
+  current: string,
+): MoveEffectLine[] {
+  const lines: MoveEffectLine[] = [];
+  if (follows > 0) {
+    lines.push({
+      icon: 'truck',
+      text:
+        follows === 1
+          ? t('directory.move.follows.one', { department: target })
+          : t('directory.move.follows.many', {
+              count: follows,
+              department: target,
+            }),
+    });
+  }
+  if (toSettle > 0) {
+    lines.push({
+      icon: 'alert',
+      text:
+        toSettle === 1
+          ? t('directory.move.toSettle.one', { department: current })
+          : t('directory.move.toSettle.many', {
+              count: toSettle,
+              department: current,
+            }),
+    });
+  }
+  if (lines.length === 0) {
+    lines.push({ icon: 'check', text: t('directory.move.none') });
+  }
+  return lines;
 }

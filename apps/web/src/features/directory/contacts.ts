@@ -1,6 +1,6 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { normalizeName } from '@repo/shared/text';
-import type { DirectoryEntry, OutsideContactDraft } from '@repo/ui';
+import type { OutsideContactDraft } from '@repo/ui';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
   CourrierDatabase,
@@ -14,6 +14,7 @@ import {
   listed,
   normalizeEmail,
 } from '#/features/directory/people';
+import type { DirectoryEntry } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { initialsOf } from '#/features/settings/initials';
 
