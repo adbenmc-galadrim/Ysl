@@ -223,15 +223,22 @@ export function ReglagesHome() {
     value: directorySize ? String(directorySize) : undefined,
     onPress: () => void navigate({ to: '/reglages/annuaire' }),
   };
+  const posterItem: SettingsGroup['items'][number] = {
+    icon: 'qr',
+    color: 'grey',
+    label: t('poster.link'),
+    onPress: () => void navigate({ to: '/reglages/affiche-qr' }),
+  };
   const ownDirectory: SettingsGroup = {
     header: t('settings.group.service'),
-    items: [directoryItem],
+    items: [directoryItem, posterItem],
   };
 
   const service: SettingsGroup = {
     header: t('settings.group.service'),
     items: [
       directoryItem,
+      posterItem,
       {
         icon: 'pin',
         color: 'red',

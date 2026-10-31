@@ -97,14 +97,39 @@ export function NavetteDepartementADeposer() {
   );
 }
 
+export type DepositScanScreenProps = {
+  video?: ReactNode;
+  department?: string;
+  torch?: boolean;
+  /** The hint, or what went wrong with the camera. */
+  hint: ReactNode;
+  listLabel: string;
+  onClose?: () => void;
+  onTorch?: () => void;
+  onList?: () => void;
+};
+
 /** The camera looking for the poster of the department. */
-export function NavetteScannerQr() {
+export function DepositScanScreen({
+  video,
+  department,
+  torch,
+  hint,
+  listLabel,
+  onClose,
+  onTorch,
+  onList,
+}: DepositScanScreenProps) {
   return (
-    <DepositQrScene department="Studio">
+    <DepositQrScene
+      department={department}
+      video={video}
+      torch={torch}
+      onClose={onClose}
+      onTorch={onTorch}
+    >
       <p className="absolute top-[560px] left-[47px] w-[300px] text-center text-17 leading-[20.4px] font-semibold">
-        Visez le QR affiché au point de&nbsp;
-        <br />
-        réception
+        {hint}
       </p>
       <Button
         variant="light"
@@ -112,122 +137,311 @@ export function NavetteScannerQr() {
         icon="list"
         iconSize={20}
         className="absolute top-[760px] left-[76px] h-12 w-60"
+        onClick={onList}
       >
-        Choisir dans la liste
+        {listLabel}
       </Button>
     </DepositQrScene>
   );
 }
 
-/** The poster read belongs to another department the shuttle also serves. */
-export function NavetteQrAutreDepartement() {
+export function NavetteScannerQr() {
   return (
-    <DepositQrScene department="Finance" wrong>
+    <DepositScanScreen
+      department="Studio"
+      hint={
+        <>
+          Visez le QR affiché au point de&nbsp;
+          <br />
+          réception
+        </>
+      }
+      listLabel="Choisir dans la liste"
+    />
+  );
+}
+
+export type DepositOtherQrScreenProps = {
+  video?: ReactNode;
+  department?: string;
+  torch?: boolean;
+  title: string;
+  text: string;
+  /** Nothing to put down there: the card only says so. */
+  action?: { label: string; onClick: () => void };
+  onClose?: () => void;
+  onTorch?: () => void;
+};
+
+/** The poster read belongs to another department the shuttle also serves. */
+export function DepositOtherQrScreen({
+  video,
+  department,
+  torch,
+  title,
+  text,
+  action,
+  onClose,
+  onTorch,
+}: DepositOtherQrScreenProps) {
+  return (
+    <DepositQrScene
+      department={department}
+      video={video}
+      torch={torch}
+      onClose={onClose}
+      onTorch={onTorch}
+      wrong
+    >
       <div className="absolute top-[540px] left-5 h-[150px] w-[353px] rounded-[18px] bg-night">
         <Icon name="alert" size={20} className="absolute top-[18px] left-4 text-ios-red" />
         <p className="absolute top-4 left-[46px] text-17 font-semibold">
-          C’est le QR de Finance
+          {title}
         </p>
         <p className="absolute top-[41px] left-[46px] text-14 text-night-muted">
-          Vous avez 5 colis pour Finance. Déposer ici ?
+          {text}
         </p>
-        <Button
-          variant="light"
-          size="md"
-          className="absolute top-[86px] left-4 h-12 w-[321px]"
-        >
-          Déposer à Finance
-        </Button>
+        {action && (
+          <Button
+            variant="light"
+            size="md"
+            className="absolute top-[86px] left-4 h-12 w-[321px]"
+            onClick={action.onClick}
+          >
+            {action.label}
+          </Button>
+        )}
       </div>
     </DepositQrScene>
   );
 }
 
+export function NavetteQrAutreDepartement() {
+  return (
+    <DepositOtherQrScreen
+      department="Finance"
+      title="C’est le QR de Finance"
+      text="Vous avez 5 colis pour Finance. Déposer ici ?"
+      action={{ label: 'Déposer à Finance', onClick: () => undefined }}
+    />
+  );
+}
+
+export type DepositCountScreenProps = {
+  /** « QR du Studio lu »; nothing when chosen from the list. */
+  read?: string;
+  count: number;
+  countLine: string;
+  hint: ReactNode;
+  listLabel: string;
+  actionLabel: string;
+  onAction?: () => void;
+  onClose?: () => void;
+  onList?: () => void;
+};
+
 /** The department is confirmed by its QR: how many parcels are put down. */
-export function NavetteNombreDeColis() {
+export function DepositCountScreen({
+  read,
+  count,
+  countLine,
+  hint,
+  listLabel,
+  actionLabel,
+  onAction,
+  onClose,
+  onList,
+}: DepositCountScreenProps) {
   return (
     <Screen
       bottom={
         <DepositBottom>
-          <Button>J’ai posé 6 colis</Button>
+          <Button onClick={onAction}>{actionLabel}</Button>
         </DepositBottom>
       }
     >
-      <NavBar leading={CLOSE} className="[&>div:first-child]:pl-0" />
-      <span className="mt-3 flex h-7 w-[125px] items-center gap-1 rounded-full bg-green-soft pl-2 text-green">
-        <Icon name="check" size={14} />
-        <span className="relative -top-px text-13 font-semibold">QR du Studio lu</span>
-      </span>
-      <p className="mt-[60px] text-center text-[120px] leading-[144px] font-bold tracking-[-4px]">
-        6
-      </p>
-      <p className="mt-2 text-center text-22 font-semibold">
-        colis à poser au Studio
-      </p>
-      <p className="mx-auto mt-2.5 w-[300px] text-center text-15 text-muted">
-        Posez-les à l’accueil et demandez qu’on les&nbsp;
-        <br />
-        compte.
-      </p>
-      <DepositGroup
-        className="mt-[26px]"
-        items={[
-          { icon: 'list', title: 'Voir les 6 colis', chevron: true },
-        ]}
+      <NavBar
+        leading={
+          <IconButton
+            icon="x"
+            label="Fermer"
+            size="lg"
+            iconSize={22}
+            onClick={onClose}
+          />
+        }
+        className="[&>div:first-child]:pl-0"
       />
+      {read ? (
+        <span className="mt-3 flex h-7 w-fit items-center gap-1 rounded-full bg-green-soft pr-2.5 pl-2 text-green">
+          <Icon name="check" size={14} />
+          <span className="relative -top-px text-13 font-semibold">{read}</span>
+        </span>
+      ) : (
+        <span className="mt-3 block h-7" />
+      )}
+      <p className="mt-[60px] text-center text-[120px] leading-[144px] font-bold tracking-[-4px]">
+        {count}
+      </p>
+      <p className="mt-2 text-center text-22 font-semibold">{countLine}</p>
+      <p className="mx-auto mt-2.5 w-[300px] text-center text-15 text-muted">
+        {hint}
+      </p>
+      <button
+        type="button"
+        className="mt-[26px] block w-full cursor-pointer text-left"
+        onClick={onList}
+      >
+        <DepositGroup
+          items={[{ icon: 'list', title: listLabel, chevron: true }]}
+        />
+      </button>
     </Screen>
   );
 }
 
+export function NavetteNombreDeColis() {
+  return (
+    <DepositCountScreen
+      read="QR du Studio lu"
+      count={6}
+      countLine="colis à poser au Studio"
+      hint={
+        <>
+          Posez-les à l’accueil et demandez qu’on les&nbsp;
+          <br />
+          compte.
+        </>
+      }
+      listLabel="Voir les 6 colis"
+      actionLabel="J’ai posé 6 colis"
+    />
+  );
+}
+
+export type DepositWaitingScreenProps = {
+  title: string;
+  text: ReactNode;
+  posted: { title: string; value: string };
+  status: { title: string; value: string };
+  note: string;
+  actionLabel: string;
+  onAction?: () => void;
+  onClose?: () => void;
+};
+
 /** The parcels are down: the department has to count them, the round goes on. */
-export function NavetteAttenteConfirmation() {
+export function DepositWaitingScreen({
+  title,
+  text,
+  posted,
+  status,
+  note,
+  actionLabel,
+  onAction,
+  onClose,
+}: DepositWaitingScreenProps) {
   return (
     <Screen
       bottom={
         <DepositBottom>
-          <Button>Continuer la tournée</Button>
+          <Button onClick={onAction}>{actionLabel}</Button>
         </DepositBottom>
       }
     >
-      <NavBar leading={CLOSE} className="[&>div:first-child]:pl-0" />
+      <NavBar
+        leading={
+          <IconButton
+            icon="x"
+            label="Fermer"
+            size="lg"
+            iconSize={22}
+            onClick={onClose}
+          />
+        }
+        className="[&>div:first-child]:pl-0"
+      />
       <span className="mx-auto mt-20 flex size-[88px] items-center justify-center rounded-full bg-fill">
         <Icon name="clock" size={40} />
       </span>
       <h1 className="mt-8 text-center text-[26px] leading-[31px] font-bold">
-        Au Studio de confirmer
+        {title}
       </h1>
       <p className="mx-auto mt-[9px] w-[310px] text-center text-15 text-muted">
-        Julie Perrin ou un collègue compte les 6 colis&nbsp;
-        <br />
-        sur son poste ou son iPhone.
+        {text}
       </p>
       <DepositGroup
         className="mt-[54px]"
         items={[
-          { icon: 'truck', title: 'Posé à 10:56', value: '6 colis' },
+          { icon: 'truck', title: posted.title, value: posted.value },
           {
             icon: 'clock',
             iconClassName: 'bg-orange-solid',
-            title: 'Confirmation',
-            value: 'En attente',
+            title: status.title,
+            value: status.value,
           },
         ]}
       />
       <p className="relative -top-px mt-[26px] text-center text-13 text-muted">
-        Inutile d’attendre : la confirmation arrivera dans la tournée.
+        {note}
       </p>
     </Screen>
   );
 }
 
+export function NavetteAttenteConfirmation() {
+  return (
+    <DepositWaitingScreen
+      title="Au Studio de confirmer"
+      text={
+        <>
+          Julie Perrin ou un collègue compte les 6 colis&nbsp;
+          <br />
+          sur son poste ou son iPhone.
+        </>
+      }
+      posted={{ title: 'Posé à 10:56', value: '6 colis' }}
+      status={{ title: 'Confirmation', value: 'En attente' }}
+      note="Inutile d’attendre : la confirmation arrivera dans la tournée."
+      actionLabel="Continuer la tournée"
+    />
+  );
+}
+
+export type DepositDoneScreenProps = {
+  title: string;
+  line: string;
+  /** A count that did not match, said over the rest. */
+  gap?: { title: string; description: string };
+  rows: readonly { icon?: 'mail' | 'route'; title: string; value: string }[];
+  progress?: { value: number; label: string };
+  actionLabel: string;
+  actionIcon?: boolean;
+  onAction?: () => void;
+};
+
 /** The department has counted as many parcels as were announced. */
-export function NavetteDepotConfirme() {
+export function DepositDoneScreen({
+  title,
+  line,
+  gap,
+  rows,
+  progress,
+  actionLabel,
+  actionIcon = true,
+  onAction,
+}: DepositDoneScreenProps) {
   return (
     <Screen
       bottom={
         <DepositBottom>
-          <Button icon="arrowRight" iconSize={20} className="gap-2">
-            Aller à Finance · 5 colis
+          <Button
+            icon={actionIcon ? 'arrowRight' : undefined}
+            iconSize={20}
+            className="gap-2"
+            onClick={onAction}
+          >
+            {actionLabel}
           </Button>
         </DepositBottom>
       }
@@ -236,25 +450,51 @@ export function NavetteDepotConfirme() {
         <Icon name="tick" size={44} />
       </span>
       <h1 className="mt-6 text-center text-[26px] leading-[31px] font-bold">
-        6 colis déposés au Studio
+        {title}
       </h1>
-      <p className="mt-[9px] text-center text-15 text-muted">
-        Confirmé par Julie Perrin à 10:58
-      </p>
+      <p className="mt-[9px] text-center text-15 text-muted">{line}</p>
+      {gap && (
+        <PhoneBanner
+          tone="red"
+          icon="warning"
+          className="mt-5"
+          title={gap.title}
+          description={gap.description}
+          height={67}
+        />
+      )}
       <DepositGroup
         className="mt-10"
-        items={[
-          {
-            icon: 'mail',
-            iconColor: 'ink',
-            title: 'E-mails aux salariés',
-            value: '5 envoyés',
-          },
-          { icon: 'route', title: 'Tournée', value: '2 sur 4' },
-        ]}
+        items={rows.map(({ icon, title: rowTitle, value }) => ({
+          icon,
+          iconColor: icon === 'mail' ? ('ink' as const) : undefined,
+          title: rowTitle,
+          value,
+        }))}
       />
-      <ProgressBar value={0.5} label="Tournée" className="mt-[26px] bg-fill-2" />
+      {progress && (
+        <ProgressBar
+          value={progress.value}
+          label={progress.label}
+          className="mt-[26px] bg-fill-2"
+        />
+      )}
     </Screen>
+  );
+}
+
+export function NavetteDepotConfirme() {
+  return (
+    <DepositDoneScreen
+      title="6 colis déposés au Studio"
+      line="Confirmé par Julie Perrin à 10:58"
+      rows={[
+        { icon: 'mail', title: 'E-mails aux salariés', value: '5 envoyés' },
+        { icon: 'route', title: 'Tournée', value: '2 sur 4' },
+      ]}
+      progress={{ value: 0.5, label: 'Tournée' }}
+      actionLabel="Aller à Finance · 5 colis"
+    />
   );
 }
 

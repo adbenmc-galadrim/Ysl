@@ -99,13 +99,13 @@ describe('0023_departement_archive', () => {
     );
   });
 
-  it('refuses a parcel back to waiting there, and leaves what stays closed', async () => {
+  it('lets a parcel reopen, but not there: 0034 takes it off the archived department', async () => {
     const delivered = newId();
     await client.query(
       `update department set deleted_at = null where id = $1`,
       [archived],
     );
-    await addParcel(delivered, 'remis', archived);
+    await addParcel(delivered, 'retourne', archived);
     await client.query(
       `update department set deleted_at = now() where id = $1`,
       [archived],
@@ -114,11 +114,14 @@ describe('0023_departement_archive', () => {
     await client.query(`update parcel set updated_at = now() where id = $1`, [
       delivered,
     ]);
-    await refused(
-      client.query(
-        `update parcel set status = 'notifie', status_seq = status_seq + 1, delivered_at = null, delivered_by = null where id = $1`,
-        [delivered],
-      ),
+    await client.query(
+      `update parcel set status = 'notifie', status_seq = status_seq + 1 where id = $1`,
+      [delivered],
     );
+    const { rows } = await client.query<{ department_id: string | null }>(
+      `select department_id from parcel where id = $1`,
+      [delivered],
+    );
+    expect(rows[0]?.department_id).toBeNull();
   });
 });

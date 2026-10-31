@@ -754,7 +754,24 @@ export function handoverItems(
   ];
 }
 
-function action(parcel: LocalParcel, tour?: boolean): RecordAction | undefined {
+/** A return decided on a blocked parcel: undoing it blocks it again. */
+function returnedWhileBlocked(events: readonly LocalEvent[]): boolean {
+  const last = events
+    .flatMap((row) => {
+      const event = readParcelEvent(row.type, row.detail);
+      return event?.type === 'parcel.status' && event.to === 'retourne'
+        ? [{ at: row.at, from: event.from }]
+        : [];
+    })
+    .sort((a, b) => b.at.getTime() - a.at.getTime())[0];
+  return last?.from === 'a_regulariser';
+}
+
+function action(
+  parcel: LocalParcel,
+  tour?: boolean,
+  events: readonly LocalEvent[] = [],
+): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
   if (tour && parcel.status === 'recu' && !parcel.deletedAt) {
     return { kind: 'dispatch' };
@@ -772,7 +789,10 @@ function action(parcel: LocalParcel, tour?: boolean): RecordAction | undefined {
   ) {
     return;
   }
-  const to = stepBackOf(parcel);
+  const to =
+    parcel.status === 'retourne' && returnedWhileBlocked(events)
+      ? 'a_regulariser'
+      : stepBackOf(parcel);
   return to && { kind: 'stepBack', from: parcel.status, to };
 }
 
@@ -873,7 +893,7 @@ export function describeRecord(
     details: details(record, sync, options),
     history: history(record, showUnsent, now, t),
     sync,
-    action: action(parcel, record.tour),
+    action: action(parcel, record.tour, record.events),
     damage: damageCard(record, now, t),
     handover: handoverCard(record, options),
   };

@@ -6,7 +6,10 @@ import {
   type NotificationStatus,
 } from '@repo/contract/mail';
 import { COMPANY_SETTINGS_KEY } from '@repo/contract/company-settings';
-import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
+import {
+  departmentConfirmsDeposit,
+  OPERATING_PROFILE_KEY,
+} from '@repo/contract/operating-profile';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
@@ -25,7 +28,10 @@ import {
   setting,
 } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
+import { TRPCError } from '@trpc/server';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
+import { confirmDeposit } from '#features/deposits/service';
+import { readOperatingProfile } from '#features/operating/service';
 import {
   type FailureStatus,
   guardOf,
@@ -51,6 +57,13 @@ const SERVER_COLUMNS = new Set([
   'deliveryStatus',
   'deliveryAt',
   'tourShuttleId',
+  'formerShuttleIds',
+  'counted',
+  'gap',
+  'gapParcelIds',
+  'confirmedAt',
+  'confirmedBy',
+  'confirmedByName',
 ]);
 
 /** Columns an update leaves alone, whatever the device sends. */
@@ -316,6 +329,28 @@ async function isServerMail(
   return row?.channel === 'server';
 }
 
+/** A profile with no confirmation (§3.7.4): what the shuttle put down is deposited as it says. */
+async function confirmWithoutDepartment(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, userId }: Writer,
+): Promise<void> {
+  const profile = await readOperatingProfile(tx, organizationId);
+  if (departmentConfirmsDeposit(profile)) return;
+  await confirmDeposit(
+    tx,
+    { organizationId, userId, name: null },
+    null,
+    { depositId: op.entityId, counted: 0, gap: null },
+    { now: op.clientTs, asAnnounced: true },
+  ).catch((error: unknown) => {
+    if (error instanceof TRPCError) {
+      throw new SyncRejected(SYNC_STATUS.conflict, error.message);
+    }
+    throw error;
+  });
+}
+
 async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
   const { organizationId } = writer;
   const table = tableOf(op.entity);
@@ -332,6 +367,19 @@ async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
       .onConflictDoNothing({ target: table.id })
       .returning({ id: table.id });
     if (inserted.length === 0) await requireOwn(tx, table, op, organizationId);
+    return;
+  }
+
+  if (op.entity === 'deposit') {
+    // Announced once: its count is the department's, through `deposits.confirm`.
+    const inserted = await insert
+      .onConflictDoNothing({ target: table.id })
+      .returning({ id: table.id });
+    if (inserted.length === 0) {
+      await requireOwn(tx, table, op, organizationId);
+    } else {
+      await confirmWithoutDepartment(tx, op, writer);
+    }
     return;
   }
 

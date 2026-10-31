@@ -7,11 +7,13 @@ import {
   type OperatingProfile,
   type OperatingSettings,
   type ParcelCounts,
+  departmentConfirmsDeposit,
 } from '@repo/contract/operating-profile';
 import type { AnyDb } from '@repo/db';
-import { organization, parcel, setting } from '@repo/db/schema';
+import { deposit, organization, parcel, setting } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
+import { confirmDeposit } from '#features/deposits/service';
 import type { Access } from '#lib/access';
 
 async function readProfileRow(db: AnyDb, organizationId: string) {
@@ -130,6 +132,30 @@ export async function saveOperatingProfile(
   const before = await getOperatingSettings(db, organizationId);
   const impact = operatingImpact(before.profile, profile, before.counts);
   if (impact.changes.length === 0) return { ...before, applied: 0 };
-  await writeOperatingProfile(db, organizationId, profile, updatedBy);
+  await db.transaction(async (tx) => {
+    await writeOperatingProfile(tx, organizationId, profile, updatedBy);
+    // The step just turned off holds for what already waits on it (D31).
+    if (departmentConfirmsDeposit(profile)) return;
+    const waiting = await tx
+      .select({ id: deposit.id })
+      .from(deposit)
+      .where(
+        and(
+          eq(deposit.organizationId, organizationId),
+          isNull(deposit.confirmedAt),
+          isNull(deposit.deletedAt),
+        ),
+      )
+      .for('update');
+    for (const { id } of waiting) {
+      await confirmDeposit(
+        tx,
+        { organizationId, userId: updatedBy, name: null },
+        null,
+        { depositId: id, counted: 0, gap: null },
+        { asAnnounced: true },
+      );
+    }
+  });
   return { ...before, profile, applied: impact.parcels };
 }

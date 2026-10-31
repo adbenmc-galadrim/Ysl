@@ -2,12 +2,21 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import type { CompanyShellNavSection, IconName } from '@repo/ui';
 import type { AccountRole } from '#/features/auth/route-access';
 
-export type DeskEntry = 'home' | 'colis' | 'annuaire' | 'comptes' | 'reglages';
+export type DeskEntry =
+  | 'home'
+  | 'colis'
+  | 'depots'
+  | 'regulariser'
+  | 'annuaire'
+  | 'comptes'
+  | 'reglages';
 
 /** Where each entry of the computer's sidebar leads. */
 export const DESK_PATH = {
   home: '/',
   colis: '/colis',
+  depots: '/departement/depots',
+  regulariser: '/tableau-de-bord/regulariser',
   annuaire: '/reglages/annuaire',
   comptes: '/reglages/comptes',
   reglages: '/reglages',
@@ -33,9 +42,33 @@ export function deskNav(
       items: [
         { id: 'home', ...home },
         { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
+        ...(role === 'department'
+          ? [
+              {
+                id: 'depots',
+                label: t('deposits.title'),
+                icon: 'truck',
+              } as const,
+            ]
+          : []),
+        ...(role === 'company_admin'
+          ? [
+              {
+                id: 'regulariser',
+                label: t('settlement.title'),
+                icon: 'alert',
+              } as const,
+            ]
+          : []),
         { id: 'annuaire', label: t('directory.nav.directory'), icon: 'users' },
         ...(role === 'company_admin'
-          ? [{ id: 'comptes', label: t('accounts.title'), icon: 'key' } as const]
+          ? [
+              {
+                id: 'comptes',
+                label: t('accounts.title'),
+                icon: 'key',
+              } as const,
+            ]
           : []),
         { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
       ],
@@ -48,6 +81,8 @@ const SPACE_PATHS = ['/tableau-de-bord', '/departement'];
 /** The entry a path belongs to; a parcel's record stays under Colis. */
 export function activeDeskEntry(pathname: string): DeskEntry {
   if (pathname === '/' || SPACE_PATHS.includes(pathname)) return 'home';
+  if (pathname.startsWith(DESK_PATH.depots)) return 'depots';
+  if (pathname.startsWith(DESK_PATH.regulariser)) return 'regulariser';
   if (pathname.startsWith(DESK_PATH.annuaire)) return 'annuaire';
   if (pathname.startsWith(DESK_PATH.comptes)) return 'comptes';
   if (pathname.startsWith(DESK_PATH.reglages)) return 'reglages';
@@ -56,7 +91,10 @@ export function activeDeskEntry(pathname: string): DeskEntry {
 
 /** The pages drawn for a computer; every other one is a phone screen in the frame. */
 export const isDeskPage = (pathname: string): boolean =>
-  pathname === '/' || SPACE_PATHS.includes(pathname);
+  pathname === '/' ||
+  SPACE_PATHS.includes(pathname) ||
+  pathname === DESK_PATH.depots ||
+  pathname === DESK_PATH.regulariser;
 
 export type RoleSpace = {
   to: '/tournee' | '/departement' | '/tableau-de-bord';

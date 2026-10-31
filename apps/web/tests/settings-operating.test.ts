@@ -56,9 +56,9 @@ describe('readOperatingProfile', () => {
 describe('the banner of what does not act yet', () => {
   const t = createTranslator(DEFAULT_LOCALE);
 
-  it('names the deposit and the moment of the e-mail, and no other step', () => {
+  it('names the moment of the e-mail, and no other step', () => {
     const banner = t('operating.notYet');
-    expect(NOT_YET_PARAMS).toEqual(['depositConfirmation', 'emailMoment']);
+    expect(NOT_YET_PARAMS).toEqual(['emailMoment']);
     for (const param of OPERATING_PARAMS) {
       expect(banner.includes(`« ${t(`operating.param.${param}`)} »`)).toBe(
         NOT_YET_PARAMS.includes(param),

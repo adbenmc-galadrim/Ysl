@@ -56,6 +56,13 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
   'operating.get': (caller) => caller.operating.get(),
   'operating.save': (caller) =>
     caller.operating.save({ profile: DEFAULT_OPERATING_PROFILE }),
+  'deposits.confirm': (caller) =>
+    caller.deposits.confirm({ depositId: newId(), counted: 1, gap: null }),
+  'deposits.settlement': (caller) => caller.deposits.settlement(),
+  'deposits.settle': (caller) =>
+    caller.deposits.settle({ action: 'return', parcelId: newId() }),
+  'deposits.entrust': (caller) =>
+    caller.deposits.entrust({ parcelIds: [newId()], shuttleId: 'x' }),
   'departments.list': (caller) => caller.departments.list(),
   'departments.create': (caller) =>
     caller.departments.create({ name: 'Finance' }),
@@ -100,6 +107,9 @@ const ADMIN = [
   'maintenance.status',
   'maintenance.purgeNow',
   'imports.v1Csv',
+  'deposits.settlement',
+  'deposits.settle',
+  'deposits.entrust',
   'departments.create',
   'departments.update',
   'departments.updatePickup',
@@ -117,6 +127,7 @@ const ADMIN = [
 const READ_DEPARTMENTS = ['departments.list', 'account.company'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
 const ATTACHED_DEPARTMENT = [
+  'deposits.confirm',
   'directory.requestMove',
   'directory.moveRequests',
   'directory.closeMoveRequest',

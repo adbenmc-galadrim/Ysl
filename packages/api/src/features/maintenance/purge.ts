@@ -248,6 +248,10 @@ export async function purgeOrganization(
       'notification',
       sql`not exists (select 1 from parcel p where p.organization_id = t.organization_id and p.id = any(t.parcel_ids) and p.deleted_at is null)`,
     ],
+    [
+      'deposit',
+      sql`not exists (select 1 from parcel p where p.organization_id = t.organization_id and p.id = any(t.parcel_ids) and p.deleted_at is null)`,
+    ],
     ['pickup_code', sql`coalesce(t.used_at, t.expires_at) < ${at.parcel}`],
     [
       'batch',
@@ -274,6 +278,7 @@ export async function purgeOrganization(
 
   const erasures: [PurgeTable, SQL | null][] = [
     ['handover', null],
+    ['deposit', null],
     ['notification', null],
     ['pickup_code', null],
     ['parcel', null],

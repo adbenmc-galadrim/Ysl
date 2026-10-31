@@ -45,7 +45,10 @@ export async function claimUnclaimed(
 ): Promise<number> {
   const claimed = await db
     .update(parcel)
-    .set({ tourShuttleId: shuttleId })
+    .set({
+      formerShuttleIds: sql`array_append(${parcel.formerShuttleIds}, ${parcelCarrier})`,
+      tourShuttleId: shuttleId,
+    })
     .where(unclaimed(organizationId))
     .returning({ id: parcel.id });
   return claimed.length;

@@ -6,6 +6,7 @@ import type {
   batch,
   contact,
   department,
+  deposit,
   directoryPerson,
   emailTemplate,
   event,
@@ -76,7 +77,7 @@ export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
  */
 export type LocalParcel = Omit<
   LocalRow<typeof parcel.$inferSelect>,
-  'statusSeq' | 'departmentId' | 'tourShuttleId'
+  'statusSeq' | 'departmentId' | 'tourShuttleId' | 'formerShuttleIds'
 > & {
   statusSeq?: number;
   departmentId?: string | null;
@@ -119,6 +120,8 @@ export type LocalDepartment = Omit<
   'scopeXid'
 >;
 
+export type LocalDeposit = LocalRow<typeof deposit.$inferSelect>;
+
 export type SyncedRows = {
   directory_person: LocalDirectoryPerson;
   contact: LocalContact;
@@ -134,6 +137,7 @@ export type SyncedRows = {
   setting: LocalSetting;
   sender_alias: LocalSenderAlias;
   recipient_alias: LocalRecipientAlias;
+  deposit: LocalDeposit;
   department: LocalDepartment;
 };
 
@@ -378,7 +382,9 @@ export type LocalExtraction = {
 const FIRST_SYNCED_STORES: Record<
   Exclude<
     SyncedEntity,
-    keyof typeof ALIAS_STORES | keyof typeof DEPARTMENT_STORES
+    | keyof typeof ALIAS_STORES
+    | keyof typeof DEPARTMENT_STORES
+    | keyof typeof DEPOSIT_STORES
   >,
   string
 > = {
@@ -429,10 +435,13 @@ const PROOF_STORES = { handover_proof: 'id, handoverId, kind, createdAt' };
 /** Version 8 (YSL-117): the departments of the company, or the account's own. */
 const DEPARTMENT_STORES = { department: 'id, name' };
 
+const DEPOSIT_STORES = { deposit: 'id, departmentId, postedAt' };
+
 const SYNCED_STORES: Record<SyncedEntity, string> = {
   ...FIRST_SYNCED_STORES,
   ...ALIAS_STORES,
   ...DEPARTMENT_STORES,
+  ...DEPOSIT_STORES,
 };
 
 /** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
@@ -451,6 +460,7 @@ export class CourrierDatabase extends Dexie {
   recipientAlias!: Table<LocalRecipientAlias, string>;
   batch!: Table<LocalBatch, string>;
   parcel!: Table<LocalParcel, string>;
+  deposit!: Table<LocalDeposit, string>;
   department!: Table<LocalDepartment, string>;
   emailTemplate!: Table<LocalEmailTemplate, string>;
   notification!: Table<LocalNotification, string>;
@@ -492,6 +502,10 @@ export class CourrierDatabase extends Dexie {
     this.version(9)
       .stores({})
       .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
+    // The same for the deposits, held back from the app before this one.
+    this.version(10)
+      .stores(DEPOSIT_STORES)
+      .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -507,6 +521,7 @@ export class CourrierDatabase extends Dexie {
     this.event = this.table('event');
     this.setting = this.table('setting');
     this.department = this.table('department');
+    this.deposit = this.table('deposit');
     this.outbox = this.table('outbox');
     this.photo = this.table('photo');
     this.syncState = this.table('sync_state');

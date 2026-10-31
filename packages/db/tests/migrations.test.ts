@@ -116,7 +116,7 @@ describe('migrations', () => {
     );
     const names = triggers.map((row) => row.tgname);
 
-    expect(synced).toHaveLength(15);
+    expect(synced).toHaveLength(16);
     for (const { table_name } of synced) {
       expect(names).toContain(`${table_name}_stamp_server_xid_insert`);
       expect(names).toContain(`${table_name}_stamp_server_xid_update`);

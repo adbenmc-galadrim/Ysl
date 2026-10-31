@@ -14,7 +14,7 @@ import {
   syncGeneration,
 } from '@repo/db/schema';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
-import { parcelScope, type Access } from '#lib/access';
+import { parcelScope, type Access, type ParcelScope } from '#lib/access';
 import { purgeHorizon } from '#features/maintenance/purge';
 import { readerGeneration, visibleRows } from '#features/sync/scope';
 import { tableOf, type SyncTable } from '#features/sync/tables';
@@ -95,11 +95,13 @@ function withoutServerColumns(row: Row): PullChange['row'] {
     organizationId: _organizationId,
     scopeXid: _scopeXid,
     tourShuttleId: _tourShuttleId,
+    formerShuttleIds: _formerShuttleIds,
     ...rest
   } = row;
   void _organizationId;
   void _scopeXid;
   void _tourShuttleId;
+  void _formerShuttleIds;
   return rest;
 }
 
@@ -113,8 +115,16 @@ function forReader(
   row: Row,
   input: PullInput,
   now: Date,
+  scope: ParcelScope,
 ): Row {
-  if (name !== 'parcel' || input.tourStatuses || row.deletedAt) return row;
+  if (name !== 'parcel' || row.deletedAt) return row;
+  if (
+    scope.kind === 'tour' &&
+    (row.tourShuttleId ?? row.receivedBy) !== scope.shuttleId
+  ) {
+    return { ...row, deletedAt: now };
+  }
+  if (input.tourStatuses) return row;
   return (TOUR_STATUSES as readonly unknown[]).includes(row.status)
     ? { ...row, deletedAt: now }
     : row;
@@ -194,6 +204,7 @@ export async function pull(
     const name = SYNCED_ENTITIES[entity];
     if (!name) break;
     if (name === 'department' && !input.departments) continue;
+    if (name === 'deposit' && !input.deposits) continue;
     const room = input.limit - rows.length;
     const page = await pageOf(
       db,
@@ -207,7 +218,7 @@ export async function pull(
     rows.push(
       ...kept.map((row) => ({
         entity: name,
-        row: withoutServerColumns(forReader(name, row, input, now)),
+        row: withoutServerColumns(forReader(name, row, input, now, scope)),
       })),
     );
     if (page.length > room) {

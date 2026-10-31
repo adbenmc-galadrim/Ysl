@@ -239,6 +239,13 @@
       "when": 1793473236037,
       "tag": "0033_scan_remise",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793474720864,
+      "tag": "0034_depot_departement",
+      "breakpoints": true
     }
   ]
 }

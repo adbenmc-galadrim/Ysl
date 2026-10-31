@@ -78,6 +78,13 @@ async function seqOf(id: string) {
 }
 
 /** As a device changes a status: the counter it saw, plus one, unless told otherwise. */
+async function traceEmail(id: string) {
+  await client.query(
+    'update parcel set last_notified_at = now() where id = $1',
+    [id],
+  );
+}
+
 async function setStatus(
   id: string,
   status: ParcelStatus,
@@ -161,6 +168,87 @@ afterAll(async () => {
 });
 
 describe('parcel status transitions', () => {
+  it('deposit « Notifié » only with an e-mail traced, « Déposé » only without', async () => {
+    const untold = await insertParcel('en_route', personId, departmentId);
+    expect(await setStatus(untold, 'notifie')).toMatchObject({
+      constraint: 'parcel_status_transition',
+    });
+    const told = await insertParcel('en_route', personId, departmentId);
+    await traceEmail(told);
+    expect(await setStatus(told, 'depose')).toMatchObject({
+      constraint: 'parcel_status_transition',
+    });
+    expect(await setStatus(told, 'notifie')).toBeNull();
+  });
+
+  it('send a reopened parcel where its person is, unless it is physically elsewhere', async () => {
+    const other = newId();
+    await db
+      .insert(schema.department)
+      .values({ id: other, organizationId, name: 'Studio' });
+    const moved = newId();
+    await db.insert(schema.directoryPerson).values({
+      id: moved,
+      organizationId,
+      lastName: 'Rey',
+      firstName: 'Lou',
+      nameNorm: 'lou rey',
+      email: `lou.${moved}@example.test`,
+      departmentId: other,
+    });
+    const undeposited = await insertParcel('retourne', moved, departmentId);
+    await client.query('update parcel set department_id = $1 where id = $2', [
+      departmentId,
+      undeposited,
+    ]);
+    expect(await setStatus(undeposited, 'recu')).toBeNull();
+    const deposited = await insertParcel('retourne', moved, departmentId);
+    await client.query(
+      'update parcel set department_id = $1, deposited_at = now() where id = $2',
+      [departmentId, deposited],
+    );
+    await db
+      .update(schema.parcel)
+      .set({ ...columnsFor('depose'), depositedAt: AT, statusSeq: 1 })
+      .where(eq(schema.parcel.id, deposited));
+
+    const [one] = await db
+      .select({ departmentId: schema.parcel.departmentId })
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, undeposited));
+    expect(one?.departmentId).toBe(other);
+    const [two] = await db
+      .select({
+        status: schema.parcel.status,
+        departmentId: schema.parcel.departmentId,
+      })
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, deposited));
+    expect(two).toEqual({ status: 'a_regulariser', departmentId });
+  });
+
+  it('take a return back on an archived department without refusing it', async () => {
+    const closed = newId();
+    await db
+      .insert(schema.department)
+      .values({ id: closed, organizationId, name: 'Fermé' });
+    const id = await insertParcel('retourne', personId, closed);
+    await client.query('update parcel set department_id = $1 where id = $2', [
+      closed,
+      id,
+    ]);
+    await client.query(
+      'update department set deleted_at = now() where id = $1',
+      [closed],
+    );
+    expect(await setStatus(id, 'recu')).toBeNull();
+    const [row] = await db
+      .select({ departmentId: schema.parcel.departmentId })
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, id));
+    expect(row?.departmentId).toBeNull();
+  });
+
   it('accept exactly the moves of canTransition', async () => {
     const pairs = PARCEL_STATUSES.flatMap((from) =>
       PARCEL_STATUSES.map((to) => [from, to] as const),
@@ -171,6 +259,7 @@ describe('parcel status transitions', () => {
     for (const [from, to] of pairs) {
       const id = await insertParcel(from, personId, departmentId);
       if (from === 'remis') await insertCancelledHandover(id, personId);
+      if (from === 'en_route' && to === 'notifie') await traceEmail(id);
       const failure = await setStatus(id, to);
       outcome[`${from} -> ${to}`] = failure === null;
       expected[`${from} -> ${to}`] = canTransition(from, to);
@@ -210,7 +299,7 @@ describe('parcel status transitions', () => {
     expect(await setStatus(id, 'recu', 'unsent')).toMatchObject({
       constraint: 'parcel_status_stale',
     });
-    expect(await setStatus(id, 'notifie', 1)).toMatchObject({
+    expect(await setStatus(id, 'depose', 1)).toMatchObject({
       constraint: 'parcel_status_stale',
     });
     expect(await statusOf(id)).toBe('en_route');

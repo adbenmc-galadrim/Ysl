@@ -62,6 +62,7 @@ beforeEach(async () => {
     await tx.execute(sql`select set_config('app.purge', 'on', true)`);
     await tx.delete(schema.event);
   });
+  await db.delete(schema.deposit);
   await db.delete(schema.handover);
   await db.delete(schema.notification);
   await db.delete(schema.pickupCode);
@@ -210,6 +211,44 @@ describe('retention purge, first pass: marks', () => {
     expect(await deletedAtOf(schema.handover, mixed.id)).toBeNull();
     expect(await deletedAtOf(schema.contact, gone.id)).toEqual(NOW);
     expect(await deletedAtOf(schema.contact, kept.id)).toBeNull();
+  });
+
+  it('marks a deposit once its parcels are marked', async () => {
+    const person = contactRow(monthsAgo(1));
+    await db.insert(schema.contact).values(person);
+    const old = delivered(person.id, monthsAgo(13));
+    const young = delivered(person.id, monthsAgo(1));
+    await db.insert(schema.parcel).values([old, young]);
+    const departmentId = newId();
+    await db.insert(schema.department).values({
+      id: departmentId,
+      organizationId: ORGANIZATION_ID,
+      name: departmentId,
+    });
+    const depositOf = (parcelIds: string[]) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      departmentId,
+      shuttleId: AGENT_ID,
+      parcelIds,
+      announced: parcelIds.length,
+      postedAt: monthsAgo(13),
+    });
+    const gone = depositOf([old.id]);
+    const kept = depositOf([old.id, young.id]);
+    await db.insert(schema.deposit).values([gone, kept]);
+
+    await runPurge(purgeDb, {
+      now: NOW,
+      organizationId: ORGANIZATION_ID,
+      trigger: 'auto',
+    });
+
+    const rows = await db
+      .select({ id: schema.deposit.id, deletedAt: schema.deposit.deletedAt })
+      .from(schema.deposit);
+    expect(rows.find(({ id }) => id === gone.id)?.deletedAt).toEqual(NOW);
+    expect(rows.find(({ id }) => id === kept.id)?.deletedAt).toBeNull();
   });
 
   it('marks a notification once its parcels are marked', async () => {

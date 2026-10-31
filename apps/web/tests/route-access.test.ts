@@ -104,6 +104,10 @@ describe('areaOf', () => {
     ['/reglages', 'settings'],
     ['/reglages/compte', 'settings'],
     ['/reglages/annuaire', 'directory'],
+    ['/reglages/affiche-qr', 'directory'],
+    ['/departement/depots', 'departmentSpace'],
+    ['/tableau-de-bord/regulariser', 'dashboard'],
+    ['/tournee/abc/depot', 'tour'],
     ['/reglages/fonctionnement', 'companySettings'],
   ] as const)('files %s under %s', (path, area) => {
     expect(areaOf(path)).toBe(area);
@@ -126,9 +130,12 @@ describe('areaOf', () => {
       .map(([, path]) => path as string)
       .filter(
         (path) =>
-          !['/bienvenue', '/connexion', '/invitation', '/mot-de-passe'].includes(
-            path,
-          ),
+          ![
+            '/bienvenue',
+            '/connexion',
+            '/invitation',
+            '/mot-de-passe',
+          ].includes(path),
       );
     expect(paths.length).toBeGreaterThan(30);
     expect(paths.filter((path) => areaOf(path) === null)).toEqual([]);

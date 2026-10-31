@@ -376,6 +376,27 @@ Table "batch" {
   }
 }
 
+Table "deposit" {
+  "id" uuid [pk, not null]
+  "organization_id" uuid [not null]
+  "created_at" timestamptz [not null, default: `now()`]
+  "updated_at" timestamptz [not null, default: `now()`]
+  "deleted_at" timestamptz
+  "server_xid" bigint [not null, default: `pg_current_xact_id()::text::bigint`]
+  "department_id" uuid [not null]
+  "shuttle_id" text [not null]
+  "shuttle_name" text
+  "parcel_ids" "uuid[]" [not null]
+  "announced" integer [not null]
+  "posted_at" timestamptz [not null]
+  "counted" integer
+  "gap" text
+  "gap_parcel_ids" "uuid[]"
+  "confirmed_at" timestamptz
+  "confirmed_by" text
+  "confirmed_by_name" text
+}
+
 Table "parcel" {
   "id" uuid [pk, not null]
   "organization_id" uuid [not null]
@@ -389,6 +410,7 @@ Table "parcel" {
   "carrier" text
   "tracking" text
   "tracking_norm" text
+  "former_shuttle_ids" "text[]" [not null, default: `'{}'`]
   "person_id" uuid
   "contact_id" uuid
   "read_name" text

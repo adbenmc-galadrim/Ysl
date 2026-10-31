@@ -52,6 +52,7 @@ const ENTITY_ROW: Record<SyncedEntity, Pick<SettingsItem, 'icon' | 'color'>> = {
   sender_alias: { icon: 'send', color: 'grey' },
   recipient_alias: { icon: 'user', color: 'indigo' },
   department: { icon: 'list', color: 'grey' },
+  deposit: { icon: 'truck', color: 'ink' },
 };
 
 const dayFormat = new Intl.DateTimeFormat('fr-FR', {
@@ -95,6 +96,8 @@ function subject({ op, row }: WaitingChange, t: TranslateFn): Subject {
         label: t('sync.change.entity.sender'),
         subtitle: (row as SyncedRows['sender'] | null)?.displayName,
       };
+    case 'deposit':
+      return { label: t('sync.change.entity.deposit') };
     case 'handover':
       return {
         label: t('sync.change.entity.handover'),

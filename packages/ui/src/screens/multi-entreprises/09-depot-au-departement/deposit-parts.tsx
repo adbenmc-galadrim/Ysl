@@ -96,17 +96,24 @@ export function DepositBottom({ children }: { children: ReactNode }) {
 export function DepositCounter({
   value,
   alert = false,
+  onChange,
   className,
 }: {
   value: number;
   alert?: boolean;
+  onChange?: (value: number) => void;
   className?: string;
 }) {
   const round = 'relative size-12 shrink-0 cursor-pointer rounded-full bg-fill';
   const bar = 'absolute rounded-[1px] bg-ink';
   return (
     <div className={cn('flex h-24 w-[260px] items-center self-center', className)}>
-      <button type="button" aria-label="Moins" className={round}>
+      <button
+        type="button"
+        aria-label="Moins"
+        className={round}
+        onClick={onChange && (() => onChange(Math.max(0, value - 1)))}
+      >
         <span className={cn(bar, 'top-[23px] left-[15px] h-[2.5px] w-[18px]')} />
       </button>
       <output
@@ -117,7 +124,12 @@ export function DepositCounter({
       >
         {value}
       </output>
-      <button type="button" aria-label="Plus" className={round}>
+      <button
+        type="button"
+        aria-label="Plus"
+        className={round}
+        onClick={onChange && (() => onChange(value + 1))}
+      >
         <span className={cn(bar, 'top-[23px] left-[15px] h-[2.5px] w-[18px]')} />
         <span className={cn(bar, 'top-[15px] left-[22.75px] h-[18px] w-[2.5px]')} />
       </button>
@@ -222,9 +234,18 @@ const CORNERS = [
 export function DepositQrScene({
   department,
   wrong = false,
+  video,
+  torch,
+  onClose,
+  onTorch,
   children,
 }: {
-  department: string;
+  department?: string;
+  /** The live camera, instead of the drawn poster of the mockups. */
+  video?: ReactNode;
+  torch?: boolean;
+  onClose?: () => void;
+  onTorch?: () => void;
   /** The poster read is not the expected one: the corners turn red. */
   wrong?: boolean;
   children: ReactNode;
@@ -234,7 +255,11 @@ export function DepositQrScene({
       data-tone="camera"
       className="relative h-dvh w-full overflow-hidden bg-scene-counter text-white"
     >
-      <div className="absolute inset-x-0 top-0 h-[520px] bg-scene" />
+      {video ? (
+        <div className="absolute inset-0">{video}</div>
+      ) : (
+        <div className="absolute inset-x-0 top-0 h-[520px] bg-scene" />
+      )}
       <div className="absolute inset-x-0 top-0 h-[98px] bg-linear-to-b from-black from-50% to-transparent" />
       <div className="absolute top-14 left-[18px] flex h-11 w-[357px] items-center justify-between">
         <IconButton
@@ -244,28 +269,36 @@ export function DepositQrScene({
           size="lg"
           iconSize={22}
           className="bg-night-2"
+          onClick={onClose}
         />
         <span className="relative left-[0.5px] text-17 font-semibold">Dépôt</span>
-        <IconButton
-          icon="torch"
-          label="Lampe"
-          variant="night"
-          size="lg"
-          iconSize={22}
-          className="bg-night-2"
-        />
+        {torch === false ? (
+          <span className="size-11" />
+        ) : (
+          <IconButton
+            icon="torch"
+            label="Lampe"
+            variant="night"
+            size="lg"
+            iconSize={22}
+            className="bg-night-2"
+            onClick={onTorch}
+          />
+        )}
       </div>
-      <div className="absolute top-[230px] left-[106px] h-[225px] w-[180px] rounded-[6px] bg-paper">
-        <p className="mt-3.5 text-center text-22 font-bold text-label-ink">
-          {department}
-        </p>
-        <QrCode
-          matrix={QR_MATRIX}
-          module={115.2 / 21}
-          label={`QR de ${department}`}
-          className="absolute top-[52px] left-[32.4px] rounded-none p-0"
-        />
-      </div>
+      {!video && (
+        <div className="absolute top-[230px] left-[106px] h-[225px] w-[180px] rounded-[6px] bg-paper">
+          <p className="mt-3.5 text-center text-22 font-bold text-label-ink">
+            {department}
+          </p>
+          <QrCode
+            matrix={QR_MATRIX}
+            module={115.2 / 21}
+            label={`QR de ${department}`}
+            className="absolute top-[52px] left-[32.4px] rounded-none p-0"
+          />
+        </div>
+      )}
       {CORNERS.map((corner) => (
         <span
           key={corner}

@@ -13,6 +13,7 @@ import { useSession } from '#/features/auth/api/use-session';
 import { ReprendreLot } from '#/features/batch/components/reprendre-lot';
 import { db } from '#/features/db/database';
 import { useTour } from '#/features/parcels/api/use-tour';
+import { gapLine, pendingParcelIds } from '#/features/parcels/deposit';
 import { formatTime } from '#/features/parcels/model';
 import { putOnTour } from '#/features/parcels/tour';
 import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
@@ -76,11 +77,14 @@ export function TourPage() {
   const stops: TourStopRow[] = (tour?.stops ?? [])
     .map(({ departmentId, parcels }) => {
       const department = data?.departments.get(departmentId);
+      const pending = pendingParcelIds(data?.deposits ?? [], departmentId);
+      const waits = parcels.every(({ id }) => pending.has(id));
+      const count = parcelsLabel(parcels.length, t);
       return {
         id: departmentId,
         name: departmentName(department, t),
         place: department?.receptionPoint ?? '',
-        parcels: parcelsLabel(parcels.length, t),
+        parcels: waits ? t('tour.stop.waiting', { parcels: count }) : count,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
@@ -181,7 +185,16 @@ export function TourPage() {
                   data.toSettle === 1
                     ? t('tour.toSettle.one')
                     : t('tour.toSettle.many', { count: data.toSettle }),
-                description: t('tour.toSettle.description'),
+                description: data.lastGap
+                  ? gapLine(
+                      data.lastGap,
+                      departmentName(
+                        data.departments.get(data.lastGap.departmentId),
+                        t,
+                      ),
+                      t,
+                    )
+                  : t('tour.toSettle.description'),
               }
             : undefined
         }
@@ -242,6 +255,12 @@ export function TourPage() {
           ) : undefined
         }
         onStop={(departmentId) =>
+          void navigate({
+            to: '/tournee/$departmentId',
+            params: { departmentId },
+          })
+        }
+        onDone={(departmentId) =>
           void navigate({
             to: '/tournee/$departmentId',
             params: { departmentId },

@@ -467,3 +467,262 @@ export function DepartementConfirmerEcartDesktop() {
     />
   );
 }
+
+export type DepositGapKindOption = { id: string; label: string };
+
+export type DepartmentDepositParcel = {
+  id: string;
+  title: string;
+  line: string;
+  checked: boolean;
+};
+
+export type DepartmentDepositProps = {
+  title: string;
+  line: string;
+  counted: number;
+  onCount: (value: number) => void;
+  countedLabel: string;
+  confirmLabel: string;
+  onConfirm: () => void;
+  /** Taken away offline: the department's count is written on the server. */
+  disabled?: boolean;
+  notice?: { title: string; description: string };
+  onClose?: () => void;
+  gapAction?: { label: string; onClick: () => void };
+  /** « Colis par colis »: the count is what is ticked. */
+  each?: {
+    hint: string;
+    parcels: readonly DepartmentDepositParcel[];
+    onParcel: (id: string) => void;
+  };
+  /** The gap open: its kind and the parcels it concerns. */
+  gap?: {
+    banner: { title: string; description: string };
+    kinds: readonly DepositGapKindOption[];
+    kind: string;
+    onKind: (id: string) => void;
+    parcels: readonly DepartmentDepositParcel[];
+    onParcel: (id: string) => void;
+    unknown: { title: string; line: string; checked: boolean };
+    onUnknown: () => void;
+  };
+};
+
+/** The count of a deposit on the phone; `gap` opens the rest of the mockups' second screen. */
+export function DepartmentDepositMobile({
+  title,
+  line,
+  counted,
+  onCount,
+  countedLabel,
+  confirmLabel,
+  onConfirm,
+  disabled,
+  notice,
+  onClose,
+  gapAction,
+  each,
+  gap,
+}: DepartmentDepositProps) {
+  return (
+    <Screen
+      bottom={
+        <DepositBottom>
+          <Button disabled={disabled} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
+          {gapAction && (
+            <Button variant="secondary" onClick={gapAction.onClick}>
+              {gapAction.label}
+            </Button>
+          )}
+        </DepositBottom>
+      }
+    >
+      <NavBar
+        leading={
+          <IconButton
+            icon="x"
+            label="Fermer"
+            size="lg"
+            iconSize={22}
+            onClick={onClose}
+          />
+        }
+        title={title}
+        className={CLOSE_BAR}
+      />
+      <p className="mt-4 text-center text-15 text-muted">{line}</p>
+      {notice && (
+        <PhoneBanner
+          tone="orange"
+          icon="warning"
+          className="mt-3"
+          title={notice.title}
+          description={notice.description}
+          height={67}
+        />
+      )}
+      <DepositCounter
+        value={counted}
+        alert={Boolean(gap)}
+        onChange={each ? undefined : onCount}
+        className="mt-[46px]"
+      />
+      {each && (
+        <div className="mt-4">
+          <p className="text-center text-15 text-muted">{each.hint}</p>
+          {each.parcels.map((parcel) => (
+            <button
+              key={parcel.id}
+              type="button"
+              className="block w-full cursor-pointer text-left"
+              onClick={() => each.onParcel(parcel.id)}
+            >
+              <PhoneRow
+                leading={<KraftThumb />}
+                title={parcel.title}
+                lines={[parcel.line]}
+                mark={<TickMark checked={parcel.checked} />}
+                separator
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      {each ? null : gap ? (
+        <>
+          <PhoneBanner
+            tone="red"
+            icon="warning"
+            className="mt-3.5"
+            title={gap.banner.title}
+            description={gap.banner.description}
+            height={67}
+          />
+          <div
+            role="radiogroup"
+            className="mt-[23px] grid h-11 grid-cols-3 rounded-full bg-fill-2 p-0.5"
+          >
+            {gap.kinds.map(({ id, label }) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={id === gap.kind}
+                onClick={() => gap.onKind(id)}
+                className={cn(
+                  'cursor-pointer rounded-[20px] text-14 font-semibold',
+                  id === gap.kind ? 'bg-ink text-on-ink' : 'text-ink-2',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-4">
+            {gap.parcels.map((parcel) => (
+              <button
+                key={parcel.id}
+                type="button"
+                className="block w-full cursor-pointer text-left"
+                onClick={() => gap.onParcel(parcel.id)}
+              >
+                <PhoneRow
+                  leading={<KraftThumb />}
+                  title={parcel.title}
+                  lines={[parcel.line]}
+                  mark={<TickMark checked={parcel.checked} />}
+                  separator
+                />
+              </button>
+            ))}
+            <button
+              type="button"
+              className="block w-full cursor-pointer text-left"
+              onClick={gap.onUnknown}
+            >
+              <PhoneRow
+                leading={<RoundTile icon="info" />}
+                title={gap.unknown.title}
+                lines={[gap.unknown.line]}
+                mark={<TickMark checked={gap.unknown.checked} />}
+              />
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className="mt-2 text-center text-17 font-semibold">{countedLabel}</p>
+      )}
+    </Screen>
+  );
+}
+
+export type DepartmentDepositRow = {
+  id: string;
+  at: string;
+  by: string;
+  count: number;
+  state: string;
+  tone: 'orange' | 'green' | 'red';
+};
+
+export type DepartmentDepositsProps = {
+  title: string;
+  subtitle: string;
+  label: string;
+  empty: string;
+  rows: readonly DepartmentDepositRow[];
+  columns: { at: string; by: string; count: string; state: string };
+  onRow: (id: string) => void;
+};
+
+/** The deposits of the department, wherever it reads them: the table goes full width. */
+export function DepartmentDepositsContent({
+  title,
+  subtitle,
+  label,
+  empty,
+  rows,
+  columns,
+  onRow,
+}: DepartmentDepositsProps) {
+  return (
+    <>
+      <DeskPageHeader title={title} subtitle={subtitle} />
+      {rows.length ? (
+        <DeskTable
+          label={label}
+          columns={[
+            {
+              key: 'at',
+              header: columns.at,
+              width: 200,
+              cell: (d: DepartmentDepositRow) => (
+                <button
+                  type="button"
+                  className="cursor-pointer font-semibold"
+                  onClick={() => onRow(d.id)}
+                >
+                  {d.at}
+                </button>
+              ),
+            },
+            { key: 'by', header: columns.by, width: 200, cell: (d) => d.by },
+            { key: 'count', header: columns.count, width: 100, cell: (d) => d.count },
+            {
+              key: 'state',
+              header: columns.state,
+              cell: (d) => <StatusDot size="sm" tone={d.tone} label={d.state} />,
+            },
+          ]}
+          rows={[...rows]}
+          rowKey={(d) => d.id}
+        />
+      ) : (
+        <p className="text-15 text-muted">{empty}</p>
+      )}
+    </>
+  );
+}

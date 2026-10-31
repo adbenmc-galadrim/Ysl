@@ -549,3 +549,7 @@ changes[] }`, chaque changement étant l'opération d'outbox (`opId`, `entity`,
   90 jours (`RETENTION.syncOp`), index `sync_op_applied_at_idx`.
 - **Index `*_cursor_idx`** : `REINDEX CONCURRENTLY` périodique (pages coupées par les
   insertions de plusieurs organisations).
+
+## Le dépôt (YSL-134)
+
+`deposit` est la dernière entité synchronisée : `sync.pull` ne l'envoie qu'à l'app qui annonce `deposits: true`, et Dexie 10 efface le curseur pour tout relire. La navette annonce le dépôt par `sync.push`, hors ligne compris, une seule fois : une copie renvoyée ne change rien. Le compte, l'écart et la régularisation passent par `deposits.confirm`, `deposits.settle` et `deposits.entrust`, en une transaction, en ligne : `checkReach` refuse à tout appareil `en_route` vers `depose`, `notifie` ou `a_regulariser`, ce qui garde `depositedStatus` comme seul chemin. Une navette à qui on retire un colis le reçoit comme retiré à son prochain pull (`former_shuttle_ids`, jamais envoyée aux appareils).

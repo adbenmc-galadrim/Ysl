@@ -156,6 +156,29 @@ describe('describeRecord', () => {
     });
   });
 
+  it('blocks again a parcel whose return, decided while blocked, is undone', async () => {
+    const parcel = parcelRow({ status: 'retourne' });
+    await db.parcel.put(parcel);
+    await db.event.put({
+      id: 'ev-return',
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      entity: 'parcel',
+      entityId: parcel.id,
+      type: 'parcel.status',
+      actorId: 'agent-1',
+      at: NOW,
+      detail: { from: 'a_regulariser', to: 'retourne' },
+    });
+    const view = describeRecord(await record(parcel.id), options);
+    expect(view.action).toEqual({
+      kind: 'stepBack',
+      from: 'retourne',
+      to: 'a_regulariser',
+    });
+  });
+
   it('says when the last reminder left and how many went', async () => {
     const day = (date: number) => new Date(2026, 9, date, 10);
     const row = parcelRow({

@@ -3,6 +3,7 @@ import {
   batch,
   contact,
   department,
+  deposit,
   directoryPerson,
   event,
   handover,
@@ -79,7 +80,23 @@ export function visibleRows(
   const hanging = (link: SQL) =>
     and(parcelsWhere(link, false), or(inRange, parcelsWhere(link, true)));
 
-  if (table === parcel) return and(inScope, inRange);
+  if (table === deposit) {
+    return and(
+      scope.kind === 'department'
+        ? eq(deposit.departmentId, scope.departmentId)
+        : eq(deposit.shuttleId, scope.shuttleId),
+      inRange,
+    );
+  }
+  if (table === parcel) {
+    // Those it no longer carries come too, for its phone to let them go (`forReader`).
+    return and(
+      scope.kind === 'tour'
+        ? or(inScope, sql`${scope.shuttleId} = any(${parcel.formerShuttleIds})`)
+        : inScope,
+      inRange,
+    );
+  }
   if (scope.kind === 'department') {
     const { departmentId } = scope;
     if (table === directoryPerson) {
