@@ -21,8 +21,9 @@ const isSession = (data: unknown): data is Session =>
 
 /**
  * Only the auth server saying so ends a session: it answers `null` or 401. A
- * proxy's error or page during a deployment, whatever its status, says nothing
- * of the session, and answering "none" would empty the device (§9.1).
+ * proxy's error or page during a deployment says nothing of the session, and
+ * answering "none" would empty the device (§9.1). A proxy's 401 cannot be told
+ * from the server's and still counts.
  */
 export function readSessionAnswer({
   data,

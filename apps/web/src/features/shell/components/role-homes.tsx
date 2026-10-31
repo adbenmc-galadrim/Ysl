@@ -33,14 +33,17 @@ function useCounts(): HomeCounts | undefined {
 const shown = (count: number | undefined) =>
   count === undefined ? '…' : String(count);
 
-/** Only when there is one: an orange figure asks for action. */
-const toSettleStat = (counts: HomeCounts | undefined): DeskStat[] =>
+/** Only when there is one. Orange asks for action: the admin's alone, who reassigns (§2.1). */
+const toSettleStat = (
+  counts: HomeCounts | undefined,
+  tone?: DeskStat['tone'],
+): DeskStat[] =>
   counts?.toSettle
     ? [
         {
           label: t('parcel.state.a_regulariser'),
           value: String(counts.toSettle),
-          tone: 'orange',
+          tone,
         },
       ]
     : [];
@@ -122,7 +125,7 @@ export function DashboardHome() {
             counts && counts.coming + counts.present + counts.toSettle,
           ),
         },
-        ...toSettleStat(counts),
+        ...toSettleStat(counts, 'orange'),
       ]}
       notice={{
         title: t('home.dashboard.notice.title'),
