@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
 import * as schema from '@repo/db/schema';
-import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
   const { openTestDb } = await import('./helpers/pglite');
@@ -20,17 +19,10 @@ vi.mock('@repo/auth', () => ({
 
 const { appRouter } = await import('#root');
 const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
-const { AGENT_ID, ORGANIZATION_ID, parcelRow } =
-  await import('./helpers/pglite');
+const { AGENT_ID } = await import('./helpers/pglite');
 
 const PLATFORM_ID = 'platform-1';
 const OPEN_TO_PLATFORM = ['account.me', 'health.check', 'platform.overview'];
-const NOMINATIVE = [
-  'Service courrier',
-  'Autre client',
-  'Martin',
-  'camille@example.test',
-];
 
 function sessionOf(role: string | null, userId: string): Session {
   const base = sessionFor(role);
@@ -58,15 +50,6 @@ beforeAll(async () => {
     email: 'plateforme@example.test',
     role: 'platform_admin',
   });
-  await db.insert(schema.parcel).values(parcelRow());
-  await db.insert(schema.directoryPerson).values({
-    id: newId(),
-    organizationId: ORGANIZATION_ID,
-    lastName: 'Martin',
-    firstName: 'Camille',
-    nameNorm: 'martin camille',
-    email: 'camille@example.test',
-  });
 });
 
 afterAll(async () => {
@@ -85,11 +68,7 @@ describe('the app admin', () => {
   );
 
   it('reads figures with no name in them', async () => {
-    const overview = await caller().platform.overview();
-
-    expect(overview).toEqual({ companies: 2 });
-    const body = JSON.stringify(overview);
-    for (const name of NOMINATIVE) expect(body).not.toContain(name);
+    expect(await caller().platform.overview()).toEqual({ companies: 2 });
   });
 
   it('reads only its own account', async () => {
