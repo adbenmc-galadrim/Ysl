@@ -60,11 +60,16 @@ export async function postDeposit(
 export const isPending = (deposit: LocalDeposit) =>
   !deposit.confirmedAt && !deposit.deletedAt;
 
-/** The parcel ids a deposit still to count holds back from a new one. */
+/** The parcel ids a deposit still to count holds back at this department; one that moved since goes on. */
 export function pendingParcelIds(
   deposits: readonly LocalDeposit[],
+  departmentId: string,
 ): ReadonlySet<string> {
-  return new Set(deposits.filter(isPending).flatMap((row) => row.parcelIds));
+  return new Set(
+    deposits
+      .filter((row) => isPending(row) && row.departmentId === departmentId)
+      .flatMap((row) => row.parcelIds),
+  );
 }
 
 /** The last one first: what the screens say about a department. */

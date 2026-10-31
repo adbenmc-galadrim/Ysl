@@ -74,10 +74,10 @@ export function TourPage() {
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
 
   const tour = data?.tour;
-  const pending = pendingParcelIds(data?.deposits ?? []);
   const stops: TourStopRow[] = (tour?.stops ?? [])
     .map(({ departmentId, parcels }) => {
       const department = data?.departments.get(departmentId);
+      const pending = pendingParcelIds(data?.deposits ?? [], departmentId);
       const waits = parcels.every(({ id }) => pending.has(id));
       const count = parcelsLabel(parcels.length, t);
       return {

@@ -103,17 +103,19 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
   );
   const data = useLiveQuery(async () => {
     const { tour, departments, deposits } = await loadTour(db);
-    const pending = pendingParcelIds(deposits);
     return {
       departments,
       confirms: departmentConfirmsDeposit(await readOperatingProfile(db)),
       stops: tour.stops
-        .map((row) => ({
-          id: row.departmentId,
-          parcelIds: row.parcels
-            .filter(({ id }) => !pending.has(id))
-            .map(({ id }) => id),
-        }))
+        .map((row) => {
+          const pending = pendingParcelIds(deposits, row.departmentId);
+          return {
+            id: row.departmentId,
+            parcelIds: row.parcels
+              .filter(({ id }) => !pending.has(id))
+              .map(({ id }) => id),
+          };
+        })
         .filter(({ parcelIds }) => parcelIds.length > 0),
     };
   }, []);

@@ -128,16 +128,19 @@ describe('currentTour', () => {
 describe('the deposit on the way', () => {
   it('holds back what a deposit still to count announced, not the rest', () => {
     const posted = {
+      departmentId: 'finance',
       parcelIds: ['a'],
       confirmedAt: null,
       deletedAt: null,
     } as unknown as LocalDeposit;
     const counted = {
+      departmentId: 'finance',
       parcelIds: ['b'],
       confirmedAt: new Date(),
       deletedAt: null,
     } as unknown as LocalDeposit;
-    expect([...pendingParcelIds([posted, counted])]).toEqual(['a']);
+    expect([...pendingParcelIds([posted, counted], 'finance')]).toEqual(['a']);
+    expect([...pendingParcelIds([posted, counted], 'studio')]).toEqual([]);
   });
 
   it('says the count in the banner, or the employee gone', () => {

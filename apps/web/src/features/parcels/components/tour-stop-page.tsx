@@ -33,7 +33,7 @@ export function TourStopPage({ departmentId }: { departmentId: string }) {
     const carried =
       tour.stops.find((row) => row.departmentId === departmentId)?.parcels ??
       [];
-    const pending = pendingParcelIds(deposits);
+    const pending = pendingParcelIds(deposits, departmentId);
     const parcels = carried.filter(({ id }) => !pending.has(id));
     const context = await loadRecipientContext(db, parcels);
     const now = new Date();
@@ -41,10 +41,13 @@ export function TourStopPage({ departmentId }: { departmentId: string }) {
       deposits.filter((row) => row.departmentId === departmentId),
     );
     const next = tour.stops
-      .map((row) => ({
-        id: row.departmentId,
-        count: row.parcels.filter(({ id }) => !pending.has(id)).length,
-      }))
+      .map((row) => {
+        const held = pendingParcelIds(deposits, row.departmentId);
+        return {
+          id: row.departmentId,
+          count: row.parcels.filter(({ id }) => !held.has(id)).length,
+        };
+      })
       .find((row) => row.id !== departmentId && row.count > 0);
     return {
       tour,
