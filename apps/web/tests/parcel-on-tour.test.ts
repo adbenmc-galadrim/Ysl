@@ -7,6 +7,8 @@ import { listWaitingParcels } from '#/features/handover/waiting';
 import { loadPendingMails } from '#/features/mail/pending-mails';
 import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
 import { listHomeParcels } from '#/features/parcels/api/use-parcels';
+import { loadTour } from '#/features/parcels/api/use-tour';
+import { planHandovers, planMails } from '#/features/parcels/selection';
 import { describeRecord } from '#/features/parcels/record';
 import { listSearchEntries } from '#/features/search/api/search-entries';
 import { putOnTour } from '#/features/parcels/tour';
@@ -201,5 +203,70 @@ describe('« Mettre en route »', () => {
       showUnsent: false,
     });
     expect(view.action).toEqual({ kind: 'dispatch' });
+  });
+});
+
+describe('a selection in a company that runs tours', () => {
+  const received = parcelRow({ id: 'r', status: 'recu', personId: 'p-1' });
+  const context = {
+    people: new Map(),
+    contacts: new Map(),
+    tour: true,
+  };
+
+  it('notifies neither a parcel « Reçu » nor one on its way', () => {
+    const { notice, reminder } = planMails([received, onTour], context);
+    expect([...notice, ...reminder]).toEqual([]);
+  });
+
+  it('hands over what was deposited, not what the shuttle carries', () => {
+    const put = parcelRow({ id: 'd', status: 'depose', personId: 'p-1' });
+    const { groups } = planHandovers([received, put], true);
+    expect(groups.flatMap(({ parcelIds }) => parcelIds)).toEqual(['d']);
+    expect(
+      planHandovers([received], false).groups.flatMap(
+        ({ parcelIds }) => parcelIds,
+      ),
+    ).toEqual(['r']);
+  });
+});
+
+describe('the tour read from the iPhone', () => {
+  it('dates a parcel deposited from the day it left, not from its reception', async () => {
+    const monday = new Date(NOW.getTime() - 5 * 86_400_000);
+    const wednesday = new Date(NOW.getTime() - 3 * 86_400_000);
+    await db.parcel.clear();
+    await db.parcel.bulkPut([
+      parcelRow({
+        id: 'closed-earlier',
+        status: 'depose',
+        departmentId: 'finance',
+        receivedAt: wednesday,
+        depositedAt: new Date(wednesday.getTime() + 3_600_000),
+        statusSeq: 1,
+      }),
+      parcelRow({
+        id: 'sent-late',
+        status: 'depose',
+        departmentId: 'finance',
+        receivedAt: monday,
+        depositedAt: NOW,
+        statusSeq: 2,
+      }),
+    ]);
+    await db.event.put({
+      id: 'left',
+      entity: 'parcel',
+      entityId: 'sent-late',
+      type: 'parcel.status',
+      detail: { from: 'recu', to: 'en_route' },
+      agentId: 'agent-1',
+      at: new Date(NOW.getTime() - 3_600_000),
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    } as never);
+    const { tour } = await loadTour(db, NOW);
+    expect(tour.deposited).toBe(1);
   });
 });

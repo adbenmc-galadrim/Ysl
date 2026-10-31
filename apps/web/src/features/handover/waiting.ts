@@ -20,7 +20,7 @@ export type HandoverRecipient = { kind: RecipientKind; id: string };
 export const WAITING_STATUSES = ['recu', 'depose', 'notifie'] as const;
 
 /** With tours, a parcel « Reçu » is still with the shuttle: nothing to hand over (§8.3). */
-const isWaiting = (parcel: LocalParcel, tour: boolean) =>
+export const isWaiting = (parcel: LocalParcel, tour: boolean) =>
   !parcel.deletedAt &&
   !(tour && parcel.status === 'recu') &&
   (WAITING_STATUSES as readonly string[]).includes(parcel.status);

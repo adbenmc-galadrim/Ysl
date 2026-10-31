@@ -21,13 +21,21 @@ export type TourData = {
   toSettle: number;
 };
 
+/** Older deposits end before any tour still shown: their date of departure changes nothing. */
+const ENTRY_HORIZON_MS = 30 * 24 * 60 * 60 * 1000;
+
 /** The day a parcel last went on its way: its history says, when it did not leave at once. */
 async function loadEntries(
   database: CourrierDatabase,
   parcels: readonly LocalParcel[],
+  now: Date,
 ): Promise<TourEntries> {
   const sent = parcels.filter(
-    (parcel) => parcel.status === 'en_route' && (parcel.statusSeq ?? 0) > 0,
+    (parcel) =>
+      (parcel.statusSeq ?? 0) > 0 &&
+      (parcel.status === 'en_route' ||
+        (parcel.depositedAt &&
+          now.getTime() - parcel.depositedAt.getTime() < ENTRY_HORIZON_MS)),
   );
   const entries = new Map<string, Date>();
   await Promise.all(
@@ -58,7 +66,7 @@ export async function loadTour(
     database.department.toArray(),
   ]);
   return {
-    tour: currentTour(parcels, now, await loadEntries(database, parcels)),
+    tour: currentTour(parcels, now, await loadEntries(database, parcels, now)),
     departments: new Map(departments.map((row) => [row.id, row])),
     incomplete: parcels.filter(({ status }) => status === 'a_completer'),
     toDispatch: parcels.filter(({ status }) => status === 'recu'),

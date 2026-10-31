@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
+import { goesOnTour } from '#/features/parcels/tour';
 import type { LocalParcel } from '#/features/db/schema';
 import { writeQueue } from '#/features/handover/queue';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
@@ -140,7 +141,10 @@ export function ColisSelection({
   // P4 by name, as « Remettre » does without a QR: one person opens their
   // parcels with the ticked ones ticked; several are handed over in turn.
   const handOver = async () => {
-    const { groups, skipped } = planHandovers(await loadTicked());
+    const { groups, skipped } = planHandovers(
+      await loadTicked(),
+      await goesOnTour(db),
+    );
     const [first, ...rest] = groups;
     if (!first) {
       setToast(
@@ -182,7 +186,10 @@ export function ColisSelection({
 
   // « Supprimer » takes what nobody was told about yet (logical delete).
   const deletable = tickedRows.filter(
-    (row) => row.state === 'incomplete' || row.state === 'toNotify',
+    (row) =>
+      row.state === 'incomplete' ||
+      row.state === 'toNotify' ||
+      row.state === 'toDispatch',
   ).length;
   const kept = tickedRows.length - deletable;
   const remove = async () => {

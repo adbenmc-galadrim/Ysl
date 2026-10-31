@@ -33,7 +33,8 @@ export async function loadSelectionMails(
       !parcel.deletedAt &&
       !onServer.has(parcel.id) &&
       (parcel.personId !== null || parcel.contactId !== null) &&
-      (parcel.status === 'notifie' || (!reminder && parcel.status === 'recu')),
+      (parcel.status === 'notifie' ||
+        (!reminder && !context.tour && parcel.status === 'recu')),
   );
 }
 
