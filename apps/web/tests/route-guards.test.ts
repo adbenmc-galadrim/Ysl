@@ -65,6 +65,21 @@ describe('requireAdmin', () => {
     ).toMatchObject({ options: { to: '/' } });
   });
 
+  it.each(['shuttle', 'department', 'platform_admin'])(
+    'sends a %s back to the home page',
+    (role) => {
+      expect(
+        thrownBy(() => requireAdmin({ session: sessionWithRole(role) })),
+      ).toMatchObject({ options: { to: '/' } });
+    },
+  );
+
+  it('lets a company admin through', () => {
+    expect(() =>
+      requireAdmin({ session: sessionWithRole('company_admin') }),
+    ).not.toThrow();
+  });
+
   it('lets an admin through', () => {
     expect(() =>
       requireAdmin({ session: sessionWithRole('admin') }),

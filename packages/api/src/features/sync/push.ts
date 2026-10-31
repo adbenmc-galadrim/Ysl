@@ -1,4 +1,4 @@
-import type { UserRole } from '@repo/contract/auth';
+import { isCompanyAdmin, type UserRole } from '@repo/contract/auth';
 import {
   canMoveNotification,
   notificationRow,
@@ -132,7 +132,7 @@ function updatesOf(table: SyncTable, values: Values): Values {
  * end up in every e-mail.
  */
 function checkSetting(op: SyncOp, { role }: Writer): void {
-  if (role !== 'admin') {
+  if (!isCompanyAdmin(role)) {
     throw new SyncRejected(
       SYNC_STATUS.forbidden,
       `setting ${op.entityId} written by a non-admin`,

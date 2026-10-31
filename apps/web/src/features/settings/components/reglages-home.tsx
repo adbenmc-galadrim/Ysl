@@ -1,4 +1,4 @@
-import { toUserRole } from '@repo/contract/auth';
+import { isCompanyAdmin, toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   CORNER_RADII,
@@ -101,7 +101,7 @@ export function ReglagesHome() {
         label: t('settings.handovers'),
         onPress: () => void navigate({ to: '/reglages/remises' }),
       },
-      ...(role === 'admin'
+      ...(isCompanyAdmin(role)
         ? [
             {
               icon: 'lock' as const,
@@ -255,7 +255,7 @@ export function ReglagesHome() {
         onPress: () => void navigate({ to: '/reglages/compte' }),
       }}
       groups={
-        role === 'admin'
+        isCompanyAdmin(role)
           ? [steering, data, mail, service, app]
           : [steering, data, mail, app]
       }

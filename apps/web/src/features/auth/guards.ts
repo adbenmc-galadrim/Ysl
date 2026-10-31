@@ -1,4 +1,5 @@
 import type { Session } from '@repo/auth/client';
+import { isCompanyAdmin, toUserRole } from '@repo/contract/auth';
 import type { QueryClient } from '@tanstack/react-query';
 import { redirect } from '@tanstack/react-router';
 import { sessionQueryOptions } from '#/features/auth/api/session';
@@ -30,5 +31,7 @@ export async function redirectIfSignedIn(
 }
 
 export function requireAdmin({ session }: { session: Session }) {
-  if (session.user.role !== 'admin') throw redirect({ to: '/' });
+  if (!isCompanyAdmin(toUserRole(session.user.role))) {
+    throw redirect({ to: '/' });
+  }
 }

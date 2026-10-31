@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util';
 import {
   DEFAULT_USER_ROLE,
   password as passwordSchema,
+  USER_ROLES,
   userRole,
 } from '@repo/contract/auth';
 import { closeDb, db } from '@repo/db';
@@ -14,7 +15,7 @@ import {
 
 const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
 
-const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role agent|admin] [--organization <name>]
+const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role ${USER_ROLES.join('|')}] [--organization <name>]
 The password is read from standard input, or from ${PASSWORD_VARIABLE}.
 Without --organization, the only organization is used, or "Service courrier" is created.`;
 
