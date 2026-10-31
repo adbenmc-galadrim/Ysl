@@ -13,7 +13,13 @@ import {
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { type ReactNode, useMemo, useState } from 'react';
+import {
+  type ChangeEvent,
+  type ReactNode,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { db } from '#/features/db/database';
 import type {
@@ -24,6 +30,7 @@ import type {
 } from '#/features/db/schema';
 import { contactEntries } from '#/features/directory/contacts';
 import { ContactSheet } from '#/features/directory/components/contact-sheet';
+import { DirectoryImport } from '#/features/directory/components/directory-import';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { usePersonForm } from '#/features/directory/components/person-form';
 import { useMove } from '#/features/directory/components/use-move';
@@ -234,7 +241,13 @@ function DeskRecord({
   );
 }
 
-function DirectoryDesktop({ directory }: { directory: Directory }) {
+function DirectoryDesktop({
+  directory,
+  onImport,
+}: {
+  directory: Directory;
+  onImport: () => void;
+}) {
   const navigate = useNavigate();
   const session = useSession();
   const { people, contacts, departments, names, open } = directory;
@@ -403,6 +416,7 @@ function DirectoryDesktop({ directory }: { directory: Directory }) {
             query: total === 0 ? query : undefined,
           }))
         }
+        onImport={onImport}
         panel={side}
       />
       {contact && (
@@ -678,9 +692,41 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
 export function DirectoryScreen() {
   const directory = useDirectory();
   const desk = useMediaQuery(DESK_WIDTH);
-  return desk ? (
-    <DirectoryDesktop directory={directory} />
-  ) : (
-    <DirectoryPhone directory={directory} />
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+
+  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
+    setFile(event.target.files?.[0] ?? null);
+    event.target.value = '';
+  };
+
+  return (
+    <>
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".csv,text/csv"
+        aria-hidden="true"
+        tabIndex={-1}
+        className="hidden"
+        onChange={onFile}
+      />
+      {file && desk ? (
+        <DirectoryImport
+          key={`${file.name}-${file.lastModified}`}
+          file={file}
+          departments={directory.departments}
+          onChangeFile={() => fileInput.current?.click()}
+          onClose={() => setFile(null)}
+        />
+      ) : desk ? (
+        <DirectoryDesktop
+          directory={directory}
+          onImport={() => fileInput.current?.click()}
+        />
+      ) : (
+        <DirectoryPhone directory={directory} />
+      )}
+    </>
   );
 }
