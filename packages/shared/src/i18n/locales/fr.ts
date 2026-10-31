@@ -1761,7 +1761,7 @@ export const fr = {
   'operating.saved': 'Appliqué à {{count}} colis',
   'operating.undo': 'Annuler',
   'operating.notYet':
-    'Pour l’instant, seuls « Navette = département » et les relances automatiques agissent sur les colis. Les autres réglages sont gardés et prendront effet avec les prochaines versions.',
+    'Seuls « Confirmation du dépôt » et « Moment de l’e-mail » n’agissent pas encore : ils prendront effet avec les prochaines versions. Les autres réglages s’appliquent tout de suite.',
   'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',

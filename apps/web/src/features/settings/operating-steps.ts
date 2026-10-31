@@ -55,6 +55,12 @@ export const SECTIONS = [
   { id: 'mail', params: ['emailMoment', 'reminders'] },
 ] as const satisfies { id: string; params: OperatingParam[] }[];
 
+/** Saved and announced, but nothing acts on them yet: the banner says so for these alone. */
+export const NOT_YET_PARAMS: readonly OperatingParam[] = [
+  'depositConfirmation',
+  'emailMoment',
+];
+
 type Choice = string;
 
 export const choiceOf = (
