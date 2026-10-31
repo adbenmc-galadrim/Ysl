@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({
   listUsers: vi.fn(),
+  getUser: vi.fn(),
   createUser: vi.fn(),
   banUser: vi.fn(),
   unbanUser: vi.fn(),
@@ -87,6 +88,7 @@ describe('agents.create, roles', () => {
 describe('agents.setActive', () => {
   beforeEach(() => {
     for (const fn of Object.values(api)) fn.mockReset();
+    api.getUser.mockResolvedValue({ role: 'agent' });
   });
 
   it('bans the account and revokes its sessions when deactivating', async () => {
@@ -100,5 +102,71 @@ describe('agents.setActive', () => {
       headers: HEADERS,
       body: { userId: 'user-2' },
     });
+  });
+});
+
+describe('agents, app admin accounts', () => {
+  beforeEach(() => {
+    for (const fn of Object.values(api)) fn.mockReset();
+    api.getUser.mockResolvedValue({ role: 'platform_admin' });
+  });
+
+  it('leaves them out of the list', async () => {
+    api.listUsers.mockResolvedValue({
+      users: [
+        createdUser('agent').user,
+        { ...createdUser('platform_admin').user, id: 'app-admin' },
+      ],
+    });
+
+    const agents = await admin().agents.list();
+
+    expect(agents.map((agent) => agent.id)).toEqual(['user-2']);
+  });
+
+  it.each([true, false])('refuses setActive to %s', async (active) => {
+    await expect(
+      admin().agents.setActive({ userId: 'app-admin', active }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(api.banUser).not.toHaveBeenCalled();
+    expect(api.unbanUser).not.toHaveBeenCalled();
+    expect(api.revokeUserSessions).not.toHaveBeenCalled();
+  });
+
+  it('refuses a password reset', async () => {
+    await expect(
+      admin().agents.resetPassword({
+        userId: 'app-admin',
+        password: 'motdepasse-1',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(api.setUserPassword).not.toHaveBeenCalled();
+    expect(api.revokeUserSessions).not.toHaveBeenCalled();
+  });
+
+  it('refuses when the role of the target is unknown', async () => {
+    api.getUser.mockResolvedValue({});
+
+    await expect(
+      admin().agents.resetPassword({
+        userId: 'app-admin',
+        password: 'motdepasse-1',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(api.setUserPassword).not.toHaveBeenCalled();
+  });
+
+  it('still resets the password of an agent', async () => {
+    api.getUser.mockResolvedValue({ role: 'agent' });
+
+    await admin().agents.resetPassword({
+      userId: 'user-2',
+      password: 'motdepasse-1',
+    });
+
+    expect(api.setUserPassword).toHaveBeenCalledOnce();
   });
 });

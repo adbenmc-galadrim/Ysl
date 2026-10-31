@@ -8,6 +8,7 @@ import { importsRouter } from '#features/imports/router';
 import { mailSenderRouter } from '#features/mail/router';
 import { maintenanceRouter } from '#features/maintenance/router';
 import { pickupRouter } from '#features/pickup/router';
+import { platformRouter } from '#features/platform/router';
 import { syncRouter } from '#features/sync/router';
 import { router } from '#lib/trpc';
 
@@ -22,6 +23,7 @@ export const appRouter = router({
   mailSender: mailSenderRouter,
   maintenance: maintenanceRouter,
   pickup: pickupRouter,
+  platform: platformRouter,
   sync: syncRouter,
 });
 

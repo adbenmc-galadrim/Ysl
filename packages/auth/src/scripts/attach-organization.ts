@@ -3,12 +3,12 @@ import { closeDb, db } from '@repo/db';
 import {
   attachToOrganization,
   findUserByEmail,
-  resolveOrganization,
+  resolveOrganizationFor,
 } from '#organization';
 
 const USAGE = `Usage: pnpm auth:attach-organization --email <email> [--organization <name>]
 Attaches an existing account to an organization. Without --organization, the only
-organization is used, or "Service courrier" is created.`;
+organization is used, or "Service courrier" is created. An app admin is refused.`;
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -21,7 +21,11 @@ async function main(): Promise<void> {
 
   const user = await findUserByEmail(db, values.email);
   if (!user) throw new Error(`No account with email ${values.email}.`);
-  const organization = await resolveOrganization(db, values.organization);
+  const organization = await resolveOrganizationFor(
+    db,
+    user,
+    values.organization,
+  );
   await attachToOrganization(db, user.id, organization.id);
 
   console.log(

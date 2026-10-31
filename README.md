@@ -45,6 +45,10 @@ la synchronisation (lecture et écriture), ni les codes de retrait, ni les expor
 qu'ils ne sont pas filtrés par département.
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
+Un compte `platform_admin` n'appartient à aucune organisation (`auth:create-user` sans
+`--organization`, `auth:attach-organization` refuse) ; il atteint le routeur `platform`,
+qui ne rend que des chiffres, et aucune donnée d'une entreprise.
+
 Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription
 publique : le premier administrateur se crée en ligne de commande, les comptes suivants
 aussi tant que l'écran d'équipe n'existe pas.
@@ -232,7 +236,7 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation |
+| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation (`platform_admin` : à aucune) |
 | `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |

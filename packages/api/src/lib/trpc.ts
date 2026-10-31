@@ -64,6 +64,15 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next();
 });
 
+/** The app admin: outside every company, so a company account promoted by mistake stays refused (D26). */
+export const platformProcedure = protectedProcedure.use(
+  async ({ ctx, next }) => {
+    if (roleOf(ctx.session) !== 'platform_admin') throw forbidden();
+    if (await membershipOf(db, ctx.session.user.id)) throw forbidden();
+    return next();
+  },
+);
+
 /** Signed in and attached to a company: what every synced table is keyed by. The app admin never is (D26). */
 export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   if (roleOf(ctx.session) === 'platform_admin') throw forbidden();

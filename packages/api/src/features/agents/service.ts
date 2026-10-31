@@ -29,6 +29,25 @@ function toAgent(user: AuthUser): Agent {
   };
 }
 
+function isPlatformAccount(user: { role?: string | null }): boolean {
+  return toUserRole(user.role) === 'platform_admin';
+}
+
+/** An app admin is nobody's agent: a company admin must not be able to take the account. */
+async function refusePlatformAccount(
+  headers: Headers,
+  userId: string,
+): Promise<void> {
+  const target = await auth.api.getUser({ headers, query: { id: userId } });
+  // No `role` at all means Better Auth stopped sending it: refuse rather than read it as an agent.
+  if (target.role === undefined || isPlatformAccount(target)) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: translate('agents.error.notFound'),
+    });
+  }
+}
+
 async function guarded<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
@@ -63,7 +82,7 @@ export async function listAgents(headers: Headers): Promise<Agent[]> {
       query: { limit: LIST_LIMIT, sortBy: 'createdAt', sortDirection: 'desc' },
     }),
   );
-  return users.map(toAgent);
+  return users.filter((user) => !isPlatformAccount(user)).map(toAgent);
 }
 
 export async function createAgent(input: CreateAgentInput): Promise<Agent> {
@@ -85,6 +104,7 @@ export async function setAgentActive(
   input: { userId: string; active: boolean },
 ): Promise<void> {
   await guarded(async () => {
+    await refusePlatformAccount(headers, input.userId);
     if (input.active) {
       await auth.api.unbanUser({ headers, body: { userId: input.userId } });
       return;
@@ -102,6 +122,7 @@ export async function resetAgentPassword(
   input: { userId: string; password: string },
 ): Promise<void> {
   await guarded(async () => {
+    await refusePlatformAccount(headers, input.userId);
     await auth.api.setUserPassword({
       headers,
       body: { userId: input.userId, newPassword: input.password },

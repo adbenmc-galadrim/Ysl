@@ -21,6 +21,13 @@ export class AlreadyAttachedError extends Error {
   }
 }
 
+export class PlatformAccountError extends Error {
+  constructor(email: string) {
+    super(`${email} is an app admin: it belongs to no organization.`);
+    this.name = 'PlatformAccountError';
+  }
+}
+
 export type OrganizationChoice =
   | { kind: 'existing'; id: string; name: string }
   | { kind: 'new'; name: string };
@@ -56,6 +63,17 @@ export async function chooseOrganization(
   return { kind: 'new', name: DEFAULT_ORGANIZATION_NAME };
 }
 
+/** Same choice for a new account; an app admin gets none, and naming one for it is a mistake. */
+export async function chooseOrganizationFor(
+  db: AnyDb,
+  account: { email: string; role: string },
+  name?: string,
+): Promise<OrganizationChoice | null> {
+  if (account.role !== 'platform_admin') return chooseOrganization(db, name);
+  if (name) throw new PlatformAccountError(account.email);
+  return null;
+}
+
 /** Makes the chosen organization real, once there is an account to put in it. */
 export async function ensureOrganization(
   db: AnyDb,
@@ -77,12 +95,31 @@ export async function resolveOrganization(
   return ensureOrganization(db, await chooseOrganization(db, name));
 }
 
-/** Makes the account a member; refuses to move one that already belongs elsewhere. */
+/** The organization a stray account should join; an app admin is refused before one gets created for it. */
+export async function resolveOrganizationFor(
+  db: AnyDb,
+  account: { email: string; role: string | null },
+  name?: string,
+): Promise<{ id: string; name: string; created: boolean }> {
+  if (account.role === 'platform_admin') {
+    throw new PlatformAccountError(account.email);
+  }
+  return resolveOrganization(db, name);
+}
+
+/** Makes the account a member; refuses an app admin, and to move one that already belongs elsewhere. */
 export async function attachToOrganization(
   db: AnyDb,
   userId: string,
   organizationId: string,
 ): Promise<void> {
+  const [account] = await db
+    .select({ email: user.email, role: user.role })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (account?.role === 'platform_admin') {
+    throw new PlatformAccountError(account.email);
+  }
   const [current] = await db
     .select({
       organizationId: organizationMember.organizationId,
@@ -106,9 +143,9 @@ export async function attachToOrganization(
 export async function findUserByEmail(
   db: AnyDb,
   email: string,
-): Promise<{ id: string; email: string } | undefined> {
+): Promise<{ id: string; email: string; role: string | null } | undefined> {
   const [found] = await db
-    .select({ id: user.id, email: user.email })
+    .select({ id: user.id, email: user.email, role: user.role })
     .from(user)
     .where(eq(user.email, email));
   return found;
