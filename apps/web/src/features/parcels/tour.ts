@@ -1,7 +1,7 @@
 import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeName } from '@repo/shared/text';
-import type { Upsert } from '#/features/db/commit';
+import { commitLocal, type Upsert } from '#/features/db/commit';
 import type {
   CourrierDatabase,
   DraftParcel,
@@ -120,4 +120,47 @@ export function onTourWrites(
       options,
     ),
   ];
+}
+
+/**
+ * « Mettre en route » (D31): a parcel received before the profile had tours, or
+ * whose tour was cancelled. Without a department it goes back to « À compléter »,
+ * which asks for one (ME25). Offline like every write. Says what became of them.
+ */
+export async function putOnTour(
+  db: CourrierDatabase,
+  parcelIds: readonly string[],
+  { agentId, now = new Date() }: { agentId: string; now?: Date },
+): Promise<{ onRoute: number; toComplete: number }> {
+  const parcels = await db.parcel.bulkGet([...parcelIds]);
+  const options = { agentId, now };
+  const upserts: Upsert[] = [];
+  let onRoute = 0;
+  let toComplete = 0;
+  for (const parcel of parcels) {
+    if (!parcel || parcel.deletedAt || parcel.status !== 'recu') continue;
+    const goesTo = await tourDepartment(db, parcel, parcel);
+    if (goesTo === undefined) continue;
+    if (goesTo) {
+      onRoute += 1;
+      upserts.push(
+        ...onTourWrites({ ...parcel, departmentId: goesTo }, options),
+      );
+    } else {
+      toComplete += 1;
+      upserts.push(
+        {
+          entity: 'parcel',
+          row: { ...parcel, ...statusPatch(parcel, 'a_completer', options) },
+        },
+        parcelEvent(
+          parcel.id,
+          { type: 'parcel.status', from: 'recu', to: 'a_completer' },
+          options,
+        ),
+      );
+    }
+  }
+  await commitLocal(db, { upserts }, { now });
+  return { onRoute, toComplete };
 }

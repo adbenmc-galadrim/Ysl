@@ -802,6 +802,7 @@ export const fr = {
   'parcel.todo.a_completer':
     'Compléter le destinataire ou le numéro avant de notifier',
   'parcel.todo.recu': 'Pas encore notifié : prévenir le destinataire',
+  'parcel.todo.dispatch': 'À mettre en route vers son département',
   'parcel.todo.en_route': 'En route vers son département',
   'parcel.todo.depose': 'Déposé au département : prévenir le destinataire',
   'parcel.todo.a_regulariser': 'Bloqué : à réaffecter par l’admin de l’entreprise',
@@ -881,6 +882,7 @@ export const fr = {
   'record.when.yesterday': 'Hier à {{time}}',
   'record.when.day': 'Le {{date}} à {{time}}',
   'record.action.complete': 'Compléter',
+  'record.action.dispatch': 'Mettre en route',
   'record.cancel': 'Annuler',
   'record.missing.title': 'Colis introuvable',
   'record.missing.description':

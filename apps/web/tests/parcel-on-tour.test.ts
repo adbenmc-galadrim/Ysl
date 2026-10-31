@@ -9,6 +9,7 @@ import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
 import { listHomeParcels } from '#/features/parcels/api/use-parcels';
 import { describeRecord } from '#/features/parcels/record';
 import { listSearchEntries } from '#/features/search/api/search-entries';
+import { putOnTour } from '#/features/parcels/tour';
 import { groupResults } from '#/features/search/search-index';
 import {
   NOW,
@@ -118,5 +119,87 @@ describe('handing over with tours', () => {
   it('leaves a parcel « Reçu » at the desk of a small site', async () => {
     await profile({ shuttleActsAsDepartment: true });
     expect(await waiting()).toEqual(expect.arrayContaining(['at-desk']));
+  });
+});
+
+describe('« Mettre en route »', () => {
+  const asShuttle = { agentId: 'agent-1', now: NOW };
+  const toursOn = () =>
+    db.setting.put({
+      id: 'profile',
+      key: OPERATING_PROFILE_KEY,
+      value: { shuttleActsAsDepartment: false },
+      updatedBy: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+
+  it('sends a parcel received before the tours towards its department, offline', async () => {
+    await toursOn();
+    await db.directoryPerson.put(
+      personRow({ id: 'p-2', departmentId: 'finance', email: 'b@ysl.test' }),
+    );
+    await db.parcel.put(
+      parcelRow({ id: 'before', status: 'recu', personId: 'p-2' }),
+    );
+    expect(await putOnTour(db, ['before'], asShuttle)).toEqual({
+      onRoute: 1,
+      toComplete: 0,
+    });
+    const row = await db.parcel.get('before');
+    expect(row).toMatchObject({ status: 'en_route', departmentId: 'finance' });
+    expect(
+      await db.outbox
+        .where('[entity+entityId]')
+        .equals(['parcel', 'before'])
+        .count(),
+    ).toBe(1);
+  });
+
+  it('sends one with nowhere to go back to « À compléter », which asks', async () => {
+    await toursOn();
+    await db.parcel.put(
+      parcelRow({
+        id: 'nowhere',
+        status: 'recu',
+        contactId: null,
+        personId: null,
+      }),
+    );
+    expect(await putOnTour(db, ['nowhere'], asShuttle)).toEqual({
+      onRoute: 0,
+      toComplete: 1,
+    });
+    expect((await db.parcel.get('nowhere'))?.status).toBe('a_completer');
+  });
+
+  it('does nothing without tours, or to a parcel past « Reçu »', async () => {
+    await db.parcel.put(
+      parcelRow({ id: 'small', status: 'recu', personId: 'p-1' }),
+    );
+    expect(await putOnTour(db, ['small'], asShuttle)).toEqual({
+      onRoute: 0,
+      toComplete: 0,
+    });
+    await toursOn();
+    expect(await putOnTour(db, [onTour.id], asShuttle)).toEqual({
+      onRoute: 0,
+      toComplete: 0,
+    });
+    expect((await db.parcel.get('small'))?.status).toBe('recu');
+  });
+
+  it('is what a parcel « Reçu » offers on its record, not a notice', async () => {
+    await toursOn();
+    await db.parcel.put(
+      parcelRow({ id: 'cancelled', status: 'recu', personId: 'p-1' }),
+    );
+    const view = describeRecord((await loadParcelRecord(db, 'cancelled'))!, {
+      now: NOW,
+      t,
+      showUnsent: false,
+    });
+    expect(view.action).toEqual({ kind: 'dispatch' });
   });
 });

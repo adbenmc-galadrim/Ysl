@@ -88,6 +88,8 @@ export type RecordSync = 'synced' | 'unsent' | 'rejected';
 export type RecordAction =
   | { kind: 'complete' }
   | { kind: 'notify' }
+  /** A parcel « Reçu » in a company that runs tours (D31). */
+  | { kind: 'dispatch' }
   | {
       kind: 'stepBack';
       from: 'en_route' | 'notifie' | 'retourne';
@@ -195,7 +197,10 @@ function stateCard(
   t: TranslateFn,
 ): RecordView['state'] {
   const { parcel } = record;
-  const description = t(STATUS_TODO[parcel.status]);
+  const description =
+    record.tour && parcel.status === 'recu'
+      ? t('parcel.todo.dispatch')
+      : t(STATUS_TODO[parcel.status]);
   const today = startOfDay(now);
   const at = (key: 'received' | 'delivered', date: Date) =>
     date >= today
@@ -744,8 +749,11 @@ export function handoverItems(
   ];
 }
 
-function action(parcel: LocalParcel): RecordAction | undefined {
+function action(parcel: LocalParcel, tour?: boolean): RecordAction | undefined {
   if (parcel.status === 'a_completer') return { kind: 'complete' };
+  if (tour && parcel.status === 'recu' && !parcel.deletedAt) {
+    return { kind: 'dispatch' };
+  }
   if (awaitsNotice(parcel)) return { kind: 'notify' };
   // A handover is undone with its reason, by its own sheet (F44). A received
   // parcel goes back to "À compléter" from the form, once it lacks a number
@@ -860,7 +868,7 @@ export function describeRecord(
     details: details(record, sync, options),
     history: history(record, showUnsent, now, t),
     sync,
-    action: action(parcel),
+    action: action(parcel, record.tour),
     damage: damageCard(record, now, t),
     handover: handoverCard(record, options),
   };
