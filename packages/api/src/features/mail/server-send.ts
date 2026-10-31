@@ -406,13 +406,15 @@ async function prepareOne(tx: AnyDb, id: string, now: Date): Promise<void> {
     return fail(id, t('mail.server.superseded'));
   }
   const who = await whoOf(tx, row, told);
-  // Moved to someone else since the request: their code and name are not this mail's.
+  // Moved to someone else since the request, a twin card at the same address
+  // included: their code and name are not this mail's. Only a contact sharing the
+  // address is the same human, one mail (`groupByRecipient`).
   const asked = row.recipients[0]?.toLowerCase();
   const mine = told.filter(
     (item) =>
       (row.personId !== null && item.personId === row.personId) ||
       (row.contactId !== null && item.contactId === row.contactId) ||
-      who.addressOf(item)?.toLowerCase() === asked,
+      (item.personId === null && who.addressOf(item)?.toLowerCase() === asked),
   );
   if (mine.length === 0) return fail(id, t('mail.server.superseded'));
   const parcels = mine.filter(isPlaced);

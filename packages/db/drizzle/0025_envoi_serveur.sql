@@ -89,12 +89,7 @@ BEGIN
       (SELECT d.id FROM "public"."department" AS d
         WHERE d.organization_id = NEW.organization_id
           AND d.deleted_at IS NULL
-          AND lower(d.name) = 'service courrier'),
-      (SELECT d.id FROM "public"."department" AS d
-        WHERE d.organization_id = NEW.organization_id
-          AND d.deleted_at IS NULL
-        ORDER BY d.created_at
-        LIMIT 1)
+          AND lower(d.name) = 'service courrier')
     );
   END IF;
   RETURN NEW;

@@ -278,6 +278,38 @@ describe('a request written by the iPhone', () => {
     expect(await liveCodes(first)).toHaveLength(0);
   });
 
+  it('keeps twin cards apart: same address, two departments, each their code', async () => {
+    const email = `${newId()}@example.test`;
+    const { id: atFinance } = await addPerson(email);
+    const atStudio = newId();
+    await db.insert(directoryPerson).values({
+      id: atStudio,
+      organizationId: ORGANIZATION_ID,
+      departmentId: studio,
+      firstName: 'Nora',
+      lastName: 'Haddad',
+      nameNorm: 'haddad nora',
+      email,
+    });
+    const ofFinance = await addParcel(atFinance);
+    const ofStudio = { ...parcelRow(), personId: atStudio };
+    await db.insert(parcel).values(ofStudio);
+
+    const stale = await request(atFinance, [ofStudio.id], {
+      recipients: [email],
+    });
+    await round();
+    expect(brevo.sent).toHaveLength(0);
+    expect(await mailOf(stale)).toMatchObject({ status: 'failed' });
+
+    await request(atFinance, [ofFinance], { recipients: [email] });
+    await request(atStudio, [ofStudio.id], { recipients: [email] });
+    await round();
+    expect(brevo.sent).toHaveLength(2);
+    expect((await liveCodes(atFinance))[0]?.departmentId).toBe(finance);
+    expect((await liveCodes(atStudio))[0]?.departmentId).toBe(studio);
+  });
+
   it('sends one mail and one live code when a parcel has its own address', async () => {
     const { id: person, email } = await addPerson();
     const a = await addParcel(person);
