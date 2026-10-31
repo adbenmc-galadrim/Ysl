@@ -47,6 +47,8 @@ export type CompanyShellProps = {
   /** From the root to the current page, which is drawn in bold. */
   breadcrumb: CompanyShellCrumb[];
   searchPlaceholder?: string;
+  /** Makes the bar's search a real field; drawn as a shortcut otherwise. */
+  search?: { value: string; onChange: (value: string) => void };
   onNavigate?: (id: string) => void;
   /** Drawn over the whole window, sidebar included: a dialog and its scrim. */
   overlay?: ReactNode;
@@ -120,7 +122,8 @@ function CompanyShellNav({
 function CompanyShellBar({
   breadcrumb,
   searchPlaceholder,
-}: Pick<CompanyShellProps, 'breadcrumb' | 'searchPlaceholder'>) {
+  search,
+}: Pick<CompanyShellProps, 'breadcrumb' | 'searchPlaceholder' | 'search'>) {
   return (
     <header className="flex h-[52px] shrink-0 items-start border-b border-separator pt-[10px] pr-6 pl-6">
       <ol className="mr-auto flex min-w-0 pt-1.5 text-13">
@@ -153,9 +156,20 @@ function CompanyShellBar({
         className="flex h-8 w-[280px] shrink-0 items-center gap-2 rounded-[6px] bg-fill pr-2.5 pl-2.5 text-13 text-muted"
       >
         <Icon name="search" size={14} className="shrink-0" />
-        <span className="-mt-0.5 min-w-0 flex-1 truncate">
-          {searchPlaceholder}
-        </span>
+        {search ? (
+          <input
+            type="search"
+            aria-label={searchPlaceholder}
+            placeholder={searchPlaceholder}
+            value={search.value}
+            onChange={(event) => search.onChange(event.target.value)}
+            className="-mt-0.5 min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-muted"
+          />
+        ) : (
+          <span className="-mt-0.5 min-w-0 flex-1 truncate">
+            {searchPlaceholder}
+          </span>
+        )}
         <kbd className="flex h-[18px] w-[30px] shrink-0 items-center justify-center rounded-[4px] bg-surface pb-px font-sans text-11 shadow-[0_0_0_0.5px_var(--color-border),inset_0_0_0_0.5px_var(--color-border)]">
           ⌘K
         </kbd>
@@ -177,6 +191,7 @@ export function CompanyShell({
   account,
   breadcrumb,
   searchPlaceholder = 'Rechercher',
+  search,
   onNavigate,
   overlay,
   children,
@@ -237,6 +252,7 @@ export function CompanyShell({
         <CompanyShellBar
           breadcrumb={breadcrumb}
           searchPlaceholder={searchPlaceholder}
+          search={search}
         />
         <main className="relative flex min-h-0 flex-1 flex-col overflow-y-auto px-8 pt-6 pb-8">
           {children}
