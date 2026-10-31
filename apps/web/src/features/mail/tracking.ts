@@ -50,6 +50,28 @@ function bounced(notification: LocalNotification): boolean {
   return notification.deliveryStatus === 'bounced';
 }
 
+/** A request the server holds: not the agent's to confirm. */
+function onItsWay(notification: LocalNotification): boolean {
+  return notification.channel === 'server' && !notification.sentAt;
+}
+
+/**
+ * Whether a later mail settles a failure. A failure the agent declared: any
+ * later mail. A bounce: one that left and did not bounce, to another address, or
+ * delivered to this one; preparing a mail or reminding the same address fixes nothing.
+ */
+function takesOver(
+  failed: LocalNotification,
+  later: LocalNotification,
+): boolean {
+  if (!bounced(failed)) return true;
+  if (statusOf(later) !== 'sent' || bounced(later)) return false;
+  return (
+    later.recipients[0] !== failed.recipients[0] ||
+    later.deliveryStatus === 'delivered'
+  );
+}
+
 /**
  * What a new mail could still tell: the parcels waiting for a first notice,
  * and after a bounce those marked notified, whose recipient heard nothing.
@@ -82,6 +104,8 @@ export function trackMails(
     .sort(newestFirst);
   return mine.map((notification) => {
     const status = statusOf(notification);
+    if (status === 'prepared' && onItsWay(notification))
+      return { notification, status, state: 'sent', resentAt: null };
     if (status === 'sent' && !bounced(notification))
       return { notification, status, state: 'sent', resentAt: null };
     if (status !== 'failed' && !bounced(notification))
@@ -90,9 +114,7 @@ export function trackMails(
       (other) =>
         other.preparedAt > notification.preparedAt &&
         other.parcelIds.some((id) => notification.parcelIds.includes(id)) &&
-        // A reminder to the same address would bounce too: it fixes nothing.
-        (!bounced(notification) ||
-          other.recipients[0] !== notification.recipients[0]),
+        takesOver(notification, other),
     );
     const settled = !notification.parcelIds.some((id) =>
       stillToTell(notification, parcels.get(id)),
@@ -203,7 +225,9 @@ export function lastMailLine(
     case 'opened':
       return t('mails.last.opened');
     case 'prepared':
-      return t('mails.last.prepared');
+      return onItsWay(notification)
+        ? t('mails.status.sending')
+        : t('mails.last.prepared');
   }
 }
 
@@ -223,6 +247,7 @@ function sentLine(
   now: Date,
   t: TranslateFn,
 ): string {
+  if (onItsWay(notification)) return t('mails.status.sending');
   const { deliveryStatus, deliveryAt } = notification;
   if (deliveryStatus && deliveryStatus !== 'bounced' && deliveryAt) {
     return t(`mails.status.${deliveryStatus}`, {
