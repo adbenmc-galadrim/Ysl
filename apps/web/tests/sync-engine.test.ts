@@ -1,3 +1,4 @@
+import { COMPANY_SUSPENDED } from '@repo/contract/auth';
 import 'fake-indexeddb/auto';
 import type { PullOutput } from '@repo/contract/sync';
 import { newId } from '@repo/shared/id';
@@ -172,5 +173,31 @@ describe('createSyncEngine', () => {
       lastError: 'UNAUTHORIZED',
     });
     expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
+  it('says the company is suspended, without a session gone, and clears it after', async () => {
+    const onUnauthorized = vi.fn();
+    const onCompanySuspended = vi.fn();
+    const pull = vi.fn().mockRejectedValueOnce(
+      Object.assign(new Error('suspended'), {
+        data: { code: 'FORBIDDEN', reason: COMPANY_SUSPENDED },
+      }),
+    );
+    pull.mockResolvedValue(empty);
+    const engine = createSyncEngine({
+      db,
+      push: vi.fn().mockResolvedValue({ results: [] }),
+      pull,
+      online: () => true,
+      onUnauthorized,
+      onCompanySuspended,
+    });
+
+    await engine.syncNow();
+    expect(onCompanySuspended).toHaveBeenLastCalledWith(true);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+
+    await engine.syncNow({ force: true });
+    expect(onCompanySuspended).toHaveBeenLastCalledWith(false);
   });
 });

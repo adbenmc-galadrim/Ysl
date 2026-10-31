@@ -1,3 +1,4 @@
+import { clearCompanySuspended } from '#/features/auth/company-suspension';
 import { forgetSession } from '#/features/auth/session-cache';
 import { clearLocalData } from '#/features/db/clear';
 import { db } from '#/features/db/database';
@@ -12,6 +13,7 @@ import { stopSync } from '#/features/sync/sync';
  */
 export async function wipeLocalData(): Promise<void> {
   forgetSession(localStorage);
+  clearCompanySuspended(localStorage);
   forgetPrepared(localStorage);
   resetOfflinePrep();
   await stopSync();

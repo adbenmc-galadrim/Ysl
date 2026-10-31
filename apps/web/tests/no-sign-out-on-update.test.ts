@@ -60,13 +60,15 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+const active = () => Promise.resolve('active' as const);
+
 describe('an update never signs a device out', () => {
   it.each(ROLES_EVER_KEPT)(
     'keeps the session and the data of a device that kept the role %s, offline',
     async (role) => {
       const store = keptBy(role);
       const wipe = vi.fn(() => Promise.resolve());
-      const session = await settleSession({ kind: 'unreachable' }, store, wipe);
+      const session = await settleSession({ kind: 'unreachable' }, store, wipe, active);
       expect(wipe).not.toHaveBeenCalled();
       expect(session?.user.id).toBe('u1');
       expect(store.data.has(SESSION_KEY)).toBe(true);
@@ -81,6 +83,7 @@ describe('an update never signs a device out', () => {
         { kind: 'session', session: sessionOf(role) },
         keptBy('agent'),
         wipe,
+        active,
       );
       expect(wipe).not.toHaveBeenCalled();
     },
@@ -93,7 +96,7 @@ describe('an update never signs a device out', () => {
       const wipe = vi.fn(() => Promise.resolve());
       const lookup = readSessionAnswer(answer);
       expect(lookup).toEqual({ kind: 'unreachable' });
-      await settleSession(lookup, store, wipe);
+      await settleSession(lookup, store, wipe, active);
       expect(wipe).not.toHaveBeenCalled();
       expect(store.data.has(SESSION_KEY)).toBe(true);
     },

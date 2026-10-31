@@ -1,4 +1,5 @@
 import type { Session } from '@repo/auth/client';
+import { markCompanySuspended } from '#/features/auth/company-suspension';
 
 export const SESSION_KEY = 'courrier.session';
 
@@ -83,6 +84,9 @@ export function resolveSession(
   }
 }
 
+/** The server's word on an account that lost its session; `unknown` when it cannot be reached. */
+export type AccountSuspension = 'suspended' | 'active' | 'unknown';
+
 /**
  * A device that kept a session and is now told there is none was signed out
  * from elsewhere: account revoked by an admin, device or sessions closed, or
@@ -90,12 +94,25 @@ export function resolveSession(
  * (§9.1) before showing sign-in. A sign-out from this device forgets the
  * kept session before asking the server, so it is not taken for one; an
  * unreachable server changes nothing.
+ *
+ * Except a suspended company's phone: a session can run out during a long
+ * suspension, and the proofs on the phone exist nowhere else (D8). It asks
+ * first, keeps everything when in doubt, and empties itself on a sure answer.
  */
 export async function settleSession(
   lookup: SessionLookup,
   store: SessionStore,
   wipe: () => Promise<void>,
+  suspensionOf: (userId: string) => Promise<AccountSuspension>,
 ): Promise<Session | null> {
+  const kept = lookup.kind === 'none' ? readCached(store) : null;
+  if (kept) {
+    const suspension = await suspensionOf(kept.user.id);
+    if (suspension !== 'active') {
+      if (suspension === 'suspended') markCompanySuspended(store);
+      return kept;
+    }
+  }
   if (lookup.kind === 'none' && store.getItem(SESSION_KEY) !== null) {
     await wipe();
   }

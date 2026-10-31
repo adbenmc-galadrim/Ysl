@@ -6,6 +6,7 @@ import {
   SESSION_KEY,
   settleSession,
 } from '#/features/auth/session-cache';
+import { isCompanySuspended } from '#/features/auth/company-suspension';
 
 const session = {
   user: {
@@ -26,6 +27,8 @@ function memoryStore(initial: Record<string, string> = {}) {
     removeItem: (key: string) => void data.delete(key),
   };
 }
+
+const active = () => Promise.resolve('active' as const);
 
 describe('resolveSession', () => {
   it('keeps the confirmed session on the device', () => {
@@ -72,7 +75,7 @@ describe('settleSession', () => {
       return Promise.resolve();
     });
 
-    await expect(settleSession({ kind: 'none' }, store, wipe)).resolves.toBe(
+    await expect(settleSession({ kind: 'none' }, store, wipe, active)).resolves.toBe(
       null,
     );
     expect(wipe).toHaveBeenCalledOnce();
@@ -83,10 +86,45 @@ describe('settleSession', () => {
     const wipe = vi.fn(() => Promise.resolve());
 
     await expect(
-      settleSession({ kind: 'unreachable' }, kept(), wipe),
+      settleSession({ kind: 'unreachable' }, kept(), wipe, active),
     ).resolves.toEqual(session);
-    await settleSession({ kind: 'session', session }, kept(), wipe);
-    await settleSession({ kind: 'none' }, memoryStore(), wipe);
+    await settleSession({ kind: 'session', session }, kept(), wipe, active);
+    await settleSession({ kind: 'none' }, memoryStore(), wipe, active);
     expect(wipe).not.toHaveBeenCalled();
+  });
+});
+
+describe('a phone of a suspended company that lost its session', () => {
+  const keptStore = () =>
+    memoryStore({ [SESSION_KEY]: JSON.stringify(session) });
+
+  it('keeps everything, the session too, and remembers why', async () => {
+    const store = keptStore();
+    const wipe = vi.fn(() => Promise.resolve());
+    const answer = await settleSession({ kind: 'none' }, store, wipe, () =>
+      Promise.resolve('suspended'),
+    );
+    expect(wipe).not.toHaveBeenCalled();
+    expect(answer?.user.id).toBe('u1');
+    expect(isCompanySuspended(store)).toBe(true);
+  });
+
+  it('keeps everything when the server cannot say', async () => {
+    const store = keptStore();
+    const wipe = vi.fn(() => Promise.resolve());
+    await settleSession({ kind: 'none' }, store, wipe, () =>
+      Promise.resolve('unknown'),
+    );
+    expect(wipe).not.toHaveBeenCalled();
+    expect(store.getItem(SESSION_KEY)).not.toBeNull();
+  });
+
+  it('empties itself once the account is simply gone: a deleted company', async () => {
+    const store = keptStore();
+    const wipe = vi.fn(() => Promise.resolve());
+    await expect(
+      settleSession({ kind: 'none' }, store, wipe, active),
+    ).resolves.toBeNull();
+    expect(wipe).toHaveBeenCalledOnce();
   });
 });
