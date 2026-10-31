@@ -43,22 +43,21 @@ Un statut par opération, dans l'ordre envoyé :
 | 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                                                         |
 | 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails ») ; écriture hors de ce que le rôle atteint (voir plus bas)                            | `rejected`                                                                                     |
 | 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                                                     |
-| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
+| 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas), colis ou salarié vers un département archivé | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard                                    |
 
-Ces statuts valent par opération. Un compte `platform_admin`, ou `department` rattaché à aucun département, est refusé avant : `sync.push` et `sync.pull` entiers répondent 403.
+Ces statuts valent par opération. Un compte `platform_admin`, de rôle inconnu, ou `department` rattaché à aucun département, est refusé avant : `sync.push` et `sync.pull` entiers répondent 403.
 
 ## Ce que chaque rôle atteint (§2.1 du cahier)
 
 | Rôle | Colis | Annuaire | Remise (`handover`, passage à `remis`, code utilisé, `pickup.verify`) |
 | --- | --- | --- | --- |
-| `admin`, `agent`, rôle nul (jusqu'à YSL-118) | toute l'entreprise | lecture, écriture | oui |
 | `company_admin` | toute l'entreprise | lecture, écriture | non |
 | `shuttle` | toute l'entreprise, jusqu'à YSL-133 (`parcelScope`) | lecture | selon le profil : « Navette = département » (`canHandOver`, relu à chaque écriture) |
 | `department` | les siens | le sien, lecture et écriture | les siens |
 | `platform_admin` | aucun | aucun | non |
 
-Le profil de fonctionnement est la ligne `setting` de clé `operatingProfile`. Le serveur seul l'écrit (`operating.save`) : `sync.push` refuse cette clé, même d'un admin. Il descend à tous les appareils ; sans ligne, l'entreprise garde `DEFAULT_OPERATING_PROFILE`, le comportement d'avant le profil. Une remise faite hors ligne par une navette dont le profil vient de changer est refusée au push (403) et part en « Corriger ».
+Le profil de fonctionnement est la ligne `setting` de clé `operatingProfile`. Le serveur seul l'écrit (`operating.save`) : `sync.push` refuse cette clé, même d'un admin. Il descend à tous les appareils ; sans ligne, l'entreprise garde `DEFAULT_OPERATING_PROFILE`. La conversion (`docs/conversion-multi-entreprises.md`) pose `SMALL_SITE_OPERATING_PROFILE`. Une remise faite hors ligne par une navette dont le profil vient de changer est refusée au push (403) et part en « Corriger ».
 
 Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal, e-mails, remises), ses codes, les réglages et ses modèles ; ni les lots, ni les expéditeurs, ni les alias. Un colis sans département lui reste invisible. En écriture il ne crée pas de colis et n'en donne aucun à un autre département : 403 `sync.op.outOfScope`.
 
