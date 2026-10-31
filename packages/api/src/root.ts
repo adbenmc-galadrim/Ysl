@@ -1,3 +1,4 @@
+import { accountsRouter } from '#features/accounts/router';
 import { accountRouter } from '#features/account/router';
 import { departmentsRouter } from '#features/departments/router';
 import { devicesRouter } from '#features/devices/router';
@@ -15,6 +16,7 @@ import { router } from '#lib/trpc';
 
 export const appRouter = router({
   account: accountRouter,
+  accounts: accountsRouter,
   departments: departmentsRouter,
   devices: devicesRouter,
   directory: directoryRouter,

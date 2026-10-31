@@ -52,6 +52,18 @@ export const fr = {
     'Ce département a encore des comptes rattachés.',
   'departments.error.notDepartmentAccount':
     'Seul un compte département se rattache à un département.',
+  'accounts.error.suspended':
+    'Ce compte est suspendu. Les données de ce téléphone sont gardées.',
+  'accounts.error.notFound': 'Ce compte n’existe pas dans votre entreprise.',
+  'accounts.error.emailTaken':
+    'Cette adresse a déjà un compte ou une invitation en attente.',
+  'accounts.error.lastAdmin':
+    'C’est le dernier admin actif de l’entreprise : nommez-en un autre d’abord.',
+  'accounts.error.adminRole':
+    'Le rôle d’un admin ne se change pas : seuls navette et département s’échangent.',
+  'accounts.error.departmentNotFound': 'Ce département n’existe plus.',
+  'accounts.error.passwordRequired':
+    'Un compte révoqué revient avec un nouveau mot de passe.',
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
   'devices.error.current':
     'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',

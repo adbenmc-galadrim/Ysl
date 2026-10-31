@@ -4,6 +4,8 @@ import { newId } from '@repo/shared/id';
 import { hashPassword } from 'better-auth/crypto';
 import { and, eq } from 'drizzle-orm';
 
+export { verifyPassword } from 'better-auth/crypto';
+
 export const CREDENTIAL_PROVIDER = 'credential';
 
 /** The credential row Better Auth reads at sign-in, written without its admin API. */
