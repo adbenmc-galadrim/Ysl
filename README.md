@@ -237,6 +237,7 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm db:migrate` | Applique les migrations |
 | `pnpm auth:create-user` | Crée un compte, rattaché à son organisation (`platform_admin` : à aucune) |
 | `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
+| `pnpm auth:reset-password` | Change le mot de passe d'un compte, sans fermer ses sessions (`--close-sessions` les ferme et efface ses téléphones) |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
 | `pnpm visual` | Compare les stories à leurs références ; échoue au-dessus de `--max` % (0,6 par défaut) |

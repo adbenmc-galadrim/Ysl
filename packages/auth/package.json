@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./password": "./src/password.ts"
   },
   "imports": {
     "#*": [
@@ -20,6 +21,7 @@
     "auth:generate": "better-auth generate --config src/auth.ts --output ../db/src/schema/auth.ts --yes",
     "auth:create-user": "tsx src/scripts/create-user.ts",
     "auth:attach-organization": "tsx src/scripts/attach-organization.ts",
+    "auth:reset-password": "tsx src/scripts/reset-password.ts",
     "test": "vitest run"
   },
   "dependencies": {
