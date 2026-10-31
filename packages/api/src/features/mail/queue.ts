@@ -1,9 +1,14 @@
 import { cutoff, RETENTION } from '@repo/contract/retention';
 import type { AnyDb } from '@repo/db';
-import { emailOutbox } from '@repo/db/schema';
+import { emailOutbox, notification } from '@repo/db/schema';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { logger } from '@repo/shared/logger';
 import { and, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import type { EmailMessage, Mailer, SendResult } from '#features/mail/mailer';
 import { senderOf } from '#features/mail/sender';
+import { parcelsToTell, settleFailed, settleSent } from '#features/mail/settle';
+
+const t = createTranslator(DEFAULT_LOCALE);
 
 /** Waits after the 1st, 2nd… failed attempt; one attempt more, then `failed`. */
 export const RETRY_DELAYS_MS = [
@@ -24,6 +29,8 @@ export const BLOCKED_DELAY_MS = 5 * 60_000;
 export type EnqueueEmail = EmailMessage & {
   organizationId?: string | null;
   notificationId?: string | null;
+  pickupCodeId?: string | null;
+  replacedCodeId?: string | null;
 };
 
 type OutboxRow = typeof emailOutbox.$inferSelect;
@@ -44,11 +51,17 @@ export async function enqueueEmail(
       subject: message.subject,
       textBody: message.text,
       htmlBody: message.html ?? null,
+      replyTo: message.replyTo ?? null,
+      attachments: message.attachments ?? null,
+      pickupCodeId: message.pickupCodeId ?? null,
+      replacedCodeId: message.replacedCodeId ?? null,
     })
     .onConflictDoNothing({ target: emailOutbox.idempotencyKey })
     .returning({ id: emailOutbox.id });
   return { created: rows.length > 0 };
 }
+
+const SUPERSEDED = 'superseded';
 
 async function claimOne(db: AnyDb, now: Date): Promise<OutboxRow | undefined> {
   const due = sql`(
@@ -73,6 +86,31 @@ async function claimOne(db: AnyDb, now: Date): Promise<OutboxRow | undefined> {
   return row;
 }
 
+async function failNotification(
+  tx: AnyDb,
+  row: Pick<OutboxRow, 'notificationId' | 'pickupCodeId' | 'replacedCodeId'>,
+  reason: string,
+  now: Date,
+): Promise<void> {
+  if (!row.notificationId) return;
+  await settleFailed(
+    tx,
+    row.notificationId,
+    t(reason === SUPERSEDED ? 'mail.server.superseded' : 'mail.server.failed'),
+    row,
+    now,
+  );
+}
+
+/** Once a row is over, the code it quotes stays in nobody's table in clear. */
+const ERASED = {
+  textBody: '',
+  htmlBody: null,
+  replyTo: null,
+  attachments: null,
+};
+
+/** Each outcome moves the mail's notification with the row: both or neither. */
 async function record(
   db: AnyDb,
   row: OutboxRow,
@@ -85,16 +123,23 @@ async function record(
     eq(emailOutbox.attempts, row.attempts),
   );
   if (result.status === 'sent') {
-    await db
-      .update(emailOutbox)
-      .set({
-        status: 'sent',
-        providerMessageId: result.providerMessageId,
-        lastError: null,
-        leaseUntil: null,
-        finishedAt: now,
-      })
-      .where(mine);
+    await db.transaction(async (tx) => {
+      const moved = await tx
+        .update(emailOutbox)
+        .set({
+          ...ERASED,
+          status: 'sent',
+          providerMessageId: result.providerMessageId,
+          lastError: null,
+          leaseUntil: null,
+          finishedAt: now,
+        })
+        .where(mine)
+        .returning({ id: emailOutbox.id });
+      if (moved.length > 0 && row.notificationId) {
+        await settleSent(tx, row.notificationId, now);
+      }
+    });
     return 'sent';
   }
   if (result.status === 'blocked') {
@@ -111,15 +156,20 @@ async function record(
     return 'blocked';
   }
   if (result.status === 'rejected' || row.attempts >= MAX_ATTEMPTS) {
-    await db
-      .update(emailOutbox)
-      .set({
-        status: 'failed',
-        lastError: result.reason,
-        leaseUntil: null,
-        finishedAt: now,
-      })
-      .where(mine);
+    await db.transaction(async (tx) => {
+      const moved = await tx
+        .update(emailOutbox)
+        .set({
+          ...ERASED,
+          status: 'failed',
+          lastError: result.reason,
+          leaseUntil: null,
+          finishedAt: now,
+        })
+        .where(mine)
+        .returning({ id: emailOutbox.id });
+      if (moved.length > 0) await failNotification(tx, row, result.reason, now);
+    });
     return 'failed';
   }
   const delay = Math.max(
@@ -140,21 +190,61 @@ async function record(
 
 /** Last attempts interrupted by a crash: nothing will claim them any more. */
 async function failAbandoned(db: AnyDb, now: Date): Promise<void> {
-  await db
-    .update(emailOutbox)
-    .set({
-      status: 'failed',
-      lastError: 'interrupted during the last attempt',
-      leaseUntil: null,
-      finishedAt: now,
-    })
-    .where(
-      and(
-        eq(emailOutbox.status, 'sending'),
-        lt(emailOutbox.leaseUntil, now),
-        sql`${emailOutbox.attempts} >= ${MAX_ATTEMPTS}`,
-      ),
-    );
+  const reason = 'interrupted during the last attempt';
+  await db.transaction(async (tx) => {
+    const rows = await tx
+      .update(emailOutbox)
+      .set({
+        ...ERASED,
+        status: 'failed',
+        lastError: reason,
+        leaseUntil: null,
+        finishedAt: now,
+      })
+      .where(
+        and(
+          eq(emailOutbox.status, 'sending'),
+          lt(emailOutbox.leaseUntil, now),
+          sql`${emailOutbox.attempts} >= ${MAX_ATTEMPTS}`,
+        ),
+      )
+      .returning();
+    for (const row of rows) await failNotification(tx, row, reason, now);
+  });
+}
+
+/** The phone told these parcels while the mail waited: it does not leave as well. */
+async function superseded(db: AnyDb, row: OutboxRow): Promise<boolean> {
+  if (!row.notificationId) return false;
+  const [request] = await db
+    .select()
+    .from(notification)
+    .where(eq(notification.id, row.notificationId));
+  if (!request || request.channel !== 'server') return false;
+  if (request.status !== 'prepared') return true;
+  const { parcels } = await parcelsToTell(db, request);
+  return parcels.length === 0;
+}
+
+/**
+ * A company's domain refused after its check (DNS gone, sender withdrawn): the
+ * mail leaves from the platform's address rather than not at all, and one
+ * company's refusal does not stop the queue. A refused account fails again here.
+ */
+async function sendFrom(
+  mailer: Mailer,
+  message: EmailMessage,
+  from: EmailMessage['from'],
+): Promise<SendResult> {
+  const result = await mailer.send({ ...message, from });
+  if (
+    !from?.email ||
+    (result.status !== 'rejected' && result.status !== 'blocked')
+  ) {
+    return result;
+  }
+  logger.warn({ reason: result.reason }, 'company sender refused');
+  return mailer.send({ ...message, from: { name: from.name } });
 }
 
 /**
@@ -205,18 +295,24 @@ export async function drainEmailOutbox(
   for (let index = 0; index < limit && !signal?.aborted; index += 1) {
     const row = await claimOne(db, now());
     if (!row) break;
-    const result = await senderOf(db, row.organizationId)
-      .then((from) =>
-        mailer.send({
-          idempotencyKey: row.idempotencyKey,
-          to: row.recipient,
-          toName: row.recipientName,
-          subject: row.subject,
-          text: row.textBody,
-          html: row.htmlBody,
-          from,
-        }),
-      )
+    const result = await superseded(db, row)
+      .then(async (over): Promise<SendResult> => {
+        if (over) return { status: 'rejected', reason: SUPERSEDED };
+        return sendFrom(
+          mailer,
+          {
+            idempotencyKey: row.idempotencyKey,
+            to: row.recipient,
+            toName: row.recipientName,
+            subject: row.subject,
+            text: row.textBody,
+            html: row.htmlBody,
+            replyTo: row.replyTo,
+            attachments: row.attachments,
+          },
+          await senderOf(db, row.organizationId),
+        );
+      })
       .catch((error: unknown): SendResult => ({
         status: 'retry',
         reason: error instanceof Error ? error.name : 'unknown error',

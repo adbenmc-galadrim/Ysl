@@ -5,7 +5,7 @@ import {
   appRouter,
   brevoMailer,
   createTRPCContext,
-  drainEmailOutbox,
+  mailRound,
   receiveMailEvent,
   runPurge,
 } from '@repo/api';
@@ -143,7 +143,7 @@ function startMailerJob(
   });
   return startMailJob({
     intervalSeconds: env.MAIL_POLL_SECONDS,
-    run: (signal) => drainEmailOutbox(db, mailer, { signal }),
+    run: mailRound(db, mailer),
   });
 }
 

@@ -129,6 +129,24 @@ describe('a person who changes department', () => {
     expect((await codeOf(there)).deletedAt).toBeNull();
   });
 
+  it('lets a valid code win over an expired one at the new department', async () => {
+    const person = await addPerson(db, finance);
+    const moved = await addCode(person, finance);
+    const there = await addCode(person, studio);
+    await db
+      .update(schema.pickupCode)
+      .set({ expiresAt: new Date('2020-01-01T00:00:00Z') })
+      .where(eq(schema.pickupCode.id, there));
+
+    await move(person, studio);
+
+    expect((await codeOf(there)).deletedAt).not.toBeNull();
+    expect(await codeOf(moved)).toMatchObject({
+      deletedAt: null,
+      departmentId: studio,
+    });
+  });
+
   it('brings the parcel to the new department and starts the old one over', async () => {
     const before = await pull(any, accessOf('department', finance), {
       cursor: null,

@@ -57,6 +57,7 @@ const IMMUTABLE_COLUMNS = new Set([
   'organizationId',
   'serverXid',
   'createdAt',
+  'channel',
 ]);
 
 type Writer = Access;
@@ -234,13 +235,26 @@ async function checkNotification(
   op: SyncOp,
   { organizationId, userId }: Writer,
 ): Promise<void> {
-  if (
-    op.type === 'upsert' &&
-    !notificationRow.safeParse({ ...op.patch, id: op.entityId }).success
-  ) {
+  const parsed =
+    op.type === 'upsert'
+      ? notificationRow.safeParse({ ...op.patch, id: op.entityId })
+      : null;
+  if (parsed && !parsed.success) {
     throw new SyncRejected(
       SYNC_STATUS.badRequest,
       `notification ${op.entityId} does not match the contract`,
+    );
+  }
+  // A request says what to send and no more: a device never declares it sent.
+  if (
+    parsed?.data?.channel === 'server' &&
+    (parsed.data.status !== 'prepared' ||
+      parsed.data.type === 'resume_service' ||
+      parsed.data.relayName)
+  ) {
+    throw new SyncRejected(
+      SYNC_STATUS.badRequest,
+      `notification ${op.entityId} is not a request the server can send`,
     );
   }
   const [row] = await tx
@@ -278,6 +292,25 @@ async function checkNotification(
       'sync.op.notificationStale',
     );
   }
+}
+
+/** Once written, a request is the server's: an old copy on a device changes nothing, and is no error. */
+async function isServerMail(
+  tx: AnyDb,
+  op: SyncOp,
+  organizationId: string,
+): Promise<boolean> {
+  if (op.entity !== 'notification') return false;
+  const [row] = await tx
+    .select({ channel: notification.channel })
+    .from(notification)
+    .where(
+      and(
+        eq(notification.id, op.entityId),
+        eq(notification.organizationId, organizationId),
+      ),
+    );
+  return row?.channel === 'server';
 }
 
 async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
@@ -441,6 +474,7 @@ async function applyOne(
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
         await checkReach(tx, op, writer);
+        if (await isServerMail(tx, op, writer.organizationId)) return null;
         if (op.entity === 'setting') await checkSetting(tx, op, writer);
         if (op.entity === 'email_template') await checkTemplate(tx, op, writer);
         if (op.entity === 'notification') {

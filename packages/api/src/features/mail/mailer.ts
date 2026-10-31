@@ -1,4 +1,5 @@
 import type { DnsRecord } from '@repo/contract/mail';
+import type { EmailAttachment } from '@repo/db/schema';
 
 export type EmailMessage = {
   /** Stable across attempts: the provider may use it to drop a repeat. */
@@ -8,6 +9,8 @@ export type EmailMessage = {
   subject: string;
   text: string;
   html?: string | null;
+  replyTo?: string | null;
+  attachments?: EmailAttachment[] | null;
   /** Overrides the mailer's own sender, field by field. */
   from?: { email?: string; name?: string };
 };

@@ -16,7 +16,18 @@ const record = (host_name: string, value: string, status: boolean) => ({
  */
 export async function startFakeBrevo() {
   const domains = new Map<string, FakeDomain>();
-  const sent: { sender: { email: string; name: string } }[] = [];
+  const sent: {
+    sender: { email: string; name: string };
+    to: { email: string }[];
+    subject: string;
+    textContent: string;
+    htmlContent?: string;
+    replyTo?: { email: string };
+    attachment?: { name: string; content: string }[];
+    headers: { IdempotencyKey: string };
+  }[] = [];
+  /** Senders Brevo turns down, as after a domain's DNS was withdrawn. */
+  const refusedSenders = new Set<string>();
   const server: Server = createServer((req, res) => {
     let raw = '';
     req.on('data', (chunk: Buffer) => (raw += chunk.toString()));
@@ -31,7 +42,12 @@ export async function startFakeBrevo() {
       }
       const url = req.url ?? '';
       if (url === '/v3/smtp/email') {
-        sent.push(JSON.parse(raw) as (typeof sent)[number]);
+        const message = JSON.parse(raw) as (typeof sent)[number];
+        if (refusedSenders.has(message.sender.email)) {
+          reply(403, { code: 'permission_denied', message: 'sender' });
+          return;
+        }
+        sent.push(message);
         reply(201, { messageId: `<${sent.length}@relay>` });
         return;
       }
@@ -95,6 +111,7 @@ export async function startFakeBrevo() {
     fetch,
     domains,
     sent,
+    refusedSenders,
     publish: (name: string) => {
       const domain = domains.get(name);
       if (domain) domain.published = true;

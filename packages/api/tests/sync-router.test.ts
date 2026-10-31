@@ -34,6 +34,11 @@ describe('memberProcedure', () => {
   it('lets a member pull its mailroom', async () => {
     await expect(
       callerFor(memberSession(AGENT_ID)).sync.pull({ cursor: null }),
-    ).resolves.toMatchObject({ reset: false, next: null, rows: [] });
+    ).resolves.toMatchObject({
+      reset: false,
+      next: null,
+      rows: [],
+      serverMail: false,
+    });
   });
 });

@@ -5,6 +5,7 @@ import {
   pushOutput,
 } from '@repo/contract/sync';
 import { db } from '@repo/db';
+import { serverMailEnabled } from '#features/mail/config';
 import { router, scopedProcedure } from '#lib/trpc';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
@@ -13,7 +14,10 @@ export const syncRouter = router({
   pull: scopedProcedure
     .input(pullInput)
     .output(pullOutput)
-    .query(({ ctx, input }) => pull(db, ctx.access, input)),
+    .query(async ({ ctx, input }) => ({
+      ...(await pull(db, ctx.access, input)),
+      serverMail: serverMailEnabled(),
+    })),
   push: scopedProcedure
     .input(pushInput)
     .output(pushOutput)

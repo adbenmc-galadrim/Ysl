@@ -898,6 +898,76 @@ describe('sync.push', () => {
       ...overrides,
     });
 
+    describe('a request for the server', () => {
+      const parcelFor = async () => {
+        const [row] = await db
+          .select({ id: schema.parcel.id })
+          .from(schema.parcel)
+          .limit(1);
+        return row!.id;
+      };
+
+      it('refuses one a device declares sent', async () => {
+        const { results } = await push(sync, writer, {
+          ops: [
+            op(
+              'notification',
+              prepared(await parcelFor(), {
+                channel: 'server',
+                status: 'sent',
+                sentAt: NOW,
+              }),
+            ),
+          ],
+        });
+        expect(results[0]?.status).toBe(400);
+      });
+
+      it('keeps what the server wrote against an old copy of the row', async () => {
+        const mail = op(
+          'notification',
+          prepared(await parcelFor(), { channel: 'server' }),
+        );
+        await push(sync, writer, { ops: [mail] });
+        await db
+          .update(schema.notification)
+          .set({ status: 'sent', sentAt: NOW })
+          .where(eq(schema.notification.id, mail.entityId));
+
+        const { results } = await push(sync, writer, {
+          ops: [op('notification', {
+              ...mail.patch,
+              id: mail.entityId,
+              status: 'failed',
+            })],
+        });
+
+        expect(results[0]?.status).toBe(200);
+        const [row] = await db
+          .select()
+          .from(schema.notification)
+          .where(eq(schema.notification.id, mail.entityId));
+        expect(row?.status).toBe('sent');
+      });
+
+      it('reads an iPhone of before as the phone, and no copy changes the channel', async () => {
+        const mail = op('notification', prepared(await parcelFor()));
+        await push(sync, writer, { ops: [mail] });
+        await push(sync, writer, {
+          ops: [op('notification', {
+              ...mail.patch,
+              id: mail.entityId,
+              channel: 'server',
+            })],
+        });
+        const [row] = await db
+          .select()
+          .from(schema.notification)
+          .where(eq(schema.notification.id, mail.entityId));
+        expect(row?.channel).toBe('phone');
+      });
+    });
+
     it('lets only its owner write a template', async () => {
       const mine = op('email_template', template());
       const forged = op('email_template', template({ ownerId: 'agent-3' }));
