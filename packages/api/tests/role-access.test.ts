@@ -1,3 +1,4 @@
+import { DEFAULT_OPERATING_PROFILE } from '@repo/contract/operating-profile';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
@@ -61,6 +62,9 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
     caller.agents.setActive({ userId: 'x', active: false }),
   'agents.resetPassword': (caller) =>
     caller.agents.resetPassword({ userId: 'x', password: 'motdepasse-1' }),
+  'operating.get': (caller) => caller.operating.get(),
+  'operating.save': (caller) =>
+    caller.operating.save({ profile: DEFAULT_OPERATING_PROFILE }),
   'departments.list': (caller) => caller.departments.list(),
   'departments.create': (caller) =>
     caller.departments.create({ name: 'Finance' }),
@@ -96,6 +100,8 @@ const ADMIN = [
   'departments.updatePickup',
   'departments.archive',
   'departments.attachAccount',
+  'operating.get',
+  'operating.save',
 ];
 const AGENTS = [
   'agents.list',
