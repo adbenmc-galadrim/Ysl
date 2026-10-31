@@ -32,6 +32,30 @@ export async function readOperatingProfile(
   return row ? parseOperatingProfile(row.value) : DEFAULT_OPERATING_PROFILE;
 }
 
+/**
+ * Whether the company runs tours: only if its profile says so, like the app
+ * (`goesOnTour`). Read raw: `parseOperatingProfile` makes a default of what it
+ * cannot read, and the default has no shuttle acting as department.
+ */
+export async function goesOnTour(
+  db: AnyDb,
+  organizationId: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ value: setting.value })
+    .from(setting)
+    .where(
+      and(
+        eq(setting.organizationId, organizationId),
+        eq(setting.key, OPERATING_PROFILE_KEY),
+        isNull(setting.deletedAt),
+      ),
+    );
+  const value = row?.value as
+    { shuttleActsAsDepartment?: unknown } | null | undefined;
+  return value?.shuttleActsAsDepartment === false;
+}
+
 /** Only the shuttle's answer depends on the profile: nobody else pays for the read. */
 export async function mayHandOver(
   db: AnyDb,

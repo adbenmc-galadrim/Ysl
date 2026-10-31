@@ -91,9 +91,15 @@ async function pageOf(
 }
 
 function withoutServerColumns(row: Row): PullChange['row'] {
-  const { organizationId: _organizationId, scopeXid: _scopeXid, ...rest } = row;
+  const {
+    organizationId: _organizationId,
+    scopeXid: _scopeXid,
+    tourShuttleId: _tourShuttleId,
+    ...rest
+  } = row;
   void _organizationId;
   void _scopeXid;
+  void _tourShuttleId;
   return rest;
 }
 

@@ -97,6 +97,8 @@ export const parcel = pgTable(
     }),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
     receivedBy: text('received_by').notNull(),
+    /** The shuttle that took this parcel over; without one, its tour is that of whoever validated it (§3.7.9). Never sent to a device. */
+    tourShuttleId: text('tour_shuttle_id'),
     validatedAt: timestamp('validated_at', { withTimezone: true }),
     notifiedAt: timestamp('notified_at', { withTimezone: true }),
     lastNotifiedAt: timestamp('last_notified_at', { withTimezone: true }),

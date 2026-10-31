@@ -105,6 +105,7 @@ export const fr = {
   'sync.op.badRequest': 'Données invalides, à corriger sur l’appareil.',
   'sync.op.forbidden': 'Cet élément appartient à un autre service courrier.',
   'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
+  'sync.op.offTour': 'Ce colis est dans la tournée d’une autre navette.',
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
   'sync.op.departmentArchived':
     'Ce département est archivé : le colis ou le salarié ne peut pas y retourner.',

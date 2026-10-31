@@ -11,6 +11,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import type { Access } from '#lib/access';
+import { goesOnTour } from '#features/operating/service';
 import { membershipOf } from '#lib/organization';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -117,7 +118,7 @@ export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
 });
 
 /** The data of the company as this role reaches it (`parcelScope`); a department account attached nowhere has none. */
-export const scopedProcedure = memberProcedure.use(({ ctx, next }) => {
+export const scopedProcedure = memberProcedure.use(async ({ ctx, next }) => {
   const role = roleOf(ctx.session);
   if (role === 'department' && !ctx.departmentId) {
     throw new TRPCError({
@@ -130,6 +131,7 @@ export const scopedProcedure = memberProcedure.use(({ ctx, next }) => {
     userId: ctx.session.user.id,
     role,
     departmentId: ctx.departmentId,
+    onTour: role === 'shuttle' && (await goesOnTour(db, ctx.organizationId)),
   };
   return next({ ctx: { ...ctx, access } });
 });

@@ -17,7 +17,7 @@ import {
 import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import type { PullPage } from '@repo/contract/sync';
 import { and, eq, gte, lt, or, sql, type SQL } from 'drizzle-orm';
-import type { ParcelScope } from '#lib/access';
+import { parcelInScope, type ParcelScope } from '#lib/access';
 import type { SyncTable } from '#features/sync/tables';
 
 /**
@@ -28,8 +28,12 @@ import type { SyncTable } from '#features/sync/tables';
  */
 export function readerGeneration(generation: string, scope: ParcelScope) {
   if (scope.kind === 'company') return generation;
+  const reader =
+    scope.kind === 'department'
+      ? scope.departmentId
+      : `tour:${scope.shuttleId}`;
   const hex = createHash('sha256')
-    .update(`${generation}:${scope.departmentId}`)
+    .update(`${generation}:${reader}`)
     .digest('hex');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
@@ -60,29 +64,41 @@ export function visibleRows(
   inRange: SQL | undefined,
 ): SQL | undefined {
   if (scope.kind === 'company') return inRange;
-  const { departmentId } = scope;
-  if (HIDDEN_FROM_DEPARTMENT.has(table)) return sql`false`;
+  const inScope = parcelInScope(scope);
+  if (scope.kind === 'department' && HIDDEN_FROM_DEPARTMENT.has(table)) {
+    return sql`false`;
+  }
 
   const parcelsWhere = (link: SQL, ranged: boolean) => sql`exists (
     select 1 from ${parcel}
      where ${parcel.organizationId} = ${organizationId}
-       and ${parcel.departmentId} = ${departmentId}
+       and ${inScope}
        and ${link}
        ${ranged ? sql`and ${and(gte(parcel.serverXid, page.from), lt(parcel.serverXid, page.bound))}` : sql``}
   )`;
   const hanging = (link: SQL) =>
     and(parcelsWhere(link, false), or(inRange, parcelsWhere(link, true)));
 
-  if (table === parcel) return and(eq(parcel.departmentId, departmentId), inRange);
-  if (table === directoryPerson) {
-    return and(eq(directoryPerson.departmentId, departmentId), inRange);
-  }
-  if (table === pickupCode) {
-    return and(eq(pickupCode.departmentId, departmentId), inRange);
-  }
-  if (table === department) return and(eq(department.id, departmentId), inRange);
-  if (table === contact) {
-    return hanging(sql`${parcel.contactId} = ${contact.id}`);
+  if (table === parcel) return and(inScope, inRange);
+  if (scope.kind === 'department') {
+    const { departmentId } = scope;
+    if (table === directoryPerson) {
+      return and(eq(directoryPerson.departmentId, departmentId), inRange);
+    }
+    if (table === pickupCode) {
+      return and(eq(pickupCode.departmentId, departmentId), inRange);
+    }
+    if (table === department) {
+      return and(eq(department.id, departmentId), inRange);
+    }
+    if (table === contact) {
+      return hanging(sql`${parcel.contactId} = ${contact.id}`);
+    }
+  } else if (table === pickupCode) {
+    // A shuttle reads the whole directory and every contact, not the codes of people it carries nothing for.
+    return hanging(
+      sql`(${parcel.personId} = ${pickupCode.personId} or ${parcel.contactId} = ${pickupCode.contactId})`,
+    );
   }
   if (table === notification) {
     return hanging(sql`${parcel.id} = any(${notification.parcelIds})`);
