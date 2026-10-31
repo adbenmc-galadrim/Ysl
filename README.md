@@ -41,7 +41,8 @@ l'app), `company_admin` (admin entreprise), `department` (département, rattach�
 `departments.attachAccount`) et `shuttle` (navette). `admin` et `agent` restent les
 rôles des comptes existants, jusqu'à la conversion : `admin` vaut admin entreprise,
 `agent` garde tous les colis de son organisation. Un compte `department` n'atteint ni
-la synchronisation ni les exports tant qu'ils ne sont pas filtrés par département.
+la synchronisation (lecture et écriture), ni les codes de retrait, ni les exports tant
+qu'ils ne sont pas filtrés par département.
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
 Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription

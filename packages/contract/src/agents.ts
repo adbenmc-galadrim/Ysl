@@ -20,7 +20,7 @@ export const createAgentInput = z.object({
   name: z.string().trim().min(1),
   email: z.email(),
   password,
-  // Never `platform_admin`: a company admin must not be able to hand it out.
+  // Never `platform_admin`: this route must not be able to hand it out.
   role: z.enum(['agent', 'admin']).default(DEFAULT_USER_ROLE),
 });
 

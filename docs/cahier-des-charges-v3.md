@@ -102,7 +102,7 @@ Les seuils de lecture seront recalés après le spike S3 (§10), qui mesurera le
 | Annuaire | Aucun | Tous les départements, lecture et écriture | Le sien, lecture et écriture | Tout, en lecture |
 | Comptes | Invite le premier admin d'une entreprise | Crée par invitation, rattache, suspend et révoque navettes et comptes département | Non | Non |
 | Profil de fonctionnement | Le choisit à la création | Le modifie librement (D30) | Non | Non |
-| Réglages de l'entreprise (D28) | Non | Oui | Lieu, horaires, consignes du département (provisoire, §3.7.9) | Non |
+| Réglages de l'entreprise (D28) | Non | Oui | Lieu, horaires, consignes du département (§3.7.9) | Non |
 | Dépôt | Non | Non | Confirme le nombre, déclare un écart | Dépose |
 | Colis « À régulariser » (D25) | Non | Voit et réaffecte | Déclare | Voit |
 | Remise au salarié | Non | Non | Oui, avec un code de son département seulement | Si elle fait office de département |
@@ -395,7 +395,7 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là | YSL-131, YSL-135 |
 | L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Le serveur tire le code à l'envoi et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
-| Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise | YSL-116 |
+| Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise (confirmé) | YSL-116 |
 | Durées de conservation d'une entreprise neuve (D28) | Celles du §9.2 par défaut | YSL-126 |
 | Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
