@@ -324,7 +324,12 @@ export async function saveParcelEdit(
   db: CourrierDatabase,
   parcelId: string,
   edit: ParcelEdit,
-  { agentId, now = new Date(), seesTracking = true, learns = true }: EditOptions,
+  {
+    agentId,
+    now = new Date(),
+    seesTracking = true,
+    learns = true,
+  }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
   const errors = validateEdit(edit, parcel);
@@ -360,9 +365,10 @@ export async function saveParcelEdit(
   const renamed =
     senderName !== null &&
     normalizeName(senderName) !== normalizeName(parcel.senderName ?? '');
-  const learned = renamed && learns
-    ? await correctedSender(db, parcelId, senderName, now)
-    : null;
+  const learned =
+    renamed && learns
+      ? await correctedSender(db, parcelId, senderName, now)
+      : null;
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
@@ -450,7 +456,17 @@ export async function saveParcelEdit(
       : parcel.status === 'recu' && !complete && confirmsIdentity(fields)
         ? 'a_completer'
         : undefined;
-  const row = to ? { ...edited, ...statusPatch(edited, to, options) } : edited;
+  // Nobody told, nothing left to tell them: back through « Reçu », one write at a time.
+  const offTour =
+    parcel.status === 'en_route' &&
+    !parcel.lastNotifiedAt &&
+    !complete &&
+    confirmsIdentity(fields);
+  const row = to
+    ? { ...edited, ...statusPatch(edited, to, options) }
+    : offTour
+      ? { ...edited, ...statusPatch(edited, 'recu', options) }
+      : edited;
   const upserts: Upsert[] = [
     ...(learned?.upserts ?? []),
     ...(contact ? [{ entity: 'contact' as const, row: contact }] : []),
@@ -467,6 +483,24 @@ export async function saveParcelEdit(
         ]
       : []),
     ...(to === 'recu' && goesTo ? onTourWrites(row, options) : []),
+    ...(offTour
+      ? [
+          parcelEvent(
+            parcelId,
+            { type: 'parcel.status', from: 'en_route', to: 'recu' },
+            options,
+          ),
+          {
+            entity: 'parcel' as const,
+            row: { ...row, ...statusPatch(row, 'a_completer', options) },
+          },
+          parcelEvent(
+            parcelId,
+            { type: 'parcel.status', from: 'recu', to: 'a_completer' },
+            options,
+          ),
+        ]
+      : []),
   ];
   await commitLocal(db, { upserts }, { now });
   return { kind: 'saved', fields };

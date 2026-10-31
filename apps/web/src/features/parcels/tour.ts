@@ -1,3 +1,4 @@
+import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeName } from '@repo/shared/text';
 import type { Upsert } from '#/features/db/commit';
@@ -10,16 +11,22 @@ import type {
   LocalParcel,
 } from '#/features/db/schema';
 import { parcelEvent } from '#/features/parcels/events';
-import { readKeptProfile } from '#/features/settings/operating-profile';
 
 /**
  * Whether a parcel received leaves on a tour (§3.7.6). Only for a profile that
  * says so: a shuttle acting as department skips it (§8.3), and a device without
- * the profile keeps the path it always had.
+ * the profile, or with one it cannot read, keeps the path it always had. Read
+ * raw: `parseOperatingProfile` makes a default of what it cannot read, and the
+ * default has no shuttle acting as department.
  */
 export async function goesOnTour(db: CourrierDatabase): Promise<boolean> {
-  const profile = await readKeptProfile(db);
-  return profile !== null && !profile.shuttleActsAsDepartment;
+  const rows = await db.setting
+    .where('key')
+    .equals(OPERATING_PROFILE_KEY)
+    .toArray();
+  const value = rows.find((row) => !row.deletedAt)?.value as
+    { shuttleActsAsDepartment?: unknown } | null | undefined;
+  return value?.shuttleActsAsDepartment === false;
 }
 
 type DepartmentSources = {

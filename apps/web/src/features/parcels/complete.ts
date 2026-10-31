@@ -132,7 +132,7 @@ export async function assignDepartment(
   const leaves =
     parcel.status === 'a_completer' &&
     isComplete(edited) &&
-    (parcel.type === 'sans_suivi' || (await trackingVouched(db, edited)));
+    (await trackingVouched(db, edited));
   if (!leaves) {
     await commitLocal(
       db,

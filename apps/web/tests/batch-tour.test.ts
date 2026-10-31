@@ -25,6 +25,7 @@ import {
   assignRecipient,
   completeTracking,
 } from '#/features/parcels/complete';
+import { editOf, saveParcelEdit } from '#/features/parcels/edit';
 import { reviewOf } from '#/features/review/model';
 import {
   NOW,
@@ -199,6 +200,23 @@ describe('a batch saved with a tour', () => {
   });
 });
 
+describe('a profile this device cannot read', () => {
+  it('keeps the parcel received', async () => {
+    await db.setting.put({
+      id: 'operating-1',
+      key: OPERATING_PROFILE_KEY,
+      value: { shuttleActsAsDepartment: 'plus tard' },
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      updatedBy: 'admin-1',
+    });
+    expect((await saved({ recipient: toCard('in-finance') })).status).toBe(
+      'recu',
+    );
+  });
+});
+
 describe('the review with a tour', () => {
   const draft = (extra: Partial<DraftParcel>): DraftParcel => ({
     ...typedDraft('b', TRACKED, NOW),
@@ -308,6 +326,24 @@ describe('completing a parcel with a tour', () => {
     ).toBe('en_route');
   });
 
+  it('comes off its tour when the form takes its recipient away', async () => {
+    const parcel = parcelRow({
+      status: 'en_route',
+      personId: 'in-finance',
+      departmentId: 'finance',
+      ...TRACKED,
+    });
+    await db.parcel.put(parcel);
+    await saveParcelEdit(
+      db,
+      parcel.id,
+      { ...editOf(parcel), recipient: { kind: 'none' } },
+      options,
+    );
+    expect(await statuses()).toEqual(['recu', 'a_completer']);
+    expect((await db.parcel.get(parcel.id))?.status).toBe('a_completer');
+  });
+
   it('is unchanged for the small site', async () => {
     await useProfile(SMALL_SITE_OPERATING_PROFILE);
     const parcel = parcelRow({ status: 'a_completer', ...TRACKED });
@@ -319,9 +355,6 @@ describe('completing a parcel with a tour', () => {
       { ...options, seesTracking: true },
     );
     expect(await statuses()).toEqual(['recu']);
-    expect(await db.parcel.get(parcel.id)).not.toHaveProperty(
-      'departmentId',
-      'finance',
-    );
+    expect((await db.parcel.get(parcel.id))?.status).toBe('recu');
   });
 });
