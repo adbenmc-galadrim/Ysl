@@ -211,6 +211,13 @@
       "when": 1793465466480,
       "tag": "0029_reglages_entreprise",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793468542707,
+      "tag": "0030_invitation_comptes",
+      "breakpoints": true
     }
   ]
 }
