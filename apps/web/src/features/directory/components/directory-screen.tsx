@@ -1,3 +1,5 @@
+import { toUserRole } from '@repo/contract/auth';
+import type { MoveRequest } from '@repo/contract/directory';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   AnnuaireDesktop,
@@ -12,28 +14,30 @@ import {
   SectionHeader,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import {
   type ChangeEvent,
   type ReactNode,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
-import { db } from '#/features/db/database';
 import type {
   LocalContact,
   LocalDepartment,
   LocalDirectoryPerson,
-  LocalParcel,
 } from '#/features/db/schema';
 import { contactEntries } from '#/features/directory/contacts';
 import { ContactSheet } from '#/features/directory/components/contact-sheet';
+import { DepartmentDirectory } from '#/features/directory/components/department-directory';
 import { DirectoryImport } from '#/features/directory/components/directory-import';
+import {
+  type Directory,
+  useDirectory,
+} from '#/features/directory/components/use-directory';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { usePersonForm } from '#/features/directory/components/person-form';
 import { useMove } from '#/features/directory/components/use-move';
+import { useMoveRequests } from '#/features/directory/components/use-move-requests';
 import {
   ALL_DEPARTMENTS,
   departmentLabel,
@@ -44,20 +48,16 @@ import {
   listed,
   moveEffectLines,
   NO_DEPARTMENT,
-  openParcelsByPerson,
+  sameAddressElsewhere,
 } from '#/features/directory/people';
 import { initialsOf } from '#/features/settings/initials';
-import { useMediaQuery } from '#/lib/use-media-query';
+import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const NO_PEOPLE: LocalDirectoryPerson[] = [];
-const NO_CONTACTS: LocalContact[] = [];
-const NO_DEPARTMENTS: LocalDepartment[] = [];
-const NO_PARCELS: LocalParcel[] = [];
 const PAGE = 50;
-const DESK_WIDTH = '(min-width: 1280px)';
 const CONTACTS_TAB = 'contacts';
+const REQUESTS_TAB = 'demandes';
 
 const DESK_NAV: CompanyShellNavSection[] = [
   {
@@ -80,33 +80,6 @@ const peopleWord = (count: number) =>
     ? t('directory.people.one')
     : t('directory.people.many', { count });
 
-function useDirectory() {
-  const people = useLiveQuery(
-    () => db.directoryPerson.toArray(),
-    [],
-    NO_PEOPLE,
-  );
-  const contacts = useLiveQuery(() => db.contact.toArray(), [], NO_CONTACTS);
-  const departments = useLiveQuery(
-    () =>
-      db.department
-        .orderBy('name')
-        .filter((row) => !row.deletedAt)
-        .toArray(),
-    [],
-    NO_DEPARTMENTS,
-  );
-  const parcels = useLiveQuery(() => db.parcel.toArray(), [], NO_PARCELS);
-  const names = useMemo(
-    () => new Map(departments.map((row) => [row.id, row.name])),
-    [departments],
-  );
-  const open = useMemo(() => openParcelsByPerson(parcels), [parcels]);
-  return { people, contacts, departments, parcels, names, open };
-}
-
-type Directory = ReturnType<typeof useDirectory>;
-
 const departmentOptions = (
   departments: readonly LocalDepartment[],
   withNone: boolean,
@@ -122,6 +95,39 @@ function dateOf(date: Date | null | undefined): string {
     month: 'short',
     year: 'numeric',
   }).format(date);
+}
+
+/** What the admin should know of a card: a department's request, its address held elsewhere. */
+function recordNotes(
+  person: LocalDirectoryPerson,
+  directory: Directory,
+  request?: MoveRequest,
+) {
+  const elsewhere = sameAddressElsewhere(
+    person,
+    directory.people,
+    directory.names,
+  );
+  return [
+    ...(request
+      ? [
+          {
+            label: t('directory.request.from', {
+              department: request.departmentName,
+            }),
+            value: request.note || t('directory.request.noNote'),
+          },
+        ]
+      : []),
+    ...(elsewhere.length
+      ? [
+          {
+            label: t('directory.record.sameAddress'),
+            value: elsewhere.join(', '),
+          },
+        ]
+      : []),
+  ];
 }
 
 function recordDetails(person: LocalDirectoryPerson, directory: Directory) {
@@ -195,11 +201,17 @@ function DeskForm({
 function DeskRecord({
   person,
   directory,
+  request,
+  dismissMessage,
+  onDismissRequest,
   onEdit,
   onClose,
 }: {
   person: LocalDirectoryPerson;
   directory: Directory;
+  request?: MoveRequest;
+  dismissMessage?: string;
+  onDismissRequest: () => void;
   onEdit: () => void;
   onClose: () => void;
 }) {
@@ -229,13 +241,17 @@ function DeskRecord({
       target={move.target}
       onTarget={move.setTarget}
       effects={effects}
-      details={recordDetails(person, directory)}
+      details={[
+        ...recordNotes(person, directory, request),
+        ...recordDetails(person, directory),
+      ]}
       moving={move.moving}
       canMove={move.canMove}
-      message={move.message}
+      message={move.message ?? (request ? dismissMessage : undefined)}
       onMove={() => void move.move()}
       onCancelMove={move.reset}
       onEdit={onEdit}
+      onDismissRequest={request && onDismissRequest}
       onClose={onClose}
     />
   );
@@ -253,14 +269,29 @@ function DirectoryDesktop({
   const { people, contacts, departments, names, open } = directory;
   const company = useCompanyName();
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState(ALL_DEPARTMENTS);
+  const [chosenTab, setTab] = useState(ALL_DEPARTMENTS);
   const [page, setPage] = useState(0);
   const [panel, setPanel] = useState<Open>(null);
   const [contact, setContact] = useState<LocalContact | null>(null);
+  const { requests, byPerson, close, dismiss, dismissMessage } =
+    useMoveRequests();
+  // The last request closed takes its tab away.
+  const tab =
+    chosenTab === REQUESTS_TAB && !requests.length
+      ? ALL_DEPARTMENTS
+      : chosenTab;
 
   const listedPeople = people.filter(listed);
   const inContacts = tab === CONTACTS_TAB;
-  const found = inContacts ? [] : directoryPeople(people, names, query, tab);
+  const inRequests = tab === REQUESTS_TAB;
+  const found = inContacts
+    ? []
+    : directoryPeople(
+        people,
+        names,
+        query,
+        inRequests ? ALL_DEPARTMENTS : tab,
+      ).filter((person) => !inRequests || byPerson.has(person.id));
   const contactRows = inContacts ? contactEntries(contacts, query, people) : [];
   const total = inContacts ? contactRows.length : found.length;
   const lastPage = Math.max(0, Math.ceil(total / PAGE) - 1);
@@ -280,7 +311,9 @@ function DirectoryDesktop({
         name: fullName(person),
         email: person.email,
         department: departmentLabel(person, names),
-        place: person.site ?? '',
+        place: inRequests
+          ? (byPerson.get(person.id)?.note ?? '')
+          : (person.site ?? ''),
         open: open.get(person.id) ?? 0,
       }));
   const count = (id: string | null) =>
@@ -296,6 +329,14 @@ function DirectoryDesktop({
       id: row.id,
       label: `${row.name} ${count(row.id)}`,
     })),
+    ...(requests.length
+      ? [
+          {
+            id: REQUESTS_TAB,
+            label: t('directory.tab.requests', { count: requests.length }),
+          },
+        ]
+      : []),
     ...(withoutDepartment
       ? [
           {
@@ -323,6 +364,7 @@ function DirectoryDesktop({
     if (inContacts) {
       setContact(contacts.find((row) => row.id === id) ?? null);
     } else {
+      close.reset();
       setPanel({ kind: 'record', id });
     }
   };
@@ -348,6 +390,9 @@ function DirectoryDesktop({
         key={selected.id}
         person={selected}
         directory={directory}
+        request={byPerson.get(selected.id)}
+        dismissMessage={dismissMessage}
+        onDismissRequest={() => dismiss(selected.id)}
         onEdit={() => setPanel({ kind: 'edit', id: selected.id })}
         onClose={() => setPanel(null)}
       />
@@ -435,6 +480,9 @@ function MobileForm({
   person,
   query,
   directory,
+  request,
+  dismissMessage,
+  onDismissRequest,
   onDone,
   onShow,
   onMove,
@@ -443,6 +491,9 @@ function MobileForm({
   person?: LocalDirectoryPerson;
   query?: string;
   directory: Directory;
+  request?: MoveRequest;
+  dismissMessage?: string;
+  onDismissRequest?: () => void;
   onDone: () => void;
   onShow: (person: LocalDirectoryPerson) => void;
   onMove?: () => void;
@@ -455,6 +506,7 @@ function MobileForm({
     onDone,
   });
   const { duplicate } = form;
+  const notes = person ? recordNotes(person, directory, request) : [];
   return (
     <PersonFormMobile
       title={person ? fullName(person) : t('directory.add.titleMobile')}
@@ -465,9 +517,14 @@ function MobileForm({
       onChange={form.onChange}
       errors={form.errors}
       saving={form.saving}
-      message={form.message}
+      message={form.message ?? (request ? dismissMessage : undefined)}
       departments={
         person ? undefined : departmentOptions(directory.departments, true)
+      }
+      note={
+        notes.length
+          ? notes.map((row) => `${row.label} : ${row.value}`).join(' · ')
+          : undefined
       }
       conflict={
         duplicate && {
@@ -481,6 +538,12 @@ function MobileForm({
         onMove && {
           label: t('directory.move.action'),
           onClick: onMove,
+        }
+      }
+      secondaryAction={
+        request && {
+          label: t('directory.request.dismiss'),
+          onClick: onDismissRequest,
         }
       }
       onSubmit={form.onSubmit}
@@ -550,10 +613,16 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
   const [editing, setEditing] = useState<Open>(null);
   const [moving, setMoving] = useState(false);
   const [contact, setContact] = useState<LocalContact | null>(null);
+  const { requests, byPerson, close, dismiss, dismissMessage } =
+    useMoveRequests();
 
+  const requestsLabel = t('directory.tab.requests', { count: requests.length });
+  const inRequests = requests.length > 0 && filter === REQUESTS_TAB;
   const tabId =
     departments.find((row) => row.name === filter)?.id ?? ALL_DEPARTMENTS;
-  const found = directoryPeople(people, names, query, tabId);
+  const found = directoryPeople(people, names, query, tabId).filter(
+    (person) => !inRequests || byPerson.has(person.id),
+  );
   const groups = new Map<string, typeof found>();
   for (const person of found) {
     const letter = letterOf(fullName(person));
@@ -573,6 +642,11 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
           person={selected}
           query={editing.kind === 'add' ? editing.query : undefined}
           directory={directory}
+          request={selected && byPerson.get(selected.id)}
+          dismissMessage={dismissMessage}
+          onDismissRequest={() => {
+            if (selected) dismiss(selected.id);
+          }}
           onDone={() => setEditing(null)}
           onShow={(person) => setEditing({ kind: 'edit', id: person.id })}
           onMove={
@@ -603,9 +677,15 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
                 options: [
                   t('directory.filter.all'),
                   ...departments.map((row) => row.name),
+                  ...(requests.length ? [requestsLabel] : []),
                 ],
-                value: filter,
-                onChange: setFilter,
+                value: inRequests
+                  ? requestsLabel
+                  : filter === REQUESTS_TAB
+                    ? t('directory.filter.all')
+                    : filter,
+                onChange: (option) =>
+                  setFilter(option === requestsLabel ? REQUESTS_TAB : option),
               }
             : undefined
         }
@@ -620,7 +700,10 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
         }))}
         query={query}
         onQueryChange={setQuery}
-        onSelect={(id) => setEditing({ kind: 'edit', id })}
+        onSelect={(id) => {
+          close.reset();
+          setEditing({ kind: 'edit', id });
+        }}
         onAdd={() =>
           setEditing({
             kind: 'add',
@@ -687,9 +770,19 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
 /**
  * Réglages › Annuaire: the whole company's directory for its admin (D15
  * révisée, ME21), a table beside a record on a computer and a list on the
- * phone (D23). The temps and visitors kept as contacts (F27) stay under it.
+ * phone (D23), its own people for a department (ME22). The temps and visitors
+ * kept as contacts (F27) stay under the company's.
  */
 export function DirectoryScreen() {
+  const session = useSession();
+  return toUserRole(session.user.role) === 'department' ? (
+    <DepartmentDirectory />
+  ) : (
+    <CompanyDirectory />
+  );
+}
+
+function CompanyDirectory() {
   const directory = useDirectory();
   const desk = useMediaQuery(DESK_WIDTH);
   const fileInput = useRef<HTMLInputElement>(null);

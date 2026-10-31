@@ -725,6 +725,8 @@ export const fr = {
   'settings.directory': 'Annuaire',
   'directory.error.personNotFound':
     'Cette personne n’est plus dans l’annuaire.',
+  'directory.error.sameAddress':
+    '{{department}} a déjà une fiche à cette adresse.',
   'directory.error.name': 'Indiquez le prénom et le nom.',
   'directory.error.emailMissing': 'Indiquez l’adresse e-mail.',
   'directory.error.emailInvalid': 'Adresse e-mail incomplète.',
@@ -743,6 +745,7 @@ export const fr = {
   'directory.tab.all': 'Tous {{count}}',
   'directory.tab.none': 'Sans département {{count}}',
   'directory.tab.contacts': 'Hors annuaire {{count}}',
+  'directory.tab.requests': 'Demandes {{count}}',
   'directory.filter.all': 'Tous',
   'directory.contacts.title': 'Hors annuaire',
   'directory.contacts.detail':
@@ -751,6 +754,20 @@ export const fr = {
   'directory.empty.description':
     'Ajoutez un salarié, ou importez un CSV sur ordinateur.',
   'directory.empty.search': 'Aucun résultat pour « {{query}} »',
+  'directory.department.title': 'Annuaire · {{department}}',
+  'directory.department.subtitle':
+    '{{people}} · visibles aussi par l’administrateur',
+  'directory.department.search': 'Nom ou e-mail',
+  'directory.department.empty': 'Ajoutez les salariés de votre département.',
+  'directory.add.note': 'Ajouté à {{department}}. Ses colis y seront déposés.',
+  'directory.request.action': 'Demander le déplacement',
+  'directory.request.from': 'Demande de {{department}}',
+  'directory.request.noNote': 'Sans précision',
+  'directory.request.dismiss': 'Classer la demande',
+  'directory.request.dismissFailed': 'Demande non classée, réessayez.',
+  'directory.request.sent': 'Demandé le {{date}}',
+  'directory.request.offline': 'Cette demande nécessite une connexion.',
+  'directory.request.failed': 'Demande non envoyée, réessayez.',
   'directory.add.title': 'Ajouter un salarié',
   'directory.add.titleMobile': 'Nouveau salarié',
   'directory.add.submit': 'Ajouter',
@@ -761,6 +778,7 @@ export const fr = {
   'directory.record.open': 'Colis en cours',
   'directory.record.added': 'Ajouté',
   'directory.record.lastPickup': 'Dernier retrait',
+  'directory.record.sameAddress': 'Même adresse',
   'directory.record.never': '—',
   'directory.move.action': 'Déplacer vers un autre département',
   'directory.move.submit': 'Déplacer vers {{department}}',
@@ -785,6 +803,8 @@ export const fr = {
   'directory.import.problem.email': 'E-mail incomplet',
   'directory.import.problem.duplicate': 'E-mail déjà présent dans le fichier',
   'directory.import.problem.department': 'Département inconnu',
+  'directory.import.problem.ambiguous':
+    'Adresse dans plusieurs départements : indiquez lequel',
   'directory.import.toAdd': 'À ajouter',
   'directory.import.toUpdate': 'À mettre à jour',
   'directory.import.unchanged': 'Déjà à jour',

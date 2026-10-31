@@ -9,6 +9,7 @@ import {
   letterOf,
   moveEffectLines,
   openParcelsByPerson,
+  sameAddressElsewhere,
   savePerson,
   toDraft,
 } from '#/features/directory/people';
@@ -282,5 +283,46 @@ describe('directoryEntries', () => {
       initials: 'AB',
       detail: 'axelle@atelier.test',
     });
+  });
+});
+
+describe('an address two departments hold', () => {
+  const twin = (id: string, departmentId: string) => ({
+    ...personRow({ id, email: 'hugo@example.com' }),
+    departmentId,
+  });
+
+  it('leaves both cards editable as long as the address stays', async () => {
+    await db.directoryPerson.bulkPut([twin('a', 'finance'), twin('b', 'studio')]);
+
+    const result = await savePerson(
+      db,
+      { name: 'Hugo Lefèvre', email: 'HUGO@example.com', site: '', departmentId: '' },
+      { id: 'a', now: NOW },
+    );
+
+    expect(result.kind).toBe('saved');
+  });
+
+  it('still refuses to take the address of a card this account sees', async () => {
+    await db.directoryPerson.bulkPut([
+      twin('a', 'finance'),
+      { ...twin('b', 'studio'), email: 'autre@example.com' },
+    ]);
+
+    const result = await savePerson(
+      db,
+      { name: 'Autre Personne', email: 'hugo@example.com', site: '', departmentId: '' },
+      { id: 'b', now: NOW },
+    );
+
+    expect(result.kind).toBe('duplicate');
+  });
+
+  it('names the other departments for the admin', () => {
+    const people = [twin('a', 'finance'), twin('b', 'studio')];
+    const names = new Map([['finance', 'Finance'], ['studio', 'Studio']]);
+
+    expect(sameAddressElsewhere(people[0]!, people, names)).toEqual(['Studio']);
   });
 });

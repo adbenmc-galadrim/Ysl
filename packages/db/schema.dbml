@@ -152,8 +152,23 @@ Table "directory_person" {
   Indexes {
     (organization_id, server_xid, id) [type: btree, name: "directory_person_cursor_idx"]
     (organization_id, id) [type: btree, unique, name: "directory_person_organization_id_idx"]
-    (organization_id, `lower("email")`) [type: btree, unique, name: "directory_person_email_idx", note: 'partiel : where deleted_at is null']
+    (organization_id, `coalesce("department_id", '00000000-0000-0000-0000-000000000000'::uuid)`, `lower("email")`) [type: btree, unique, name: "directory_person_email_idx", note: 'partiel : where deleted_at is null']
     (organization_id, name_norm) [type: btree, name: "directory_person_name_norm_idx", note: 'partiel : where deleted_at is null']
+  }
+}
+
+Table "directory_move_request" {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  person_id uuid [not null]
+  department_id uuid [not null]
+  requested_by text
+  note text
+  created_at timestamptz [not null, default: `now()`]
+  closed_at timestamptz
+
+  Indexes {
+    (organization_id, person_id) [type: btree, unique, name: "directory_move_request_open_idx", note: 'partiel : where closed_at is null']
   }
 }
 
@@ -622,3 +637,7 @@ Ref "event_actor_id_fk":"organization_member".("organization_id", "user_id") ?<?
 Ref "setting_updated_by_fk":"organization_member".("organization_id", "user_id") ?<? "setting".("organization_id", "updated_by") [delete: no action]
 
 Ref "sync_op_user_id_fk":"organization_member".("organization_id", "user_id") <? "sync_op".("organization_id", "user_id") [delete: no action]
+
+Ref "directory_move_request_person_fk":"directory_person".("organization_id", "id") < "directory_move_request".("organization_id", "person_id") [update: no action, delete: cascade]
+
+Ref "directory_move_request_department_fk":"department".("organization_id", "id") < "directory_move_request".("organization_id", "department_id") [update: no action, delete: no action]

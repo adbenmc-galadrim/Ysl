@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@repo/auth/client', () => ({ authClient: { getSession: vi.fn() } }));
 
-const { requireAdmin, requireSession } = await import('#/features/auth/guards');
+const { requireAdmin, requireDirectoryKeeper, requireSession } = await import(
+  '#/features/auth/guards',
+);
 const { safeRedirect } = await import('#/features/auth/redirect');
 
 const queryClientWith = (session: unknown) =>
@@ -99,5 +101,23 @@ describe('safeRedirect', () => {
 
   it('keeps an internal path', () => {
     expect(safeRedirect('/colis?tri=date')).toBe('/colis?tri=date');
+  });
+});
+
+describe('requireDirectoryKeeper', () => {
+  it.each(['admin', 'company_admin', 'department'])('lets %s in', (role) => {
+    expect(
+      thrownBy(() =>
+        requireDirectoryKeeper({ session: sessionWithRole(role) }),
+      ),
+    ).toBeUndefined();
+  });
+
+  it.each(['agent', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
+    expect(
+      thrownBy(() =>
+        requireDirectoryKeeper({ session: sessionWithRole(role) }),
+      ),
+    ).toMatchObject({ options: { to: '/' } });
   });
 });

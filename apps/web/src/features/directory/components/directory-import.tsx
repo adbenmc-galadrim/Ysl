@@ -37,6 +37,7 @@ const PROBLEMS: Record<DirectoryImportProblem, string> = {
   'email-invalid': t('directory.import.problem.email'),
   'duplicate-in-file': t('directory.import.problem.duplicate'),
   'department-unknown': t('directory.import.problem.department'),
+  'email-ambiguous': t('directory.import.problem.ambiguous'),
 };
 
 const NAV: CompanyShellNavSection[] = [

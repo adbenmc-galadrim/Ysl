@@ -10,7 +10,13 @@ import {
   applyDirectoryImport,
   previewDirectoryImport,
 } from '#features/directory/import';
-import { moveEffectsOf, movePerson } from '#features/directory/service';
+import {
+  closeMoveRequest,
+  moveEffectsOf,
+  movePerson,
+  moveRequestsOf,
+  requestMove,
+} from '#features/directory/service';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
 import { accessOf, addDepartment, addPerson } from './helpers/departments';
@@ -392,5 +398,169 @@ describe('the CSV import', () => {
       .from(schema.directoryPerson)
       .where(eq(schema.directoryPerson.id, person));
     expect(after).toMatchObject({ departmentId: finance });
+  });
+});
+
+describe('one address in several departments', () => {
+  const email = (word: string) => `${word}.${newId()}@example.test`;
+  const addAt = async (departmentId: string | null, address: string) => {
+    const person = await addPerson(db, departmentId);
+    await db
+      .update(schema.directoryPerson)
+      .set({ email: address })
+      .where(eq(schema.directoryPerson.id, person));
+    return person;
+  };
+  const departmentOf = async (id: string) =>
+    (
+      await db
+        .select()
+        .from(schema.directoryPerson)
+        .where(eq(schema.directoryPerson.id, id))
+    )[0]!.departmentId;
+
+  it('a department adds an address another holds: nothing tells it so', async () => {
+    const address = email('hugo');
+    const other = await addAt(finance, address);
+    const id = newId();
+
+    const { results } = await push(any, accessOf('department', studio), {
+      ops: [
+        {
+          opId: newId(),
+          type: 'upsert',
+          entity: 'directory_person',
+          entityId: id,
+          patch: {
+            lastName: 'Lefèvre',
+            firstName: 'Hugo',
+            nameNorm: 'hugo lefevre',
+            email: address,
+          },
+          clientTs: new Date(),
+        },
+      ],
+    });
+
+    expect(results[0]?.status).toBe(200);
+    expect(await departmentOf(id)).toBe(studio);
+    expect(await departmentOf(other)).toBe(finance);
+  });
+
+  it('keeps one card per address inside a department, and among those in none', async () => {
+    for (const department of [studio, null]) {
+      const address = email('dup');
+      await addAt(department, address);
+      await expect(addAt(department, address.toUpperCase())).rejects.toThrow();
+    }
+  });
+
+  it('refuses to move someone onto the card of the same address, moving nothing', async () => {
+    const address = email('twin');
+    const here = await addAt(finance, address);
+    await addAt(studio, address);
+
+    await expect(move(here, studio)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    expect(await departmentOf(here)).toBe(finance);
+  });
+
+  it('imports onto the card of the department the line names, or asks which', async () => {
+    const address = email('both');
+    await addAt(finance, address);
+    const there = await addAt(studio, address);
+    const csv = `nom,prenom,mail,service,bureau\nLefèvre,Hugo,${address},Studio,Étage 2`;
+
+    const report = await applyDirectoryImport(any, ORGANIZATION_ID, csv, []);
+    expect(report.updated).toBe(1);
+    const [row] = await db
+      .select()
+      .from(schema.directoryPerson)
+      .where(eq(schema.directoryPerson.id, there));
+    expect(row?.site).toBe('Étage 2');
+
+    const preview = await previewDirectoryImport(
+      any,
+      ORGANIZATION_ID,
+      `nom,prenom,mail\nLefèvre,Hugo,${address}`,
+      [],
+    );
+    expect(preview.errors.map((error) => error.problem)).toEqual([
+      'email-ambiguous',
+    ]);
+  });
+});
+
+describe('a request to move someone', () => {
+  const mine = () => accessOf('department', studio);
+  const openFor = async (access: ReturnType<typeof accessOf>, id: string) =>
+    (await moveRequestsOf(any, access)).filter((row) => row.personId === id);
+
+  it('reaches the admin, not the other departments', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Parti' });
+
+    expect(await openFor(accessOf('company_admin'), person)).toMatchObject([
+      { departmentName: 'Studio', note: 'Parti' },
+    ]);
+    expect(await openFor(mine(), person)).toHaveLength(1);
+    expect(await openFor(accessOf('department', finance), person)).toEqual([]);
+  });
+
+  it('answers the same for someone elsewhere and for nobody', async () => {
+    const elsewhere = await addPerson(db, finance);
+    for (const personId of [elsewhere, newId()]) {
+      await expect(
+        requestMove(any, mine(), { personId, note: null }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    }
+    expect(await openFor(accessOf('admin'), elsewhere)).toEqual([]);
+  });
+
+  it('asked twice stays one, with the last note', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Un' });
+    await requestMove(any, mine(), { personId: person, note: 'Deux' });
+
+    expect(await openFor(accessOf('admin'), person)).toMatchObject([
+      { note: 'Deux' },
+    ]);
+  });
+
+  it('ends when the person moves', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: null });
+
+    await move(person, finance);
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+
+    await move(person, studio);
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+  });
+
+  it('goes with a person the purge erases', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Parti' });
+
+    await db
+      .delete(schema.directoryPerson)
+      .where(eq(schema.directoryPerson.id, person));
+
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+  });
+
+  it('a department closes its own request only, the admin any', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: null });
+
+    await closeMoveRequest(any, accessOf('department', finance), person);
+    expect(await openFor(mine(), person)).toHaveLength(1);
+
+    await closeMoveRequest(any, accessOf('admin'), person);
+    expect(await openFor(mine(), person)).toEqual([]);
+
+    await requestMove(any, mine(), { personId: person, note: 'Encore' });
+    expect(await openFor(mine(), person)).toHaveLength(1);
   });
 });

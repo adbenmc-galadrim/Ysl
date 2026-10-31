@@ -85,6 +85,11 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
     caller.directory.moveEffects({ personId: newId() }),
   'directory.move': (caller) =>
     caller.directory.move({ personId: newId(), departmentId: newId() }),
+  'directory.requestMove': (caller) =>
+    caller.directory.requestMove({ personId: newId(), note: null }),
+  'directory.moveRequests': (caller) => caller.directory.moveRequests(),
+  'directory.closeMoveRequest': (caller) =>
+    caller.directory.closeMoveRequest({ personId: newId() }),
   'directory.previewImport': (caller) =>
     caller.directory.previewImport({ csv: 'nom,mail', choices: [] }),
   'directory.applyImport': (caller) =>
@@ -115,6 +120,8 @@ const ADMIN = [
   'directory.move',
   'directory.previewImport',
   'directory.applyImport',
+  'directory.moveRequests',
+  'directory.closeMoveRequest',
 ];
 const AGENTS = [
   'agents.list',
@@ -124,6 +131,11 @@ const AGENTS = [
 ];
 const READ_DEPARTMENTS = ['departments.list', 'account.company'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
+const ATTACHED_DEPARTMENT = [
+  'directory.requestMove',
+  'directory.moveRequests',
+  'directory.closeMoveRequest',
+];
 const WITHOUT_HANDOVER = OPERATIONS.filter(
   (route) => route !== 'pickup.verify',
 );
@@ -181,7 +193,7 @@ describe('a department account attached to a department', () => {
       ROUTES[route]!(callerFor(sessionOf('department'))),
     );
     await db.delete(departmentMember);
-    if (OPERATIONS.includes(route)) {
+    if ([...OPERATIONS, ...ATTACHED_DEPARTMENT].includes(route)) {
       expect(code).not.toBe('FORBIDDEN');
     } else {
       expect(code).toBe('FORBIDDEN');

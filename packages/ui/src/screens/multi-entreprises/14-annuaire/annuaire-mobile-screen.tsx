@@ -9,9 +9,11 @@ import { NavBar, NavBarAction } from '#components/nav-bar';
 import { PersonAvatar, PhoneRow, PhoneSegments } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
+import { Sheet } from '#components/sheet';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
 import type {
+  MoveRequestFormProps,
   PersonFormErrors,
   PersonFormValue,
 } from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
@@ -165,6 +167,7 @@ function FormField({
   warned = false,
   type = 'text',
   className,
+  inputClassName = 'bg-surface',
 }: {
   label: string;
   value: string;
@@ -173,6 +176,7 @@ function FormField({
   warned?: boolean;
   type?: 'text' | 'email';
   className?: string;
+  inputClassName?: string;
 }) {
   return (
     <Field
@@ -189,7 +193,8 @@ function FormField({
           onChange={onChange ?? (() => {})}
           autoComplete="off"
           className={cn(
-            'relative h-12 gap-0 rounded-[12px] bg-surface pr-3.5 pl-3.5 font-normal',
+            'relative h-12 gap-0 rounded-[12px] pr-3.5 pl-3.5 font-normal',
+            inputClassName,
             warned &&
               'shadow-[0_0_0_0.75px_var(--color-orange),inset_0_0_0_0.75px_var(--color-orange)]',
           )}
@@ -217,6 +222,8 @@ export type PersonFormMobileProps = {
   } | null;
   /** Under the fields of an existing record: "Déplacer vers un autre département". */
   footerAction?: { label: string; onClick?: () => void };
+  /** Under that one: a request to close, for the admin. */
+  secondaryAction?: { label: string; onClick?: () => void };
   saving?: boolean;
   message?: string;
   onSubmit?: () => void;
@@ -234,6 +241,7 @@ export function PersonFormMobile({
   note,
   conflict,
   footerAction,
+  secondaryAction,
   saving = false,
   message,
   onSubmit,
@@ -313,6 +321,16 @@ export function PersonFormMobile({
           onClick={footerAction.onClick}
         >
           {footerAction.label}
+        </Button>
+      )}
+      {secondaryAction && !conflict && (
+        <Button
+          variant="outline"
+          block
+          className="mt-3"
+          onClick={secondaryAction.onClick}
+        >
+          {secondaryAction.label}
         </Button>
       )}
       {conflict && (
@@ -492,5 +510,52 @@ export function MoveSheetMobile({
         )}
       </div>
     </div>
+  );
+}
+
+/** Asks the admin to move someone, from the phone. */
+export function MoveRequestSheetMobile({
+  name,
+  sent,
+  note,
+  onNote,
+  saving = false,
+  message,
+  onSubmit,
+  onWithdraw,
+  onCancel,
+}: MoveRequestFormProps) {
+  return (
+    <Sheet
+      fixed
+      title="Demander le déplacement"
+      description={
+        sent ?? `${name} : l’administrateur le verra dans son annuaire.`
+      }
+      onDismiss={onCancel}
+    >
+      <FormField
+        label="Où va ce salarié ? (facultatif)"
+        value={note}
+        onChange={(event) => onNote?.(event.target.value)}
+        className="mt-4"
+        inputClassName="bg-fill"
+      />
+      {message && <p className="mt-3 text-13 text-red">{message}</p>}
+      <Button block className="mt-5" disabled={saving} onClick={onSubmit}>
+        {sent ? 'Mettre à jour' : 'Envoyer la demande'}
+      </Button>
+      {sent && (
+        <Button
+          variant="outline"
+          block
+          className="mt-3"
+          disabled={saving}
+          onClick={onWithdraw}
+        >
+          Retirer la demande
+        </Button>
+      )}
+    </Sheet>
   );
 }

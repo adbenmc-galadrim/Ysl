@@ -86,6 +86,13 @@ async function recipients(
   const personByEmail = new Map(
     people.map((person) => [person.email.toLowerCase(), person.id]),
   );
+  // An address two departments hold says nobody: a contact keeps it, unattributed.
+  const held = new Set<string>();
+  for (const { email } of people) {
+    const key = email.toLowerCase();
+    if (held.has(key)) personByEmail.delete(key);
+    held.add(key);
+  }
   const contactByEmail = new Map<string, string>();
   const contactByName = new Map<string, string>();
   for (const known of contacts) {

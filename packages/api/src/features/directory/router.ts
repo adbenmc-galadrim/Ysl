@@ -1,20 +1,34 @@
 import {
+  closeMoveRequestInput,
   directoryImportInput,
   directoryImportPreview,
   directoryImportReport,
   moveEffects,
   moveEffectsInput,
   movePersonInput,
+  moveRequests,
+  requestMoveInput,
 } from '@repo/contract/directory';
 import { db } from '@repo/db';
-import { adminMemberProcedure, router } from '#lib/trpc';
+import {
+  adminMemberProcedure,
+  departmentProcedure,
+  directoryKeeperProcedure,
+  router,
+} from '#lib/trpc';
 import {
   applyDirectoryImport,
   previewDirectoryImport,
 } from '#features/directory/import';
-import { moveEffectsOf, movePerson } from '#features/directory/service';
+import {
+  closeMoveRequest,
+  moveEffectsOf,
+  movePerson,
+  moveRequestsOf,
+  requestMove,
+} from '#features/directory/service';
 
-/** What the company admin alone does (ME21); cards are written through `sync.push`. */
+/** What goes online: moves, requests, imports (ME21). Cards are written through `sync.push`. */
 export const directoryRouter = router({
   moveEffects: adminMemberProcedure
     .input(moveEffectsInput)
@@ -26,6 +40,17 @@ export const directoryRouter = router({
     .input(movePersonInput)
     .output(moveEffects)
     .mutation(({ ctx, input }) => movePerson(db, ctx.organizationId, input)),
+  requestMove: departmentProcedure
+    .input(requestMoveInput)
+    .mutation(({ ctx, input }) => requestMove(db, ctx.access, input)),
+  moveRequests: directoryKeeperProcedure
+    .output(moveRequests)
+    .query(({ ctx }) => moveRequestsOf(db, ctx.access)),
+  closeMoveRequest: directoryKeeperProcedure
+    .input(closeMoveRequestInput)
+    .mutation(({ ctx, input }) =>
+      closeMoveRequest(db, ctx.access, input.personId),
+    ),
   previewImport: adminMemberProcedure
     .input(directoryImportInput)
     .output(directoryImportPreview)

@@ -181,16 +181,22 @@ export function ReglagesHome() {
     ],
   };
 
+  const directoryItem: SettingsGroup['items'][number] = {
+    icon: 'users',
+    color: 'orange',
+    label: t('settings.directory'),
+    value: directorySize ? String(directorySize) : undefined,
+    onPress: () => void navigate({ to: '/reglages/annuaire' }),
+  };
+  const ownDirectory: SettingsGroup = {
+    header: t('settings.group.service'),
+    items: [directoryItem],
+  };
+
   const service: SettingsGroup = {
     header: t('settings.group.service'),
     items: [
-      {
-        icon: 'users',
-        color: 'orange',
-        label: t('settings.directory'),
-        value: directorySize ? String(directorySize) : undefined,
-        onPress: () => void navigate({ to: '/reglages/annuaire' }),
-      },
+      directoryItem,
       {
         icon: 'pin',
         color: 'red',
@@ -277,7 +283,9 @@ export function ReglagesHome() {
       groups={
         isCompanyAdmin(role)
           ? [steering, data, mail, service, app]
-          : [steering, data, mail, app]
+          : role === 'department'
+            ? [steering, data, mail, ownDirectory, app]
+            : [steering, data, mail, app]
       }
       onBack={() => void navigate({ to: '/' })}
     />

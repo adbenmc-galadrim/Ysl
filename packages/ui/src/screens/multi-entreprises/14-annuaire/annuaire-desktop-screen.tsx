@@ -306,6 +306,8 @@ export type PersonFormPanelProps = {
   submitLabel: string;
   saving?: boolean;
   message?: string;
+  /** Under the fields of an existing record: "Demander le déplacement". */
+  footerAction?: { label: string; onClick?: () => void };
   onSubmit?: () => void;
   onCancel?: () => void;
 };
@@ -321,6 +323,7 @@ export function PersonFormPanel({
   submitLabel,
   saving = false,
   message,
+  footerAction,
   onSubmit,
   onCancel,
 }: PersonFormPanelProps) {
@@ -402,6 +405,16 @@ export function PersonFormPanel({
             </Button>
           )}
           {message && <p className="mt-3 text-12 text-red">{message}</p>}
+          {footerAction && (
+            <Button
+              variant="outline"
+              size="desk"
+              className="mt-4 w-full"
+              onClick={footerAction.onClick}
+            >
+              {footerAction.label}
+            </Button>
+          )}
           <div className={`flex gap-2 ${conflict ? 'mt-12' : 'mt-6 pb-4'}`}>
             <Button
               variant="outline"
@@ -446,6 +459,8 @@ export type PersonRecordPanelProps = {
   onMove?: () => void;
   onCancelMove?: () => void;
   onEdit?: () => void;
+  /** A department's request on this record: closed without moving anyone. */
+  onDismissRequest?: () => void;
   onClose?: () => void;
 };
 
@@ -465,12 +480,15 @@ export function PersonRecordPanel({
   onMove,
   onCancelMove,
   onEdit,
+  onDismissRequest,
   onClose,
 }: PersonRecordPanelProps) {
   // The figures of the mockup: the block of effects takes 148 px, the actions 48.
-  const lower = effects ? 355 : message ? 183 : 159;
+  const lower = effects ? (message ? 379 : 355) : message ? 183 : 159;
   return (
-    <DeskSidePanel className="h-[640px] w-[360px]">
+    <DeskSidePanel
+      className={`w-[360px] ${onDismissRequest ? 'h-[760px]' : 'h-[640px]'}`}
+    >
       <Avatar
         initials={initials}
         tone="fill"
@@ -553,7 +571,104 @@ export function PersonRecordPanel({
             Modifier la fiche
           </Button>
         )}
+        {onDismissRequest && (
+          <Button
+            variant="outline"
+            size="desk"
+            className="mt-2 w-full"
+            onClick={onDismissRequest}
+          >
+            Classer la demande
+          </Button>
+        )}
       </div>
+    </DeskSidePanel>
+  );
+}
+
+/** What a department tells the admin about one of its people. */
+export type MoveRequestFormProps = {
+  name: string;
+  /** "Demandé le 31 oct. 2026": the request already sent, still open. */
+  sent?: string;
+  note: string;
+  onNote?: (note: string) => void;
+  saving?: boolean;
+  message?: string;
+  onSubmit?: () => void;
+  onWithdraw?: () => void;
+  onCancel?: () => void;
+};
+
+const MOVE_REQUEST_HELP =
+  'L’administrateur le verra dans son annuaire : lui seul déplace un salarié.';
+
+/** Asks the admin to move someone, beside the table. */
+export function MoveRequestPanel({
+  name,
+  sent,
+  note,
+  onNote,
+  saving = false,
+  message,
+  onSubmit,
+  onWithdraw,
+  onCancel,
+}: MoveRequestFormProps) {
+  return (
+    <DeskSidePanel className="min-h-[320px] w-[360px]">
+      <form
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!saving) onSubmit?.();
+        }}
+      >
+        <h2 className="mt-3 ml-[15px] text-14 font-semibold">
+          Demander le déplacement
+        </h2>
+        <div className="mt-3.5 h-px bg-separator" />
+        <div className="mt-[15px] flex flex-col gap-3 px-[15px] pb-4">
+          <p className="text-13 font-semibold">{name}</p>
+          <p className="text-12 text-muted">{sent ?? MOVE_REQUEST_HELP}</p>
+          <PanelField
+            label="Où va ce salarié ? (facultatif)"
+            value={note}
+            onChange={(event) => onNote?.(event.target.value)}
+            autoComplete="off"
+          />
+          {message && <p className="text-12 text-red">{message}</p>}
+          {sent && (
+            <Button
+              variant="outline"
+              size="desk"
+              className="w-full"
+              disabled={saving}
+              onClick={onWithdraw}
+            >
+              Retirer la demande
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="desk"
+              className="w-[100px]"
+              onClick={onCancel}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              size="desk"
+              className="w-[220px]"
+              disabled={saving}
+            >
+              {sent ? 'Mettre à jour' : 'Envoyer la demande'}
+            </Button>
+          </div>
+        </div>
+      </form>
     </DeskSidePanel>
   );
 }
