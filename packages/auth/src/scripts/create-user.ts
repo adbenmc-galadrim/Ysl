@@ -11,26 +11,12 @@ import {
   chooseOrganizationFor,
   ensureOrganization,
 } from '#organization';
-
-const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
+import { PASSWORD_VARIABLE, readPassword } from '#scripts/read-password';
 
 const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> --role ${USER_ROLES.join('|')} [--organization <name>]
 The password is read from standard input, or from ${PASSWORD_VARIABLE}.
 Without --organization, the only organization is used, or "Service courrier" is created.
 A platform_admin belongs to no organization: --organization is refused.`;
-
-async function readStdin(): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
-  return Buffer.concat(chunks).toString('utf8');
-}
-
-async function readPassword(): Promise<string> {
-  const fromVariable = process.env[PASSWORD_VARIABLE];
-  if (fromVariable) return fromVariable;
-  if (process.stdin.isTTY) return '';
-  return (await readStdin()).replace(/\r?\n$/, '');
-}
 
 async function main(): Promise<void> {
   const { values } = parseArgs({

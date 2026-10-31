@@ -52,6 +52,88 @@ export const fr = {
     'Ce département a encore des comptes rattachés.',
   'departments.error.notDepartmentAccount':
     'Seul un compte département se rattache à un département.',
+  'accounts.title': 'Comptes',
+  'accounts.subtitle.one': '1 compte',
+  'accounts.subtitle.many': '{{count}} comptes',
+  'accounts.state.active': 'Actif',
+  'accounts.state.suspended': 'Suspendu',
+  'accounts.state.revoked': 'Révoqué',
+  'accounts.tab.all': 'Tous',
+  'accounts.tab.shuttle': 'Navettes',
+  'accounts.tab.department': 'Départements',
+  'accounts.tab.admin': 'Administrateurs',
+  'accounts.segment.shuttle': 'Navette',
+  'accounts.segment.department': 'Département',
+  'accounts.segment.admin': 'Admin',
+  'accounts.role': 'Rôle',
+  'accounts.state': 'État',
+  'accounts.department': 'Département',
+  'accounts.lastSignIn': 'Dernière connexion',
+  'accounts.devices': 'Appareils',
+  'accounts.departmentHint':
+    'Ses colis et son annuaire suivent ce département.',
+  'accounts.noDepartment': 'Aucun',
+  'accounts.chooseDepartment': 'Choisir',
+  'accounts.previous': 'Précédent',
+  'accounts.next': 'Suivant',
+  'accounts.failed': 'Impossible pour le moment. Rien n’a été modifié.',
+  'accounts.cancel': 'Annuler',
+  'accounts.create.title': 'Créer un compte',
+  'accounts.create.submit': 'Créer le compte',
+  'accounts.create.password': 'Mot de passe provisoire',
+  'accounts.create.hint': 'À lui transmettre, {{min}} caractères au moins.',
+  'accounts.suspend.action': 'Suspendre le compte',
+  'accounts.suspend.title': 'Suspendre {{name}} ?',
+  'accounts.suspend.description':
+    'Plus de connexion ni de synchronisation. Les photos et preuves de son téléphone sont gardées, même non envoyées : tout reprend à la réactivation. Seule limite : un téléphone resté fermé plus de 30 jours s’efface à sa réouverture.',
+  'accounts.suspend.confirm': 'Suspendre',
+  'accounts.revoke.action': 'Révoquer le compte',
+  'accounts.revoke.title': 'Révoquer {{name}} ?',
+  'accounts.revoke.description':
+    'Son téléphone effacera ses photos et preuves dès sa prochaine connexion au réseau : c’est la seule copie de ce qui n’est pas envoyé. Pour les garder, suspendez plutôt le compte.',
+  'accounts.revoke.confirm': 'Révoquer et effacer son téléphone',
+  'accounts.resume.action': 'Réactiver le compte',
+  'accounts.resume.title': 'Réactiver {{name}} ?',
+  'accounts.resume.description':
+    'Son téléphone reprend là où il en était, avec ses données.',
+  'accounts.resume.confirm': 'Réactiver',
+  'accounts.reinstate.action': 'Rétablir l’accès',
+  'accounts.reinstate.title': 'Rétablir l’accès de {{name}} ?',
+  'accounts.reinstate.description':
+    'Avec un nouveau mot de passe. Les données effacées de son téléphone ne reviennent pas ; un compte département doit ensuite être rattaché.',
+  'accounts.reinstate.confirm': 'Rétablir',
+  'accounts.password.action': 'Changer le mot de passe',
+  'accounts.password.title': 'Mot de passe de {{name}}',
+  'accounts.password.description':
+    'Ses appareils restent connectés et gardent leurs données.',
+  'accounts.password.field': 'Nouveau mot de passe',
+  'accounts.password.closeSessions':
+    'Mot de passe compromis : déconnecter ses appareils. Ses téléphones effaceront leurs photos et preuves.',
+  'accounts.password.confirm': 'Enregistrer',
+  'accounts.role.title': 'Changer le rôle de {{name}} ?',
+  'accounts.role.description':
+    'Effet à sa prochaine requête. Son téléphone se recharge alors sur ce que ce rôle voit.',
+  'accounts.role.confirm': 'Changer le rôle',
+  'accounts.suspended.title': 'Compte suspendu',
+  'accounts.suspended.data':
+    'Vos photos et preuves restent sur ce téléphone.',
+  'accounts.suspended.action':
+    'Demandez à votre administrateur de réactiver le compte.',
+  'accounts.suspended.retry': 'Vérifier à nouveau',
+  'accounts.error.suspended':
+    'Ce compte est suspendu. Les données de ce téléphone sont gardées.',
+  'accounts.error.notFound': 'Ce compte n’existe pas dans votre entreprise.',
+  'accounts.error.emailTaken':
+    'Cette adresse a déjà un compte ou une invitation en attente.',
+  'accounts.error.lastAdmin':
+    'C’est le dernier admin actif de l’entreprise : nommez-en un autre d’abord.',
+  'accounts.error.adminRole':
+    'Le rôle d’un admin ne se change pas : seuls navette et département s’échangent.',
+  'accounts.error.departmentNotFound': 'Ce département n’existe plus.',
+  'accounts.error.revoked':
+    'Ce compte est révoqué : rétablissez son accès d’abord.',
+  'accounts.error.passwordRequired':
+    'Un compte révoqué revient avec un nouveau mot de passe.',
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
   'devices.error.current':
     'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',

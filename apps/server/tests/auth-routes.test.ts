@@ -45,4 +45,38 @@ describe('authRoutes', () => {
     expect(response.status).toBe(200);
     expect(handle).toHaveBeenCalledOnce();
   });
+
+  describe('for a suspended session', () => {
+    const suspended = () => {
+      const handle = vi.fn(() => new Response('ok'));
+      const app = new Hono().route(
+        '/api/auth',
+        authRoutes(handle, () => Promise.resolve(true)),
+      );
+      return { handle, app };
+    };
+
+    it.each([
+      '/api/auth/change-password',
+      '/api/auth/update-user',
+      '/api/auth/revoke-other-sessions',
+      '/api/auth/revoke-sessions',
+      '/api/auth/sign-out',
+      '/api/auth//sign-out',
+    ])('refuses %s', async (path) => {
+      const { app, handle } = suspended();
+      const response = await app.request(path, { method: 'POST' });
+      expect(response.status).toBe(403);
+      expect(handle).not.toHaveBeenCalled();
+    });
+
+    it.each(['/api/auth/get-session', '/api/auth/sign-in/email'])(
+      'still answers %s, which tells the device it is suspended',
+      async (path) => {
+        const { app, handle } = suspended();
+        await app.request(path, { method: 'POST' });
+        expect(handle).toHaveBeenCalledOnce();
+      },
+    );
+  });
 });

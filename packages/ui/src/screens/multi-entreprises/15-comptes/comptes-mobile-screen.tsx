@@ -1,9 +1,10 @@
+import type { ChangeEvent, ReactNode } from 'react';
+
 import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
 import {
   PersonAvatar,
-  PhoneField,
   PhoneRow,
   PhoneSection,
   PhoneSegments,
@@ -12,96 +13,132 @@ import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
+import {
+  type ComptesSelect,
+  SelectOverlay,
+} from '#screens/multi-entreprises/15-comptes/comptes-desktop-screen';
 
-function RowState({
-  label,
-  tone,
-  width,
-}: {
+const STATE_STYLE = {
+  invited: { tone: 'blue', width: 140 },
+  suspended: { tone: 'orange', width: 93 },
+  revoked: { tone: 'red', width: 88 },
+} as const;
+
+export type CompteMobileState = {
   label: string;
-  tone: 'blue' | 'orange';
-  width: number;
-}) {
+  kind: keyof typeof STATE_STYLE;
+};
+
+function RowState({ state }: { state: CompteMobileState }) {
+  const { tone, width } = STATE_STYLE[state.kind];
   return (
     <span
       className={cn(
         'flex h-6 items-center gap-1.5 rounded-[12px] pl-[9px] text-13 font-semibold',
-        tone === 'blue' ? 'bg-fill' : 'bg-orange-soft text-orange-strong',
+        tone === 'blue' && 'bg-fill',
+        tone === 'orange' && 'bg-orange-soft text-orange-strong',
+        tone === 'red' && 'bg-red-soft text-red',
       )}
       style={{ width }}
     >
       <span
         className={cn(
           'size-2 rounded-full',
-          tone === 'blue' ? 'bg-blue' : 'bg-orange',
+          tone === 'blue' && 'bg-blue',
+          tone === 'orange' && 'bg-orange',
+          tone === 'red' && 'bg-red',
         )}
       />
-      <span className="-mt-0.5">{label}</span>
+      <span className="-mt-0.5">{state.label}</span>
     </span>
   );
 }
 
+export type CompteMobileRow = {
+  id: string;
+  initials: string;
+  name: string;
+  line: string;
+  state?: CompteMobileState;
+};
+
+export type ComptesMobileProps = {
+  title: string;
+  sections: readonly {
+    title: string;
+    count: number;
+    rows: readonly CompteMobileRow[];
+  }[];
+  query?: string;
+  onQueryChange?: (value: string) => void;
+  onSelect?: (id: string) => void;
+  onAdd?: () => void;
+  onBack?: () => void;
+  /** Under the rows: the next page, or an empty or failed list. */
+  footer?: ReactNode;
+};
+
 /** Who can sign in to the company, by role, on the phone. */
-export function AdminComptesMobile() {
+export function ComptesMobile({
+  title,
+  sections,
+  query = '',
+  onQueryChange,
+  onSelect,
+  onAdd,
+  onBack,
+  footer,
+}: ComptesMobileProps) {
   return (
     <Screen>
       <NavBar
-        title="Comptes"
+        title={title}
+        onBack={onBack}
         trailing={
-          <IconButton icon="userPlus" label="Inviter" size="lg" iconSize={22} />
+          <IconButton
+            icon="userPlus"
+            label="Ajouter"
+            size="lg"
+            iconSize={22}
+            onClick={onAdd}
+          />
         }
       />
-      <SearchField placeholder="Nom ou e-mail" className="mt-4" />
-      <PhoneSection title="Navettes" count={2} className="mt-5" />
-      <div className="mt-2.5">
-        <PhoneRow
-          leading={<PersonAvatar initials="KD" raised />}
-          title="Karim Daoud"
-          lines={['Service courrier']}
-          separator
-        />
-        <PhoneRow
-          leading={<PersonAvatar initials="SL" raised />}
-          title="Sophie Lambert"
-          lines={['Service courrier']}
-          separator
-        />
-      </div>
-      <PhoneSection title="Départements" count={5} className="mt-2.5" />
-      <div className="mt-2.5">
-        <PhoneRow
-          leading={<PersonAvatar initials="JP" raised />}
-          title="Julie Perrin"
-          lines={['Studio']}
-          separator
-        />
-        <PhoneRow
-          leading={<PersonAvatar initials="TM" raised />}
-          title="Thomas Moreau"
-          lines={['Studio']}
-          separator
-        />
-        <PhoneRow
-          leading={<PersonAvatar initials="NK" raised />}
-          title="Nadia Kessler"
-          lines={['Finance']}
-          before={<RowState label="Invitation envoyée" tone="blue" width={140} />}
-          separator
-        />
-        <PhoneRow
-          leading={<PersonAvatar initials="BV" raised />}
-          title="Bruno Vidal"
-          lines={['Juridique']}
-          separator
-        />
-        <PhoneRow
-          leading={<PersonAvatar initials="ÉG" raised />}
-          title="Élise Garnier"
-          lines={['Finance']}
-          before={<RowState label="Suspendu" tone="orange" width={93} />}
-          separator
-        />
-      </div>
+      <SearchField
+        placeholder="Nom ou e-mail"
+        className="mt-4"
+        value={query}
+        onChange={(event) => onQueryChange?.(event.target.value)}
+        onClear={() => onQueryChange?.('')}
+      />
+      {sections.map((section, index) => (
+        <div key={section.title}>
+          <PhoneSection
+            title={section.title}
+            count={section.count}
+            className={index === 0 ? 'mt-5' : 'mt-2.5'}
+          />
+          <div className="mt-2.5">
+            {section.rows.map((row) => (
+              <button
+                key={row.id}
+                type="button"
+                className="block w-full cursor-pointer text-left"
+                onClick={() => onSelect?.(row.id)}
+              >
+                <PhoneRow
+                  leading={<PersonAvatar initials={row.initials} raised />}
+                  title={row.name}
+                  lines={[row.line]}
+                  before={row.state && <RowState state={row.state} />}
+                  separator
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {footer}
     </Screen>
   );
 }
@@ -111,7 +148,8 @@ function AccountRow({
   tileClass,
   label,
   value,
-  chevron = false,
+  select,
+  selectName,
   separator = false,
   textTop = 17,
 }: {
@@ -119,7 +157,8 @@ function AccountRow({
   tileClass: string;
   label: string;
   value: string;
-  chevron?: boolean;
+  select?: ComptesSelect;
+  selectName?: string;
   separator?: boolean;
   textTop?: number;
 }) {
@@ -138,19 +177,22 @@ function AccountRow({
       </span>
       <span
         className={cn(
-          'absolute text-muted',
-          chevron ? 'right-9' : 'right-[15px]',
+          'absolute max-w-[180px] truncate text-muted',
+          select ? 'right-9' : 'right-[15px]',
         )}
         style={{ top: textTop }}
       >
-        {value}
+        {select ? select.label : value}
       </span>
-      {chevron && (
-        <Icon
-          name="chevron"
-          size={16}
-          className="absolute top-[18px] right-3.5 text-faint"
-        />
+      {select && (
+        <>
+          <Icon
+            name="chevron"
+            size={16}
+            className="absolute top-[18px] right-3.5 text-faint"
+          />
+          <SelectOverlay select={select} name={selectName ?? label} />
+        </>
       )}
       {separator && (
         <div className="absolute right-0 bottom-0 left-14 h-px bg-separator" />
@@ -159,18 +201,46 @@ function AccountRow({
   );
 }
 
+export type CompteRecordMobileProps = {
+  initials: string;
+  name: string;
+  email: string;
+  role: { value: string; select?: ComptesSelect };
+  department?: { value: string; select?: ComptesSelect };
+  state?: string;
+  lastLogin: string;
+  devices?: string;
+  message?: string;
+  actions: readonly { label: string; danger?: boolean; onClick?: () => void }[];
+  onBack?: () => void;
+};
+
 /** The record of one account: its role, where it sits, what can be done to it. */
-export function AdminCompteMobile() {
+export function CompteRecordMobile({
+  initials,
+  name,
+  email,
+  role,
+  department,
+  state,
+  lastLogin,
+  devices,
+  message,
+  actions,
+  onBack,
+}: CompteRecordMobileProps) {
   return (
     <Screen tone="fill">
-      <NavBar />
+      <NavBar onBack={onBack} />
       <div className="relative mt-3 h-14">
         <span className="absolute top-0 left-0 flex size-14 items-center justify-center rounded-full bg-surface text-20 font-semibold">
-          JP
+          {initials}
         </span>
-        <p className="absolute -top-px left-[68px] text-24 font-bold">Julie Perrin</p>
-        <p className="absolute top-[31px] left-[68px] text-14 text-muted">
-          julie.perrin@atelier-lumen.fr
+        <p className="absolute -top-px right-0 left-[68px] truncate text-24 font-bold">
+          {name}
+        </p>
+        <p className="absolute top-[31px] right-0 left-[68px] truncate text-14 text-muted">
+          {email}
         </p>
       </div>
       <div className="mt-7 rounded-[14px] bg-surface">
@@ -178,51 +248,177 @@ export function AdminCompteMobile() {
           icon="building"
           tileClass="bg-muted"
           label="Rôle"
-          value="Département"
+          value={role.value}
+          select={role.select}
           separator
         />
-        <AccountRow
-          icon="pin"
-          tileClass="bg-ios-red-light"
-          label="Rattachement"
-          value="Studio"
-          chevron
-          separator
-        />
+        {department && (
+          <AccountRow
+            icon="pin"
+            tileClass="bg-ios-red-light"
+            label="Rattachement"
+            value={department.value}
+            select={department.select}
+            separator
+          />
+        )}
+        {state && (
+          <AccountRow
+            icon="pause"
+            tileClass="bg-muted"
+            label="État"
+            value={state}
+            separator
+          />
+        )}
+        {devices && (
+          <AccountRow
+            icon="phone"
+            tileClass="bg-muted"
+            label="Appareils"
+            value={devices}
+            separator
+          />
+        )}
         <AccountRow
           icon="clock"
           tileClass="bg-muted"
           label="Dernière connexion"
-          value="10:51"
+          value={lastLogin}
           textTop={16}
         />
       </div>
+      {message && (
+        <p role="alert" className="mt-3 px-4 text-13 text-red">
+          {message}
+        </p>
+      )}
       <div className="mt-7 rounded-[14px] bg-surface text-16">
-        <div className="relative h-[52px] pt-4 pl-4">
-          Renvoyer un lien de mot de passe
-          <div className="absolute right-0 bottom-0 left-4 h-px bg-separator" />
-        </div>
-        <div className="h-[52px] pt-[17px] pl-4 text-red">Suspendre le compte</div>
+        {actions.map((action, index) => (
+          <button
+            key={action.label}
+            type="button"
+            onClick={action.onClick}
+            className={cn(
+              'relative block h-[52px] w-full cursor-pointer pl-4 text-left',
+              index === 0 ? 'pb-px' : 'pb-0',
+              action.danger && 'text-red',
+            )}
+          >
+            {action.label}
+            {index < actions.length - 1 && (
+              <span className="absolute right-0 bottom-0 left-4 h-px bg-separator" />
+            )}
+          </button>
+        ))}
       </div>
     </Screen>
   );
 }
 
-/** Inviting a department account; `taken` is the address already known. */
-export function AdminInviterMobile({ taken = false }: { taken?: boolean }) {
+export type CompteFormMobileProps = {
+  title: string;
+  roles: readonly string[];
+  role: string;
+  onRole?: (role: string) => void;
+  department?: ComptesSelect;
+  name: string;
+  email: string;
+  password?: string;
+  passwordLabel?: string;
+  onField?: (key: 'name' | 'email' | 'password', value: string) => void;
+  hint: string;
+  taken?: boolean;
+  submitLabel: string;
+  submitIcon: IconName;
+  saving?: boolean;
+  onSubmit?: () => void;
+  onClose?: () => void;
+};
+
+const FIELD_BOX =
+  'h-12 w-full rounded-[12px] bg-surface pr-3.5 pl-3.5 pb-[3px] text-16';
+
+function FormInput({
+  label,
+  type = 'text',
+  value,
+  onChange,
+  invalid = false,
+  autoComplete,
+}: {
+  label: string;
+  type?: string;
+  value: string;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  invalid?: boolean;
+  autoComplete?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="relative -top-px block pl-1 text-13 font-medium text-muted">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        onChange={onChange}
+        aria-invalid={invalid}
+        autoComplete={autoComplete}
+        className={cn(
+          'mt-1.5',
+          FIELD_BOX,
+          invalid && 'shadow-[inset_0_0_0_1.5px_var(--color-red)]',
+        )}
+      />
+    </label>
+  );
+}
+
+/** Creating an account on the phone. */
+export function CompteFormMobile({
+  title,
+  roles,
+  role,
+  onRole,
+  department,
+  name,
+  email,
+  password,
+  passwordLabel,
+  onField,
+  hint,
+  taken = false,
+  submitLabel,
+  submitIcon,
+  saving = false,
+  onSubmit,
+  onClose,
+}: CompteFormMobileProps) {
+  const set =
+    (key: 'name' | 'email' | 'password') =>
+    (event: ChangeEvent<HTMLInputElement>) =>
+      onField?.(key, event.target.value);
   return (
     <Screen
       tone="fill"
       bottom={
         <div className="h-[112px] border-t border-separator bg-surface px-5 pt-[23px]">
-          <Button block icon="send" iconSize={20} className="gap-2">
-            Envoyer l’invitation
+          <Button
+            block
+            icon={submitIcon}
+            iconSize={20}
+            className="gap-2"
+            disabled={saving}
+            onClick={onSubmit}
+          >
+            {submitLabel}
           </Button>
         </div>
       }
     >
       <NavBar
-        title="Inviter"
+        title={title}
         leading={
           <IconButton
             icon="x"
@@ -230,33 +426,100 @@ export function AdminInviterMobile({ taken = false }: { taken?: boolean }) {
             size="lg"
             iconSize={22}
             className="-ml-0.5"
+            onClick={onClose}
           />
         }
       />
-      <p className="relative -top-px mt-4 h-4 pl-4 text-13 font-medium text-muted">Rôle</p>
+      <p className="relative -top-px mt-4 h-4 pl-4 text-13 font-medium text-muted">
+        Rôle
+      </p>
       <PhoneSegments
         label="Rôle"
-        options={['Navette', 'Département', 'Admin']}
-        value="Département"
+        options={[...roles]}
+        value={role}
+        onChange={onRole}
         className="mt-2 h-11 rounded-[22px]"
         optionClassName="h-10 rounded-[20px] pb-[3px] text-14"
       />
       <div className="mt-5 flex flex-col gap-4">
-        <PhoneField label="Département" value="Finance" chevron />
-        <PhoneField label="Prénom et nom" value="Nadia Kessler" />
-        <PhoneField
+        {department && (
+          <label className="relative block">
+            <span className="relative -top-px block pl-1 text-13 font-medium text-muted">
+              Département
+            </span>
+            <select
+              value={department.value}
+              onChange={(event) => department.onChange?.(event.target.value)}
+              className={cn('mt-1.5 appearance-none', FIELD_BOX)}
+            >
+              {department.options.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <Icon
+              name="chevron"
+              size={16}
+              className="absolute right-3.5 bottom-4 rotate-90 text-faint"
+            />
+          </label>
+        )}
+        <FormInput label="Prénom et nom" value={name} onChange={set('name')} />
+        <FormInput
           label="E-mail professionnel"
-          value="nadia.kessler@atelier-lumen.fr"
-          boxClassName={
-            taken ? 'shadow-[inset_0_0_0_1.5px_var(--color-red)]' : undefined
-          }
+          type="email"
+          value={email}
+          onChange={set('email')}
+          invalid={taken}
         />
       </div>
       <p className={cn('relative -top-px mt-1.5 text-13', taken ? 'text-red' : 'text-muted')}>
-        {taken
-          ? 'Cette adresse a déjà un compte ou une invitation en attente.'
-          : 'Un lien valable 7 jours lui sera envoyé.'}
+        {hint}
       </p>
+      {passwordLabel && (
+        <div className="mt-4">
+          <FormInput
+            label={passwordLabel}
+            type="password"
+            autoComplete="new-password"
+            value={password ?? ''}
+            onChange={set('password')}
+          />
+        </div>
+      )}
+    </Screen>
+  );
+}
+
+/** What a suspended account sees on its device, whose data stays where it is. */
+export function CompteSuspenduScreen({
+  title,
+  lines,
+  retryLabel,
+  onRetry,
+}: {
+  title: string;
+  lines: readonly string[];
+  retryLabel: string;
+  onRetry?: () => void;
+}) {
+  return (
+    <Screen>
+      <div className="mt-[176px] flex flex-col items-center text-center">
+        <span className="flex size-[88px] items-center justify-center rounded-full bg-orange-soft text-orange-strong">
+          <Icon name="pause" size={44} />
+        </span>
+        <h1 className="mt-5 text-22 font-bold">{title}</h1>
+        {lines.map((line) => (
+          <p key={line} className="mt-2 text-15 leading-5 text-muted">
+            {line}
+          </p>
+        ))}
+        <Button block className="mt-8" onClick={onRetry}>
+          {retryLabel}
+        </Button>
+      </div>
     </Screen>
   );
 }

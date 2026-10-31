@@ -1,3 +1,4 @@
+import { accountStateOf } from '@repo/contract/accounts';
 import { UNFINISHED_STATUSES } from '@repo/contract/parcel-status';
 import { toUserRole } from '@repo/contract/auth';
 import type {
@@ -205,7 +206,7 @@ export async function attachDepartmentAccount(
   input: AttachDepartmentAccountInput,
 ): Promise<void> {
   const [account] = await db
-    .select({ role: user.role })
+    .select({ role: user.role, banned: user.banned, banReason: user.banReason })
     .from(organizationMember)
     .innerJoin(user, eq(user.id, organizationMember.userId))
     .where(
@@ -218,6 +219,12 @@ export async function attachDepartmentAccount(
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: translate('departments.error.accountNotFound'),
+    });
+  }
+  if (accountStateOf(account) === 'revoked') {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: translate('accounts.error.revoked'),
     });
   }
   if (input.departmentId === null) {

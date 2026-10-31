@@ -53,6 +53,13 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
       message: translate('error.unauthorized'),
     });
   }
+  // Read at every request: a suspended account keeps its session, so its phone keeps its data.
+  if (ctx.session.user.banned) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('accounts.error.suspended'),
+    });
+  }
   return next({ ctx: { ...ctx, session: ctx.session } });
 });
 
