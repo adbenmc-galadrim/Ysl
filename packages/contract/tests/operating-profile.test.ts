@@ -1,4 +1,4 @@
-import { canHandOver } from '@repo/contract/auth';
+import { canHandOver, toUserRole } from '@repo/contract/auth';
 import {
   DEFAULT_OPERATING_PROFILE,
   operatingImpact,
@@ -18,19 +18,25 @@ const impactOf = (change: Partial<OperatingProfile>) =>
     COUNTS,
   );
 
+describe('toUserRole', () => {
+  it('gives nothing for a role this version does not know, or a null one', () => {
+    expect(toUserRole('company_admin')).toBe('company_admin');
+    for (const role of ['admin', 'agent', 'autre', null, undefined]) {
+      expect(toUserRole(role)).toBeNull();
+    }
+  });
+});
+
 describe('canHandOver', () => {
   it('keeps the shuttle from handing over without a profile saying so', () => {
     expect(canHandOver('shuttle', DEFAULT_OPERATING_PROFILE)).toBe(false);
     expect(canHandOver('shuttle', SMALL_SITE_OPERATING_PROFILE)).toBe(true);
   });
 
-  it.each(['admin', 'agent', 'department'] as const)(
-    'leaves %s as it was whatever the profile',
-    (role) => {
-      expect(canHandOver(role, DEFAULT_OPERATING_PROFILE)).toBe(true);
-      expect(canHandOver(role, SMALL_SITE_OPERATING_PROFILE)).toBe(true);
-    },
-  );
+  it('lets a department hand over whatever the profile', () => {
+    expect(canHandOver('department', DEFAULT_OPERATING_PROFILE)).toBe(true);
+    expect(canHandOver('department', SMALL_SITE_OPERATING_PROFILE)).toBe(true);
+  });
 
   it.each(['company_admin', 'platform_admin'] as const)(
     'never lets %s hand over',

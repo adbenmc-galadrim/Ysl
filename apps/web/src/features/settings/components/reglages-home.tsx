@@ -277,7 +277,7 @@ export function ReglagesHome() {
       account={{
         name: session.user.name,
         initials: initialsOf(session.user.name),
-        description: t(`settings.account.${role}`),
+        description: role ? t(`settings.account.${role}`) : '',
         onPress: () => void navigate({ to: '/reglages/compte' }),
       }}
       groups={

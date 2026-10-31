@@ -61,13 +61,7 @@ describe('requireSession', () => {
 });
 
 describe('requireAdmin', () => {
-  it('sends an agent back to the home page', () => {
-    expect(
-      thrownBy(() => requireAdmin({ session: sessionWithRole('agent') })),
-    ).toMatchObject({ options: { to: '/' } });
-  });
-
-  it.each(['shuttle', 'department', 'platform_admin'])(
+  it.each(['shuttle', 'department', 'platform_admin', 'admin', 'agent'])(
     'sends a %s back to the home page',
     (role) => {
       expect(
@@ -79,12 +73,6 @@ describe('requireAdmin', () => {
   it('lets a company admin through', () => {
     expect(() =>
       requireAdmin({ session: sessionWithRole('company_admin') }),
-    ).not.toThrow();
-  });
-
-  it('lets an admin through', () => {
-    expect(() =>
-      requireAdmin({ session: sessionWithRole('admin') }),
     ).not.toThrow();
   });
 });
@@ -105,7 +93,7 @@ describe('safeRedirect', () => {
 });
 
 describe('requireDirectoryKeeper', () => {
-  it.each(['admin', 'company_admin', 'department'])('lets %s in', (role) => {
+  it.each(['company_admin', 'department'])('lets %s in', (role) => {
     expect(
       thrownBy(() =>
         requireDirectoryKeeper({ session: sessionWithRole(role) }),
@@ -113,7 +101,7 @@ describe('requireDirectoryKeeper', () => {
     ).toBeUndefined();
   });
 
-  it.each(['agent', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
+  it.each(['agent', 'admin', 'shuttle', 'platform_admin'])('turns %s away', (role) => {
     expect(
       thrownBy(() =>
         requireDirectoryKeeper({ session: sessionWithRole(role) }),

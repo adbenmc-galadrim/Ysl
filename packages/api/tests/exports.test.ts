@@ -29,7 +29,7 @@ const {
 } = await import('#features/exports/service');
 
 function memberSession(userId: string): Session {
-  const session = sessionFor('agent');
+  const session = sessionFor('shuttle');
   return {
     session: { ...session.session, userId },
     user: { ...session.user, id: userId },

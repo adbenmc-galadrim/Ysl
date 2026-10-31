@@ -16,7 +16,7 @@ import {
 const READER = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
-  role: 'agent',
+  role: 'shuttle',
   departmentId: null,
 } as const;
 
@@ -27,7 +27,7 @@ let sync: AnyDb;
 const writer = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
-  role: 'agent',
+  role: 'shuttle',
   departmentId: null,
 } as const;
 const NOW = new Date('2026-10-27T09:30:00Z');

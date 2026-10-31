@@ -59,7 +59,7 @@ export function AccountScreen() {
         />
         <GroupedRow
           title={t('settings.account.role')}
-          value={t(`auth.role.${role}`)}
+          value={role ? t(`auth.role.${role}`) : ''}
         />
       </GroupedSection>
       <Button

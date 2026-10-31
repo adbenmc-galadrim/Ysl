@@ -30,17 +30,17 @@ function memberSession(role: string): Session {
 
 describe('maintenance router', () => {
   it('keeps the purge to admins', async () => {
-    const agent = callerFor(memberSession('agent'));
-    await expect(agent.maintenance.status()).rejects.toMatchObject({
+    const shuttle = callerFor(memberSession('shuttle'));
+    await expect(shuttle.maintenance.status()).rejects.toMatchObject({
       code: 'FORBIDDEN',
     });
-    await expect(agent.maintenance.purgeNow()).rejects.toMatchObject({
+    await expect(shuttle.maintenance.purgeNow()).rejects.toMatchObject({
       code: 'FORBIDDEN',
     });
   });
 
   it('purges the admin’s mailroom by hand and reports it', async () => {
-    const admin = callerFor(memberSession('admin'));
+    const admin = callerFor(memberSession('company_admin'));
     await expect(admin.maintenance.status()).resolves.toEqual({ last: null });
 
     const outcome = await admin.maintenance.purgeNow();

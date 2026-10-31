@@ -10,6 +10,8 @@ export const fr = {
   'sync.op.forbidden': 'Cet élément appartient à un autre service courrier.',
   'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
+  'sync.op.departmentArchived':
+    'Ce département est archivé : le colis ou le salarié ne peut pas y retourner.',
   'sync.op.transition':
     'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
   'sync.op.statusStale':
@@ -41,9 +43,7 @@ export const fr = {
     'Ce réglage a déjà été enregistré depuis un autre appareil : rouvrez-le avant de le modifier.',
   'sync.op.retry':
     'Le serveur n’a pas pu enregistrer ce changement, nouvel essai plus tard.',
-  'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
-  'agents.error.notFound': 'Ce compte n’existe pas.',
-  'agents.error.invalid': 'Les informations saisies sont invalides.',
+  'departments.error.accountNotFound': 'Ce compte n’existe pas.',
   'departments.error.nameTaken': 'Un département porte déjà ce nom.',
   'departments.error.notFound': 'Ce département n’existe pas.',
   'departments.error.inUse':
@@ -263,8 +263,6 @@ export const fr = {
   'auth.signOut.failed': 'La déconnexion a échoué. Réessayez.',
   'auth.signOut.wipe':
     'Se déconnecter efface les données de cet iPhone une fois tout envoyé.',
-  'auth.role.agent': 'Agent',
-  'auth.role.admin': 'Administrateur',
   'auth.role.platform_admin': 'Admin de l’app',
   'auth.role.company_admin': 'Admin entreprise',
   'auth.role.department': 'Département',
@@ -1329,8 +1327,6 @@ export const fr = {
   'settings.corners.tiles': 'Pastilles toujours rondes',
   'settings.corners.tilesFooter':
     'Icônes de réglages, avatars et boutons ronds, quel que soit l’arrondi.',
-  'settings.account.agent': 'Agent courrier',
-  'settings.account.admin': 'Agent courrier, administrateur',
   'settings.account.platform_admin': 'Admin de l’app',
   'settings.account.company_admin': 'Admin entreprise',
   'settings.account.department': 'Département',

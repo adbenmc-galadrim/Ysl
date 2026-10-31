@@ -46,7 +46,8 @@ export function constraintOf(error: unknown): string | undefined {
  * a delivery a stale copy would undo, a cancellation it would revive, a
  * notification or a delivery without anyone to give it to; and, by its
  * unique index, a person whose e-mail their department already has (F50) and
- * a setting another device saved first under its key.
+ * a setting another device saved first under its key; a department that
+ * was archived (drizzle/0023_departement_archive.sql).
  */
 export const GUARDS = {
   parcel_status_transition: {
@@ -68,6 +69,10 @@ export const GUARDS = {
   handover_parcels_sticky: {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.handoverParcels',
+  },
+  department_archived: {
+    status: SYNC_STATUS.conflict,
+    key: 'sync.op.departmentArchived',
   },
   parcel_recipient_check: {
     status: SYNC_STATUS.badRequest,

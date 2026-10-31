@@ -134,7 +134,7 @@ describe('chooseOrganizationFor', () => {
     expect(
       await chooseOrganizationFor(
         db,
-        { email: 'un@example.test', role: 'agent' },
+        { email: 'un@example.test', role: 'shuttle' },
         'X',
       ),
     ).toEqual({ kind: 'new', name: 'X' });
@@ -156,7 +156,7 @@ describe('resolveOrganizationFor', () => {
   it('still creates one for any other account', async () => {
     const resolved = await resolveOrganizationFor(
       db,
-      { email: 'un@example.test', role: 'agent' },
+      { email: 'un@example.test', role: 'shuttle' },
       'Nouvelle',
     );
 

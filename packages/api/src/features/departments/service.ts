@@ -216,7 +216,7 @@ export async function attachDepartmentAccount(
   if (!account) {
     throw new TRPCError({
       code: 'NOT_FOUND',
-      message: translate('agents.error.notFound'),
+      message: translate('departments.error.accountNotFound'),
     });
   }
   if (input.departmentId === null) {

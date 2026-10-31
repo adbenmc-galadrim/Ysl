@@ -17,7 +17,7 @@ afterAll(async () => {
 });
 
 function memberSession(userId: string): Session {
-  const session = sessionFor('agent');
+  const session = sessionFor('shuttle');
   return {
     session: { ...session.session, userId },
     user: { ...session.user, id: userId },

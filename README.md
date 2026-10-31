@@ -38,11 +38,10 @@ impossible. `pnpm db:down` arrête la base.
 
 Quatre rôles (`docs/cahier-des-charges-v3.md`, §2.1) : `platform_admin` (admin de
 l'app), `company_admin` (admin entreprise), `department` (département, rattaché par
-`departments.attachAccount`) et `shuttle` (navette). `admin` et `agent` restent les
-rôles des comptes existants, jusqu'à la conversion : `admin` vaut admin entreprise,
-`agent` garde tous les colis de son organisation. Un compte `department` n'atteint
-que ses colis, son annuaire, ses codes de retrait, son département, les réglages et
-ses modèles (`docs/synchronisation.md`).
+`departments.attachAccount`) et `shuttle` (navette). Un rôle inconnu n'atteint rien.
+La conversion des comptes d'avant est décrite dans `docs/conversion-multi-entreprises.md`.
+Un compte `department` n'atteint que ses colis, son annuaire, ses codes de retrait, son
+département, les réglages et ses modèles (`docs/synchronisation.md`).
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
 Un compte `platform_admin` n'appartient à aucune organisation (`auth:create-user` sans
@@ -54,12 +53,12 @@ publique : le premier administrateur se crée en ligne de commande, les comptes 
 aussi tant que l'écran d'équipe n'existe pas.
 
 ```bash
-echo 'un-mot-de-passe' | pnpm auth:create-user --email admin@example.com --name "Admin" --role admin
+echo 'un-mot-de-passe' | pnpm auth:create-user --email admin@example.com --name "Admin" --role company_admin
 ```
 
 Le mot de passe se lit sur l'entrée standard ou dans `AUTH_USER_PASSWORD`, jamais en
-argument. Sans `--role`, le compte est un agent. Un mot de passe oublié se réinitialise
-par l'administrateur.
+argument. `--role` est obligatoire. Rien ne réinitialise encore un mot de passe oublié : cela
+vient avec l'écran d'équipe (YSL-83).
 
 Chaque compte appartient à un service courrier (une organisation), la clé de toutes les
 données synchronisées. `--organization "<nom>"` le désigne (créé s'il n'existe pas) ;
@@ -123,7 +122,7 @@ Pour créer un compte en production, depuis le terminal du conteneur de l'API da
 
 ```bash
 cd /app/packages/auth
-AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-user.ts --email admin@example.com --name "Admin" --role admin
+AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-user.ts --email admin@example.com --name "Admin" --role company_admin
 ```
 
 Ce terminal est interactif, le script n'y lit donc pas l'entrée standard : le mot de

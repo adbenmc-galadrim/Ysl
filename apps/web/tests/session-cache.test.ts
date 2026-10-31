@@ -8,7 +8,12 @@ import {
 } from '#/features/auth/session-cache';
 
 const session = {
-  user: { id: 'u1', name: 'Agent', email: 'agent@example.com', role: 'agent' },
+  user: {
+    id: 'u1',
+    name: 'Agent',
+    email: 'agent@example.com',
+    role: 'shuttle',
+  },
   session: { id: 's1', userId: 'u1' },
 } as unknown as Session;
 

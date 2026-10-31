@@ -51,17 +51,6 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
   'imports.v1Csv': (caller) => caller.imports.v1Csv({ csv: '' }),
   'maintenance.purgeNow': (caller) => caller.maintenance.purgeNow(),
   'devices.revoke': (caller) => caller.devices.revoke({ id: newId() }),
-  'agents.list': (caller) => caller.agents.list(),
-  'agents.create': (caller) =>
-    caller.agents.create({
-      name: 'Test',
-      email: 'test@example.com',
-      password: 'motdepasse-1',
-    }),
-  'agents.setActive': (caller) =>
-    caller.agents.setActive({ userId: 'x', active: false }),
-  'agents.resetPassword': (caller) =>
-    caller.agents.resetPassword({ userId: 'x', password: 'motdepasse-1' }),
   'operating.get': (caller) => caller.operating.get(),
   'operating.save': (caller) =>
     caller.operating.save({ profile: DEFAULT_OPERATING_PROFILE }),
@@ -123,12 +112,6 @@ const ADMIN = [
   'directory.moveRequests',
   'directory.closeMoveRequest',
 ];
-const AGENTS = [
-  'agents.list',
-  'agents.create',
-  'agents.setActive',
-  'agents.resetPassword',
-];
 const READ_DEPARTMENTS = ['departments.list', 'account.company'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
 const ATTACHED_DEPARTMENT = [
@@ -141,9 +124,10 @@ const WITHOUT_HANDOVER = OPERATIONS.filter(
 );
 
 const ALLOWED: Record<string, string[]> = {
-  agent: OPERATIONS,
-  none: OPERATIONS,
-  admin: [...OPERATIONS, ...ADMIN, ...AGENTS],
+  // Gone with the conversion, or unknown to this version: nothing, not a default.
+  agent: [],
+  admin: [],
+  none: [],
   company_admin: [...WITHOUT_HANDOVER, ...ADMIN],
   shuttle: WITHOUT_HANDOVER,
   // Attached nowhere: the attached account has its own test below.
@@ -177,13 +161,11 @@ describe.each(Object.keys(ALLOWED))('role %s', (role) => {
 describe('a department account attached to a department', () => {
   it.each(Object.keys(ROUTES))('on %s', async (route) => {
     const departmentId = newId();
-    await db
-      .insert(department)
-      .values({
-        id: departmentId,
-        organizationId: ORGANIZATION_ID,
-        name: route,
-      });
+    await db.insert(department).values({
+      id: departmentId,
+      organizationId: ORGANIZATION_ID,
+      name: route,
+    });
     await db.insert(departmentMember).values({
       userId: AGENT_ID,
       organizationId: ORGANIZATION_ID,

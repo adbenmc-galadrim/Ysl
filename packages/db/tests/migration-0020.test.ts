@@ -33,6 +33,7 @@ function foldersBefore(tag: string): string {
 const client = new PGlite();
 const db = drizzle({ client, schema });
 const before = foldersBefore('0020_synchro_par_departement');
+const beforeConversion = foldersBefore('0024_conversion_prod');
 
 const organizationId = newId();
 const otherOrganizationId = newId();
@@ -45,6 +46,7 @@ const movedPersonId = newId();
 afterAll(async () => {
   await client.close();
   rmSync(before, { recursive: true, force: true });
+  rmSync(beforeConversion, { recursive: true, force: true });
 });
 
 const addPerson = (id: string, email: string) =>
@@ -113,7 +115,7 @@ describe('0020_synchro_par_departement', () => {
       [parcelId],
     );
 
-    await migrate(db, { migrationsFolder });
+    await migrate(db, { migrationsFolder: beforeConversion });
 
     expect(await departmentOf(parcelId)).toBeNull();
     const { rows } = await client.query<{ server_xid: string }>(

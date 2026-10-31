@@ -109,28 +109,26 @@ const handoverRow = (parcelIds: string[], personId: string) => ({
 });
 
 describe('sync.push by role', () => {
-  describe('the roles of before', () => {
-    it.each(['agent', 'admin'] as const)(
-      '%s still writes the directory and hands over',
-      async (role) => {
-        const access = accessOf(role);
-        const personId = newId();
-        expect(
-          await statusOf(access, op('directory_person', personId, person())),
-        ).toBe(200);
-        const parcelId = await addParcel({ personId });
-        expect(
-          await statusOf(
-            access,
-            op('handover', newId(), handoverRow([parcelId], personId)),
-          ),
-        ).toBe(200);
-      },
-    );
+  describe('an archived department', () => {
+    it('refuses a parcel pushed into it, and says why', async () => {
+      const archived = newId();
+      await db.insert(schema.department).values({
+        id: archived,
+        organizationId: ORGANIZATION_ID,
+        name: 'Fermé',
+        deletedAt: new Date(),
+      });
+      const id = newId();
+      const { results } = await push(sync, accessOf('company_admin'), {
+        ops: [op('parcel', id, newParcel({ departmentId: archived }))],
+      });
+      expect(results[0]?.status).toBe(409);
+      expect(results[0]?.message).toContain('archivé');
+    });
   });
 
   describe('everyone', () => {
-    it.each(['agent', 'admin', 'company_admin', 'shuttle'] as const)(
+    it.each(['company_admin', 'shuttle'] as const)(
       '%s writes no department through the sync',
       async (role) => {
         expect(

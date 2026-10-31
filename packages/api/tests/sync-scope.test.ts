@@ -109,12 +109,7 @@ describe('sync.pull by role', () => {
     expect(department.get('directory_person')).toEqual([mine]);
     expect(department.get('department')).toEqual([finance]);
 
-    for (const role of [
-      'company_admin',
-      'shuttle',
-      'admin',
-      'agent',
-    ] as const) {
+    for (const role of ['company_admin', 'shuttle'] as const) {
       const seen = (await read(accessOf(role))).ids;
       expect(seen.get('parcel')).toEqual(expect.arrayContaining(everything));
       expect(seen.get('parcel')).not.toContain(foreignParcel);
@@ -307,7 +302,7 @@ describe('sync.pull by role', () => {
     );
     expect(asLegal.reset).toBe(true);
 
-    const asAgent = (await read(accessOf('agent'))).last;
+    const asAgent = (await read(accessOf('shuttle'))).last;
     const converted = await read(
       accessOf('department', finance),
       cursorOf(asAgent),
@@ -318,12 +313,7 @@ describe('sync.pull by role', () => {
 
   it('leaves a company reader on the server’s generation', async () => {
     const [row] = await db.select().from(schema.syncGeneration);
-    for (const role of [
-      'agent',
-      'admin',
-      'company_admin',
-      'shuttle',
-    ] as const) {
+    for (const role of ['shuttle', 'company_admin'] as const) {
       expect((await read(accessOf(role))).last.generation).toBe(
         row?.generation,
       );
@@ -331,7 +321,7 @@ describe('sync.pull by role', () => {
   });
 
   it('sends no department to an app that does not announce it, and no scope mark to anyone', async () => {
-    const output = await pull(sync, accessOf('agent'), {
+    const output = await pull(sync, accessOf('shuttle'), {
       cursor: null,
       page: null,
       limit: 1000,

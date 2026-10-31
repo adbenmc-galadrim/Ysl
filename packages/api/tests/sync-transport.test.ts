@@ -23,7 +23,7 @@ afterAll(async () => {
 });
 
 function memberSession(): Session {
-  const session = sessionFor('agent');
+  const session = sessionFor('shuttle');
   return {
     session: { ...session.session, userId: AGENT_ID },
     user: { ...session.user, id: AGENT_ID },

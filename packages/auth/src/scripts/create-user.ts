@@ -1,6 +1,5 @@
 import { parseArgs } from 'node:util';
 import {
-  DEFAULT_USER_ROLE,
   password as passwordSchema,
   USER_ROLES,
   userRole,
@@ -15,7 +14,7 @@ import {
 
 const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
 
-const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role ${USER_ROLES.join('|')}] [--organization <name>]
+const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> --role ${USER_ROLES.join('|')} [--organization <name>]
 The password is read from standard input, or from ${PASSWORD_VARIABLE}.
 Without --organization, the only organization is used, or "Service courrier" is created.
 A platform_admin belongs to no organization: --organization is refused.`;
@@ -38,7 +37,7 @@ async function main(): Promise<void> {
     options: {
       email: { type: 'string' },
       name: { type: 'string' },
-      role: { type: 'string', default: DEFAULT_USER_ROLE },
+      role: { type: 'string' },
       organization: { type: 'string' },
     },
   });

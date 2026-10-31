@@ -273,7 +273,7 @@ async function checkDepartment(
 /**
  * Whether this account may write this row (§2.1), before anything else looks
  * at it. A department is held to its own rows; `department` is written by its
- * router only; `admin`, `agent` and a null role write as before (YSL-118).
+ * router only.
  */
 export async function checkReach(
   tx: AnyDb,

@@ -5,6 +5,10 @@ import { presetTemplateId } from '@repo/contract/mail';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { push } from '#features/sync/push';
 import {
@@ -25,15 +29,22 @@ let sync: AnyDb;
 const writer = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
-  role: 'agent',
+  role: 'shuttle',
   departmentId: null,
 } as const;
-const admin = { ...writer, role: 'admin' } as const;
+const admin = { ...writer, role: 'company_admin' } as const;
 const NOW = new Date('2026-10-24T09:30:00Z');
 
 beforeAll(async () => {
   ({ client, db } = await openTestDb());
   sync = asAnyDb(db);
+  // The writer is the shuttle of a converted site: it hands over.
+  await db.insert(schema.setting).values({
+    id: newId(),
+    organizationId: ORGANIZATION_ID,
+    key: OPERATING_PROFILE_KEY,
+    value: SMALL_SITE_OPERATING_PROFILE,
+  });
 });
 
 afterAll(async () => {
@@ -118,7 +129,7 @@ describe('sync.push', () => {
       contactId: contact.id,
       department: 'Prestataire',
     });
-    await push(sync, writer, {
+    await push(sync, admin, {
       ops: [
         op('contact', contact),
         op('directory_person', card),
@@ -132,8 +143,8 @@ describe('sync.push', () => {
       op('contact', { ...contact, deletedAt: NOW }),
     ];
 
-    const first = await push(sync, writer, { ops: merged() });
-    const again = await push(sync, writer, { ops: merged() });
+    const first = await push(sync, admin, { ops: merged() });
+    const again = await push(sync, admin, { ops: merged() });
 
     expect(first.results.map((r) => r.status)).toEqual([200, 200, 200]);
     expect(again.results.map((r) => r.status)).toEqual([200, 200, 200]);
@@ -302,7 +313,7 @@ describe('sync.push', () => {
       email: 'Camille.Martin@Example.test',
     });
 
-    const { results } = await push(sync, writer, { ops: [first, second] });
+    const { results } = await push(sync, admin, { ops: [first, second] });
 
     expect(results.map((result) => result.status)).toEqual([200, 409]);
     expect(results[1]?.message).toBe(
