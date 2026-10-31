@@ -322,8 +322,8 @@ Cette durée ne fait pas partie du §9.2 : elle reste à valider par le DPO. Job
 dans `apps/server` (`MAIL_POLL_SECONDS`, 30 par défaut, 0 le coupe), éteint sans
 `BREVO_API_KEY` ou `MAIL_FROM_ADDRESS`.
 
-**Envoi par le serveur** (YSL-115, ME04) : `sync.pull` dit `serverMail` (clé Brevo, adresse
-d'expédition, job actif). Sans ce oui, l'iPhone n'écrit aucune demande et le job ne tourne
+**Envoi par le serveur** (YSL-115, ME04) : `sync.pull` dit `serverMail` (clé Brevo, jeton du webhook,
+adresse d'expédition, job actif). Sans ce oui, l'iPhone n'écrit aucune demande et le job ne tourne
 pas : la messagerie du téléphone reste le seul parcours, sans tirage ni file. Avec lui, la
 validation d'un lot écrit une `notification` `channel = 'server'`, `prepared`, par destinataire
 ayant une adresse ; elle voyage par la synchro, donc tient hors ligne. Un iPhone d'avant
@@ -334,13 +334,13 @@ dans une transaction. À l'envoi : `sent`, colis `notifie`, événement, dans la
 la file. Pendant 15 minutes l'iPhone considère ces colis partis ; passé ce délai ils lui
 reviennent en repli. Avant d'envoyer, le serveur revérifie : des colis déjà notifiés par le
 téléphone annulent le mail. Un échec passe la ligne en `failed`, rétablit l'ancien code et
-laisse les colis à notifier. Une demande de plus de 3 jours n'est plus envoyée. Le corps,
+laisse les colis à notifier. Une demande de plus de 3 jours n'est plus envoyée, préparée ou en file (compte refusé) : l'ancien code revient. Le corps,
 qui porte le code, est effacé dès la fin de l'envoi ou de l'échec ; restent l'adresse et le
 statut, 30 jours. Si Brevo refuse l'expéditeur d'une entreprise (400, 401, 402, 403), le mail
 repart de l'adresse de la plateforme ; un second refus décide seul (compte refusé : file
 bloquée). `Répondre à` : le plus ancien compte du département du colis, sinon l'agent qui a
 validé. Une désinscription ou une plainte s'inscrit dans `email_suppression`, sans
-expiration : plus aucun mail du serveur à cette adresse, la ligne passe en `failed` et le
+expiration ni levée pour l'instant (à valider par le DPO) : plus aucun mail du serveur à cette adresse, la ligne passe en `failed` et le
 colis reste à prévenir par un autre moyen.
 
 **Relances par le serveur** : profil `reminders = required` (`automatic`) : le job demande

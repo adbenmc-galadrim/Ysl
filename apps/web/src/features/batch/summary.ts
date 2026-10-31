@@ -6,7 +6,11 @@ import type {
   LocalParcel,
 } from '#/features/db/schema';
 import { loadPendingMails } from '#/features/mail/pending-mails';
-import { requestServerMails, serverMailOn } from '#/features/mail/server-mail';
+import {
+  requestServerMails,
+  serverMailOn,
+  waitingOnServer,
+} from '#/features/mail/server-mail';
 import {
   awaitsNotice,
   mailsOfBatch,
@@ -93,15 +97,14 @@ export async function loadBatchSummary(
     .aboveOrEqual(batch.startedAt)
     .toArray();
   const on = await serverMailOn(db);
+  const now = new Date();
   return {
     batch,
     mails: mailsOfBatch(pending, batchId),
     serverMails: on
       ? recent.filter(
           (row) =>
-            row.channel === 'server' &&
-            !row.deletedAt &&
-            row.status !== 'failed' &&
+            waitingOnServer(row, now) &&
             row.parcelIds.some((id) => inBatch.has(id)),
         ).length
       : 0,

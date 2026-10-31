@@ -38,14 +38,16 @@ import { randomInt } from 'node:crypto';
 import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { qrAttachment, qrModules, qrTable } from '#features/mail/qr';
 import { enqueueEmail } from '#features/mail/queue';
-import { parcelsToTell, settleFailed } from '#features/mail/settle';
+import {
+  parcelsToTell,
+  REQUEST_MAX_AGE_MS,
+  settleFailed,
+} from '#features/mail/settle';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const ZONE = 'Europe/Paris';
 const BATCH = 20;
-/** A request this old is not sent any more: the phone had all the time to take over. */
-export const REQUEST_MAX_AGE_MS = 3 * 24 * 60 * 60_000;
 
 type Request = typeof notification.$inferSelect;
 type Parcel = typeof parcel.$inferSelect;

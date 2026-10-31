@@ -331,6 +331,60 @@ describe('a request written by the iPhone', () => {
     expect(await parcelOf(row.id)).toMatchObject({ status: 'recu' });
   });
 
+  it('stops the whole queue when the account is refused, whatever the sender', async () => {
+    await db.insert(mailSender).values({
+      organizationId: ORGANIZATION_ID,
+      name: 'Maison',
+      email: 'courrier@maison.test',
+      domain: 'maison.test',
+      status: 'verified',
+    });
+    const refused = brevoMailer({
+      apiKey: 'wrong-key',
+      from: { email: 'courrier@plateforme.test', name: 'Courrier' },
+      fetch: brevo.fetch,
+    });
+    const { id: person } = await addPerson();
+    const mail = await request(person, [await addParcel(person)]);
+    await prepare();
+    expect(
+      await drainEmailOutbox(any(), refused, { now: () => NOW }),
+    ).toMatchObject({ blocked: 1, failed: 0 });
+    expect(await mailOf(mail)).toMatchObject({ status: 'prepared' });
+  });
+
+  it('gives up a mail held in the queue too long, and the former code comes back', async () => {
+    const { id: person } = await addPerson();
+    await request(person, [await addParcel(person)]);
+    await round();
+    const [held] = await liveCodes(person);
+    await db.delete(emailOutbox);
+
+    const mail = await request(person, [await addParcel(person)]);
+    await prepare();
+    await db.update(emailOutbox).set({ nextAttemptAt: NOW });
+    brevo.sent.length = 0;
+    const later = new Date(Date.now() + 4 * DAY);
+    await drainEmailOutbox(any(), mailer, { now: () => later });
+
+    expect(brevo.sent).toHaveLength(0);
+    expect(await mailOf(mail)).toMatchObject({ status: 'failed' });
+    expect((await liveCodes(person)).map((c) => c.id)).toEqual([held!.id]);
+  });
+
+  it('remembers a complaint as an unsubscribe', async () => {
+    const { id: person, email } = await addPerson();
+    await request(person, [await addParcel(person)]);
+    await round();
+    await db.update(emailOutbox).set({ providerMessageId: '<c@relay>' });
+    await receiveMailEvent(any(), { event: 'spam', 'message-id': '<c@relay>' });
+    const [row] = await db
+      .select()
+      .from(emailSuppression)
+      .where(eq(emailSuppression.email, email));
+    expect(row?.reason).toBe('complained');
+  });
+
   it('sends one mail for a double tap', async () => {
     const { id: person } = await addPerson();
     const parcelId = await addParcel(person);

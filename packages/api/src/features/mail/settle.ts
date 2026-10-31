@@ -18,6 +18,9 @@ import {
 /** A reminder asked this soon after a mail repeats it: a second tap, a stale screen. */
 const RECENT_MS = 60 * 60_000;
 
+/** A request this old is not sent any more: the phone had all the time to take over. */
+export const REQUEST_MAX_AGE_MS = 3 * 24 * 60 * 60_000;
+
 type Request = typeof notification.$inferSelect;
 type Parcel = typeof parcel.$inferSelect;
 

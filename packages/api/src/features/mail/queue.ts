@@ -6,7 +6,12 @@ import { logger } from '@repo/shared/logger';
 import { and, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import type { EmailMessage, Mailer, SendResult } from '#features/mail/mailer';
 import { senderOf } from '#features/mail/sender';
-import { parcelsToTell, settleFailed, settleSent } from '#features/mail/settle';
+import {
+  parcelsToTell,
+  REQUEST_MAX_AGE_MS,
+  settleFailed,
+  settleSent,
+} from '#features/mail/settle';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -214,7 +219,11 @@ async function failAbandoned(db: AnyDb, now: Date): Promise<void> {
 }
 
 /** The phone told these parcels while the mail waited: it does not leave as well. */
-async function superseded(db: AnyDb, row: OutboxRow): Promise<boolean> {
+async function superseded(
+  db: AnyDb,
+  row: OutboxRow,
+  now: Date,
+): Promise<boolean> {
   if (!row.notificationId) return false;
   const [request] = await db
     .select()
@@ -222,6 +231,8 @@ async function superseded(db: AnyDb, row: OutboxRow): Promise<boolean> {
     .where(eq(notification.id, row.notificationId));
   if (!request || request.channel !== 'server') return false;
   if (request.status !== 'prepared') return true;
+  // Held back by a refused account: its text is out of date, and the former code goes back.
+  if (now.getTime() - row.createdAt.getTime() > REQUEST_MAX_AGE_MS) return true;
   const { parcels } = await parcelsToTell(db, request);
   return parcels.length === 0;
 }
@@ -295,7 +306,7 @@ export async function drainEmailOutbox(
   for (let index = 0; index < limit && !signal?.aborted; index += 1) {
     const row = await claimOne(db, now());
     if (!row) break;
-    const result = await superseded(db, row)
+    const result = await superseded(db, row, now())
       .then(async (over): Promise<SendResult> => {
         if (over) return { status: 'rejected', reason: SUPERSEDED };
         return sendFrom(

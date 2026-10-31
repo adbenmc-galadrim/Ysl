@@ -6,7 +6,11 @@ import { Dexie } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db as appDb } from '#/features/db/database';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
-import { parcelsOnServer, serverMailOn } from '#/features/mail/server-mail';
+import {
+  parcelsOnServer,
+  serverMailOn,
+  waitingOnServer,
+} from '#/features/mail/server-mail';
 import { readOperatingProfile } from '#/features/settings/operating-profile';
 import {
   groupByRecipient,
@@ -74,13 +78,14 @@ export async function loadReminderMails(
     automatic &&
     !states.get(parcel.id)?.late &&
     lastSent(parcel.id)?.deliveryStatus !== 'bounced' &&
-    // Given up on by the server: the phone is the way left.
+    // Given up on, or stuck, at the server: the phone is the way left.
     !aboutParcel(parcel.id).some(
       (row) =>
         row.channel === 'server' &&
         row.type === 'relance' &&
-        row.status === 'failed' &&
-        row.preparedAt > (lastSent(parcel.id)?.sentAt ?? parcel.notifiedAt!),
+        row.preparedAt > (lastSent(parcel.id)?.sentAt ?? parcel.notifiedAt!) &&
+        (row.status === 'failed' ||
+          (row.status === 'prepared' && !waitingOnServer(row, now))),
     ) &&
     aboutParcel(parcel.id).some(
       (row) => row.channel === 'server' && row.type === 'avis' && row.sentAt,
