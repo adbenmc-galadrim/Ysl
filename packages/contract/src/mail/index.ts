@@ -63,3 +63,15 @@ export type {
 } from './notification';
 export { DELIVERY_STATUSES, EMAIL_OUTBOX_STATUSES } from './outbox';
 export type { DeliveryStatus, EmailOutboxStatus } from './outbox';
+export {
+  DNS_RECORD_KINDS,
+  MAIL_DOMAIN_STATUSES,
+  saveSenderInput,
+  SENDER_NAME_MAX,
+  senderSettings,
+} from './sender';
+export type {
+  DnsRecord,
+  SaveSenderInput,
+  SenderSettings,
+} from './sender';

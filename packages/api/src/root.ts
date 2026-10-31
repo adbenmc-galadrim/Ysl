@@ -5,6 +5,7 @@ import { devicesRouter } from '#features/devices/router';
 import { exportsRouter } from '#features/exports/router';
 import { healthRouter } from '#features/health/router';
 import { importsRouter } from '#features/imports/router';
+import { mailSenderRouter } from '#features/mail/router';
 import { maintenanceRouter } from '#features/maintenance/router';
 import { pickupRouter } from '#features/pickup/router';
 import { syncRouter } from '#features/sync/router';
@@ -18,6 +19,7 @@ export const appRouter = router({
   exports: exportsRouter,
   health: healthRouter,
   imports: importsRouter,
+  mailSender: mailSenderRouter,
   maintenance: maintenanceRouter,
   pickup: pickupRouter,
   sync: syncRouter,

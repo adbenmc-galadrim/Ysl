@@ -168,6 +168,16 @@ export function ReglagesHome() {
             search: sentMails?.toConfirm ? { filtre: 'toConfirm' } : {},
           }),
       },
+      ...(isCompanyAdmin(role)
+        ? [
+            {
+              icon: 'globe' as const,
+              color: 'indigo' as const,
+              label: t('settings.sender'),
+              onPress: () => void navigate({ to: '/reglages/expediteur' }),
+            },
+          ]
+        : []),
     ],
   };
 

@@ -134,6 +134,13 @@
       "when": 1793424903097,
       "tag": "0018_departements",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793427311674,
+      "tag": "0019_expediteur_entreprise",
+      "breakpoints": true
     }
   ]
 }
