@@ -91,7 +91,8 @@ export function RecipientChooser({
   };
 
   const submit = () => {
-    if (!typing?.name.trim()) return;
+    // Until the book is read, a twin at this address could not be offered.
+    if (!book || !typing?.name.trim()) return;
     const email = normalizeEmail(typing.email);
     if (email && !isEmail(email)) {
       setEmailError(true);

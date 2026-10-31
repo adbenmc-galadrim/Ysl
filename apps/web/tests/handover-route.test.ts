@@ -3,6 +3,20 @@ import { describeRecipient } from '#/features/handover/recipient';
 import { parseRemiseColisSearch } from '#/features/handover/route';
 import { contactRow, personRow } from './helpers/local-rows';
 
+describe('describeRecipient with departments', () => {
+  it('names the department by its id, and keeps the word without one', () => {
+    const person = personRow({ departmentId: 'x', department: 'Ancien nom' });
+
+    expect(
+      describeRecipient({ kind: 'person', person }, new Map([['x', 'Presse']]))
+        .department,
+    ).toBe('Presse');
+    expect(describeRecipient({ kind: 'person', person }).department).toBe(
+      'Ancien nom',
+    );
+  });
+});
+
 describe('the search of /remise/colis', () => {
   it('keeps the code checked by a QR', () => {
     expect(

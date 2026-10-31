@@ -21,6 +21,7 @@ import type {
 } from '#/features/db/schema';
 import { ReadingView } from '#/features/diagnostic/components/reading-view';
 import {
+  departmentLabel,
   departmentNames,
   NO_DEPARTMENT_NAMES,
 } from '#/features/directory/people';
@@ -200,12 +201,13 @@ export function ReviewScreen() {
       draft.recipient?.kind === 'person'
         ? people.find((p) => p.id === draft.recipient?.id)
         : undefined;
+    const department = person ? departmentLabel(person, names) : '';
     return {
       id: draft.id,
       name: draft.recipient?.name ?? null,
       lines: [
-        person?.department
-          ? `${person.department}, ${carrierLine(draft)}`
+        department
+          ? `${department}, ${carrierLine(draft)}`
           : carrierLine(draft),
       ],
       thumbnail: thumbnail(draft),

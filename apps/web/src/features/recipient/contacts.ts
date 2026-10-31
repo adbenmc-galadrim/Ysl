@@ -102,8 +102,8 @@ export async function typedContact(
 
 /**
  * Saves someone typed outside the directory as a contact, local first and
- * queued for `sync.push`, and returns the choice it makes; a card of the
- * directory under the same e-mail is chosen instead, nothing written.
+ * queued for `sync.push`, and returns the choice it makes; the only card of
+ * the directory under the same e-mail is chosen instead, nothing written.
  */
 export async function saveOutsideContact(
   db: CourrierDatabase,
@@ -113,10 +113,13 @@ export async function saveOutsideContact(
   const now = options.now ?? new Date();
   const key = normalizeEmail(typed.email);
   if (key) {
-    const person = (
+    const cards = (
       await db.directoryPerson.where('email').equals(key).toArray()
-    ).find((p) => p.active && !p.deletedAt);
-    if (person) return personOption(person, await departmentNames(db));
+    ).filter((p) => p.active && !p.deletedAt);
+    // Twins in two departments: the address does not say which, so no card is taken.
+    if (cards.length === 1) {
+      return personOption(cards[0]!, await departmentNames(db));
+    }
   }
   const contact = await typedContact(
     db,

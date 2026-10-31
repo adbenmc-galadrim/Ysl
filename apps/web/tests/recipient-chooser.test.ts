@@ -130,6 +130,21 @@ describe('Personne hors annuaire', () => {
     expect(outsideDuplicates('', [camille], [temp])).toEqual([]);
   });
 
+  it('takes no twin for a typed address: it stays a contact', async () => {
+    const db = await openTestDatabase();
+    const twin = (departmentId: string) =>
+      personRow({ email: 'anne@example.com', departmentId });
+    await db.directoryPerson.bulkPut([twin('a'), twin('b')]);
+
+    const chosen = await saveOutsideContact(
+      db,
+      { name: 'Anne Martin', email: 'anne@example.com', department: '' },
+      { agentId: 'agent-1', now: NOW },
+    );
+
+    expect(chosen.kind).toBe('contact');
+  });
+
   it('offers every twin at the address, each with its department', () => {
     const twin = (id: string, departmentId: string) =>
       personRow({
