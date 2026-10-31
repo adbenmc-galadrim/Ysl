@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InvitationRouteImport } from './routes/invitation'
+import { Route as MotDePasseRouteImport } from './routes/mot-de-passe'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedDepartementRouteImport } from './routes/_authenticated/departement'
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
@@ -75,6 +76,11 @@ const ConnexionRoute = ConnexionRouteImport.update({
 const InvitationRoute = InvitationRouteImport.update({
   id: '/invitation',
   path: '/invitation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MotDePasseRoute = MotDePasseRouteImport.update({
+  id: '/mot-de-passe',
+  path: '/mot-de-passe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -336,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
+  '/mot-de-passe': typeof MotDePasseRoute
   '/departement': typeof AuthenticatedDepartementRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
@@ -384,6 +391,7 @@ export interface FileRoutesByTo {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
+  '/mot-de-passe': typeof MotDePasseRoute
   '/departement': typeof AuthenticatedDepartementRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/bienvenue': typeof BienvenueRoute
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
+  '/mot-de-passe': typeof MotDePasseRoute
   '/_authenticated/departement': typeof AuthenticatedDepartementRoute
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
@@ -487,6 +496,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/invitation'
+    | '/mot-de-passe'
     | '/departement'
     | '/notifier'
     | '/preparation'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/invitation'
+    | '/mot-de-passe'
     | '/departement'
     | '/notifier'
     | '/preparation'
@@ -585,6 +596,7 @@ export interface FileRouteTypes {
     | '/bienvenue'
     | '/connexion'
     | '/invitation'
+    | '/mot-de-passe'
     | '/_authenticated/departement'
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
@@ -636,6 +648,7 @@ export interface RootRouteChildren {
   BienvenueRoute: typeof BienvenueRoute
   ConnexionRoute: typeof ConnexionRoute
   InvitationRoute: typeof InvitationRoute
+  MotDePasseRoute: typeof MotDePasseRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       path: '/invitation'
       fullPath: '/invitation'
       preLoaderRoute: typeof InvitationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mot-de-passe': {
+      id: '/mot-de-passe'
+      path: '/mot-de-passe'
+      fullPath: '/mot-de-passe'
+      preLoaderRoute: typeof MotDePasseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -1093,6 +1113,7 @@ const rootRouteChildren: RootRouteChildren = {
   BienvenueRoute: BienvenueRoute,
   ConnexionRoute: ConnexionRoute,
   InvitationRoute: InvitationRoute,
+  MotDePasseRoute: MotDePasseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

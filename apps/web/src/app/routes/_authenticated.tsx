@@ -8,7 +8,7 @@ import {
   useNavigate,
 } from '@tanstack/react-router';
 import { useEffect } from 'react';
-import { toUserRole } from '@repo/contract/auth';
+import { mustChangePassword, toUserRole } from '@repo/contract/auth';
 import { sessionQueryOptions } from '#/features/auth/api/session';
 import { requireSession } from '#/features/auth/guards';
 import {
@@ -81,6 +81,7 @@ export const Route = createFileRoute('/_authenticated')({
       installed: isInstalledApp(currentDisplayContext()),
     });
     if (session.user.banned) return { session };
+    if (mustChangePassword(session)) throw redirect({ to: '/mot-de-passe' });
     const role = toUserRole(session.user.role);
     const area = areaOf(location.pathname);
     const profile =
