@@ -14,7 +14,7 @@ import {
   user,
 } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
-import { eq } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 
 export { COMPANY_SUSPENDED } from '@repo/contract/auth';
 
@@ -48,6 +48,15 @@ export async function createCompany(
     });
   });
   return id;
+}
+
+/** ME14: the script makes the first one; there is no second door to the platform. */
+export async function platformAdminExists(db: AnyDb): Promise<boolean> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(user)
+    .where(eq(user.role, 'platform_admin'));
+  return Boolean(row?.total);
 }
 
 export class OrganizationChoiceError extends Error {

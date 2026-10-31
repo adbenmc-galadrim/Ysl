@@ -1,7 +1,8 @@
 import { parseArgs } from 'node:util';
 import { password as passwordSchema } from '@repo/contract/auth';
-import { closeDb } from '@repo/db';
+import { closeDb, db } from '@repo/db';
 import { auth } from '#auth';
+import { platformAdminExists } from '#organization';
 import { PASSWORD_VARIABLE, readPassword } from '#scripts/read-password';
 
 const ROLE = 'platform_admin';
@@ -21,6 +22,11 @@ async function main(): Promise<void> {
   });
   if (!values.email || !values.name || values.role !== ROLE) {
     throw new Error(USAGE);
+  }
+  if (await platformAdminExists(db)) {
+    throw new Error(
+      `An app admin already exists: nothing created. A lost password: pnpm auth:reset-password.`,
+    );
   }
   const password = passwordSchema.safeParse(await readPassword());
   if (!password.success) {
