@@ -98,6 +98,9 @@ describe('profile models', () => {
         shuttleActsAsDepartment: true,
       }),
     ).toBe(2);
+    expect(
+      stepsChangedFromModel('multi_departments', DEFAULT_OPERATING_PROFILE),
+    ).toBe(6);
   });
 
   it('leaves a company without a profile as it was', () => {

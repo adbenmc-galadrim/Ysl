@@ -57,7 +57,10 @@ export const SECTIONS = [
 
 type Choice = string;
 
-export const choiceOf = (profile: OperatingProfile, param: OperatingParam): Choice => {
+export const choiceOf = (
+  profile: OperatingProfile,
+  param: OperatingParam,
+): Choice => {
   const value = profile[param];
   if (typeof value !== 'boolean') return value;
   return value ? 'yes' : 'no';

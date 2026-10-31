@@ -406,6 +406,7 @@ export function NouvelleEntrepriseFonctionnementDesktop({
           </DeskPanel>
         ))}
       </div>
+      {/* The footer floats over the page: the last row must scroll out from under it. */}
       <div aria-hidden className="h-20 shrink-0" />
     </WizardShell>
   );

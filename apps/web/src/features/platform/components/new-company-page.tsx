@@ -38,7 +38,7 @@ const ICON = {
   strict_traceability: 'shield',
 } as const;
 
-/** What each card promises: the test of the model's profile holds it to its word. */
+/** What each card promises: to keep in step with `PROFILE_OF_MODEL`. */
 const FEATURES = {
   small_site: [
     { text: t('platform.model.small_site.feature.handover'), on: true },
@@ -54,7 +54,10 @@ const FEATURES = {
   ],
   strict_traceability: [
     { text: t('platform.model.strict_traceability.feature.deposit'), on: true },
-    { text: t('platform.model.strict_traceability.feature.handover'), on: true },
+    {
+      text: t('platform.model.strict_traceability.feature.handover'),
+      on: true,
+    },
     { text: t('platform.model.strict_traceability.feature.photo'), on: true },
     { text: t('platform.model.strict_traceability.feature.proof'), on: true },
   ],

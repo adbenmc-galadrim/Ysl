@@ -4,7 +4,7 @@ import {
   OPERATING_PROFILE_KEY,
   SMALL_SITE_OPERATING_PROFILE,
 } from '@repo/contract/operating-profile';
-import { setting } from '@repo/db/schema';
+import { organization, setting } from '@repo/db/schema';
 import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
@@ -49,6 +49,20 @@ describe('the operating profile', () => {
 
   it('names no starting model for a company from before the models', async () => {
     expect(await admin().operating.get()).toMatchObject({ profileModel: null });
+  });
+
+  it('gives the starting model and keeps it through a save', async () => {
+    await db.update(organization).set({ profileModel: 'small_site' });
+    expect(await admin().operating.get()).toMatchObject({
+      profileModel: 'small_site',
+    });
+    const saved = await admin().operating.save({
+      profile: { ...DEFAULT_OPERATING_PROFILE, photo: 'required' },
+    });
+    expect(saved.profileModel).toBe('small_site');
+    await admin().operating.save({ profile: DEFAULT_OPERATING_PROFILE });
+    await db.delete(setting).where(eq(setting.key, OPERATING_PROFILE_KEY));
+    await db.update(organization).set({ profileModel: null });
   });
 
   it('saving the same profile writes nothing', async () => {
