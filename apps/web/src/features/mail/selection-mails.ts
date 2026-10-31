@@ -4,6 +4,7 @@ import {
   type PickupSecret,
   recallSecrets,
 } from '#/features/mail/pickup-code';
+import { parcelsOnServer } from '#/features/mail/server-mail';
 import {
   groupByRecipient,
   type RecipientMail,
@@ -24,11 +25,13 @@ export async function loadSelectionMails(
     (parcel): parcel is LocalParcel => parcel !== undefined,
   );
   const context = await loadRecipientContext(db, parcels);
+  const onServer = await parcelsOnServer(db);
   return groupByRecipient(
     parcels,
     context,
     (parcel) =>
       !parcel.deletedAt &&
+      !onServer.has(parcel.id) &&
       (parcel.personId !== null || parcel.contactId !== null) &&
       (parcel.status === 'notifie' || (!reminder && parcel.status === 'recu')),
   );

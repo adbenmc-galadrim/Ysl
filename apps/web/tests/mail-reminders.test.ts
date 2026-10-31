@@ -279,6 +279,7 @@ describe('the recipients without an address', () => {
         section.people.map(({ person }) => person.name),
       ]),
     ).toEqual([
+      ['Adresse refusée', 'Corriger', []],
       ['À relancer', undefined, ['Nora Morel']],
       ['En souffrance', undefined, []],
       ['À prévenir autrement', 'Prévenir', ['Marc Petit']],

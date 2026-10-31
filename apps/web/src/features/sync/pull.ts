@@ -156,6 +156,10 @@ async function readFrom(
   progress: (rows: number) => void,
 ): Promise<Read> {
   let output = await client({ cursor, page: null, limit, departments: true });
+  await db.syncState.put({
+    key: SYNC_STATE_KEYS.serverMail,
+    value: output.serverMail === true,
+  });
   const { generation } = output;
   let reset = output.reset;
   const seen = new Set<string>();

@@ -1,6 +1,9 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { RelancesScreen } from '@repo/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
+import { useSession } from '#/features/auth/api/use-session';
+import { db } from '#/features/db/database';
+import { requestServerMails, useServerMail } from '#/features/mail/server-mail';
 import {
   dueCount,
   reminderSections,
@@ -20,6 +23,8 @@ export function RelancesPage() {
   const navigate = useNavigate();
   const router = useRouter();
   const mails = useReminderMails();
+  const userId = useSession().user.id;
+  const serverMail = useServerMail();
   if (!mails) return null;
 
   const sections = reminderSections(mails, new Date(), t);
@@ -46,6 +51,17 @@ export function RelancesPage() {
           (entry) => entry.person.id === person.id,
         )?.mail;
         if (!mail) return;
+        if (mail.bounced) {
+          void navigate({
+            to: '/reglages/e-mails',
+            search: { colis: mail.parcels[0]!.id, filtre: 'failed' },
+          });
+          return;
+        }
+        if (serverMail && mail.address) {
+          void requestServerMails(db, [mail], 'relance', { userId });
+          return;
+        }
         void navigate({
           to: '/notifier',
           search: {
@@ -60,7 +76,18 @@ export function RelancesPage() {
       }
       onRemindAll={
         due > 0
-          ? () => void navigate({ to: '/notifier', search: { relance: true } })
+          ? () => {
+              if (serverMail) {
+                void requestServerMails(
+                  db,
+                  mails.filter((mail) => mail.due && mail.address),
+                  'relance',
+                  { userId },
+                );
+                return;
+              }
+              void navigate({ to: '/notifier', search: { relance: true } });
+            }
           : undefined
       }
       onBack={back}

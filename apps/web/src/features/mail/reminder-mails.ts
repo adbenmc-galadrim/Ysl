@@ -1,3 +1,4 @@
+import { reminderMode } from '@repo/contract/operating-profile';
 import type { ReminderState } from '@repo/contract/reminders';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { ReminderPerson } from '@repo/ui';
@@ -5,6 +6,8 @@ import { Dexie } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db as appDb } from '#/features/db/database';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import { parcelsOnServer, serverMailOn } from '#/features/mail/server-mail';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 import {
   groupByRecipient,
   parcelName,
@@ -25,6 +28,8 @@ import { loadReminderDates } from '#/features/parcels/reminders';
  */
 export type ReminderMail = RecipientMail & {
   due: boolean;
+  /** The last mail that left bounced: the address first, no reminder to it. */
+  bounced: boolean;
   reminders: ReadonlyMap<string, ReminderState>;
 };
 
@@ -51,16 +56,50 @@ export async function loadReminderMails(
       return state && (state.due || state.late) ? [[parcel.id, state]] : [];
     }),
   );
+  const onServer = await parcelsOnServer(db, now);
+  // Automatic (§3.7.9): the server reminds whom it told, until only the alert is left.
+  const automatic =
+    (await serverMailOn(db)) &&
+    reminderMode((await readOperatingProfile(db)).reminders) === 'automatic';
+  const mailsAboutThem = (await db.notification.toArray()).filter(
+    (row) => !row.deletedAt,
+  );
+  const aboutParcel = (parcelId: string) =>
+    mailsAboutThem.filter((row) => row.parcelIds.includes(parcelId));
+  const lastSent = (parcelId: string) =>
+    aboutParcel(parcelId)
+      .filter((row) => row.sentAt)
+      .sort((a, b) => b.sentAt!.getTime() - a.sentAt!.getTime())[0];
+  const serverReminds = (parcel: LocalParcel) =>
+    automatic &&
+    !states.get(parcel.id)?.late &&
+    lastSent(parcel.id)?.deliveryStatus !== 'bounced' &&
+    // Given up on by the server: the phone is the way left.
+    !aboutParcel(parcel.id).some(
+      (row) =>
+        row.channel === 'server' &&
+        row.type === 'relance' &&
+        row.status === 'failed' &&
+        row.preparedAt > (lastSent(parcel.id)?.sentAt ?? parcel.notifiedAt!),
+    ) &&
+    aboutParcel(parcel.id).some(
+      (row) => row.channel === 'server' && row.type === 'avis' && row.sentAt,
+    );
   const pending = (parcel: LocalParcel) =>
     states.has(parcel.id) &&
+    !onServer.has(parcel.id) &&
+    !serverReminds(parcel) &&
     (parcel.personId !== null || parcel.contactId !== null);
   return groupByRecipient(notified, context, pending)
     .map((mail) => {
       const reminders = new Map(
         mail.parcels.map((parcel) => [parcel.id, states.get(parcel.id)!]),
       );
-      const due = [...reminders.values()].some((state) => state.due);
-      return { ...mail, due, reminders };
+      const bounced = mail.parcels.some(
+        (parcel) => lastSent(parcel.id)?.deliveryStatus === 'bounced',
+      );
+      const due = !bounced && [...reminders.values()].some((s) => s.due);
+      return { ...mail, due, bounced, reminders };
     })
     .sort((a, b) => Number(b.due) - Number(a.due));
 }
@@ -106,8 +145,9 @@ export function describeReminder(
       count: mail.parcels.length,
       names: mail.parcels.map((parcel) => parcelName(parcel, t)).join(', '),
     }),
-    status:
-      sent && last
+    status: mail.bounced
+      ? t('remind.row.bounced')
+      : sent && last
         ? t('remind.row.reminded', {
             days,
             count: sent,
@@ -138,8 +178,13 @@ export function reminderSections(
     mail,
     person: describeReminder(mail, now, t),
   }));
-  const reachable = people.filter(({ mail }) => mail.address);
+  const reachable = people.filter(({ mail }) => mail.address && !mail.bounced);
   return [
+    {
+      title: t('remind.section.bounced'),
+      actionLabel: t('remind.row.fix'),
+      people: people.filter(({ mail }) => mail.address && mail.bounced),
+    },
     {
       title: t('remind.section.due'),
       people: reachable.filter(({ mail }) => mail.due),

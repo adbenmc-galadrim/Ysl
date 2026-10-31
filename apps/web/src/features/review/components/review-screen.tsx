@@ -9,6 +9,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { requestBatchMails } from '#/features/batch/summary';
 import { finishBatch, listDrafts } from '#/features/batch/store';
 import { useBatch } from '#/features/batch/use-batch';
 import { useDraftPhotos } from '#/features/batch/use-draft-photos';
@@ -233,6 +234,11 @@ export function ReviewScreen() {
         batchId,
         agentId: session.user.id,
       });
+      if (saved.length > 0) {
+        await requestBatchMails(db, batchId, {
+          userId: session.user.id,
+        }).catch(() => undefined);
+      }
       await (saved.length > 0
         ? navigate({
             to: '/lot/$batchId',

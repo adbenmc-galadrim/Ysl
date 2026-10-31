@@ -6,6 +6,7 @@ import type {
   LocalParcel,
 } from '#/features/db/schema';
 import { loadPendingMails } from '#/features/mail/pending-mails';
+import { requestServerMails, serverMailOn } from '#/features/mail/server-mail';
 import {
   awaitsNotice,
   mailsOfBatch,
@@ -53,7 +54,24 @@ export type BatchSummary = BatchCounts & {
   batch: LocalBatch;
   /** One per recipient of the batch, with every parcel of theirs to notify. */
   mails: RecipientMail[];
+  /** The mails the server is sending for this batch, nothing to do for them. */
+  serverMails: number;
 };
+
+/**
+ * Asks the server for the mails of a batch just validated (D12, ME04), one per
+ * recipient with an address, when it sends them; otherwise nothing changes and
+ * Notifier takes over. A failure here leaves the parcels in « À notifier ».
+ */
+export async function requestBatchMails(
+  db: CourrierDatabase,
+  batchId: string,
+  { userId, now = new Date() }: { userId: string; now?: Date },
+): Promise<void> {
+  if (!(await serverMailOn(db))) return;
+  const mails = mailsOfBatch(await loadPendingMails(db), batchId);
+  await requestServerMails(db, mails, 'avis', { userId, now });
+}
 
 /**
  * Read only: the screen is worked out from the saved rows each time, so an
@@ -69,9 +87,24 @@ export async function loadBatchSummary(
     db.parcel.where('batchId').equals(batchId).toArray(),
     loadPendingMails(db),
   ]);
+  const inBatch = new Set(parcels.map(({ id }) => id));
+  const recent = await db.notification
+    .where('preparedAt')
+    .aboveOrEqual(batch.startedAt)
+    .toArray();
+  const on = await serverMailOn(db);
   return {
     batch,
     mails: mailsOfBatch(pending, batchId),
+    serverMails: on
+      ? recent.filter(
+          (row) =>
+            row.channel === 'server' &&
+            !row.deletedAt &&
+            row.status !== 'failed' &&
+            row.parcelIds.some((id) => inBatch.has(id)),
+        ).length
+      : 0,
     ...countBatch(parcels),
   };
 }
