@@ -125,6 +125,7 @@ describe('a department on the card', () => {
       id,
       name: 'Finance',
       receptionPoint: null,
+      replyEmail: null,
       pickup: null,
       createdAt: NOW,
       updatedAt: NOW,

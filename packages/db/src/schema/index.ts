@@ -1,4 +1,5 @@
 export * from '#schema/auth';
+export * from '#schema/company-logo';
 export * from '#schema/department';
 export * from '#schema/directory';
 export * from '#schema/email-outbox';
