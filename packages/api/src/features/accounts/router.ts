@@ -2,10 +2,13 @@ import {
   accountRecord,
   accountTargetInput,
   createAccountInput,
+  createAccountOutput,
+  linkDelivery,
   listAccountsInput,
   listAccountsOutput,
   reinstateAccountInput,
   resetAccountPasswordInput,
+  sendAccountLinkInput,
   setAccountRoleInput,
 } from '@repo/contract/accounts';
 import { db } from '@repo/db';
@@ -17,6 +20,7 @@ import {
   reinstateAccount,
   resetAccountPassword,
   revokeAccount,
+  sendAccountLink,
   setAccountRole,
   suspendAccount,
 } from '#features/accounts/service';
@@ -35,8 +39,16 @@ export const accountsRouter = router({
     ),
   create: adminMemberProcedure
     .input(createAccountInput)
-    .output(accountRecord)
-    .mutation(({ ctx, input }) => createAccount(db, ctx.organizationId, input)),
+    .output(createAccountOutput)
+    .mutation(({ ctx, input }) =>
+      createAccount(db, ctx.organizationId, input, ctx.session.user.name),
+    ),
+  sendLink: adminMemberProcedure
+    .input(sendAccountLinkInput)
+    .output(linkDelivery)
+    .mutation(({ ctx, input }) =>
+      sendAccountLink(db, ctx.organizationId, input, ctx.session.user.name),
+    ),
   setRole: adminMemberProcedure
     .input(setAccountRoleInput)
     .mutation(({ ctx, input }) =>

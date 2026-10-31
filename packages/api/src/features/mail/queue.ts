@@ -251,7 +251,7 @@ async function superseded(
  * mail leaves from the platform's address rather than not at all, and one
  * company's refusal does not stop the queue. A refused account fails again here.
  */
-async function sendFrom(
+export async function sendFrom(
   mailer: Mailer,
   message: EmailMessage,
   from: EmailMessage['from'],

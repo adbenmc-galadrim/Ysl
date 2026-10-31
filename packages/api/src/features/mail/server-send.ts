@@ -91,7 +91,7 @@ function parcelLine(item: Parcel, now: Date): string {
   );
 }
 
-const escapeHtml = (text: string) =>
+export const escapeHtml = (text: string) =>
   text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

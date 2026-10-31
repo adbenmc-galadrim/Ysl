@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
 import * as schema from '@repo/db/schema';
-import { verifyPassword } from '@repo/auth/password';
+import { credentialRow } from '@repo/auth/password';
 import { eq } from 'drizzle-orm';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -96,6 +96,15 @@ beforeEach(async () => {
     { userId: SHUTTLE, organizationId: ORGANIZATION_ID },
     { userId: FOREIGN, organizationId: OTHER_ORGANIZATION_ID },
   ]);
+  await db
+    .insert(schema.account)
+    .values(
+      await Promise.all(
+        [ADMIN, SECOND_ADMIN, SHUTTLE, FOREIGN].map((id) =>
+          credentialRow(id, 'mot-de-passe'),
+        ),
+      ),
+    );
   await openSession(SHUTTLE);
 });
 
@@ -153,7 +162,6 @@ describe('the wall between companies', () => {
         admin().accounts.create({
           name: 'Nouveau',
           email: 'nouveau@example.test',
-          password: 'motdepasse',
           role: 'department',
           departmentId: OTHER_DEPARTMENT,
         }),
@@ -179,11 +187,10 @@ describe('the wall between companies', () => {
 });
 
 describe('creating an account', () => {
-  it('attaches it to the company and its department, with a working password', async () => {
-    const created = await admin().accounts.create({
+  it('attaches it to the company and its department, with no password to sign in with', async () => {
+    const { account: created } = await admin().accounts.create({
       name: 'Nadia Kessler',
       email: 'Nouveau@Example.test',
-      password: 'motdepasse',
       role: 'department',
       departmentId: STUDIO,
     });
@@ -191,15 +198,14 @@ describe('creating an account', () => {
       email: 'nouveau@example.test',
       role: 'department',
       departmentName: 'Studio',
-      state: 'active',
+      state: 'invited',
     });
-    const [credential] = await db
+    expect(created.linkExpiresAt).not.toBeNull();
+    const credentials = await db
       .select()
       .from(schema.account)
       .where(eq(schema.account.userId, created.id));
-    expect(
-      await verifyPassword({ hash: credential?.password ?? '', password: 'motdepasse' }),
-    ).toBe(true);
+    expect(credentials).toHaveLength(0);
   });
 
   it('never hands out the platform role', async () => {
@@ -208,7 +214,6 @@ describe('creating an account', () => {
         admin().accounts.create({
           name: 'X',
           email: 'nouveau@example.test',
-          password: 'motdepasse',
           role: 'platform_admin' as 'shuttle',
           departmentId: null,
         }),
@@ -222,7 +227,6 @@ describe('creating an account', () => {
         admin().accounts.create({
           name: 'X',
           email: 'nouveau@example.test',
-          password: 'motdepasse',
           role: 'department',
           departmentId: null,
         }),
@@ -236,7 +240,6 @@ describe('creating an account', () => {
         admin().accounts.create({
           name: 'X',
           email: 'autre-societe@example.test',
-          password: 'motdepasse',
           role: 'shuttle',
           departmentId: null,
         }),
@@ -357,6 +360,20 @@ describe('suspending and revoking', () => {
   });
 });
 
+describe('the last admin', () => {
+  it('is not replaced by an invitation nobody answered', async () => {
+    await db.delete(schema.user).where(eq(schema.user.id, SECOND_ADMIN));
+    await admin().accounts.create({
+      name: 'Invitée',
+      email: 'nouveau@example.test',
+      role: 'company_admin',
+      departmentId: null,
+    });
+    expect(await codeOf(admin().accounts.revoke({ userId: ADMIN }))).toBe('CONFLICT');
+    expect(await codeOf(admin().accounts.suspend({ userId: ADMIN }))).toBe('CONFLICT');
+  });
+});
+
 describe('the password', () => {
   it('keeps the sessions unless asked to close them', async () => {
     await admin().accounts.resetPassword({ userId: SHUTTLE, password: 'nouveau-mdp' });
@@ -367,6 +384,19 @@ describe('the password', () => {
       closeSessions: true,
     });
     expect(await sessionsOf(SHUTTLE)).toHaveLength(0);
+  });
+
+  it('asks for a change when an admin sets it, also on bringing back', async () => {
+    expect((await userRow(SHUTTLE))?.passwordChangeRequiredAt).toBeNull();
+    await admin().accounts.resetPassword({ userId: SHUTTLE, password: 'nouveau-mdp' });
+    expect((await userRow(SHUTTLE))?.passwordChangeRequiredAt).toBeInstanceOf(Date);
+    await db
+      .update(schema.user)
+      .set({ passwordChangeRequiredAt: null })
+      .where(eq(schema.user.id, SHUTTLE));
+    await admin().accounts.revoke({ userId: SHUTTLE });
+    await admin().accounts.reinstate({ userId: SHUTTLE, password: 'nouveau-mdp' });
+    expect((await userRow(SHUTTLE))?.passwordChangeRequiredAt).toBeInstanceOf(Date);
   });
 });
 

@@ -25,6 +25,10 @@ const PLATFORM_ID = 'platform-1';
 const OPEN_TO_PLATFORM = [
   'account.me',
   'health.check',
+  'invitations.accept',
+  'invitations.changeRequiredPassword',
+  'invitations.inspect',
+  'invitations.inviteCompanyAdmin',
   'platform.accountSuspension',
   'platform.company',
   'platform.companies',

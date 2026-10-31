@@ -1,11 +1,13 @@
 import type {
   AccountRecord,
   AccountState,
+  LinkDelivery,
   ListAccountsInput,
 } from '@repo/contract/accounts';
 import {
   ACCOUNTS_PAGE_SIZE,
   createAccountInput,
+  INVITATION_DAYS,
 } from '@repo/contract/accounts';
 import { MIN_PASSWORD_LENGTH } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -32,7 +34,9 @@ import {
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useDeferredValue, useEffect, useState } from 'react';
+import { LinkSheet } from '#/features/invitations/components/link-sheet';
 import {
+  accountLabel,
   devicesLine,
   hasNextPage,
   lastSignIn,
@@ -52,6 +56,7 @@ const ALL = 'all';
 
 type Tab = typeof ALL | 'shuttle' | 'department' | 'company_admin';
 type Open = { kind: 'create' } | { kind: 'record'; id: string } | null;
+type Given = { delivery: LinkDelivery; name: string; email: string; userId: string };
 type Dialog =
   | { kind: 'suspend' | 'revoke' | 'resume' | 'reinstate' | 'password' }
   | { kind: 'role'; role: 'shuttle' | 'department' }
@@ -296,10 +301,52 @@ function roleSelect(
   };
 }
 
+/** A link for an account in use or still invited; suspended or revoked, only the password. */
+function passwordActions(
+  account: AccountRecord,
+  onLink: () => void,
+  onPassword: () => void,
+) {
+  const changePassword = {
+    label: t('accounts.password.action'),
+    onClick: onPassword,
+  };
+  if (account.state === 'invited') {
+    return {
+      main: { label: t('accounts.link.invite'), onClick: onLink },
+      secondary: undefined,
+    };
+  }
+  return account.state === 'active'
+    ? {
+        main: { label: t('accounts.link.action'), onClick: onLink },
+        secondary: changePassword,
+      }
+    : { main: changePassword, secondary: undefined };
+}
+
+function linkLine(account: AccountRecord) {
+  if (!account.linkExpiresAt) return [];
+  const date = account.linkExpiresAt.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+  });
+  return [
+    {
+      label: t('accounts.link.line'),
+      value:
+        account.linkExpiresAt > new Date()
+          ? t('accounts.link.validUntil', { date })
+          : t('accounts.link.expired', { date }),
+    },
+  ];
+}
+
 /** Suspending and bringing back, which the mockups draw at the foot of the record. */
 function stateActions(state: AccountState, onDialog: (dialog: Dialog) => void) {
   switch (state) {
     case 'active':
+    case 'invited':
       return {
         state: {
           label: t('accounts.suspend.action'),
@@ -339,9 +386,9 @@ function stateActions(state: AccountState, onDialog: (dialog: Dialog) => void) {
 }
 
 /**
- * Comptes (admin entreprise): who can sign in to the company, created without
- * e-mail until the invitation exists (YSL-122). A suspension keeps the phone's
- * data; a revocation erases it, and the confirmation says so.
+ * Comptes (admin entreprise): who can sign in to the company, each invited by a
+ * link, handed over by the admin when no mail can leave. A suspension keeps the
+ * phone's data; a revocation erases it, and the confirmation says so.
  */
 export function AccountsScreen() {
   const desk = useMediaQuery(DESK_WIDTH);
@@ -357,6 +404,7 @@ export function AccountsScreen() {
   const [open, setOpen] = useState<Open>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [form, setForm] = useState<CompteFormValue>(EMPTY_FORM);
+  const [given, setGiven] = useState<Given | null>(null);
 
   const toFirstPage = <T,>(set: (value: T) => void) => (value: T) => {
     setPage(1);
@@ -388,18 +436,39 @@ export function AccountsScreen() {
     enabled: recordId !== null,
   });
   const attach = useAccountMutations(() => {});
+  const sendLink = useMutation({
+    mutationFn: (target: { account: AccountRecord; copy: boolean }) =>
+      trpcClient.accounts.sendLink.mutate({
+        userId: target.account.id,
+        copy: target.copy,
+      }),
+    onSuccess: async (delivery, { account: target }) => {
+      setGiven({
+        delivery,
+        name: target.name,
+        email: target.email,
+        userId: target.id,
+      });
+      await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+    },
+  });
   const create = useMutation({
     mutationFn: () =>
       trpcClient.accounts.create.mutate({
         name: form.name,
         email: form.email,
-        password: form.password,
         role: form.role as 'shuttle' | 'department' | 'company_admin',
         departmentId: form.role === 'department' ? form.departmentId : null,
       }),
-    onSuccess: async (created) => {
+    onSuccess: async ({ account: created, link }) => {
       setForm(EMPTY_FORM);
       setOpen({ kind: 'record', id: created.id });
+      setGiven({
+        delivery: link,
+        name: created.name,
+        email: created.email,
+        userId: created.id,
+      });
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
     },
   });
@@ -455,17 +524,44 @@ export function AccountsScreen() {
   }).success;
   const formHint = create.isError
     ? errorMessage(create.error)
-    : t('accounts.create.hint', { min: MIN_PASSWORD_LENGTH });
+    : t('accounts.create.hint', { days: INVITATION_DAYS });
 
-  const sheet = account && dialog && (
-    <AccountDialog
-      key={`${account.id}-${dialog.kind}`}
-      dialog={dialog}
-      account={account}
-      departments={allDepartments}
-      onClose={() => setDialog(null)}
+  const sheet = given ? (
+    <LinkSheet
+      key={given.delivery.delivery}
+      delivery={given.delivery}
+      named={given}
+      onClose={() => setGiven(null)}
+      onCopyInstead={
+        account && account.id === given.userId
+          ? () => sendLink.mutate({ account, copy: true })
+          : undefined
+      }
     />
+  ) : (
+    account &&
+    dialog && (
+      <AccountDialog
+        key={`${account.id}-${dialog.kind}`}
+        dialog={dialog}
+        account={account}
+        departments={allDepartments}
+        onClose={() => setDialog(null)}
+      />
+    )
   );
+  const password =
+    account &&
+    passwordActions(
+      account,
+      () => sendLink.mutate({ account, copy: false }),
+      () => setDialog({ kind: 'password' }),
+    );
+  const recordMessage = sendLink.isError
+    ? errorMessage(sendLink.error)
+    : attach.isError
+      ? errorMessage(attach.error)
+      : undefined;
   const actions = account && stateActions(account.state, setDialog);
   const select = account && roleSelect(account, setDialog);
   // A revoked account has left its department; it is attached again once back.
@@ -497,7 +593,6 @@ export function AccountsScreen() {
           value={form}
           onChange={setForm}
           department={formDepartment}
-          passwordLabel={t('accounts.create.password')}
           hint={formHint}
           taken={taken}
           submitLabel={t('accounts.create.submit')}
@@ -520,15 +615,20 @@ export function AccountsScreen() {
                 roleName(account.role)
               ),
             },
-            { label: t('accounts.state'), value: stateLabel(account.state, t) },
-            { label: t('accounts.lastSignIn'), value: lastSignIn(account) },
-            { label: t('accounts.devices'), value: devicesLine(account, t) },
+            { label: t('accounts.state'), value: accountLabel(account, t) },
+            ...(account.state === 'invited'
+              ? linkLine(account)
+              : [
+                  { label: t('accounts.lastSignIn'), value: lastSignIn(account) },
+                  { label: t('accounts.devices'), value: devicesLine(account, t) },
+                ]),
           ]}
           department={inDepartment ? attachTo(account) : undefined}
           departmentHint={t('accounts.departmentHint')}
-          message={attach.isError ? errorMessage(attach.error) : undefined}
-          passwordLabel={t('accounts.password.action')}
-          onPassword={() => setDialog({ kind: 'password' })}
+          message={recordMessage}
+          passwordLabel={password?.main.label ?? ''}
+          onPassword={password?.main.onClick}
+          secondary={password?.secondary}
           stateAction={actions?.state}
           revoke={actions?.revoke}
           onClose={() => setOpen(null)}
@@ -540,9 +640,16 @@ export function AccountsScreen() {
           {...deskShell}
           title={t('accounts.title')}
           subtitle={
-            counts?.all === 1
-              ? t('accounts.subtitle.one')
-              : t('accounts.subtitle.many', { count: counts?.all ?? 0 })
+            [
+              counts?.all === 1
+                ? t('accounts.subtitle.one')
+                : t('accounts.subtitle.many', { count: counts?.all ?? 0 }),
+              ...(counts?.invited === 1
+                ? [t('accounts.subtitle.invitedOne')]
+                : counts?.invited
+                  ? [t('accounts.subtitle.invited', { count: counts.invited })]
+                  : []),
+            ].join(' · ')
           }
           tabs={[
             { id: ALL, label: t('accounts.tab.all'), count: counts?.all ?? 0 },
@@ -564,6 +671,7 @@ export function AccountsScreen() {
             options: [
               { id: '', label: t('accounts.tab.all') },
               { id: 'active', label: stateLabel('active', t) },
+              { id: 'invited', label: stateLabel('invited', t) },
               { id: 'suspended', label: stateLabel('suspended', t) },
               { id: 'revoked', label: stateLabel('revoked', t) },
             ],
@@ -611,8 +719,6 @@ export function AccountsScreen() {
         department={form.role === 'department' ? formDepartment : undefined}
         name={form.name}
         email={form.email}
-        password={form.password}
-        passwordLabel={t('accounts.create.password')}
         onField={(key, value) =>
           setForm((current) => ({ ...current, [key]: value }))
         }
@@ -640,15 +746,14 @@ export function AccountsScreen() {
               ? { value: account.departmentName ?? '—', select: attachTo(account) }
               : undefined
           }
-          state={stateLabel(account.state, t)}
+          state={accountLabel(account, t)}
           lastLogin={lastSignIn(account)}
           devices={devicesLine(account, t)}
-          message={attach.isError ? errorMessage(attach.error) : undefined}
+          message={recordMessage}
           actions={[
-            {
-              label: t('accounts.password.action'),
-              onClick: () => setDialog({ kind: 'password' }),
-            },
+            ...(password
+              ? [password.main, ...(password.secondary ? [password.secondary] : [])]
+              : []),
             ...(actions
               ? [
                   {
@@ -689,7 +794,7 @@ export function AccountsScreen() {
           state:
             row.state === 'active'
               ? undefined
-              : { label: stateLabel(row.state, t), kind: row.state },
+              : { label: accountLabel(row, t), kind: row.state },
         })),
     }))
     .filter((section) => section.rows.length > 0);
