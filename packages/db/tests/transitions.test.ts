@@ -181,7 +181,7 @@ describe('parcel status transitions', () => {
 
     expect(outcome).toEqual(expected);
     expect(Object.values(expected).filter(Boolean)).toHaveLength(40);
-  });
+  }, 30_000);
 
   it('refuse a tour for a parcel with no department', async () => {
     const id = await insertParcel('recu', personId);

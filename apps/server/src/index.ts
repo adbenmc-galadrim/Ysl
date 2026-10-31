@@ -10,6 +10,10 @@ import {
   runPurge,
 } from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
+import {
+  COMPANY_SUSPENDED,
+  isInSuspendedCompany,
+} from '@repo/auth/organization';
 import { closeDb, db, pingDb, withConnection } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { logger } from '@repo/shared/logger';
@@ -89,7 +93,11 @@ app.route(
     },
     async (headers) => {
       const session = await auth.api.getSession({ headers }).catch(() => null);
-      return Boolean(session?.user.banned);
+      if (!session) return null;
+      if (session.user.banned) return 'ACCOUNT_SUSPENDED';
+      return (await isInSuspendedCompany(db, session.user.id))
+        ? COMPANY_SUSPENDED
+        : null;
     },
   ),
 );

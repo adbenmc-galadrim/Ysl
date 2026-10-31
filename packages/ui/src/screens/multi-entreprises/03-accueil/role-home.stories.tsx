@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { CompanySuspendedScreen } from '#screens/multi-entreprises/03-accueil/company-suspended-screen';
 import { CompanyShell } from '#components/company-shell';
 import { ACCOUNT, COMPANY } from '#fixtures/multi-entreprises';
 import {
-  PlatformHomeScreen,
   RoleHomeDesktop,
   RoleHomeMobile,
   type RoleHomeProps,
@@ -55,18 +55,15 @@ export const DepartementTelephone: Story = {
   render: () => <RoleHomeMobile {...SPACE} />,
 };
 
-export const AdminDeLApp: Story = {
-  name: 'Admin de l’app',
-  globals: desktop,
+export const EntrepriseSuspendue: Story = {
+  name: 'Entreprise suspendue',
+  globals: mobile,
   render: () => (
-    <div className="h-dvh">
-      <PlatformHomeScreen
-        title="L’espace plateforme arrive"
-        description="Il réunira les entreprises et leurs chiffres d’usage. Ce compte n’a accès à aucun colis ni à aucun annuaire."
-        name="Claire Bonnet"
-        email="claire@example.com"
-        signOutLabel="Se déconnecter"
-      />
-    </div>
+    <CompanySuspendedScreen
+      title="Votre entreprise est suspendue"
+      description="La connexion et la synchronisation sont arrêtées. Vos colis, photos et preuves restent sur ce téléphone : rien n’est effacé. Tout repartira quand l’entreprise sera réactivée."
+      pending="Modifications en attente sur ce téléphone : 3"
+      retryLabel="Vérifier à nouveau"
+    />
   ),
 };

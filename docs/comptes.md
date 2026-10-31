@@ -14,6 +14,17 @@ longtemps s'efface à sa réouverture après réactivation, comme tout autre té
 
 Le dernier admin actif d'une entreprise ne peut être ni suspendu ni révoqué.
 
+## Entreprise suspendue
+
+La suspension par l'admin de l'app s'ajoute à celle du compte, avec les mêmes garanties : connexion
+refusée, toute requête répond 403 (`/api/auth/*` compris, sauf la lecture de session et la connexion),
+sessions gardées, téléphone intact, écran « Votre entreprise est suspendue ». Une session expirée
+pendant cette suspension n'efface pas le téléphone, même resté fermé : le même compte se reconnecte
+après la réactivation et retrouve ses données. Supprimer l'entreprise, ou révoquer le compte, l'efface.
+
+Pendant la suspension d'un compte seul, une session expirée n'efface rien non plus ; après sa
+réactivation, la règle ci-dessus s'applique.
+
 ## Mot de passe perdu, sans admin disponible
 
 Depuis le terminal du conteneur de l'API (l'image doit contenir ce script), le mot de passe

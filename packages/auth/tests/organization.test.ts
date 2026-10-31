@@ -1,15 +1,22 @@
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
+import { eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
+  accountStanding,
   AlreadyAttachedError,
   attachToOrganization,
   chooseOrganization,
   chooseOrganizationFor,
+  createCompany,
   DEFAULT_ORGANIZATION_NAME,
   OrganizationChoiceError,
   PlatformAccountError,
@@ -39,6 +46,8 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await db.delete(schema.setting);
+  await db.delete(schema.department);
   await db.delete(schema.organizationMember);
   await db.delete(schema.organization);
 });
@@ -193,5 +202,77 @@ describe('attachToOrganization', () => {
     await expect(
       attachToOrganization(db, 'u2', second.id),
     ).rejects.toBeInstanceOf(AlreadyAttachedError);
+  });
+});
+
+describe('createCompany', () => {
+  const posted = async (organizationId: string) => ({
+    departments: await db
+      .select({ name: schema.department.name })
+      .from(schema.department)
+      .where(eq(schema.department.organizationId, organizationId)),
+    settings: await db
+      .select({ key: schema.setting.key, value: schema.setting.value })
+      .from(schema.setting)
+      .where(eq(schema.setting.organizationId, organizationId)),
+  });
+
+  it('gives the company its mail department and the profile of its model', async () => {
+    const small = await createCompany(db, {
+      name: 'Petit',
+      profileModel: 'small_site',
+    });
+    const multi = await createCompany(db, {
+      name: 'Grand',
+      profileModel: 'multi_departments',
+    });
+
+    expect(await posted(small)).toEqual({
+      departments: [{ name: 'Service courrier' }],
+      settings: [
+        { key: OPERATING_PROFILE_KEY, value: SMALL_SITE_OPERATING_PROFILE },
+      ],
+    });
+    expect((await posted(multi)).settings[0]?.value).toMatchObject({
+      shuttleActsAsDepartment: false,
+    });
+  });
+
+  it('applies to the company a script creates', async () => {
+    const created = await resolveOrganization(db, 'Par script');
+    expect((await posted(created.id)).departments).toHaveLength(1);
+    expect((await posted(created.id)).settings).toHaveLength(1);
+  });
+});
+
+describe('accountStanding', () => {
+  const standing = async (id: string) =>
+    (await accountStanding(db, id)).standing;
+  const setBan = (banned: boolean, banReason: string | null) =>
+    db
+      .update(schema.user)
+      .set({ banned, banReason })
+      .where(eq(schema.user.id, 'u1'));
+
+  it('tells a phone what to keep', async () => {
+    const id = await createCompany(db, {
+      name: 'Atelier',
+      profileModel: 'small_site',
+    });
+    await attachToOrganization(db, 'u1', id);
+    expect(await standing('nobody')).toBe('gone');
+    expect(await standing('u1')).toBe('active');
+
+    await setBan(true, 'suspended');
+    expect(await standing('u1')).toBe('account_suspended');
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: new Date() })
+      .where(eq(schema.organization.id, id));
+    expect(await standing('u1')).toBe('suspended');
+
+    await setBan(true, 'revoked');
+    expect(await standing('u1')).toBe('gone');
+    await setBan(false, null);
   });
 });

@@ -7,7 +7,13 @@ import { reachedNobody } from '@repo/contract/mail';
 import { readParcelEvent } from '@repo/contract/parcel-event';
 import { knownReminders, reminderState } from '@repo/contract/reminders';
 import type { AnyDb } from '@repo/db';
-import { event, notification, parcel, setting } from '@repo/db/schema';
+import {
+  event,
+  notification,
+  organization,
+  parcel,
+  setting,
+} from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { and, arrayOverlaps, eq, inArray, isNull, sql } from 'drizzle-orm';
 
@@ -85,8 +91,14 @@ async function requestUnderLock(db: AnyDb, now: Date): Promise<number> {
   const profiles = await db
     .select({ organizationId: setting.organizationId, value: setting.value })
     .from(setting)
+    .innerJoin(organization, eq(organization.id, setting.organizationId))
     .where(
-      and(eq(setting.key, OPERATING_PROFILE_KEY), isNull(setting.deletedAt)),
+      and(
+        eq(setting.key, OPERATING_PROFILE_KEY),
+        isNull(setting.deletedAt),
+        // No new reminder while suspended: it may be over for good. A mail already queued still leaves.
+        isNull(organization.suspendedAt),
+      ),
     );
   let requested = 0;
   for (const { organizationId, value } of profiles) {

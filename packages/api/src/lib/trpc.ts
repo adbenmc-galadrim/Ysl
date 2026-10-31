@@ -1,6 +1,11 @@
 import type { Session } from '@repo/auth';
 import { db } from '@repo/db';
-import { isCompanyAdmin, toUserRole, type UserRole } from '@repo/contract/auth';
+import {
+  COMPANY_SUSPENDED,
+  isCompanyAdmin,
+  toUserRole,
+  type UserRole,
+} from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
@@ -8,6 +13,8 @@ import type { Access } from '#lib/access';
 import { membershipOf } from '#lib/organization';
 
 const translate = createTranslator(DEFAULT_LOCALE);
+
+class CompanySuspendedError extends Error {}
 
 export function createTRPCContext({
   headers,
@@ -23,10 +30,14 @@ export type Context = ReturnType<typeof createTRPCContext>;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
-  errorFormatter: ({ shape, error }) =>
-    error.code === 'INTERNAL_SERVER_ERROR'
-      ? { ...shape, message: translate('error.internal') }
-      : shape,
+  errorFormatter: ({ shape, error }) => {
+    if (error.code === 'INTERNAL_SERVER_ERROR') {
+      return { ...shape, message: translate('error.internal') };
+    }
+    return error.cause instanceof CompanySuspendedError
+      ? { ...shape, data: { ...shape.data, reason: COMPANY_SUSPENDED } }
+      : shape;
+  },
 });
 
 export const router = t.router;
@@ -80,6 +91,14 @@ export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: translate('sync.error.noOrganization'),
+    });
+  }
+  // A 403, never a 401: a 401 tells the phone its session ended, and it empties itself.
+  if (membership.suspended) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('company.suspended.refused'),
+      cause: new CompanySuspendedError(),
     });
   }
   return next({ ctx: { ...ctx, ...membership } });

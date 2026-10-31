@@ -1,3 +1,8 @@
+import {
+  clearCompanySuspended,
+  markCompanySuspended,
+} from '#/features/auth/company-suspension';
+import { keptAccount } from '#/features/auth/session-cache';
 import { onLocalCommit } from '#/features/db/commit';
 import { db } from '#/features/db/database';
 import { settleDeliveryConflicts } from '#/features/handover/conflicts';
@@ -17,6 +22,14 @@ export const syncEngine = createSyncEngine({
   pull: (input) => trpcClient.sync.pull.query(input),
   onUnauthorized: () => {
     void queryClient.invalidateQueries({ queryKey: ['session'] });
+  },
+  onCompanySuspended: (suspended) => {
+    if (!suspended) {
+      clearCompanySuspended(localStorage);
+      return;
+    }
+    const account = keptAccount(localStorage);
+    if (account) markCompanySuspended(localStorage, account);
   },
   afterPull: async () => {
     for (const conflict of await settleDeliveryConflicts(db)) {

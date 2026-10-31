@@ -22,7 +22,19 @@ const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
 const { AGENT_ID } = await import('./helpers/pglite');
 
 const PLATFORM_ID = 'platform-1';
-const OPEN_TO_PLATFORM = ['account.me', 'health.check', 'platform.overview'];
+const OPEN_TO_PLATFORM = [
+  'account.me',
+  'health.check',
+  'platform.accountSuspension',
+  'platform.company',
+  'platform.companies',
+  'platform.createCompany',
+  'platform.deleteCompany',
+  'platform.overview',
+  'platform.reactivateCompany',
+  'platform.renameCompany',
+  'platform.suspendCompany',
+];
 
 function sessionOf(role: string | null, userId: string): Session {
   const base = sessionFor(role);

@@ -20,6 +20,7 @@ const FORM_ID = 'sign-in-form';
 
 const ERROR_MESSAGES = {
   invalid: t('auth.signIn.error.invalid'),
+  suspended: t('auth.signIn.error.suspended'),
   rateLimited: t('auth.signIn.error.rateLimited'),
   network: t('auth.signIn.error.network'),
   unknown: t('auth.signIn.error.unknown'),

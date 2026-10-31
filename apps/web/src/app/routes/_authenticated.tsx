@@ -16,6 +16,10 @@ import {
   mayReach,
   needsPreparation,
 } from '#/features/auth/route-access';
+import {
+  CompanySuspendedPage,
+  useCompanySuspended,
+} from '#/features/auth/components/company-suspended-page';
 import { db } from '#/features/db/database';
 import {
   currentDisplayContext,
@@ -41,6 +45,7 @@ function AuthenticatedLayout() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const ended = isFetched && session === null;
+  const suspended = useCompanySuspended();
 
   useEffect(() => {
     if (!ended) return;
@@ -61,6 +66,7 @@ function AuthenticatedLayout() {
       />
     );
   }
+  if (suspended) return <CompanySuspendedPage />;
 
   return (
     <RoleFrame>

@@ -7,6 +7,7 @@ import { DeskPanel } from '#components/desk-panel';
 import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
 import { cn } from '#lib/tv';
+import type { PlatformChrome } from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 import { STEP_GROUPS } from '#screens/multi-entreprises/04-nouvelle-entreprise/steps';
 
 const STEPS = [
@@ -69,10 +70,15 @@ function Footer({ note, children }: { note: string; children: ReactNode }) {
 function WizardShell({
   current,
   footer,
+  chrome,
+  steps = true,
   children,
 }: {
   current: number;
   footer: ReactNode;
+  chrome?: PlatformChrome;
+  /** The app has one step until the invitation and the profile's detail exist. */
+  steps?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -83,16 +89,25 @@ function WizardShell({
       account={ACCOUNT.platform}
       breadcrumb={crumbs('Plateforme', 'Entreprises', 'Nouvelle entreprise')}
       overlay={footer}
+      {...chrome}
     >
       <DeskPageHeader title="Nouvelle entreprise" />
-      <Stepper current={current} />
+      {steps && <Stepper current={current} />}
       <div className="mt-[18px] h-px shrink-0 bg-separator" />
       {children}
     </CompanyShell>
   );
 }
 
-const MODELS = [
+export type ProfileModelCard = {
+  id?: string;
+  name: string;
+  description: string;
+  selected?: boolean;
+  features: { text: string; on: boolean }[];
+};
+
+const MODELS: ProfileModelCard[] = [
   {
     name: 'Petit site, la navette remet',
     description: 'Un seul lieu de retrait : la navette scanne et remet elle-même.',
@@ -127,17 +142,55 @@ const MODELS = [
 ];
 
 /** Step 1 on the computer: the company's name and the model it starts from. */
-export function NouvelleEntrepriseModeleDesktop() {
+export function NouvelleEntrepriseModeleDesktop({
+  chrome,
+  steps,
+  name,
+  onName,
+  models = MODELS,
+  onSelectModel,
+  note = 'Étape 1 sur 3',
+  confirmLabel = 'Continuer',
+  confirmDisabled = false,
+  onConfirm,
+  onCancel,
+  error,
+}: {
+  chrome?: PlatformChrome;
+  steps?: boolean;
+  name?: string;
+  onName?: (name: string) => void;
+  models?: ProfileModelCard[];
+  onSelectModel?: (id: string) => void;
+  note?: string;
+  confirmLabel?: string;
+  confirmDisabled?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+  error?: string;
+} = {}) {
   return (
     <WizardShell
       current={0}
+      chrome={chrome}
+      steps={steps}
       footer={
-        <Footer note="Étape 1 sur 3">
-          <Button variant="outline" size="desk" className="h-9 w-[82.4px]">
+        <Footer note={note}>
+          <Button
+            variant="outline"
+            size="desk"
+            className="h-9 w-[82.4px]"
+            onClick={onCancel}
+          >
             Annuler
           </Button>
-          <Button size="desk" className="h-9 w-[120px]">
-            Continuer
+          <Button
+            size="desk"
+            className="h-9 w-[120px]"
+            disabled={confirmDisabled}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
           </Button>
         </Footer>
       }
@@ -149,9 +202,24 @@ export function NouvelleEntrepriseModeleDesktop() {
         <p className="absolute top-[52px] text-12 text-muted">
           Affiché aux salariés et dans les e-mails
         </p>
-        <div className="absolute top-[23px] left-[280px] flex h-9 w-[420px] items-start rounded-[6px] pt-[9px] pl-3 text-14 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)]">
-          Atelier Lumen
-        </div>
+        {onName ? (
+          <input
+            aria-label="Nom de l’entreprise"
+            value={name ?? ''}
+            onChange={(event) => onName(event.target.value)}
+            maxLength={80}
+            className="absolute top-[23px] left-[280px] h-9 w-[420px] rounded-[6px] pl-3 text-14 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)] outline-none"
+          />
+        ) : (
+          <div className="absolute top-[23px] left-[280px] flex h-9 w-[420px] items-start rounded-[6px] pt-[9px] pl-3 text-14 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)]">
+            Atelier Lumen
+          </div>
+        )}
+        {error && (
+          <p role="alert" className="absolute top-[63px] left-[280px] text-12 text-red">
+            {error}
+          </p>
+        )}
       </div>
       <h2 className="mt-6 text-15 font-semibold">
         Modèle de fonctionnement
@@ -161,11 +229,22 @@ export function NouvelleEntrepriseModeleDesktop() {
         l’entreprise peut tout changer ensuite.
       </p>
       <div className="mt-[21px] flex shrink-0 gap-[15px]">
-        {MODELS.map((model) => (
+        {models.map((model) => (
           <div
             key={model.name}
+            role="radio"
+            aria-checked={Boolean(model.selected)}
+            tabIndex={onSelectModel ? 0 : undefined}
+            onClick={() => model.id && onSelectModel?.(model.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (model.id) onSelectModel?.(model.id);
+              }
+            }}
             className={cn(
               'relative h-[236px] w-[374px] rounded-desk',
+              onSelectModel && 'cursor-pointer',
               model.selected
                 ? 'shadow-[0_0_0_1px_var(--color-ink),inset_0_0_0_1px_var(--color-ink)]'
                 : 'shadow-[0_0_0_0.5px_var(--color-border),inset_0_0_0_0.5px_var(--color-border)]',

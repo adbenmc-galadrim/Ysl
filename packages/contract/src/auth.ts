@@ -49,3 +49,6 @@ export const password = z
   .string()
   .min(MIN_PASSWORD_LENGTH)
   .max(MAX_PASSWORD_LENGTH);
+
+/** Why a suspended company's account is refused, at sign-in and on the API alike. */
+export const COMPANY_SUSPENDED = 'COMPANY_SUSPENDED';

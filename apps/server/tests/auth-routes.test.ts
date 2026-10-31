@@ -51,7 +51,7 @@ describe('authRoutes', () => {
       const handle = vi.fn(() => new Response('ok'));
       const app = new Hono().route(
         '/api/auth',
-        authRoutes(handle, () => Promise.resolve(true)),
+        authRoutes(handle, () => Promise.resolve('COMPANY_SUSPENDED')),
       );
       return { handle, app };
     };
@@ -67,6 +67,7 @@ describe('authRoutes', () => {
       const { app, handle } = suspended();
       const response = await app.request(path, { method: 'POST' });
       expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({ code: 'COMPANY_SUSPENDED' });
       expect(handle).not.toHaveBeenCalled();
     });
 

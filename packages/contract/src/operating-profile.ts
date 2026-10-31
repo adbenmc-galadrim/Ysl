@@ -55,6 +55,16 @@ export const SMALL_SITE_OPERATING_PROFILE: OperatingProfile = {
   shuttleActsAsDepartment: true,
 };
 
+/** The models offered when a company is created (D30); YSL-125 details them. */
+export const PROFILE_MODELS = ['small_site', 'multi_departments'] as const;
+
+export type ProfileModel = (typeof PROFILE_MODELS)[number];
+
+export const PROFILE_OF_MODEL: Record<ProfileModel, OperatingProfile> = {
+  small_site: SMALL_SITE_OPERATING_PROFILE,
+  multi_departments: DEFAULT_OPERATING_PROFILE,
+};
+
 /** A stored value this version cannot read counts as no profile. Unknown fields are a later version's. */
 export function parseOperatingProfile(value: unknown): OperatingProfile {
   const parsed = z.object(shape).safeParse(value);

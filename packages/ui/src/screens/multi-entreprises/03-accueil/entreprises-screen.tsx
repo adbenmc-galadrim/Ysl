@@ -3,9 +3,13 @@ import type { ReactNode } from 'react';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CompanyLogo, CompanyPill } from '#components/company-parts';
-import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import {
+  CompanyShell,
+  DeskPageHeader,
+  type CompanyShellProps,
+} from '#components/company-shell';
 import { DeskSelect } from '#components/desk-form';
-import { DeskStats } from '#components/desk-panel';
+import { DeskStats, type DeskStat } from '#components/desk-panel';
 import {
   DeskTable,
   type DeskTableColumn,
@@ -90,29 +94,40 @@ const COLUMNS: DeskTableColumn<Company>[] = [
   },
 ];
 
-const TABS = [
+export type CompanyTab = { label: string; count: number; width?: number };
+
+const TABS: CompanyTab[] = [
   { label: 'Toutes', width: 44, count: 5 },
   { label: 'Actives', width: 46, count: 3 },
   { label: 'Invitation envoyée', width: 112, count: 1 },
   { label: 'Suspendues', width: 77, count: 1 },
 ];
 
-function CompanyTabs() {
+function CompanyTabs({
+  tabs,
+  active,
+  onSelect,
+}: {
+  tabs: CompanyTab[];
+  active: number;
+  onSelect?: (index: number) => void;
+}) {
   return (
     <div
       role="tablist"
       aria-label="Entreprises par statut"
       className="mt-7 flex h-[29px] shrink-0 gap-6 border-b border-separator"
     >
-      {TABS.map((tab, i) => (
+      {tabs.map((tab, i) => (
         <button
           key={tab.label}
           type="button"
           role="tab"
-          aria-selected={i === 0}
+          aria-selected={i === active}
+          onClick={() => onSelect?.(i)}
           className={cn(
             'flex h-7 cursor-pointer items-start gap-1.5 border-b-2 text-14 outline-none',
-            i === 0
+            i === active
               ? 'border-ink font-semibold'
               : 'border-transparent font-medium text-muted',
           )}
@@ -123,7 +138,7 @@ function CompanyTabs() {
           <span
             className={cn(
               'flex h-[18px] w-5 items-center justify-center rounded-full pb-1 text-11 font-semibold',
-              i === 0 ? 'bg-ink text-on-ink' : 'bg-fill text-muted',
+              i === active ? 'bg-ink text-on-ink' : 'bg-fill text-muted',
             )}
           >
             {tab.count}
@@ -134,11 +149,19 @@ function CompanyTabs() {
   );
 }
 
+/** What the app gives every page of the platform; the mockups' account otherwise. */
+export type PlatformChrome = Pick<
+  CompanyShellProps,
+  'nav' | 'account' | 'onNavigate' | 'search'
+>;
+
 function PlatformShell({
   searchPlaceholder,
+  chrome,
   children,
 }: {
   searchPlaceholder: string;
+  chrome?: PlatformChrome;
   children: ReactNode;
 }) {
   return (
@@ -149,74 +172,117 @@ function PlatformShell({
       account={ACCOUNT.platform}
       breadcrumb={crumbs('Plateforme', 'Entreprises')}
       searchPlaceholder={searchPlaceholder}
+      {...chrome}
     >
       {children}
     </CompanyShell>
   );
 }
 
+export type EntreprisesDesktopProps = {
+  chrome?: PlatformChrome;
+  subtitle?: string;
+  stats?: DeskStat[];
+  tabs?: CompanyTab[];
+  activeTab?: number;
+  onSelectTab?: (index: number) => void;
+  rows?: Company[];
+  /** Colis du mois, dernière activité and the filters: the mockup's, until the figures exist. */
+  withUsage?: boolean;
+  range?: string;
+  note?: string;
+  onNew?: () => void;
+  onOpen?: (company: Company) => void;
+};
+
+const USAGE_COLUMNS = new Set(['parcels', 'activity']);
+
 /** The platform's home: its clients, as figures and never as their content. */
-export function EntreprisesDesktop() {
+export function EntreprisesDesktop({
+  chrome,
+  subtitle = '5 entreprises clientes · chiffres d’octobre',
+  stats = [
+    { label: 'Entreprises actives', value: '3' },
+    { label: 'Comptes', value: '76' },
+    { label: 'Colis en octobre', value: '1 900' },
+    { label: 'Invitation en attente', value: '1', tone: 'orange' },
+  ],
+  tabs = TABS,
+  activeTab = 0,
+  onSelectTab,
+  rows = COMPANIES,
+  withUsage = true,
+  range = '1–5 sur 5',
+  note = 'Chiffres seulement : ni colis, ni annuaire, ni nom de salarié (D26).',
+  onNew,
+  onOpen,
+}: EntreprisesDesktopProps) {
   return (
-    <PlatformShell searchPlaceholder="Rechercher une entreprise">
+    <PlatformShell searchPlaceholder="Rechercher une entreprise" chrome={chrome}>
       <DeskPageHeader
         title="Entreprises"
-        subtitle="5 entreprises clientes · chiffres d’octobre"
+        subtitle={subtitle}
         actions={
           <Button
             size="desk"
             icon="plus"
             className="w-[182.8px] justify-start"
+            onClick={onNew}
           >
             Nouvelle entreprise
           </Button>
         }
       />
-      <DeskStats
-        className="mt-6"
-        stats={[
-          { label: 'Entreprises actives', value: '3' },
-          { label: 'Comptes', value: '76' },
-          { label: 'Colis en octobre', value: '1 900' },
-          { label: 'Invitation en attente', value: '1', tone: 'orange' },
-        ]}
-      />
-      <CompanyTabs />
-      <div className="mt-[19px] flex gap-2">
-        <DeskSelect
-          icon="filter"
-          label="Modèle"
-          value="Tous"
-          className="w-[137px]"
-        />
-        <DeskSelect
-          icon="list"
-          label="Tri"
-          value="Dernière activité"
-          className="w-[176px]"
-        />
-      </div>
+      <DeskStats className="mt-6" stats={stats} />
+      <CompanyTabs tabs={tabs} active={activeTab} onSelect={onSelectTab} />
+      {withUsage && (
+        <div className="mt-[19px] flex gap-2">
+          <DeskSelect
+            icon="filter"
+            label="Modèle"
+            value="Tous"
+            className="w-[137px]"
+          />
+          <DeskSelect
+            icon="list"
+            label="Tri"
+            value="Dernière activité"
+            className="w-[176px]"
+          />
+        </div>
+      )}
       <DeskTable
         label="Entreprises clientes"
         className="mt-4 shrink-0"
-        columns={COLUMNS}
-        rows={COMPANIES}
+        columns={
+          withUsage
+            ? COLUMNS
+            : COLUMNS.filter((column) => !USAGE_COLUMNS.has(column.key))
+        }
+        rows={rows}
         rowKey={(c) => c.id}
         rowHeight={44}
-        footer={<DeskTablePagination range="1–5 sur 5" />}
+        onRowClick={onOpen}
+        footer={<DeskTablePagination range={range} />}
       />
       <p className="mt-[18px] flex items-center gap-2 text-12 text-muted">
         <Icon name="lock" size={14} className="mt-0.5" />
-        Chiffres seulement : ni colis, ni annuaire, ni nom de salarié (D26).
+        {note}
       </p>
     </PlatformShell>
   );
 }
 
 /** The same list when the server does not answer. */
-export function EntreprisesErreurDesktop() {
+export function EntreprisesErreurDesktop({
+  chrome,
+  onRetry,
+}: {
+  chrome?: PlatformChrome;
+  onRetry?: () => void;
+}) {
   return (
-    <PlatformShell searchPlaceholder="Rechercher une entreprise">
+    <PlatformShell searchPlaceholder="Rechercher une entreprise" chrome={chrome}>
       <DeskPageHeader title="Entreprises" subtitle="Liste non chargée" />
       <div className="mt-[175px] flex flex-col items-center text-center">
         <span className="flex size-[88px] items-center justify-center rounded-full bg-red-soft text-red">
@@ -231,6 +297,7 @@ export function EntreprisesErreurDesktop() {
           icon="refresh"
           iconSize={24}
           className="mt-[25px] h-12 w-[180px] gap-[7px] text-16"
+          onClick={onRetry}
         >
           Réessayer
         </Button>
@@ -243,19 +310,148 @@ function CompanyRow({
   company,
   separator,
   lines,
+  onOpen,
 }: {
   company: Company;
   separator: boolean;
   lines: string[];
+  onOpen?: (company: Company) => void;
 }) {
-  return (
+  const row = (
     <PhoneRow
       height={80}
-      leading={<CompanyLogo initials={company.initials} size={40} />}
+      leading={
+        <CompanyLogo
+          initials={company.initials}
+          size={40}
+          muted={company.status !== 'active'}
+        />
+      }
       title={company.name}
       lines={lines}
       separator={separator}
     />
+  );
+  return onOpen ? (
+    <button
+      type="button"
+      className="block w-full cursor-pointer text-left outline-none focus-visible:ring-2 focus-visible:ring-blue"
+      onClick={() => onOpen(company)}
+    >
+      {row}
+    </button>
+  ) : (
+    row
+  );
+}
+
+export type EntreprisesMobileProps = {
+  subtitle: string;
+  /** Under « Actives »: each company with its line of figures. */
+  active: { company: Company; lines: string[] }[];
+  /** Under « À suivre »: the suspended ones. */
+  watched: { company: Company; lines: string[] }[];
+  onNew?: () => void;
+  onOpen?: (company: Company) => void;
+  signOutLabel: string;
+  onSignOut?: () => void;
+  search?: { value: string; onChange: (value: string) => void };
+  searchPlaceholder?: string;
+};
+
+/** The phone's home of the app's admin, on real figures. */
+export function EntreprisesListMobile({
+  subtitle,
+  active,
+  watched,
+  onNew,
+  onOpen,
+  signOutLabel,
+  onSignOut,
+  search,
+  searchPlaceholder,
+}: EntreprisesMobileProps) {
+  return (
+    <Screen
+      className="pt-[calc(var(--safe-top)+6px)]"
+      bottom={
+        <BottomBar className="pt-[34px] pb-[26px]">
+          {search ? (
+            <input
+              type="search"
+              aria-label={searchPlaceholder}
+              placeholder={searchPlaceholder}
+              value={search.value}
+              onChange={(event) => search.onChange(event.target.value)}
+              className="h-12 min-w-0 flex-1 rounded-full bg-fill px-4 text-15 outline-none"
+            />
+          ) : (
+            <SearchTrigger size="dock" />
+          )}
+          <Button icon="plus" iconSize={20} className="w-[171px] gap-2" onClick={onNew}>
+            Nouvelle
+          </Button>
+        </BottomBar>
+      }
+    >
+      <div className="flex h-11 items-center justify-end">
+        <IconButton
+          icon="logout"
+          label={signOutLabel}
+          size="lg"
+          iconSize={22}
+          className="-mr-0.5"
+          onClick={onSignOut}
+        />
+      </div>
+      <LargeTitle
+        title={<span className="tracking-[-0.4px]">Entreprises</span>}
+        subtitle={subtitle}
+        className="mt-[7px] gap-1.5"
+      />
+      {active.length > 0 && (
+        <>
+          <SectionHeader
+            title="Actives"
+            count={active.length}
+            size="lg"
+            className="mt-[23px] h-[27px]"
+          />
+          <div className="mt-3.5">
+            {active.map((row, i) => (
+              <CompanyRow
+                key={row.company.id}
+                company={row.company}
+                lines={row.lines}
+                separator={i < active.length - 1}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
+        </>
+      )}
+      {watched.length > 0 && (
+        <>
+          <SectionHeader
+            title="À suivre"
+            count={watched.length}
+            size="lg"
+            className="mt-[15px] h-[27px]"
+          />
+          <div className="mt-3.5">
+            {watched.map((row, i) => (
+              <CompanyRow
+                key={row.company.id}
+                company={row.company}
+                lines={row.lines}
+                separator={i < watched.length - 1}
+                onOpen={onOpen}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </Screen>
   );
 }
 

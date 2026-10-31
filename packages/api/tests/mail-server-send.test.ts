@@ -636,6 +636,23 @@ describe('automatic reminders', () => {
 
   const J2 = new Date('2026-10-28T09:00:00Z');
 
+  it('asks none for a suspended company, and catches up once reactivated', async () => {
+    await setProfile('required');
+    await noticed();
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: NOW })
+      .where(eq(schema.organization.id, ORGANIZATION_ID));
+    expect(await requestDueReminders(any(), J2)).toBe(0);
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: null })
+      .where(eq(schema.organization.id, ORGANIZATION_ID));
+    expect(await requestDueReminders(any(), J2)).toBeGreaterThan(0);
+    await round(J2);
+    brevo.sent.length = 0;
+  });
+
   it('goes once at J+2 with a new code, and the former QR says replaced', async () => {
     await setProfile('required');
     const { person, parcelId } = await noticed();

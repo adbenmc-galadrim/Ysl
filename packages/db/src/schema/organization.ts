@@ -1,3 +1,4 @@
+import { PROFILE_MODELS } from '@repo/contract/operating-profile';
 import {
   pgTable,
   text,
@@ -13,6 +14,12 @@ export const organization = pgTable('organization', {
   createdAt: timestamp('created_at', { withTimezone: true })
     .defaultNow()
     .notNull(),
+  // No connection and no synchronisation while set; everything is kept (ME13).
+  suspendedAt: timestamp('suspended_at', { withTimezone: true }),
+  // Last time it came back: a phone whose session ran out before then keeps its proofs.
+  reactivatedAt: timestamp('reactivated_at', { withTimezone: true }),
+  // The model picked at creation (D30), for the record: the company's profile lives on, in `setting`.
+  profileModel: text('profile_model', { enum: PROFILE_MODELS }),
 });
 
 export const organizationMember = pgTable(

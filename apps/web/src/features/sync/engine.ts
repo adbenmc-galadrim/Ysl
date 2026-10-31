@@ -1,3 +1,4 @@
+import { COMPANY_SUSPENDED } from '@repo/contract/auth';
 import { SYNC_STATE_KEYS, type CourrierDatabase } from '#/features/db/schema';
 import { describeError } from '#/features/sync/errors';
 import { pullChanges, type PullClient } from '#/features/sync/pull';
@@ -27,6 +28,8 @@ export type SyncEngineOptions = {
   now?: () => Date;
   /** Called when the server answered 401: the session is gone. */
   onUnauthorized?: () => void;
+  /** The server refused the company (its 403), or took it back: nothing is erased either way. */
+  onCompanySuspended?: (suspended: boolean) => void;
   /** Settles what the pull resolved of the refused changes (a handover lost to another iPhone). */
   afterPull?: () => Promise<void>;
 };
@@ -64,6 +67,11 @@ function isUnauthorized(error: unknown): boolean {
   return data?.code === 'UNAUTHORIZED';
 }
 
+function refusedAsSuspended(error: unknown): boolean {
+  const data = (error as { data?: { reason?: string } } | null)?.data;
+  return data?.reason === COMPANY_SUSPENDED;
+}
+
 /**
  * One synchronisation at a time: push what the device changed, then pull
  * what the server has. A run asked for while one is going joins it. Offline,
@@ -76,6 +84,7 @@ export function createSyncEngine({
   online = () => navigator.onLine,
   now = () => new Date(),
   onUnauthorized,
+  onCompanySuspended,
   afterPull,
 }: SyncEngineOptions) {
   let snapshot = INITIAL_SYNC_SNAPSHOT;
@@ -117,6 +126,7 @@ export function createSyncEngine({
         onProgress: (rows) => set({ pulled: rows }),
       });
       await afterPull?.();
+      onCompanySuspended?.(false);
       const at = now();
       await db.syncState.put({ key: SYNC_STATE_KEYS.lastSyncAt, value: at });
       if (pushed.stopped === 'retry') {
@@ -140,6 +150,7 @@ export function createSyncEngine({
       };
     } catch (error) {
       if (isUnauthorized(error)) onUnauthorized?.();
+      if (refusedAsSuspended(error)) onCompanySuspended?.(true);
       return failed(error);
     }
   }

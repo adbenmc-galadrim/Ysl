@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
-    "./password": "./src/password.ts"
+    "./password": "./src/password.ts",
+    "./organization": "./src/organization.ts"
   },
   "imports": {
     "#*": [

@@ -35,12 +35,15 @@ function StepOf({ step }: { step: number }) {
   );
 }
 
-const PHONE_MODELS: {
+export type ProfileModelPhoneCard = {
+  id?: string;
   icon: IconName;
   name: string;
   description: string;
   selected?: boolean;
-}[] = [
+};
+
+const PHONE_MODELS: ProfileModelPhoneCard[] = [
   {
     icon: 'truck',
     name: 'Petit site, la navette remet',
@@ -60,32 +63,73 @@ const PHONE_MODELS: {
 ];
 
 /** Step 1 on the phone: the name, then one model out of three. */
-export function NouvelleEntrepriseModeleMobile() {
+export function NouvelleEntrepriseModeleMobile({
+  name = 'Atelier Lumen',
+  onName,
+  models = PHONE_MODELS,
+  onSelectModel,
+  confirmLabel = 'Continuer',
+  confirmDisabled = false,
+  onConfirm,
+  onCancel,
+  withStep = true,
+  error,
+}: {
+  name?: string;
+  onName?: (name: string) => void;
+  models?: ProfileModelPhoneCard[];
+  onSelectModel?: (id: string) => void;
+  confirmLabel?: string;
+  confirmDisabled?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+  withStep?: boolean;
+  error?: string;
+} = {}) {
   return (
     <Screen
       tone="fill"
       className="pt-[calc(var(--safe-top)+6px)]"
       bottom={
         <Bar>
-          <Button block>Continuer</Button>
+          <Button block disabled={confirmDisabled} onClick={onConfirm}>
+            {confirmLabel}
+          </Button>
         </Bar>
       }
     >
-      <PhoneNav icon="x" title="Nouvelle entreprise" trailing={<StepOf step={1} />} />
+      <PhoneNav
+        icon="x"
+        title="Nouvelle entreprise"
+        trailing={withStep ? <StepOf step={1} /> : undefined}
+        onBack={onCancel}
+      />
       <PhoneField
         label="Nom de l’entreprise"
-        value="Atelier Lumen"
+        value={name}
+        onChange={onName}
+        error={Boolean(error)}
         className="mt-4"
       />
+      {error && (
+        <p role="alert" className="mt-1.5 text-13 text-red">
+          {error}
+        </p>
+      )}
       <PhoneGroupTitle className="mt-6">
         Modèle de fonctionnement
       </PhoneGroupTitle>
       <div className="mt-2.5 flex flex-col gap-3">
-        {PHONE_MODELS.map((model) => (
+        {models.map((model) => (
           <div
             key={model.name}
+            role="radio"
+            aria-checked={Boolean(model.selected)}
+            tabIndex={onSelectModel ? 0 : undefined}
+            onClick={() => model.id && onSelectModel?.(model.id)}
             className={cn(
               'relative h-[138px] rounded-[16px] bg-surface',
+              onSelectModel && 'cursor-pointer',
               model.selected
                 ? 'shadow-[0_0_0_1px_var(--color-ink),inset_0_0_0_1px_var(--color-ink)]'
                 : 'shadow-[inset_0_0_0_1px_var(--color-separator)]',

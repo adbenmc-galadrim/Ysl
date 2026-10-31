@@ -24,6 +24,7 @@ const EXPECTED: Record<RouteArea, readonly AccountRole[]> = {
   departmentSpace: ['department'],
   directory: ['company_admin', 'department'],
   companySettings: ['company_admin'],
+  platform: ['platform_admin'],
 };
 
 const ACTS_AS_DEPARTMENT = { shuttleActsAsDepartment: true };
@@ -44,7 +45,7 @@ describe('mayReach', () => {
     const areas = (Object.keys(EXPECTED) as RouteArea[]).filter((area) =>
       mayReach(area, 'platform_admin', ACTS_AS_DEPARTMENT),
     );
-    expect(areas).toEqual(['home']);
+    expect(areas).toEqual(['home', 'platform']);
   });
 });
 

@@ -4,6 +4,78 @@ export const fr = {
   'error.forbidden': 'Vous n’avez pas accès à cette fonction.',
   'sync.error.noDepartment':
     'Ce compte n’est rattaché à aucun département. Demandez à l’administrateur de votre entreprise de le rattacher.',
+  'company.suspended.refused': 'Votre entreprise est suspendue.',
+  'company.suspended.title': 'Votre entreprise est suspendue',
+  'company.suspended.description':
+    'La connexion et la synchronisation sont arrêtées. Vos colis, photos et preuves restent sur ce téléphone : rien n’est effacé. Tout repartira quand l’entreprise sera réactivée.',
+  'company.suspended.pending': 'Modifications en attente sur ce téléphone : {{count}}',
+  'company.suspended.retry': 'Vérifier à nouveau',
+  'platform.nav.companies': 'Entreprises',
+  'platform.account.role': 'Administrateur de l’app',
+  'platform.signOut': 'Se déconnecter',
+  'platform.search': 'Rechercher une entreprise',
+  'platform.note': 'Chiffres seulement : ni colis, ni annuaire, ni nom de salarié.',
+  'platform.loading': 'Chargement…',
+  'platform.list.subtitle': '{{count}} entreprises clientes',
+  'platform.list.subtitle.one': '1 entreprise cliente',
+  'platform.list.stat.active': 'Entreprises actives',
+  'platform.list.stat.suspended': 'Suspendues',
+  'platform.list.stat.accounts': 'Comptes',
+  'platform.list.tab.all': 'Toutes',
+  'platform.list.tab.active': 'Actives',
+  'platform.list.tab.suspended': 'Suspendues',
+  'platform.list.range': '{{count}} sur {{total}}',
+  'platform.list.line': '{{departments}} · {{accounts}}',
+  'platform.status.active': 'Active',
+  'platform.status.suspended': 'Suspendue',
+  'platform.model.none': 'Sans modèle',
+  'platform.model.small_site': 'Petit site',
+  'platform.model.small_site.title': 'Petit site, la navette remet',
+  'platform.model.small_site.description':
+    'Un seul lieu de retrait : la navette scanne et remet elle-même.',
+  'platform.model.small_site.feature.handover':
+    'La navette fait office de département',
+  'platform.model.multi_departments': 'Multi-départements',
+  'platform.model.multi_departments.title': 'Multi-départements',
+  'platform.model.multi_departments.description':
+    'Plusieurs départements : chacun remet ses colis aux salariés.',
+  'platform.model.multi_departments.feature.handover':
+    'La navette ne remet pas : le département le fait',
+  'platform.model.feature.deposit': 'Pas de confirmation de dépôt',
+  'platform.model.feature.email': 'E-mail dès le scan',
+  'platform.model.feature.reminders': 'Relances facultatives',
+  'platform.new.confirm': 'Créer',
+  'platform.new.note': 'L’entreprise pourra tout modifier ensuite',
+  'platform.sheet.status.active': 'Active · créée le {{date}} · modèle {{model}}',
+  'platform.sheet.status.suspended':
+    'Suspendue depuis le {{since}} · créée le {{date}} · modèle {{model}}',
+  'platform.sheet.stat.accounts': 'Comptes',
+  'platform.sheet.stat.departments': 'Départements',
+  'platform.sheet.stat.parcels': 'Colis',
+  'platform.sheet.model': 'Modèle de départ',
+  'platform.sheet.suspend': 'Suspendre',
+  'platform.sheet.reactivate': 'Réactiver',
+  'platform.sheet.rename': 'Renommer',
+  'platform.sheet.delete': 'Supprimer',
+  'platform.sheet.notice.title': 'Suspendue depuis le {{since}}',
+  'platform.sheet.notice.description':
+    'Plus aucune connexion ni synchronisation. Les données sont gardées.',
+  'platform.suspend.description':
+    '{{accounts}} ne pourront plus se connecter ni synchroniser. Colis, annuaire et réglages sont gardés, et les téléphones ne sont pas effacés ; vous pourrez réactiver.',
+  'platform.delete.description':
+    'Tout sera effacé sans retour : {{accounts}}, {{departments}}, l’annuaire et {{parcels}} avec leurs preuves. Les téléphones se videront à leur prochaine connexion au serveur.',
+  'platform.delete.exportHint':
+    'Son administrateur exporte ses colis depuis Réglages, tant qu’elle n’est pas suspendue.',
+  'platform.count.accounts': '{{count}} comptes',
+  'platform.count.accounts.one': '1 compte',
+  'platform.count.departments': '{{count}} départements',
+  'platform.count.departments.one': '1 département',
+  'platform.count.parcels': '{{count}} colis',
+  'platform.error.save': 'L’enregistrement a échoué. Réessayez.',
+  'platform.error.notFound': 'Cette entreprise n’existe plus.',
+  'platform.error.nameTaken': 'Une entreprise porte déjà ce nom.',
+  'platform.error.confirmName':
+    'Le nom saisi ne correspond pas : rien n’a été supprimé.',
   'sync.error.noOrganization':
     'Ce compte n’est rattaché à aucun service courrier.',
   'sync.op.badRequest': 'Données invalides, à corriger sur l’appareil.',
@@ -325,6 +397,8 @@ export const fr = {
   'auth.signIn.forgotNotice':
     'Demandez à votre administrateur de réinitialiser votre mot de passe.',
   'auth.signIn.error.invalid': 'E-mail ou mot de passe incorrect.',
+  'auth.signIn.error.suspended':
+    'Votre entreprise est suspendue. Contactez votre administrateur.',
   'auth.signIn.error.rateLimited':
     'Trop de tentatives, réessayez dans une minute.',
   'auth.signIn.error.network':
@@ -368,9 +442,6 @@ export const fr = {
     'Le tableau de bord arrive dans une prochaine version',
   'home.dashboard.notice.description':
     'Les retards et les chiffres par département s’afficheront ici. Les colis, l’annuaire et les réglages sont déjà ouverts.',
-  'home.platform.title': 'L’espace plateforme arrive',
-  'home.platform.description':
-    'Il réunira les entreprises et leurs chiffres d’usage. Ce compte n’a accès à aucun colis ni à aucun annuaire.',
   'colis.summary': '{{count}} colis, dont {{todo}} à traiter',
   'colis.summary.empty': 'Aucun colis en attente',
   'colis.summary.loading': 'Chargement…',
