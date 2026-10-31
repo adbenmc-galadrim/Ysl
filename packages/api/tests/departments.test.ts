@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
-import { departmentMember, organizationMember, user } from '@repo/db/schema';
+import {
+  departmentMember,
+  directoryPerson,
+  organizationMember,
+  parcel,
+  user,
+} from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -17,7 +23,7 @@ vi.mock('@repo/db', () => ({
 vi.mock('@repo/auth', () => ({ auth: { api: {} }, isAPIError: () => false }));
 
 const { callerFor, sessionFor } = await import('./helpers/caller');
-const { AGENT_ID, ORGANIZATION_ID, STRANGER_ID } =
+const { AGENT_ID, ORGANIZATION_ID, parcelRow, STRANGER_ID } =
   await import('./helpers/pglite');
 
 const FINANCE_USER = 'finance-1';
@@ -250,6 +256,45 @@ describe('departments.archive', () => {
     await expect(
       admin().departments.create({ name: 'Studio' }),
     ).resolves.toMatchObject({ name: 'Studio' });
+  });
+
+  it.each([
+    [
+      'a person',
+      (departmentId: string) =>
+        db.insert(directoryPerson).values({
+          id: newId(),
+          organizationId: ORGANIZATION_ID,
+          lastName: 'Haddad',
+          firstName: 'Nora',
+          nameNorm: 'nora haddad',
+          email: `nora.${departmentId}@example.test`,
+          departmentId,
+        }),
+    ],
+    [
+      'a parcel waiting',
+      (departmentId: string) =>
+        db.insert(parcel).values({ ...parcelRow(), departmentId }),
+    ],
+  ])('refuses while it holds %s', async (what, seed) => {
+    const { id } = await admin().departments.create({ name: `Tenu ${what}` });
+    await seed(id);
+
+    await expect(admin().departments.archive({ id })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+  });
+
+  it('archives a department whose parcels are all handed over', async () => {
+    const { id } = await admin().departments.create({ name: 'Vidé' });
+    await db.insert(parcel).values({
+      ...parcelRow(),
+      departmentId: id,
+      status: 'retourne',
+    });
+
+    await expect(admin().departments.archive({ id })).resolves.toBeUndefined();
   });
 
   it('cannot archive the department of another company', async () => {

@@ -11,13 +11,15 @@ import type { AnyDb } from '@repo/db';
 import {
   department,
   departmentMember,
+  directoryPerson,
   organizationMember,
+  parcel,
   user,
 } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { TRPCError } from '@trpc/server';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { sqlState } from '#features/sync/errors';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -156,6 +158,36 @@ export async function archiveDepartment(
     throw new TRPCError({
       code: 'CONFLICT',
       message: translate('departments.error.hasMembers'),
+    });
+  }
+  // New parcels would still follow its people there, and nobody could hand them over.
+  const [person] = await db
+    .select({ id: directoryPerson.id })
+    .from(directoryPerson)
+    .where(
+      and(
+        eq(directoryPerson.organizationId, organizationId),
+        eq(directoryPerson.departmentId, id),
+        isNull(directoryPerson.deletedAt),
+      ),
+    )
+    .limit(1);
+  const [waiting] = await db
+    .select({ id: parcel.id })
+    .from(parcel)
+    .where(
+      and(
+        eq(parcel.organizationId, organizationId),
+        eq(parcel.departmentId, id),
+        isNull(parcel.deletedAt),
+        inArray(parcel.status, ['a_completer', 'recu', 'notifie']),
+      ),
+    )
+    .limit(1);
+  if (person || waiting) {
+    throw new TRPCError({
+      code: 'CONFLICT',
+      message: translate('departments.error.inUse'),
     });
   }
   const [row] = await db

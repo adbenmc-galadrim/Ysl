@@ -45,6 +45,8 @@ export const fr = {
   'agents.error.invalid': 'Les informations saisies sont invalides.',
   'departments.error.nameTaken': 'Un département porte déjà ce nom.',
   'departments.error.notFound': 'Ce département n’existe pas.',
+  'departments.error.inUse':
+    'Ce département a encore des salariés ou des colis en attente.',
   'departments.error.hasMembers':
     'Ce département a encore des comptes rattachés.',
   'departments.error.notDepartmentAccount':
