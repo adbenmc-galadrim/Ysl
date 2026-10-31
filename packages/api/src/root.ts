@@ -15,6 +15,7 @@ import { pickupRouter } from '#features/pickup/router';
 import { platformRouter } from '#features/platform/router';
 import { syncRouter } from '#features/sync/router';
 import { tourRouter } from '#features/tour/router';
+import { depositsRouter } from '#features/deposits/router';
 import { router } from '#lib/trpc';
 
 export const appRouter = router({
@@ -22,6 +23,7 @@ export const appRouter = router({
   accounts: accountsRouter,
   company: companyRouter,
   departments: departmentsRouter,
+  deposits: depositsRouter,
   devices: devicesRouter,
   directory: directoryRouter,
   exports: exportsRouter,

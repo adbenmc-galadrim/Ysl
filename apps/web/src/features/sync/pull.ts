@@ -161,6 +161,7 @@ async function readFrom(
     limit,
     departments: true,
     tourStatuses: true,
+    deposits: true,
   });
   await db.syncState.put({
     key: SYNC_STATE_KEYS.serverMail,
@@ -185,6 +186,7 @@ async function readFrom(
       limit,
       departments: true,
       tourStatuses: true,
+      deposits: true,
     });
   }
   return { generation, reset, rows, bound: output.cursor, seen };

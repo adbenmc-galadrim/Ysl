@@ -71,6 +71,7 @@ export function cutoff(now: Date, duration: RetentionDuration): Date {
 /** The tables a purge marks or erases, children before parents. */
 export const PURGE_TABLES = [
   'handover',
+  'deposit',
   'notification',
   'pickup_code',
   'event',

@@ -2,6 +2,7 @@ export * from '#schema/account-invitation';
 export * from '#schema/auth';
 export * from '#schema/company-logo';
 export * from '#schema/department';
+export * from '#schema/deposit';
 export * from '#schema/directory';
 export * from '#schema/email-outbox';
 export * from '#schema/event';

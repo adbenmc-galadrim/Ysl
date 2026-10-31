@@ -17,6 +17,7 @@ export const SYNCED_ENTITIES = [
   'sender_alias',
   'recipient_alias',
   'department',
+  'deposit',
 ] as const;
 
 export const syncedEntity = z.enum(SYNCED_ENTITIES);
@@ -138,6 +139,8 @@ export const pullInput = z.object({
   departments: z.literal(true).optional(),
   /** This app knows the statuses of a tour: a PWA of before gets those parcels as removed. */
   tourStatuses: z.literal(true).optional(),
+  /** This app has a `deposit` table: a PWA of before would fail on its rows. */
+  deposits: z.literal(true).optional(),
 });
 
 export type PullInput = z.infer<typeof pullInput>;

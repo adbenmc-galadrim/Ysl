@@ -3,6 +3,7 @@ import {
   batch,
   contact,
   department,
+  deposit,
   directoryPerson,
   emailTemplate,
   event,
@@ -34,6 +35,7 @@ export const SYNC_TABLES = {
   sender_alias: senderAlias,
   recipient_alias: recipientAlias,
   department,
+  deposit,
 } as const satisfies Record<SyncedEntity, unknown>;
 
 export type SyncTable = (typeof SYNC_TABLES)[SyncedEntity];

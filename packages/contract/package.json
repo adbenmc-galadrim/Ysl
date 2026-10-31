@@ -32,7 +32,8 @@
     "./settings": "./src/settings.ts",
     "./sync": "./src/sync.ts",
     "./tracking": "./src/tracking/index.ts",
-    "./tour": "./src/tour.ts"
+    "./tour": "./src/tour.ts",
+    "./deposits": "./src/deposits.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

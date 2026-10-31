@@ -153,6 +153,18 @@ export const fr = {
   'sync.op.forbidden': 'Cet élément appartient à un autre service courrier.',
   'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
   'sync.op.offTour': 'Ce colis est dans la tournée d’une autre navette.',
+  'sync.op.depositOnly':
+    'Le dépôt et sa régularisation passent par le serveur : ouvrez le colis une fois en ligne.',
+  'deposit.error.notFound': 'Ce dépôt n’existe plus.',
+  'deposit.error.confirmed': 'Ce dépôt est déjà confirmé.',
+  'deposit.error.count': 'Le nombre compté ne correspond pas à l’écart déclaré.',
+  'deposit.error.department': 'Ce département ne peut pas recevoir ce colis.',
+  'deposit.error.followsPerson':
+    'Ce colis suit son destinataire : changez le salarié ou sa fiche.',
+  'deposit.error.parcelGone': 'Ce colis n’existe plus.',
+  'deposit.error.settled': 'Ce colis n’attend plus de décision.',
+  'deposit.error.shuttle': 'Cette navette n’est pas disponible.',
+  'deposit.lost.note': 'Déclaré perdu par l’admin de l’entreprise.',
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
   'sync.op.departmentArchived':
     'Ce département est archivé : le colis ou le salarié ne peut pas y retourner.',
@@ -1910,6 +1922,7 @@ export const fr = {
   'sync.change.entity.notification': 'Notification',
   'sync.change.entity.pickup_code': 'Code de retrait',
   'sync.change.entity.handover': 'Remise',
+  'sync.change.entity.deposit': 'Dépôt',
   'sync.change.entity.event': 'Événement',
   'sync.change.entity.setting': 'Réglage',
   'sync.change.entity.unknown': 'Changement',

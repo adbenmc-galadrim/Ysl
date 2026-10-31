@@ -25,7 +25,10 @@ import {
   setting,
 } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
+import { TRPCError } from '@trpc/server';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
+import { confirmDeposit } from '#features/deposits/service';
+import { readOperatingProfile } from '#features/operating/service';
 import {
   type FailureStatus,
   guardOf,
@@ -51,6 +54,13 @@ const SERVER_COLUMNS = new Set([
   'deliveryStatus',
   'deliveryAt',
   'tourShuttleId',
+  'formerShuttleIds',
+  'counted',
+  'gap',
+  'gapParcelIds',
+  'confirmedAt',
+  'confirmedBy',
+  'confirmedByName',
 ]);
 
 /** Columns an update leaves alone, whatever the device sends. */
@@ -316,6 +326,32 @@ async function isServerMail(
   return row?.channel === 'server';
 }
 
+/** A profile with no confirmation (§3.7.4): what the shuttle put down is deposited as it says. */
+async function confirmWithoutDepartment(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, userId }: Writer,
+): Promise<void> {
+  const profile = await readOperatingProfile(tx, organizationId);
+  if (profile.depositConfirmation !== 'disabled') return;
+  await confirmDeposit(
+    tx,
+    { organizationId, userId, name: null },
+    null,
+    {
+      depositId: op.entityId,
+      counted: Number(op.patch.announced),
+      gap: null,
+    },
+    op.clientTs,
+  ).catch((error: unknown) => {
+    if (error instanceof TRPCError) {
+      throw new SyncRejected(SYNC_STATUS.conflict, error.message);
+    }
+    throw error;
+  });
+}
+
 async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
   const { organizationId } = writer;
   const table = tableOf(op.entity);
@@ -332,6 +368,19 @@ async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
       .onConflictDoNothing({ target: table.id })
       .returning({ id: table.id });
     if (inserted.length === 0) await requireOwn(tx, table, op, organizationId);
+    return;
+  }
+
+  if (op.entity === 'deposit') {
+    // Announced once: its count is the department's, through `deposits.confirm`.
+    const inserted = await insert
+      .onConflictDoNothing({ target: table.id })
+      .returning({ id: table.id });
+    if (inserted.length === 0) {
+      await requireOwn(tx, table, op, organizationId);
+    } else {
+      await confirmWithoutDepartment(tx, op, writer);
+    }
     return;
   }
 

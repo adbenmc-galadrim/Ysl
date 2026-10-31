@@ -1,4 +1,4 @@
-import { canWriteDirectory } from '@repo/contract/auth';
+import { canWriteDirectory, isCompanyAdmin } from '@repo/contract/auth';
 import type { HandoverMethod } from '@repo/contract/handover';
 import {
   missingHandoverSteps,
@@ -438,6 +438,65 @@ async function checkTour(
   }
 }
 
+/** Announced by the shuttle that carries them, once. */
+async function checkDeposit(
+  tx: AnyDb,
+  op: SyncOp,
+  access: Access,
+): Promise<void> {
+  const scope = parcelScope(access);
+  if (scope.kind !== 'tour' || op.type !== 'upsert') {
+    refuse(op, 'is announced by a shuttle on tour', 'sync.op.readOnly');
+  }
+  if (
+    !(await allInScope(
+      tx,
+      access.organizationId,
+      scope,
+      idsOf(op.patch.parcelIds),
+    ))
+  ) {
+    offTour(op);
+  }
+}
+
+/**
+ * The deposit, its gap and their settling go through `deposits`, in one
+ * transaction: a device writes none of them, so `depositedStatus` stays the
+ * only way. The admin, who settles, may still take a step back from « À régulariser ».
+ */
+async function checkTourStatus(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, role }: Access,
+): Promise<void> {
+  if (op.entity !== 'parcel' || op.type !== 'upsert') return;
+  const to = op.patch.status;
+  if (typeof to !== 'string') return;
+  const [row] = await tx
+    .select({ status: parcel.status })
+    .from(parcel)
+    .where(
+      and(
+        eq(parcel.organizationId, organizationId),
+        eq(parcel.id, op.entityId),
+      ),
+    );
+  if (row?.status === to) return;
+  const from = row?.status;
+  const deposits =
+    (from === undefined && (to === 'depose' || to === 'a_regulariser')) ||
+    (from === 'en_route' &&
+      (to === 'depose' || to === 'notifie' || to === 'a_regulariser')) ||
+    ((from === 'depose' || from === 'notifie') && to === 'a_regulariser');
+  const settles =
+    from === 'a_regulariser' &&
+    (!isCompanyAdmin(role) || to === 'en_route' || to === 'retourne');
+  if (deposits || settles) {
+    refuse(op, 'moves through a deposit', 'sync.op.depositOnly');
+  }
+}
+
 /**
  * Whether this account may write this row (§2.1), before anything else looks
  * at it. A department is held to its own rows; `department` is written by its
@@ -456,6 +515,8 @@ export async function checkReach(
   if (op.entity === 'directory_person' && !canWriteDirectory(access.role)) {
     refuse(op, 'is read-only for this account', 'sync.op.directoryReadOnly');
   }
+  if (op.entity === 'deposit') await checkDeposit(tx, op, access);
+  await checkTourStatus(tx, op, access);
   const scope = parcelScope(access);
   if (scope.kind === 'department') {
     await checkDepartment(tx, op, access, scope.departmentId);
@@ -494,6 +555,7 @@ export async function departmentWrite(
   if (scope.kind === 'tour' && op.entity === 'parcel') {
     values = { ...values, receivedBy: access.userId };
   }
+  if (op.entity === 'deposit') return { ...values, shuttleId: access.userId };
   if (!('departmentId' in values)) return values;
   if (op.entity === 'directory_person') {
     const [row] = await tx
@@ -513,7 +575,11 @@ export async function departmentWrite(
   }
   if (op.entity !== 'parcel') return values;
   const [row] = await tx
-    .select({ personId: parcel.personId, departmentId: parcel.departmentId })
+    .select({
+      personId: parcel.personId,
+      contactId: parcel.contactId,
+      departmentId: parcel.departmentId,
+    })
     .from(parcel)
     .where(
       and(
@@ -523,6 +589,12 @@ export async function departmentWrite(
     );
   const personId =
     values.personId === undefined ? row?.personId : values.personId;
-  if (!personId || !row || row.departmentId === null) return values;
-  return withoutDepartment(values);
+  if (!row || row.departmentId === null) return values;
+  if (personId) return withoutDepartment(values);
+  // Nobody in the directory: only another recipient takes it elsewhere. The same one in a copy is a copy, perhaps stale.
+  const contactId =
+    values.contactId === undefined ? row.contactId : values.contactId;
+  return row.personId === null && contactId === row.contactId
+    ? withoutDepartment(values)
+    : values;
 }

@@ -21,7 +21,7 @@ describe('CourrierDatabase', () => {
         'handover_proof',
       ].sort(),
     );
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
     for (const entity of SYNCED_ENTITIES) {
       expect(db.synced(entity).schema.primKey.name).toBe('id');
     }
@@ -75,7 +75,7 @@ describe('CourrierDatabase upgrade to version 3', () => {
     await db.open();
     const [op] = await db.outbox.toArray();
 
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
     expect(op?.state).toBe('queued');
     expect(await db.outbox.where('state').equals('queued').count()).toBe(1);
     db.close();
