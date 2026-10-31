@@ -174,7 +174,11 @@ export async function informOrally(
   const codes = pickup
     ? await pickupCodeWrites(
         db,
-        { personId: mail.personId, contactId: mail.contactId },
+        {
+          personId: mail.personId,
+          contactId: mail.contactId,
+          departmentId: mail.departmentId,
+        },
         pickup,
         { now },
       )

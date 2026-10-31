@@ -15,6 +15,7 @@ import {
 } from '#/features/db/commit';
 import type { CourrierDatabase, LocalNotification } from '#/features/db/schema';
 import {
+  departmentOfParcels,
   pickupCodeWrites,
   type PickupSecret,
 } from '#/features/mail/pickup-code';
@@ -98,7 +99,11 @@ export async function prepareNotification(
   const codes = input.pickup
     ? await pickupCodeWrites(
         db,
-        { personId: row.personId, contactId: row.contactId },
+        {
+          personId: row.personId,
+          contactId: row.contactId,
+          departmentId: await departmentOfParcels(db, row.parcelIds),
+        },
         input.pickup,
         { now },
       )

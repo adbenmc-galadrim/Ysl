@@ -2,7 +2,11 @@ import type { NotificationStatus } from '@repo/contract/mail';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { LocalNotification, LocalParcel } from '#/features/db/schema';
 import { statusOf } from '#/features/mail/notifications';
-import { namedRecipient, type RecipientMail } from '#/features/mail/recipients';
+import {
+  departmentOfParcel,
+  namedRecipient,
+  type RecipientMail,
+} from '#/features/mail/recipients';
 import {
   carrierLabel,
   recipientOf,
@@ -307,6 +311,7 @@ export function mailOf(
     personId: notification.personId,
     contactId: notification.contactId,
     address: notification.recipients[0] ?? null,
+    departmentId: waiting[0] ? departmentOfParcel(waiting[0], person) : null,
     parcels: waiting,
   };
 }

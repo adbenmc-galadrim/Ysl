@@ -28,6 +28,7 @@ import { needsFallback } from '#/features/mail/fallback';
 import { useMailTarget } from '#/features/mail/mail-target';
 import { MAILERS } from '#/features/mail/mailer';
 import {
+  departmentOfParcels,
   drawSecrets,
   pickupToWrite,
   recallSecrets,
@@ -93,7 +94,9 @@ async function openDraft(
     readPickup(db),
     // A reminder quotes the code the employee already holds (F37).
     notification.type === 'relance'
-      ? recallSecrets(db, [notification])
+      ? departmentOfParcels(db, notification.parcelIds).then((departmentId) =>
+          recallSecrets(db, [{ ...notification, departmentId }]),
+        )
       : drawSecrets(db, 1),
   ]);
   const ofType = templates.filter((row) => row.type === notification.type);

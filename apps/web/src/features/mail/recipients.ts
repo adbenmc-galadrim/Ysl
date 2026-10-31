@@ -24,8 +24,8 @@ import {
 
 /**
  * One e-mail to write: who it goes to and every parcel of theirs waiting
- * for a first notice (F34, D12: one mail per person, sent when the agent
- * says). `address` is null when nobody typed one: the mail cannot leave.
+ * for a first notice (F34, D12: one mail per person and per department, sent
+ * when the agent says). `address` is null when nobody typed one: the mail cannot leave.
  */
 export type RecipientMail = {
   key: string;
@@ -35,6 +35,8 @@ export type RecipientMail = {
   firstName: string | null;
   lastName: string | null;
   address: string | null;
+  /** The department of these parcels: its code opens nowhere else (§3.7.9). */
+  departmentId?: string | null;
   parcels: LocalParcel[];
 };
 
@@ -91,7 +93,19 @@ export function addressOf(
 }
 
 /**
- * The mails for these parcels, one per address: a directory person and a
+ * The parcel's department; the server sets it, so one just written here
+ * reads its person's until the next pull.
+ */
+export function departmentOfParcel(
+  parcel: Pick<LocalParcel, 'departmentId'>,
+  person: Pick<LocalDirectoryPerson, 'departmentId'> | undefined,
+): string | null {
+  return parcel.departmentId ?? person?.departmentId ?? null;
+}
+
+/**
+ * The mails for these parcels, one per address and per department, each
+ * with its code: a directory person and a
  * contact sharing an address are one human and get one mail, named after
  * the directory. Without an address, one block per person or contact, kept
  * to say what is missing. By name, then by address. `keep`: the parcels a
@@ -109,9 +123,11 @@ export function groupByRecipient(
   for (const parcel of byReception) {
     const { person, contact } = recipientOf(parcel, context);
     const address = addressOf(parcel, context);
-    const key = address
+    const departmentId = departmentOfParcel(parcel, person);
+    const who = address
       ? address.toLowerCase()
       : `${parcel.personId ? 'person' : 'contact'}:${parcel.personId ?? parcel.contactId}`;
+    const key = departmentId ? `${who}|${departmentId}` : who;
     const mail = mails.get(key);
     if (mail && (mail.personId || !person)) {
       mail.parcels.push(parcel);
@@ -121,6 +137,7 @@ export function groupByRecipient(
     mails.set(key, {
       key,
       address,
+      departmentId,
       ...named,
       parcels: [...(mail?.parcels ?? []), parcel],
     });

@@ -11,7 +11,7 @@ import {
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 
 /**
- * The mails of parcels ticked on Colis (F31), one per person, those
+ * The mails of parcels ticked on Colis (F31), one per person and per department, those
  * parcels only: notices take the received and notified ones (a person's
  * notice also reminds), reminders the notified ones alone.
  */

@@ -8,6 +8,7 @@ import {
 import { newId } from '@repo/shared/id';
 import type { Upsert } from '#/features/db/commit';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
+import { departmentOfParcel } from '#/features/mail/recipients';
 
 const PIN_SPACE = 10 ** PICKUP_PIN_LENGTH;
 
@@ -81,20 +82,36 @@ export function pickupToWrite(
   return secret?.codeId && !withQr ? undefined : secret;
 }
 
+/** Whose code, and where it opens: one per person and per department (§3.7.9). */
 export type PickupRecipient = {
   personId: string | null;
   contactId: string | null;
+  departmentId?: string | null;
 };
 
-function codesOf(
+async function codesOf(
   db: CourrierDatabase,
-  { personId, contactId }: PickupRecipient,
+  { personId, contactId, departmentId = null }: PickupRecipient,
 ): Promise<LocalPickupCode[]> {
-  return personId
-    ? db.pickupCode.where('personId').equals(personId).toArray()
+  const codes = personId
+    ? await db.pickupCode.where('personId').equals(personId).toArray()
     : contactId
-      ? db.pickupCode.where('contactId').equals(contactId).toArray()
-      : Promise.resolve([]);
+      ? await db.pickupCode.where('contactId').equals(contactId).toArray()
+      : [];
+  return codes.filter((code) => (code.departmentId ?? null) === departmentId);
+}
+
+/** The department a mail about these parcels belongs to: they share one (`groupByRecipient`). */
+export async function departmentOfParcels(
+  db: CourrierDatabase,
+  parcelIds: readonly string[],
+): Promise<string | null> {
+  const parcel = parcelIds[0] ? await db.parcel.get(parcelIds[0]) : undefined;
+  if (!parcel) return null;
+  const person = parcel.personId
+    ? await db.directoryPerson.get(parcel.personId)
+    : undefined;
+  return departmentOfParcel(parcel, person);
 }
 
 let pinsByHash: Promise<Map<string, string>> | undefined;
@@ -150,8 +167,9 @@ export async function recallSecrets(
 
 /**
  * The writes that make this PIN and token the recipient's code: the codes
- * still open for them go first, since the server allows one open code per
- * person (`pickup_code_active_person_idx`), then the new one. The last mail
+ * still open for them in this department go first, since the server allows
+ * one per person and per department (`pickup_code_active_person_idx`), then
+ * the new one. The last mail
  * sent holds the valid code. Only the hashes are written: the token lives
  * in the QR shared with the mail, or nowhere when the mail went as text.
  * A reminder that quotes the open code (`codeId`) keeps its PIN and its
@@ -164,7 +182,7 @@ export async function pickupCodeWrites(
   secret: PickupSecret,
   { now = new Date() }: { now?: Date } = {},
 ): Promise<Upsert[]> {
-  const { personId, contactId } = recipient;
+  const { personId, contactId, departmentId = null } = recipient;
   const mine = await codesOf(db, recipient);
   const kept = secret.codeId
     ? mine.find((row) => row.id === secret.codeId && isLive(row))
@@ -177,6 +195,7 @@ export async function pickupCodeWrites(
     deletedAt: null,
     personId,
     contactId: personId ? null : contactId,
+    departmentId,
     tokenHash: await pickupTokenHash(token),
     pinHash: kept?.pinHash ?? (await pickupPinHash(pin)),
     expiresAt: kept?.expiresAt ?? new Date(now.getTime() + PICKUP_CODE_TTL_MS),
