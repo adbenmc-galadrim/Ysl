@@ -123,6 +123,59 @@ export function reminderMode(state: StepState): ReminderMode {
 /** Proof turned off: the handover goes by the name and says so (§3.7.9). */
 export const HANDOVER_METHOD_WITHOUT_PROOF: HandoverMethod = 'manuel';
 
+/** What a handover carries, as the phone is about to write it and as the server receives it. */
+export type HandoverFacts = {
+  method: HandoverMethod;
+  hasSignature?: boolean | null;
+  hasPhoto?: boolean | null;
+  hasScan?: boolean | null;
+};
+
+export type HandoverStep = 'proof' | 'signature' | 'photo' | 'scan';
+
+/**
+ * The steps the profile requires that this handover lacks (ME16): the phone
+ * holds « Remettre » on it, the server refuses by it. A signature stands in for
+ * the QR or the code (D6): `manuel` is what is left without one.
+ */
+export function missingHandoverSteps(
+  profile: OperatingProfile,
+  { method, hasSignature, hasPhoto, hasScan }: HandoverFacts,
+): HandoverStep[] {
+  return [
+    profile.handoverProof === 'required' &&
+      method === HANDOVER_METHOD_WITHOUT_PROOF &&
+      ('proof' as const),
+    profile.signature === 'required' && !hasSignature && ('signature' as const),
+    profile.photo === 'required' && !hasPhoto && ('photo' as const),
+    profile.handoverScan === 'required' && !hasScan && ('scan' as const),
+  ].filter((step) => step !== false);
+}
+
+/** Nothing a handover could lack: no read, no check, as before the profile. */
+export function requiresHandoverSteps(profile: OperatingProfile): boolean {
+  return (
+    profile.handoverProof === 'required' ||
+    profile.signature === 'required' ||
+    profile.photo === 'required' ||
+    profile.handoverScan === 'required'
+  );
+}
+
+/** Whether picking the person by the name can end in a handover (§3.7.9, D6). */
+export function mayHandOverByName(
+  profile: Pick<OperatingProfile, 'handoverProof' | 'signature'>,
+): boolean {
+  return (
+    profile.handoverProof !== 'required' || profile.signature !== 'disabled'
+  );
+}
+
+/** The review holds the save while a doubt is neither settled nor passed. */
+export function reviewHoldsSave(state: StepState, doubts: number): boolean {
+  return state === 'required' && doubts > 0;
+}
+
 export type ParcelCounts = Partial<Record<ParcelStatus, number>>;
 
 /** The parcels under way each parameter applies to. */
