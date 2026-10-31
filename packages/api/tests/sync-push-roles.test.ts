@@ -1,11 +1,18 @@
 import type { PGlite } from '@electric-sql/pglite';
 import type { AnyDb } from '@repo/db';
 import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
+import {
+  DEFAULT_OPERATING_PROFILE,
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
+import { EMPTY_PICKUP } from '@repo/contract/settings';
 import type { SyncOp, SyncedEntity } from '@repo/contract/sync';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { writeOperatingProfile } from '#features/operating/service';
 import { push } from '#features/sync/push';
 import type { Access } from '#lib/access';
 import {
@@ -159,6 +166,72 @@ describe('sync.push by role', () => {
           op('contact', newId(), { name: 'Marc', nameNorm: 'marc' }),
         ),
       ).toBe(200);
+    });
+
+    it('hands over once the profile says so, and no longer when it stops saying so', async () => {
+      const personId = await addPerson(db, finance);
+      const handOver = async () => {
+        const parcelId = await addParcel({ personId, status: 'notifie' });
+        return statusOf(
+          shuttle(),
+          op('handover', newId(), handoverRow([parcelId], personId)),
+        );
+      };
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        SMALL_SITE_OPERATING_PROFILE,
+        AGENT_ID,
+      );
+      expect(await handOver()).toBe(200);
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        DEFAULT_OPERATING_PROFILE,
+        AGENT_ID,
+      );
+      expect(await handOver()).toBe(403);
+    });
+
+    it("takes no profile from a device, an admin's included", async () => {
+      expect(
+        await statusOf(
+          accessOf('company_admin'),
+          op('setting', newId(), {
+            key: OPERATING_PROFILE_KEY,
+            value: SMALL_SITE_OPERATING_PROFILE,
+          }),
+        ),
+      ).toBe(400);
+    });
+
+    it('lets no device delete or reuse the row of the profile', async () => {
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        SMALL_SITE_OPERATING_PROFILE,
+        AGENT_ID,
+      );
+      const [row] = await db
+        .select({ id: schema.setting.id })
+        .from(schema.setting)
+        .where(eq(schema.setting.key, OPERATING_PROFILE_KEY));
+      const admin = accessOf('company_admin');
+      expect(await statusOf(admin, op('setting', row!.id, {}, 'delete'))).toBe(
+        403,
+      );
+      expect(
+        await statusOf(
+          admin,
+          op('setting', row!.id, { key: 'pickup', value: EMPTY_PICKUP }),
+        ),
+      ).toBe(403);
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        DEFAULT_OPERATING_PROFILE,
+        AGENT_ID,
+      );
     });
 
     it('does not hand over: no handover, no parcel in or out of remis, no code used', async () => {
