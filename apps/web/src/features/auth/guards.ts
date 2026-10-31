@@ -35,3 +35,11 @@ export function requireAdmin({ session }: { session: Session }) {
     throw redirect({ to: '/' });
   }
 }
+
+/** The directory (D15 révisée): the company admin's, or a department's own. */
+export function requireDirectoryKeeper({ session }: { session: Session }) {
+  const role = toUserRole(session.user.role);
+  if (role !== 'department' && !isCompanyAdmin(role)) {
+    throw redirect({ to: '/' });
+  }
+}

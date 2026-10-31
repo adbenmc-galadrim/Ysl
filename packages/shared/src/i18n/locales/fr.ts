@@ -753,6 +753,16 @@ export const fr = {
   'directory.empty.description':
     'Ajoutez un salarié, ou importez un CSV sur ordinateur.',
   'directory.empty.search': 'Aucun résultat pour « {{query}} »',
+  'directory.department.title': 'Annuaire · {{department}}',
+  'directory.department.subtitle':
+    '{{people}} · visibles aussi par l’administrateur',
+  'directory.department.search': 'Nom ou e-mail',
+  'directory.department.empty': 'Ajoutez les salariés de votre département.',
+  'directory.add.note': 'Ajouté à {{department}}. Ses colis y seront déposés.',
+  'directory.request.action': 'Demander le déplacement',
+  'directory.request.sent': 'Demandé le {{date}}',
+  'directory.request.offline': 'Cette demande nécessite une connexion.',
+  'directory.request.failed': 'Demande non envoyée, réessayez.',
   'directory.add.title': 'Ajouter un salarié',
   'directory.add.titleMobile': 'Nouveau salarié',
   'directory.add.submit': 'Ajouter',

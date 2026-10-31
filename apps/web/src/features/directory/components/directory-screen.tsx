@@ -1,3 +1,4 @@
+import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   AnnuaireDesktop,
@@ -12,25 +13,26 @@ import {
   SectionHeader,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
-import { useLiveQuery } from 'dexie-react-hooks';
 import {
   type ChangeEvent,
   type ReactNode,
-  useMemo,
   useRef,
   useState,
 } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
-import { db } from '#/features/db/database';
 import type {
   LocalContact,
   LocalDepartment,
   LocalDirectoryPerson,
-  LocalParcel,
 } from '#/features/db/schema';
 import { contactEntries } from '#/features/directory/contacts';
 import { ContactSheet } from '#/features/directory/components/contact-sheet';
+import { DepartmentDirectory } from '#/features/directory/components/department-directory';
 import { DirectoryImport } from '#/features/directory/components/directory-import';
+import {
+  type Directory,
+  useDirectory,
+} from '#/features/directory/components/use-directory';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { usePersonForm } from '#/features/directory/components/person-form';
 import { useMove } from '#/features/directory/components/use-move';
@@ -44,19 +46,13 @@ import {
   listed,
   moveEffectLines,
   NO_DEPARTMENT,
-  openParcelsByPerson,
 } from '#/features/directory/people';
 import { initialsOf } from '#/features/settings/initials';
-import { useMediaQuery } from '#/lib/use-media-query';
+import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const NO_PEOPLE: LocalDirectoryPerson[] = [];
-const NO_CONTACTS: LocalContact[] = [];
-const NO_DEPARTMENTS: LocalDepartment[] = [];
-const NO_PARCELS: LocalParcel[] = [];
 const PAGE = 50;
-const DESK_WIDTH = '(min-width: 1280px)';
 const CONTACTS_TAB = 'contacts';
 
 const DESK_NAV: CompanyShellNavSection[] = [
@@ -79,33 +75,6 @@ const peopleWord = (count: number) =>
   count === 1
     ? t('directory.people.one')
     : t('directory.people.many', { count });
-
-function useDirectory() {
-  const people = useLiveQuery(
-    () => db.directoryPerson.toArray(),
-    [],
-    NO_PEOPLE,
-  );
-  const contacts = useLiveQuery(() => db.contact.toArray(), [], NO_CONTACTS);
-  const departments = useLiveQuery(
-    () =>
-      db.department
-        .orderBy('name')
-        .filter((row) => !row.deletedAt)
-        .toArray(),
-    [],
-    NO_DEPARTMENTS,
-  );
-  const parcels = useLiveQuery(() => db.parcel.toArray(), [], NO_PARCELS);
-  const names = useMemo(
-    () => new Map(departments.map((row) => [row.id, row.name])),
-    [departments],
-  );
-  const open = useMemo(() => openParcelsByPerson(parcels), [parcels]);
-  return { people, contacts, departments, parcels, names, open };
-}
-
-type Directory = ReturnType<typeof useDirectory>;
 
 const departmentOptions = (
   departments: readonly LocalDepartment[],
@@ -687,9 +656,19 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
 /**
  * Réglages › Annuaire: the whole company's directory for its admin (D15
  * révisée, ME21), a table beside a record on a computer and a list on the
- * phone (D23). The temps and visitors kept as contacts (F27) stay under it.
+ * phone (D23), its own people for a department (ME22). The temps and visitors
+ * kept as contacts (F27) stay under the company's.
  */
 export function DirectoryScreen() {
+  const session = useSession();
+  return toUserRole(session.user.role) === 'department' ? (
+    <DepartmentDirectory />
+  ) : (
+    <CompanyDirectory />
+  );
+}
+
+function CompanyDirectory() {
   const directory = useDirectory();
   const desk = useMediaQuery(DESK_WIDTH);
   const fileInput = useRef<HTMLInputElement>(null);

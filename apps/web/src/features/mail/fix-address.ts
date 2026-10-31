@@ -51,13 +51,12 @@ export function cardEditable(card: AddressCard): boolean {
 export type AddressCheck =
   | { kind: 'ok'; address: string }
   | { kind: 'invalid' }
-  /** Another card already holds the address: the directory keeps one card per e-mail. */
+  /** Another card this account sees holds the address: no second card for it. */
   | { kind: 'duplicate'; name: string };
 
 /**
- * Whether `typed` can become the card's address. The directory never holds
- * two cards with one e-mail (F50, `directory_person_email_idx`), and no
- * card takes the address of another, person or contact: the agent picks
+ * Whether `typed` can become the card's address. No card takes the address
+ * of another this account sees (F50), person or contact: the agent picks
  * that card on the parcel instead. Written on the parcels
  * only, any well-formed address goes.
  */

@@ -7,6 +7,7 @@ import {
   departmentLabel,
   type DepartmentNames,
   findByEmail,
+  keepsAddress,
   savePerson,
   toDraft,
 } from '#/features/directory/people';
@@ -47,13 +48,16 @@ export function usePersonForm({
 
   useEffect(() => {
     let current = true;
-    void findByEmail(db, value.email, person?.id).then((found) => {
+    const check = keepsAddress(person, value.email)
+      ? Promise.resolve(undefined)
+      : findByEmail(db, value.email, person?.id);
+    void check.then((found) => {
       if (current) setDuplicate(found ?? null);
     });
     return () => {
       current = false;
     };
-  }, [value.email, person?.id]);
+  }, [value.email, person]);
 
   const onChange = (next: PersonFormValue) => {
     setValue(next);

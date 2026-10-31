@@ -76,6 +76,32 @@ export async function findByEmail(
   );
 }
 
+export function keepsAddress(
+  person: Pick<LocalDirectoryPerson, 'email'> | undefined,
+  email: string,
+): boolean {
+  return !!person && normalizeEmail(person.email) === normalizeEmail(email);
+}
+
+/** The other departments holding this person's address, for the admin who sees them all. */
+export function sameAddressElsewhere(
+  person: LocalDirectoryPerson,
+  people: readonly LocalDirectoryPerson[],
+  names: DepartmentNames,
+): string[] {
+  const key = normalizeEmail(person.email);
+  return people
+    .filter(
+      (other) =>
+        other.id !== person.id &&
+        !other.deletedAt &&
+        normalizeEmail(other.email) === key,
+    )
+    .map(
+      (other) => departmentLabel(other, names) || t('directory.noDepartment'),
+    );
+}
+
 export type SaveResult =
   | { kind: 'saved'; person: LocalDirectoryPerson }
   | { kind: 'duplicate'; person: LocalDirectoryPerson }
@@ -89,11 +115,12 @@ export type SaveOptions = {
 
 /**
  * Adds a person to the directory, or updates one, local first and queued for
- * `sync.push`. An e-mail the directory already has never makes a second
- * card: the person already there comes back instead, for the caller to use.
- * The server holds the same rule (`directory_person_email_idx`) for cards
- * added on two iPhone before they synced. A department is chosen once, on a
- * new card: after that only `directory.move` changes it.
+ * `sync.push`. An e-mail this account can see never makes a second card: the
+ * person already there comes back instead, for the caller to use. A card that
+ * keeps its address is not one: two departments may hold the same, each unable
+ * to know (`directory_person_email_idx`, one card per address and department).
+ * A department is chosen once, on a new card: after that only `directory.move`
+ * changes it.
  */
 export async function savePerson(
   db: CourrierDatabase,
@@ -102,10 +129,12 @@ export async function savePerson(
 ): Promise<SaveResult> {
   const errors = validatePerson(draft);
   if (Object.keys(errors).length) return { kind: 'invalid', errors };
-  const duplicate = await findByEmail(db, draft.email, id);
+  const existing = id ? await db.directoryPerson.get(id) : undefined;
+  const duplicate = keepsAddress(existing, draft.email)
+    ? undefined
+    : await findByEmail(db, draft.email, id);
   if (duplicate) return { kind: 'duplicate', person: duplicate };
 
-  const existing = id ? await db.directoryPerson.get(id) : undefined;
   const typed = draft.name.trim().replace(/\s+/g, ' ');
   // Untouched, a compound first name stays as it is: splitting would cut it wrongly.
   const { firstName, lastName } =
