@@ -27,8 +27,8 @@ Il faut :
 - **Safari** : l'installation ne fonctionne pas depuis Chrome ou un autre navigateur ;
 - **une connexion Wi-Fi** pour la première ouverture : l'app télécharge environ 30 Mo
   pour fonctionner ensuite sans réseau ;
-- **un compte personnel** (adresse e-mail et mot de passe), créé par l'administrateur
-  du service. Il n'y a pas d'inscription depuis l'app.
+- **un lien d'invitation**, reçu par e-mail ou transmis par l'administrateur. Ouvert dans
+  Safari, il sert à choisir son mot de passe. Il n'y a pas d'inscription depuis l'app.
 
 Chaque agent a son propre compte, même s'il partage un iPhone avec un collègue : c'est ce
 qui permet de savoir qui a reçu ou remis un colis.
@@ -76,7 +76,8 @@ Safari.
 
 Touchez l'icône. L'app s'ouvre en plein écran, sans la barre de Safari, sur l'écran de
 connexion. Saisissez l'adresse e-mail et le mot de passe du compte, puis touchez
-**Se connecter**.
+**Se connecter**. Si l'administrateur vous a transmis un mot de passe provisoire, l'app demande
+d'en choisir un autre avant de continuer.
 
 ![Écran de connexion](images/installation/07-connexion.png)
 
@@ -183,9 +184,8 @@ chiffrées tant que l'iPhone est verrouillé.
    d'un autre appareil Apple), si la DSI le gère ainsi.
 
 3. **Prévenir la DSI** et l'équipe technique de l'app si le compte lui-même est en
-   cause (mot de passe noté avec l'iPhone, par exemple) : elle peut désactiver le compte,
-   ce qui ferme toutes ses sessions. Il n'y a pas encore d'écran pour le faire depuis
-   l'app ni pour changer le mot de passe d'un agent.
+   cause (mot de passe noté avec l'iPhone, par exemple) : l'administrateur de
+   l'entreprise peut révoquer le compte ou changer son mot de passe depuis **Comptes**.
 
 Tant qu'un iPhone déconnecté reste hors réseau (mode avion, sous-sol), l'app reste
 utilisable sur place avec ce qu'elle avait déjà ; elle se vide à la première connexion.

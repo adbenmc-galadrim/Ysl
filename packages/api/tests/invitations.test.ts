@@ -406,6 +406,30 @@ describe('the app admin', () => {
     ).toMatchObject({ state: 'valid', role: 'company_admin' });
   });
 
+  it('kills the link of an unanswered admin when another is invited', async () => {
+    const wrong = await platform().invitations.inviteCompanyAdmin(input);
+    await platform().invitations.inviteCompanyAdmin({
+      ...input,
+      email: 'bonne-adresse@example.test',
+    });
+    if (wrong.delivery !== 'copy') throw new Error();
+    expect(
+      await anyone().invitations.inspect({ token: tokenOf(wrong.link) }),
+    ).toEqual({ state: 'invalid' });
+  });
+
+  it('refuses a suspended company, whose admin could not sign in', async () => {
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: new Date() })
+      .where(eq(schema.organization.id, OTHER_ORGANIZATION_ID));
+    expect(await codeOf(platform().invitations.inviteCompanyAdmin(input))).toBe('CONFLICT');
+    await db
+      .update(schema.organization)
+      .set({ suspendedAt: null })
+      .where(eq(schema.organization.id, OTHER_ORGANIZATION_ID));
+  });
+
   it('takes a revoked admin back only through the link, the old password dead', async () => {
     await db
       .update(schema.user)

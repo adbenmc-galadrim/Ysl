@@ -944,6 +944,7 @@ Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont
 | --- | --- | --- |
 | `user` (Better Auth) | id, email, nom, rôle (admin de l'app, admin entreprise, département, navette), actif, mot de passe à changer | Un compte est rattaché à une entreprise, sauf l'admin de l'app, et à un département pour le rôle département |
 | `organization` | id, nom, logo, profil de fonctionnement, durées de conservation, statut | L'entreprise. Toutes les autres tables y sont rattachées |
+| `account_invitation` | compte, entreprise, empreinte du jeton, expiration, utilisation | Le dernier lien donné à un compte, jamais en clair, non synchronisé. Part avec le compte et l'entreprise |
 | `mail_sender` | entreprise, nom et adresse d'expédition, domaine, statut, enregistrements DNS | L'expéditeur de l'entreprise (YSL-114), non synchronisé. Un domaine n'appartient qu'à une entreprise |
 | `department` | id, organization_id, nom, point de réception, lieu, horaires, consignes, QR de dépôt | Le service courrier est un département comme un autre |
 | `directory_person` | id, nom, prénom, email, department_id, site, source (`manuel`, `csv`, `entra`), actif | Minimisation : pas de téléphone ni de manager. E-mail unique par département (ME22) |

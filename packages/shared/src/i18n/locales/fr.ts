@@ -152,7 +152,7 @@ export const fr = {
   'accounts.subtitle.one': '1 compte',
   'accounts.subtitle.many': '{{count}} comptes',
   'accounts.state.active': 'Actif',
-  'accounts.state.invited': 'Invitation envoyée',
+  'accounts.state.invited': 'Invitation en attente',
   'accounts.state.invitedExpired': 'Invitation expirée',
   'accounts.state.suspended': 'Suspendu',
   'accounts.state.revoked': 'Révoqué',
@@ -301,6 +301,8 @@ export const fr = {
   'invitations.error.invalid': 'Ce lien n’est plus valable.',
   'invitations.error.samePassword':
     'Choisissez un mot de passe différent de celui qui vous a été transmis.',
+  'invitations.error.companySuspended':
+    'Cette entreprise est suspendue : réactivez-la avant d’inviter.',
   'invitations.error.companyNotFound': 'Cette entreprise n’existe plus.',
   'invitations.error.companyHasAdmin':
     'Cette entreprise a déjà un administrateur actif : c’est à lui d’inviter.',

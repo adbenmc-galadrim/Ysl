@@ -27,7 +27,7 @@ describe('the state of an invited account', () => {
   it('says when the link has run out', () => {
     const invited = (linkExpiresAt: Date | null) =>
       accountLabel({ state: 'invited', linkExpiresAt }, t, now);
-    expect(invited(new Date('2026-11-02T12:00:00Z'))).toBe('Invitation envoyée');
+    expect(invited(new Date('2026-11-02T12:00:00Z'))).toBe('Invitation en attente');
     expect(invited(new Date('2026-10-31T12:00:00Z'))).toBe('Invitation expirée');
     expect(invited(null)).toBe('Invitation expirée');
   });

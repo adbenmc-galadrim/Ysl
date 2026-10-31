@@ -180,7 +180,7 @@ export async function inviteCompanyAdmin(
   try {
     link = await db.transaction(async (tx) => {
       const [company] = await tx
-        .select({ id: organization.id })
+        .select({ id: organization.id, suspendedAt: organization.suspendedAt })
         .from(organization)
         .where(eq(organization.id, organizationId))
         .for('update');
@@ -188,6 +188,12 @@ export async function inviteCompanyAdmin(
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: translate('invitations.error.companyNotFound'),
+        });
+      }
+      if (company.suspendedAt) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: translate('invitations.error.companySuspended'),
         });
       }
       const [active] = await tx
@@ -208,6 +214,13 @@ export async function inviteCompanyAdmin(
           message: translate('invitations.error.companyHasAdmin'),
         });
       }
+      // A link sent to a wrong address must not stay good: nobody here can see or revoke it (D26).
+      await tx.delete(accountInvitation).where(
+        and(
+          eq(accountInvitation.organizationId, organizationId),
+          sql`${accountInvitation.userId} in (select "user"."id" from "user" where "user"."role" = ${ADMIN_ROLE} and not ${HAS_PASSWORD})`,
+        ),
+      );
       const [existing] = await tx
         .select({
           id: user.id,

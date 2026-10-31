@@ -32,14 +32,13 @@ rejoigne un département archivé.
 ## Après le déploiement
 
 1. `/ready` répond 200, le SHA déployé est le bon, une synchro d'un compte converti passe.
-2. **Remettre une navette en place.** Un `company_admin` ne remet pas (§2.1) et l'écran
-   d'équipe n'existe pas encore (YSL-83) : tant qu'aucun compte `shuttle` n'existe, personne
+2. **Remettre une navette en place.** Un `company_admin` ne remet pas (§2.1) : tant qu'aucun compte `shuttle` n'existe, personne
    ne peut remettre un colis. La route `/remise` reste ouverte à l'admin jusqu'à YSL-119 : sa
    remise, faite hors ligne ou encore en file au déploiement, part en « Corriger » (403).
 
    **Ne pas se déconnecter de l'iPhone qui reçoit les colis** : la déconnexion efface sa base
    locale et ses fichiers, seule copie des photos d'étiquettes et des preuves de remise (D8).
-   Passer plutôt son compte en navette, sans changer de session, puis créer l'admin à part :
+   Passer plutôt son compte en navette, sans changer de session, puis inviter l'admin à part (`docs/comptes.md`) :
 
    ```sql
    UPDATE "user" SET role = 'shuttle' WHERE email = '<e-mail de l''opérateur>';
