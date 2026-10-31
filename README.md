@@ -45,6 +45,10 @@ la synchronisation (lecture et écriture), ni les codes de retrait, ni les expor
 qu'ils ne sont pas filtrés par département.
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
+Un compte `platform_admin` n'appartient à aucune organisation (`auth:create-user` sans
+`--organization`, `auth:attach-organization` refuse) ; il atteint le routeur `platform`,
+qui ne rend que des chiffres, et aucune donnée d'une entreprise.
+
 Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription
 publique : le premier administrateur se crée en ligne de commande, les comptes suivants
 aussi tant que l'écran d'équipe n'existe pas.

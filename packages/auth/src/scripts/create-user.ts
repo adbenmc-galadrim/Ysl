@@ -53,6 +53,9 @@ async function main(): Promise<void> {
   }
 
   const platformAccount = role.data === 'platform_admin';
+  if (platformAccount && values.organization) {
+    throw new Error(`An app admin belongs to no organization.\n${USAGE}`);
+  }
   const choice = platformAccount
     ? null
     : await chooseOrganization(db, values.organization);

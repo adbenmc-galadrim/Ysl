@@ -11,6 +11,7 @@ import {
   chooseOrganization,
   DEFAULT_ORGANIZATION_NAME,
   OrganizationChoiceError,
+  PlatformAccountError,
   resolveOrganization,
 } from '#organization';
 
@@ -26,6 +27,12 @@ beforeAll(async () => {
   await db.insert(schema.user).values([
     { id: 'u1', name: 'Un', email: 'un@example.test' },
     { id: 'u2', name: 'Deux', email: 'deux@example.test' },
+    {
+      id: 'app-admin',
+      name: 'Admin app',
+      email: 'plateforme@example.test',
+      role: 'platform_admin',
+    },
   ]);
 });
 
@@ -109,6 +116,15 @@ describe('chooseOrganization', () => {
 });
 
 describe('attachToOrganization', () => {
+  it('refuses an app admin', async () => {
+    const { id } = await resolveOrganization(db, 'Service courrier');
+
+    await expect(attachToOrganization(db, 'app-admin', id)).rejects.toThrow(
+      PlatformAccountError,
+    );
+    expect(await db.select().from(schema.organizationMember)).toEqual([]);
+  });
+
   it('attaches once, and tolerates a repeat', async () => {
     const { id } = await resolveOrganization(db);
 

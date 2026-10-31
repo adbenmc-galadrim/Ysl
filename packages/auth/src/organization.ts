@@ -21,6 +21,13 @@ export class AlreadyAttachedError extends Error {
   }
 }
 
+export class PlatformAccountError extends Error {
+  constructor(email: string) {
+    super(`${email} is an app admin: it belongs to no organization.`);
+    this.name = 'PlatformAccountError';
+  }
+}
+
 export type OrganizationChoice =
   | { kind: 'existing'; id: string; name: string }
   | { kind: 'new'; name: string };
@@ -77,12 +84,19 @@ export async function resolveOrganization(
   return ensureOrganization(db, await chooseOrganization(db, name));
 }
 
-/** Makes the account a member; refuses to move one that already belongs elsewhere. */
+/** Makes the account a member; refuses an app admin, and to move one that already belongs elsewhere. */
 export async function attachToOrganization(
   db: AnyDb,
   userId: string,
   organizationId: string,
 ): Promise<void> {
+  const [account] = await db
+    .select({ email: user.email, role: user.role })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (account?.role === 'platform_admin') {
+    throw new PlatformAccountError(account.email);
+  }
   const [current] = await db
     .select({
       organizationId: organizationMember.organizationId,
