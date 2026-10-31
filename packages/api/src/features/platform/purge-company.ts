@@ -1,6 +1,11 @@
 import type { AnyDb } from '@repo/db';
 import { logger } from '@repo/shared/logger';
-import { organization, organizationMember, user, verification } from '@repo/db/schema';
+import {
+  organization,
+  organizationMember,
+  user,
+  verification,
+} from '@repo/db/schema';
 import { eq, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { MailDomains } from '#features/mail/mailer';
 
@@ -47,7 +52,9 @@ export async function companyTablesInOrder(db: AnyDb): Promise<string[]> {
         ),
     );
     if (free.length === 0) {
-      throw new Error(`Company tables reference each other: ${[...remaining].join(', ')}`);
+      throw new Error(
+        `Company tables reference each other: ${[...remaining].join(', ')}`,
+      );
     }
     for (const table of free.sort()) {
       ordered.push(table);

@@ -23,6 +23,8 @@ import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedTableauDeBordRouteImport } from './routes/_authenticated/tableau-de-bord'
 import { Route as AuthenticatedTourneeRouteImport } from './routes/_authenticated/tournee'
 import { Route as AuthenticatedColisIndexRouteImport } from './routes/_authenticated/colis/index'
+import { Route as AuthenticatedEntreprisesIdRouteImport } from './routes/_authenticated/entreprises/$id'
+import { Route as AuthenticatedEntreprisesNouvelleRouteImport } from './routes/_authenticated/entreprises/nouvelle'
 import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
 import { Route as AuthenticatedReglagesIndexRouteImport } from './routes/_authenticated/reglages/index'
 import { Route as AuthenticatedReglagesAnnuaireRouteImport } from './routes/_authenticated/reglages/annuaire'
@@ -126,6 +128,18 @@ const AuthenticatedColisIndexRoute = AuthenticatedColisIndexRouteImport.update({
   path: '/colis/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedEntreprisesIdRoute =
+  AuthenticatedEntreprisesIdRouteImport.update({
+    id: '/entreprises/$id',
+    path: '/entreprises/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedEntreprisesNouvelleRoute =
+  AuthenticatedEntreprisesNouvelleRouteImport.update({
+    id: '/entreprises/nouvelle',
+    path: '/entreprises/nouvelle',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedLotBatchIdRoute = AuthenticatedLotBatchIdRouteImport.update({
   id: '/lot/$batchId',
   path: '/lot/$batchId',
@@ -317,6 +331,8 @@ export interface FileRoutesByFullPath {
   '/scan': typeof AuthenticatedScanRoute
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
   '/tournee': typeof AuthenticatedTourneeRoute
+  '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
+  '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
@@ -362,6 +378,8 @@ export interface FileRoutesByTo {
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
   '/tournee': typeof AuthenticatedTourneeRoute
   '/': typeof AuthenticatedIndexRoute
+  '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
+  '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
@@ -409,6 +427,8 @@ export interface FileRoutesById {
   '/_authenticated/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
   '/_authenticated/tournee': typeof AuthenticatedTourneeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
+  '/_authenticated/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/_authenticated/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
   '/_authenticated/reglages/annuaire': typeof AuthenticatedReglagesAnnuaireRoute
   '/_authenticated/reglages/appareils': typeof AuthenticatedReglagesAppareilsRoute
@@ -456,6 +476,8 @@ export interface FileRouteTypes {
     | '/scan'
     | '/tableau-de-bord'
     | '/tournee'
+    | '/entreprises/$id'
+    | '/entreprises/nouvelle'
     | '/lot/$batchId'
     | '/reglages/annuaire'
     | '/reglages/appareils'
@@ -501,6 +523,8 @@ export interface FileRouteTypes {
     | '/tableau-de-bord'
     | '/tournee'
     | '/'
+    | '/entreprises/$id'
+    | '/entreprises/nouvelle'
     | '/lot/$batchId'
     | '/reglages/annuaire'
     | '/reglages/appareils'
@@ -547,6 +571,8 @@ export interface FileRouteTypes {
     | '/_authenticated/tableau-de-bord'
     | '/_authenticated/tournee'
     | '/_authenticated/'
+    | '/_authenticated/entreprises/$id'
+    | '/_authenticated/entreprises/nouvelle'
     | '/_authenticated/lot/$batchId'
     | '/_authenticated/reglages/annuaire'
     | '/_authenticated/reglages/appareils'
@@ -684,6 +710,20 @@ declare module '@tanstack/react-router' {
       path: '/colis'
       fullPath: '/colis/'
       preLoaderRoute: typeof AuthenticatedColisIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/entreprises/$id': {
+      id: '/_authenticated/entreprises/$id'
+      path: '/entreprises/$id'
+      fullPath: '/entreprises/$id'
+      preLoaderRoute: typeof AuthenticatedEntreprisesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/entreprises/nouvelle': {
+      id: '/_authenticated/entreprises/nouvelle'
+      path: '/entreprises/nouvelle'
+      fullPath: '/entreprises/nouvelle'
+      preLoaderRoute: typeof AuthenticatedEntreprisesNouvelleRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/lot/$batchId': {
@@ -910,6 +950,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTableauDeBordRoute: typeof AuthenticatedTableauDeBordRoute
   AuthenticatedTourneeRoute: typeof AuthenticatedTourneeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedEntreprisesIdRoute: typeof AuthenticatedEntreprisesIdRoute
+  AuthenticatedEntreprisesNouvelleRoute: typeof AuthenticatedEntreprisesNouvelleRoute
   AuthenticatedLotBatchIdRoute: typeof AuthenticatedLotBatchIdRoute
   AuthenticatedReglagesAnnuaireRoute: typeof AuthenticatedReglagesAnnuaireRoute
   AuthenticatedReglagesAppareilsRoute: typeof AuthenticatedReglagesAppareilsRoute
@@ -954,6 +996,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTableauDeBordRoute: AuthenticatedTableauDeBordRoute,
   AuthenticatedTourneeRoute: AuthenticatedTourneeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedEntreprisesIdRoute: AuthenticatedEntreprisesIdRoute,
+  AuthenticatedEntreprisesNouvelleRoute: AuthenticatedEntreprisesNouvelleRoute,
   AuthenticatedLotBatchIdRoute: AuthenticatedLotBatchIdRoute,
   AuthenticatedReglagesAnnuaireRoute: AuthenticatedReglagesAnnuaireRoute,
   AuthenticatedReglagesAppareilsRoute: AuthenticatedReglagesAppareilsRoute,

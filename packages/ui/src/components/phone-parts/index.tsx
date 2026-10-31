@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 import { Avatar } from '#components/avatar';
 import { Banner, type BannerProps } from '#components/banner';
@@ -230,6 +230,7 @@ export function PhoneField({
   label,
   type = 'text',
   value,
+  onChange,
   placeholder,
   chevron = false,
   error = false,
@@ -240,6 +241,8 @@ export function PhoneField({
   label: string;
   type?: 'text' | 'email' | 'password';
   value?: string;
+  /** Makes it a controlled field; the mockups only draw a value. */
+  onChange?: (value: string) => void;
   placeholder?: string;
   chevron?: boolean;
   error?: boolean;
@@ -256,7 +259,13 @@ export function PhoneField({
         <FieldInput
           id={id}
           type={type}
-          defaultValue={value}
+          {...(onChange
+            ? {
+                value: value ?? '',
+                onChange: (event: ChangeEvent<HTMLInputElement>) =>
+                  onChange(event.target.value),
+              }
+            : { defaultValue: value })}
           placeholder={placeholder}
           className={cn(
             'relative h-12 gap-0 rounded-[12px] bg-surface pr-3.5 pl-3.5 font-normal',
@@ -329,10 +338,12 @@ export function PhoneNav({
   title,
   icon = 'back',
   trailing,
+  onBack,
 }: {
   title?: ReactNode;
   icon?: IconName;
   trailing?: ReactNode;
+  onBack?: () => void;
 }) {
   return (
     <div className="relative flex h-11 shrink-0 items-center justify-between">
@@ -342,6 +353,7 @@ export function PhoneNav({
         size="lg"
         iconSize={22}
         className="-ml-0.5"
+        onClick={onBack}
       />
       {title && (
         <h1 className="absolute inset-x-[67px] text-center text-17 font-semibold">

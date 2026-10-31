@@ -3,11 +3,13 @@ import type { ReactNode } from 'react';
 import { Button } from '#components/button';
 import { CompanyLogo } from '#components/company-parts';
 import { CompanyShell } from '#components/company-shell';
-import { DeskPanel, DeskStats } from '#components/desk-panel';
+import { DeskPanel, DeskStats, type DeskStat } from '#components/desk-panel';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
 import { StatusDot } from '#components/status-dot';
 import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
+import { cn } from '#lib/tv';
+import type { PlatformChrome } from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 
 type Admin = {
   name: string;
@@ -71,47 +73,117 @@ const JOURNAL = [
   ['3 sept., 10:15', 'Entreprise créée, modèle Multi-départements'],
 ];
 
-function CompanySheet({ overlay }: { overlay?: ReactNode }) {
+/** A real company on the record; without it, the mockup's. No account name in it (D26). */
+export type CompanySheetData = {
+  name: string;
+  initials: string;
+  /** « Active · créée le … · modèle … ». */
+  status: string;
+  suspended: boolean;
+  stats: DeskStat[];
+  profile: string[][];
+  actions: ReactNode;
+};
+
+function ProfilePanel({
+  rows,
+  subtitle = 'Choisi à la création, géré ensuite par l’entreprise. Lecture seule.',
+}: {
+  rows: string[][];
+  subtitle?: string;
+}) {
+  return (
+    <DeskPanel
+      title="Profil de fonctionnement"
+      subtitle={subtitle}
+      className="h-[180px]"
+    >
+      <dl className="mt-4 flex flex-col gap-3.5 px-[15px] text-13">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex">
+            <dt className="w-[180px] text-muted">{label}</dt>
+            <dd className="font-medium">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </DeskPanel>
+  );
+}
+
+function CompanySheet({
+  overlay,
+  chrome,
+  data,
+}: {
+  overlay?: ReactNode;
+  chrome?: PlatformChrome;
+  data?: CompanySheetData;
+}) {
   return (
     <CompanyShell
       company={COMPANY.platform}
       nav={PLATFORM_NAV}
       active="entreprises"
       account={ACCOUNT.platform}
-      breadcrumb={crumbs('Plateforme', 'Entreprises', 'Atelier Lumen')}
+      breadcrumb={crumbs('Plateforme', 'Entreprises', data?.name ?? 'Atelier Lumen')}
       overlay={overlay}
+      {...chrome}
     >
       <header className="-mt-1.5 flex h-[70px] shrink-0 items-start">
-        <CompanyLogo initials="AL" size="desk-40" className="mt-0.5" />
+        <CompanyLogo
+          initials={data?.initials ?? 'AL'}
+          size="desk-40"
+          muted={data?.suspended}
+          className="mt-0.5"
+        />
         <div className="ml-3 min-w-0 flex-1">
-          <h1 className="text-22 font-bold tracking-[-0.3px]">Atelier Lumen</h1>
+          <h1 className="text-22 font-bold tracking-[-0.3px]">
+            {data?.name ?? 'Atelier Lumen'}
+          </h1>
           <p className="relative mt-[3px] flex items-center gap-1.5 text-13 text-muted">
-            <span className="mt-[3px] size-2 rounded-full bg-green" />
-            Active · créée le 3 septembre 2026 · modèle Multi-départements
+            <span
+              className={cn(
+                'mt-[3px] size-2 rounded-full',
+                data?.suspended ? 'bg-orange' : 'bg-green',
+              )}
+            />
+            {data?.status ??
+              'Active · créée le 3 septembre 2026 · modèle Multi-départements'}
           </p>
         </div>
         <div className="mt-1.5 flex gap-2">
-          <Button
-            variant="outline"
-            size="desk"
-            icon="pause"
-            className="w-[110px] justify-start"
-          >
-            Suspendre
-          </Button>
-          <Button variant="outline" size="desk" className="w-11 px-0" aria-label="Plus d’actions">
-            <Icon name="more" size={16} className="mt-[3.5px]" />
-          </Button>
+          {data?.actions ?? (
+            <>
+              <Button
+                variant="outline"
+                size="desk"
+                icon="pause"
+                className="w-[110px] justify-start"
+              >
+                Suspendre
+              </Button>
+              <Button variant="outline" size="desk" className="w-11 px-0" aria-label="Plus d’actions">
+                <Icon name="more" size={16} className="mt-[3.5px]" />
+              </Button>
+            </>
+          )}
         </div>
       </header>
       <DeskStats
-        stats={[
+        stats={data?.stats ?? [
           { label: 'Comptes', value: '42' },
           { label: 'Départements', value: '4' },
           { label: 'Colis en octobre', value: '1 284' },
           { label: 'Dernière activité', value: '5 min' },
         ]}
       />
+      {data ? (
+        <div className="mt-5 flex shrink-0 gap-4">
+          <div className="flex w-[568px] shrink-0 flex-col gap-4">
+            <ProfilePanel rows={data.profile} />
+          </div>
+        </div>
+      ) : (
       <div className="mt-5 flex shrink-0 gap-4">
         <div className="flex w-[568px] shrink-0 flex-col gap-4">
           <DeskPanel title="Administrateurs" action="Inviter" className="h-[220px]">
@@ -123,20 +195,10 @@ function CompanySheet({ overlay }: { overlay?: ReactNode }) {
               rowKey={(a) => a.email}
             />
           </DeskPanel>
-          <DeskPanel
-            title="Profil de fonctionnement"
+          <ProfilePanel
+            rows={PROFILE}
             subtitle="Choisi à la création, géré ensuite par l’entreprise (D30). Lecture seule."
-            className="h-[180px]"
-          >
-            <dl className="mt-4 flex flex-col gap-3.5 px-[15px] text-13">
-              {PROFILE.map(([label, value]) => (
-                <div key={label} className="flex">
-                  <dt className="w-[180px] text-muted">{label}</dt>
-                  <dd className="font-medium">{value}</dd>
-                </div>
-              ))}
-            </dl>
-          </DeskPanel>
+          />
         </div>
         <div className="flex w-[568px] shrink-0 flex-col gap-4">
           <DeskPanel
@@ -180,13 +242,22 @@ function CompanySheet({ overlay }: { overlay?: ReactNode }) {
           </DeskPanel>
         </div>
       </div>
+      )}
     </CompanyShell>
   );
 }
 
 /** A client seen by the platform: figures, its admins, nothing of its content. */
-export function FicheEntrepriseDesktop() {
-  return <CompanySheet />;
+export function FicheEntrepriseDesktop({
+  chrome,
+  data,
+  overlay,
+}: {
+  chrome?: PlatformChrome;
+  data?: CompanySheetData;
+  overlay?: ReactNode;
+} = {}) {
+  return <CompanySheet chrome={chrome} data={data} overlay={overlay} />;
 }
 
 function Dialog({
@@ -205,7 +276,7 @@ function Dialog({
       <div
         role="dialog"
         aria-modal="true"
-        className="absolute left-[480px] flex w-[480px] flex-col rounded-desk bg-surface shadow-[0_16px_48px_rgb(0_0_0/0.2)]"
+        className="absolute left-1/2 flex w-[480px] max-w-[calc(100%-32px)] -translate-x-1/2 flex-col rounded-desk bg-surface shadow-[0_16px_48px_rgb(0_0_0/0.2)]"
         style={{ top, height }}
       >
         <div className="min-h-0 flex-1 px-6 pt-[22px]">{children}</div>
@@ -217,39 +288,230 @@ function Dialog({
   );
 }
 
+export type ConfirmDialogProps = {
+  name: string;
+  /** What will happen, in figures: no account or employee is named (D26). */
+  description: string;
+  pending?: boolean;
+  error?: string;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+};
+
+/** Asks before the company stops working; the mockup's reason waits for the journal. */
+export function SuspendDialog({
+  name,
+  description,
+  reason,
+  pending = false,
+  error,
+  onCancel,
+  onConfirm,
+}: ConfirmDialogProps & { reason?: string }) {
+  return (
+    <Dialog
+      top={240}
+      height={reason ? 330 : 240}
+      footer={
+        <>
+          <Button
+            variant="outline"
+            size="desk"
+            className="w-[84px]"
+            onClick={onCancel}
+          >
+            Annuler
+          </Button>
+          <Button
+            size="desk"
+            className="w-[110px]"
+            disabled={pending}
+            onClick={onConfirm}
+          >
+            Suspendre
+          </Button>
+        </>
+      }
+    >
+      <h2 className="text-[18px] leading-[22px] font-bold">
+        Suspendre {name} ?
+      </h2>
+      <p className="mt-2 text-13 leading-[18px] text-ink-2">{description}</p>
+      {reason && (
+        <>
+          <p className="mt-[37px] text-13 font-semibold">
+            Raison (pour le journal)
+          </p>
+          <div className="mt-[7px] h-8 rounded-[6px] pt-1.5 pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-border)]">
+            {reason}
+          </div>
+        </>
+      )}
+      {error && (
+        <p role="alert" className="mt-3 text-13 text-red">
+          {error}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
+/** Deleting for good: the button wakes only once the name is typed. */
+export function DeleteDialog({
+  name,
+  description,
+  typed,
+  onTyped,
+  exportHint = 'Son administrateur exporte colis et preuves depuis Rapports.',
+  pending = false,
+  error,
+  onCancel,
+  onConfirm,
+}: ConfirmDialogProps & {
+  /** Where the company's admin finds the export today. */
+  exportHint?: string;
+  typed: string;
+  onTyped?: (value: string) => void;
+}) {
+  return (
+    <Dialog
+      top={200}
+      height={420}
+      footer={
+        <>
+          <Button
+            variant="outline"
+            size="desk"
+            className="w-[84px]"
+            onClick={onCancel}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="outline"
+            size="desk"
+            disabled={typed.trim() !== name || pending}
+            className="w-[190px] text-red disabled:opacity-50"
+            onClick={onConfirm}
+          >
+            Supprimer définitivement
+          </Button>
+        </>
+      }
+    >
+      <h2 className="text-[18px] leading-[22px] font-bold text-red">
+        Supprimer {name} ?
+      </h2>
+      <p className="mt-2 text-13 leading-[18px] text-ink-2">{description}</p>
+      <div className="mt-6 flex h-14 items-start rounded-[6px] bg-fill pl-3">
+        <Icon name="download" size={16} className="mt-[19px]" />
+        <div className="mt-[9px] ml-2.5">
+          <p className="text-13 font-semibold">
+            Proposez d’abord l’export à l’entreprise
+          </p>
+          <p className="mt-[3px] text-12 text-muted">{exportHint}</p>
+        </div>
+      </div>
+      <label className="block">
+        <span className="mt-[23px] block text-13 font-semibold">
+          Tapez « {name} » pour confirmer
+        </span>
+        {onTyped ? (
+          <input
+            value={typed}
+            onChange={(event) => onTyped(event.target.value)}
+            autoComplete="off"
+            className="mt-[7px] h-8 w-full rounded-[6px] pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-ink-2)] outline-none"
+          />
+        ) : (
+          <div className="mt-[7px] h-8 rounded-[6px] pt-1.5 pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-ink-2)]">
+            {typed}
+          </div>
+        )}
+      </label>
+      {error && (
+        <p role="alert" className="mt-2 text-13 text-red">
+          {error}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
+/** No mock-up: the delete dialog's bones, for a typo in a client's name. */
+export function RenameDialog({
+  name,
+  onName,
+  disabled = false,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  onName: (value: string) => void;
+  disabled?: boolean;
+  error?: string;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+}) {
+  return (
+    <Dialog
+      top={240}
+      height={230}
+      footer={
+        <>
+          <Button
+            variant="outline"
+            size="desk"
+            className="w-[84px]"
+            onClick={onCancel}
+          >
+            Annuler
+          </Button>
+          <Button
+            size="desk"
+            className="w-[110px]"
+            disabled={disabled}
+            onClick={onConfirm}
+          >
+            Renommer
+          </Button>
+        </>
+      }
+    >
+      <h2 className="text-[18px] leading-[22px] font-bold">
+        Renommer l’entreprise
+      </h2>
+      <label className="block">
+        <span className="mt-4 block text-13 font-semibold">
+          Nom de l’entreprise
+        </span>
+        <input
+          value={name}
+          onChange={(event) => onName(event.target.value)}
+          maxLength={80}
+          className="mt-[7px] h-8 w-full rounded-[6px] pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-ink-2)] outline-none"
+        />
+      </label>
+      {error && (
+        <p role="alert" className="mt-2 text-13 text-red">
+          {error}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
 /** The record under the question of suspending the company. */
 export function SuspendreDesktop() {
   return (
     <CompanySheet
       overlay={
-        <Dialog
-          top={240}
-          height={330}
-          footer={
-            <>
-              <Button variant="outline" size="desk" className="w-[84px]">
-                Annuler
-              </Button>
-              <Button size="desk" className="w-[110px]">
-                Suspendre
-              </Button>
-            </>
-          }
-        >
-          <h2 className="text-[18px] leading-[22px] font-bold">
-            Suspendre Atelier Lumen ?
-          </h2>
-          <p className="mt-2 text-13 leading-[18px] text-ink-2">
-            Les 42 comptes ne pourront plus se connecter ni synchroniser. Colis,
-            annuaire et réglages sont gardés ; vous pourrez réactiver.
-          </p>
-          <p className="mt-[37px] text-13 font-semibold">
-            Raison (pour le journal)
-          </p>
-          <div className="mt-[7px] h-8 rounded-[6px] pt-1.5 pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-border)]">
-            Fin de contrat au 31 octobre
-          </div>
-        </Dialog>
+        <SuspendDialog
+          name="Atelier Lumen"
+          description="Les 42 comptes ne pourront plus se connecter ni synchroniser. Colis, annuaire et réglages sont gardés ; vous pourrez réactiver."
+          reason="Fin de contrat au 31 octobre"
+        />
       }
     />
   );
@@ -260,50 +522,11 @@ export function SupprimerDesktop() {
   return (
     <CompanySheet
       overlay={
-        <Dialog
-          top={200}
-          height={420}
-          footer={
-            <>
-              <Button variant="outline" size="desk" className="w-[84px]">
-                Annuler
-              </Button>
-              <Button
-                variant="outline"
-                size="desk"
-                disabled
-                className="w-[190px] text-red disabled:opacity-50"
-              >
-                Supprimer définitivement
-              </Button>
-            </>
-          }
-        >
-          <h2 className="text-[18px] leading-[22px] font-bold text-red">
-            Supprimer Atelier Lumen ?
-          </h2>
-          <p className="mt-2 text-13 leading-[18px] text-ink-2">
-            Tout sera effacé sans retour : 42 comptes, 4 départements, l’annuaire
-            et 3 812 colis avec leurs preuves.
-          </p>
-          <div className="mt-6 flex h-14 items-start rounded-[6px] bg-fill pl-3">
-            <Icon name="download" size={16} className="mt-[19px]" />
-            <div className="mt-[9px] ml-2.5">
-              <p className="text-13 font-semibold">
-                Proposez d’abord l’export à l’entreprise
-              </p>
-              <p className="mt-[3px] text-12 text-muted">
-                Son administrateur exporte colis et preuves depuis Rapports.
-              </p>
-            </div>
-          </div>
-          <p className="mt-[23px] text-13 font-semibold">
-            Tapez « Atelier Lumen » pour confirmer
-          </p>
-          <div className="mt-[7px] h-8 rounded-[6px] pt-1.5 pl-2.5 text-13 shadow-[inset_0_0_0_1px_var(--color-ink-2)]">
-            Atelier Lum
-          </div>
-        </Dialog>
+        <DeleteDialog
+          name="Atelier Lumen"
+          description="Tout sera effacé sans retour : 42 comptes, 4 départements, l’annuaire et 3 812 colis avec leurs preuves."
+          typed="Atelier Lum"
+        />
       }
     />
   );

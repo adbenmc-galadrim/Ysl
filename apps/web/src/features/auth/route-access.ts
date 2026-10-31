@@ -24,6 +24,7 @@ export type RouteArea =
   | 'departmentSpace'
   | 'directory'
   | 'companySettings'
+  | 'platform'
   | 'settings';
 
 const AREA_OF_FIRST_SEGMENT = new Map<string, RouteArea>(
@@ -40,6 +41,7 @@ const AREA_OF_FIRST_SEGMENT = new Map<string, RouteArea>(
     tournee: 'tour',
     'tableau-de-bord': 'dashboard',
     departement: 'departmentSpace',
+    entreprises: 'platform',
     reglages: 'settings',
   }),
 );
@@ -98,6 +100,7 @@ const REACHED_BY: Record<
   departmentSpace: ['department'],
   directory: ['department', 'company_admin'],
   companySettings: ['company_admin'],
+  platform: ['platform_admin'],
 };
 
 /**

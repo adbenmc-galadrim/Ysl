@@ -2,19 +2,17 @@ import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   type DeskStat,
-  PlatformHomeScreen,
   RoleHomeDesktop,
   RoleHomeMobile,
   type RoleHomeProps,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useSignOut } from '#/features/auth/api/sign-out';
 import { useSession } from '#/features/auth/api/use-session';
 import { hasDesk } from '#/features/auth/route-access';
 import { db } from '#/features/db/database';
 import { ColisPage } from '#/features/parcels/components/colis-page';
-import { signOutMessage } from '#/features/settings/components/account-screen';
+import { CompaniesPage } from '#/features/platform/companies-page';
 import { homeCounts, type HomeCounts } from '#/features/shell/home-counts';
 import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
@@ -136,30 +134,12 @@ export function DashboardHome() {
   );
 }
 
-/** Until YSL-121: the app's admin has no screen of its own, only this one. */
-function PlatformHome() {
-  const session = useSession();
-  const signOut = useSignOut();
-  return (
-    <PlatformHomeScreen
-      title={t('home.platform.title')}
-      description={t('home.platform.description')}
-      name={session.user.name}
-      email={session.user.email}
-      signOutLabel={t('auth.signOut')}
-      signingOut={signOut.isPending}
-      onSignOut={() => signOut.mutate({})}
-      error={signOut.isError ? signOutMessage(signOut.error) : undefined}
-    />
-  );
-}
-
 /** `/`, by role: a computer role on a computer opens on its space, everyone else on the work. */
 export function HomePage() {
   const session = useSession();
   const role = toUserRole(session.user.role);
   const desk = useMediaQuery(DESK_WIDTH);
-  if (role === 'platform_admin') return <PlatformHome />;
+  if (role === 'platform_admin') return <CompaniesPage />;
   if (desk && hasDesk(role)) {
     return role === 'department' ? <DepartmentHome /> : <DashboardHome />;
   }

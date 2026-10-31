@@ -21,8 +21,13 @@ vi.mock('@repo/auth', () => ({
 }));
 
 const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
-const { AGENT_ID, OTHER_ORGANIZATION_ID, ORGANIZATION_ID, parcelRow, STRANGER_ID } =
-  await import('./helpers/pglite');
+const {
+  AGENT_ID,
+  OTHER_ORGANIZATION_ID,
+  ORGANIZATION_ID,
+  parcelRow,
+  STRANGER_ID,
+} = await import('./helpers/pglite');
 const { companyTablesInOrder, purgeCompanyRows, releaseCompanyDomain } =
   await import('#features/platform/purge-company');
 
@@ -48,7 +53,9 @@ async function tablesWithOrganizationId(): Promise<string[]> {
   return result.rows.map((row) => row.name);
 }
 
-async function rowsLeft(organizationId: string): Promise<Record<string, number>> {
+async function rowsLeft(
+  organizationId: string,
+): Promise<Record<string, number>> {
   const left: Record<string, number> = {};
   for (const table of await tablesWithOrganizationId()) {
     const result = (await db.execute(
@@ -408,9 +415,9 @@ describe('deleting a company', () => {
     ).toEqual([]);
     expect(await db.select().from(schema.session)).toEqual([]);
     expect(await db.select().from(schema.verification)).toEqual([]);
-    expect(await codeOf(platform().platform.company({ id: ORGANIZATION_ID }))).toBe(
-      'NOT_FOUND',
-    );
+    expect(
+      await codeOf(platform().platform.company({ id: ORGANIZATION_ID })),
+    ).toBe('NOT_FOUND');
   });
 
   it('reaches a table added later', async () => {

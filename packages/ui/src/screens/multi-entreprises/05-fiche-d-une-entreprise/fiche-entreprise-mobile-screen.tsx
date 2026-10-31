@@ -242,6 +242,94 @@ export function FicheEntrepriseSuspendueMobile() {
   );
 }
 
+/** A real company on the phone: the same record, no account name in it (D26). */
+export function FicheEntrepriseMountedMobile({
+  name,
+  initials,
+  suspended,
+  statusLabel,
+  notice,
+  stats,
+  profile,
+  onBack,
+  primaryLabel,
+  onPrimary,
+  children,
+}: {
+  name: string;
+  initials: string;
+  suspended: boolean;
+  statusLabel: string;
+  notice?: { title: string; description: string };
+  stats: { label: string; value: string }[];
+  profile: { title: string; value: string }[];
+  onBack?: () => void;
+  primaryLabel: string;
+  onPrimary?: () => void;
+  children?: ReactNode;
+}) {
+  return (
+    <Screen
+      tone="fill"
+      className="pt-[calc(var(--safe-top)+6px)]"
+      bottom={
+        <BottomBar surface="plain" className="pt-6 pb-9">
+          <Button
+            block
+            variant={suspended ? 'primary' : 'secondary'}
+            icon={suspended ? 'refresh' : 'pause'}
+            iconSize={20}
+            className="gap-2"
+            onClick={onPrimary}
+          >
+            {primaryLabel}
+          </Button>
+        </BottomBar>
+      }
+    >
+      <PhoneNav onBack={onBack} />
+      <Identity
+        initials={initials}
+        name={name}
+        muted={suspended}
+        status={
+          <CompanyPill
+            tone={suspended ? 'orange' : 'green'}
+            label={statusLabel}
+          />
+        }
+      />
+      {notice && (
+        <Banner
+          tone="orange"
+          icon="pause"
+          title={notice.title}
+          description={notice.description}
+          {...BANNER_CLASSES}
+        />
+      )}
+      <div className="mt-6 grid grid-cols-2 gap-x-[11px] gap-y-3">
+        {stats.map((stat) => (
+          <PhoneStat key={stat.label} size={26} {...stat} />
+        ))}
+      </div>
+      <PhoneGroupTitle className="mt-[22px]">Fonctionnement</PhoneGroupTitle>
+      <div className="mt-1.5 rounded-[14px] bg-surface">
+        {profile.map((row, i) => (
+          <PhoneSettingRow
+            key={row.title}
+            title={row.title}
+            value={row.value}
+            chevron={false}
+            separator={i < profile.length - 1}
+          />
+        ))}
+      </div>
+      {children}
+    </Screen>
+  );
+}
+
 function BehindSheet() {
   return (
     <Screen tone="fill" className="pt-[calc(var(--safe-top)+6px)]">
@@ -279,66 +367,128 @@ function SheetTile({
   );
 }
 
+export type SheetAnswerProps = {
+  /** The app's sheet lies over its own screen, with no drawn indicator. */
+  fixed?: boolean;
+  name?: string;
+  description?: string;
+  pending?: boolean;
+  error?: string;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+};
+
 /** Asked on the phone before the company stops working. */
-export function SuspendreMobile() {
+export function SuspendreMobile({
+  fixed = false,
+  name = 'Atelier Lumen',
+  description = '42 comptes ne pourront plus se connecter ni synchroniser. Les données sont gardées.',
+  pending = false,
+  error,
+  onCancel,
+  onConfirm,
+}: SheetAnswerProps = {}) {
   return (
     <Sheet
-      behind={<BehindSheet />}
+      {...(fixed
+        ? { fixed: true, onDismiss: onCancel }
+        : { behind: <BehindSheet /> })}
       scrimClassName="bg-black/32"
-      className="pb-[134px]"
+      className={fixed ? 'pb-9' : 'pb-[134px]'}
       title={
         <>
           <SheetTile tone="orange" icon="pause" />
-          Suspendre Atelier Lumen ?
+          Suspendre {name} ?
         </>
       }
     >
-      <p className="mt-2 text-15 leading-[21px] text-ink-2">
-        42 comptes ne pourront plus se connecter ni synchroniser. Les données
-        sont gardées.
-      </p>
-      <Button block className="mt-[46px]">
+      <p className="mt-2 text-15 leading-[21px] text-ink-2">{description}</p>
+      {error && (
+        <p role="alert" className="mt-2 text-13 text-red">
+          {error}
+        </p>
+      )}
+      <Button
+        block
+        className="mt-[46px]"
+        disabled={pending}
+        onClick={onConfirm}
+      >
         Suspendre
       </Button>
-      <Button block variant="secondary" className="mt-3">
+      <Button block variant="secondary" className="mt-3" onClick={onCancel}>
         Annuler
       </Button>
-      <HomeIndicator />
+      {!fixed && <HomeIndicator />}
     </Sheet>
   );
 }
 
 /** Asked on the phone before the company is deleted: the name must be typed. */
-export function SupprimerMobile() {
+export function SupprimerMobile({
+  fixed = false,
+  name = 'Atelier Lumen',
+  description = 'Tout sera effacé sans retour : 42 comptes, 4 départements, l’annuaire et 3 812 colis.',
+  typed = 'Atelier Lumen',
+  onTyped,
+  pending = false,
+  error,
+  onCancel,
+  onConfirm,
+}: SheetAnswerProps & {
+  typed?: string;
+  onTyped?: (value: string) => void;
+} = {}) {
   return (
     <Sheet
-      behind={<BehindSheet />}
+      {...(fixed
+        ? { fixed: true, onDismiss: onCancel }
+        : { behind: <BehindSheet /> })}
       scrimClassName="bg-black/32"
-      className="pb-[130px]"
+      className={fixed ? 'pb-9' : 'pb-[130px]'}
       title={
         <>
           <SheetTile tone="red" icon="trash" />
-          Supprimer Atelier Lumen ?
+          Supprimer {name} ?
         </>
       }
     >
-      <p className="mt-2 text-15 leading-[21px] text-ink-2">
-        Tout sera effacé sans retour : 42 comptes, 4 départements, l’annuaire et
-        3 812 colis.
-      </p>
-      <p className="mt-[29px] text-13 font-medium text-muted">
-        Tapez « Atelier Lumen »
-      </p>
-      <div className="mt-[7px] h-12 rounded-[12px] bg-fill pt-3.5 pl-3.5 text-17 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)]">
-        Atelier Lumen
-      </div>
-      <Button block variant="danger" className="mt-[30px]">
+      <p className="mt-2 text-15 leading-[21px] text-ink-2">{description}</p>
+      <label className="block">
+        <span className="mt-[29px] block text-13 font-medium text-muted">
+          Tapez « {name} »
+        </span>
+        {onTyped ? (
+          <input
+            value={typed}
+            onChange={(event) => onTyped(event.target.value)}
+            autoComplete="off"
+            className="mt-[7px] h-12 w-full rounded-[12px] bg-fill pl-3.5 text-17 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)] outline-none"
+          />
+        ) : (
+          <div className="mt-[7px] h-12 rounded-[12px] bg-fill pt-3.5 pl-3.5 text-17 shadow-[0_0_0_0.75px_var(--color-ink),inset_0_0_0_0.75px_var(--color-ink)]">
+            {typed}
+          </div>
+        )}
+      </label>
+      {error && (
+        <p role="alert" className="mt-2 text-13 text-red">
+          {error}
+        </p>
+      )}
+      <Button
+        block
+        variant="danger"
+        className="mt-[30px]"
+        disabled={typed.trim() !== name || pending}
+        onClick={onConfirm}
+      >
         Supprimer définitivement
       </Button>
-      <Button block variant="secondary" className="mt-3">
+      <Button block variant="secondary" className="mt-3" onClick={onCancel}>
         Annuler
       </Button>
-      <HomeIndicator />
+      {!fixed && <HomeIndicator />}
     </Sheet>
   );
 }
