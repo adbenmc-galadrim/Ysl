@@ -10,6 +10,7 @@
     "./codes": "./src/codes/index.ts",
     "./departments": "./src/departments.ts",
     "./devices": "./src/devices.ts",
+    "./directory": "./src/directory.ts",
     "./exports": "./src/exports.ts",
     "./extract": "./src/extract/index.ts",
     "./handover": "./src/handover.ts",
