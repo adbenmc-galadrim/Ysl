@@ -4,6 +4,7 @@ export * from '#schema/directory';
 export * from '#schema/email-outbox';
 export * from '#schema/event';
 export * from '#schema/handover';
+export * from '#schema/mail-sender';
 export * from '#schema/notification';
 export * from '#schema/organization';
 export * from '#schema/parcel';
