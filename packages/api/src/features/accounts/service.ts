@@ -420,18 +420,20 @@ export async function reinstateAccount(
   organizationId: string,
   input: ReinstateAccountInput,
 ): Promise<void> {
-  const target = await targetOf(db, organizationId, input.userId);
-  if (accountStateOf(target) === 'revoked' && !input.password) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: translate('accounts.error.passwordRequired'),
-    });
-  }
-  if (input.password) await setPassword(db, input.userId, input.password);
-  await db
-    .update(user)
-    .set({ banned: false, banReason: null, updatedAt: new Date() })
-    .where(eq(user.id, input.userId));
+  await db.transaction(async (tx) => {
+    const target = await targetOf(tx, organizationId, input.userId);
+    if (accountStateOf(target) === 'revoked' && !input.password) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: translate('accounts.error.passwordRequired'),
+      });
+    }
+    if (input.password) await setPassword(tx, input.userId, input.password);
+    await tx
+      .update(user)
+      .set({ banned: false, banReason: null, updatedAt: new Date() })
+      .where(eq(user.id, input.userId));
+  });
 }
 
 export async function resetAccountPassword(
@@ -439,9 +441,11 @@ export async function resetAccountPassword(
   organizationId: string,
   input: ResetAccountPasswordInput,
 ): Promise<void> {
-  await targetOf(db, organizationId, input.userId);
-  await setPassword(db, input.userId, input.password);
-  if (input.closeSessions) {
-    await db.delete(session).where(eq(session.userId, input.userId));
-  }
+  await db.transaction(async (tx) => {
+    await targetOf(tx, organizationId, input.userId);
+    await setPassword(tx, input.userId, input.password);
+    if (input.closeSessions) {
+      await tx.delete(session).where(eq(session.userId, input.userId));
+    }
+  });
 }
