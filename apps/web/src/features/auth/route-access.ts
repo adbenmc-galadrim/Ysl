@@ -61,6 +61,7 @@ const AREA_OF_SETTING = new Map<string, RouteArea>(
     annuaire: 'directory',
     appareils: 'companySettings',
     comptes: 'companySettings',
+    conservation: 'companySettings',
     donnees: 'companySettings',
     identite: 'companySettings',
     fonctionnement: 'companySettings',

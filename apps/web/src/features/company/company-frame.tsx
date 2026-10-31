@@ -14,7 +14,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 const TAB_PATH = {
   identity: '/reglages/identite',
   operation: '/reglages/fonctionnement',
-  retention: '/reglages/donnees',
+  retention: '/reglages/conservation',
 } as const;
 
 function DeskFrame({
