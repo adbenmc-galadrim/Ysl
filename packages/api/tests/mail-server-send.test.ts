@@ -20,6 +20,8 @@ import {
   type TestDb,
 } from './helpers/pglite';
 
+import { writeCompanySettings } from '#features/company/settings';
+
 const {
   department,
   departmentMember,
@@ -181,6 +183,48 @@ describe('a request written by the iPhone', () => {
       .from(event)
       .where(eq(event.entityId, ids[0]!));
     expect(events.map((row) => row.type)).toContain('parcel.notified');
+  });
+
+  it('heads the mail with the company name, neutral without a logo', async () => {
+    const { id: person } = await addPerson();
+    await request(person, [await addParcel(person)]);
+    await round();
+
+    expect(brevo.sent[0]!.htmlContent).toContain('<strong>');
+    expect(brevo.sent[0]!.htmlContent).not.toContain('<img');
+  });
+
+  it('shows the logo of the company once it has one', async () => {
+    await writeCompanySettings(
+      db,
+      ORGANIZATION_ID,
+      { logoId: '0190f0f0-0000-7000-8000-000000000001' },
+      null,
+    );
+    const { id: person } = await addPerson();
+    await request(person, [await addParcel(person)]);
+    await round();
+    await writeCompanySettings(db, ORGANIZATION_ID, { logoId: null }, null);
+
+    expect(brevo.sent[0]!.htmlContent).toContain(
+      '/api/logos/0190f0f0-0000-7000-8000-000000000001',
+    );
+  });
+
+  it('sends the answers to the shared address of the department', async () => {
+    await db
+      .update(department)
+      .set({ replyEmail: 'finance@example.test' })
+      .where(eq(department.id, finance));
+    const { id: person } = await addPerson();
+    await request(person, [await addParcel(person)]);
+    await round();
+    await db
+      .update(department)
+      .set({ replyEmail: null })
+      .where(eq(department.id, finance));
+
+    expect(brevo.sent[0]!.replyTo?.email).toBe('finance@example.test');
   });
 
   it('leaves no code or text in the queue once the mail left', async () => {
