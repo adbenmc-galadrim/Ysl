@@ -38,8 +38,8 @@ function callerAs(userId: string, role: string) {
   session.user.id = userId;
   return callerFor(session);
 }
-const admin = () => callerAs(AGENT_ID, 'admin');
-const otherAdmin = () => callerAs(STRANGER_ID, 'admin');
+const admin = () => callerAs(AGENT_ID, 'company_admin');
+const otherAdmin = () => callerAs(STRANGER_ID, 'company_admin');
 const RECORD = {
   kind: 'dkim' as const,
   type: 'TXT',
@@ -223,17 +223,26 @@ describe('who may claim a domain', () => {
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
-  it('is closed to an agent', async () => {
-    const agent = callerAs(AGENT_ID, 'agent');
-    await expect(agent.mailSender.get()).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
-    await expect(agent.mailSender.save(SENDER)).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
-    await expect(agent.mailSender.check()).rejects.toMatchObject({
-      code: 'FORBIDDEN',
-    });
+  it.each(['agent', 'shuttle', 'department', 'platform_admin'])(
+    'is closed to the role %s',
+    async (role) => {
+      const caller = callerAs(AGENT_ID, role);
+      await expect(caller.mailSender.get()).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+      await expect(caller.mailSender.save(SENDER)).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+      await expect(caller.mailSender.check()).rejects.toMatchObject({
+        code: 'FORBIDDEN',
+      });
+    },
+  );
+
+  it('stays open to the former admin role', async () => {
+    expect(
+      (await callerAs(AGENT_ID, 'admin').mailSender.get()).sender,
+    ).toBeNull();
   });
 });
 

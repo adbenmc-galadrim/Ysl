@@ -168,7 +168,7 @@ export function ReglagesHome() {
             search: sentMails?.toConfirm ? { filtre: 'toConfirm' } : {},
           }),
       },
-      ...(role === 'admin'
+      ...(isCompanyAdmin(role)
         ? [
             {
               icon: 'globe' as const,
