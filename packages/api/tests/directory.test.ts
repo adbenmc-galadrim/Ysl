@@ -515,7 +515,7 @@ describe('a request to move someone', () => {
         requestMove(any, mine(), { personId, note: null }),
       ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     }
-    expect(await openFor(accessOf('admin'), elsewhere)).toEqual([]);
+    expect(await openFor(accessOf('company_admin'), elsewhere)).toEqual([]);
   });
 
   it('asked twice stays one, with the last note', async () => {
@@ -523,7 +523,7 @@ describe('a request to move someone', () => {
     await requestMove(any, mine(), { personId: person, note: 'Un' });
     await requestMove(any, mine(), { personId: person, note: 'Deux' });
 
-    expect(await openFor(accessOf('admin'), person)).toMatchObject([
+    expect(await openFor(accessOf('company_admin'), person)).toMatchObject([
       { note: 'Deux' },
     ]);
   });
@@ -533,10 +533,10 @@ describe('a request to move someone', () => {
     await requestMove(any, mine(), { personId: person, note: null });
 
     await move(person, finance);
-    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+    expect(await openFor(accessOf('company_admin'), person)).toEqual([]);
 
     await move(person, studio);
-    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+    expect(await openFor(accessOf('company_admin'), person)).toEqual([]);
   });
 
   it('goes with a person the purge erases', async () => {
@@ -547,7 +547,7 @@ describe('a request to move someone', () => {
       .delete(schema.directoryPerson)
       .where(eq(schema.directoryPerson.id, person));
 
-    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+    expect(await openFor(accessOf('company_admin'), person)).toEqual([]);
   });
 
   it('a department closes its own request only, the admin any', async () => {
@@ -557,7 +557,7 @@ describe('a request to move someone', () => {
     await closeMoveRequest(any, accessOf('department', finance), person);
     expect(await openFor(mine(), person)).toHaveLength(1);
 
-    await closeMoveRequest(any, accessOf('admin'), person);
+    await closeMoveRequest(any, accessOf('company_admin'), person);
     expect(await openFor(mine(), person)).toEqual([]);
 
     await requestMove(any, mine(), { personId: person, note: 'Encore' });

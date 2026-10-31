@@ -115,3 +115,9 @@ sur la prod. Comptes, identifiants, sessions, rattachements, colis (statut compr
 codes, événements et remises : empreintes identiques avant et après, hors `department_id`,
 `role`, `updated_at` et `server_xid`. Seconde exécution sans effet. Retour arrière, puis nouvelle
 conversion, joués aussi.
+
+Rejouée après l'arrivée de `0022` sur une copie de la base locale (40 comptes, 868 colis, 339
+personnes, sans dump de la prod : celle-ci n'a toujours aucun département), avec une personne dont
+le département tenait déjà l'e-mail et une demande de déplacement ouverte : mêmes empreintes,
+la personne reste sans département, la demande reste ouverte ; retour arrière, ancien code et
+nouvelle conversion joués.
