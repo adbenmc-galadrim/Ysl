@@ -1,3 +1,4 @@
+import { missingHandoverSteps } from '@repo/contract/operating-profile';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { newId } from '@repo/shared/id';
 import { commitLocal, type Upsert } from '#/features/db/commit';
@@ -28,15 +29,23 @@ import {
 } from '#/features/handover/waiting';
 import { parcelEvent } from '#/features/parcels/events';
 import type { PhotoFiles } from '#/features/photos/opfs';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 
 /**
  * Why a handover was not written: the code no longer opens (a `PickupRefusal`,
  * or `missing` when the URL names none, `mismatch` when it names someone
  * else), the person is `gone` from this iPhone, a ticked parcel is no longer
- * waiting (`stale`), or `nothing` was ticked.
+ * waiting (`stale`), `nothing` was ticked, or a step the profile requires is
+ * missing (`steps`), a signature or a photo that could not be kept included.
  */
 export type HandoverRefusal =
-  PickupRefusal | 'missing' | 'mismatch' | 'gone' | 'stale' | 'nothing';
+  | PickupRefusal
+  | 'missing'
+  | 'mismatch'
+  | 'gone'
+  | 'stale'
+  | 'nothing'
+  | 'steps';
 
 export class HandoverRefusedError extends Error {
   constructor(readonly reason: HandoverRefusal) {
@@ -50,6 +59,8 @@ export type HandoverInput = RemiseColisSearch & {
   parcelIds: readonly string[];
   /** Someone else collects for the recipient; their proof still stands for them. */
   delegateName?: string | null;
+  /** Every parcel handed over was scanned against the list. */
+  hasScan?: boolean;
 };
 
 export type HandoverOptions = {
@@ -59,10 +70,12 @@ export type HandoverOptions = {
   now?: Date;
   /**
    * The signature drawn before « Remettre », kept on this iPhone only. A
-   * signature that cannot be kept (no OPFS, a full disk) never stops the
-   * handover: it goes without one.
+   * signature that cannot be kept (no OPFS, a full disk) stops the handover
+   * only when the profile requires one; otherwise it goes without.
    */
   signature?: { proof: ProofInput; files: PhotoFiles };
+  /** The photo a profile asks for before « Remettre », kept the same way. */
+  photo?: { proof: ProofInput; files: PhotoFiles };
 };
 
 export type HandoverDone = {
@@ -143,7 +156,7 @@ async function closedCodes(
 export async function recordHandover(
   db: CourrierDatabase,
   input: HandoverInput,
-  { agentId, agentName, now = new Date(), signature }: HandoverOptions,
+  { agentId, agentName, now = new Date(), signature, photo }: HandoverOptions,
 ): Promise<HandoverDone> {
   const recipient: HandoverRecipient = { kind: input.kind, id: input.id };
   const person = await loadHandoverPerson(db, recipient);
@@ -182,6 +195,18 @@ export async function recordHandover(
         return undefined;
       })
     : undefined;
+  const pictured = photo
+    ? await saveProof(db, photo.files, handoverId, photo.proof, now).catch(
+        (error: unknown) => {
+          console.warn('Handover photo not kept', error);
+          return undefined;
+        },
+      )
+    : undefined;
+  const dropProofs = async () => {
+    if (signed && signature) await deleteProof(db, signature.files, signed);
+    if (pictured && photo) await deleteProof(db, photo.files, pictured);
+  };
 
   const handover: LocalHandover = {
     id: handoverId,
@@ -202,8 +227,14 @@ export async function recordHandover(
     cancelNote: null,
     cancelledByName: null,
     hasSignature: !!signed,
-    hasPhoto: false,
+    hasPhoto: !!pictured,
+    hasScan: !!input.hasScan,
   };
+  const profile = await readOperatingProfile(db);
+  if (missingHandoverSteps(profile, handover).length > 0) {
+    await dropProofs();
+    throw new HandoverRefusedError('steps');
+  }
   const closed = checked
     ? parcels.length === waiting.filter(ofCode).length
       ? [checked]
@@ -235,7 +266,7 @@ export async function recordHandover(
   try {
     await commitLocal(db, { upserts }, { now });
   } catch (error) {
-    if (signed && signature) await deleteProof(db, signature.files, signed);
+    await dropProofs();
     throw error;
   }
   return {

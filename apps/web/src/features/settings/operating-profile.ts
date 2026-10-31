@@ -3,6 +3,8 @@ import {
   parseOperatingProfile,
   type OperatingProfile,
 } from '@repo/contract/operating-profile';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db as appDb } from '#/features/db/database';
 import type { CourrierDatabase } from '#/features/db/schema';
 
 /** This device's copy if it has one: none yet is not the same as a refusal. */
@@ -22,4 +24,9 @@ export async function readOperatingProfile(
   db: CourrierDatabase,
 ): Promise<OperatingProfile> {
   return (await readKeptProfile(db)) ?? parseOperatingProfile(undefined);
+}
+
+/** The profile on this device, live; undefined while it is read. */
+export function useOperatingProfile(): OperatingProfile | undefined {
+  return useLiveQuery(() => readOperatingProfile(appDb), []);
 }

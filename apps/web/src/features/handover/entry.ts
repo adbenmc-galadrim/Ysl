@@ -23,6 +23,8 @@ export type HandoverEntry = {
   /** The parcels it handed over still on this iPhone, in its order. */
   parcels: LocalParcel[];
   sync: HandoverSync;
+  /** Why the server refused it, as it said so. */
+  refusal?: string;
   /** The signature and the photo this iPhone holds (D8: they stay where taken). */
   proofs: HandoverProofKind[];
 };
@@ -111,6 +113,7 @@ export async function loadHandoverEntry(
     handover,
     parcels: handedOf(handover, parcels, undone),
     sync: handoverSyncOf(ops),
+    refusal: ops.find((op) => op.state === 'rejected')?.lastError ?? undefined,
     proofs,
   };
 }
