@@ -52,7 +52,13 @@ export * from '#screens/multi-entreprises/01-premier-lancement-et-connexion/conn
 export type { Company } from '#fixtures/multi-entreprises';
 export * from '#screens/multi-entreprises/03-accueil/company-suspended-screen';
 export * from '#screens/multi-entreprises/03-accueil/entreprises-screen';
+export * from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
 export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
+export type {
+  TourStopParcel,
+  TourStopScreenProps,
+} from '#screens/multi-entreprises/09-depot-au-departement/navette-depot-screen';
+export { TourStopScreen } from '#screens/multi-entreprises/09-depot-au-departement/navette-depot-screen';
 export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-desktop-screen';
 export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-mobile-screen';
 export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-desktop-screen';
