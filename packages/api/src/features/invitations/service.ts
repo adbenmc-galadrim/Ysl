@@ -22,6 +22,7 @@ import { TRPCError } from '@trpc/server';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 import { deliverLink } from '#features/invitations/delivery';
 import { hashToken, issueLink } from '#features/invitations/link';
+import { type JournalActor, recordPlatformAction } from '#features/platform/journal';
 import { sqlState } from '#features/sync/errors';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -169,18 +170,31 @@ export async function changeRequiredPassword(
  * The same address again gives a new link: a first link lost, or a revoked admin
  * coming back, whose old password dies here so that only the link lets it in. A
  * suspended admin keeps open sessions the link would not touch: refused, like
- * any other existing address.
+ * any other existing address. That refusal tells an address has an account: the
+ * typo must show, so it stays, and each one goes to the journal, address left out.
  */
 export async function inviteCompanyAdmin(
   db: AnyDb,
   input: InviteCompanyAdminOutput,
+  actor: JournalActor,
 ): Promise<LinkDelivery> {
   const { organizationId, name, email } = input;
   let link: Awaited<ReturnType<typeof issueLink>>;
+  let companyName = '';
+  const emailTaken = () =>
+    new TRPCError({
+      code: 'CONFLICT',
+      message: translate('accounts.error.emailTaken'),
+    });
+  let taken = false;
   try {
     link = await db.transaction(async (tx) => {
       const [company] = await tx
-        .select({ id: organization.id, suspendedAt: organization.suspendedAt })
+        .select({
+          id: organization.id,
+          name: organization.name,
+          suspendedAt: organization.suspendedAt,
+        })
         .from(organization)
         .where(eq(organization.id, organizationId))
         .for('update');
@@ -190,6 +204,7 @@ export async function inviteCompanyAdmin(
           message: translate('invitations.error.companyNotFound'),
         });
       }
+      companyName = company.name;
       if (company.suspendedAt) {
         throw new TRPCError({
           code: 'CONFLICT',
@@ -238,6 +253,12 @@ export async function inviteCompanyAdmin(
           .insert(user)
           .values({ id: userId, name, email, role: ADMIN_ROLE });
         await tx.insert(organizationMember).values({ userId, organizationId });
+        await recordPlatformAction(
+          tx,
+          actor,
+          { id: organizationId, name: company.name },
+          'company_admin_invited',
+        );
         return issueLink(tx, { userId, organizationId });
       }
       if (
@@ -245,24 +266,32 @@ export async function inviteCompanyAdmin(
         existing.organizationId !== organizationId ||
         accountStateOf(existing) === 'suspended'
       ) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: translate('accounts.error.emailTaken'),
-        });
+        taken = true;
+        throw emailTaken();
       }
       await tx.delete(account).where(eq(account.userId, existing.id));
       await tx
         .update(user)
         .set({ banned: false, banReason: null, updatedAt: new Date() })
         .where(eq(user.id, existing.id));
+      await recordPlatformAction(
+        tx,
+        actor,
+        { id: organizationId, name: company.name },
+        'company_admin_invited',
+      );
       return issueLink(tx, { userId: existing.id, organizationId });
     });
   } catch (error) {
-    if (sqlState(error) !== UNIQUE_VIOLATION) throw error;
-    throw new TRPCError({
-      code: 'CONFLICT',
-      message: translate('accounts.error.emailTaken'),
-    });
+    if (!taken && sqlState(error) !== UNIQUE_VIOLATION) throw error;
+    // Outside the transaction just undone, which would take the line with it.
+    await recordPlatformAction(
+      db,
+      actor,
+      { id: organizationId, name: companyName },
+      'company_admin_invite_refused',
+    );
+    throw emailTaken();
   }
   return deliverLink(
     db,

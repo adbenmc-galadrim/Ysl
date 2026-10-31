@@ -83,6 +83,15 @@ export type CompanySheetData = {
   stats: DeskStat[];
   profile: string[][];
   actions: ReactNode;
+  /** Its last lines, the platform account's acts and no one else's (D26). */
+  journal: {
+    title: string;
+    allLabel: string;
+    onAll?: () => void;
+    lines: { id: string; when: string; what: string }[];
+    /** Instead of the lines: nothing yet, or the server's refusal. */
+    message?: string;
+  };
 };
 
 function ProfilePanel({
@@ -181,6 +190,35 @@ function CompanySheet({
         <div className="mt-5 flex shrink-0 gap-4">
           <div className="flex w-[568px] shrink-0 flex-col gap-4">
             <ProfilePanel rows={data.profile} />
+          </div>
+          <div className="flex w-[568px] shrink-0 flex-col gap-4">
+            <DeskPanel
+              title={data.journal.title}
+              action={
+                <button
+                  type="button"
+                  className="cursor-pointer"
+                  onClick={data.journal.onAll}
+                >
+                  {data.journal.allLabel}
+                </button>
+              }
+              className="h-[180px]"
+            >
+              <div className="mt-3.5 flex flex-col gap-[18px] px-[15px] text-13">
+                {data.journal.message && (
+                  <p className="text-muted">{data.journal.message}</p>
+                )}
+                {data.journal.lines.map((line) => (
+                  <p key={line.id} className="flex">
+                    <span className="w-[124px] shrink-0 text-muted">
+                      {line.when}
+                    </span>
+                    {line.what}
+                  </p>
+                ))}
+              </div>
+            </DeskPanel>
           </div>
         </div>
       ) : (
@@ -298,7 +336,10 @@ export type ConfirmDialogProps = {
   onConfirm?: () => void;
 };
 
-/** Asks before the company stops working; the mockup's reason waits for the journal. */
+/**
+ * Asks before the company stops working. `reason` is the mockup's alone: free
+ * text could name someone, so the app never asks one (D26, YSL-123).
+ */
 export function SuspendDialog({
   name,
   description,

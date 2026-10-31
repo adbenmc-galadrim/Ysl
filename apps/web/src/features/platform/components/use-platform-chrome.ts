@@ -7,7 +7,7 @@ import { initialsOf } from '#/features/settings/initials';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-/** The app's admin on a computer: its one section, and the way out. */
+/** The app's admin on a computer: its sections, and the way out. */
 export function usePlatformChrome(): PlatformChrome {
   const session = useSession();
   const navigate = useNavigate();
@@ -21,6 +21,11 @@ export function usePlatformChrome(): PlatformChrome {
             label: t('platform.nav.companies'),
             icon: 'building',
           },
+          {
+            id: 'journal',
+            label: t('platform.nav.journal'),
+            icon: 'file',
+          },
           { id: 'signOut', label: t('platform.signOut'), icon: 'logout' },
         ],
       },
@@ -32,6 +37,7 @@ export function usePlatformChrome(): PlatformChrome {
     },
     onNavigate: (id) => {
       if (id === 'signOut') signOut.mutate({});
+      else if (id === 'journal') void navigate({ to: '/journal' });
       else void navigate({ to: '/' });
     },
   };

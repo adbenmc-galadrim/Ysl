@@ -34,6 +34,7 @@ const OPEN_TO_PLATFORM = [
   'platform.companies',
   'platform.createCompany',
   'platform.deleteCompany',
+  'platform.journal',
   'platform.overview',
   'platform.reactivateCompany',
   'platform.renameCompany',
@@ -84,7 +85,13 @@ describe('the app admin', () => {
   );
 
   it('reads figures with no name in them', async () => {
-    expect(await caller().platform.overview()).toEqual({ companies: 2 });
+    expect(await caller().platform.overview()).toEqual({
+      companies: 2,
+      suspendedCompanies: 0,
+      accounts: 2,
+      departments: 0,
+      parcelsThisMonth: 0,
+    });
   });
 
   it('reads only its own account', async () => {
@@ -95,12 +102,13 @@ describe('the app admin', () => {
   });
 });
 
-describe('platform.overview', () => {
+describe('platform.overview and platform.journal', () => {
   it.each(['agent', 'admin', 'company_admin', 'department', 'shuttle', null])(
     'refuses the role %s',
     async (role) => {
       const caller = callerFor(sessionOf(role, AGENT_ID));
       expect(await codeOf(caller.platform.overview())).toBe('FORBIDDEN');
+      expect(await codeOf(caller.platform.journal({}))).toBe('FORBIDDEN');
     },
   );
 
@@ -111,6 +119,9 @@ describe('platform.overview', () => {
 
   it('refuses without a session', async () => {
     expect(await codeOf(callerFor(null).platform.overview())).toBe(
+      'UNAUTHORIZED',
+    );
+    expect(await codeOf(callerFor(null).platform.journal({}))).toBe(
       'UNAUTHORIZED',
     );
   });

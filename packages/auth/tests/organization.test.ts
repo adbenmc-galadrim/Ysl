@@ -19,6 +19,7 @@ import {
   DEFAULT_ORGANIZATION_NAME,
   OrganizationChoiceError,
   PlatformAccountError,
+  platformAdminExists,
   resolveOrganization,
   resolveOrganizationFor,
 } from '#organization';
@@ -53,6 +54,21 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await client.close();
+});
+
+describe('platformAdminExists', () => {
+  it('tells whether the first app admin is already there', async () => {
+    expect(await platformAdminExists(db)).toBe(true);
+    await db
+      .update(schema.user)
+      .set({ role: null })
+      .where(eq(schema.user.id, 'app-admin'));
+    expect(await platformAdminExists(db)).toBe(false);
+    await db
+      .update(schema.user)
+      .set({ role: 'platform_admin' })
+      .where(eq(schema.user.id, 'app-admin'));
+  });
 });
 
 describe('resolveOrganization', () => {

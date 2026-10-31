@@ -1112,6 +1112,8 @@ La purge est automatique (job serveur) et s'applique aussi aux appareils au mome
 
 Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une ligne marquée supprimée est effacée 30 jours plus tard (le temps que chaque appareil la retire), une personne désactivée est retirée après 30 jours, le journal des opérations synchronisées (`sync_op`) est gardé 90 jours. Ces délais ne se règlent pas par entreprise.
 
+Journal de l'admin de l'app (`platform_journal`, à faire valider par le DPO) : 12 mois, nom de l'entreprise compris après sa suppression ; effacé par la purge planifiée. Rien d'une personne de l'entreprise, seulement le nom du compte de plateforme.
+
 Historique des e-mails (`email_outbox`, à faire valider par le DPO) : 30 jours par défaut après la fin de l'envoi, réglable de 7 à 90 jours. Une ligne restée en cours d'envoi est effacée au même délai après la fin de son bail. Adresses désinscrites ou en plainte (`email_suppression`) : gardées sans durée et sans réinscription, pour que l'opposition tienne ; à faire valider par le DPO.
 
 Réglage par entreprise (D28, YSL-126) : photos et lectures de 1 à 90 jours, colis, signatures et contacts de 1 à 60 mois. Une signature ne survit pas à son colis. L'écran annonce les lignes touchées avant d'enregistrer une durée réduite ; photos d'étiquettes et lectures, sur les iPhone seulement, ne peuvent pas être comptées par le serveur.

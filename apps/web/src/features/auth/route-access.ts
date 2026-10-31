@@ -42,6 +42,7 @@ const AREA_OF_FIRST_SEGMENT = new Map<string, RouteArea>(
     'tableau-de-bord': 'dashboard',
     departement: 'departmentSpace',
     entreprises: 'platform',
+    journal: 'platform',
     reglages: 'settings',
   }),
 );

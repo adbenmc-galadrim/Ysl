@@ -155,22 +155,22 @@ export function DeskSelect({
   icon,
   label,
   value,
+  choices,
+  selected,
+  onSelect,
   className,
 }: {
   icon: IconName;
   label: string;
   value: string;
+  /** With these it opens the system's list, laid invisibly over the drawing. */
+  choices?: readonly { value: string; label: string }[];
+  selected?: string;
+  onSelect?: (value: string) => void;
   className?: string;
 }) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        'flex h-8 shrink-0 cursor-pointer items-center rounded-[6px] border border-border bg-surface pl-[9px] text-13 whitespace-nowrap outline-none',
-        'focus-visible:ring-2 focus-visible:ring-blue',
-        className,
-      )}
-    >
+  const face = (
+    <>
       <Icon name={icon} size={14} className="text-muted" />
       <span className="-mt-0.5 ml-1.5 text-muted">{label}</span>
       <span className="-mt-0.5 ml-1.5 font-semibold">{value}</span>
@@ -179,6 +179,41 @@ export function DeskSelect({
         size={10}
         className="mr-[9px] ml-auto rotate-90 text-muted"
       />
+    </>
+  );
+  const box =
+    'flex h-8 shrink-0 cursor-pointer items-center rounded-[6px] border border-border bg-surface pl-[9px] text-13 whitespace-nowrap outline-none';
+  if (choices) {
+    return (
+      <span
+        className={cn(
+          box,
+          'relative focus-within:ring-2 focus-within:ring-blue',
+          className,
+        )}
+      >
+        {face}
+        <select
+          aria-label={label}
+          value={selected}
+          onChange={(event) => onSelect?.(event.target.value)}
+          className="absolute inset-0 cursor-pointer opacity-0"
+        >
+          {choices.map((choice) => (
+            <option key={choice.value} value={choice.value}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={cn(box, 'focus-visible:ring-2 focus-visible:ring-blue', className)}
+    >
+      {face}
     </button>
   );
 }

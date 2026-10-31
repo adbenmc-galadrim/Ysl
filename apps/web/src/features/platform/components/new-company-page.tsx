@@ -18,7 +18,6 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { COMPANIES_KEY } from '#/features/platform/components/companies-page';
 import { platformErrorMessage } from '#/features/platform/errors';
 import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
 import {
@@ -110,7 +109,7 @@ export function NewCompanyPage() {
         profile,
       }),
     onSuccess: async ({ id }) => {
-      await queryClient.invalidateQueries({ queryKey: COMPANIES_KEY });
+      await queryClient.invalidateQueries({ queryKey: ['platform'] });
       void navigate({
         to: '/entreprises/$id',
         params: { id },

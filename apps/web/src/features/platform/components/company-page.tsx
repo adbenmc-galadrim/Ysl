@@ -14,13 +14,15 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { COMPANIES_KEY } from '#/features/platform/components/companies-page';
 import {
+  activityFigure,
   counted,
   figure,
   longDate,
   modelName,
+  monthName,
 } from '#/features/platform/company-view';
+import { journalText, journalWhen } from '#/features/platform/journal-view';
 import { InviteCompanyAdmin } from '#/features/invitations/components/invite-company-admin';
 import { platformErrorMessage } from '#/features/platform/errors';
 import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
@@ -31,6 +33,8 @@ import { trpcClient } from '#/lib/trpc';
 const t = createTranslator(DEFAULT_LOCALE);
 
 type Asked = 'suspend' | 'delete' | 'rename' | null;
+
+const JOURNAL_ON_SHEET = 3;
 
 function statusLine(company: PlatformCompanyDetail): string {
   const shared = {
@@ -70,8 +74,8 @@ function useCompanyActions(id: string, onDone: () => void) {
       mutationFn: (confirmName: string) =>
         trpcClient.platform.deleteCompany.mutate({ id, confirmName }),
       onSuccess: async () => {
-        await queryClient.invalidateQueries({ queryKey: COMPANIES_KEY });
         queryClient.removeQueries({ queryKey: ['platform', 'company', id] });
+        await queryClient.invalidateQueries({ queryKey: ['platform'] });
         void navigate({ to: '/' });
       },
     }),
@@ -93,6 +97,14 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
     queryFn: () => trpcClient.platform.company.query({ id }),
   });
   const company = query.data;
+  const journal = useQuery({
+    queryKey: ['platform', 'journal', { companyId: id, limit: JOURNAL_ON_SHEET }],
+    queryFn: () =>
+      trpcClient.platform.journal.query({
+        companyId: id,
+        limit: JOURNAL_ON_SHEET,
+      }),
+  });
 
   if (!company) {
     if (query.isPending) return null;
@@ -156,8 +168,17 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
       label: t('platform.sheet.stat.departments'),
       value: figure(company.departments),
     },
-    { label: t('platform.sheet.stat.parcels'), value: figure(company.parcels) },
+    {
+      label: t('platform.sheet.stat.parcels', { month: monthName(new Date()) }),
+      value: figure(company.parcelsThisMonth),
+    },
+    {
+      label: t('platform.sheet.stat.activity'),
+      value: activityFigure(company.lastActivityAt, new Date()),
+    },
   ];
+  const openJournal = () =>
+    void navigate({ to: '/journal', search: { entreprise: company.id } });
   const model = modelName(company.profileModel, t);
   const changedSteps =
     company.changedSteps === null ? null : figure(company.changedSteps);
@@ -215,6 +236,21 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
               : statusLine(company),
             suspended,
             stats,
+            journal: {
+              title: t('platform.nav.journal'),
+              allLabel: t('platform.journal.all'),
+              onAll: openJournal,
+              message: journal.isError
+                ? platformErrorMessage(journal.error)
+                : journal.data?.total === 0
+                  ? t('platform.journal.empty')
+                  : undefined,
+              lines: (journal.data?.entries ?? []).map((entry) => ({
+                id: entry.id,
+                when: journalWhen(entry.at, new Date(), t),
+                what: journalText(entry, t),
+              })),
+            },
             profile: [
               [t('platform.sheet.model'), model],
               ...(changedSteps === null
@@ -223,14 +259,16 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
             ],
             actions: (
               <>
-                <Button
-                  variant="outline"
-                  size="desk"
-                  icon="userPlus"
-                  onClick={() => setInviting(true)}
-                >
-                  {t('platform.sheet.invite')}
-                </Button>
+                {!suspended && (
+                  <Button
+                    variant="outline"
+                    size="desk"
+                    icon="userPlus"
+                    onClick={() => setInviting(true)}
+                  >
+                    {t('platform.sheet.invite')}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="desk"
@@ -297,8 +335,13 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
         onPrimary={primary}
       >
         <div className="mt-6 flex flex-col gap-3">
-          <Button block variant="secondary" onClick={() => setInviting(true)}>
-            {t('platform.sheet.invite')}
+          {!suspended && (
+            <Button block variant="secondary" onClick={() => setInviting(true)}>
+              {t('platform.sheet.invite')}
+            </Button>
+          )}
+          <Button block variant="secondary" onClick={openJournal}>
+            {t('platform.journal.open')}
           </Button>
           <Button block variant="secondary" onClick={askRename}>
             {t('platform.sheet.rename')}
