@@ -17,12 +17,9 @@ async function wipeLocalData(): Promise<void> {
 async function suspensionOf(userId: string): Promise<AccountSuspension> {
   try {
     const { trpcClient } = await import('#/lib/trpc');
-    const { standing } = await trpcClient.platform.accountSuspension.query({
-      userId,
-    });
-    return standing;
+    return await trpcClient.platform.accountSuspension.query({ userId });
   } catch {
-    return 'unknown';
+    return { standing: 'unknown' };
   }
 }
 

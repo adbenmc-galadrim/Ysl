@@ -1,5 +1,5 @@
 {
-  "id": "297c08e9-bf35-44f2-bfad-792c6a39f5a9",
+  "id": "93996ff2-ef54-4c18-8bd2-baccd895346e",
   "prevId": "4ae41cda-109f-483d-9499-8ebddfe267ce",
   "version": "7",
   "dialect": "postgresql",
@@ -3259,6 +3259,12 @@
         },
         "suspended_at": {
           "name": "suspended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reactivated_at": {
+          "name": "reactivated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

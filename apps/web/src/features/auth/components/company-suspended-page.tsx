@@ -1,6 +1,6 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { CompanySuspendedScreen } from '@repo/ui';
-import { useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import {
   isCompanySuspended,
   subscribeCompanySuspended,
@@ -9,6 +9,8 @@ import { syncNow } from '#/features/sync/sync';
 import { useSync } from '#/features/sync/use-sync';
 
 const t = createTranslator(DEFAULT_LOCALE);
+
+const RECHECK_MS = 60_000;
 
 export function useCompanySuspended(): boolean {
   return useSyncExternalStore(subscribeCompanySuspended, () =>
@@ -23,6 +25,13 @@ export function useCompanySuspended(): boolean {
 export function CompanySuspendedPage() {
   const { pending, rejected } = useSync();
   const waiting = pending + rejected;
+  // Past the back-off of the refusals: reactivated, the phone finds out within a minute.
+  useEffect(() => {
+    const check = () => void syncNow({ force: true });
+    check();
+    const timer = setInterval(check, RECHECK_MS);
+    return () => clearInterval(timer);
+  }, []);
   return (
     <CompanySuspendedScreen
       title={t('company.suspended.title')}

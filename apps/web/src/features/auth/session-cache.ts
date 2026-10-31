@@ -88,7 +88,17 @@ export function resolveSession(
 }
 
 /** The server's word on an account that lost its session; `unknown` when it cannot be reached. */
-export type AccountSuspension = 'suspended' | 'active' | 'gone' | 'unknown';
+export type AccountSuspension = {
+  standing: 'suspended' | 'active' | 'gone' | 'unknown';
+  reactivatedAt?: Date | null;
+};
+
+/** It ran out by itself before the company came back: suspended, maybe with the phone shut. */
+function ranOutBefore(kept: Session, reactivatedAt?: Date | null): boolean {
+  return Boolean(
+    reactivatedAt && new Date(kept.session.expiresAt) <= reactivatedAt,
+  );
+}
 
 /**
  * A device that kept a session and is now told there is none was signed out
@@ -118,13 +128,18 @@ export async function settleSession(
   if (lookup.kind === 'unreachable') return resolveSession(lookup, store);
   const kept = readCached(store);
   if (kept) {
-    const standing = await suspensionOf(kept.user.id);
+    const { standing, reactivatedAt } = await suspensionOf(kept.user.id);
     if (standing === 'unknown') return kept;
     if (standing === 'suspended') {
       markCompanySuspended(store, kept.user.id);
       return kept;
     }
-    if (standing === 'active' && suspendedAccount(store) === kept.user.id) {
+    if (
+      standing === 'active' &&
+      (suspendedAccount(store) === kept.user.id ||
+        ranOutBefore(kept, reactivatedAt))
+    ) {
+      markCompanySuspended(store, kept.user.id);
       return resolveSession(lookup, store);
     }
   }

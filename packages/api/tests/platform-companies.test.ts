@@ -309,7 +309,7 @@ describe('a suspended company', () => {
     expect(await codeOf(shuttle().account.company())).toBe('FORBIDDEN');
     expect(
       await callerFor(null).platform.accountSuspension({ userId: AGENT_ID }),
-    ).toEqual({ standing: 'suspended' });
+    ).toEqual({ standing: 'suspended', reactivatedAt: null });
   });
 
   it('touches no other company', async () => {
@@ -319,7 +319,7 @@ describe('a suspended company', () => {
     });
     expect(
       await callerFor(null).platform.accountSuspension({ userId: STRANGER_ID }),
-    ).toEqual({ standing: 'active' });
+    ).toEqual({ standing: 'active', reactivatedAt: null });
   });
 
   it('keeps the first date when asked twice', async () => {
@@ -331,6 +331,15 @@ describe('a suspended company', () => {
 
   it('works again once reactivated', async () => {
     await platform().platform.reactivateCompany({ id: ORGANIZATION_ID });
+    const { reactivatedAt } = await callerFor(null).platform.accountSuspension({
+      userId: AGENT_ID,
+    });
+    expect(reactivatedAt).toBeInstanceOf(Date);
+    await platform().platform.reactivateCompany({ id: ORGANIZATION_ID });
+    expect(
+      (await callerFor(null).platform.accountSuspension({ userId: AGENT_ID }))
+        .reactivatedAt,
+    ).toEqual(reactivatedAt);
     expect(await shuttle().account.company()).toMatchObject({
       name: 'Service courrier',
     });
@@ -419,7 +428,7 @@ describe('deleting a company', () => {
     expect(await db.select().from(schema.verification)).toEqual([]);
     expect(
       await callerFor(null).platform.accountSuspension({ userId: AGENT_ID }),
-    ).toEqual({ standing: 'gone' });
+    ).toEqual({ standing: 'gone', reactivatedAt: null });
     expect(
       await codeOf(platform().platform.company({ id: ORGANIZATION_ID })),
     ).toBe('NOT_FOUND');

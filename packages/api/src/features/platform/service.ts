@@ -78,20 +78,24 @@ export async function renameCompany(
   return rows.length > 0;
 }
 
-/** Keeps the first date: a second tap does not restart the suspension. */
+/** Keeps the first date: a second tap does not restart the suspension, nor a stray one mark a return. */
 export async function setCompanySuspended(
   db: AnyDb,
   id: string,
   suspended: boolean,
   now = new Date(),
 ): Promise<boolean> {
+  const at = sql`${now.toISOString()}::timestamptz`;
   const rows = await db
     .update(organization)
-    .set({
-      suspendedAt: suspended
-        ? sql`coalesce(${organization.suspendedAt}, ${now.toISOString()}::timestamptz)`
-        : null,
-    })
+    .set(
+      suspended
+        ? { suspendedAt: sql`coalesce("suspended_at", ${at})` }
+        : {
+            suspendedAt: null,
+            reactivatedAt: sql`case when "suspended_at" is null then "reactivated_at" else ${at} end`,
+          },
+    )
     .where(eq(organization.id, id))
     .returning({ id: organization.id });
   return rows.length > 0;

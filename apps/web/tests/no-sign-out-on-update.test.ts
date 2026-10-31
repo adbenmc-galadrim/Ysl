@@ -60,7 +60,7 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-const active = () => Promise.resolve('active' as const);
+const active = () => Promise.resolve({ standing: 'active' as const });
 
 describe('an update never signs a device out', () => {
   it.each(ROLES_EVER_KEPT)(

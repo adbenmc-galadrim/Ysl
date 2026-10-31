@@ -31,7 +31,7 @@ function memoryStore(initial: Record<string, string> = {}) {
   };
 }
 
-const active = () => Promise.resolve('active' as const);
+const active = () => Promise.resolve({ standing: 'active' as const });
 
 describe('resolveSession', () => {
   it('keeps the confirmed session on the device', () => {
@@ -105,7 +105,7 @@ describe('a phone of a suspended company that lost its session', () => {
     const store = keptStore();
     const wipe = vi.fn(() => Promise.resolve());
     const answer = await settleSession({ kind: 'none' }, store, wipe, () =>
-      Promise.resolve('suspended'),
+      Promise.resolve({ standing: 'suspended' as const }),
     );
     expect(wipe).not.toHaveBeenCalled();
     expect(answer?.user.id).toBe('u1');
@@ -116,7 +116,7 @@ describe('a phone of a suspended company that lost its session', () => {
     const store = keptStore();
     const wipe = vi.fn(() => Promise.resolve());
     await settleSession({ kind: 'none' }, store, wipe, () =>
-      Promise.resolve('unknown'),
+      Promise.resolve({ standing: 'unknown' as const }),
     );
     expect(wipe).not.toHaveBeenCalled();
     expect(store.getItem(SESSION_KEY)).not.toBeNull();
@@ -128,7 +128,7 @@ describe('a phone of a suspended company that lost its session', () => {
     const wipe = vi.fn(() => Promise.resolve());
     await expect(
       settleSession({ kind: 'none' }, store, wipe, () =>
-        Promise.resolve('gone'),
+        Promise.resolve({ standing: 'gone' as const }),
       ),
     ).resolves.toBeNull();
     expect(wipe).toHaveBeenCalledOnce();
@@ -146,6 +146,39 @@ describe('a phone of a suspended company that lost its session', () => {
 
     await settleSession({ kind: 'session', session }, store, wipe, active);
     expect(wipe).not.toHaveBeenCalled();
+  });
+
+  it('keeps the proofs of a phone left shut through the suspension', async () => {
+    const expired = {
+      ...session,
+      session: { ...session.session, expiresAt: new Date('2026-09-01') },
+    };
+    const store = memoryStore({ [SESSION_KEY]: JSON.stringify(expired) });
+    const wipe = vi.fn(() => Promise.resolve());
+    await settleSession({ kind: 'none' }, store, wipe, () =>
+      Promise.resolve({
+        standing: 'active' as const,
+        reactivatedAt: new Date('2026-10-01'),
+      }),
+    );
+    expect(wipe).not.toHaveBeenCalled();
+    expect(isCompanySuspended(store)).toBe(true);
+  });
+
+  it('still empties itself when a session was revoked after the company came back', async () => {
+    const live = {
+      ...session,
+      session: { ...session.session, expiresAt: new Date('2026-12-01') },
+    };
+    const store = memoryStore({ [SESSION_KEY]: JSON.stringify(live) });
+    const wipe = vi.fn(() => Promise.resolve());
+    await settleSession({ kind: 'none' }, store, wipe, () =>
+      Promise.resolve({
+        standing: 'active' as const,
+        reactivatedAt: new Date('2026-10-01'),
+      }),
+    );
+    expect(wipe).toHaveBeenCalledOnce();
   });
 
   it('empties itself when another account signs in', async () => {

@@ -65,4 +65,5 @@ export const accountSuspensionInput = z.strictObject({
 
 export const accountSuspensionOutput = z.strictObject({
   standing: z.enum(ACCOUNT_STANDINGS),
+  reactivatedAt: z.date().nullable(),
 });

@@ -12,6 +12,7 @@ import {
 } from '@repo/contract/platform';
 import { db } from '@repo/db';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { logger } from '@repo/shared/logger';
 import { TRPCError } from '@trpc/server';
 import { mailDomainProvider } from '#features/mail/provider';
 import {
@@ -75,21 +76,29 @@ export const platformRouter = router({
   suspendCompany: platformProcedure
     .input(companyInput)
     .output(companyInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       if (!(await setCompanySuspended(db, input.id, true))) throw notFound();
+      logger.info(
+        { companyId: input.id, by: ctx.session.user.id },
+        'company suspended',
+      );
       return { id: input.id };
     }),
   reactivateCompany: platformProcedure
     .input(companyInput)
     .output(companyInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       if (!(await setCompanySuspended(db, input.id, false))) throw notFound();
+      logger.info(
+        { companyId: input.id, by: ctx.session.user.id },
+        'company reactivated',
+      );
       return { id: input.id };
     }),
   deleteCompany: platformProcedure
     .input(deleteCompanyInput)
     .output(companyInput)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const company = await getCompany(db, input.id);
       if (!company) throw notFound();
       if (input.confirmName.trim() !== company.name) {
@@ -100,6 +109,10 @@ export const platformRouter = router({
       }
       const purged = await purgeCompanyRows(db, input.id);
       if (!purged) throw notFound();
+      logger.info(
+        { companyId: input.id, by: ctx.session.user.id },
+        'company deleted',
+      );
       await releaseCompanyDomain(purged.domain, mailDomainProvider());
       return { id: input.id };
     }),
@@ -111,7 +124,5 @@ export const platformRouter = router({
   accountSuspension: publicProcedure
     .input(accountSuspensionInput)
     .output(accountSuspensionOutput)
-    .query(async ({ input }) => ({
-      standing: await accountStanding(db, input.userId),
-    })),
+    .query(({ input }) => accountStanding(db, input.userId)),
 });
