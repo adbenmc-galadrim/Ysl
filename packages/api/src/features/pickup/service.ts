@@ -6,6 +6,7 @@ import {
 import type { AnyDb } from '@repo/db';
 import { contact, directoryPerson, pickupCode } from '@repo/db/schema';
 import { and, eq } from 'drizzle-orm';
+import type { ParcelScope } from '#lib/access';
 
 type Recipient = NonNullable<PickupVerifyOutput['recipient']>;
 
@@ -53,13 +54,15 @@ async function recipientOf(
  * mailroom, for the desk whose own copy does not know it yet (a code a
  * colleague has just issued) or may be behind (used on another iPhone).
  * The same rule as on the iPhone (`pickupVerdict`); nothing is written,
- * the handover alone uses a code.
+ * the handover alone uses a code. A department knows its own codes only:
+ * another's is `unknown`, as on its iPhone (§3.7.9).
  */
 export async function verifyPickup(
   db: AnyDb,
   organizationId: string,
   { kind, hash }: PickupVerifyInput,
   now = new Date(),
+  scope: ParcelScope = { kind: 'company' },
 ): Promise<PickupVerifyOutput> {
   const rows = await db
     .select()
@@ -68,6 +71,9 @@ export async function verifyPickup(
       and(
         eq(pickupCode.organizationId, organizationId),
         eq(kind === 'token' ? pickupCode.tokenHash : pickupCode.pinHash, hash),
+        scope.kind === 'department'
+          ? eq(pickupCode.departmentId, scope.departmentId)
+          : undefined,
       ),
     );
   const verdict = pickupVerdict(rows, now);

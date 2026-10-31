@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   pgTable,
@@ -10,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { department } from '#schema/department';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
 
 export const DIRECTORY_SOURCES = ['manuel', 'entra'] as const;
@@ -23,6 +25,8 @@ export const directoryPerson = pgTable(
     nameNorm: text('name_norm').notNull(),
     email: text('email').notNull(),
     department: text('department'),
+    /** The department that holds this person; the text above goes with the conversion (YSL-118). */
+    departmentId: uuid('department_id'),
     site: text('site'),
     source: text('source', { enum: DIRECTORY_SOURCES })
       .default('manuel')
@@ -31,6 +35,14 @@ export const directoryPerson = pgTable(
   },
   (table) => [
     ...syncConstraints('directory_person', table, { referenced: true }),
+    foreignKey({
+      name: 'directory_person_department_fk',
+      columns: [table.organizationId, table.departmentId],
+      foreignColumns: [department.organizationId, department.id],
+    }),
+    index('directory_person_department_idx')
+      .on(table.organizationId, table.departmentId)
+      .where(sql`${table.departmentId} is not null`),
     oneOf('directory_person_source_check', table.source, DIRECTORY_SOURCES),
     uniqueIndex('directory_person_email_idx')
       .on(table.organizationId, sql`lower(${table.email})`)

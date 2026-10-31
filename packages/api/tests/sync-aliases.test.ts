@@ -13,7 +13,12 @@ import {
   type TestDb,
 } from './helpers/pglite';
 
-const READER = { organizationId: ORGANIZATION_ID, userId: AGENT_ID };
+const READER = {
+  organizationId: ORGANIZATION_ID,
+  userId: AGENT_ID,
+  role: 'agent',
+  departmentId: null,
+} as const;
 
 let client: PGlite;
 let db: TestDb;
@@ -23,6 +28,7 @@ const writer = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
   role: 'agent',
+  departmentId: null,
 } as const;
 const NOW = new Date('2026-10-27T09:30:00Z');
 

@@ -51,6 +51,7 @@ const ENTITY_ROW: Record<SyncedEntity, Pick<SettingsItem, 'icon' | 'color'>> = {
   setting: { icon: 'list', color: 'grey' },
   sender_alias: { icon: 'send', color: 'grey' },
   recipient_alias: { icon: 'user', color: 'indigo' },
+  department: { icon: 'list', color: 'grey' },
 };
 
 const dayFormat = new Intl.DateTimeFormat('fr-FR', {

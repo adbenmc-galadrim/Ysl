@@ -2,6 +2,8 @@ export const fr = {
   'error.internal': 'Une erreur est survenue. Réessayez dans un instant.',
   'error.unauthorized': 'Connectez-vous pour continuer.',
   'error.forbidden': 'Vous n’avez pas accès à cette fonction.',
+  'sync.error.noDepartment':
+    'Ce compte n’est rattaché à aucun département. Demandez à l’administrateur de votre entreprise de le rattacher.',
   'sync.error.noOrganization':
     'Ce compte n’est rattaché à aucun service courrier.',
   'sync.op.badRequest': 'Données invalides, à corriger sur l’appareil.',
@@ -28,6 +30,10 @@ export const fr = {
   'sync.op.notificationStale':
     'Cet e-mail a changé d’état depuis un autre appareil.',
   'sync.op.notificationOwner': 'Cet e-mail a été préparé par un autre agent.',
+  'sync.op.outOfScope': 'Cette donnée n’est pas celle de votre département.',
+  'sync.op.readOnly': 'Cette donnée n’est pas modifiable depuis l’appareil.',
+  'sync.op.directoryReadOnly': 'L’annuaire est en lecture seule pour ce compte.',
+  'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
@@ -39,6 +45,8 @@ export const fr = {
   'agents.error.invalid': 'Les informations saisies sont invalides.',
   'departments.error.nameTaken': 'Un département porte déjà ce nom.',
   'departments.error.notFound': 'Ce département n’existe pas.',
+  'departments.error.inUse':
+    'Ce département a encore des salariés ou des colis en attente.',
   'departments.error.hasMembers':
     'Ce département a encore des comptes rattachés.',
   'departments.error.notDepartmentAccount':

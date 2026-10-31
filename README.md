@@ -40,9 +40,9 @@ Quatre rôles (`docs/cahier-des-charges-v3.md`, §2.1) : `platform_admin` (admin
 l'app), `company_admin` (admin entreprise), `department` (département, rattaché par
 `departments.attachAccount`) et `shuttle` (navette). `admin` et `agent` restent les
 rôles des comptes existants, jusqu'à la conversion : `admin` vaut admin entreprise,
-`agent` garde tous les colis de son organisation. Un compte `department` n'atteint ni
-la synchronisation (lecture et écriture), ni les codes de retrait, ni les exports tant
-qu'ils ne sont pas filtrés par département.
+`agent` garde tous les colis de son organisation. Un compte `department` n'atteint
+que ses colis, son annuaire, ses codes de retrait, son département, les réglages et
+ses modèles (`docs/synchronisation.md`).
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
 Un compte `platform_admin` n'appartient à aucune organisation (`auth:create-user` sans

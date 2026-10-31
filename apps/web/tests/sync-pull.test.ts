@@ -62,6 +62,7 @@ describe('pullChanges', () => {
       cursor: null,
       page: null,
       limit: 200,
+      departments: true,
     });
     expect(await db.parcel.get(parcel.id)).toMatchObject({
       notes: 'du serveur',
@@ -101,8 +102,13 @@ describe('pullChanges', () => {
     const outcome = await pullChanges(db, client, { limit: 1 });
 
     expect(client.mock.calls.map(([input]) => input)).toEqual([
-      { cursor: { generation: GENERATION, xid: 300 }, page: null, limit: 1 },
-      { cursor: null, page: token, limit: 1 },
+      {
+        cursor: { generation: GENERATION, xid: 300 },
+        page: null,
+        limit: 1,
+        departments: true,
+      },
+      { cursor: null, page: token, limit: 1, departments: true },
     ]);
     expect(cursorsSeen).toEqual([
       { generation: GENERATION, xid: 300 },
@@ -245,6 +251,7 @@ describe('pullChanges', () => {
       cursor: { generation: GENERATION, xid: 20 },
       page: null,
       limit: 200,
+      departments: true,
     });
     expect(outcome.cursor).toEqual({ generation: GENERATION, xid: 25 });
     expect(await db.parcel.get(erased.id)).toBeUndefined();

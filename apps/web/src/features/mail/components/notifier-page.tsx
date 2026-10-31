@@ -82,7 +82,7 @@ export type NotifierScope = {
   /** Opens on the first recipient without an address, on « Comment le prévenir ? ». */
   otherWay?: boolean;
   /**
-   * Parcels ticked on Colis (F31): only those, one mail per person; the
+   * Parcels ticked on Colis (F31): only those, one mail per person and per department; the
    * notices first, then `then`, the reminders of those notified only.
    */
   selection?: readonly string[];

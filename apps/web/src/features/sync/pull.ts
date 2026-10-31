@@ -155,7 +155,7 @@ async function readFrom(
   limit: number,
   progress: (rows: number) => void,
 ): Promise<Read> {
-  let output = await client({ cursor, page: null, limit });
+  let output = await client({ cursor, page: null, limit, departments: true });
   const { generation } = output;
   let reset = output.reset;
   const seen = new Set<string>();
@@ -169,7 +169,12 @@ async function readFrom(
     rows += await applyChanges(db, output.rows);
     progress(rows);
     if (!output.next) break;
-    output = await client({ cursor: null, page: output.next, limit });
+    output = await client({
+      cursor: null,
+      page: output.next,
+      limit,
+      departments: true,
+    });
   }
   return { generation, reset, rows, bound: output.cursor, seen };
 }

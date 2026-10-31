@@ -201,12 +201,12 @@ export type MergeOptions = { agentId: string; now?: Date };
 const open = (code: LocalPickupCode) => !code.deletedAt && !code.usedAt;
 
 /**
- * The pickup codes of a merge: one open code per person (the server's
- * `pickup_code_active_person_idx`), the one of the latest mail, as when a
- * new mail is sent. The contact's, when it is the latest still in date,
- * moves to the person and the person's own are withdrawn; the contact's
- * other codes in date are withdrawn, so their QR says « replaced », and
- * its expired ones stay as they are.
+ * The pickup codes of a merge: one open code per person and per department
+ * (the server's `pickup_code_active_person_idx`), the one of the latest mail,
+ * as when a new mail is sent. In each department, the contact's, when it is
+ * the latest still in date, moves to the person and the person's own are
+ * withdrawn; the contact's other codes in date are withdrawn, so their QR
+ * says « replaced », and its expired ones stay as they are.
  * Withdrawals come first: the server checks the index row by row.
  */
 async function mergedCodes(
@@ -215,34 +215,41 @@ async function mergedCodes(
   personId: string,
   now: Date,
 ): Promise<Upsert[]> {
-  const theirs = (
+  const allTheirs = (
     await db.pickupCode.where('contactId').equals(contactId).toArray()
   ).filter(open);
-  const mine = (
+  const allMine = (
     await db.pickupCode.where('personId').equals(personId).toArray()
   ).filter(open);
+  const departmentOf = (code: LocalPickupCode) => code.departmentId ?? null;
   const inDate = (code: LocalPickupCode) => code.expiresAt > now;
-  const latest = [...theirs, ...mine]
-    .filter(inDate)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-  const moved = latest && theirs.includes(latest) ? latest : undefined;
-  const withdrawn = [
-    ...(moved ? mine : []),
-    ...theirs.filter((code) => code !== moved && inDate(code)),
-  ];
+  const withdrawn: LocalPickupCode[] = [];
+  const moved: LocalPickupCode[] = [];
+  for (const department of new Set(
+    [...allTheirs, ...allMine].map(departmentOf),
+  )) {
+    const inIt = (code: LocalPickupCode) => departmentOf(code) === department;
+    const theirs = allTheirs.filter(inIt);
+    const mine = allMine.filter(inIt);
+    const latest = [...theirs, ...mine]
+      .filter(inDate)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+    const kept = latest && theirs.includes(latest) ? latest : undefined;
+    if (kept) moved.push(kept);
+    withdrawn.push(
+      ...(kept ? mine : []),
+      ...theirs.filter((code) => code !== kept && inDate(code)),
+    );
+  }
   return [
     ...withdrawn.map((row): Upsert => ({
       entity: 'pickup_code',
       row: { ...row, deletedAt: now, updatedAt: now },
     })),
-    ...(moved
-      ? [
-          {
-            entity: 'pickup_code',
-            row: { ...moved, personId, contactId: null, updatedAt: now },
-          } as const,
-        ]
-      : []),
+    ...moved.map((row): Upsert => ({
+      entity: 'pickup_code',
+      row: { ...row, personId, contactId: null, updatedAt: now },
+    })),
   ];
 }
 

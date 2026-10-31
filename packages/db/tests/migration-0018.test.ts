@@ -67,7 +67,11 @@ describe('0018_departements', () => {
     const snapshot = async () => ({
       user: (await client.query(`select * from "user"`)).rows,
       member: (await client.query(`select * from organization_member`)).rows,
-      parcel: (await client.query(`select * from parcel`)).rows,
+      parcel: (
+        await client.query(
+          `select id, organization_id, status, received_at, server_xid from parcel`,
+        )
+      ).rows,
       setting: (await client.query(`select * from setting`)).rows,
     });
     const old = await snapshot();

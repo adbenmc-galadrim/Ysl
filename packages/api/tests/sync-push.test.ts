@@ -26,6 +26,7 @@ const writer = {
   organizationId: ORGANIZATION_ID,
   userId: AGENT_ID,
   role: 'agent',
+  departmentId: null,
 } as const;
 const admin = { ...writer, role: 'admin' } as const;
 const NOW = new Date('2026-10-24T09:30:00Z');

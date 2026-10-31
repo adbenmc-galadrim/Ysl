@@ -1,4 +1,4 @@
-import { isCompanyAdmin, type UserRole } from '@repo/contract/auth';
+import { isCompanyAdmin } from '@repo/contract/auth';
 import {
   canMoveNotification,
   notificationRow,
@@ -35,7 +35,9 @@ import {
   SyncRejected,
 } from '#features/sync/errors';
 import { withRetry } from '#features/sync/retry';
+import { checkReach, departmentWrite } from '#features/sync/reach';
 import { tableOf, type SyncTable } from '#features/sync/tables';
+import type { Access } from '#lib/access';
 
 export const LOCK_TIMEOUT = '3s';
 
@@ -55,11 +57,7 @@ const IMMUTABLE_COLUMNS = new Set([
   'createdAt',
 ]);
 
-type Writer = {
-  organizationId: string;
-  userId: string;
-  role: UserRole;
-};
+type Writer = Access;
 
 type Values = Record<string, unknown>;
 
@@ -262,7 +260,10 @@ async function checkNotification(
 async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
   const { organizationId } = writer;
   const table = tableOf(op.entity);
-  const values: Values = { ...valuesOf(table, op), organizationId };
+  const values: Values = {
+    ...(await departmentWrite(tx, op, writer, valuesOf(table, op))),
+    organizationId,
+  };
   if (op.entity === 'setting') values.updatedBy = writer.userId;
   const insert = tx.insert(table).values(values as never);
 
@@ -416,6 +417,7 @@ async function applyOne(
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
+        await checkReach(tx, op, writer);
         if (op.entity === 'setting') checkSetting(op, writer);
         if (op.entity === 'email_template') await checkTemplate(tx, op, writer);
         if (op.entity === 'notification') {

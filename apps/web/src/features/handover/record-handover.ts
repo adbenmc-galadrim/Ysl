@@ -5,12 +5,14 @@ import type {
   CourrierDatabase,
   LocalHandover,
   LocalPickupCode,
+  LocalParcel,
 } from '#/features/db/schema';
 import {
   findActivePickupCode,
   isActiveCode,
   type PickupRefusal,
 } from '#/features/handover/pickup-lookup';
+import { departmentOfParcel } from '#/features/mail/recipients';
 import {
   deleteProof,
   type ProofInput,
@@ -98,11 +100,37 @@ export async function recheckCode(
 async function openCodeOf(
   db: CourrierDatabase,
   recipient: HandoverRecipient,
+  departmentId: string | null,
   now: Date,
 ): Promise<LocalPickupCode | undefined> {
   const field = recipient.kind === 'person' ? 'personId' : 'contactId';
   const codes = await db.pickupCode.where(field).equals(recipient.id).toArray();
-  return codes.find((code) => isActiveCode(code, now));
+  return codes.find(
+    (code) =>
+      isActiveCode(code, now) && (code.departmentId ?? null) === departmentId,
+  );
+}
+
+/**
+ * A handover by name: the open code of each department where these parcels
+ * leave nothing on the shelf.
+ */
+async function closedCodes(
+  db: CourrierDatabase,
+  recipient: HandoverRecipient,
+  departmentOf: (parcel: LocalParcel) => string | null,
+  parcels: readonly LocalParcel[],
+  waiting: readonly LocalParcel[],
+  now: Date,
+): Promise<LocalPickupCode[]> {
+  const closed: LocalPickupCode[] = [];
+  for (const department of new Set(parcels.map(departmentOf))) {
+    const inIt = (parcel: LocalParcel) => departmentOf(parcel) === department;
+    if (parcels.filter(inIt).length !== waiting.filter(inIt).length) continue;
+    const code = await openCodeOf(db, recipient, department, now);
+    if (code) closed.push(code);
+  }
+  return closed;
 }
 
 /**
@@ -128,6 +156,18 @@ export async function recordHandover(
   const ticked = new Set(input.parcelIds);
   const parcels = waiting.filter((parcel) => ticked.has(parcel.id));
   if (parcels.length !== ticked.size) throw new HandoverRefusedError('stale');
+  // A code opens its department only (§3.7.9); one of before has none.
+  const home =
+    recipient.kind === 'person'
+      ? await db.directoryPerson.get(recipient.id)
+      : undefined;
+  const departmentOf = (parcel: LocalParcel) =>
+    departmentOfParcel(parcel, home);
+  const ofCode = (parcel: LocalParcel) =>
+    !checked?.departmentId ||
+    !departmentOf(parcel) ||
+    departmentOf(parcel) === checked.departmentId;
+  if (!parcels.every(ofCode)) throw new HandoverRefusedError('mismatch');
 
   const handoverId = newId();
   const signed = signature
@@ -164,10 +204,11 @@ export async function recordHandover(
     hasSignature: !!signed,
     hasPhoto: false,
   };
-  const closed =
-    parcels.length === waiting.length
-      ? (checked ?? (await openCodeOf(db, recipient, now)))
-      : undefined;
+  const closed = checked
+    ? parcels.length === waiting.filter(ofCode).length
+      ? [checked]
+      : []
+    : await closedCodes(db, recipient, departmentOf, parcels, waiting, now);
 
   const upserts: Upsert[] = [
     { entity: 'handover', row: handover },
@@ -186,9 +227,10 @@ export async function recordHandover(
         { agentId, now },
       ),
     ),
-    ...(closed
-      ? [{ entity: 'pickup_code', row: { ...closed, usedAt: now } } as const]
-      : []),
+    ...closed.map((code): Upsert => ({
+      entity: 'pickup_code',
+      row: { ...code, usedAt: now },
+    })),
   ];
   try {
     await commitLocal(db, { upserts }, { now });

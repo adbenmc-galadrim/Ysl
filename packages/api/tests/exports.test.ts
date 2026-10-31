@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
-import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
+import {
+  contact,
+  department,
+  directoryPerson,
+  handover,
+  parcel,
+} from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -333,5 +339,52 @@ describe('exportParcelsCsv', () => {
     expect(formatExportDate(new Date('2026-12-01T08:00:00Z'))).toBe(
       '01/12/2026 09:00',
     );
+  });
+});
+
+describe('exports by department', () => {
+  it('holds a department to its own parcels, even when the selection names another', async () => {
+    const departmentOf = async (name: string) => {
+      const id = newId();
+      await db
+        .insert(department)
+        .values({ id, organizationId: ORGANIZATION_ID, name });
+      return id;
+    };
+    const finance = await departmentOf('Finance');
+    const legal = await departmentOf('Juridique');
+    const row = (departmentId: string | null) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      status: 'recu' as const,
+      receivedAt: new Date('2026-10-24T08:00:00Z'),
+      receivedBy: AGENT_ID,
+      departmentId,
+    });
+    const mine = row(finance);
+    const theirs = row(legal);
+    const loose = row(null);
+    await db.insert(parcel).values([mine, theirs, loose]);
+    const scope = { kind: 'department', departmentId: finance } as const;
+
+    const all = await exportParcelsCsv(
+      db,
+      ORGANIZATION_ID,
+      new Date(),
+      undefined,
+      scope,
+    );
+    expect(all.count).toBe(1);
+    expect(all.csv).toContain(mine.id);
+
+    const picked = await exportParcelsCsv(
+      db,
+      ORGANIZATION_ID,
+      new Date(),
+      [mine.id, theirs.id, loose.id],
+      scope,
+    );
+    expect(picked.count).toBe(1);
+    expect(picked.csv).not.toContain(theirs.id);
   });
 });

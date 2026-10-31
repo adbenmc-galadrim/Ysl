@@ -5,6 +5,7 @@ import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   numeric,
@@ -13,6 +14,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { department } from '#schema/department';
 import { contact, directoryPerson } from '#schema/directory';
 import { sender } from '#schema/sender';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
@@ -61,6 +63,8 @@ export const parcel = pgTable(
     readName: text('read_name'),
     notificationEmail: text('notification_email'),
     department: text('department'),
+    /** Who sees it (§2.1): follows its person (drizzle/0020), null until someone says. */
+    departmentId: uuid('department_id'),
     senderId: uuid('sender_id'),
     senderName: text('sender_name'),
     /** Pieces received of a parcel in several boxes, over the pieces its label announces ("2 sur 3"), not the "n" printed on one box. */
@@ -100,6 +104,14 @@ export const parcel = pgTable(
   },
   (table) => [
     ...syncConstraints('parcel', table, { referenced: true }),
+    foreignKey({
+      name: 'parcel_department_fk',
+      columns: [table.organizationId, table.departmentId],
+      foreignColumns: [department.organizationId, department.id],
+    }),
+    index('parcel_department_idx')
+      .on(table.organizationId, table.departmentId)
+      .where(sql`${table.departmentId} is not null`),
     oneOf('parcel_type_check', table.type, PARCEL_TYPES),
     oneOf('parcel_status_check', table.status, PARCEL_STATUSES),
     check(

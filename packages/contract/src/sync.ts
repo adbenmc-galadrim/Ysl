@@ -16,6 +16,7 @@ export const SYNCED_ENTITIES = [
   'setting',
   'sender_alias',
   'recipient_alias',
+  'department',
 ] as const;
 
 export const syncedEntity = z.enum(SYNCED_ENTITIES);
@@ -133,6 +134,8 @@ export const pullInput = z.object({
   cursor: syncCursor.nullable(),
   page: pullPage.nullable().default(null),
   limit: z.number().int().min(1).max(PULL_PAGE_MAX).default(PULL_PAGE_DEFAULT),
+  /** This app has a `department` table: a PWA of before would fail on its rows. */
+  departments: z.literal(true).optional(),
 });
 
 export type PullInput = z.infer<typeof pullInput>;
