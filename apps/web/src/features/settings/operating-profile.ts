@@ -21,9 +21,5 @@ export async function readKeptProfile(
 export async function readOperatingProfile(
   db: CourrierDatabase,
 ): Promise<OperatingProfile> {
-  const rows = await db.setting
-    .where('key')
-    .equals(OPERATING_PROFILE_KEY)
-    .toArray();
-  return parseOperatingProfile(rows.find((row) => !row.deletedAt)?.value);
+  return (await readKeptProfile(db)) ?? parseOperatingProfile(undefined);
 }

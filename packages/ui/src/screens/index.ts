@@ -3,7 +3,6 @@
  * the callbacks, the screen draws. The other screens stay Storybook-only
  * until a ticket mounts them.
  */
-export * from '#screens/accueil-role/role-home-screen';
 export * from '#screens/colis/colis-screen';
 export * from '#screens/colis/fiche-colis-screen';
 export * from '#screens/colis/lecture-screen';
@@ -50,5 +49,6 @@ export * from '#screens/remise/retire-par-screen';
 export * from '#screens/remise/scanner-qr-screen';
 export * from '#screens/remise/signature-screen';
 export * from '#screens/multi-entreprises/01-premier-lancement-et-connexion/connexion-screen';
+export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';

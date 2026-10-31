@@ -1,4 +1,5 @@
 import { toUserRole } from '@repo/contract/auth';
+import { OPEN_STATUSES } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   PlatformHomeScreen,
@@ -19,14 +20,16 @@ import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-const WAITING = new Set(['a_completer', 'recu', 'notifie']);
-
 /** The parcels of this device that wait for someone; a department pulls only its own. */
 function useWaitingCount(): string {
   const count = useLiveQuery(
     () =>
       db.parcel
-        .filter((row) => !row.deletedAt && WAITING.has(row.status))
+        .filter(
+          (row) =>
+            !row.deletedAt &&
+            (OPEN_STATUSES as readonly string[]).includes(row.status),
+        )
         .count(),
     [],
   );

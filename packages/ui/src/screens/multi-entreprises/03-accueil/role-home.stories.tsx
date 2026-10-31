@@ -7,7 +7,7 @@ import {
   RoleHomeDesktop,
   RoleHomeMobile,
   type RoleHomeProps,
-} from '#screens/accueil-role/role-home-screen';
+} from '#screens/multi-entreprises/03-accueil/role-home-screen';
 
 /** No mockup: the honest wait of each role until its own space is delivered. */
 const meta = {

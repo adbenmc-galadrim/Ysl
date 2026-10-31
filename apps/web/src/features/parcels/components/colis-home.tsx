@@ -345,7 +345,7 @@ export function ColisHome() {
                   onClick={handover}
                   className="w-[145px] gap-2 text-16"
                 >
-                  {t('colis.row.handover')}
+                  {t('colis.handover')}
                 </Button>
               )}
             </>
@@ -407,7 +407,11 @@ export function ColisHome() {
                 ? { kind: pick.choice.kind, id: pick.choice.id }
                 : { ...pick, kind: 'typed' },
               // Only the name shows here: a number still in doubt stays so.
-              { agentId: session.user.id, seesTracking: false },
+              {
+                agentId: session.user.id,
+                seesTracking: false,
+                learns: access.receives,
+              },
             );
             setChoosing(null);
           }}

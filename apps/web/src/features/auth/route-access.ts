@@ -26,40 +26,54 @@ export type RouteArea =
   | 'companySettings'
   | 'settings';
 
-const AREA_OF_FIRST_SEGMENT: Record<string, RouteArea> = {
-  colis: 'work',
-  notifier: 'work',
-  preparation: 'work',
-  recherche: 'work',
-  relances: 'work',
-  scan: 'reception',
-  revue: 'reception',
-  lot: 'reception',
-  remise: 'handover',
-  tournee: 'tour',
-  'tableau-de-bord': 'dashboard',
-  departement: 'departmentSpace',
-  reglages: 'settings',
-};
+const AREA_OF_FIRST_SEGMENT = new Map<string, RouteArea>(
+  Object.entries({
+    colis: 'work',
+    notifier: 'work',
+    preparation: 'work',
+    recherche: 'work',
+    relances: 'work',
+    scan: 'reception',
+    revue: 'reception',
+    lot: 'reception',
+    remise: 'handover',
+    tournee: 'tour',
+    'tableau-de-bord': 'dashboard',
+    departement: 'departmentSpace',
+    reglages: 'settings',
+  }),
+);
 
-const AREA_OF_SETTING: Record<string, RouteArea> = {
-  annuaire: 'directory',
-  appareils: 'companySettings',
-  donnees: 'companySettings',
-  expediteur: 'companySettings',
-  fonctionnement: 'companySettings',
-  'import-v1': 'companySettings',
-  'lieu-et-horaires': 'companySettings',
-};
+/** One line per page: a page of Réglages left out is refused nothing, so a test requires it. */
+const AREA_OF_SETTING = new Map<string, RouteArea>(
+  Object.entries({
+    apparence: 'settings',
+    arrondis: 'settings',
+    compte: 'settings',
+    'e-mails': 'settings',
+    export: 'settings',
+    messagerie: 'settings',
+    'modeles-email': 'settings',
+    remises: 'settings',
+    synchronisation: 'settings',
+    annuaire: 'directory',
+    appareils: 'companySettings',
+    donnees: 'companySettings',
+    expediteur: 'companySettings',
+    fonctionnement: 'companySettings',
+    'import-v1': 'companySettings',
+    'lieu-et-horaires': 'companySettings',
+  }),
+);
 
 /** Null for a path the app does not have: the router answers it. */
 export function areaOf(pathname: string): RouteArea | null {
   const [first, second] = pathname.split('/').filter(Boolean);
   if (!first) return 'home';
-  if (first === 'reglages' && second && AREA_OF_SETTING[second]) {
-    return AREA_OF_SETTING[second];
+  if (first === 'reglages' && second) {
+    return AREA_OF_SETTING.get(second) ?? null;
   }
-  return AREA_OF_FIRST_SEGMENT[first] ?? null;
+  return AREA_OF_FIRST_SEGMENT.get(first) ?? null;
 }
 
 const FIELD: readonly AccountRole[] = [

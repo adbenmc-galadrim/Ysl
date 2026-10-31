@@ -110,6 +110,9 @@ describe('areaOf', () => {
 
   it('leaves a path the app does not have to the router', () => {
     expect(areaOf('/nimporte-quoi')).toBeNull();
+    expect(areaOf('/reglages/nouvelle-page')).toBeNull();
+    expect(areaOf('/constructor')).toBeNull();
+    expect(areaOf('/reglages/constructor')).toBeNull();
   });
 
   it('knows every signed-in route of the app', () => {

@@ -305,7 +305,7 @@ export const fr = {
     'Les colis scannés apparaîtront ici, rangés par ce qu’il reste à faire.',
   'colis.empty.description.department':
     'Les colis déposés pour votre département apparaîtront ici.',
-  'colis.row.handover': 'Remettre',
+  'colis.handover': 'Remettre',
   'colis.empty.scan': 'Scanner des colis',
   'colis.empty.handover': 'Remettre un colis',
   'colis.pending.title.one': '1 changement en attente',
