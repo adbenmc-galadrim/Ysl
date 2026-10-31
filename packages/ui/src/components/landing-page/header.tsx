@@ -210,6 +210,17 @@ export function Hero({
               <BorderBeam radius={24} duration={8} />
             </div>
           </Rise>
+          {signInHref && hero.computer && (
+            <p className="mt-6 max-w-[500px] text-15 leading-[22px] text-site-muted">
+              {hero.computer.text}{' '}
+              <a
+                href={signInHref}
+                className="font-medium text-site-blue-ink"
+              >
+                {hero.computer.link}
+              </a>
+            </p>
+          )}
           <Perks perks={hero.perks} />
         </div>
         <Tilt className="absolute top-12 left-[640px] hidden xl:block" max={3}>

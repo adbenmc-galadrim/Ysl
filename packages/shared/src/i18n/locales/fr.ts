@@ -236,8 +236,6 @@ export const fr = {
   'devices.revoke.cancel': 'Annuler',
   'devices.revoke.done': 'Appareil déconnecté.',
   'devices.revoke.failed': 'L’appareil n’a pas été déconnecté. Réessayez.',
-  'auth.signIn.title': 'Service courrier',
-  'auth.signIn.description': 'Connectez-vous avec votre compte personnel.',
   'auth.signIn.email': 'Adresse e-mail',
   'auth.signIn.password': 'Mot de passe',
   'auth.signIn.submit': 'Se connecter',
@@ -1585,6 +1583,9 @@ export const fr = {
   'landing.hero.lineTwo': 'Tout tient dans l’iPhone.',
   'landing.hero.install': 'Installer l’app',
   'landing.hero.howItWorks': 'Comment ça marche',
+  'landing.hero.computer.text':
+    'Compte département ou administrateur ? Sur ordinateur, rien à installer.',
+  'landing.hero.computer.link': 'Se connecter',
   'landing.hero.scanTitle': 'Scannez. Installez. C’est parti.',
   'landing.hero.scanText': 'Avec l’appareil photo de l’iPhone.',
   'landing.hero.scanLink': 'Comment ça marche ↓',

@@ -319,6 +319,8 @@ export type LandingCopy = {
     scanText: string;
     scanLink: string;
     scanLinkLabel: string;
+    /** For an account that works on a computer: where to sign in instead. */
+    computer?: { text: string; link: string };
     perks: [string, string, string];
   };
   journey: {

@@ -5,10 +5,9 @@ import { Button } from '#components/button';
 import { OFFLINE_PACKS } from '#fixtures/offline';
 import { CameraPermissionScreen } from '#screens/demarrage/camera-permission-screen';
 import { OfflinePrepScreen } from '#screens/demarrage/offline-prep-screen';
-import { SignInScreen } from '#screens/demarrage/sign-in-screen';
 
 /**
- * First launch, in order: install from Safari, sign in, download what the
+ * First launch, in order: install from Safari, download what the
  * offline mode needs, allow the camera.
  */
 const meta = {
@@ -22,12 +21,6 @@ const meta = {
 } satisfies Meta;
 
 export default meta;
-
-export const Connexion: StoryObj<typeof SignInScreen> = {
-  parameters: { reference: '03-demarrage/demarrage--connexion' },
-  args: { email: 'karim.daoud@saint-laurent.fr', password: 'courrier-ysl' },
-  render: (args) => <SignInScreen {...args} />,
-};
 
 export const PreparationHorsLigne: StoryObj<typeof OfflinePrepScreen> = {
   name: 'Préparation hors ligne',
