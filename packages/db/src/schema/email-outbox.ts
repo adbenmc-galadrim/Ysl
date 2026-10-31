@@ -1,9 +1,15 @@
-import { DELIVERY_STATUSES, EMAIL_OUTBOX_STATUSES } from '@repo/contract/mail';
+import {
+  DELIVERY_STATUSES,
+  EMAIL_OUTBOX_STATUSES,
+  SUPPRESSION_REASONS,
+} from '@repo/contract/mail';
 import { sql } from 'drizzle-orm';
 import {
   index,
   integer,
+  jsonb,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -13,9 +19,13 @@ import { notification } from '#schema/notification';
 import { organization } from '#schema/organization';
 import { oneOf } from '#schema/sync';
 
+export type EmailAttachment = { name: string; contentBase64: string };
+
 /**
  * The server's e-mails on their way out. Not synced. A row is
  * one message: `idempotency_key` keeps a retried caller from queueing it twice.
+ * A pickup code stays in clear only while the mail waits: the text goes once
+ * the row is finished, the address stays for the follow-up.
  */
 export const emailOutbox = pgTable(
   'email_outbox',
@@ -34,6 +44,11 @@ export const emailOutbox = pgTable(
     subject: text('subject').notNull(),
     textBody: text('text_body').notNull(),
     htmlBody: text('html_body'),
+    replyTo: text('reply_to'),
+    attachments: jsonb('attachments').$type<EmailAttachment[]>(),
+    // The code this mail quotes, and the one it took over from: given back if it fails.
+    pickupCodeId: uuid('pickup_code_id'),
+    replacedCodeId: uuid('replaced_code_id'),
     status: text('status', { enum: EMAIL_OUTBOX_STATUSES })
       .default('queued')
       .notNull(),
@@ -67,5 +82,22 @@ export const emailOutbox = pgTable(
     index('email_outbox_notification_id_idx')
       .on(table.notificationId)
       .where(sql`${table.notificationId} is not null`),
+  ],
+);
+
+/** An address that asked for no more mail (ME02), past the 30 days of the queue. */
+export const emailSuppression = pgTable(
+  'email_suppression',
+  {
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organization.id),
+    email: text('email').notNull(),
+    reason: text('reason', { enum: SUPPRESSION_REASONS }).notNull(),
+    at: timestamp('at', { withTimezone: true }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.organizationId, table.email] }),
+    oneOf('email_suppression_reason_check', table.reason, SUPPRESSION_REASONS),
   ],
 );

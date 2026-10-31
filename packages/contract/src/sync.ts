@@ -162,6 +162,8 @@ export const pullOutput = z.object({
   rows: z.array(pullChange),
   next: pullPage.nullable(),
   cursor: z.number().int().nonnegative(),
+  /** The server sends the mails itself (YSL-115); absent or false: the phone does. */
+  serverMail: z.boolean().optional(),
 });
 
 export type PullOutput = z.infer<typeof pullOutput>;
