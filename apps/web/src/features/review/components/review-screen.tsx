@@ -7,7 +7,7 @@ import {
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { requestBatchMails } from '#/features/batch/summary';
 import { finishBatch, listDrafts } from '#/features/batch/store';
@@ -18,6 +18,7 @@ import type {
   DraftParcel,
   ExtractionFieldName,
   LocalContact,
+  LocalDepartment,
   LocalDirectoryPerson,
 } from '#/features/db/schema';
 import { ReadingView } from '#/features/diagnostic/components/reading-view';
@@ -29,8 +30,10 @@ import {
 import { settleRecipients } from '#/features/recipient/check';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
+import { draftDepartment, goesOnTour } from '#/features/parcels/tour';
 import { skipDraft } from '#/features/review/actions';
 import { AnnexStep } from '#/features/review/components/annex-step';
+import { DepartmentStep } from '#/features/review/components/department-step';
 import { SenderStep } from '#/features/review/components/sender-step';
 import { RecipientStep } from '#/features/review/components/recipient-step';
 import type { StepProps } from '#/features/review/components/step';
@@ -48,6 +51,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const NO_PEOPLE: LocalDirectoryPerson[] = [];
 const NO_CONTACTS: LocalContact[] = [];
+const NO_DEPARTMENTS: LocalDepartment[] = [];
 
 /** The doubtful parcels the agent walks through, and those passed on the way. */
 type Walk = { queue: string[]; at: number; passed: string[] };
@@ -116,6 +120,21 @@ export function ReviewScreen() {
     () => (batchId ? listDrafts(db, batchId) : undefined),
     [batchId],
   );
+  const tour = useLiveQuery(() => goesOnTour(db), []);
+  const departments = useLiveQuery(
+    () => db.department.toArray(),
+    [],
+    NO_DEPARTMENTS,
+  );
+  const departmentOf = useMemo(() => {
+    if (!tour) return undefined;
+    const cards = new Map(people.map((person) => [person.id, person]));
+    const others = new Map(contacts.map((contact) => [contact.id, contact]));
+    return (draft: DraftParcel) =>
+      draftDepartment(draft, cards, others, departments);
+  }, [tour, people, contacts, departments]);
+  /** A ready parcel opened to send it elsewhere (ME25). */
+  const [changing, setChanging] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
   const [walk, setWalk] = useState<Walk | null>(null);
   const [zoomed, setZoomed] = useState(false);
@@ -158,10 +177,13 @@ export function ReviewScreen() {
     : undefined;
   const steps =
     current && !walk?.passed.includes(current.id)
-      ? reviewOf(current).steps
+      ? reviewOf(current, departmentOf).steps
       : [];
   const step = steps[0];
-  const shown = usePhoto(current?.photoId);
+  const moving = changing
+    ? drafts?.find((draft) => draft.id === changing)
+    : undefined;
+  const shown = usePhoto((current ?? moving)?.photoId);
 
   /* A parcel settled or passed hands over to the next one still doubtful. */
   useEffect(() => {
@@ -169,15 +191,17 @@ export function ReviewScreen() {
     const next = walk.queue.findIndex((id, i) => {
       if (i <= walk.at || walk.passed.includes(id)) return false;
       const draft = drafts.find((d) => d.id === id);
-      return draft !== undefined && reviewOf(draft).steps.length > 0;
+      return (
+        draft !== undefined && reviewOf(draft, departmentOf).steps.length > 0
+      );
     });
     setZoomed(false);
     setWalk(next === -1 ? null : { ...walk, at: next });
-  }, [walk, drafts, step]);
+  }, [walk, drafts, step, departmentOf]);
 
-  if (!settled || !drafts) return null;
+  if (!settled || !drafts || tour === undefined) return null;
 
-  const review = reviewBatch(drafts);
+  const review = reviewBatch(drafts, departmentOf);
   const thumbnail = (draft: DraftParcel) => {
     const url = draft.photoId ? urls.get(draft.photoId) : undefined;
     return url ? (
@@ -202,7 +226,12 @@ export function ReviewScreen() {
       draft.recipient?.kind === 'person'
         ? people.find((p) => p.id === draft.recipient?.id)
         : undefined;
-    const department = person ? departmentLabel(person, names) : '';
+    const goesTo = departmentOf?.(draft);
+    const department = goesTo
+      ? (names.get(goesTo) ?? '')
+      : person
+        ? departmentLabel(person, names)
+        : '';
     return {
       id: draft.id,
       name: draft.recipient?.name ?? null,
@@ -256,7 +285,9 @@ export function ReviewScreen() {
     const lastParcel = !walk.queue.some((id, i) => {
       if (i <= walk.at || walk.passed.includes(id)) return false;
       const draft = drafts.find((d) => d.id === id);
-      return draft !== undefined && reviewOf(draft).steps.length > 0;
+      return (
+        draft !== undefined && reviewOf(draft, departmentOf).steps.length > 0
+      );
     });
     const frame: StepProps = {
       draft: current,
@@ -273,7 +304,10 @@ export function ReviewScreen() {
           : 'recipient.submit.next',
       ),
       onZoom: shown ? () => setZoomed(true) : undefined,
-      source: <VerifierSourceLink onClick={() => setExplaining(step.field)} />,
+      source:
+        step.field === 'department' ? undefined : (
+          <VerifierSourceLink onClick={() => setExplaining(step.field)} />
+        ),
       onBack: () => {
         setZoomed(false);
         setExplaining(null);
@@ -297,6 +331,13 @@ export function ReviewScreen() {
             people={people}
             contacts={contacts}
             names={names}
+          />
+        ) : step.field === 'department' ? (
+          <DepartmentStep
+            key={key}
+            {...frame}
+            departments={departments}
+            people={people}
           />
         ) : step.field === 'sender' ? (
           <SenderStep key={key} {...frame} />
@@ -334,6 +375,31 @@ export function ReviewScreen() {
     );
   }
 
+  if (moving) {
+    return (
+      <DepartmentStep
+        key={moving.id}
+        draft={moving}
+        step={{ index: 1, total: 1 }}
+        photo={
+          shown && {
+            src: shown.url,
+            width: shown.photo.width,
+            height: shown.photo.height,
+            focus: null,
+          }
+        }
+        submitLabel={t('review.submit.done')}
+        selected={departmentOf?.(moving) ?? undefined}
+        departments={departments}
+        people={people}
+        onBack={() => setChanging(null)}
+        onSkip={() => setChanging(null)}
+        onDone={() => setChanging(null)}
+      />
+    );
+  }
+
   return (
     <RevueLotScreen
       count={drafts.length}
@@ -344,6 +410,7 @@ export function ReviewScreen() {
       saving={saving}
       onBack={() => void navigate({ to: '/scan' })}
       onOpen={open}
+      onOpenReady={tour ? setChanging : undefined}
       onSave={() => void save()}
     />
   );

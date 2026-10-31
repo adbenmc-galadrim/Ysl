@@ -142,6 +142,15 @@ export async function settleSender(
   return updateDraft(db, draftId, { sender });
 }
 
+/** The department the agent sends this parcel to (ME25). */
+export function chooseDepartment(
+  db: CourrierDatabase,
+  draftId: string,
+  departmentId: string,
+): Promise<boolean> {
+  return updateDraft(db, draftId, { departmentId });
+}
+
 /** « Passer »: the parcel is saved « À compléter », as it stands (P2.3). */
 export function skipDraft(
   db: CourrierDatabase,

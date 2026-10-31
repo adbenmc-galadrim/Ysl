@@ -64,7 +64,7 @@ export const parcel = pgTable(
     readName: text('read_name'),
     notificationEmail: text('notification_email'),
     department: text('department'),
-    /** Who sees it (§2.1): follows its person (drizzle/0020), null until someone says. */
+    /** Who sees it (§2.1): follows its person (drizzle/0020), unless chosen at the review (drizzle/0028); null until someone says. */
     departmentId: uuid('department_id'),
     senderId: uuid('sender_id'),
     senderName: text('sender_name'),

@@ -51,12 +51,17 @@ function columnsFor(status: ParcelStatus) {
     : { status, deliveredAt: null, deliveredBy: null };
 }
 
-async function insertParcel(status: ParcelStatus, personId: string) {
+async function insertParcel(
+  status: ParcelStatus,
+  personId: string,
+  departmentId?: string,
+) {
   const id = newId();
   await db.insert(schema.parcel).values({
     id,
     organizationId,
     personId,
+    departmentId,
     receivedAt: AT,
     receivedBy: agentId,
     ...columnsFor(status),
@@ -164,11 +169,7 @@ describe('parcel status transitions', () => {
     const expected: Record<string, boolean> = {};
 
     for (const [from, to] of pairs) {
-      const id = await insertParcel(from, personId);
-      await client.query('update parcel set department_id = $1 where id = $2', [
-        departmentId,
-        id,
-      ]);
+      const id = await insertParcel(from, personId, departmentId);
       if (from === 'remis') await insertCancelledHandover(id, personId);
       const failure = await setStatus(id, to);
       outcome[`${from} -> ${to}`] = failure === null;
@@ -182,6 +183,12 @@ describe('parcel status transitions', () => {
     expect(outcome).toEqual(expected);
     expect(Object.values(expected).filter(Boolean)).toHaveLength(40);
   }, 30_000);
+
+  it('refuse a parcel born on tour with no department', async () => {
+    expect(await failureOf(insertParcel('en_route', personId))).toMatchObject({
+      constraint: 'parcel_status_transition',
+    });
+  });
 
   it('refuse a tour for a parcel with no department', async () => {
     const id = await insertParcel('recu', personId);

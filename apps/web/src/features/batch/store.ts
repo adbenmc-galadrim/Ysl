@@ -14,10 +14,12 @@ import type {
   DraftBatch,
   DraftParcel,
   LocalBatch,
+  LocalContact,
   LocalParcel,
 } from '#/features/db/schema';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { parcelEvent } from '#/features/parcels/events';
+import { draftDepartment, goesOnTour } from '#/features/parcels/tour';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { serviceText } from '#/features/scan/annex';
 import { notifiable } from '#/features/scan/confidence';
@@ -43,6 +45,7 @@ export type DraftPatch = Partial<
     | 'trackingConfirmed'
     | 'durations'
     | 'reviewSkipped'
+    | 'departmentId'
     | 'learnedRecipient'
     | 'department'
     | 'type'
@@ -258,6 +261,8 @@ function toParcel(
   { batchId, agentId, now }: Required<FinishOptions>,
   learnedSenderId?: string | null,
   contactDepartment: string | null = null,
+  /** Where it goes on a tour; undefined when the company has no tour. */
+  goesTo?: string | null,
 ): LocalParcel {
   const sender = promotedSender(draft);
   const senderId =
@@ -269,7 +274,13 @@ function toParcel(
     deletedAt: null,
     batchId,
     type: draft.type ?? 'colis',
-    status: promotedStatus(draft),
+    status:
+      goesTo === undefined
+        ? promotedStatus(draft)
+        : goesTo && notifiable(draft)
+          ? 'en_route'
+          : 'a_completer',
+    ...(goesTo ? { departmentId: goesTo } : {}),
     statusSeq: 0,
     depositedAt: null,
     reply: null,
@@ -330,6 +341,30 @@ export async function setDraftDamage(
   }
 }
 
+/** Where each draft goes, the contacts' words included: a contact typed in this batch is not stored yet. */
+async function draftDestinations(
+  db: CourrierDatabase,
+  drafts: readonly DraftParcel[],
+  words: ReadonlyMap<string, string | null>,
+): Promise<Map<string, string | null>> {
+  const [people, stored, departments] = await Promise.all([
+    db.directoryPerson.toArray(),
+    db.contact.toArray(),
+    db.department.toArray(),
+  ]);
+  const byId = new Map(people.map((person) => [person.id, person]));
+  const contacts = new Map<string, Pick<LocalContact, 'department'>>([
+    ...stored.map((contact) => [contact.id, contact] as const),
+    ...[...words].map(([id, department]) => [id, { department }] as const),
+  ]);
+  return new Map(
+    drafts.map((draft) => [
+      draft.id,
+      draftDepartment(draft, byId, contacts, departments),
+    ]),
+  );
+}
+
 /**
  * "Terminer": the batch and its parcels become server rows in one write
  * (queued for `sync.push`), with what the sure senders and the agent's
@@ -350,6 +385,9 @@ export function finishBatch(
       db.photo,
       db.batch,
       db.parcel,
+      db.setting,
+      db.department,
+      db.directoryPerson,
       db.sender,
       db.senderAccount,
       db.senderAlias,
@@ -387,12 +425,16 @@ export function finishBatch(
             : [],
         ),
       );
+      const goesTo = (await goesOnTour(db))
+        ? await draftDestinations(db, drafts, departments)
+        : null;
       const parcels = drafts.map((draft) =>
         toParcel(
           draft,
           options,
           learned.senderIds.get(draft.id),
           draft.recipient ? departments.get(draft.recipient.id) : null,
+          goesTo ? (goesTo.get(draft.id) ?? null) : undefined,
         ),
       );
       await commitLocal(
@@ -403,6 +445,17 @@ export function finishBatch(
             ...recipients,
             { entity: 'batch', row: batch },
             ...parcels.map((row) => ({ entity: 'parcel' as const, row })),
+            ...parcels.flatMap((row) =>
+              row.status === 'en_route'
+                ? [
+                    parcelEvent(
+                      row.id,
+                      { type: 'parcel.status', from: 'recu', to: 'en_route' },
+                      { agentId, now },
+                    ),
+                  ]
+                : [],
+            ),
             ...drafts.flatMap(({ id, damage }) =>
               damage
                 ? [

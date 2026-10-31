@@ -22,6 +22,7 @@ export type AnnexField = (typeof ANNEX_FIELDS)[number];
 export type ReviewStep =
   | { field: 'tracking'; level: 'to-verify' | 'none' | 'carrier' }
   | { field: 'recipient' }
+  | { field: 'department' }
   | { field: 'sender' }
   | { field: AnnexField };
 
@@ -62,16 +63,22 @@ export const asksSender = (sender: DraftSender | null) =>
  * it alone counts as ready.
  */
 const blocks = (step: ReviewStep) =>
-  step.field === 'tracking' || step.field === 'recipient';
+  step.field === 'tracking' ||
+  step.field === 'recipient' ||
+  step.field === 'department';
 
 /**
  * What the agent still has to look at on a draft. A number not sure nor
  * confirmed; a number sure, its format naming no carrier, the carrier to
  * choose; no card settled for the recipient, a name a code printed
  * included (a company is not someone to tell); an annex field or a sender
- * read « à vérifier ». A parcel « Sans suivi » has no number to check.
+ * read « à vérifier ». A parcel « Sans suivi » has no number to check. With a
+ * tour, `departmentOf` says where it goes: nowhere is one more doubt (ME25).
  */
-export function reviewOf(draft: DraftParcel): ReviewItem {
+export function reviewOf(
+  draft: DraftParcel,
+  departmentOf?: (draft: DraftParcel) => string | null,
+): ReviewItem {
   const { tracking, recipient, extraction } = draftFields(draft);
   const steps: ReviewStep[] = [];
   const scores: number[] = [];
@@ -89,6 +96,9 @@ export function reviewOf(draft: DraftParcel): ReviewItem {
   if (!draft.recipient) {
     steps.push({ field: 'recipient' });
     scores.push(recipient?.confidence ?? 0);
+  } else if (departmentOf && !departmentOf(draft)) {
+    steps.push({ field: 'department' });
+    scores.push(0);
   }
   if (asksSender(draft.sender ?? null)) {
     steps.push({ field: 'sender' });
@@ -120,8 +130,11 @@ export function reviewOf(draft: DraftParcel): ReviewItem {
  * The batch as the review lists it (F25): the doubts first, least sure on
  * top, then the parcels passed, then the ready ones, each in batch order.
  */
-export function reviewBatch(drafts: readonly DraftParcel[]): Review {
-  const items = drafts.map(reviewOf);
+export function reviewBatch(
+  drafts: readonly DraftParcel[],
+  departmentOf?: (draft: DraftParcel) => string | null,
+): Review {
+  const items = drafts.map((draft) => reviewOf(draft, departmentOf));
   const order = (item: ReviewItem) => drafts.indexOf(item.draft);
   return {
     toCheck: items

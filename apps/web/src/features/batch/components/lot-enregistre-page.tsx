@@ -69,7 +69,7 @@ export function LotEnregistrePage({ batchId }: { batchId: string }) {
       sendLabel={t(ready === 1 ? 'lot.send.one' : 'lot.send.many', {
         count: ready,
       })}
-      note={t('lot.note')}
+      note={summary.onTour ? null : t('lot.note')}
       onLater={() => void navigate({ to: '/' })}
       onSend={notify}
       onNewBatch={() => void navigate({ to: '/scan' })}

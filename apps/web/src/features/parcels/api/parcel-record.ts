@@ -5,6 +5,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
+import { goesOnTour } from '#/features/parcels/tour';
 import type { CourrierDatabase, LocalPhoto } from '#/features/db/schema';
 import { photoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
@@ -67,6 +68,11 @@ export async function loadParcelRecord(
   return {
     parcel,
     person,
+    tour: parcel.status === 'a_completer' && (await goesOnTour(database)),
+    goesTo:
+      parcel.status === 'en_route' && parcel.departmentId
+        ? (await database.department.get(parcel.departmentId))?.name
+        : undefined,
     contact,
     events,
     ops,

@@ -131,7 +131,7 @@ export function LotEnregistreScreen({
       </GroupedList>
 
       <div className="mt-5">
-        <InfoNote>{note}</InfoNote>
+        {note && <InfoNote>{note}</InfoNote>}
       </div>
     </Screen>
   );

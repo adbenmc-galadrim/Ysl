@@ -218,6 +218,68 @@ export function VerifierColisScreen({
   );
 }
 
+export type DepartmentChoice = { id: string; name: string };
+
+export type VerifierDepartementScreenProps = Pick<
+  VerifierColisScreenProps,
+  | 'step'
+  | 'label'
+  | 'photo'
+  | 'fields'
+  | 'onBack'
+  | 'onSkip'
+  | 'onZoom'
+  | 'onSubmit'
+  | 'source'
+> & {
+  /** The recipient's department, when they have one: a change is a choice. */
+  recipientDepartment: string | null;
+  departments: DepartmentChoice[];
+  selectedId?: string;
+  submitLabel?: string;
+  onSelect?: (id: string) => void;
+};
+
+/**
+ * The department step (ME25): the parcel goes where its recipient works, and
+ * the agent can send it elsewhere. Nothing chosen, nothing to validate:
+ * « Passer » leaves the parcel to complete later.
+ */
+export function VerifierDepartementScreen({
+  recipientDepartment,
+  departments,
+  selectedId,
+  submitLabel = 'Valider et suivant',
+  onSelect,
+  ...frame
+}: VerifierDepartementScreenProps) {
+  return (
+    <VerifyFrame
+      {...frame}
+      question="Vers quel département ?"
+      hint={
+        recipientDepartment
+          ? `Département du destinataire : ${recipientDepartment}`
+          : 'Le destinataire n’a pas de département'
+      }
+      submitLabel={submitLabel}
+      submitDisabled={selectedId === undefined}
+    >
+      <PersonOptionGroup label="Département" className="mt-[18px]">
+        {departments.map((department) => (
+          <PersonOption
+            key={department.id}
+            initials={department.name.charAt(0).toUpperCase()}
+            name={department.name}
+            selected={department.id === selectedId}
+            onClick={() => onSelect?.(department.id)}
+          />
+        ))}
+      </PersonOptionGroup>
+    </VerifyFrame>
+  );
+}
+
 /** A number the scanner proposes for the parcel. */
 export type TrackingChoice = {
   value: string;

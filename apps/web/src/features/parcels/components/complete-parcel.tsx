@@ -1,11 +1,13 @@
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, Sheet } from '@repo/ui';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
 import {
+  assignDepartment,
   assignRecipient,
   completeTracking,
   type TrackingInput,
@@ -13,11 +15,12 @@ import {
 import { TrackingEntry } from '#/features/parcels/components/tracking-entry';
 import { gapsOf, missingOf } from '#/features/parcels/model';
 import { formatTracking } from '#/features/parcels/record';
+import { goesOnTour } from '#/features/parcels/tour';
 import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-type Step = 'menu' | 'recipient' | 'tracking' | 'carrier';
+type Step = 'menu' | 'recipient' | 'tracking' | 'carrier' | 'department';
 
 export type CompleteParcelProps = {
   parcel: LocalParcel;
@@ -43,6 +46,9 @@ export function CompleteParcel({
   const [failed, setFailed] = useState(false);
   const { receives } = useAccess();
   const options = { agentId: session.user.id, learns: receives };
+  const tour = useLiveQuery(() => goesOnTour(db), [], false);
+  const departments = useLiveQuery(() => db.department.toArray(), [], []);
+  const nowhere = tour && !parcel.departmentId;
   const gaps = gapsOf(parcel);
   const numbered = parcel.type !== 'sans_suivi';
   const doubted = gaps.length === 0 && numbered && parcel.tracking !== null;
@@ -97,12 +103,45 @@ export function CompleteParcel({
     );
   }
 
+  if (step === 'department') {
+    return (
+      <Sheet
+        fixed
+        title={t('complete.department')}
+        className="pb-[calc(var(--safe-bottom)+16px)]"
+        onDismiss={() => setStep('menu')}
+      >
+        <div className="mt-6 flex flex-col gap-3">
+          {departments
+            .filter((department) => !department.deletedAt)
+            .map((department) => (
+              <Button
+                key={department.id}
+                block
+                variant="secondary"
+                disabled={busy}
+                onClick={() =>
+                  void run(() =>
+                    assignDepartment(db, parcel.id, department.id, options),
+                  )
+                }
+              >
+                {department.name}
+              </Button>
+            ))}
+        </div>
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet
       fixed
       title={t('complete.title')}
       description={
-        failed ? t('record.error.write') : missingOf(parcel, t) || undefined
+        failed
+          ? t('record.error.write')
+          : missingOf(parcel, t, [], tour) || undefined
       }
       className="pb-[calc(var(--safe-bottom)+16px)]"
       onDismiss={onClose}
@@ -111,6 +150,11 @@ export function CompleteParcel({
         {gaps.includes('recipient') && (
           <Button block onClick={() => setStep('recipient')}>
             {t('complete.recipient')}
+          </Button>
+        )}
+        {nowhere && !gaps.includes('recipient') && (
+          <Button block onClick={() => setStep('department')}>
+            {t('complete.department')}
           </Button>
         )}
         {doubted && parcel.carrier && (

@@ -26,15 +26,17 @@ describe('toSections', () => {
       parcel('d', 'late'),
       parcel('c', 'notified'),
       parcel('b', 'toNotify'),
+      parcel('t', 'onTour'),
       parcel('a', 'incomplete'),
     ]);
     expect(sections.map((section) => section.title)).toEqual([
       'À compléter',
       'À notifier',
+      'En route',
       'En attente de retrait',
       'Remis aujourd’hui',
     ]);
-    expect(sections[2]?.parcels.map((row) => row.id)).toEqual(['d', 'c']);
+    expect(sections[3]?.parcels.map((row) => row.id)).toEqual(['d', 'c']);
   });
 
   it('lists the parcels answered for on top, and only there', () => {

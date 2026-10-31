@@ -495,12 +495,125 @@ describe('sync.push by role', () => {
       const personId = await addPerson(db, finance);
       const id = newId();
       expect(
+        await statusOf(access, op('parcel', id, newParcel({ personId }))),
+      ).toBe(200);
+      expect((await storedParcel(id))?.departmentId).toBe(finance);
+      expect(
         await statusOf(
           access,
           op('parcel', id, newParcel({ personId, departmentId: legal })),
         ),
       ).toBe(200);
       expect((await storedParcel(id))?.departmentId).toBe(finance);
+    });
+
+    it('is the one chosen at the review on a new parcel (ME25)', async () => {
+      const personId = await addPerson(db, finance);
+      const id = newId();
+      expect(
+        await statusOf(
+          accessOf('shuttle'),
+          op(
+            'parcel',
+            id,
+            newParcel({ status: 'en_route', personId, departmentId: legal }),
+          ),
+        ),
+      ).toBe(200);
+      expect(await storedParcel(id)).toMatchObject({
+        status: 'en_route',
+        departmentId: legal,
+      });
+    });
+
+    it('is given to a parcel left without one, and kept going on tour', async () => {
+      const access = accessOf('shuttle');
+      const personId = await addPerson(db, null);
+      const id = newId();
+      const parcel = newParcel({ status: 'a_completer', personId });
+      expect(await statusOf(access, op('parcel', id, parcel))).toBe(200);
+      expect((await storedParcel(id))?.departmentId).toBeNull();
+      const chosen = { ...parcel, departmentId: legal };
+      expect(
+        await statusOf(
+          access,
+          op('parcel', id, { ...chosen, status: 'recu', statusSeq: 1 }),
+        ),
+      ).toBe(200);
+      expect(
+        await statusOf(
+          access,
+          op('parcel', id, { ...chosen, status: 'en_route', statusSeq: 2 }),
+        ),
+      ).toBe(200);
+      expect(await storedParcel(id)).toMatchObject({
+        status: 'en_route',
+        departmentId: legal,
+      });
+    });
+
+    it('empties when the parcel goes to a card without one', async () => {
+      const access = accessOf('shuttle');
+      const id = newId();
+      const personId = await addPerson(db, finance);
+      await statusOf(access, op('parcel', id, newParcel({ personId })));
+      const blank = await addPerson(db, null);
+      await statusOf(access, op('parcel', id, newParcel({ personId: blank })));
+      expect((await storedParcel(id))?.departmentId).toBeNull();
+    });
+
+    it('stays on a parcel on tour whose card has none', async () => {
+      const access = accessOf('shuttle');
+      const id = newId();
+      const personId = await addPerson(db, finance);
+      const parcel = newParcel({ status: 'en_route', personId });
+      await statusOf(
+        access,
+        op('parcel', id, { ...parcel, departmentId: legal }),
+      );
+      const blank = await addPerson(db, null);
+      await statusOf(access, op('parcel', id, { ...parcel, personId: blank }));
+      expect((await storedParcel(id))?.departmentId).toBe(legal);
+    });
+
+    it.each([
+      ['a tour', DEFAULT_OPERATING_PROFILE, null],
+      ['a shuttle acting as department', SMALL_SITE_OPERATING_PROFILE, 'mail'],
+    ] as const)(
+      'with %s, the mail department catches a contact or not',
+      async (_, profile, expected) => {
+        const mail = await addDepartment(db, 'Service courrier');
+        await writeOperatingProfile(sync, ORGANIZATION_ID, profile, AGENT_ID);
+        const id = newId();
+        await statusOf(
+          accessOf('shuttle'),
+          op(
+            'parcel',
+            id,
+            newParcel({
+              status: 'a_completer',
+              contactId: await addContact(db),
+            }),
+          ),
+        );
+        expect((await storedParcel(id))?.departmentId).toBe(
+          expected ? mail : null,
+        );
+        await db
+          .update(schema.department)
+          .set({ deletedAt: NOW })
+          .where(eq(schema.department.id, mail));
+      },
+    );
+
+    it('is required to be born on tour', async () => {
+      const personId = await addPerson(db, null);
+      expect(
+        await statusOf(
+          accessOf('shuttle'),
+          op('parcel', newId(), newParcel({ status: 'en_route', personId })),
+        ),
+      ).toBe(409);
     });
 
     it('is the one a company account says when nobody in the directory is named', async () => {

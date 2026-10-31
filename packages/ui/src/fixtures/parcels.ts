@@ -8,6 +8,8 @@ export type ParcelState =
   | 'incomplete'
   /** Received and stored, the recipient does not know yet. */
   | 'toNotify'
+  /** With the shuttle, on its way to its department (§3.7.6). */
+  | 'onTour'
   /** Notified, waiting for the recipient to come by. */
   | 'notified'
   /** Notified long enough ago that it needs chasing. */

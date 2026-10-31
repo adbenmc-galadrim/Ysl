@@ -37,6 +37,8 @@ export type RevueLotScreenProps = {
   onBack?: () => void;
   /** Opens « Vérifier un colis » on that parcel. */
   onOpen?: (id: string) => void;
+  /** Opens a ready parcel, to change where it goes (ME25); left out, the rows stay still. */
+  onOpenReady?: (id: string) => void;
   onSave?: () => void;
 };
 
@@ -110,6 +112,7 @@ export function RevueLotScreen({
   saving = false,
   onBack,
   onOpen,
+  onOpenReady,
   onSave,
 }: RevueLotScreenProps) {
   return (
@@ -169,6 +172,7 @@ export function RevueLotScreen({
                 trailing={<CheckCircle checked />}
                 separator={i < ready.length - 1}
                 separatorInset={56}
+                onClick={onOpenReady && (() => onOpenReady(row.id))}
               />
             ))}
           </div>

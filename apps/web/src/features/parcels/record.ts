@@ -60,6 +60,10 @@ export type ParcelRecord = {
   parcel: LocalParcel;
   person?: LocalDirectoryPerson;
   contact?: LocalContact;
+  /** On tour, the department it goes to. */
+  goesTo?: string;
+  /** The company runs tours: a parcel with nowhere to go says so. */
+  tour?: boolean;
   /** The `event` rows of this parcel, from every iPhone. */
   events: readonly LocalEvent[];
   /** The outbox ops of the parcel and of its events. */
@@ -83,7 +87,11 @@ export type RecordSync = 'synced' | 'unsent' | 'rejected';
 export type RecordAction =
   | { kind: 'complete' }
   | { kind: 'notify' }
-  | { kind: 'stepBack'; from: 'notifie' | 'retourne'; to: ParcelStatus };
+  | {
+      kind: 'stepBack';
+      from: 'en_route' | 'notifie' | 'retourne';
+      to: ParcelStatus;
+    };
 
 export type RecordView = Pick<
   FicheColisScreenProps,
@@ -200,7 +208,7 @@ function stateCard(
       return {
         icon: 'alert',
         title: t('record.state.a_completer'),
-        description: missingOf(parcel, t) || description,
+        description: missingOf(parcel, t, [], record.tour) || description,
       };
     case 'recu':
       return {
@@ -740,7 +748,15 @@ function action(parcel: LocalParcel): RecordAction | undefined {
   // A handover is undone with its reason, by its own sheet (F44). A received
   // parcel goes back to "À compléter" from the form, once it lacks a number
   // or anyone to tell, a name read included.
-  if (parcel.status !== 'notifie' && parcel.status !== 'retourne') return;
+  // Once its e-mail left, a tour is not undone: the recipient was told.
+  if (parcel.status === 'en_route' && parcel.lastNotifiedAt) return;
+  if (
+    parcel.status !== 'en_route' &&
+    parcel.status !== 'notifie' &&
+    parcel.status !== 'retourne'
+  ) {
+    return;
+  }
   const to = stepBackOf(parcel);
   return to && { kind: 'stepBack', from: parcel.status, to };
 }
@@ -802,16 +818,18 @@ export function describeRecord(
   const recipient = person
     ? fullName(person)
     : (contact?.name ?? t('parcel.recipient.unknown'));
-  const place = person
-    ? (person.department ?? parcel.department ?? '')
-    : contact
-      ? outsideDetail({
-          department: parcel.department ?? contact.department ?? null,
-        })
-      : (parcel.department ??
-        (parcel.readName
-          ? t('parcel.readName', { name: parcel.readName })
-          : ''));
+  const place = record.goesTo
+    ? record.goesTo
+    : person
+      ? (person.department ?? parcel.department ?? '')
+      : contact
+        ? outsideDetail({
+            department: parcel.department ?? contact.department ?? null,
+          })
+        : (parcel.department ??
+          (parcel.readName
+            ? t('parcel.readName', { name: parcel.readName })
+            : ''));
   return {
     recipient,
     place,

@@ -17,6 +17,7 @@ import { fullName, isEmail, normalizeEmail } from '#/features/directory/people';
 import { parcelEvent } from '#/features/parcels/events';
 import { gapsOf } from '#/features/parcels/model';
 import { liveParcel } from '#/features/parcels/status';
+import { onTourWrites, tourDepartment } from '#/features/parcels/tour';
 
 /** Who the parcel is for, as the form leaves it. */
 export type RecipientChoice =
@@ -217,7 +218,7 @@ export async function printedOn(
  * A number nobody doubts: none to doubt (« Sans suivi »), or read sure or
  * confirmed by the agent at « Terminer », as this iPhone's reading kept it.
  */
-async function trackingVouched(
+export async function trackingVouched(
   db: CourrierDatabase,
   parcel: LocalParcel,
 ): Promise<boolean> {
@@ -323,7 +324,12 @@ export async function saveParcelEdit(
   db: CourrierDatabase,
   parcelId: string,
   edit: ParcelEdit,
-  { agentId, now = new Date(), seesTracking = true, learns = true }: EditOptions,
+  {
+    agentId,
+    now = new Date(),
+    seesTracking = true,
+    learns = true,
+  }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
   const errors = validateEdit(edit, parcel);
@@ -359,9 +365,10 @@ export async function saveParcelEdit(
   const renamed =
     senderName !== null &&
     normalizeName(senderName) !== normalizeName(parcel.senderName ?? '');
-  const learned = renamed && learns
-    ? await correctedSender(db, parcelId, senderName, now)
-    : null;
+  const learned =
+    renamed && learns
+      ? await correctedSender(db, parcelId, senderName, now)
+      : null;
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
@@ -418,6 +425,18 @@ export async function saveParcelEdit(
     });
   }
 
+  const goesTo =
+    parcel.status === 'a_completer'
+      ? await tourDepartment(db, parcel, edited)
+      : undefined;
+  if (goesTo) edited.departmentId = goesTo;
+  // On tour, the parcel follows its new recipient, as the server does.
+  if (parcel.status === 'en_route' && edited.personId !== parcel.personId) {
+    const person = edited.personId
+      ? await db.directoryPerson.get(edited.personId)
+      : undefined;
+    edited.departmentId = person?.departmentId ?? parcel.departmentId;
+  }
   const complete = isComplete(edited);
   // A parcel the recipient disowned was notified: its number was vouched
   // for then (YSL-70).
@@ -430,13 +449,24 @@ export async function saveParcelEdit(
   const to =
     parcel.status === 'a_completer' &&
     complete &&
+    goesTo !== null &&
     confirmsIdentity(fields) &&
     vouched
       ? 'recu'
       : parcel.status === 'recu' && !complete && confirmsIdentity(fields)
         ? 'a_completer'
         : undefined;
-  const row = to ? { ...edited, ...statusPatch(edited, to, options) } : edited;
+  // Nobody told, nothing left to tell them: back through « Reçu », one write at a time.
+  const offTour =
+    parcel.status === 'en_route' &&
+    !parcel.lastNotifiedAt &&
+    !complete &&
+    confirmsIdentity(fields);
+  const row = to
+    ? { ...edited, ...statusPatch(edited, to, options) }
+    : offTour
+      ? { ...edited, ...statusPatch(edited, 'recu', options) }
+      : edited;
   const upserts: Upsert[] = [
     ...(learned?.upserts ?? []),
     ...(contact ? [{ entity: 'contact' as const, row: contact }] : []),
@@ -448,6 +478,25 @@ export async function saveParcelEdit(
           parcelEvent(
             parcelId,
             { type: 'parcel.status', from: parcel.status, to },
+            options,
+          ),
+        ]
+      : []),
+    ...(to === 'recu' && goesTo ? onTourWrites(row, options) : []),
+    ...(offTour
+      ? [
+          parcelEvent(
+            parcelId,
+            { type: 'parcel.status', from: 'en_route', to: 'recu' },
+            options,
+          ),
+          {
+            entity: 'parcel' as const,
+            row: { ...row, ...statusPatch(row, 'a_completer', options) },
+          },
+          parcelEvent(
+            parcelId,
+            { type: 'parcel.status', from: 'recu', to: 'a_completer' },
             options,
           ),
         ]

@@ -76,7 +76,10 @@ function datedStatus(
           time: formatTime(parcel.deliveredAt),
         });
   }
-  if (state === 'toNotify' && parcel.receivedAt < today) {
+  if (
+    (state === 'toNotify' || state === 'onTour') &&
+    parcel.receivedAt < today
+  ) {
     return t('parcel.status.receivedOn', {
       date: shortDate(parcel.receivedAt, now),
       time: formatTime(parcel.receivedAt),
@@ -153,6 +156,7 @@ export function matchesQuery(
 const WAITING: readonly ParcelState[] = [
   'incomplete',
   'toNotify',
+  'onTour',
   'notified',
   'late',
 ];
@@ -207,6 +211,7 @@ const STATUS_GROUPS = [
     states: ['incomplete'],
   },
   { id: 'toNotify', key: 'search.section.toNotify', states: ['toNotify'] },
+  { id: 'onTour', key: 'search.section.onTour', states: ['onTour'] },
   {
     id: 'waiting',
     key: 'search.section.waiting',
