@@ -452,6 +452,64 @@ export function HorairesDepartementMobile() {
 }
 
 /** The A4 poster that the shuttle scans at the department's door. */
+export type DepartmentPosterProps = {
+  initials: string;
+  company: string;
+  name: string;
+  place?: string | null;
+  matrix: string[];
+  instruction: string;
+  hours?: string;
+  code: string;
+};
+
+/** The poster at the reception point: `print:` strips the app around it. */
+export function DepartmentPoster({
+  initials,
+  company,
+  name,
+  place,
+  matrix,
+  instruction,
+  hours,
+  code,
+}: DepartmentPosterProps) {
+  return (
+    <div className="relative h-[842px] w-[595px] bg-white text-black">
+      <span className="absolute top-12 left-12 flex size-12 items-center justify-center rounded-[10px] bg-black text-[19px] font-bold text-white">
+        {initials}
+      </span>
+      <p className="absolute top-[62px] left-[108px] text-18 font-semibold">
+        {company}
+      </p>
+      <h1 className="absolute top-[150px] left-12 text-[56px] leading-[1.2] font-bold tracking-[-1px]">
+        {name}
+      </h1>
+      {place && (
+        <p className="absolute top-[222px] left-12 text-20">{place}</p>
+      )}
+      <QrCode
+        matrix={matrix}
+        module={300 / matrix.length}
+        label={code}
+        className="absolute top-[290px] left-[147px] rounded-none p-0"
+      />
+      <p className="absolute top-[631px] left-12 w-[499px] text-center text-18">
+        {instruction}
+      </p>
+      <span className="absolute top-[720px] left-12 h-px w-[499px] bg-separator" />
+      {hours && (
+        <p className="absolute top-[739px] left-12 w-[499px] text-center text-14">
+          {hours}
+        </p>
+      )}
+      <p className="absolute top-[790px] left-12 w-[499px] text-center font-mono text-11">
+        {code}
+      </p>
+    </div>
+  );
+}
+
 export function AfficheQrA4() {
   return (
     <div className="relative h-[842px] w-[595px] bg-white text-black after:pointer-events-none after:absolute after:inset-0 after:border after:border-separator">

@@ -3,9 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '#/features/db/database';
 import type {
   CourrierDatabase,
+  LocalDeposit,
   LocalDepartment,
   LocalParcel,
 } from '#/features/db/schema';
+import { latestFirst } from '#/features/parcels/deposit';
 import { goesOnTour } from '#/features/parcels/tour';
 import {
   currentTour,
@@ -19,6 +21,9 @@ export type TourData = {
   incomplete: LocalParcel[];
   toDispatch: LocalParcel[];
   toSettle: number;
+  /** The last deposit whose count left a parcel « À régulariser ». */
+  lastGap?: LocalDeposit;
+  deposits: LocalDeposit[];
 };
 
 /** Older deposits end before any tour still shown: their date of departure changes nothing. */
@@ -61,11 +66,21 @@ export async function loadTour(
   database: CourrierDatabase,
   now = new Date(),
 ): Promise<TourData> {
-  const [parcels, departments] = await Promise.all([
+  const [parcels, departments, deposits] = await Promise.all([
     database.parcel.filter((row) => !row.deletedAt).toArray(),
     database.department.toArray(),
+    database.deposit.filter((row) => !row.deletedAt).toArray(),
   ]);
+  const settling = new Set(
+    parcels
+      .filter(({ status }) => status === 'a_regulariser')
+      .map(({ id }) => id),
+  );
   return {
+    deposits,
+    lastGap: latestFirst(deposits).find((row) =>
+      row.gapParcelIds?.some((id) => settling.has(id)),
+    ),
     tour: currentTour(parcels, now, await loadEntries(database, parcels, now)),
     departments: new Map(departments.map((row) => [row.id, row])),
     incomplete: parcels.filter(({ status }) => status === 'a_completer'),

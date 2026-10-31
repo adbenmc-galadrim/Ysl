@@ -54,11 +54,37 @@ export * from '#screens/multi-entreprises/03-accueil/company-suspended-screen';
 export * from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 export * from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
 export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
+export {
+  DepartmentDepositMobile,
+  DepartmentDepositsContent,
+  type DepartmentDepositParcel,
+  type DepartmentDepositProps,
+  type DepartmentDepositRow,
+} from '#screens/multi-entreprises/09-depot-au-departement/departement-depot-screen';
+export {
+  SettlementContent,
+  SettlementPanel,
+  type SettlementOption,
+  type SettlementTableRow,
+} from '#screens/multi-entreprises/09-depot-au-departement/admin-regulariser-screen';
+export { DepartmentPoster } from '#screens/multi-entreprises/18-departements/departements-screen';
 export type {
   TourStopParcel,
+  DepositCountScreenProps,
+  DepositDoneScreenProps,
+  DepositOtherQrScreenProps,
+  DepositScanScreenProps,
+  DepositWaitingScreenProps,
   TourStopScreenProps,
 } from '#screens/multi-entreprises/09-depot-au-departement/navette-depot-screen';
-export { TourStopScreen } from '#screens/multi-entreprises/09-depot-au-departement/navette-depot-screen';
+export {
+  DepositCountScreen,
+  DepositDoneScreen,
+  DepositOtherQrScreen,
+  DepositScanScreen,
+  DepositWaitingScreen,
+  TourStopScreen,
+} from '#screens/multi-entreprises/09-depot-au-departement/navette-depot-screen';
 export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-desktop-screen';
 export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-mobile-screen';
 export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-desktop-screen';

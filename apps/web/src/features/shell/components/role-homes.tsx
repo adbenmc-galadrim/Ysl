@@ -14,6 +14,7 @@ import { db } from '#/features/db/database';
 import { useGoesOnTour } from '#/features/parcels/api/use-tour';
 import { ColisPage } from '#/features/parcels/components/colis-page';
 import { TourPage } from '#/features/parcels/components/tour-page';
+import { isPending } from '#/features/parcels/deposit';
 import { goesOnTour } from '#/features/parcels/tour';
 import { CompaniesPage } from '#/features/platform/components/companies-page';
 import { homeCounts, type HomeCounts } from '#/features/shell/home-counts';
@@ -78,7 +79,21 @@ export function DepartmentHome() {
   const counts = useCounts();
   const name = useOwnDepartmentName();
   const desk = useMediaQuery(DESK_WIDTH);
-  const action = useParcelsAction(desk);
+  const parcels = useParcelsAction(desk);
+  const navigate = useNavigate();
+  const toCount = useLiveQuery(
+    () => db.deposit.filter(isPending).count(),
+    [],
+  );
+  const action = toCount
+    ? {
+        label:
+          toCount === 1
+            ? t('deposits.home.action.one')
+            : t('deposits.home.action', { count: toCount }),
+        onPress: () => void navigate({ to: '/departement/depots' }),
+      }
+    : parcels;
   return (
     <RoleHome
       title={t('home.department.title')}
@@ -101,7 +116,14 @@ export function DepartmentHome() {
 export function DashboardHome() {
   const counts = useCounts();
   const desk = useMediaQuery(DESK_WIDTH);
-  const action = useParcelsAction(desk);
+  const parcels = useParcelsAction(desk);
+  const navigate = useNavigate();
+  const action = counts?.toSettle
+    ? {
+        label: t('settlement.home.action'),
+        onPress: () => void navigate({ to: '/tableau-de-bord/regulariser' }),
+      }
+    : parcels;
   return (
     <RoleHome
       title={t('home.dashboard.title')}

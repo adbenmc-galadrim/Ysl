@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
@@ -184,5 +186,221 @@ export function AdminRegulariserMobile() {
         ]}
       />
     </Screen>
+  );
+}
+
+export type SettlementTableRow = {
+  id: string;
+  name: string;
+  department: string;
+  cause: string;
+  since: string;
+};
+
+/** What the admin decides, for one parcel, on either layout. */
+export type SettlementOption = {
+  id: string;
+  label: string;
+  /** What this choice asks for next: a department, a person, a shuttle. */
+  select?: {
+    label: string;
+    value: string;
+    options: readonly { id: string; label: string }[];
+    onChange: (id: string) => void;
+  };
+};
+
+export type SettlementPanelProps = {
+  name: string;
+  line: string;
+  banner: { title: string; description: string };
+  question: string;
+  options: readonly SettlementOption[];
+  chosen: string;
+  onChoose: (id: string) => void;
+  note?: string;
+  error?: string;
+  actionLabel: string;
+  disabled?: boolean;
+  onAction: () => void;
+  onClose?: () => void;
+};
+
+export function SettlementPanel({
+  name,
+  line,
+  banner,
+  question,
+  options,
+  chosen,
+  onChoose,
+  note,
+  error,
+  actionLabel,
+  disabled,
+  onAction,
+  onClose,
+}: SettlementPanelProps) {
+  return (
+    <aside className="flex w-full max-w-[360px] shrink-0 flex-col rounded-desk border border-separator p-[15px]">
+      <div className="flex items-start justify-between">
+        <h2 className="text-16 font-bold">{name}</h2>
+        {onClose && (
+          <button
+            type="button"
+            aria-label="Fermer"
+            className="cursor-pointer"
+            onClick={onClose}
+          >
+            <Icon name="x" size={16} className="text-muted" />
+          </button>
+        )}
+      </div>
+      <p className="mt-[3px] font-mono text-12 text-muted">{line}</p>
+      <div className="relative mt-4 shrink-0 rounded-[6px] bg-red-soft py-2.5 pr-2 pl-9 text-red">
+        <Icon name="warning" size={16} className="absolute top-3 left-3" />
+        <p className="text-13 font-semibold">{banner.title}</p>
+        <p className="mt-[5px] text-12">{banner.description}</p>
+      </div>
+      <p className="mt-[15px] text-13 font-semibold">{question}</p>
+      <div role="radiogroup" aria-label={question} className="mt-3 flex flex-col gap-3">
+        {options.map((option) => (
+          <div key={option.id}>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={option.id === chosen}
+              className="flex w-full cursor-pointer items-start gap-2.5 text-left text-13"
+              onClick={() => onChoose(option.id)}
+            >
+              <span
+                className={cn(
+                  'mt-px flex size-[17px] shrink-0 items-center justify-center rounded-full border-[1.5px]',
+                  option.id === chosen ? 'border-ink bg-ink' : 'border-border',
+                )}
+              >
+                {option.id === chosen && (
+                  <span className="size-1.5 rounded-full bg-on-ink" />
+                )}
+              </span>
+              <span>{option.label}</span>
+            </button>
+            {option.id === chosen && option.select && (
+              <select
+                aria-label={option.select.label}
+                value={option.select.value}
+                onChange={(event) => option.select?.onChange(event.target.value)}
+                className="mt-2 ml-[27px] h-9 w-[calc(100%-27px)] rounded-[6px] border border-border bg-surface px-2 text-13"
+              >
+                <option value="">{option.select.label}</option>
+                {option.select.options.map(({ id, label }) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        ))}
+      </div>
+      {note && <p className="mt-3 text-12 text-muted">{note}</p>}
+      {error && <p className="mt-3 text-12 text-red">{error}</p>}
+      <Button
+        size="desk"
+        className="mt-5 w-full"
+        disabled={disabled}
+        onClick={onAction}
+      >
+        {actionLabel}
+      </Button>
+    </aside>
+  );
+}
+
+export type SettlementListProps = {
+  title: string;
+  subtitle: string;
+  sections: readonly {
+    id: string;
+    title: string;
+    rows: readonly SettlementTableRow[];
+  }[];
+  columns: { name: string; department: string; cause: string; since: string };
+  empty: string;
+  activeRow?: string;
+  onRow: (id: string) => void;
+  panel?: ReactNode;
+};
+
+/** The company's blocked parcels and those without a place; the choice opens beside, under on a phone. */
+export function SettlementContent({
+  title,
+  subtitle,
+  sections,
+  columns,
+  empty,
+  activeRow,
+  onRow,
+  panel,
+}: SettlementListProps) {
+  const shown = sections.filter(({ rows }) => rows.length > 0);
+  return (
+    <>
+      <DeskPageHeader title={title} subtitle={subtitle} />
+      <div className="flex flex-col items-start gap-4 xl:flex-row">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-6">
+          {shown.map((section) => (
+            <section key={section.id}>
+              <h2 className="mb-2 text-14 font-semibold">{section.title}</h2>
+              <DeskTable
+                label={section.title}
+                columns={[
+                  {
+                    key: 'name',
+                    header: columns.name,
+                    width: 200,
+                    cell: (row: SettlementTableRow) => (
+                      <button
+                        type="button"
+                        className="cursor-pointer text-left font-semibold"
+                        onClick={() => onRow(row.id)}
+                      >
+                        {row.name}
+                      </button>
+                    ),
+                  },
+                  {
+                    key: 'department',
+                    header: columns.department,
+                    width: 140,
+                    cell: (row) => row.department,
+                  },
+                  {
+                    key: 'cause',
+                    header: columns.cause,
+                    cell: (row) => (
+                      <span className="text-ink-2">{row.cause}</span>
+                    ),
+                  },
+                  {
+                    key: 'since',
+                    header: columns.since,
+                    width: 110,
+                    cell: (row) => (
+                      <span className="text-muted">{row.since}</span>
+                    ),
+                  },
+                ]}
+                rows={[...section.rows]}
+                rowKey={(row) => row.id}
+                activeRow={activeRow}
+              />
+            </section>
+          ))}
+          {shown.length === 0 && <p className="text-15 text-muted">{empty}</p>}
+        </div>
+        {panel}
+      </div>
+    </>
   );
 }

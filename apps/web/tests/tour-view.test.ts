@@ -1,5 +1,11 @@
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { describe, expect, it } from 'vitest';
+import type { LocalDeposit } from '#/features/db/schema';
+import { gapLine, pendingParcelIds } from '#/features/parcels/deposit';
+import { formatTime } from '#/features/parcels/model';
 import { currentTour } from '#/features/parcels/tour-view';
+
+const t = createTranslator(DEFAULT_LOCALE);
 
 const NOW = new Date(2026, 9, 31, 12);
 const at = (hour: number, day = 31) => new Date(2026, 9, day, hour);
@@ -116,5 +122,41 @@ describe('currentTour', () => {
       NOW,
     );
     expect(view).toMatchObject({ closed: false, departments: 0, deposited: 0 });
+  });
+});
+
+describe('the deposit on the way', () => {
+  it('holds back what a deposit still to count announced, not the rest', () => {
+    const posted = {
+      parcelIds: ['a'],
+      confirmedAt: null,
+      deletedAt: null,
+    } as unknown as LocalDeposit;
+    const counted = {
+      parcelIds: ['b'],
+      confirmedAt: new Date(),
+      deletedAt: null,
+    } as unknown as LocalDeposit;
+    expect([...pendingParcelIds([posted, counted])]).toEqual(['a']);
+  });
+
+  it('says the count in the banner, or the employee gone', () => {
+    const postedAt = new Date('2026-10-31T09:40:00');
+    expect(
+      gapLine(
+        { gap: 'missing', counted: 4, announced: 5, postedAt },
+        'Finance',
+        t,
+      ),
+    ).toBe(
+      `Finance a compté 4 colis sur 5 au dépôt de ${formatTime(postedAt)}.`,
+    );
+    expect(
+      gapLine(
+        { gap: 'left', counted: 5, announced: 5, postedAt },
+        'Finance',
+        t,
+      ),
+    ).toContain('salarié parti');
   });
 });
