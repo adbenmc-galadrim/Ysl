@@ -453,7 +453,7 @@ export const fr = {
   'handover.step.lost':
     'Signature ou photo non enregistrée sur cet iPhone : recommencez.',
   'handover.scan.title': 'Vérifier les colis',
-  'handover.scan.progress': '{{read}} colis scanné(s) sur {{count}}',
+  'handover.scan.progress': '{{read}} sur {{count}} colis scannés',
   'handover.scan.done': 'Colis scannés',
   'handover.scan.type': 'Saisir le numéro',
   'handover.scan.number': 'Numéro du colis',

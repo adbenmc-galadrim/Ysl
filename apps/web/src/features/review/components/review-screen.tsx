@@ -155,7 +155,10 @@ export function ReviewScreen() {
   const urls = useDraftPhotos(drafts ?? []);
 
   useEffect(() => {
-    matcher.setEntries(recipientEntries(people, contacts, names), anchors);
+    matcher.setEntries(
+      recipientEntries(people, contacts, names),
+      anchors,
+    );
   }, [matcher, people, contacts, names, anchors]);
 
   /* Once per visit: the exact names a code prints settle their card silently. */

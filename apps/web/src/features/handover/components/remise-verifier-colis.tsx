@@ -19,6 +19,7 @@ import { parcelOfRead } from '#/features/handover/parcel-scan';
 import {
   grabVideoFrame,
   QR_SCAN_INTERVAL_MS,
+  readFrameTexts,
 } from '#/features/handover/qr-scan';
 import { decodeQueue } from '#/features/scan/decoder';
 
@@ -26,7 +27,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 export type RemiseVerifierColisProps = {
   parcels: readonly LocalParcel[];
-  /** The parcels read so far, ticked or not. */
+  /** Where the ticked parcels stand: « 1 sur 3 colis scannés ». */
   progress: string;
   onRead: (parcelId: string) => void;
   onClose: () => void;
@@ -83,18 +84,12 @@ export function RemiseVerifierColis({
     const queue = decodeQueue();
     const look = async () => {
       if (stopped) return;
-      let texts: string[] = [];
-      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-        await queue.acquire();
-        try {
-          const result = await queue.decode(await grabVideoFrame(video));
-          texts = result.symbols.map((symbol) => symbol.text);
-        } catch {
-          texts = [];
-        } finally {
-          queue.release();
-        }
-      }
+      const texts =
+        video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+          ? await readFrameTexts(queue, () => grabVideoFrame(video)).catch(
+              (): string[] => [],
+            )
+          : [];
       const text = texts[0];
       if (text === undefined) lastText = '';
       else if (!stopped && text !== lastText) {

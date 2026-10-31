@@ -18,7 +18,7 @@ import { addHandoverProof, type ProofInput } from '#/features/handover/proofs';
 import { strokesToPng } from '#/features/handover/signature-png';
 import { signatureHeading } from '#/features/handover/signing';
 import { photoFiles } from '#/features/photos/opfs';
-import { readOperatingProfile } from '#/features/settings/operating-profile';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { useOnline } from '#/lib/use-online';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -59,7 +59,7 @@ export function RemiseConfirmeePage({
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
   );
-  const profile = useLiveQuery(() => readOperatingProfile(db), []);
+  const profile = useOperatingProfile();
   const urls = useProofUrls(handoverId);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);

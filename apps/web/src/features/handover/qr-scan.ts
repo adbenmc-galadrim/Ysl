@@ -9,7 +9,8 @@ export const QR_FRAME_SIDE = 1280;
 
 /**
  * The frame on screen, shrunk: the stream films at 12 Mpx for the labels,
- * which a QR held up to the counter does not need, every 400 ms.
+ * which a QR held up to the counter does not need, every 400 ms. A label
+ * checked at the counter is held close, and is read at this size too.
  */
 export function grabVideoFrame(video: HTMLVideoElement): Promise<ImageBitmap> {
   const { width, height } = fitWithin(
@@ -22,6 +23,20 @@ export function grabVideoFrame(video: HTMLVideoElement): Promise<ImageBitmap> {
   if (!context) return createImageBitmap(video);
   context.drawImage(video, 0, 0, width, height);
   return Promise.resolve(canvas.transferToImageBitmap());
+}
+
+/** The codes in one frame of the viewfinder, read by the barcode Worker. */
+export async function readFrameTexts(
+  queue: DecodeQueue,
+  grab: () => Promise<ImageBitmap>,
+): Promise<string[]> {
+  await queue.acquire();
+  try {
+    const result = await queue.decode(await grab());
+    return result.symbols.map((symbol) => symbol.text);
+  } finally {
+    queue.release();
+  }
 }
 
 /**

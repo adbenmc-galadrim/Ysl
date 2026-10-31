@@ -45,7 +45,7 @@ export type RemiseColisScreenProps = {
   excluded?: string[];
   /**
    * Picked by the name, nothing proves who collects: the agent may have the
-   * recipient sign (`onSignature`), never required. A note says something
+   * recipient sign (`onSignature`), unless the profile requires it. A note says something
    * beside « Faire signer »; without `onSignature` the line is greyed out.
    */
   signatureNote?: string;
@@ -55,7 +55,7 @@ export type RemiseColisScreenProps = {
   signatureRequired?: boolean;
   /** The profile requires a photo before the handover. */
   photo?: { taken: boolean; onTake: () => void };
-  /** Each parcel scanned against the list: « 1 colis sur 3 scanné ». */
+  /** Each parcel scanned against the list: « 1 sur 3 colis scannés ». */
   scan?: { label: string; done: boolean; onScan: () => void };
   /**
    * Who collects, when not the recipient: « Retiré par Paul Mercier ». With
@@ -128,7 +128,7 @@ export function RemiseColisScreen({
   announced,
   onCollector,
   // The mockup's wording, kept so its reference holds; the app says the
-  // signature is optional (D6).
+  // signature is optional unless the profile requires it (D6).
   registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,

@@ -41,7 +41,7 @@ export const EtapesExigees: Story = {
     onSignature: () => {},
     signatureRequired: true,
     photo: { taken: true, onTake: () => {} },
-    scan: { label: '1 colis sur 3 scanné', done: false, onScan: () => {} },
+    scan: { label: '1 sur 3 colis scannés', done: false, onScan: () => {} },
     confirmNote: 'Faites signer avant de remettre.',
   },
 };
