@@ -1,10 +1,15 @@
 import type { Session } from '@repo/auth';
 import { db } from '@repo/db';
-import { toUserRole, type UserRole } from '@repo/contract/auth';
+import {
+  isCompanyAdmin,
+  seesWholeCompany,
+  toUserRole,
+  type UserRole,
+} from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
-import { organizationOf } from '#lib/organization';
+import { membershipOf } from '#lib/organization';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -32,6 +37,13 @@ export const router = t.router;
 
 export const publicProcedure = t.procedure;
 
+export function forbidden(): TRPCError {
+  return new TRPCError({
+    code: 'FORBIDDEN',
+    message: translate('error.forbidden'),
+  });
+}
+
 export function roleOf(session: Session): UserRole {
   return toUserRole(session.user.role);
 }
@@ -46,35 +58,33 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   return next({ ctx: { ...ctx, session: ctx.session } });
 });
 
+/** Better Auth's admin API, which ignores companies: closed to `company_admin`. */
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (roleOf(ctx.session) !== 'admin') {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: translate('error.forbidden'),
-    });
-  }
+  if (roleOf(ctx.session) !== 'admin') throw forbidden();
   return next();
 });
 
-/** Signed in and attached to a mailroom: what every synced table is keyed by. */
+/** Signed in and attached to a company: what every synced table is keyed by. The app admin never is (D26). */
 export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
-  const organizationId = await organizationOf(db, ctx.session.user.id);
-  if (!organizationId) {
+  if (roleOf(ctx.session) === 'platform_admin') throw forbidden();
+  const membership = await membershipOf(db, ctx.session.user.id);
+  if (!membership) {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: translate('sync.error.noOrganization'),
     });
   }
-  return next({ ctx: { ...ctx, organizationId } });
+  return next({ ctx: { ...ctx, ...membership } });
 });
 
-/** An admin of the mailroom: the screens of Réglages › Service courrier. */
+/** The data of the whole company, closed to an account that may only see its department. */
+export const wholeCompanyProcedure = memberProcedure.use(({ ctx, next }) => {
+  if (!seesWholeCompany(roleOf(ctx.session))) throw forbidden();
+  return next();
+});
+
+/** An admin of the company: the screens of Réglages › Service courrier. */
 export const adminMemberProcedure = memberProcedure.use(({ ctx, next }) => {
-  if (roleOf(ctx.session) !== 'admin') {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: translate('error.forbidden'),
-    });
-  }
+  if (!isCompanyAdmin(roleOf(ctx.session))) throw forbidden();
   return next();
 });

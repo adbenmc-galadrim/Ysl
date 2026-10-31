@@ -63,6 +63,27 @@ describe('agents.create', () => {
   });
 });
 
+describe('agents.create, roles', () => {
+  beforeEach(() => {
+    for (const fn of Object.values(api)) fn.mockReset();
+  });
+
+  it.each(['platform_admin', 'company_admin', 'department', 'shuttle'])(
+    'refuses to hand out %s',
+    async (role) => {
+      await expect(
+        admin().agents.create({
+          name: 'Test',
+          email: 'test@example.com',
+          password: 'motdepasse-1',
+          role: role as 'agent',
+        }),
+      ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+      expect(api.createUser).not.toHaveBeenCalled();
+    },
+  );
+});
+
 describe('agents.setActive', () => {
   beforeEach(() => {
     for (const fn of Object.values(api)) fn.mockReset();

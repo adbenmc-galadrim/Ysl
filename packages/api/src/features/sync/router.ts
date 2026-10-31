@@ -5,12 +5,12 @@ import {
   pushOutput,
 } from '@repo/contract/sync';
 import { db } from '@repo/db';
-import { memberProcedure, roleOf, router } from '#lib/trpc';
+import { roleOf, router, wholeCompanyProcedure } from '#lib/trpc';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
 
 export const syncRouter = router({
-  pull: memberProcedure
+  pull: wholeCompanyProcedure
     .input(pullInput)
     .output(pullOutput)
     .query(({ ctx, input }) =>
@@ -20,7 +20,7 @@ export const syncRouter = router({
         input,
       ),
     ),
-  push: memberProcedure
+  push: wholeCompanyProcedure
     .input(pushInput)
     .output(pushOutput)
     .mutation(({ ctx, input }) =>

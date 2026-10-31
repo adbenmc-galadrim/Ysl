@@ -828,6 +828,19 @@ describe('sync.push', () => {
       expect(await stored(unknownKey.entityId)).toEqual([]);
     });
 
+    it('saves the pickup of a company admin', async () => {
+      const write = op('setting', setting(newId()));
+
+      const { results } = await push(
+        sync,
+        { ...writer, role: 'company_admin' },
+        { ops: [write] },
+      );
+
+      expect(results.map((result) => result.status)).toEqual([200]);
+      await db.delete(schema.setting);
+    });
+
     it('saves the pickup of an admin, once per key', async () => {
       const first = op('setting', setting(newId()));
       const second = op('setting', setting(newId()));
