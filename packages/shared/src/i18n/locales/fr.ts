@@ -169,17 +169,15 @@ export const fr = {
   'sender.name': 'Nom affiché',
   'sender.email': 'Adresse',
   'sender.email.help':
-    'Avis de retrait, relances et invitations partent du serveur avec cette adresse.',
+    'L’adresse des e-mails envoyés par le serveur. Ceux préparés dans la messagerie du téléphone partent de son compte.',
   'sender.save': 'Enregistrer',
   'sender.saved': 'Expéditeur enregistré',
   'sender.check': 'Vérifier maintenant',
   'sender.pending.title': 'Domaine {{domain}} pas encore vérifié',
   'sender.pending.platform':
-    'En attendant, les e-mails partent de {{address}} au nom de « {{name}} ».',
-  'sender.pending.noPlatform':
-    'En attendant, les e-mails ne partent pas de cette adresse.',
+    'En attendant, les e-mails envoyés par le serveur partent de {{address}} au nom de « {{name}} ».',
   'sender.verified.title': '{{domain}} vérifié le {{date}}',
-  'sender.verified.description': 'Les e-mails partent de {{address}}.',
+  'sender.verified.description': 'Les e-mails envoyés par le serveur partent de {{address}}.',
   'sender.unconfigured.title': 'Envoi par le serveur pas encore activé',
   'sender.unconfigured.description':
     'L’expéditeur est gardé. La vérification du domaine ouvrira à l’activation ; d’ici là, la messagerie du téléphone reste utilisable.',

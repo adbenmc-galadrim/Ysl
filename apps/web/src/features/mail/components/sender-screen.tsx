@@ -103,14 +103,10 @@ function StatusBanner({ settings }: { settings: SenderSettings }) {
       tone="orange"
       icon="alert"
       title={t('sender.pending.title', { domain: sender.domain })}
-      description={
-        platformAddress
-          ? t('sender.pending.platform', {
-              address: platformAddress,
-              name: sender.name,
-            })
-          : t('sender.pending.noPlatform')
-      }
+      description={t('sender.pending.platform', {
+        address: platformAddress ?? '',
+        name: sender.name,
+      })}
     />
   );
 }
@@ -325,7 +321,10 @@ export function SenderScreen() {
                     block
                     icon="refresh"
                     disabled={check.isPending || !online || draft !== null}
-                    onClick={() => check.mutate()}
+                    onClick={() => {
+                      save.reset();
+                      check.mutate();
+                    }}
                   >
                     {t('sender.check')}
                   </Button>

@@ -16,9 +16,11 @@ const translate = createTranslator(DEFAULT_LOCALE);
 
 function context(): SenderContext {
   return {
-    provider: env.BREVO_API_KEY
-      ? brevoDomains({ apiKey: env.BREVO_API_KEY })
-      : null,
+    // The mail job needs both: without the address, nothing would leave.
+    provider:
+      env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
+        ? brevoDomains({ apiKey: env.BREVO_API_KEY })
+        : null,
     platformAddress: env.MAIL_FROM_ADDRESS ?? null,
   };
 }

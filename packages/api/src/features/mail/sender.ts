@@ -4,7 +4,7 @@ import type {
   SenderSettings,
 } from '@repo/contract/mail';
 import type { AnyDb } from '@repo/db';
-import { mailSender } from '@repo/db/schema';
+import { mailSender, organization } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, eq } from 'drizzle-orm';
 import type { EmailMessage, MailDomains } from '#features/mail/mailer';
@@ -219,7 +219,13 @@ export async function senderOf(
 ): Promise<EmailMessage['from']> {
   if (!organizationId) return undefined;
   const row = await rowOf(db, organizationId);
-  if (!row) return undefined;
+  if (!row) {
+    const [company] = await db
+      .select({ name: organization.name })
+      .from(organization)
+      .where(eq(organization.id, organizationId));
+    return company && { name: company.name };
+  }
   return row.status === 'verified'
     ? { email: row.email, name: row.name }
     : { name: row.name };

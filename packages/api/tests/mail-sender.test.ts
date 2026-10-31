@@ -123,10 +123,10 @@ describe('company sender', () => {
     expect(await sentFrom('m3')).toEqual(SENDER);
   });
 
-  it('keeps the plain platform sender for a company that set nothing', async () => {
+  it('sends in the company name when it set nothing', async () => {
     expect(await sentFrom('m1')).toEqual({
       email: 'notifications@plateforme.test',
-      name: 'Courrier',
+      name: 'Service courrier',
     });
   });
 
@@ -238,6 +238,13 @@ describe('who may claim a domain', () => {
 });
 
 describe('without the provider', () => {
+  it('counts a key without a sender address as not configured', async () => {
+    env.MAIL_FROM_ADDRESS = undefined;
+    const saved = await admin().mailSender.save(SENDER);
+    env.MAIL_FROM_ADDRESS = 'notifications@plateforme.test';
+    expect(saved.providerConfigured).toBe(false);
+  });
+
   it('saves the sender and says the check is unavailable', async () => {
     env.BREVO_API_KEY = undefined;
 
