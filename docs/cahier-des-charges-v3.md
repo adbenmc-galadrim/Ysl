@@ -403,14 +403,14 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 
 | Point | Choix provisoire | Ticket |
 | --- | --- | --- |
-| Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Celui qui déclare l'écart désigne les colis concernés | YSL-134 |
+| Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Confirmé par YSL-134 : le département désigne les colis ; « Je ne sais pas » les bloque tous ; « En trop » ne bloque aucun colis listé, le nombre reste au dépôt et s'affiche à l'admin ; « Salarié parti » bloque un colis qui est bien là | YSL-134 |
 | Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là | YSL-131, YSL-135 |
 | L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Confirmé : le serveur tire le code quand il met le mail en file et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
 | Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise (confirmé) | YSL-116 |
 | Durées de conservation d'une entreprise neuve (D28) | Confirmé : celles du §9.2 par défaut ; une entreprise sans réglage garde exactement ces durées | YSL-126 |
 | Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
-| Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
+| Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | Confirmé par YSL-134 : l'admin entreprise seul, la navette voit. Un colis à personne ne se déplace que par la personne. Un changement de département efface la trace de l'e-mail : le dépôt prévient de nouveau | YSL-134 |
 | Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Confirmé : le serveur tire un nouveau code à chaque relance et retire l'ancien, rétabli si le mail échoue ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
 | Conversion de la prod : profil de l'entreprise convertie et colis en cours | Profil qui reproduit l'agent unique (la navette remet, « Petit site ») ; les colis gardent leur statut | YSL-118 |
 | Cycle de vie d'une tournée : ouverture, clôture, colis « À compléter » | Un colis entre dans la tournée de la navette qui l'a validé ; la tournée se clôt quand tous sont déposés ; un colis « À compléter » reste visible de cette navette. Confirmé par YSL-133 : la tournée se déduit des colis, sans table `tour` ; un colis À régulariser ou retourné ne la retient pas ; la navette faisant office de département n'a pas de tournée | YSL-133 |
@@ -963,7 +963,7 @@ Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont
 | `pickup_code` | id, person_id ou contact_id, department_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne et par département, qui couvre ses colis en attente dans ce département (§3.7.9) |
 | `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, has_scan, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
-| `deposit` | Tournée : pas de table, déduite des colis (§3.7.9). Dépôt : département, navette, nombre attendu, nombre confirmé, écart, confirmé par, à | Le nombre confirmé suffit ; le détail dépend du profil |
+| `deposit` | Tournée : pas de table, déduite des colis (§3.7.9). Dépôt : département, navette, colis annoncés, nombre compté, écart et colis concernés, confirmé par, à | Annoncé par la navette, hors ligne compris ; le colis reste « En route » jusqu'à la confirmation, écrite par le serveur seul |
 | `setting` | clé, valeur | Réglages restants par entreprise ; lieu et horaires passent au département |
 
 **Côté client (Dexie)**, on retrouve les mêmes tables, à l'exception de `user`, ainsi que :
