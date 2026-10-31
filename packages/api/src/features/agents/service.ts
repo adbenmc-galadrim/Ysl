@@ -39,7 +39,8 @@ async function refusePlatformAccount(
   userId: string,
 ): Promise<void> {
   const target = await auth.api.getUser({ headers, query: { id: userId } });
-  if (isPlatformAccount(target)) {
+  // No `role` at all means Better Auth stopped sending it: refuse rather than read it as an agent.
+  if (target.role === undefined || isPlatformAccount(target)) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: translate('agents.error.notFound'),

@@ -146,6 +146,19 @@ describe('agents, app admin accounts', () => {
     expect(api.revokeUserSessions).not.toHaveBeenCalled();
   });
 
+  it('refuses when the role of the target is unknown', async () => {
+    api.getUser.mockResolvedValue({});
+
+    await expect(
+      admin().agents.resetPassword({
+        userId: 'app-admin',
+        password: 'motdepasse-1',
+      }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(api.setUserPassword).not.toHaveBeenCalled();
+  });
+
   it('still resets the password of an agent', async () => {
     api.getUser.mockResolvedValue({ role: 'agent' });
 
