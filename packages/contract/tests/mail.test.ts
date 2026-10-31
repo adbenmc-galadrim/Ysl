@@ -429,6 +429,28 @@ describe('parcels of a confirmed mail', () => {
     });
   });
 
+  it('traces the mail of a parcel on tour and leaves it en route (§3.7.9)', () => {
+    const onTour = { ...base, status: 'en_route' as const };
+    expect(notifyParcel(onTour, options)).toMatchObject({
+      reminder: false,
+      patch: {
+        status: 'en_route',
+        statusSeq: 2,
+        notifiedAt: null,
+        lastNotifiedAt: sentAt,
+      },
+    });
+    expect(
+      notifyParcel({ ...onTour, lastNotifiedAt: sentAt }, options),
+    ).toMatchObject({ skip: 'closed' });
+  });
+
+  it('holds a parcel to settle back: no mail tells it', () => {
+    expect(
+      notifyParcel({ ...base, status: 'a_regulariser' }, options),
+    ).toMatchObject({ skip: 'closed' });
+  });
+
   it('records a reminder without moving the first notice', () => {
     const first = new Date('2026-10-25T09:00:00Z');
     const change = notifyParcel(
@@ -482,7 +504,9 @@ describe('reachedNobody', () => {
 
   it('holds only when every mail that left bounced', () => {
     expect(reachedNobody('p', [mail('bounced')])).toBe(true);
-    expect(reachedNobody('p', [mail('bounced'), mail('delivered')])).toBe(false);
+    expect(reachedNobody('p', [mail('bounced'), mail('delivered')])).toBe(
+      false,
+    );
     expect(reachedNobody('p', [mail('bounced'), mail(null)])).toBe(false);
     expect(reachedNobody('p', [{ ...mail('bounced'), sentAt: null }])).toBe(
       false,

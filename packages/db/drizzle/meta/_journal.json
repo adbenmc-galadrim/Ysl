@@ -183,6 +183,13 @@
       "when": 1793444324779,
       "tag": "0025_envoi_serveur",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793449405797,
+      "tag": "0026_statuts_tournee",
+      "breakpoints": true
     }
   ]
 }

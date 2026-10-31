@@ -21,7 +21,7 @@ describe('CourrierDatabase', () => {
         'handover_proof',
       ].sort(),
     );
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
     for (const entity of SYNCED_ENTITIES) {
       expect(db.synced(entity).schema.primKey.name).toBe('id');
     }
@@ -75,7 +75,7 @@ describe('CourrierDatabase upgrade to version 3', () => {
     await db.open();
     const [op] = await db.outbox.toArray();
 
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
     expect(op?.state).toBe('queued');
     expect(await db.outbox.where('state').equals('queued').count()).toBe(1);
     db.close();
@@ -101,6 +101,26 @@ describe('CourrierDatabase upgrade to version 8', () => {
     expect(await db.syncState.get(SYNC_STATE_KEYS.cursor)).toBeUndefined();
     expect(await db.syncState.get(SYNC_STATE_KEYS.lastSyncAt)).toBeDefined();
     expect(await db.parcel.get('p-1')).toBeDefined();
+    db.close();
+  });
+});
+
+describe('CourrierDatabase upgrade to version 9', () => {
+  it('reads everything again, for the parcels of a tour shown as removed', async () => {
+    const name = 'schema-upgrade-9-test';
+    const older = new Dexie(name);
+    older.version(8).stores({ parcel: 'id', sync_state: 'key' });
+    await older.open();
+    await older.table('sync_state').put({
+      key: SYNC_STATE_KEYS.cursor,
+      value: { generation: 'g', xid: 42 },
+    });
+    older.close();
+
+    const db = new CourrierDatabase(name);
+    await db.open();
+
+    expect(await db.syncState.get(SYNC_STATE_KEYS.cursor)).toBeUndefined();
     db.close();
   });
 });

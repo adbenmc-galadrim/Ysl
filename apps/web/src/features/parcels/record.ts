@@ -260,6 +260,19 @@ function stateCard(
         title: t('parcel.status.returned'),
         description,
       };
+    case 'en_route':
+    case 'depose':
+      return {
+        icon: 'package',
+        title: t(`parcel.state.${parcel.status}`),
+        description,
+      };
+    case 'a_regulariser':
+      return {
+        icon: 'alert',
+        title: t('parcel.state.a_regulariser'),
+        description,
+      };
   }
 }
 

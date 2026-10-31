@@ -5,16 +5,29 @@ export type MoveOutcome = 'follows' | 'toSettle' | 'stays';
 
 /**
  * What becomes of a parcel when its person changes department (ME21). The
- * trigger of `drizzle/0021` holds the same list; a test compares them. Hook of
- * YSL-131: `en_route` follows, `depose` goes `toSettle`, and the trigger marks it.
+ * trigger `directory_person_moved` holds the same list; a test compares them.
+ * `toSettle`: already at its department, the parcel stays and is marked (D25).
+ * Read it through `moveOutcomeOf`: a notified parcel may be deposited too.
  */
 export const PARCEL_ON_MOVE: Record<ParcelStatus, MoveOutcome> = {
   a_completer: 'follows',
   recu: 'follows',
+  en_route: 'follows',
+  depose: 'toSettle',
+  a_regulariser: 'stays',
   notifie: 'follows',
   remis: 'stays',
   retourne: 'stays',
 };
+
+export function moveOutcomeOf(parcel: {
+  status: ParcelStatus;
+  depositedAt?: Date | null;
+}): MoveOutcome {
+  return parcel.status === 'notifie' && parcel.depositedAt
+    ? 'toSettle'
+    : PARCEL_ON_MOVE[parcel.status];
+}
 
 const personId = z.uuid();
 const departmentId = z.uuid();

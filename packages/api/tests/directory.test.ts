@@ -23,6 +23,7 @@ import { accessOf, addDepartment, addPerson } from './helpers/departments';
 import {
   asAnyDb,
   openTestDb,
+  AGENT_ID,
   ORGANIZATION_ID,
   OTHER_ORGANIZATION_ID,
   parcelRow,
@@ -95,8 +96,100 @@ describe('a person who changes department', () => {
       expect((await parcelOf(parcel)).departmentId).toBe(
         PARCEL_ON_MOVE[status] === 'follows' ? studio : finance,
       );
+      expect((await parcelOf(parcel)).status).toBe(
+        PARCEL_ON_MOVE[status] === 'toSettle' ? 'a_regulariser' : status,
+      );
     },
   );
+
+  it('marks a deposited parcel in place, one step up, with its line in the history', async () => {
+    const person = await addPerson(db, finance);
+    const parcel = await addParcel(person);
+    await client.exec(
+      `update parcel set department_id = '${finance}', status = 'en_route', status_seq = 1 where id = '${parcel}'; update parcel set status = 'depose', status_seq = 2, deposited_at = now() where id = '${parcel}';`,
+    );
+
+    expect(await moveEffectsOf(any, ORGANIZATION_ID, person)).toEqual({
+      follows: 0,
+      toSettle: 1,
+    });
+    await move(person, studio);
+
+    expect(await parcelOf(parcel)).toMatchObject({
+      status: 'a_regulariser',
+      statusSeq: 3,
+      departmentId: finance,
+    });
+    const events = await db
+      .select()
+      .from(schema.event)
+      .where(eq(schema.event.entityId, parcel));
+    expect(events).toEqual([
+      expect.objectContaining({
+        entity: 'parcel',
+        type: 'parcel.status',
+        detail: { from: 'depose', to: 'a_regulariser' },
+      }),
+    ]);
+    const { rows } = await pull(
+      any,
+      {
+        organizationId: ORGANIZATION_ID,
+        userId: AGENT_ID,
+        role: 'department',
+        departmentId: finance,
+      },
+      {
+        cursor: null,
+        page: null,
+        limit: 1000,
+        departments: true,
+      },
+    );
+    expect(
+      rows.some(({ entity, row }) => entity === 'parcel' && row.id === parcel),
+    ).toBe(true);
+  });
+
+  it('marks a parcel deposited and notified in place, and lets an earlier one follow', async () => {
+    const person = await addPerson(db, finance);
+    const deposited = await addParcel(person);
+    const atTheDesk = await addParcel(person);
+    await client.exec(
+      `update parcel set status = 'notifie', status_seq = 1, notified_at = now() where id in ('${deposited}', '${atTheDesk}'); update parcel set deposited_at = now() where id = '${deposited}';`,
+    );
+
+    expect(await moveEffectsOf(any, ORGANIZATION_ID, person)).toEqual({
+      follows: 1,
+      toSettle: 1,
+    });
+    await move(person, studio);
+
+    expect(await parcelOf(deposited)).toMatchObject({
+      status: 'a_regulariser',
+      departmentId: finance,
+    });
+    expect(await parcelOf(atTheDesk)).toMatchObject({
+      status: 'notifie',
+      departmentId: studio,
+    });
+  });
+
+  it('forgets the e-mail of a parcel on tour: it named the old department', async () => {
+    const person = await addPerson(db, finance);
+    const parcel = await addParcel(person);
+    await client.exec(
+      `update parcel set status = 'en_route', status_seq = 1, last_notified_at = now() where id = '${parcel}';`,
+    );
+
+    await move(person, studio);
+
+    expect(await parcelOf(parcel)).toMatchObject({
+      status: 'en_route',
+      departmentId: studio,
+      lastNotifiedAt: null,
+    });
+  });
 
   it('says beforehand what will follow', async () => {
     const person = await addPerson(db, finance);

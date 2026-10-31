@@ -36,6 +36,7 @@ export function parcelRow(overrides: Partial<LocalParcel> = {}): LocalParcel {
     type: 'colis',
     status: 'recu',
     statusSeq: 0,
+    depositedAt: null,
     reply: null,
     repliedAt: null,
     expectedDelegate: null,

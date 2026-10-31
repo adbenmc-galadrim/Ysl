@@ -1,3 +1,4 @@
+import { UNFINISHED_STATUSES } from '@repo/contract/parcel-status';
 import { toUserRole } from '@repo/contract/auth';
 import type {
   AttachDepartmentAccountInput,
@@ -180,7 +181,7 @@ export async function archiveDepartment(
         eq(parcel.organizationId, organizationId),
         eq(parcel.departmentId, id),
         isNull(parcel.deletedAt),
-        inArray(parcel.status, ['a_completer', 'recu', 'notifie']),
+        inArray(parcel.status, UNFINISHED_STATUSES),
       ),
     )
     .limit(1);

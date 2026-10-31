@@ -63,6 +63,7 @@ describe('pullChanges', () => {
       page: null,
       limit: 200,
       departments: true,
+      tourStatuses: true,
     });
     expect(await db.parcel.get(parcel.id)).toMatchObject({
       notes: 'du serveur',
@@ -107,8 +108,15 @@ describe('pullChanges', () => {
         page: null,
         limit: 1,
         departments: true,
+        tourStatuses: true,
       },
-      { cursor: null, page: token, limit: 1, departments: true },
+      {
+        cursor: null,
+        page: token,
+        limit: 1,
+        departments: true,
+        tourStatuses: true,
+      },
     ]);
     expect(cursorsSeen).toEqual([
       { generation: GENERATION, xid: 300 },
@@ -252,6 +260,7 @@ describe('pullChanges', () => {
       page: null,
       limit: 200,
       departments: true,
+      tourStatuses: true,
     });
     expect(outcome.cursor).toEqual({ generation: GENERATION, xid: 25 });
     expect(await db.parcel.get(erased.id)).toBeUndefined();

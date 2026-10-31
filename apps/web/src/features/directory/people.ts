@@ -1,5 +1,5 @@
 import type { MoveEffects } from '@repo/contract/directory';
-import { OPEN_STATUSES } from '@repo/contract/parcel-status';
+import { UNFINISHED_STATUSES } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { newId } from '@repo/shared/id';
 import { isEmail, normalizeName } from '@repo/shared/text';
@@ -283,14 +283,14 @@ export function letterOf(name: string): string {
   return /[A-Z]/.test(letter) ? letter : '#';
 }
 
-/** Those still at the desk, by person: the « Colis en cours » of the table. */
+/** Those not yet out of the company's hands, by person: the « Colis en cours » of the table. */
 export function openParcelsByPerson(
   parcels: readonly Pick<LocalParcel, 'personId' | 'status' | 'deletedAt'>[],
 ): Map<string, number> {
   const counts = new Map<string, number>();
   for (const { personId, status, deletedAt } of parcels) {
     if (!personId || deletedAt) continue;
-    if (!(OPEN_STATUSES as readonly string[]).includes(status)) continue;
+    if (!(UNFINISHED_STATUSES as readonly string[]).includes(status)) continue;
     counts.set(personId, (counts.get(personId) ?? 0) + 1);
   }
   return counts;

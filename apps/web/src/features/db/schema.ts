@@ -485,6 +485,10 @@ export class CourrierDatabase extends Dexie {
     this.version(8)
       .stores(DEPARTMENT_STORES)
       .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
+    // The same for the parcels of a tour, shown to the app before this one as removed.
+    this.version(9)
+      .stores({})
+      .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');

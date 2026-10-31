@@ -136,6 +136,8 @@ export const pullInput = z.object({
   limit: z.number().int().min(1).max(PULL_PAGE_MAX).default(PULL_PAGE_DEFAULT),
   /** This app has a `department` table: a PWA of before would fail on its rows. */
   departments: z.literal(true).optional(),
+  /** This app knows the statuses of a tour: a PWA of before gets those parcels as removed. */
+  tourStatuses: z.literal(true).optional(),
 });
 
 export type PullInput = z.infer<typeof pullInput>;

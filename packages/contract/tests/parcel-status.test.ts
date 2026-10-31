@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { knownReminders } from '@repo/contract/reminders';
 import {
   BACKWARD_TRANSITIONS,
   canTransition,
+  depositedStatus,
   FORWARD_TRANSITIONS,
   isStepBack,
   PARCEL_STATUSES,
@@ -40,7 +42,9 @@ describe('the status graph', () => {
     for (const from of PARCEL_STATUSES) {
       for (const to of BACKWARD_TRANSITIONS[from]) {
         expect(FORWARD_TRANSITIONS[to], `${from} → ${to}`).toContain(from);
-        expect(isStepBack(from, to)).toBe(true);
+        expect(isStepBack(from, to)).toBe(
+          !FORWARD_TRANSITIONS[from].includes(to),
+        );
       }
     }
   });
@@ -59,12 +63,104 @@ describe('stepBackOf', () => {
     ['a_completer', null, undefined],
     ['recu', null, 'a_completer'],
     ['notifie', EARLIER, 'recu'],
+    ['en_route', null, 'recu'],
+    ['depose', null, 'en_route'],
+    ['a_regulariser', EARLIER, 'notifie'],
+    ['a_regulariser', null, 'en_route'],
     ['remis', EARLIER, 'notifie'],
     ['remis', null, 'recu'],
     ['retourne', EARLIER, 'notifie'],
     ['retourne', null, 'recu'],
   ] as const)('%s, notified %s → %s', (status, notifiedAt, expected) => {
     expect(stepBackOf({ status, notifiedAt })).toBe(expected);
+  });
+});
+
+describe('stepBackOf a deposited parcel', () => {
+  it('goes back to the deposit, not to the reception', () => {
+    const depositedAt = EARLIER;
+    expect(
+      stepBackOf({ status: 'notifie', notifiedAt: NOW, depositedAt }),
+    ).toBe('depose');
+    expect(stepBackOf({ status: 'remis', notifiedAt: null, depositedAt })).toBe(
+      'depose',
+    );
+    expect(
+      stepBackOf({ status: 'a_regulariser', notifiedAt: null, depositedAt }),
+    ).toBe('depose');
+  });
+});
+
+describe('a parcel going on tour', () => {
+  it('needs a department', () => {
+    expect(() => statusPatch(fields(), 'en_route', context)).toThrow(
+      StatusTransitionError,
+    );
+    expect(
+      statusPatch(fields({ departmentId: 'finance' }), 'en_route', context)
+        .status,
+    ).toBe('en_route');
+  });
+
+  it('reads a gap as a step forward, not as an undo', () => {
+    expect(isStepBack('en_route', 'a_regulariser')).toBe(false);
+    expect(isStepBack('a_regulariser', 'en_route')).toBe(false);
+    expect(isStepBack('depose', 'en_route')).toBe(true);
+  });
+});
+
+describe('the deposit of a parcel on tour (§3.7.9)', () => {
+  const onTour = (lastNotifiedAt: Date | null) =>
+    fields({ status: 'en_route', lastNotifiedAt, departmentId: 'finance' });
+
+  it('is « Déposé » when no e-mail has left', () => {
+    expect(depositedStatus(onTour(null))).toBe('depose');
+    expect(statusPatch(onTour(null), 'depose', context)).toMatchObject({
+      depositedAt: NOW,
+      notifiedAt: null,
+    });
+  });
+
+  it('is « Notifié » after the e-mail of the scan, counting from the deposit', () => {
+    const parcel = onTour(EARLIER);
+    expect(depositedStatus(parcel)).toBe('notifie');
+    expect(statusPatch(parcel, 'notifie', context)).toMatchObject({
+      notifiedAt: NOW,
+      lastNotifiedAt: EARLIER,
+      depositedAt: NOW,
+    });
+    expect(
+      knownReminders({ notifiedAt: NOW, lastNotifiedAt: EARLIER }, []),
+    ).toEqual([]);
+  });
+
+  it('goes back on tour, its e-mail kept, when that deposit is undone', () => {
+    const deposited = fields({
+      status: 'notifie',
+      notifiedAt: NOW,
+      lastNotifiedAt: EARLIER,
+      depositedAt: NOW,
+      departmentId: 'finance',
+    });
+    expect(stepBackOf(deposited)).toBe('en_route');
+    const back = statusPatch(deposited, 'en_route', context);
+    expect(back).toMatchObject({ notifiedAt: null, lastNotifiedAt: EARLIER });
+    expect(depositedStatus(back)).toBe('notifie');
+  });
+
+  it('keeps the e-mail through a gap that is settled', () => {
+    const settled = statusPatch(onTour(EARLIER), 'a_regulariser', context);
+    const back = statusPatch(
+      fields({ ...settled, departmentId: 'finance' }),
+      'en_route',
+      context,
+    );
+    expect(depositedStatus(back)).toBe('notifie');
+  });
+
+  it('cannot be handed over on tour', () => {
+    expect(canTransition('en_route', 'remis')).toBe(false);
+    expect(canTransition('a_regulariser', 'remis')).toBe(false);
   });
 });
 

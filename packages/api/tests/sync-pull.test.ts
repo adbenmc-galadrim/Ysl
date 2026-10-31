@@ -326,3 +326,69 @@ describe('sync.pull', () => {
     expect(ids(second)).toEqual([older.id]);
   });
 });
+
+describe('sync.pull and the statuses of a tour', () => {
+  const addOnTour = async (status: 'en_route' | 'depose' | 'a_regulariser') => {
+    const row = parcelRow();
+    await db.insert(schema.parcel).values(row);
+    await client.exec(
+      `alter table parcel disable trigger user; update parcel set status = '${status}' where id = '${row.id}'; alter table parcel enable trigger user;`,
+    );
+    return row.id;
+  };
+  const parcelsOf = (output: PullOutput) =>
+    new Map(
+      output.rows
+        .filter(({ entity }) => entity === 'parcel')
+        .map(({ row }) => [row.id, row]),
+    );
+
+  it.each(['en_route', 'depose', 'a_regulariser'] as const)(
+    'takes a parcel %s off a PWA of before, which knows no such status',
+    async (status) => {
+      const id = await addOnTour(status);
+      const waiting = parcelRow();
+      await db.insert(schema.parcel).values(waiting);
+      const input = { cursor: null, page: null, limit: 1000 };
+
+      const before = parcelsOf(await pull(sync, READER, input));
+
+      expect(before.get(id)?.deletedAt).toBeInstanceOf(Date);
+      expect(before.get(waiting.id)).toMatchObject({
+        status: 'recu',
+        deletedAt: null,
+      });
+    },
+  );
+
+  it('shows it as it is to the app that says it knows them', async () => {
+    const id = await addOnTour('en_route');
+
+    const known = parcelsOf(
+      await pull(sync, READER, {
+        cursor: null,
+        page: null,
+        limit: 1000,
+        tourStatuses: true,
+      }),
+    );
+
+    expect(known.get(id)).toMatchObject({
+      status: 'en_route',
+      deletedAt: null,
+    });
+  });
+
+  it('gives it back to the PWA once it returns to a status it knows', async () => {
+    const id = await addOnTour('en_route');
+    await client.exec(
+      `alter table parcel disable trigger user; update parcel set status = 'recu', server_xid = pg_current_xact_id()::text::bigint where id = '${id}'; alter table parcel enable trigger user;`,
+    );
+
+    const back = parcelsOf(
+      await pull(sync, READER, { cursor: null, page: null, limit: 1000 }),
+    );
+
+    expect(back.get(id)).toMatchObject({ status: 'recu', deletedAt: null });
+  });
+});
