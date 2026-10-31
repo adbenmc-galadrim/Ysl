@@ -46,6 +46,8 @@ import {
   reviewSummary,
 } from '#/features/review/model';
 import { usePhoto } from '#/features/review/photo';
+import { readCompanySettings } from '#/features/settings/company-settings';
+import { useCompanySettings } from '#/features/settings/use-company-settings';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -145,11 +147,15 @@ export function ReviewScreen() {
   const settling = useRef(false);
   const savingRef = useRef(false);
   const matcher = recipientMatcher();
+  const anchors = useCompanySettings().reception?.anchors;
   const urls = useDraftPhotos(drafts ?? []);
 
   useEffect(() => {
-    matcher.setEntries(recipientEntries(people, contacts, names));
-  }, [matcher, people, contacts, names]);
+    matcher.setEntries(
+      recipientEntries(people, contacts, names),
+      anchors,
+    );
+  }, [matcher, people, contacts, names, anchors]);
 
   /* Once per visit: the exact names a code prints settle their card silently. */
   useEffect(() => {
@@ -166,6 +172,7 @@ export function ReviewScreen() {
           await db.contact.toArray(),
           await departmentNames(db),
         ),
+        (await readCompanySettings(db)).reception?.anchors,
       );
       await settleRecipients(db, batchId, matcher);
       setSettled(true);

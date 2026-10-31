@@ -4,6 +4,8 @@ import {
   readableName,
   readTokens,
   withinOneEdit,
+  type HostMarks,
+  hostMarks,
 } from './words';
 
 /** A card of the directory (`directory_person`) or a contact outside it (`contact`). */
@@ -42,6 +44,8 @@ export type RecipientIndex = {
   entries: readonly Indexed[];
   /** First names the directory knows, for the lost `I` of `|SABELLE` (§4.8). */
   firstNames: ReadonlySet<string>;
+  /** The company's own name and street, which never name a person (ME34). */
+  host: HostMarks;
 };
 
 /** Where a name comes from: a structured code, the OCR's name, or the whole text. */
@@ -87,6 +91,7 @@ const significant = (text: string) =>
 
 export function indexRecipients(
   entries: readonly RecipientEntry[],
+  anchors: readonly string[] = [],
 ): RecipientIndex {
   const indexed: Indexed[] = [];
   const firstNames = new Set<string>();
@@ -104,7 +109,7 @@ export function indexRecipients(
       order: [...first, ...last].join(' '),
     });
   }
-  return { entries: indexed, firstNames };
+  return { entries: indexed, firstNames, host: hostMarks(anchors) };
 }
 
 /** A word read, or two neighbours glued, with the positions it covers. */
@@ -224,8 +229,8 @@ export function matchRecipient(
   const named = reads
     .map((read) => ({
       source: read.source,
-      tokens: readTokens(read.text, index.firstNames),
-      readName: readableName(read.text, index.firstNames),
+      tokens: readTokens(read.text, index.firstNames, index.host),
+      readName: readableName(read.text, index.firstNames, index.host),
     }))
     .filter((read) => read.tokens.length > 0);
   const strict = named.length === 0;
@@ -234,7 +239,7 @@ export function matchRecipient(
       ? [
           {
             source: 'text' as const,
-            tokens: readTokens(text, index.firstNames),
+            tokens: readTokens(text, index.firstNames, index.host),
           },
         ]
       : []

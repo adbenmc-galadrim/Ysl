@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   fixOcrWord,
+  hostMarks,
   indexRecipients,
   matchRecipient,
   readableName,
+  readTokens,
   type RecipientEntry,
   silentMatch,
   type RecipientRead,
 } from '@repo/contract/recipient';
+import { FIRST_CLIENT } from './fixtures/first-client';
 
 const person = (
   id: string,
@@ -15,19 +18,22 @@ const person = (
   lastName: string,
 ): RecipientEntry => ({ id, kind: 'person', firstName, lastName });
 
-const DIRECTORY = indexRecipients([
-  person('lea', 'Léa', 'Fontaine'),
-  person('louis', 'Louis', 'Fontaine'),
-  person('lise', 'Lise', 'Fontan'),
-  person('isabelle', 'Isabelle', 'Moreau'),
-  person('eulalie', 'Eulalie', 'Lefèvre'),
-  person('axelle', 'Axelle', 'Lelievre'),
-  person('pierre', 'Pierre', 'de La Rochère'),
-  person('laurent', 'Laurent', 'Martin'),
-  person('hugo', 'Hugo', 'Dupont'),
-  person('leo', 'Léo', 'Durand'),
-  { id: 'nora', kind: 'contact', firstName: 'Nora', lastName: 'Haddad' },
-]);
+const DIRECTORY = indexRecipients(
+  [
+    person('lea', 'Léa', 'Fontaine'),
+    person('louis', 'Louis', 'Fontaine'),
+    person('lise', 'Lise', 'Fontan'),
+    person('isabelle', 'Isabelle', 'Moreau'),
+    person('eulalie', 'Eulalie', 'Lefèvre'),
+    person('axelle', 'Axelle', 'Lelievre'),
+    person('pierre', 'Pierre', 'de La Rochère'),
+    person('laurent', 'Laurent', 'Martin'),
+    person('hugo', 'Hugo', 'Dupont'),
+    person('leo', 'Léo', 'Durand'),
+    { id: 'nora', kind: 'contact', firstName: 'Nora', lastName: 'Haddad' },
+  ],
+  FIRST_CLIENT.anchors,
+);
 
 const ocr = (text: string): RecipientRead => ({ text, source: 'ocr' });
 const code = (text: string): RecipientRead => ({ text, source: 'code' });
@@ -137,6 +143,53 @@ describe('matchRecipient — the read name', () => {
     expect(bestOf([ocr('H. DUPONT')])).toBe('hugo');
   });
 
+  it("reads another company's name as nobody, and the first client's as a name", () => {
+    const lumen = hostMarks(['Atelier Lumen', 'Rue Royale']);
+    expect(readTokens('ATEL1ER LUMEN HUGO DUPONT', new Set(), lumen)).toEqual([
+      'hugo',
+      'dupont',
+    ]);
+    expect(readTokens('BELLECHASSE DUPONT', new Set(), lumen)).toContain(
+      'bellechasse',
+    );
+    expect(readTokens('SAINT DUPONT')).toContain('saint');
+  });
+
+  it('reads a hyphenated or apostrophed company as nobody', () => {
+    expect(
+      readTokens('SAINT-GOBAIN DUPONT', new Set(), hostMarks(['Saint-Gobain'])),
+    ).toEqual(['dupont']);
+    expect(
+      readTokens("L'OREAL DUPONT", new Set(), hostMarks(["L'Oréal"])),
+    ).toEqual(['dupont']);
+    for (const printed of ["L'Oréal", "L'ORÉAL", 'L’OREAL']) {
+      expect(
+        readTokens(`${printed} DUPONT`, new Set(), hostMarks(["L'Oréal"])),
+      ).toEqual(['dupont']);
+      expect(
+        readableName(`${printed} DUPONT`, new Set(), hostMarks(["L'Oréal"])),
+      ).toBe('Dupont');
+    }
+  });
+
+  it('keeps a compound name holding a single-word anchor', () => {
+    expect(
+      readableName(
+        'Marie Saint-Martin',
+        new Set(),
+        hostMarks(FIRST_CLIENT.anchors),
+      ),
+    ).toBe('Marie Saint-Martin');
+  });
+
+  it('keeps a name that merely starts like a single-word anchor', () => {
+    const host = hostMarks(['Bellechasse']);
+    expect(readTokens('BELLECHASSEUR DUPONT', new Set(), host)).toContain(
+      'dupont',
+    );
+    expect(readableName('BELLA DUPONT', new Set(), host)).toBe('Bella Dupont');
+  });
+
   it('ignores the debris of the host company', () => {
     expect(ids([ocr('SAINT LAURENT')])).toEqual([]);
     expect(ids([ocr('SA1NT LAURENT BELLECHASSE')])).toEqual([]);
@@ -229,7 +282,12 @@ describe('readableName', () => {
       'Jean-Pierre De La Rochere',
     );
     expect(readableName('L.FONTAIN')).toBe('L. Fontain');
-    expect(readableName('SAINT LAURENT')).toBeNull();
+    expect(
+      readableName('SAINT LAURENT', new Set(), hostMarks(FIRST_CLIENT.anchors)),
+    ).toBeNull();
+    expect(
+      readableName('SA1NT LAUREN1', new Set(), hostMarks(FIRST_CLIENT.anchors)),
+    ).toBeNull();
   });
 });
 

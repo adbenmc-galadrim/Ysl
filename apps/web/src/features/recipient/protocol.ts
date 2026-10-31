@@ -5,7 +5,7 @@ import type {
 } from '@repo/contract/recipient';
 
 export type MatchRequest =
-  | { type: 'index'; entries: RecipientEntry[] }
+  | { type: 'index'; entries: RecipientEntry[]; anchors: string[] }
   | {
       type: 'match';
       id: number;

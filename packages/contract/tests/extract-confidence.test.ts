@@ -8,6 +8,8 @@ import {
   ocrTrackings,
 } from '@repo/contract/extract';
 
+import { FIRST_CLIENT } from './fixtures/first-client';
+
 const UPS = '1Z12345E0205271686';
 const DHL = '5413337112';
 const FEDEX = '877974873338';
@@ -180,6 +182,7 @@ describe('recipient — business checks of §4.3', () => {
   it('asks « réexpédition ? » for a code addressed outside 75007', () => {
     const { recipient } = extractFields({
       symbols: [{ format: 'Aztec', text: dpdAztec('MARIE CURIE', '69002') }],
+      reception: FIRST_CLIENT,
     });
     expect(recipient).toMatchObject({
       confidence: 0.82,
@@ -188,11 +191,36 @@ describe('recipient — business checks of §4.3', () => {
     });
   });
 
+  it('asks nothing of a company that has not set its address', () => {
+    const { recipient } = extractFields({
+      symbols: [{ format: 'Aztec', text: dpdAztec('MARIE CURIE', '69002') }],
+    });
+    expect(recipient).toMatchObject({ level: 'sure', flags: [] });
+  });
+
+  it('compares a label to the address of its own company', () => {
+    const lyon = { postalCode: '69002' };
+    const read = (reception: { postalCode: string }) =>
+      extractFields({
+        symbols: [{ format: 'Aztec', text: dpdAztec('MARIE CURIE', '69002') }],
+        reception,
+      }).recipient?.flags;
+    expect(read(lyon)).toEqual([]);
+    expect(read(FIRST_CLIENT)).toEqual(['forward']);
+  });
+
   it('tells the mailroom country from another', () => {
-    expect(elsewhere({ postalCode: '75007', country: 'FR' })).toBe(false);
-    expect(elsewhere({ postalCode: '75 007', country: '250' })).toBe(false);
-    expect(elsewhere({ postalCode: '75007', country: '276' })).toBe(true);
-    expect(elsewhere({ name: 'MARIE CURIE' })).toBe(false);
+    expect(elsewhere({ postalCode: '75007', country: 'FR' }, FIRST_CLIENT)).toBe(
+      false,
+    );
+    expect(elsewhere({ postalCode: '75 007', country: '250' }, FIRST_CLIENT)).toBe(
+      false,
+    );
+    expect(elsewhere({ postalCode: '75007', country: '276' }, FIRST_CLIENT)).toBe(
+      true,
+    );
+    expect(elsewhere({ name: 'MARIE CURIE' }, FIRST_CLIENT)).toBe(false);
+    expect(elsewhere({ postalCode: '69002' }, null)).toBe(false);
   });
 
   it('takes the OCR name close to the code name as the same reading', () => {

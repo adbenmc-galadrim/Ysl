@@ -10,6 +10,7 @@ import {
 import type { DraftParcel } from '#/features/db/schema';
 import { ocrText } from '#/features/scan/annex';
 import { recipientInCodes } from '#/features/scan/extract';
+import { currentReception } from '#/features/settings/company-snapshot';
 
 /** What the agent typed, chose or confirmed (§4.3 rank 9). */
 export const AGENT_CONFIDENCE = 1;
@@ -109,6 +110,7 @@ export function draftFields(
         : { text, recipientName: draft.ocrName },
     directory,
     recipients: draft.learnedRecipient ? [draft.learnedRecipient] : null,
+    reception: currentReception(),
   });
   return {
     extraction,

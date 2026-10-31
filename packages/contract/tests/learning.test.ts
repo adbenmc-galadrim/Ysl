@@ -161,6 +161,7 @@ describe('a learned recipient addressed elsewhere', () => {
     const { recipient, recipientCard } = extractFields({
       symbols: [{ format: 'Aztec', text: aztec }],
       recipients: [lea(4)],
+      reception: { postalCode: '75007' },
     });
     expect(recipientCard).toEqual({ kind: 'person', id: 'person-1' });
     expect(recipient?.flags).toContain('forward');

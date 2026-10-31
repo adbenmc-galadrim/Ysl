@@ -1,3 +1,4 @@
+import type { CompanyReception } from '../company-settings';
 import type { CarrierService, CodeSymbol, ParsedCode, Pieces } from '../codes';
 import type { TrackingContext } from '../tracking/rules';
 import type { KnownRecipientAlias } from './learning';
@@ -51,6 +52,8 @@ export type OcrInput = {
 };
 
 export type ExtractInput = {
+  /** The company's address (ME34): without one, no label is « elsewhere ». */
+  reception?: Pick<CompanyReception, 'postalCode'> | null;
   symbols: readonly CodeSymbol[];
   ocr?: OcrInput | null;
   /** The account dictionary and the senders already seen (§4.8). */

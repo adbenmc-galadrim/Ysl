@@ -76,18 +76,84 @@ export const NOT_NAME = new Set([
   'dr',
 ]);
 
-/**
- * The host company and its street as labels print them, OCR slips allowed:
- * debris of these lines must never bring a person (v1 `RE_CO`, `RE_ADDR`).
- * « Laurent » alone stays a first name; only the phrase is the company.
- */
-const HOST_PHRASES = [
-  /\b(?:Y[VW]ES\s*)?S[A4][I1L!|]NT\s*-?\s*L[A4][UV]R[A-Z0-9]*/gi,
-  /\bYSL\b/gi,
-];
+const fold = (text: string) =>
+  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
-/** Single words of the host's address, matched at one edit (v1 `isNameWord`). */
-const HOST_WORDS = ['saint', 'bellechasse', 'ysl'];
+/** What one letter of an anchor may print as: an OCR slip (v1 `RE_CO`), or its accent. */
+const PRINTED_AS: Record<string, string> = {
+  A: 'A4ÀÂÄ',
+  C: 'CÇ',
+  E: 'EÉÈÊË',
+  I: 'I1L!|ÎÏ',
+  O: 'OÔÖ',
+  U: 'UVÙÛÜ',
+  V: 'VW',
+  "'": "'’",
+};
+
+const WHOLE_WORD_UP_TO = 4;
+
+const letterPattern = (letter: string) => {
+  const printed = PRINTED_AS[letter];
+  if (printed) return `[${printed.replace('|', '\\|')}]`;
+  return letter.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+};
+
+const wordPattern = (word: string) => [...word].map(letterPattern).join('');
+
+/**
+ * An anchor as labels print it, OCR slips allowed, on the raw text: the
+ * anchor is folded, the text is not. The last word of a phrase keeps its first
+ * letters only, the rest being the most damaged (« SAINT LAUREN1 »); a single
+ * word must be whole, it could start a name.
+ */
+function anchorPhrase(anchor: string): RegExp | null {
+  const words = fold(anchor)
+    .replace(/’/g, "'")
+    .toUpperCase()
+    .split(/[\s-]+/)
+    .filter(Boolean);
+  const last = words.at(-1);
+  if (!last) return null;
+  const open = words.length > 1 && last.length > WHOLE_WORD_UP_TO;
+  const pattern = [
+    ...words.slice(0, -1).map(wordPattern),
+    wordPattern(open ? last.slice(0, WHOLE_WORD_UP_TO) : last) +
+      (open ? '[\\p{L}\\p{N}]*' : '(?![\\p{L}\\p{N}])'),
+  ].join('\\s*-?\\s*');
+  return new RegExp(`(?<![\\p{L}\\p{N}])${pattern}`, 'giu');
+}
+
+/** How a company's own name and street print: debris of these never bring a person. */
+export type HostMarks = {
+  phrases: readonly RegExp[];
+  /** Single words of its name and address, matched at one edit (v1 `isNameWord`). */
+  words: readonly string[];
+};
+
+export const NO_HOST: HostMarks = { phrases: [], words: [] };
+
+/**
+ * The longest anchor first: « Saint Laurent » must not leave « Yves » behind.
+ * A long single word goes word by word only: cut out of the text, « Saint »
+ * would turn « Marie Saint-Martin » into « Marie Martin ».
+ */
+export function hostMarks(anchors: readonly string[]): HostMarks {
+  if (anchors.length === 0) return NO_HOST;
+  const longest = [...anchors].sort((a, b) => b.length - a.length);
+  return {
+    phrases: longest
+      .filter(
+        (anchor) =>
+          !/^\p{L}+$/u.test(fold(anchor).trim()) ||
+          anchor.trim().length <= WHOLE_WORD_UP_TO,
+      )
+      .flatMap((anchor) => anchorPhrase(anchor) ?? []),
+    words: anchors
+      .map((anchor) => fold(anchor).trim())
+      .filter((anchor) => /^\p{L}+$/u.test(anchor)),
+  };
+}
 
 const DIGIT_LETTERS: Record<string, string> = {
   '0': 'O',
@@ -95,9 +161,6 @@ const DIGIT_LETTERS: Record<string, string> = {
   '5': 'S',
   '8': 'B',
 };
-
-const fold = (text: string) =>
-  text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
 
 /** Lower case, no accent, letters only: how names are compared. */
 export const nameTokens = (text: string): string[] =>
@@ -127,12 +190,12 @@ export function withinOneEdit(a: string, b: string): boolean {
   return edits + (long.length - j) + (short.length - i) <= 1;
 }
 
-export const isHostWord = (word: string) =>
-  HOST_WORDS.some((host) => withinOneEdit(word, host));
+export const isHostWord = (word: string, host: HostMarks = NO_HOST) =>
+  host.words.some((own) => withinOneEdit(word, own));
 
 /** The text without the host company's name, which says nothing of the person. */
-export const withoutHost = (text: string) =>
-  HOST_PHRASES.reduce((rest, phrase) => rest.replace(phrase, ' '), text);
+export const withoutHost = (text: string, host: HostMarks = NO_HOST) =>
+  host.phrases.reduce((rest, phrase) => rest.replace(phrase, ' '), text);
 
 /**
  * One word as the OCR printed it, mended the v1 way (`fixOcrWord`): a
@@ -169,8 +232,9 @@ export function fixOcrWord(
 export function readTokens(
   text: string,
   firstNames: ReadonlySet<string> = new Set(),
+  host: HostMarks = NO_HOST,
 ): string[] {
-  const words = withoutHost(text)
+  const words = withoutHost(text, host)
     .split(/[\s:;,/]+/)
     .filter((word) => word !== '')
     .map((word) => fixOcrWord(word, firstNames));
@@ -178,7 +242,9 @@ export function readTokens(
     .flatMap(nameTokens)
     .filter(
       (token) =>
-        !PARTICLES.has(token) && !NOT_NAME.has(token) && !isHostWord(token),
+        !PARTICLES.has(token) &&
+        !NOT_NAME.has(token) &&
+        !isHostWord(token, host),
     );
 }
 
@@ -199,8 +265,9 @@ const CIVILITY = /^(?:M|MR|MRS|MS|MME|MLLE|DR)\.?$/i;
 export function readableName(
   text: string,
   firstNames: ReadonlySet<string> = new Set(),
+  host: HostMarks = NO_HOST,
 ): string | null {
-  const raw = withoutHost(text)
+  const raw = withoutHost(text, host)
     .replace(/\b(\p{Lu})\.(?=\p{Lu}{2,})/gu, '$1. ')
     .split(/[\s:;,/]+/)
     .filter((word) => word !== '');
@@ -209,7 +276,7 @@ export function readableName(
     .map((word) => fixOcrWord(word, firstNames).replace(/\|+/g, ' ').trim())
     .filter((word) =>
       nameTokens(word).some(
-        (token) => !NOT_NAME.has(token) && !isHostWord(token),
+        (token) => !NOT_NAME.has(token) && !isHostWord(token, host),
       ),
     )
     .map((word) => (/^\p{L}$/u.test(word) ? `${word}.` : word));

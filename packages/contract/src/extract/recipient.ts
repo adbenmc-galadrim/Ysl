@@ -1,5 +1,6 @@
 import { jaroWinkler, normalizeName } from '@repo/shared/text';
 import type { Party } from '../codes';
+import { RECEPTION_COUNTRIES, type CompanyReception } from '../company-settings';
 import { CONFIDENCE } from './confidence';
 import { adjust, canonical, mergeField, type Observation } from './fields';
 import {
@@ -10,12 +11,6 @@ import {
   learnedConfidence,
 } from './learning';
 import type { Field, FieldSource } from './types';
-
-/** The mailroom's address (§4.3): rue de Bellechasse, Paris 7e. */
-export const MAILROOM = {
-  postalCode: '75007',
-  countries: ['FR', 'FRA', 'FRANCE', '250'],
-} as const;
 
 export type RecipientRead = {
   name: string;
@@ -30,15 +25,22 @@ const similarity = (a: string, b: string) => {
   return left === '' || right === '' ? 0 : jaroWinkler(left, right);
 };
 
-/** A party addressed elsewhere than the mailroom: forwarded, or misread. */
-export const elsewhere = (party: Party | undefined) => {
+/**
+ * A party addressed elsewhere than the company's reception (ME34): forwarded,
+ * or misread. A company that has not set its address has nothing to compare.
+ */
+export const elsewhere = (
+  party: Party | undefined,
+  reception: Pick<CompanyReception, 'postalCode'> | null | undefined,
+) => {
+  if (!reception) return false;
   const postal = party?.postalCode?.replace(/\s+/g, '');
   const country = party?.country?.trim().toUpperCase();
   return (
-    (postal !== undefined && postal !== '' && postal !== MAILROOM.postalCode) ||
+    (postal !== undefined && postal !== '' && postal !== reception.postalCode) ||
     (country !== undefined &&
       country !== '' &&
-      !(MAILROOM.countries as readonly string[]).includes(country))
+      !(RECEPTION_COUNTRIES as readonly string[]).includes(country))
   );
 };
 
@@ -56,7 +58,7 @@ const fromAlias = (field: Field<string>) =>
 /**
  * The recipient of §4.5 with the business checks of §4.3: a name read
  * twice close enough (Jaro-Winkler ≥ 0,92) is one name read by two
- * sources; a code that addresses the parcel outside 75007 costs a malus
+ * sources; a code that addresses the parcel outside the company's reception costs a malus
  * and asks « réexpédition ? »; a name the directory knows earns 0,10. A
  * printed name the agent took for a card before reads as that card, with
  * the confidence its confirmations earned (§4.8), never « sûr » alone.
@@ -65,6 +67,7 @@ export const extractRecipientField = (
   reads: readonly RecipientRead[],
   directory: readonly string[] = [],
   aliases: readonly KnownRecipientAlias[] = [],
+  reception: Pick<CompanyReception, 'postalCode'> | null = null,
 ): RecipientField => {
   const keys: { key: string; name: string }[] = [];
   const keyOf = (name: string) => {
@@ -108,7 +111,7 @@ export const extractRecipientField = (
   const chosen = keyOf(field.value);
   if (
     reads.some(
-      (r, at) => observations[at]!.key === chosen && elsewhere(r.party),
+      (r, at) => observations[at]!.key === chosen && elsewhere(r.party, reception),
     )
   ) {
     field = adjust(field, -CONFIDENCE.forwardMalus, 'forward');

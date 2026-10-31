@@ -27,6 +27,7 @@ import {
   selectTracking,
   structuredCode,
 } from '#/features/scan/extract';
+import { currentReception } from '#/features/settings/company-snapshot';
 
 type FormatKey = Extract<TranslationKey, `scan.format.${string}`>;
 
@@ -301,6 +302,7 @@ export function toScanReading(
     const read = extractFields({
       symbols: result.symbols,
       ocr: text?.ocrName ? { text: '', recipientName: text.ocrName } : null,
+      reception: currentReception(),
     });
     return {
       kind: 'read',

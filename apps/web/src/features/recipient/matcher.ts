@@ -10,7 +10,7 @@ import type { MatchReply, MatchRequest } from '#/features/recipient/protocol';
 
 /** Where the matching runs: a Worker in the app, the calling thread where there is none. */
 export type MatchEngine = {
-  setEntries(entries: RecipientEntry[]): void;
+  setEntries(entries: RecipientEntry[], anchors?: string[]): void;
   match(reads: RecipientRead[], text?: string | null): Promise<RecipientResult>;
 };
 
@@ -18,8 +18,8 @@ export type MatchEngine = {
 export class InlineMatcher implements MatchEngine {
   private index: RecipientIndex = indexRecipients([]);
 
-  setEntries(entries: RecipientEntry[]) {
-    this.index = indexRecipients(entries);
+  setEntries(entries: RecipientEntry[], anchors: string[] = []) {
+    this.index = indexRecipients(entries, anchors);
   }
 
   match(reads: RecipientRead[], text: string | null = null) {
@@ -44,13 +44,15 @@ class WorkerMatcher implements MatchEngine {
   private worker: Worker | undefined;
   private fallback: InlineMatcher | undefined;
   private entries: RecipientEntry[] = [];
+  private anchors: string[] = [];
   private nextId = 0;
   private readonly pending = new Map<number, Pending>();
 
-  setEntries(entries: RecipientEntry[]) {
+  setEntries(entries: RecipientEntry[], anchors: string[] = []) {
     this.entries = entries;
-    if (this.fallback) this.fallback.setEntries(entries);
-    else this.post({ type: 'index', entries });
+    this.anchors = anchors;
+    if (this.fallback) this.fallback.setEntries(entries, anchors);
+    else this.post({ type: 'index', entries, anchors });
   }
 
   match(reads: RecipientRead[], text: string | null = null) {
@@ -69,7 +71,7 @@ class WorkerMatcher implements MatchEngine {
   private fail() {
     this.worker?.terminate();
     const fallback = new InlineMatcher();
-    fallback.setEntries(this.entries);
+    fallback.setEntries(this.entries, this.anchors);
     this.fallback = fallback;
     for (const { reads, text, resolve } of this.pending.values()) {
       void fallback.match(reads, text).then(resolve);

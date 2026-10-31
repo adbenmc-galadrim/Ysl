@@ -88,6 +88,7 @@ describe('explainField — from the best source to the confidence shown', () => 
   it('replays the malus of a recipient addressed elsewhere', () => {
     const { recipient } = extractFields({
       symbols: [{ format: 'Aztec', text: dpdAztec('CAMILLE MOREL', '69002') }],
+      reception: { postalCode: '75007' },
     });
     expect(explainField(recipient!).adjustments).toEqual([
       { kind: 'forward', delta: -CONFIDENCE.forwardMalus },
