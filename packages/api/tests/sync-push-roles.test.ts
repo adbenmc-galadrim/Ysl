@@ -576,6 +576,36 @@ describe('sync.push by role', () => {
       expect((await storedParcel(id))?.departmentId).toBe(legal);
     });
 
+    it.each([
+      ['a tour', DEFAULT_OPERATING_PROFILE, null],
+      ['a shuttle acting as department', SMALL_SITE_OPERATING_PROFILE, 'mail'],
+    ] as const)(
+      'with %s, the mail department catches a contact or not',
+      async (_, profile, expected) => {
+        const mail = await addDepartment(db, 'Service courrier');
+        await writeOperatingProfile(sync, ORGANIZATION_ID, profile, AGENT_ID);
+        const id = newId();
+        await statusOf(
+          accessOf('shuttle'),
+          op(
+            'parcel',
+            id,
+            newParcel({
+              status: 'a_completer',
+              contactId: await addContact(db),
+            }),
+          ),
+        );
+        expect((await storedParcel(id))?.departmentId).toBe(
+          expected ? mail : null,
+        );
+        await db
+          .update(schema.department)
+          .set({ deletedAt: NOW })
+          .where(eq(schema.department.id, mail));
+      },
+    );
+
     it('is required to be born on tour', async () => {
       const personId = await addPerson(db, null);
       expect(
