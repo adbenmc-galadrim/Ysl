@@ -51,6 +51,8 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
   'imports.v1Csv': (caller) => caller.imports.v1Csv({ csv: '' }),
   'maintenance.purgeNow': (caller) => caller.maintenance.purgeNow(),
   'devices.revoke': (caller) => caller.devices.revoke({ id: newId() }),
+  'platform.overview': (caller) => caller.platform.overview(),
+  'platform.journal': (caller) => caller.platform.journal({}),
   'operating.get': (caller) => caller.operating.get(),
   'operating.save': (caller) =>
     caller.operating.save({ profile: DEFAULT_OPERATING_PROFILE }),

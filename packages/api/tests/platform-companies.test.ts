@@ -460,6 +460,8 @@ describe('deleting a company', () => {
     expect(result.rows.map((row) => row.name)).toEqual([
       'account',
       'organization',
+      // Outlives the company on purpose: `company_id`, a copied name, figures only.
+      'platform_journal',
       'rate_limit',
       'session',
       'sync_generation',

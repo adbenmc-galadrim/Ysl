@@ -8,7 +8,6 @@ import {
   linkDelivery,
 } from '@repo/contract/accounts';
 import { db } from '@repo/db';
-import { logger } from '@repo/shared/logger';
 import {
   acceptInvitation,
   changeRequiredPassword,
@@ -42,12 +41,7 @@ export const invitationsRouter = router({
   inviteCompanyAdmin: platformProcedure
     .input(inviteCompanyAdminInput)
     .output(linkDelivery)
-    .mutation(async ({ ctx, input }) => {
-      const delivery = await inviteCompanyAdmin(db, input);
-      logger.info(
-        { companyId: input.organizationId, by: ctx.session.user.id },
-        'company admin invited',
-      );
-      return delivery;
-    }),
+    .mutation(({ ctx, input }) =>
+      inviteCompanyAdmin(db, input, ctx.session.user),
+    ),
 });

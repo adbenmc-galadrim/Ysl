@@ -225,6 +225,13 @@
       "when": 1793469556281,
       "tag": "0031_tournee_porteur",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793471029409,
+      "tag": "0032_journal_plateforme",
+      "breakpoints": true
     }
   ]
 }

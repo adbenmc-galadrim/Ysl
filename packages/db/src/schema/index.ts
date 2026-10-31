@@ -10,6 +10,7 @@ export * from '#schema/mail-sender';
 export * from '#schema/notification';
 export * from '#schema/organization';
 export * from '#schema/parcel';
+export * from '#schema/platform-journal';
 export * from '#schema/purge-run';
 export * from '#schema/sender';
 export * from '#schema/setting';

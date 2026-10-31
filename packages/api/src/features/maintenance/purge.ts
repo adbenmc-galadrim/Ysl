@@ -14,6 +14,7 @@ import { organization, purgeRun } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
 import { readCompanySettings } from '#features/company/settings';
+import { eraseOldJournal } from '#features/platform/journal';
 import {
   eraseCompanyEmails,
   eraseUnownedEmails,
@@ -465,7 +466,10 @@ export async function runPurge(
         failure ??= error instanceof Error ? error : new Error(String(error));
       }
     }
-    if (!organizationId) await eraseUnownedEmails(db, now);
+    if (!organizationId) {
+      await eraseUnownedEmails(db, now);
+      await eraseOldJournal(db, now);
+    }
     if (failure) throw failure;
     return { status: 'done', runs };
   } finally {
