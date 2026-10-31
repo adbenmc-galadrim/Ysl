@@ -32,7 +32,7 @@ const impactOf = (change: Partial<OperatingProfile>) =>
   );
 
 describe('profile models', () => {
-  it('gives each model the profile of ME18 and of its card', () => {
+  it('gives each model the profile of ME18', () => {
     expect(PROFILE_OF_MODEL).toEqual({
       small_site: {
         shuttleActsAsDepartment: true,

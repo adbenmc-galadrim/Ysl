@@ -303,6 +303,7 @@ export function NouvelleEntrepriseFonctionnementDesktop({
   totalSteps,
   groups = STEP_GROUPS,
   summary = 'Modèle « Multi-départements » · 1 étape modifiée',
+  notice,
   note = 'Étape 2 sur 3 · l’entreprise pourra tout modifier ensuite',
   onChoose,
   onRevert,
@@ -316,6 +317,7 @@ export function NouvelleEntrepriseFonctionnementDesktop({
   totalSteps?: number;
   groups?: WizardStepGroup[];
   summary?: string;
+  notice?: string;
   note?: string;
   onChoose?: (step: string, value: string) => void;
   onRevert?: () => void;
@@ -365,6 +367,7 @@ export function NouvelleEntrepriseFonctionnementDesktop({
           </Button>
         )}
       </div>
+      {notice && <p className="mt-2 shrink-0 text-13 text-orange-strong">{notice}</p>}
       <div className="mt-2 flex shrink-0 flex-col gap-4">
         {groups.map((group) => (
           <DeskPanel key={group.title} title={group.title}>

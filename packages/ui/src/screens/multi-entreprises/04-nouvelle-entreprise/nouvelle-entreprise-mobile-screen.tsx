@@ -175,6 +175,7 @@ export function NouvelleEntrepriseFonctionnementMobile({
   totalSteps,
   groups = STEP_GROUPS,
   summary = 'Multi-départements · 1 étape modifiée',
+  notice,
   onChoose,
   onRevert,
   onBack,
@@ -185,6 +186,7 @@ export function NouvelleEntrepriseFonctionnementMobile({
   totalSteps?: number;
   groups?: WizardStepGroup[];
   summary?: string;
+  notice?: string;
   onChoose?: (step: string, value: string) => void;
   onRevert?: () => void;
   onBack?: () => void;
@@ -219,6 +221,7 @@ export function NouvelleEntrepriseFonctionnementMobile({
           Revenir au modèle
         </button>
       )}
+      {notice && <p className="mt-2 text-13 text-orange-strong">{notice}</p>}
       {groups.map((group, g) => (
         <section key={group.title}>
           <PhoneGroupTitle className={cn('top-0', g === 0 ? 'mt-[17px]' : 'mt-5')}>{group.title}</PhoneGroupTitle>
