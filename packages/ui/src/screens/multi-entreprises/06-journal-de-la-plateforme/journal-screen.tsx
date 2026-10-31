@@ -317,6 +317,7 @@ export function JournalListMobile({
   onBack,
   search,
   searchPlaceholder,
+  message,
   moreLabel,
   onMore,
 }: {
@@ -324,6 +325,7 @@ export function JournalListMobile({
   onBack?: () => void;
   search?: { value: string; onChange: (value: string) => void };
   searchPlaceholder?: string;
+  message?: string;
   moreLabel?: string;
   onMore?: () => void;
 }) {
@@ -339,6 +341,11 @@ export function JournalListMobile({
           onChange={(event) => search.onChange(event.target.value)}
           className="mt-2 h-11 w-full shrink-0 rounded-full bg-fill px-4 text-15 outline-none"
         />
+      )}
+      {message && (
+        <p role="status" className="mt-4 text-13 text-muted">
+          {message}
+        </p>
       )}
       {days.map((day, i) => (
         <div key={day.title}>

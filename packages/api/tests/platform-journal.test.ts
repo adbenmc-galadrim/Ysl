@@ -19,8 +19,8 @@ vi.mock('@repo/auth', () => ({ auth: { api: {} }, isAPIError: () => false }));
 const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
 const { asAnyDb, ORGANIZATION_ID, parcelRow } =
   await import('./helpers/pglite');
-const { eraseOldJournal, readJournal } =
-  await import('#features/platform/journal');
+const { readJournal } = await import('#features/platform/journal');
+const { runPurge } = await import('#features/maintenance/purge');
 
 const PLATFORM_ID = 'platform-1';
 
@@ -252,7 +252,7 @@ describe('reading the journal', () => {
         row('Ancienne', '2025-10-30T10:00:00Z'),
         row('Récente', '2025-11-01T10:00:00Z'),
       ]);
-    await eraseOldJournal(asAnyDb(db), NOW);
+    await runPurge(asAnyDb(db), { now: NOW, trigger: 'auto' });
     const { entries } = await readJournal(asAnyDb(db), {}, NOW);
     expect(entries.map((entry) => entry.companyName)).toEqual(['Récente']);
   });

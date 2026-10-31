@@ -82,7 +82,7 @@ export type JournalAction = (typeof JOURNAL_ACTIONS)[number];
 
 /**
  * What an action leaves besides its company: a model, a former name, figures.
- * Strict and without free text: no address, no employee's name, no reason (D26).
+ * Strict: no address, no employee's name, no reason typed by anyone (D26).
  */
 export const journalDetail = z.strictObject({
   profileModel: z.enum(PROFILE_MODELS).optional(),

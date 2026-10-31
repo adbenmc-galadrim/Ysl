@@ -12,7 +12,11 @@ import {
   JournalListMobile,
   JournalVideMobile,
 } from '@repo/ui';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
@@ -29,38 +33,51 @@ const t = createTranslator(DEFAULT_LOCALE);
 const ALL = 'all';
 
 /** The app's admin's own acts, kept twelve months; a company's people never appear (D26). */
-export function JournalPage({ company }: { company?: string }) {
+export function JournalPage({ companyId }: { companyId?: string }) {
   const desk = useMediaQuery(DESK_WIDTH);
   const navigate = useNavigate();
   const chrome = usePlatformChrome();
-  const [query, setQuery] = useState(company ?? '');
+  const [query, setQuery] = useState('');
   const [action, setAction] = useState<JournalAction | typeof ALL>(ALL);
   const [period, setPeriod] = useState<JournalPeriod>('12m');
   const [page, setPage] = useState(0);
-  const [shownOnPhone, setShownOnPhone] = useState(JOURNAL_PAGE);
-  const offset = desk ? page * JOURNAL_PAGE : 0;
-  const limit = desk ? JOURNAL_PAGE : shownOnPhone;
-  const input = {
+  const filter = {
     period,
-    offset,
-    limit,
     ...(action === ALL ? {} : { action }),
     ...(query.trim() ? { query: query.trim() } : {}),
+    ...(companyId ? { companyId } : {}),
   };
-  const journal = useQuery({
-    queryKey: ['platform', 'journal', input],
-    queryFn: () => trpcClient.platform.journal.query(input),
+  const offset = page * JOURNAL_PAGE;
+  const paged = useQuery({
+    queryKey: ['platform', 'journal', { ...filter, offset }],
+    queryFn: () => trpcClient.platform.journal.query({ ...filter, offset }),
     placeholderData: keepPreviousData,
+    enabled: desk,
   });
-  const entries = journal.data?.entries ?? [];
-  const total = journal.data?.total ?? 0;
+  const piled = useInfiniteQuery({
+    queryKey: ['platform', 'journal', 'phone', filter],
+    queryFn: ({ pageParam }) =>
+      trpcClient.platform.journal.query({ ...filter, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: (last, pages) => {
+      const read = pages.length * JOURNAL_PAGE;
+      return read < last.total ? read : undefined;
+    },
+    placeholderData: keepPreviousData,
+    enabled: !desk,
+  });
+  const journal = desk ? paged : piled;
+  const entries = desk
+    ? (paged.data?.entries ?? [])
+    : (piled.data?.pages.flatMap((one) => one.entries) ?? []);
+  const total =
+    (desk ? paged.data?.total : piled.data?.pages[0]?.total) ?? 0;
   const now = new Date();
   const search = {
     value: query,
     onChange: (value: string) => {
       setQuery(value);
       setPage(0);
-      setShownOnPhone(JOURNAL_PAGE);
     },
   };
 
@@ -76,6 +93,31 @@ export function JournalPage({ company }: { company?: string }) {
           searchPlaceholder: t('platform.search'),
           lines: entries.map((entry) => journalLine(entry, now, t)),
           filters: [
+            ...(companyId
+              ? [
+                  {
+                    icon: 'building' as const,
+                    label: t('platform.journal.filter.company'),
+                    value: entries[0]?.companyName ?? '…',
+                    className: 'w-[300px]',
+                    selected: companyId,
+                    onSelect: () => {
+                      setPage(0);
+                      void navigate({ to: '/journal' });
+                    },
+                    choices: [
+                      {
+                        value: companyId,
+                        label: entries[0]?.companyName ?? '…',
+                      },
+                      {
+                        value: ALL,
+                        label: t('platform.journal.filter.company.all'),
+                      },
+                    ],
+                  },
+                ]
+              : []),
             {
               icon: 'filter',
               label: t('platform.journal.filter.type'),
@@ -127,7 +169,10 @@ export function JournalPage({ company }: { company?: string }) {
     );
   }
 
-  const onBack = () => void navigate({ to: '/' });
+  const onBack = () =>
+    void (companyId
+      ? navigate({ to: '/entreprises/$id', params: { id: companyId } })
+      : navigate({ to: '/' }));
   if (journal.isPending) return <JournalChargementMobile onBack={onBack} />;
   if (journal.isError) {
     return (
@@ -153,8 +198,9 @@ export function JournalPage({ company }: { company?: string }) {
       onBack={onBack}
       search={search}
       searchPlaceholder={t('platform.search')}
-      moreLabel={entries.length < total ? t('platform.journal.more') : undefined}
-      onMore={() => setShownOnPhone(shownOnPhone + JOURNAL_PAGE)}
+      message={total === 0 ? t('platform.journal.none') : undefined}
+      moreLabel={piled.hasNextPage ? t('platform.journal.more') : undefined}
+      onMore={() => void piled.fetchNextPage()}
     />
   );
 }

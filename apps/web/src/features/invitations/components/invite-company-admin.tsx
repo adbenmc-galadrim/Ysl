@@ -4,7 +4,7 @@ import {
 } from '@repo/contract/accounts';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, FieldInput, Sheet } from '@repo/ui';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { LinkSheet } from '#/features/invitations/components/link-sheet';
 import { trpcClient } from '#/lib/trpc';
@@ -28,13 +28,17 @@ export function InviteCompanyAdmin({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [delivery, setDelivery] = useState<LinkDelivery | null>(null);
+  const queryClient = useQueryClient();
   const invite = useMutation({
     mutationFn: (typed: { name: string; email: string; copy: boolean }) =>
       trpcClient.invitations.inviteCompanyAdmin.mutate({
         organizationId,
         ...typed,
       }),
-    onSuccess: setDelivery,
+    onSuccess: (sent) => {
+      setDelivery(sent);
+      void queryClient.invalidateQueries({ queryKey: ['platform', 'journal'] });
+    },
   });
   if (delivery) {
     return (

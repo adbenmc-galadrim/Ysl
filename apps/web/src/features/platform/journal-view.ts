@@ -12,6 +12,11 @@ import {
 } from '#/features/platform/company-view';
 import { initialsOf } from '#/features/settings/initials';
 
+const YEAR = new Intl.DateTimeFormat('fr-FR', {
+  year: 'numeric',
+  timeZone: 'Europe/Paris',
+});
+
 const KIND_OF: Record<JournalEntry['action'], JournalKind> = {
   company_created: 'creation',
   company_renamed: 'renaming',
@@ -89,12 +94,16 @@ export function journalDays(
   for (const entry of entries) {
     const ago = daysAgo(entry.at, now);
     const month = monthName(entry.at);
+    const year = YEAR.format(entry.at);
+    const named = month.charAt(0).toLocaleUpperCase('fr') + month.slice(1);
     const title =
       ago === 0
         ? t('platform.journal.today')
         : ago === 1
           ? t('platform.journal.yesterday')
-          : month.charAt(0).toLocaleUpperCase('fr') + month.slice(1);
+          : year === YEAR.format(now)
+            ? named
+            : `${named} ${year}`;
     const last = days.at(-1);
     if (last?.title === title) last.lines.push(journalLine(entry, now, t));
     else days.push({ title, lines: [journalLine(entry, now, t)] });

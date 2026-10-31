@@ -49,6 +49,8 @@ export const fr = {
     'Les créations, invitations et suspensions apparaîtront ici.',
   'platform.journal.none': 'Aucune action ne correspond à ces filtres.',
   'platform.journal.range': '{{from}}–{{to}} sur {{total}}',
+  'platform.journal.filter.company': 'Entreprise',
+  'platform.journal.filter.company.all': 'Toutes',
   'platform.journal.filter.type': 'Type',
   'platform.journal.filter.type.all': 'Tous',
   'platform.journal.filter.period': 'Période',

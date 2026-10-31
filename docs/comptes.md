@@ -56,7 +56,7 @@ Il voit des chiffres par entreprise : comptes, départements, colis reçus depui
 colis, ni annuaire, ni nom de salarié (D26).
 
 Le journal garde 12 mois ses créations, renommages, suspensions, réactivations, suppressions
-et invitations, avec le nom de l'entreprise à ce moment-là et le nom du compte de plateforme.
+et invitations (y compris celles refusées parce que l'adresse a déjà un compte), avec le nom de l'entreprise à ce moment-là et le nom du compte de plateforme.
 Il survit à la suppression de l'entreprise (table `platform_journal`, sans `organization_id`,
 hors de la purge). Pas d'adresse, pas de nom de salarié, pas de texte libre : la suspension ne
 demande pas de raison.

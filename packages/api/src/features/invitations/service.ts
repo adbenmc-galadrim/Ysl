@@ -284,6 +284,7 @@ export async function inviteCompanyAdmin(
     });
   } catch (error) {
     if (!taken && sqlState(error) !== UNIQUE_VIOLATION) throw error;
+    // Outside the transaction just undone, which would take the line with it.
     await recordPlatformAction(
       db,
       actor,

@@ -57,6 +57,7 @@ describe('the journal lines', () => {
         entry({ at: new Date('2026-10-20T09:00:00Z') }),
         entry({ at: new Date('2026-10-02T09:00:00Z') }),
         entry({ at: new Date('2026-09-02T09:00:00Z') }),
+        entry({ at: new Date('2025-11-02T09:00:00Z') }),
       ],
       NOW,
       t,
@@ -66,6 +67,7 @@ describe('the journal lines', () => {
       ['Hier', 1],
       ['Octobre', 2],
       ['Septembre', 1],
+      ['Novembre 2025', 1],
     ]);
   });
 });

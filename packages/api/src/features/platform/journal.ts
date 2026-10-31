@@ -7,13 +7,17 @@ import type {
 import { JOURNAL_PAGE } from '@repo/contract/platform';
 import type { AnyDb } from '@repo/db';
 import { platformJournal } from '@repo/db/schema';
-import { and, count, desc, eq, gte, lt, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lt, sql } from 'drizzle-orm';
+import { escapeLike } from '#features/accounts/service';
 
 export const JOURNAL_MONTHS = 12;
 
 export type JournalActor = { id: string; name: string };
 
-/** Written in the action's own transaction: no action without its line, nor the reverse. */
+/**
+ * Called in the action's own transaction: no action without its line, nor the
+ * reverse. A refusal has no transaction left to join, and passes `db`.
+ */
 export async function recordPlatformAction(
   db: AnyDb,
   actor: JournalActor,
@@ -33,11 +37,6 @@ export async function recordPlatformAction(
 
 const PERIOD_INTERVAL = { '30d': '30 days', '90d': '90 days', '12m': '12 months' };
 
-/** `%` and `_` typed in a search are letters. */
-function likeOf(query: string): string {
-  return `%${query.replace(/[\\%_]/g, '\\$&')}%`;
-}
-
 export async function readJournal(
   db: AnyDb,
   input: JournalInput,
@@ -56,9 +55,7 @@ export async function readJournal(
     gte(platformJournal.at, since),
     action ? eq(platformJournal.action, action) : undefined,
     companyId ? eq(platformJournal.companyId, companyId) : undefined,
-    query
-      ? sql`${platformJournal.companyName} ilike ${likeOf(query)}`
-      : undefined,
+    query ? ilike(platformJournal.companyName, `%${escapeLike(query)}%`) : undefined,
   );
   const [entries, totals] = await Promise.all([
     db

@@ -178,7 +178,7 @@ export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
     },
   ];
   const openJournal = () =>
-    void navigate({ to: '/journal', search: { entreprise: company.name } });
+    void navigate({ to: '/journal', search: { entreprise: company.id } });
   const model = modelName(company.profileModel, t);
   const changedSteps =
     company.changedSteps === null ? null : figure(company.changedSteps);
