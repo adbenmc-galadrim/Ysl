@@ -953,7 +953,6 @@ export const fr = {
   'export.ready': 'Fichier prêt : touchez « Partager le fichier ».',
   'export.done.one': '{{count}} colis exporté à {{time}}.',
   'export.done.many': '{{count}} colis exportés à {{time}}.',
-  'settings.sender': 'Expéditeur des e-mails',
   'settings.privacy': 'Données et confidentialité',
   'privacy.retention.header': 'Durées de conservation (validées par le DPO)',
   'privacy.retention.photo': 'Photos d’étiquettes et de remise',

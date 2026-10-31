@@ -84,16 +84,21 @@ export function CompanySettingsDesk({
   tab,
   shell,
   overlay,
+  navEntry = 'entreprise',
+  onTab,
   children,
 }: {
   tab: CompanySettingsTab;
+  /** The sidebar entry to light: the mockups call it « Entreprise ». */
+  navEntry?: string;
+  onTab?: (tab: CompanySettingsTab) => void;
   shell: Omit<ComponentProps<typeof CompanyShell>, 'active' | 'overlay' | 'children'>;
   overlay?: ReactNode;
   children: ReactNode;
 }) {
   const widths = COMPANY_SETTINGS_TAB_WIDTHS[tab];
   return (
-    <CompanyShell {...shell} active="entreprise" overlay={overlay}>
+    <CompanyShell {...shell} active={navEntry} overlay={overlay}>
       <DeskPageHeader
         title="Entreprise"
         subtitle="Réglages communs à tous les départements"
@@ -102,6 +107,7 @@ export function CompanySettingsDesk({
       <DeskTabs
         label="Réglages de l’entreprise"
         active={tab}
+        onChange={(id) => onTab?.(id as CompanySettingsTab)}
         className="mt-[16.4px] shrink-0"
         tabs={[
           { id: 'identity', label: 'Identité et e-mails', width: widths[0] },

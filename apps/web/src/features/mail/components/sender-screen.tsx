@@ -4,16 +4,18 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Banner,
   Button,
+  DeskFormRow,
+  DeskInput,
+  DeskTable,
+  type DeskTableColumn,
   Field,
   FieldInput,
   GroupedFootnote,
   GroupedHeader,
   GroupedRow,
   GroupedSection,
-  SettingsScreen,
 } from '@repo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { copyText } from '#/features/mail/fallback';
 import { recordLine, recordsText } from '#/features/mail/sender-records';
@@ -142,13 +144,80 @@ function RecordCard({
   );
 }
 
+/** What the admin sends to the client's IT, ready to address. */
+export function itMailto(records: DnsRecord[]): string {
+  return `mailto:?subject=${encodeURIComponent(t('sender.it.subject'))}&body=${encodeURIComponent(recordsText(records, t))}`;
+}
+
+function DeskRecords({
+  records,
+  onCopy,
+}: {
+  records: DnsRecord[];
+  onCopy: (text: string) => void;
+}) {
+  const columns: DeskTableColumn<DnsRecord>[] = [
+    {
+      key: 'kind',
+      header: t('sender.record.column.kind'),
+      width: 150,
+      cell: (record) => (
+        <span className="font-semibold">
+          {t(`sender.record.${record.kind}`)} · {record.type}
+        </span>
+      ),
+    },
+    {
+      key: 'host',
+      header: t('sender.record.column.host'),
+      width: 190,
+      cell: (record) => (
+        <span className="font-mono text-12 break-all">{record.host}</span>
+      ),
+    },
+    {
+      key: 'value',
+      header: t('sender.record.column.value'),
+      cell: (record) => (
+        <button
+          type="button"
+          className="cursor-pointer text-left font-mono text-12 break-all"
+          aria-label={t('sender.copy', { label: recordLine(record, t) })}
+          onClick={() => onCopy(record.value)}
+        >
+          {record.value}
+        </button>
+      ),
+    },
+    {
+      key: 'state',
+      header: t('sender.record.column.state'),
+      width: 100,
+      cell: (record) =>
+        t(
+          record.configured
+            ? 'sender.record.configured'
+            : 'sender.record.missing',
+        ),
+    },
+  ];
+  return (
+    <DeskTable
+      label={t('sender.records.headerVerified')}
+      columns={columns}
+      rows={records}
+      rowKey={(record) => `${record.kind}:${record.host}`}
+    />
+  );
+}
+
 /**
- * Réglages › Expéditeur des e-mails (admin, D28): the address a company sends
+ * Identité et e-mails › Expéditeur (admin, D28): the address a company sends
  * from, the DNS records for its IT, and the check. Until the domain is
- * verified, the server sends from the platform's address.
+ * verified, the server sends from the platform's address. Only what the
+ * provider returns is listed: no SPF unless it gives one.
  */
-export function SenderScreen() {
-  const navigate = useNavigate();
+export function SenderSection({ desk = false }: { desk?: boolean }) {
   const online = useOnline();
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<{ name: string; email: string } | null>(
@@ -199,17 +268,18 @@ export function SenderScreen() {
         : t('sender.loading');
 
   return (
-    <SettingsScreen
-      title={t('sender.title')}
-      onBack={() => void navigate({ to: '/reglages' })}
-    >
+    <>
       {placeholder ? (
         <GroupedSection>
           <GroupedRow title={placeholder} />
         </GroupedSection>
       ) : (
         settings && (
-          <div className="flex flex-col gap-4 px-4">
+          <div
+            className={
+              desk ? 'flex max-w-[1000px] flex-col gap-4' : 'flex flex-col gap-4'
+            }
+          >
             <div role="status" className="flex flex-col gap-3">
               <StatusBanner settings={settings} />
               {save.isSuccess && !draft && !settings.problem && (
@@ -223,46 +293,81 @@ export function SenderScreen() {
                 save.mutate(value);
               }}
             >
-              <Field label={t('sender.name')}>
-                {(id) => (
-                  <FieldInput
-                    id={id}
-                    className="bg-surface"
-                    required
-                    maxLength={SENDER_NAME_MAX}
-                    value={value.name}
-                    onChange={(event) => edit({ name: event.target.value })}
-                  />
-                )}
-              </Field>
-              <Field
-                label={t('sender.email')}
-                help={
-                  save.isError ? (
-                    <span role="alert">{saveMessage(save.error)}</span>
-                  ) : (
-                    t('sender.email.help')
-                  )
-                }
-                helpTone={save.isError ? 'red' : 'muted'}
-              >
-                {(id) => (
-                  <FieldInput
-                    id={id}
-                    className="bg-surface"
-                    required
-                    type="email"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    value={value.email}
-                    onChange={(event) => edit({ email: event.target.value })}
-                  />
-                )}
-              </Field>
+              {desk ? (
+                <>
+                  <DeskFormRow label={t('sender.name')}>
+                    <DeskInput
+                      label={t('sender.name')}
+                      required
+                      maxLength={SENDER_NAME_MAX}
+                      value={value.name}
+                      onChange={(event) => edit({ name: event.target.value })}
+                    />
+                  </DeskFormRow>
+                  <DeskFormRow
+                    label={t('sender.email')}
+                    hint={t('sender.email.hintDesk')}
+                  >
+                    <DeskInput
+                      label={t('sender.email')}
+                      required
+                      type="email"
+                      value={value.email}
+                      onChange={(event) => edit({ email: event.target.value })}
+                    />
+                  </DeskFormRow>
+                  {save.isError && (
+                    <p role="alert" className="text-13 text-red">
+                      {saveMessage(save.error)}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Field label={t('sender.name')}>
+                    {(id) => (
+                      <FieldInput
+                        id={id}
+                        className="bg-surface"
+                        required
+                        maxLength={SENDER_NAME_MAX}
+                        value={value.name}
+                        onChange={(event) => edit({ name: event.target.value })}
+                      />
+                    )}
+                  </Field>
+                  <Field
+                    label={t('sender.email')}
+                    help={
+                      save.isError ? (
+                        <span role="alert">{saveMessage(save.error)}</span>
+                      ) : (
+                        t('sender.email.help')
+                      )
+                    }
+                    helpTone={save.isError ? 'red' : 'muted'}
+                  >
+                    {(id) => (
+                      <FieldInput
+                        id={id}
+                        className="bg-surface"
+                        required
+                        type="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        value={value.email}
+                        onChange={(event) => edit({ email: event.target.value })}
+                      />
+                    )}
+                  </Field>
+                </>
+              )}
               <Button
                 type="submit"
                 variant="secondary"
-                block
+                block={!desk}
+                size={desk ? 'desk' : undefined}
+                className={desk ? 'self-start' : undefined}
                 disabled={!draft || save.isPending || !online}
               >
                 {t('sender.save')}
@@ -277,7 +382,9 @@ export function SenderScreen() {
                       : 'sender.records.header',
                   )}
                 </GroupedHeader>
-                {sender.records.length ? (
+                {desk && sender.records.length ? (
+                  <DeskRecords records={sender.records} onCopy={copy} />
+                ) : sender.records.length ? (
                   sender.records.map((record) => (
                     <RecordCard
                       key={`${record.kind}:${record.host}`}
@@ -305,6 +412,16 @@ export function SenderScreen() {
                       onClick={() => copy(recordsText(sender.records, t))}
                     >
                       {t('sender.copyAll')}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      icon="send"
+                      block
+                      onClick={() => {
+                        window.location.href = itMailto(sender.records);
+                      }}
+                    >
+                      {t('sender.it')}
                     </Button>
                     <p
                       role="status"
@@ -339,6 +456,6 @@ export function SenderScreen() {
           </div>
         )
       )}
-    </SettingsScreen>
+    </>
   );
 }

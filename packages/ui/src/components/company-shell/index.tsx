@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { Avatar } from '#components/avatar';
 import { Icon, type IconName } from '#icons';
@@ -10,6 +10,8 @@ export type CompanyShellCompany = {
   /** The role in that company: "Département Studio", "Administrateur". */
   subtitle: string;
   initials: string;
+  /** The company's logo (D28); absent or unreadable, the neutral initials (D14). */
+  logoUrl?: string;
   /** `ink` is a company's own logo, `fill` the neutral one. */
   logoTone?: 'ink' | 'fill';
 };
@@ -200,6 +202,7 @@ export function CompanyShell({
   children,
   className,
 }: CompanyShellProps) {
+  const [failedLogo, setFailedLogo] = useState<string>();
   return (
     <div
       className={cn(
@@ -209,16 +212,25 @@ export function CompanyShell({
     >
       <aside className="flex w-[224px] shrink-0 flex-col border-r border-separator bg-sidebar">
         <div className="flex h-[57px] shrink-0 items-start border-b border-separator pt-3.5 pr-[13px] pl-4">
-          <span
-            className={cn(
-              'flex size-7 shrink-0 items-center justify-center rounded-[6px] text-11 font-bold',
-              company.logoTone === 'fill'
-                ? 'bg-fill-2 text-ink'
-                : 'bg-ink text-on-ink',
-            )}
-          >
-            {company.initials}
-          </span>
+          {company.logoUrl && failedLogo !== company.logoUrl ? (
+            <img
+              src={company.logoUrl}
+              alt=""
+              onError={() => setFailedLogo(company.logoUrl)}
+              className="size-7 shrink-0 rounded-[6px] object-contain"
+            />
+          ) : (
+            <span
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-[6px] text-11 font-bold',
+                company.logoTone === 'fill'
+                  ? 'bg-fill-2 text-ink'
+                  : 'bg-ink text-on-ink',
+              )}
+            >
+              {company.initials}
+            </span>
+          )}
           <span className="ml-2 flex min-w-0 flex-1 flex-col">
             <span className="-mt-px truncate text-14 font-semibold">
               {company.name}

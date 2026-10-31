@@ -48,7 +48,8 @@ function DeskFrame({
 /**
  * What surrounds a page: for the computer roles on a computer (D23), the
  * sidebar and its bar; a phone screen sits in it as it is, centred by
- * `Screen`. The directory and the accounts draw the same shell themselves, around their search.
+ * `Screen`. The directory, the accounts and the company's settings draw the same
+ * shell themselves, around their search and their tabs.
  */
 export function RoleFrame({ children }: { children: ReactNode }) {
   const session = useSession();
@@ -60,7 +61,9 @@ export function RoleFrame({ children }: { children: ReactNode }) {
     !desk ||
     !hasDesk(toUserRole(session.user.role)) ||
     pathname.startsWith(DESK_PATH.annuaire) ||
-    pathname.startsWith(DESK_PATH.comptes)
+    pathname.startsWith(DESK_PATH.comptes) ||
+    pathname === '/reglages/identite' ||
+    pathname === '/reglages/conservation'
   ) {
     return <>{children}</>;
   }
