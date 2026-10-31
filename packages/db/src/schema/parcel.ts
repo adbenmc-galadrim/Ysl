@@ -55,6 +55,7 @@ export const parcel = pgTable(
     status: text('status', { enum: PARCEL_STATUSES }).notNull(),
     /** Moves one up with every change of status: a step back must carry it (drizzle/0005_statuts_reversibles.sql). */
     statusSeq: integer('status_seq').default(0).notNull(),
+    depositedAt: timestamp('deposited_at', { withTimezone: true }),
     carrier: text('carrier'),
     tracking: text('tracking'),
     trackingNorm: text('tracking_norm'),

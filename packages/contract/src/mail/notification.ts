@@ -150,6 +150,7 @@ export function notifyParcel(
         lastNotifiedAt: sentAt,
         deliveredAt: null,
         deliveredBy: null,
+        depositedAt: parcel.depositedAt ?? null,
       },
     };
   }

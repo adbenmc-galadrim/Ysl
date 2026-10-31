@@ -51,6 +51,9 @@ export const PARCELS_CSV_HEADER = [
 const V1_STATUS: Record<ParcelStatus, string> = {
   a_completer: 'En attente',
   recu: 'Recu',
+  en_route: 'Recu',
+  depose: 'Recu',
+  a_regulariser: 'En attente',
   notifie: 'Notifie',
   remis: 'Remis',
   retourne: 'Retourne',

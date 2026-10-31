@@ -124,6 +124,7 @@ async function statusOf(id: string) {
 
 let personId: string;
 
+let departmentId: string;
 beforeAll(async () => {
   await migrate(db, { migrationsFolder });
   await db
@@ -135,6 +136,10 @@ beforeAll(async () => {
   await db
     .insert(schema.organizationMember)
     .values({ userId: agentId, organizationId });
+  departmentId = newId();
+  await db
+    .insert(schema.department)
+    .values({ id: departmentId, organizationId, name: 'Finance' });
   personId = newId();
   await db.insert(schema.directoryPerson).values({
     id: personId,
@@ -160,6 +165,10 @@ describe('parcel status transitions', () => {
 
     for (const [from, to] of pairs) {
       const id = await insertParcel(from, personId);
+      await client.query('update parcel set department_id = $1 where id = $2', [
+        departmentId,
+        id,
+      ]);
       if (from === 'remis') await insertCancelledHandover(id, personId);
       const failure = await setStatus(id, to);
       outcome[`${from} -> ${to}`] = failure === null;
@@ -171,7 +180,33 @@ describe('parcel status transitions', () => {
     }
 
     expect(outcome).toEqual(expected);
-    expect(Object.values(expected).filter(Boolean)).toHaveLength(17);
+    expect(Object.values(expected).filter(Boolean)).toHaveLength(40);
+  });
+
+  it('refuse a tour for a parcel with no department', async () => {
+    const id = await insertParcel('recu', personId);
+
+    expect(await setStatus(id, 'en_route')).toMatchObject({
+      constraint: 'parcel_status_transition',
+    });
+    expect(await statusOf(id)).toBe('recu');
+  });
+
+  it('refuse a stale copy of a parcel on tour', async () => {
+    const id = await insertParcel('recu', personId);
+    await client.query('update parcel set department_id = $1 where id = $2', [
+      departmentId,
+      id,
+    ]);
+    await setStatus(id, 'en_route');
+
+    expect(await setStatus(id, 'recu', 'unsent')).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await setStatus(id, 'notifie', 0)).toMatchObject({
+      constraint: 'parcel_status_stale',
+    });
+    expect(await statusOf(id)).toBe('en_route');
   });
 
   it('take a step back only from a copy that saw the status it leaves', async () => {

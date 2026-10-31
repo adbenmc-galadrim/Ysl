@@ -2,7 +2,7 @@ import {
   type MoveEffects,
   type MovePersonInput,
   type MoveRequest,
-  PARCEL_ON_MOVE,
+  moveOutcomeOf,
   type RequestMoveInput,
 } from '@repo/contract/directory';
 import type { AnyDb } from '@repo/db';
@@ -60,7 +60,7 @@ export async function moveEffectsOf(
 ): Promise<MoveEffects> {
   await personIn(tx, organizationId, personId);
   const rows = await tx
-    .select({ status: parcel.status })
+    .select({ status: parcel.status, depositedAt: parcel.depositedAt })
     .from(parcel)
     .where(
       and(
@@ -70,7 +70,7 @@ export async function moveEffectsOf(
       ),
     );
   const count = (outcome: 'follows' | 'toSettle') =>
-    rows.filter((row) => PARCEL_ON_MOVE[row.status] === outcome).length;
+    rows.filter((row) => moveOutcomeOf(row) === outcome).length;
   return { follows: count('follows'), toSettle: count('toSettle') };
 }
 
@@ -167,7 +167,10 @@ export async function requestMove(
     .insert(directoryMoveRequest)
     .values({ id: newId(), organizationId, personId, ...values })
     .onConflictDoUpdate({
-      target: [directoryMoveRequest.organizationId, directoryMoveRequest.personId],
+      target: [
+        directoryMoveRequest.organizationId,
+        directoryMoveRequest.personId,
+      ],
       targetWhere: isNull(directoryMoveRequest.closedAt),
       set: values,
     });

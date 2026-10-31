@@ -271,6 +271,7 @@ function toParcel(
     type: draft.type ?? 'colis',
     status: promotedStatus(draft),
     statusSeq: 0,
+    depositedAt: null,
     reply: null,
     repliedAt: null,
     expectedDelegate: null,
