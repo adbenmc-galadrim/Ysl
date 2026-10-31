@@ -35,15 +35,17 @@ export async function loadRecipientContext(
   const contactIds = [
     ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
   ];
-  const [people, contacts, handovers] = await Promise.all([
+  const [people, contacts, handovers, departments] = await Promise.all([
     database.directoryPerson.bulkGet(personIds),
     database.contact.bulkGet(contactIds),
     handoversOf(database, parcels),
+    database.department.toArray(),
   ]);
   return {
     people: byId<LocalDirectoryPerson>(people),
     contacts: byId<LocalContact>(contacts),
     handovers,
+    departments: new Map(departments.map(({ id, name }) => [id, name])),
   };
 }
 

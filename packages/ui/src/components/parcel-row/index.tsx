@@ -14,6 +14,7 @@ type Look = {
 const LOOK: Record<ParcelState, Look> = {
   incomplete: { tile: { icon: 'alert', tone: 'red' }, line: 'red' },
   toNotify: { tile: { icon: 'package', tone: 'neutral' }, line: 'muted' },
+  onTour: { tile: { icon: 'truck', tone: 'neutral' }, line: 'muted' },
   notified: { tile: { icon: 'mail', tone: 'blue' }, line: 'muted' },
   late: { tile: { icon: 'clock', tone: 'orange' }, line: 'orange' },
   handedOver: { tile: { icon: 'check', tone: 'green' }, line: 'muted' },

@@ -87,7 +87,8 @@ function damageCardOf(
   };
 }
 
-const UNDO_DESCRIPTION: Record<'notifie' | 'retourne', string> = {
+const UNDO_DESCRIPTION: Record<'en_route' | 'notifie' | 'retourne', string> = {
+  en_route: t('record.undo.description.en_route'),
   notifie: t('record.undo.description.notifie'),
   retourne: t('record.undo.description.retourne'),
 };
@@ -397,7 +398,8 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               label: t('handover.cancel.action'),
               onClick: () => setCancelling(true),
             }
-          : action?.kind === 'stepBack'
+          : action?.kind === 'stepBack' &&
+              (action.from !== 'en_route' || access.receives)
             ? {
                 label: stepBackLabel(action.from, t),
                 onClick: () => {

@@ -7,6 +7,7 @@ export const SECTION_IDS = [
   'replies',
   'incomplete',
   'toNotify',
+  'onTour',
   'waiting',
   'handedOver',
 ] as const;
@@ -36,6 +37,7 @@ const SECTIONS: {
     states: ['incomplete'],
   },
   { id: 'toNotify', title: t('colis.section.toNotify'), states: ['toNotify'] },
+  { id: 'onTour', title: t('colis.section.onTour'), states: ['onTour'] },
   {
     id: 'waiting',
     title: t('colis.section.waiting'),

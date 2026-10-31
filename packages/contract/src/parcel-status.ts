@@ -67,6 +67,7 @@ export function isStepBack(from: ParcelStatus, to: ParcelStatus): boolean {
 export const OPEN_STATUSES = [
   'a_completer',
   'recu',
+  'en_route',
   'notifie',
 ] as const satisfies readonly ParcelStatus[];
 
@@ -80,7 +81,8 @@ export const TOUR_STATUSES = [
 /** Everything not yet out of the company's hands: a department holding one stays open. */
 export const UNFINISHED_STATUSES = [
   ...OPEN_STATUSES,
-  ...TOUR_STATUSES,
+  'depose',
+  'a_regulariser',
 ] as const satisfies readonly ParcelStatus[];
 
 /** The progress line of the parcel sheet: Reçu, Notifié, Remis. */
@@ -123,6 +125,7 @@ export const STATUS_TODO = {
 /** The undo action of a status, named after the step it takes back. */
 export const STEP_BACK_LABEL = {
   recu: 'parcel.undo.recu',
+  en_route: 'parcel.undo.en_route',
   notifie: 'parcel.undo.notifie',
   remis: 'parcel.undo.remis',
   retourne: 'parcel.undo.retourne',

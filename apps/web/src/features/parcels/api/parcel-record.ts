@@ -67,6 +67,10 @@ export async function loadParcelRecord(
   return {
     parcel,
     person,
+    goesTo:
+      parcel.status === 'en_route' && parcel.departmentId
+        ? (await database.department.get(parcel.departmentId))?.name
+        : undefined,
     contact,
     events,
     ops,

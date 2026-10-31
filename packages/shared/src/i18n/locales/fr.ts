@@ -452,6 +452,7 @@ export const fr = {
   'parcel.reply.absent': 'Absence jusqu’au {{date}}',
   'colis.section.incomplete': 'À compléter',
   'colis.section.toNotify': 'À notifier',
+  'colis.section.onTour': 'En route',
   'colis.section.waiting': 'En attente de retrait',
   'colis.section.handedOver': 'Remis aujourd’hui',
   'colis.empty.title': 'Tout est remis',
@@ -593,6 +594,7 @@ export const fr = {
   'parcel.todo.remis': 'Rien à faire : remis au destinataire',
   'parcel.todo.retourne': 'Rien à faire : retourné à l’expéditeur',
   'parcel.undo.recu': 'Remettre à compléter',
+  'parcel.undo.en_route': 'Annuler la tournée',
   'parcel.undo.notifie': 'Annuler la notification',
   'parcel.undo.remis': 'Annuler la remise',
   'parcel.undo.retourne': 'Annuler le retour',
@@ -733,6 +735,8 @@ export const fr = {
   'record.delete.description':
     'Il disparaît des listes sur tous les iPhone ; son historique reste.',
   'record.delete.confirm': 'Supprimer le colis',
+  'record.undo.description.en_route':
+    'Le colis revient dans « À notifier », il ne part plus en tournée.',
   'record.undo.description.notifie': 'Le colis revient dans « À notifier ».',
   'record.undo.description.retourne':
     'Le colis revient au comptoir, comme avant son retour.',

@@ -27,6 +27,7 @@ describe('homeState', () => {
       'incomplete',
     );
     expect(homeState(parcel({ status: 'recu' }), NOW)).toBe('toNotify');
+    expect(homeState(parcel({ status: 'en_route' }), NOW)).toBe('onTour');
     expect(
       homeState(parcel({ status: 'notifie', notifiedAt: hoursAgo(47) }), NOW),
     ).toBe('notified');

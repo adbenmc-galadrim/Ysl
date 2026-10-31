@@ -26,6 +26,8 @@ export type RecipientContext = {
   contacts: ReadonlyMap<string, LocalContact>;
   /** The standing handover of the parcels handed over, by parcel id. */
   handovers?: ReadonlyMap<string, LocalHandover>;
+  /** The names of the departments, by id: a parcel on tour names where it goes. */
+  departments?: ReadonlyMap<string, string>;
 };
 
 export function startOfDay(now: Date): Date {
@@ -83,6 +85,8 @@ export function homeState(
       return 'incomplete';
     case 'recu':
       return 'toNotify';
+    case 'en_route':
+      return 'onTour';
     case 'notifie':
       return reminderOf(parcel, now, dates)?.late ? 'late' : 'notified';
     case 'remis':
@@ -194,6 +198,7 @@ function statusLine(
     case 'incomplete':
       return missingOf(parcel, t, ['recipient']);
     case 'toNotify':
+    case 'onTour':
       return t('parcel.status.received', {
         time: formatTime(parcel.receivedAt),
       });
@@ -361,7 +366,11 @@ export function describeParcel(
       (reply?.kind === 'notMine' && parcel.readName
         ? parcel.readName
         : t('parcel.recipient.unknown')));
-  const department = person?.department ?? parcel.department ?? '';
+  const goesTo =
+    state === 'onTour' && parcel.departmentId
+      ? context.departments?.get(parcel.departmentId)
+      : undefined;
+  const department = goesTo ?? person?.department ?? parcel.department ?? '';
   // A parcel « Sans suivi » carries the app's own number: no « ···MXA4 ».
   const last4 =
     parcel.tracking && parcel.type !== 'sans_suivi'
