@@ -3,7 +3,10 @@ import type {
   AccountState,
   ListAccountsInput,
 } from '@repo/contract/accounts';
-import { ACCOUNTS_PAGE_SIZE } from '@repo/contract/accounts';
+import {
+  ACCOUNTS_PAGE_SIZE,
+  createAccountInput,
+} from '@repo/contract/accounts';
 import { MIN_PASSWORD_LENGTH } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -69,10 +72,12 @@ const errorCode = (error: unknown) =>
 function errorMessage(error: unknown): string {
   if (!error) return '';
   const code = errorCode(error);
-  if (code === 'BAD_REQUEST' || code === 'CONFLICT' || code === 'NOT_FOUND') {
-    return (error as Error).message;
-  }
-  return t('accounts.failed');
+  const { message } = error as Error;
+  // A refused schema answers with zod's JSON, which is no sentence for a screen.
+  const worded =
+    (code === 'BAD_REQUEST' || code === 'CONFLICT' || code === 'NOT_FOUND') &&
+    !message.startsWith('[');
+  return worded ? message : t('accounts.failed');
 }
 
 function roleName(role: AccountRecord['role']): string {
@@ -435,11 +440,10 @@ export function AccountsScreen() {
     return form.role === 'department' ? select : { ...select, disabled: true };
   })();
   const taken = errorCode(create.error) === 'CONFLICT';
-  const canCreate =
-    form.name.trim() !== '' &&
-    form.email.trim() !== '' &&
-    form.password.length >= MIN_PASSWORD_LENGTH &&
-    (form.role !== 'department' || form.departmentId !== '');
+  const canCreate = createAccountInput.safeParse({
+    ...form,
+    departmentId: form.role === 'department' ? form.departmentId || null : null,
+  }).success;
   const formHint = create.isError
     ? errorMessage(create.error)
     : t('accounts.create.hint', { min: MIN_PASSWORD_LENGTH });
@@ -455,7 +459,9 @@ export function AccountsScreen() {
   );
   const actions = account && stateActions(account.state, setDialog);
   const select = account && roleSelect(account, setDialog);
-  const inDepartment = account?.role === 'department';
+  // A revoked account has left its department; it is attached again once back.
+  const inDepartment =
+    account?.role === 'department' && account.state !== 'revoked';
 
   if (desk) {
     const { companyCrumb, company, nav, account: me, onNavigate } = shell;
@@ -505,7 +511,7 @@ export function AccountsScreen() {
                 roleName(account.role)
               ),
             },
-            { label: t('accounts.state'), value: stateLabel(account.state) },
+            { label: t('accounts.state'), value: stateLabel(account.state, t) },
             { label: t('accounts.lastSignIn'), value: lastSignIn(account) },
             { label: t('accounts.devices'), value: devicesLine(account, t) },
           ]}
@@ -524,7 +530,11 @@ export function AccountsScreen() {
         <ComptesDesktop
           {...deskShell}
           title={t('accounts.title')}
-          subtitle={t('accounts.subtitle', { count: counts?.all ?? 0 })}
+          subtitle={
+            counts?.all === 1
+              ? t('accounts.subtitle.one')
+              : t('accounts.subtitle.many', { count: counts?.all ?? 0 })
+          }
           tabs={[
             { id: ALL, label: t('accounts.tab.all'), count: counts?.all ?? 0 },
             { id: 'shuttle', label: t('accounts.tab.shuttle'), count: counts?.shuttle ?? 0 },
@@ -541,23 +551,23 @@ export function AccountsScreen() {
           )}
           stateFilter={{
             value: stateFilter,
-            label: stateFilter ? stateLabel(stateFilter) : t('accounts.tab.all'),
+            label: stateFilter ? stateLabel(stateFilter, t) : t('accounts.tab.all'),
             options: [
               { id: '', label: t('accounts.tab.all') },
-              { id: 'active', label: stateLabel('active') },
-              { id: 'suspended', label: stateLabel('suspended') },
-              { id: 'revoked', label: stateLabel('revoked') },
+              { id: 'active', label: stateLabel('active', t) },
+              { id: 'suspended', label: stateLabel('suspended', t) },
+              { id: 'revoked', label: stateLabel('revoked', t) },
             ],
             onChange: (id) =>
               toFirstPage(setStateFilter)(id as AccountState | ''),
           }}
-          rows={rows.map(tableRow)}
+          rows={rows.map((row) => tableRow(row, t))}
           activeRow={recordId ?? undefined}
           onSelect={(id) => {
             attach.reset();
             setOpen({ kind: 'record', id });
           }}
-          range={pageRange(page, ACCOUNTS_PAGE_SIZE, total)}
+          range={pageRange(page, ACCOUNTS_PAGE_SIZE, total, t)}
           onPrevious={previous}
           onNext={next}
           addLabel={t('accounts.create.title')}
@@ -621,7 +631,7 @@ export function AccountsScreen() {
               ? { value: account.departmentName ?? '—', select: attachTo(account) }
               : undefined
           }
-          state={stateLabel(account.state)}
+          state={stateLabel(account.state, t)}
           lastLogin={lastSignIn(account)}
           devices={devicesLine(account, t)}
           message={attach.isError ? errorMessage(attach.error) : undefined}
@@ -670,7 +680,7 @@ export function AccountsScreen() {
           state:
             row.state === 'active'
               ? undefined
-              : (stateLabel(row.state) as 'Suspendu' | 'Révoqué'),
+              : { label: stateLabel(row.state, t), kind: row.state },
         })),
     }))
     .filter((section) => section.rows.length > 0);
@@ -699,7 +709,7 @@ export function AccountsScreen() {
           )}
           {list.data && total > ACCOUNTS_PAGE_SIZE && (
             <div className="flex items-center justify-between text-14 text-muted">
-              <span>{pageRange(page, ACCOUNTS_PAGE_SIZE, total)}</span>
+              <span>{pageRange(page, ACCOUNTS_PAGE_SIZE, total, t)}</span>
               <span className="flex gap-2">
                 <Button variant="secondary" size="sm" disabled={!previous} onClick={previous}>
                   {t('accounts.previous')}

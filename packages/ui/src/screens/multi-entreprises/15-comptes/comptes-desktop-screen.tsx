@@ -21,7 +21,7 @@ import { cn } from '#lib/tv';
 
 export type CompteRole = 'navette' | 'departement' | 'admin';
 
-export type CompteState = 'Actif' | 'Invitation envoyée' | 'Suspendu' | 'Révoqué';
+export type CompteStateKind = 'active' | 'invited' | 'suspended' | 'revoked';
 
 /** Someone in the table. `id` is what comes back on a click. */
 export type CompteRow = {
@@ -30,7 +30,8 @@ export type CompteRow = {
   email: string;
   role: CompteRole | null;
   department: string;
-  state: CompteState;
+  state: string;
+  stateKind: CompteStateKind;
   lastLogin: string;
 };
 
@@ -45,7 +46,7 @@ export type ComptesSelect = {
   disabled?: boolean;
 };
 
-function SelectOverlay({
+export function SelectOverlay({
   select,
   name,
 }: {
@@ -76,10 +77,10 @@ const ROLE_TAG: Record<CompteRole, { icon: IconName; label: string; width: numbe
 };
 
 const STATE_TONE = {
-  Actif: 'green',
-  'Invitation envoyée': 'blue',
-  Suspendu: 'orange',
-  Révoqué: 'red',
+  active: 'green',
+  invited: 'blue',
+  suspended: 'orange',
+  revoked: 'red',
 } as const;
 
 function RoleTag({ role }: { role: CompteRole | null }) {
@@ -123,7 +124,7 @@ const DEPARTMENT: DeskTableColumn<CompteRow> = {
 const STATE: Omit<DeskTableColumn<CompteRow>, 'width'> = {
   key: 'state',
   header: 'État',
-  cell: (a) => <StatusDot size="sm" tone={STATE_TONE[a.state]} label={a.state} />,
+  cell: (a) => <StatusDot size="sm" tone={STATE_TONE[a.stateKind]} label={a.state} />,
 };
 
 const FULL_COLUMNS: DeskTableColumn<CompteRow>[] = [

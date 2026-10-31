@@ -13,18 +13,24 @@ import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
-import type { ComptesSelect } from '#screens/multi-entreprises/15-comptes/comptes-desktop-screen';
+import {
+  type ComptesSelect,
+  SelectOverlay,
+} from '#screens/multi-entreprises/15-comptes/comptes-desktop-screen';
 
 const STATE_STYLE = {
-  'Invitation envoyée': { tone: 'blue', width: 140 },
-  Suspendu: { tone: 'orange', width: 93 },
-  Révoqué: { tone: 'red', width: 88 },
+  invited: { tone: 'blue', width: 140 },
+  suspended: { tone: 'orange', width: 93 },
+  revoked: { tone: 'red', width: 88 },
 } as const;
 
-export type CompteMobileState = keyof typeof STATE_STYLE;
+export type CompteMobileState = {
+  label: string;
+  kind: keyof typeof STATE_STYLE;
+};
 
-function RowState({ label }: { label: CompteMobileState }) {
-  const { tone, width } = STATE_STYLE[label];
+function RowState({ state }: { state: CompteMobileState }) {
+  const { tone, width } = STATE_STYLE[state.kind];
   return (
     <span
       className={cn(
@@ -43,7 +49,7 @@ function RowState({ label }: { label: CompteMobileState }) {
           tone === 'red' && 'bg-red',
         )}
       />
-      <span className="-mt-0.5">{label}</span>
+      <span className="-mt-0.5">{state.label}</span>
     </span>
   );
 }
@@ -124,7 +130,7 @@ export function ComptesMobile({
                   leading={<PersonAvatar initials={row.initials} raised />}
                   title={row.name}
                   lines={[row.line]}
-                  before={row.state && <RowState label={row.state} />}
+                  before={row.state && <RowState state={row.state} />}
                   separator
                 />
               </button>
@@ -185,19 +191,7 @@ function AccountRow({
             size={16}
             className="absolute top-[18px] right-3.5 text-faint"
           />
-          <select
-            aria-label={selectName ?? label}
-            value={select.value}
-            disabled={select.disabled}
-            onChange={(event) => select.onChange?.(event.target.value)}
-            className="absolute inset-0 size-full cursor-pointer opacity-0"
-          >
-            {select.options.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <SelectOverlay select={select} name={selectName ?? label} />
         </>
       )}
       {separator && (

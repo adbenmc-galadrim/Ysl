@@ -10,8 +10,8 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 describe('the pages of the accounts', () => {
   it('shows the range past 200 accounts', () => {
-    expect(pageRange(5, 50, 205)).toBe('201–205 sur 205');
-    expect(pageRange(1, 50, 0)).toBe('0 sur 0');
+    expect(pageRange(5, 50, 205, t)).toBe('201–205 sur 205');
+    expect(pageRange(1, 50, 0, t)).toBe('0–0 sur 0');
   });
 
   it('offers the next page while accounts remain, and only then', () => {

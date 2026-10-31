@@ -35,12 +35,17 @@ const DESKTOP = { viewport: { value: 'landingDesktop', isRotated: false } };
 const MOBILE = { viewport: { value: 'iphone15', isRotated: false } };
 const PAGE = 'multi-entreprises/15-comptes/comptes--admin-entreprise-';
 
+const KIND: Record<string, CompteRow['stateKind']> = {
+  'Invitation envoyée': 'invited',
+  Suspendu: 'suspended',
+};
+
 const row = (
   name: string,
   email: string,
   role: CompteRow['role'],
   department: string,
-  state: CompteRow['state'],
+  state: string,
   lastLogin: string,
 ): CompteRow => ({
   id: `${email}@atelier-lumen.fr`,
@@ -49,6 +54,7 @@ const row = (
   role,
   department,
   state,
+  stateKind: KIND[state] ?? 'active',
   lastLogin,
 });
 
@@ -151,9 +157,9 @@ const MOBILE_SECTIONS = [
     rows: [
       { id: 'jp', initials: 'JP', name: 'Julie Perrin', line: 'Studio' },
       { id: 'tm', initials: 'TM', name: 'Thomas Moreau', line: 'Studio' },
-      { id: 'nk', initials: 'NK', name: 'Nadia Kessler', line: 'Finance', state: 'Invitation envoyée' as const },
+      { id: 'nk', initials: 'NK', name: 'Nadia Kessler', line: 'Finance', state: { label: 'Invitation envoyée', kind: 'invited' as const } },
       { id: 'bv', initials: 'BV', name: 'Bruno Vidal', line: 'Juridique' },
-      { id: 'eg', initials: 'ÉG', name: 'Élise Garnier', line: 'Finance', state: 'Suspendu' as const },
+      { id: 'eg', initials: 'ÉG', name: 'Élise Garnier', line: 'Finance', state: { label: 'Suspendu', kind: 'suspended' as const } },
     ],
   },
 ];

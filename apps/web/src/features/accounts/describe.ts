@@ -4,7 +4,7 @@ import type {
   ListAccountsOutput,
 } from '@repo/contract/accounts';
 import type { TranslateFn } from '@repo/shared/i18n';
-import type { CompteRole, CompteRow, CompteState } from '@repo/ui';
+import type { CompteRole, CompteRow, CompteStateKind } from '@repo/ui';
 import { deviceKind } from '#/features/devices/describe';
 import { formatSyncTime } from '#/features/sync/sync-card';
 
@@ -14,14 +14,8 @@ const ROLE_TAG: Partial<Record<string, CompteRole>> = {
   company_admin: 'admin',
 };
 
-const STATE_LABEL: Record<AccountState, CompteState> = {
-  active: 'Actif',
-  suspended: 'Suspendu',
-  revoked: 'Révoqué',
-};
-
-export const stateLabel = (state: AccountState): CompteState =>
-  STATE_LABEL[state];
+export const stateLabel = (state: AccountState, t: TranslateFn): string =>
+  t(`accounts.state.${state}`);
 
 export const lastSignIn = (
   account: Pick<AccountRecord, 'lastSignInAt'>,
@@ -40,14 +34,15 @@ export function devicesLine(
     : '—';
 }
 
-export function tableRow(account: AccountRecord): CompteRow {
+export function tableRow(account: AccountRecord, t: TranslateFn): CompteRow {
   return {
     id: account.id,
     name: account.name,
     email: account.email,
     role: account.role ? (ROLE_TAG[account.role] ?? null) : null,
     department: account.departmentName ?? '—',
-    state: stateLabel(account.state),
+    state: stateLabel(account.state, t),
+    stateKind: account.state satisfies CompteStateKind,
     lastLogin: lastSignIn(account),
   };
 }
@@ -57,10 +52,13 @@ export function pageRange(
   page: number,
   pageSize: number,
   total: number,
+  t: TranslateFn,
 ): string {
-  if (total === 0) return '0 sur 0';
-  const first = (page - 1) * pageSize + 1;
-  return `${first}–${Math.min(page * pageSize, total)} sur ${total}`;
+  return t('directory.range', {
+    from: total === 0 ? 0 : (page - 1) * pageSize + 1,
+    to: Math.min(page * pageSize, total),
+    total,
+  });
 }
 
 export const hasNextPage = (

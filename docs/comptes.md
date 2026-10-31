@@ -5,7 +5,7 @@ plateforme n'y figurent jamais et `/api/auth/admin/*` reste en 404.
 
 | Geste | Connexion | Téléphone du compte |
 |---|---|---|
-| Suspendre | refusée, toute requête répond 403 | **données gardées**, écran « Compte suspendu », tout reprend à la réactivation |
+| Suspendre | refusée, toute requête répond 403 (seule la lecture de session reste ouverte, pour dire au téléphone qu'il est suspendu) | **données gardées**, écran « Compte suspendu », tout reprend à la réactivation |
 | Révoquer | refusée, sessions supprimées | **photos et preuves effacées** à sa prochaine requête, y compris ce qui n'est pas envoyé |
 | Changer le mot de passe | nouveau mot de passe | données gardées, sauf si « fermer ses sessions » est coché |
 

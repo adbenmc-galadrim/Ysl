@@ -53,7 +53,11 @@ export const fr = {
   'departments.error.notDepartmentAccount':
     'Seul un compte département se rattache à un département.',
   'accounts.title': 'Comptes',
-  'accounts.subtitle': '{{count}} comptes',
+  'accounts.subtitle.one': '1 compte',
+  'accounts.subtitle.many': '{{count}} comptes',
+  'accounts.state.active': 'Actif',
+  'accounts.state.suspended': 'Suspendu',
+  'accounts.state.revoked': 'Révoqué',
   'accounts.tab.all': 'Tous',
   'accounts.tab.shuttle': 'Navettes',
   'accounts.tab.department': 'Départements',
