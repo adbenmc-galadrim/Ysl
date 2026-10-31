@@ -17,7 +17,8 @@ const PASSWORD_VARIABLE = 'AUTH_USER_PASSWORD';
 
 const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> [--role ${USER_ROLES.join('|')}] [--organization <name>]
 The password is read from standard input, or from ${PASSWORD_VARIABLE}.
-Without --organization, the only organization is used, or "Service courrier" is created.`;
+Without --organization, the only organization is used, or "Service courrier" is created.
+A platform_admin belongs to no organization: --organization is refused.`;
 
 async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
@@ -54,7 +55,7 @@ async function main(): Promise<void> {
 
   const platformAccount = role.data === 'platform_admin';
   if (platformAccount && values.organization) {
-    throw new Error(`An app admin belongs to no organization.\n${USAGE}`);
+    throw new Error(USAGE);
   }
   const choice = platformAccount
     ? null

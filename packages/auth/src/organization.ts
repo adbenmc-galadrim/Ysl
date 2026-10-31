@@ -84,6 +84,18 @@ export async function resolveOrganization(
   return ensureOrganization(db, await chooseOrganization(db, name));
 }
 
+/** The organization a stray account should join; an app admin is refused before one gets created for it. */
+export async function resolveOrganizationFor(
+  db: AnyDb,
+  account: { email: string; role: string | null },
+  name?: string,
+): Promise<{ id: string; name: string; created: boolean }> {
+  if (account.role === 'platform_admin') {
+    throw new PlatformAccountError(account.email);
+  }
+  return resolveOrganization(db, name);
+}
+
 /** Makes the account a member; refuses an app admin, and to move one that already belongs elsewhere. */
 export async function attachToOrganization(
   db: AnyDb,
@@ -120,9 +132,9 @@ export async function attachToOrganization(
 export async function findUserByEmail(
   db: AnyDb,
   email: string,
-): Promise<{ id: string; email: string } | undefined> {
+): Promise<{ id: string; email: string; role: string | null } | undefined> {
   const [found] = await db
-    .select({ id: user.id, email: user.email })
+    .select({ id: user.id, email: user.email, role: user.role })
     .from(user)
     .where(eq(user.email, email));
   return found;

@@ -13,6 +13,7 @@ import {
   OrganizationChoiceError,
   PlatformAccountError,
   resolveOrganization,
+  resolveOrganizationFor,
 } from '#organization';
 
 const migrationsFolder = fileURLToPath(
@@ -112,6 +113,29 @@ describe('chooseOrganization', () => {
       name: 'C',
     });
     expect(await db.select().from(schema.organization)).toHaveLength(2);
+  });
+});
+
+describe('resolveOrganizationFor', () => {
+  it('creates no organization for an app admin', async () => {
+    await expect(
+      resolveOrganizationFor(
+        db,
+        { email: 'plateforme@example.test', role: 'platform_admin' },
+        'Nouvelle',
+      ),
+    ).rejects.toThrow(PlatformAccountError);
+    expect(await db.select().from(schema.organization)).toEqual([]);
+  });
+
+  it('still creates one for any other account', async () => {
+    const resolved = await resolveOrganizationFor(
+      db,
+      { email: 'un@example.test', role: 'agent' },
+      'Nouvelle',
+    );
+
+    expect(resolved).toMatchObject({ name: 'Nouvelle', created: true });
   });
 });
 
