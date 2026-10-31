@@ -47,7 +47,10 @@ function lastNotification(parcel: LocalParcel): Date {
 }
 
 /** The reminders each parcel had, from the sent mails on the iPhone (`loadReminderDates`). */
-export type ReminderDates = ReadonlyMap<string, readonly Date[]>;
+export type ReminderDates = ReadonlyMap<string, readonly Date[]> & {
+  /** The profile turned reminders off: none falls due; a parcel can still run late. */
+  remindersOff?: boolean;
+};
 
 /**
  * Where a notified parcel stands with its reminders (F37, D12), by the
@@ -62,7 +65,7 @@ export function reminderOf(
 ): ReminderState | undefined {
   if (parcel.deletedAt || parcel.status !== 'notifie') return undefined;
   const notifiedAt = firstNotification(parcel);
-  return reminderState(
+  const state = reminderState(
     {
       notifiedAt,
       reminders: knownReminders(
@@ -73,6 +76,7 @@ export function reminderOf(
     },
     now,
   );
+  return dates?.remindersOff ? { ...state, due: false } : state;
 }
 
 /**

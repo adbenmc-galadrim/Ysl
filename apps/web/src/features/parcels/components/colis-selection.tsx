@@ -1,3 +1,5 @@
+import { reminderMode } from '@repo/contract/operating-profile';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, EmptyState, SelectionScreen, Sheet, Toast } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
@@ -108,7 +110,11 @@ export function ColisSelection({
 
   const remind = async () => {
     const parcels = await loadTicked();
-    const plan = planMails(parcels, await loadRecipientContext(db, parcels));
+    const planned = planMails(parcels, await loadRecipientContext(db, parcels));
+    // Reminders turned off (§3.7.9): only the first notices are left to send.
+    const off =
+      reminderMode((await readOperatingProfile(db)).reminders) === 'none';
+    const plan = off ? { ...planned, reminder: [] } : planned;
     const skipped = {
       ...(plan.skipped.recipient && {
         sansDestinataire: plan.skipped.recipient,

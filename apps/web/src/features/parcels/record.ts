@@ -49,6 +49,7 @@ import {
   formatAgo,
   formatTime,
   missingOf,
+  type ReminderDates,
   reminderOf,
   shortDate,
   startOfDay,
@@ -59,6 +60,8 @@ import { groupTyped } from '#/features/scan/typed';
 /** A parcel's record as the local database holds it. */
 export type ParcelRecord = {
   parcel: LocalParcel;
+  /** The profile turned reminders off: the record calls for none. */
+  remindersOff?: boolean;
   person?: LocalDirectoryPerson;
   contact?: LocalContact;
   /** On tour, the department it goes to. */
@@ -181,14 +184,16 @@ function syncOf(ops: readonly OutboxOp[]): RecordSync {
 }
 
 /** The reminders the record's history dates: every mail sent, or word given, after the notice. */
-function reminderDates(record: ParcelRecord): Map<string, Date[]> {
+function reminderDates(record: ParcelRecord): ReminderDates {
   const dates = record.events.flatMap((row) => {
     const type = readParcelEvent(row.type, row.detail)?.type;
     return type === 'parcel.notified' || type === 'parcel.informed'
       ? [row.at]
       : [];
   });
-  return new Map([[record.parcel.id, dates]]);
+  return Object.assign(new Map([[record.parcel.id, dates]]), {
+    remindersOff: record.remindersOff,
+  });
 }
 
 function stateCard(
