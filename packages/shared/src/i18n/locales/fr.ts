@@ -1084,7 +1084,7 @@ export const fr = {
   'journal.empty.search': 'Aucun nom ne correspond à « {{query}} ».',
   'export.share.title': 'Historique des colis',
   'export.note':
-    'Tous les colis du service, remis compris, préparés par le serveur.',
+    'Tous les colis que vous voyez, remis compris, préparés par le serveur.',
   'export.offline': 'Hors ligne : l’export demande une connexion au serveur.',
   'export.failed': 'L’export n’a pas abouti. Réessayez.',
   'export.ready': 'Fichier prêt : touchez « Partager le fichier ».',

@@ -35,13 +35,7 @@ export function deskNav(
         { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
         { id: 'annuaire', label: t('directory.nav.directory'), icon: 'users' },
         ...(role === 'company_admin'
-          ? [
-              {
-                id: 'comptes',
-                label: t('accounts.title'),
-                icon: 'key',
-              } as const,
-            ]
+          ? [{ id: 'comptes', label: t('accounts.title'), icon: 'key' } as const]
           : []),
         { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
       ],
