@@ -226,6 +226,40 @@ describe('telling a contact instead', () => {
     expect((await db.parcel.get(notified.id))?.expectedDelegate).toBeNull();
   });
 
+  it('remembers no twin: the address alone does not say which card', async () => {
+    const pierre = personRow({ firstName: 'Pierre', email: '' });
+    await db.directoryPerson.bulkPut([
+      pierre,
+      personRow({ email: 'anne@example.com', departmentId: 'a' }),
+      personRow({ email: 'anne@example.com', departmentId: 'b' }),
+    ]);
+    await db.notification.put({
+      id: '0199f000-0000-7000-8000-0000000000f3',
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      type: 'avis',
+      personId: pierre.id,
+      contactId: null,
+      recipients: ['anne@example.com'],
+      cc: [],
+      parcelIds: ['0199f000-0000-7000-8000-0000000000f2'],
+      templateId: null,
+      status: 'sent',
+      target: 'mailto',
+      preparedAt: NOW,
+      preparedBy: 'agent-1',
+      openedAt: null,
+      sentAt: NOW,
+      failedReason: null,
+      relayName: 'Anne Martin',
+    });
+
+    expect(
+      await rememberedRelay(db, { personId: pierre.id, contactId: null }),
+    ).toBeNull();
+  });
+
   it('finds the contact told last time for a card without address, from the mails', async () => {
     const pierre = personRow({
       firstName: 'Pierre',

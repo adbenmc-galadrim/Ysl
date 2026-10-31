@@ -331,6 +331,14 @@ describe('searchOptions with departments (ME23)', () => {
     );
   });
 
+  it('falls back on the word a card came with, before the conversion', () => {
+    const before = { ...twin('a', null), department: 'Studio' };
+
+    expect(searchOptions([before], [], 'studio', names)[0]?.detail).toBe(
+      'Studio',
+    );
+  });
+
   it('falls back on the address for a card without department', () => {
     expect(
       searchOptions([twin('a', null)], [], 'martin', names)[0]?.detail,

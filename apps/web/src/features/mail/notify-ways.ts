@@ -82,10 +82,12 @@ export async function rememberedRelay(
     .sort((a, b) => b.sentAt!.getTime() - a.sentAt!.getTime())[0];
   const address = last?.recipients[0]?.toLowerCase();
   if (!address) return null;
-  const person = (
+  const cards = (
     await db.directoryPerson.where('email').equals(address).toArray()
-  ).find((row) => row.active && !row.deletedAt);
-  if (person) return personOption(person, await departmentNames(db));
+  ).filter((row) => row.active && !row.deletedAt);
+  // Twins in two departments: the address does not say which, the agent chooses.
+  if (cards.length > 1) return null;
+  if (cards[0]) return personOption(cards[0], await departmentNames(db));
   const known = (
     await db.contact.where('email').equals(address).toArray()
   ).find((row) => !row.deletedAt);

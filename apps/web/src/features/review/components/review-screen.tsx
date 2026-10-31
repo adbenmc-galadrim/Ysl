@@ -20,11 +20,11 @@ import type {
   LocalDirectoryPerson,
 } from '#/features/db/schema';
 import { ReadingView } from '#/features/diagnostic/components/reading-view';
-import { settleRecipients } from '#/features/recipient/check';
 import {
   departmentNames,
   NO_DEPARTMENT_NAMES,
 } from '#/features/directory/people';
+import { settleRecipients } from '#/features/recipient/check';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
 import { skipDraft } from '#/features/review/actions';

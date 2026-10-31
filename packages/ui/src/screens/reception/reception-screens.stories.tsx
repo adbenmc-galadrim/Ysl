@@ -304,7 +304,7 @@ export const PersonneHorsAnnuaire: Story = {
   ),
 };
 
-/** Réglages › Annuaire › a contact: its card, and the directory card it can now join. */
+/** Two cards of one person, one per department (ME23, no reference). */
 const TWINS: RecipientOption[] = [
   { id: 'a', name: 'Anne Martin', initials: 'AM', detail: 'Finance' },
   { id: 'b', name: 'Anne Martin', initials: 'AM', detail: 'Presse' },
@@ -341,6 +341,7 @@ export const PersonneHorsAnnuaireJumelles: Story = {
   ),
 };
 
+/** Réglages › Annuaire › a contact: its card, and the directory card it can now join. */
 export const ModifierContact: Story = {
   name: 'Modifier un contact hors annuaire',
   render: () => (
