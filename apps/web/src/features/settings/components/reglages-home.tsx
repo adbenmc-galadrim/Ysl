@@ -11,6 +11,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useHealthQuery } from '#/features/health/api/get-health';
 import { displayVersion } from '#/features/install/app-host';
 import { hasDesk } from '#/features/auth/route-access';
+import { useGoesOnTour } from '#/features/parcels/api/use-tour';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { accountLine, roleSpace } from '#/features/shell/role-nav';
@@ -94,8 +95,10 @@ export function ReglagesHome() {
     (preset) => preset.value === corners.radius,
   )?.title;
 
+  const tour = useGoesOnTour();
   // On a computer, the sidebar already leads there.
-  const space = desk && hasDesk(role) ? null : roleSpace(role, t);
+  const space =
+    desk && hasDesk(role) ? null : roleSpace(role, t, tour === true);
   const own: SettingsGroup[] = space
     ? [
         {

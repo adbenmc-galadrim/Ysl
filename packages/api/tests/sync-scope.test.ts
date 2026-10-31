@@ -8,7 +8,8 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
-import type { Access } from '#lib/access';
+import { exportParcelsCsv } from '#features/exports/service';
+import { parcelScope, type Access } from '#lib/access';
 import {
   accessOf,
   addContact,
@@ -16,11 +17,13 @@ import {
   addPerson,
 } from './helpers/departments';
 import {
+  addOtherShuttle,
   AGENT_ID,
   asAnyDb,
   openTestDb,
   ORGANIZATION_ID,
   OTHER_ORGANIZATION_ID,
+  OTHER_SHUTTLE_ID,
   parcelRow,
   STRANGER_ID,
   type TestDb,
@@ -34,6 +37,7 @@ let legal: string;
 
 beforeAll(async () => {
   ({ client, db } = await openTestDb());
+  await addOtherShuttle(db);
   sync = asAnyDb(db);
   finance = await addDepartment(db, 'Finance');
   legal = await addDepartment(db, 'Juridique');
@@ -357,5 +361,116 @@ describe('sync.pull by role', () => {
     const { ids } = await read(accessOf('department', finance));
 
     expect(ids.get('email_template')).toEqual([mine.id]);
+  });
+});
+
+describe('sync.pull of a shuttle on tour', () => {
+  const SHUTTLE = AGENT_ID;
+  const asShuttle: Access = {
+    ...accessOf('shuttle', null),
+    userId: SHUTTLE,
+    onTour: true,
+  };
+
+  it('reads its tours, the whole directory, and what hangs on its parcels only', async () => {
+    const person = await addPerson(db, finance);
+    const contact = await addContact(db);
+    const mine = await addParcel({ personId: person, receivedBy: SHUTTLE });
+    const taken = await addParcel({
+      personId: person,
+      receivedBy: OTHER_SHUTTLE_ID,
+      tourShuttleId: SHUTTLE,
+    });
+    const other = await addParcel({
+      contactId: contact,
+      receivedBy: OTHER_SHUTTLE_ID,
+    });
+    const given = await addParcel({
+      personId: person,
+      receivedBy: SHUTTLE,
+      tourShuttleId: OTHER_SHUTTLE_ID,
+    });
+    const event = (entityId: string) => ({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      entity: PARCEL_EVENT_ENTITY,
+      entityId,
+      type: 'parcel.status',
+      detail: {},
+      agentId: OTHER_SHUTTLE_ID,
+      at: new Date(),
+    });
+    const onMine = event(mine);
+    const onOther = event(other);
+    await db.insert(schema.event).values([onMine, onOther]);
+
+    const { ids } = await read(asShuttle);
+    const parcels = ids.get('parcel') ?? [];
+    expect(parcels).toEqual(expect.arrayContaining([mine, taken]));
+    expect(parcels).not.toContain(other);
+    expect(parcels).not.toContain(given);
+    expect(ids.get('directory_person')).toContain(person);
+    expect(ids.get('contact')).toContain(contact);
+    expect(ids.get('department')).toEqual(
+      expect.arrayContaining([finance, legal]),
+    );
+    expect(ids.get('event')).toContain(onMine.id);
+    expect(ids.get('event')).not.toContain(onOther.id);
+  });
+
+  it('keeps the whole company outside a tour, and starts over when the profile changes', async () => {
+    const other = await addParcel({ receivedBy: OTHER_SHUTTLE_ID });
+    const wide = await read({ ...asShuttle, onTour: false });
+    expect(wide.ids.get('parcel')).toContain(other);
+
+    const narrowed = await read(asShuttle, cursorOf(wide.last));
+    expect(narrowed.reset).toBe(true);
+    expect(narrowed.ids.get('parcel')).not.toContain(other);
+
+    const widened = await read(
+      { ...asShuttle, onTour: false },
+      cursorOf(narrowed.last),
+    );
+    expect(widened.reset).toBe(true);
+    expect(widened.ids.get('parcel')).toContain(other);
+  });
+
+  it('never sends who took a parcel over', async () => {
+    const taken = await addParcel({
+      receivedBy: OTHER_SHUTTLE_ID,
+      tourShuttleId: SHUTTLE,
+    });
+    let output = await pull(sync, asShuttle, {
+      cursor: null,
+      page: null,
+      limit: 500,
+      departments: true,
+    });
+    const row = output.rows.find((change) => change.row.id === taken)?.row;
+    expect(row).toBeDefined();
+    expect(row).not.toHaveProperty('tourShuttleId');
+    output = await pull(sync, accessOf('company_admin', null), {
+      cursor: null,
+      page: null,
+      limit: 500,
+      departments: true,
+    });
+    expect(output.rows.some(({ row: r }) => 'tourShuttleId' in r)).toBe(false);
+  });
+});
+
+describe('exports of a shuttle on tour', () => {
+  it('holds its own parcels only, as the pull', async () => {
+    await addParcel({ receivedBy: AGENT_ID, tracking: 'MINE-TOUR-1' });
+    await addParcel({ receivedBy: OTHER_SHUTTLE_ID, tracking: 'OTHER-TOUR-1' });
+    const { csv } = await exportParcelsCsv(
+      sync,
+      ORGANIZATION_ID,
+      new Date(),
+      undefined,
+      parcelScope({ ...accessOf('shuttle', null), onTour: true }),
+    );
+    expect(csv).toContain('MINE-TOUR-1');
+    expect(csv).not.toContain('OTHER-TOUR-1');
   });
 });

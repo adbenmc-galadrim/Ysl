@@ -6,7 +6,9 @@ const t = createTranslator(DEFAULT_LOCALE);
 export const SECTION_IDS = [
   'replies',
   'incomplete',
+  'toSettle',
   'toNotify',
+  'toDispatch',
   'onTour',
   'waiting',
   'handedOver',
@@ -23,25 +25,25 @@ const SECTIONS: {
   {
     id: 'replies',
     title: t('colis.section.replies'),
-    states: [
-      'incomplete',
-      'toNotify',
-      'notified',
-      'handedOver',
-      'returned',
-    ],
+    states: ['incomplete', 'toNotify', 'notified', 'handedOver', 'returned'],
   },
   {
     id: 'incomplete',
     title: t('colis.section.incomplete'),
     states: ['incomplete'],
   },
+  { id: 'toSettle', title: t('colis.section.toSettle'), states: ['toSettle'] },
   { id: 'toNotify', title: t('colis.section.toNotify'), states: ['toNotify'] },
+  {
+    id: 'toDispatch',
+    title: t('colis.section.toDispatch'),
+    states: ['toDispatch'],
+  },
   { id: 'onTour', title: t('colis.section.onTour'), states: ['onTour'] },
   {
     id: 'waiting',
     title: t('colis.section.waiting'),
-    states: ['notified', 'late'],
+    states: ['deposited', 'notified', 'late'],
   },
   {
     id: 'handedOver',
@@ -61,7 +63,12 @@ export function sectionId(title: string): SectionId | undefined {
   return SECTIONS.find((section) => section.title === title)?.id;
 }
 
-const TODO_STATES: readonly ParcelState[] = ['incomplete', 'toNotify'];
+const TODO_STATES: readonly ParcelState[] = [
+  'incomplete',
+  'toSettle',
+  'toNotify',
+  'toDispatch',
+];
 
 /**
  * The home list: one section per thing left to do, in the order of the day;
@@ -100,7 +107,10 @@ type CountedRow = Parcel & { remindDue?: boolean };
 
 const COUNTER_ROWS: Record<CounterId, (row: CountedRow) => boolean> = {
   incomplete: (row) => row.state === 'incomplete',
-  waiting: (row) => row.state === 'notified' || row.state === 'late',
+  waiting: (row) =>
+    row.state === 'deposited' ||
+    row.state === 'notified' ||
+    row.state === 'late',
   remind: (row) => row.remindDue === true,
   late: (row) => row.state === 'late',
 };

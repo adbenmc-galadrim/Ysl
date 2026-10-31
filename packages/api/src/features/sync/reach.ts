@@ -15,7 +15,12 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { SyncRejected } from '#features/sync/errors';
 import { isHiddenFromDepartment } from '#features/sync/scope';
 import { tableOf } from '#features/sync/tables';
-import { parcelScope, type Access } from '#lib/access';
+import {
+  parcelInScope,
+  parcelScope,
+  type Access,
+  type ParcelScope,
+} from '#lib/access';
 import { mayHandOver } from '#features/operating/service';
 
 type Values = Record<string, unknown>;
@@ -74,11 +79,11 @@ async function checkHandOver(
 const idsOf = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((id) => typeof id === 'string') : [];
 
-/** Every parcel named is in the department. */
-async function allInDepartment(
+/** Every parcel named is within the scope. */
+async function allInScope(
   tx: AnyDb,
   organizationId: string,
-  departmentId: string,
+  scope: ParcelScope,
   ids: string[],
 ): Promise<boolean> {
   if (ids.length === 0) return false;
@@ -88,7 +93,7 @@ async function allInDepartment(
     .where(
       and(
         eq(parcel.organizationId, organizationId),
-        eq(parcel.departmentId, departmentId),
+        parcelInScope(scope),
         inArray(parcel.id, ids),
       ),
     );
@@ -156,7 +161,7 @@ async function checkDepartment(
 ): Promise<void> {
   const { organizationId } = access;
   const inDepartment = (ids: string[]) =>
-    allInDepartment(tx, organizationId, departmentId, ids);
+    allInScope(tx, organizationId, { kind: 'department', departmentId }, ids);
   const { patch, entityId: id } = op;
 
   if (isHiddenFromDepartment(tableOf(op.entity))) outOfScope(op);
@@ -270,6 +275,64 @@ async function checkDepartment(
   }
 }
 
+const offTour = (op: SyncOp): never =>
+  refuse(op, 'is on another tour', 'sync.op.offTour');
+
+/** What a shuttle on tour writes: its own parcels and new ones; the directory and the contacts stay open to it. */
+async function checkTour(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId }: Access,
+  scope: ParcelScope,
+): Promise<void> {
+  const onTour = (ids: string[]) => allInScope(tx, organizationId, scope, ids);
+  const { patch, entityId: id } = op;
+  switch (op.entity) {
+    case 'parcel': {
+      const [row] = await tx
+        .select({ id: parcel.id })
+        .from(parcel)
+        .where(
+          and(eq(parcel.organizationId, organizationId), eq(parcel.id, id)),
+        );
+      if (row && !(await onTour([id]))) offTour(op);
+      return;
+    }
+    case 'notification': {
+      const [row] = await tx
+        .select({ parcelIds: notification.parcelIds })
+        .from(notification)
+        .where(
+          and(
+            eq(notification.organizationId, organizationId),
+            eq(notification.id, id),
+          ),
+        );
+      if (row && !(await onTour(row.parcelIds))) offTour(op);
+      if (
+        op.type === 'upsert' &&
+        patch.parcelIds !== undefined &&
+        !(await onTour(idsOf(patch.parcelIds)))
+      ) {
+        offTour(op);
+      }
+      return;
+    }
+    case 'event': {
+      if (
+        patch.entity === PARCEL_EVENT_ENTITY &&
+        typeof patch.entityId === 'string' &&
+        !(await onTour([patch.entityId]))
+      ) {
+        offTour(op);
+      }
+      return;
+    }
+    default:
+      return;
+  }
+}
+
 /**
  * Whether this account may write this row (§2.1), before anything else looks
  * at it. A department is held to its own rows; `department` is written by its
@@ -291,6 +354,7 @@ export async function checkReach(
   if (scope.kind === 'department') {
     await checkDepartment(tx, op, access, scope.departmentId);
   }
+  if (scope.kind === 'tour') await checkTour(tx, op, access, scope);
 }
 
 const withoutDepartment = ({ departmentId: _dropped, ...rest }: Values) => {
@@ -299,7 +363,7 @@ const withoutDepartment = ({ departmentId: _dropped, ...rest }: Values) => {
 };
 
 /**
- * The department a row gets. A department stamps its own and cannot give a
+ * The department a row gets, and on tour who received it. A department stamps its own and cannot give a
  * parcel away. A parcel for a person follows that person (the trigger of
  * drizzle/0020): once it has a department, a copy's, perhaps stale, says
  * nothing; a new parcel or one without any takes what the agent chose at the
@@ -319,6 +383,10 @@ export async function departmentWrite(
       return { ...values, departmentId: scope.departmentId };
     }
     return op.entity === 'parcel' ? withoutDepartment(values) : values;
+  }
+  // A new parcel enters the tour of the shuttle that validated it; an update leaves this column alone.
+  if (scope.kind === 'tour' && op.entity === 'parcel') {
+    values = { ...values, receivedBy: access.userId };
   }
   if (!('departmentId' in values)) return values;
   if (op.entity === 'directory_person') {

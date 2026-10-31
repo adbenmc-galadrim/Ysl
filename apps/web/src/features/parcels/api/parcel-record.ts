@@ -68,7 +68,9 @@ export async function loadParcelRecord(
   return {
     parcel,
     person,
-    tour: parcel.status === 'a_completer' && (await goesOnTour(database)),
+    tour:
+      (parcel.status === 'a_completer' || parcel.status === 'recu') &&
+      (await goesOnTour(database)),
     goesTo:
       parcel.status === 'en_route' && parcel.departmentId
         ? (await database.department.get(parcel.departmentId))?.name

@@ -31,7 +31,8 @@
     "./retention": "./src/retention.ts",
     "./settings": "./src/settings.ts",
     "./sync": "./src/sync.ts",
-    "./tracking": "./src/tracking/index.ts"
+    "./tracking": "./src/tracking/index.ts",
+    "./tour": "./src/tour.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

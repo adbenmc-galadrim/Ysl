@@ -14,6 +14,7 @@ export type TestDb = PgliteDatabase<typeof schema>;
 
 export const AGENT_ID = 'agent-1';
 export const STRANGER_ID = 'agent-2';
+export const OTHER_SHUTTLE_ID = 'shuttle-2';
 export const ORGANIZATION_ID = newId();
 export const OTHER_ORGANIZATION_ID = newId();
 
@@ -35,6 +36,19 @@ export async function openTestDb(): Promise<{ client: PGlite; db: TestDb }> {
     { userId: STRANGER_ID, organizationId: OTHER_ORGANIZATION_ID },
   ]);
   return { client, db };
+}
+
+/** A second shuttle of the company, for the files that compare two tours. */
+export async function addOtherShuttle(db: TestDb): Promise<void> {
+  await db.insert(schema.user).values({
+    id: OTHER_SHUTTLE_ID,
+    name: 'Autre navette',
+    email: 'navette@example.test',
+    role: 'shuttle',
+  });
+  await db
+    .insert(schema.organizationMember)
+    .values({ userId: OTHER_SHUTTLE_ID, organizationId: ORGANIZATION_ID });
 }
 
 export function asAnyDb(db: TestDb): AnyDb {

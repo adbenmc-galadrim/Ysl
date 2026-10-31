@@ -9,7 +9,7 @@ import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
 import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import type { ParcelScope } from '#lib/access';
+import { parcelInScope, type ParcelScope } from '#lib/access';
 import { textCell, toCsv, type CsvCell } from '#features/exports/csv';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -116,9 +116,7 @@ async function readParcels(
       and(
         eq(parcel.organizationId, organizationId),
         isNull(parcel.deletedAt),
-        scope.kind === 'department'
-          ? eq(parcel.departmentId, scope.departmentId)
-          : undefined,
+        parcelInScope(scope),
       ),
     )
     .orderBy(asc(parcel.receivedAt), asc(parcel.id));

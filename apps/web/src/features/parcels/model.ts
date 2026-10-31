@@ -75,20 +75,29 @@ export function reminderOf(
   );
 }
 
-/** Where the parcel sits on the home list; nothing when it is not shown. */
+/**
+ * Where the parcel sits on the home list; nothing when it is not shown.
+ * `tour`: the company runs tours, so a parcel still « Reçu » has yet to leave:
+ * nobody is told before its deposit (§8.3).
+ */
 export function homeState(
   parcel: LocalParcel,
   now: Date,
   dates?: ReminderDates,
+  tour = false,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   switch (parcel.status) {
     case 'a_completer':
       return 'incomplete';
     case 'recu':
-      return 'toNotify';
+      return tour ? 'toDispatch' : 'toNotify';
     case 'en_route':
       return 'onTour';
+    case 'depose':
+      return 'deposited';
+    case 'a_regulariser':
+      return 'toSettle';
     case 'notifie':
       return reminderOf(parcel, now, dates)?.late ? 'late' : 'notified';
     case 'remis':
@@ -211,10 +220,17 @@ function statusLine(
     case 'incomplete':
       return missingOf(parcel, t, ['recipient'], tour);
     case 'toNotify':
+    case 'toDispatch':
     case 'onTour':
       return t('parcel.status.received', {
         time: formatTime(parcel.receivedAt),
       });
+    case 'deposited':
+      return t('parcel.status.deposited', {
+        time: formatTime(parcel.depositedAt ?? parcel.receivedAt),
+      });
+    case 'toSettle':
+      return t('parcel.status.toSettle');
     case 'notified':
     case 'late': {
       const reminder = reminderOf(parcel, now, dates);
@@ -264,6 +280,14 @@ export type HomeParcel = ParcelRow & {
   noAddress: boolean;
 };
 
+/** The states named after the department the parcel goes to, or came to. */
+const GOES_SOMEWHERE: readonly ParcelState[] = [
+  'toDispatch',
+  'onTour',
+  'deposited',
+  'toSettle',
+];
+
 /** The list row of a local parcel; nothing when the home list leaves it out. */
 export function toParcelRow(
   parcel: LocalParcel,
@@ -272,7 +296,7 @@ export function toParcelRow(
   t: TranslateFn,
   dates?: ReminderDates,
 ): HomeParcel | undefined {
-  const state = homeState(parcel, now, dates);
+  const state = homeState(parcel, now, dates, context.tour);
   if (!state) return undefined;
   return {
     ...describeParcel(parcel, state, context, now, t, dates),
@@ -358,6 +382,26 @@ export function replyLine(
   return { kind: REPLY_ROW[reply.kind], text };
 }
 
+// A parcel « Sans suivi » carries the app's own number: no « ···MXA4 ».
+const last4Of = (parcel: LocalParcel) =>
+  parcel.tracking && parcel.type !== 'sans_suivi'
+    ? parcel.tracking.slice(-4)
+    : '';
+
+/** « UPS ···0622 », « 2 colis UPS »: which box it is, on its carrier's word. */
+export function carrierLineOf(parcel: LocalParcel, t: TranslateFn): string {
+  const last4 = last4Of(parcel);
+  const carrier = carrierLabel(parcel, t);
+  const pieces = parcel.pieceTotal ?? 0;
+  const received = parcel.pieceN ?? pieces;
+  if (pieces > 1) {
+    return received < pieces
+      ? t('parcel.pieces.partial', { count: received, total: pieces, carrier })
+      : t('parcel.pieces', { count: pieces, carrier });
+  }
+  return last4 ? `${carrier} ···${last4}` : carrier;
+}
+
 /** The list row of a parcel drawn in `state`, wherever it is listed. */
 export function describeParcel(
   parcel: LocalParcel,
@@ -380,30 +424,13 @@ export function describeParcel(
         ? parcel.readName
         : t('parcel.recipient.unknown')));
   const goesTo =
-    state === 'onTour' && parcel.departmentId
+    parcel.departmentId && GOES_SOMEWHERE.includes(state)
       ? context.departments?.get(parcel.departmentId)
       : undefined;
   const department = goesTo ?? person?.department ?? parcel.department ?? '';
-  // A parcel « Sans suivi » carries the app's own number: no « ···MXA4 ».
-  const last4 =
-    parcel.tracking && parcel.type !== 'sans_suivi'
-      ? parcel.tracking.slice(-4)
-      : '';
+  const last4 = last4Of(parcel);
   const carrier = carrierLabel(parcel, t);
-  const pieces = parcel.pieceTotal ?? 0;
-  const received = parcel.pieceN ?? pieces;
-  const carrierLine =
-    pieces > 1
-      ? received < pieces
-        ? t('parcel.pieces.partial', {
-            count: received,
-            total: pieces,
-            carrier,
-          })
-        : t('parcel.pieces', { count: pieces, carrier })
-      : last4
-        ? `${carrier} ···${last4}`
-        : carrier;
+  const carrierLine = carrierLineOf(parcel, t);
   const noEmail = addressMissing({ parcel, person, contact });
   const note =
     !person && !contact && parcel.readName && reply?.kind !== 'notMine'

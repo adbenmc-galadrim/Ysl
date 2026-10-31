@@ -11,10 +11,13 @@ import { EMPTY_PICKUP } from '@repo/contract/settings';
 import type { SyncOp, SyncedEntity } from '@repo/contract/sync';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { writeCompanySettings } from '#features/company/settings';
-import { writeOperatingProfile } from '#features/operating/service';
+import {
+  goesOnTour,
+  writeOperatingProfile,
+} from '#features/operating/service';
 import { push } from '#features/sync/push';
 import type { Access } from '#lib/access';
 import {
@@ -24,10 +27,13 @@ import {
   addPerson,
 } from './helpers/departments';
 import {
+  addOtherShuttle,
   AGENT_ID,
   asAnyDb,
   openTestDb,
   ORGANIZATION_ID,
+  OTHER_ORGANIZATION_ID,
+  OTHER_SHUTTLE_ID,
   parcelRow,
   type TestDb,
 } from './helpers/pglite';
@@ -40,6 +46,7 @@ let legal: string;
 
 beforeAll(async () => {
   ({ client, db } = await openTestDb());
+  await addOtherShuttle(db);
   sync = asAnyDb(db);
   finance = await addDepartment(db, 'Finance');
   legal = await addDepartment(db, 'Juridique');
@@ -673,5 +680,107 @@ describe('sync.push by role', () => {
         ),
       ).toBeGreaterThanOrEqual(400);
     });
+  });
+});
+
+describe('sync.push of a shuttle on tour', () => {
+  const other = OTHER_SHUTTLE_ID;
+  const asShuttle: Access = { ...accessOf('shuttle'), onTour: true };
+
+  it('writes its own parcels and new ones, not those of another tour', async () => {
+    const mine = await addParcel({ receivedBy: AGENT_ID });
+    const theirs = await addParcel({ receivedBy: other });
+    const taken = await addParcel({
+      receivedBy: other,
+      tourShuttleId: AGENT_ID,
+    });
+    const created = newId();
+
+    expect(
+      await statusOf(asShuttle, op('parcel', mine, newParcel({ notes: 'x' }))),
+    ).toBe(200);
+    expect(
+      await statusOf(asShuttle, op('parcel', taken, newParcel({ notes: 'x' }))),
+    ).toBe(200);
+    expect(
+      await statusOf(
+        asShuttle,
+        op('parcel', created, newParcel({ receivedBy: other })),
+      ),
+    ).toBe(200);
+    expect(
+      await statusOf(
+        asShuttle,
+        op('parcel', theirs, newParcel({ notes: 'x' })),
+      ),
+    ).toBe(403);
+    expect(
+      await statusOf(
+        { ...asShuttle, onTour: false },
+        op('parcel', theirs, newParcel({ notes: 'x' })),
+      ),
+    ).toBe(200);
+
+    const [row] = await db
+      .select({ receivedBy: schema.parcel.receivedBy })
+      .from(schema.parcel)
+      .where(eq(schema.parcel.id, created));
+    expect(row?.receivedBy).toBe(AGENT_ID);
+  });
+
+  it('cannot hand itself a parcel by a copy', async () => {
+    const theirs = await addParcel({ receivedBy: other });
+    const mine = await addParcel({ receivedBy: AGENT_ID });
+    await statusOf(asShuttle, op('parcel', theirs, newParcel()));
+    await statusOf(
+      asShuttle,
+      op(
+        'parcel',
+        mine,
+        newParcel({ tourShuttleId: other, receivedBy: other }),
+      ),
+    );
+    const rows = await db
+      .select({
+        id: schema.parcel.id,
+        receivedBy: schema.parcel.receivedBy,
+        tourShuttleId: schema.parcel.tourShuttleId,
+      })
+      .from(schema.parcel)
+      .where(inArray(schema.parcel.id, [theirs, mine]));
+    expect(rows.find(({ id }) => id === theirs)?.receivedBy).toBe(other);
+    expect(rows.find(({ id }) => id === mine)).toMatchObject({
+      receivedBy: AGENT_ID,
+      tourShuttleId: null,
+    });
+  });
+
+  it('refuses an event on a parcel of another tour', async () => {
+    const theirs = await addParcel({ receivedBy: other });
+    const event = op('event', newId(), {
+      entity: PARCEL_EVENT_ENTITY,
+      entityId: theirs,
+      type: 'parcel.status',
+      detail: {},
+      agentId: AGENT_ID,
+      at: NOW,
+    });
+    expect(await statusOf(asShuttle, event)).toBe(403);
+  });
+});
+
+describe('whether a company runs tours', () => {
+  it('reads the profile as the app does: only an explicit false', async () => {
+    const company = OTHER_ORGANIZATION_ID;
+    expect(await goesOnTour(sync, company)).toBe(false);
+    await writeOperatingProfile(
+      sync,
+      company,
+      SMALL_SITE_OPERATING_PROFILE,
+      null,
+    );
+    expect(await goesOnTour(sync, company)).toBe(false);
+    await writeOperatingProfile(sync, company, DEFAULT_OPERATING_PROFILE, null);
+    expect(await goesOnTour(sync, company)).toBe(true);
   });
 });

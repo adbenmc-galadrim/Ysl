@@ -23,7 +23,6 @@ import { Route as AuthenticatedRelancesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/revue'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedTableauDeBordRouteImport } from './routes/_authenticated/tableau-de-bord'
-import { Route as AuthenticatedTourneeRouteImport } from './routes/_authenticated/tournee'
 import { Route as AuthenticatedColisIndexRouteImport } from './routes/_authenticated/colis/index'
 import { Route as AuthenticatedEntreprisesIdRouteImport } from './routes/_authenticated/entreprises/$id'
 import { Route as AuthenticatedEntreprisesNouvelleRouteImport } from './routes/_authenticated/entreprises/nouvelle'
@@ -50,6 +49,8 @@ import { Route as AuthenticatedRemiseCodeRouteImport } from './routes/_authentic
 import { Route as AuthenticatedRemiseColisRouteImport } from './routes/_authenticated/remise/colis'
 import { Route as AuthenticatedRemiseConfirmeeRouteImport } from './routes/_authenticated/remise/confirmee'
 import { Route as AuthenticatedRemiseNomRouteImport } from './routes/_authenticated/remise/nom'
+import { Route as AuthenticatedTourneeIndexRouteImport } from './routes/_authenticated/tournee/index'
+import { Route as AuthenticatedTourneeDepartmentIdRouteImport } from './routes/_authenticated/tournee/$departmentId'
 import { Route as AuthenticatedColisParcelIdIndexRouteImport } from './routes/_authenticated/colis/$parcelId/index'
 import { Route as AuthenticatedColisParcelIdDommageRouteImport } from './routes/_authenticated/colis/$parcelId/dommage'
 import { Route as AuthenticatedColisParcelIdLectureRouteImport } from './routes/_authenticated/colis/$parcelId/lecture'
@@ -131,11 +132,6 @@ const AuthenticatedTableauDeBordRoute =
     path: '/tableau-de-bord',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedTourneeRoute = AuthenticatedTourneeRouteImport.update({
-  id: '/tournee',
-  path: '/tournee',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedColisIndexRoute = AuthenticatedColisIndexRouteImport.update({
   id: '/colis/',
   path: '/colis/',
@@ -288,6 +284,18 @@ const AuthenticatedRemiseNomRoute = AuthenticatedRemiseNomRouteImport.update({
   path: '/remise/nom',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTourneeIndexRoute =
+  AuthenticatedTourneeIndexRouteImport.update({
+    id: '/tournee/',
+    path: '/tournee/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTourneeDepartmentIdRoute =
+  AuthenticatedTourneeDepartmentIdRouteImport.update({
+    id: '/tournee/$departmentId',
+    path: '/tournee/$departmentId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedColisParcelIdIndexRoute =
   AuthenticatedColisParcelIdIndexRouteImport.update({
     id: '/colis/$parcelId/',
@@ -351,7 +359,6 @@ export interface FileRoutesByFullPath {
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
-  '/tournee': typeof AuthenticatedTourneeRoute
   '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -375,9 +382,11 @@ export interface FileRoutesByFullPath {
   '/remise/colis': typeof AuthenticatedRemiseColisRoute
   '/remise/confirmee': typeof AuthenticatedRemiseConfirmeeRoute
   '/remise/nom': typeof AuthenticatedRemiseNomRoute
+  '/tournee/$departmentId': typeof AuthenticatedTourneeDepartmentIdRoute
   '/colis/': typeof AuthenticatedColisIndexRoute
   '/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/remise/': typeof AuthenticatedRemiseIndexRoute
+  '/tournee/': typeof AuthenticatedTourneeIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -400,7 +409,6 @@ export interface FileRoutesByTo {
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
-  '/tournee': typeof AuthenticatedTourneeRoute
   '/': typeof AuthenticatedIndexRoute
   '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
@@ -425,9 +433,11 @@ export interface FileRoutesByTo {
   '/remise/colis': typeof AuthenticatedRemiseColisRoute
   '/remise/confirmee': typeof AuthenticatedRemiseConfirmeeRoute
   '/remise/nom': typeof AuthenticatedRemiseNomRoute
+  '/tournee/$departmentId': typeof AuthenticatedTourneeDepartmentIdRoute
   '/colis': typeof AuthenticatedColisIndexRoute
   '/reglages': typeof AuthenticatedReglagesIndexRoute
   '/remise': typeof AuthenticatedRemiseIndexRoute
+  '/tournee': typeof AuthenticatedTourneeIndexRoute
   '/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -452,7 +462,6 @@ export interface FileRoutesById {
   '/_authenticated/revue': typeof AuthenticatedRevueRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
-  '/_authenticated/tournee': typeof AuthenticatedTourneeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/_authenticated/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
@@ -477,9 +486,11 @@ export interface FileRoutesById {
   '/_authenticated/remise/colis': typeof AuthenticatedRemiseColisRoute
   '/_authenticated/remise/confirmee': typeof AuthenticatedRemiseConfirmeeRoute
   '/_authenticated/remise/nom': typeof AuthenticatedRemiseNomRoute
+  '/_authenticated/tournee/$departmentId': typeof AuthenticatedTourneeDepartmentIdRoute
   '/_authenticated/colis/': typeof AuthenticatedColisIndexRoute
   '/_authenticated/reglages/': typeof AuthenticatedReglagesIndexRoute
   '/_authenticated/remise/': typeof AuthenticatedRemiseIndexRoute
+  '/_authenticated/tournee/': typeof AuthenticatedTourneeIndexRoute
   '/_authenticated/colis/$parcelId/dommage': typeof AuthenticatedColisParcelIdDommageRoute
   '/_authenticated/colis/$parcelId/lecture': typeof AuthenticatedColisParcelIdLectureRoute
   '/_authenticated/colis/$parcelId/modifier': typeof AuthenticatedColisParcelIdModifierRoute
@@ -505,7 +516,6 @@ export interface FileRouteTypes {
     | '/revue'
     | '/scan'
     | '/tableau-de-bord'
-    | '/tournee'
     | '/entreprises/$id'
     | '/entreprises/nouvelle'
     | '/lot/$batchId'
@@ -529,9 +539,11 @@ export interface FileRouteTypes {
     | '/remise/colis'
     | '/remise/confirmee'
     | '/remise/nom'
+    | '/tournee/$departmentId'
     | '/colis/'
     | '/reglages/'
     | '/remise/'
+    | '/tournee/'
     | '/colis/$parcelId/dommage'
     | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
@@ -554,7 +566,6 @@ export interface FileRouteTypes {
     | '/revue'
     | '/scan'
     | '/tableau-de-bord'
-    | '/tournee'
     | '/'
     | '/entreprises/$id'
     | '/entreprises/nouvelle'
@@ -579,9 +590,11 @@ export interface FileRouteTypes {
     | '/remise/colis'
     | '/remise/confirmee'
     | '/remise/nom'
+    | '/tournee/$departmentId'
     | '/colis'
     | '/reglages'
     | '/remise'
+    | '/tournee'
     | '/colis/$parcelId/dommage'
     | '/colis/$parcelId/lecture'
     | '/colis/$parcelId/modifier'
@@ -605,7 +618,6 @@ export interface FileRouteTypes {
     | '/_authenticated/revue'
     | '/_authenticated/scan'
     | '/_authenticated/tableau-de-bord'
-    | '/_authenticated/tournee'
     | '/_authenticated/'
     | '/_authenticated/entreprises/$id'
     | '/_authenticated/entreprises/nouvelle'
@@ -630,9 +642,11 @@ export interface FileRouteTypes {
     | '/_authenticated/remise/colis'
     | '/_authenticated/remise/confirmee'
     | '/_authenticated/remise/nom'
+    | '/_authenticated/tournee/$departmentId'
     | '/_authenticated/colis/'
     | '/_authenticated/reglages/'
     | '/_authenticated/remise/'
+    | '/_authenticated/tournee/'
     | '/_authenticated/colis/$parcelId/dommage'
     | '/_authenticated/colis/$parcelId/lecture'
     | '/_authenticated/colis/$parcelId/modifier'
@@ -749,13 +763,6 @@ declare module '@tanstack/react-router' {
       path: '/tableau-de-bord'
       fullPath: '/tableau-de-bord'
       preLoaderRoute: typeof AuthenticatedTableauDeBordRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/tournee': {
-      id: '/_authenticated/tournee'
-      path: '/tournee'
-      fullPath: '/tournee'
-      preLoaderRoute: typeof AuthenticatedTourneeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/colis/': {
@@ -940,6 +947,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRemiseNomRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/tournee/': {
+      id: '/_authenticated/tournee/'
+      path: '/tournee'
+      fullPath: '/tournee/'
+      preLoaderRoute: typeof AuthenticatedTourneeIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tournee/$departmentId': {
+      id: '/_authenticated/tournee/$departmentId'
+      path: '/tournee/$departmentId'
+      fullPath: '/tournee/$departmentId'
+      preLoaderRoute: typeof AuthenticatedTourneeDepartmentIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/colis/$parcelId/': {
       id: '/_authenticated/colis/$parcelId/'
       path: '/colis/$parcelId'
@@ -1008,7 +1029,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRevueRoute: typeof AuthenticatedRevueRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedTableauDeBordRoute: typeof AuthenticatedTableauDeBordRoute
-  AuthenticatedTourneeRoute: typeof AuthenticatedTourneeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedEntreprisesIdRoute: typeof AuthenticatedEntreprisesIdRoute
   AuthenticatedEntreprisesNouvelleRoute: typeof AuthenticatedEntreprisesNouvelleRoute
@@ -1033,9 +1053,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedRemiseColisRoute: typeof AuthenticatedRemiseColisRoute
   AuthenticatedRemiseConfirmeeRoute: typeof AuthenticatedRemiseConfirmeeRoute
   AuthenticatedRemiseNomRoute: typeof AuthenticatedRemiseNomRoute
+  AuthenticatedTourneeDepartmentIdRoute: typeof AuthenticatedTourneeDepartmentIdRoute
   AuthenticatedColisIndexRoute: typeof AuthenticatedColisIndexRoute
   AuthenticatedReglagesIndexRoute: typeof AuthenticatedReglagesIndexRoute
   AuthenticatedRemiseIndexRoute: typeof AuthenticatedRemiseIndexRoute
+  AuthenticatedTourneeIndexRoute: typeof AuthenticatedTourneeIndexRoute
   AuthenticatedColisParcelIdDommageRoute: typeof AuthenticatedColisParcelIdDommageRoute
   AuthenticatedColisParcelIdLectureRoute: typeof AuthenticatedColisParcelIdLectureRoute
   AuthenticatedColisParcelIdModifierRoute: typeof AuthenticatedColisParcelIdModifierRoute
@@ -1055,7 +1077,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRevueRoute: AuthenticatedRevueRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedTableauDeBordRoute: AuthenticatedTableauDeBordRoute,
-  AuthenticatedTourneeRoute: AuthenticatedTourneeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedEntreprisesIdRoute: AuthenticatedEntreprisesIdRoute,
   AuthenticatedEntreprisesNouvelleRoute: AuthenticatedEntreprisesNouvelleRoute,
@@ -1084,9 +1105,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedRemiseColisRoute: AuthenticatedRemiseColisRoute,
   AuthenticatedRemiseConfirmeeRoute: AuthenticatedRemiseConfirmeeRoute,
   AuthenticatedRemiseNomRoute: AuthenticatedRemiseNomRoute,
+  AuthenticatedTourneeDepartmentIdRoute: AuthenticatedTourneeDepartmentIdRoute,
   AuthenticatedColisIndexRoute: AuthenticatedColisIndexRoute,
   AuthenticatedReglagesIndexRoute: AuthenticatedReglagesIndexRoute,
   AuthenticatedRemiseIndexRoute: AuthenticatedRemiseIndexRoute,
+  AuthenticatedTourneeIndexRoute: AuthenticatedTourneeIndexRoute,
   AuthenticatedColisParcelIdDommageRoute:
     AuthenticatedColisParcelIdDommageRoute,
   AuthenticatedColisParcelIdLectureRoute:

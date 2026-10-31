@@ -3,6 +3,7 @@ import { normalizeName } from '@repo/shared/text';
 import type { Parcel } from '@repo/ui';
 import type { LocalParcel } from '#/features/db/schema';
 import {
+  isWaiting,
   type HandoverRecipient,
   recipientKey,
 } from '#/features/handover/waiting';
@@ -96,8 +97,9 @@ export function planMails(
   const open = parcels.filter(
     (parcel) =>
       !parcel.deletedAt &&
-      parcel.status !== 'remis' &&
-      parcel.status !== 'retourne',
+      (parcel.status === 'a_completer' ||
+        parcel.status === 'notifie' ||
+        (parcel.status === 'recu' && !context.tour)),
   );
   const writable = open.filter((parcel) => {
     if (
@@ -151,11 +153,14 @@ export type HandoverGroup = {
 
 /**
  * The handovers a selection calls for (P4), one per person or contact:
- * what is received or notified for someone. A parcel nobody is set for
+ * what waits at the desk for someone (`isWaiting`). A parcel nobody is set for
  * cannot be handed over and is counted; one already handed over or
  * returned is left as it is.
  */
-export function planHandovers(parcels: readonly LocalParcel[]): {
+export function planHandovers(
+  parcels: readonly LocalParcel[],
+  tour = false,
+): {
   groups: HandoverGroup[];
   skipped: number;
 } {
@@ -163,7 +168,7 @@ export function planHandovers(parcels: readonly LocalParcel[]): {
   let skipped = 0;
   for (const parcel of parcels) {
     if (parcel.deletedAt) continue;
-    if (parcel.status !== 'recu' && parcel.status !== 'notifie') {
+    if (!isWaiting(parcel, tour)) {
       if (parcel.status === 'a_completer') skipped += 1;
       continue;
     }

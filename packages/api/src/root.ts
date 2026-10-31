@@ -14,6 +14,7 @@ import { operatingRouter } from '#features/operating/router';
 import { pickupRouter } from '#features/pickup/router';
 import { platformRouter } from '#features/platform/router';
 import { syncRouter } from '#features/sync/router';
+import { tourRouter } from '#features/tour/router';
 import { router } from '#lib/trpc';
 
 export const appRouter = router({
@@ -33,6 +34,7 @@ export const appRouter = router({
   pickup: pickupRouter,
   platform: platformRouter,
   sync: syncRouter,
+  tour: tourRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { Button } from '#components/button';
 import { IconButton } from '#components/icon-button';
 import { LargeTitle } from '#components/large-title';
@@ -23,61 +25,75 @@ const CLOSE = (
   <IconButton icon="x" label="Fermer" size="lg" iconSize={22} />
 );
 
+export type TourStopParcel = { id: string; title: string; line: string };
+
+export type TourStopScreenProps = {
+  name: string;
+  subtitle: string;
+  parcels: readonly TourStopParcel[];
+  /** The deposit itself, once there is one. */
+  action?: ReactNode;
+  onBack?: () => void;
+  onParcel?: (id: string) => void;
+};
+
 /** The parcels the shuttle carries for one department, before it deposits them. */
-export function NavetteDepartementADeposer() {
+export function TourStopScreen({
+  name,
+  subtitle,
+  parcels,
+  action,
+  onBack,
+  onParcel,
+}: TourStopScreenProps) {
   return (
-    <Screen
-      bottom={
-        <DepositBottom>
-          <Button icon="qr" iconSize={20} className="gap-2">
-            Déposer au Studio
-          </Button>
-        </DepositBottom>
-      }
-    >
-      <NavBar />
+    <Screen bottom={action ? <DepositBottom>{action}</DepositBottom> : undefined}>
+      <NavBar onBack={onBack} />
       <LargeTitle
-        title={<span className="tracking-[-0.4px]">Studio</span>}
-        subtitle="Bât. A, 2e étage, accueil · 6 colis"
+        title={<span className="tracking-[-0.4px]">{name}</span>}
+        subtitle={subtitle}
         className="mt-2 gap-[5px]"
       />
       <div className="mt-6">
-        <PhoneRow
-          leading={<KraftThumb />}
-          title="Camille Morel"
-          lines={['UPS ···0622']}
-          chevron={false}
-          separator
-        />
-        <PhoneRow
-          leading={<KraftThumb />}
-          title="Hugo Lefèvre"
-          lines={['DHL ···7112']}
-          chevron={false}
-          separator
-        />
-        <PhoneRow
-          leading={<KraftThumb />}
-          title="Inès Garnier"
-          lines={['FedEx ···3338']}
-          chevron={false}
-          separator
-        />
-        <PhoneRow
-          leading={<KraftThumb />}
-          title="Axelle Bernard"
-          lines={['UPS ···2210']}
-          chevron={false}
-          separator
-        />
-        <PhoneRow
-          leading={<KraftThumb />}
-          title="Samuel Petit"
-          lines={['Amazon, 2 colis']}
-          chevron={false}
-        />
+        {parcels.map((parcel, i) => (
+          <button
+            key={parcel.id}
+            type="button"
+            className="block w-full cursor-pointer text-left"
+            onClick={onParcel && (() => onParcel(parcel.id))}
+          >
+            <PhoneRow
+              leading={<KraftThumb />}
+              title={parcel.title}
+              lines={[parcel.line]}
+              chevron={false}
+              separator={i < parcels.length - 1}
+            />
+          </button>
+        ))}
       </div>
     </Screen>
+  );
+}
+
+export function NavetteDepartementADeposer() {
+  return (
+    <TourStopScreen
+      name="Studio"
+      subtitle="Bât. A, 2e étage, accueil · 6 colis"
+      parcels={[
+        { id: '1', title: 'Camille Morel', line: 'UPS ···0622' },
+        { id: '2', title: 'Hugo Lefèvre', line: 'DHL ···7112' },
+        { id: '3', title: 'Inès Garnier', line: 'FedEx ···3338' },
+        { id: '4', title: 'Axelle Bernard', line: 'UPS ···2210' },
+        { id: '5', title: 'Samuel Petit', line: 'Amazon, 2 colis' },
+      ]}
+      action={
+        <Button icon="qr" iconSize={20} className="gap-2">
+          Déposer au Studio
+        </Button>
+      }
+    />
   );
 }
 

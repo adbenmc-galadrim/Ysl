@@ -50,6 +50,7 @@ const SERVER_COLUMNS = new Set([
   'serverXid',
   'deliveryStatus',
   'deliveryAt',
+  'tourShuttleId',
 ]);
 
 /** Columns an update leaves alone, whatever the device sends. */
@@ -59,6 +60,7 @@ const IMMUTABLE_COLUMNS = new Set([
   'serverXid',
   'createdAt',
   'channel',
+  'receivedBy',
 ]);
 
 type Writer = Access;

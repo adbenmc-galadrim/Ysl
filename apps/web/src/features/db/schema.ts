@@ -76,7 +76,7 @@ export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
  */
 export type LocalParcel = Omit<
   LocalRow<typeof parcel.$inferSelect>,
-  'statusSeq' | 'departmentId'
+  'statusSeq' | 'departmentId' | 'tourShuttleId'
 > & {
   statusSeq?: number;
   departmentId?: string | null;

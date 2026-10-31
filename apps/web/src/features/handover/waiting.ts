@@ -4,6 +4,7 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import type { RemiseParcel } from '@repo/ui';
 import { Dexie } from 'dexie';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import { goesOnTour } from '#/features/parcels/tour';
 import {
   carrierLabel,
   DAY_MS,
@@ -15,11 +16,13 @@ import {
 /** Who collects: a card of the directory or a contact outside it. */
 export type HandoverRecipient = { kind: RecipientKind; id: string };
 
-/** What waits at the desk for someone: received, notified or not (P4). */
-export const WAITING_STATUSES = ['recu', 'notifie'] as const;
+/** What waits at the desk for someone: received or deposited, notified or not (P4). */
+export const WAITING_STATUSES = ['recu', 'depose', 'notifie'] as const;
 
-const isWaiting = (parcel: LocalParcel) =>
+/** With tours, a parcel « Reçu » is still with the shuttle: nothing to hand over (§8.3). */
+export const isWaiting = (parcel: LocalParcel, tour: boolean) =>
   !parcel.deletedAt &&
+  !(tour && parcel.status === 'recu') &&
   (WAITING_STATUSES as readonly string[]).includes(parcel.status);
 
 export const recipientKey = ({ kind, id }: HandoverRecipient) =>
@@ -31,9 +34,12 @@ export async function listWaitingParcels(
   recipient: HandoverRecipient,
 ): Promise<LocalParcel[]> {
   const field = recipient.kind === 'person' ? 'personId' : 'contactId';
-  const parcels = await db.parcel.where(field).equals(recipient.id).toArray();
+  const [parcels, tour] = await Promise.all([
+    db.parcel.where(field).equals(recipient.id).toArray(),
+    goesOnTour(db),
+  ]);
   return parcels
-    .filter(isWaiting)
+    .filter((parcel) => isWaiting(parcel, tour))
     .sort((a, b) => a.receivedAt.getTime() - b.receivedAt.getTime());
 }
 
@@ -41,6 +47,7 @@ export async function listWaitingParcels(
 export async function waitingCounts(
   db: CourrierDatabase,
 ): Promise<Map<string, number>> {
+  const tour = await goesOnTour(db);
   const parcels = (
     await Promise.all(
       WAITING_STATUSES.map((status) =>
@@ -52,7 +59,7 @@ export async function waitingCounts(
     )
   ).flat();
   const counts = new Map<string, number>();
-  for (const parcel of parcels.filter(isWaiting)) {
+  for (const parcel of parcels.filter((row) => isWaiting(row, tour))) {
     const recipient: HandoverRecipient | null = parcel.personId
       ? { kind: 'person', id: parcel.personId }
       : parcel.contactId

@@ -50,11 +50,12 @@ export function searchState(
   parcel: LocalParcel,
   now: Date,
   dates?: ReminderDates,
+  tour?: boolean,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   if (parcel.status === 'remis') return 'handedOver';
   if (parcel.status === 'retourne') return 'returned';
-  return homeState(parcel, now, dates);
+  return homeState(parcel, now, dates, tour);
 }
 
 /**
@@ -77,7 +78,7 @@ function datedStatus(
         });
   }
   if (
-    (state === 'toNotify' || state === 'onTour') &&
+    (state === 'toNotify' || state === 'toDispatch' || state === 'onTour') &&
     parcel.receivedAt < today
   ) {
     return t('parcel.status.receivedOn', {
@@ -98,7 +99,7 @@ export function toSearchEntry(
   t: TranslateFn,
   dates?: ReminderDates,
 ): SearchEntry | undefined {
-  const state = searchState(parcel, now, dates);
+  const state = searchState(parcel, now, dates, context.tour);
   if (!state) return undefined;
   const described = describeParcel(parcel, state, context, now, t, dates);
   const status = datedStatus(parcel, state, now, t);
@@ -155,8 +156,11 @@ export function matchesQuery(
 
 const WAITING: readonly ParcelState[] = [
   'incomplete',
+  'toSettle',
   'toNotify',
+  'toDispatch',
   'onTour',
+  'deposited',
   'notified',
   'late',
 ];
@@ -210,12 +214,18 @@ const STATUS_GROUPS = [
     key: 'search.section.incomplete',
     states: ['incomplete'],
   },
+  { id: 'toSettle', key: 'search.section.toSettle', states: ['toSettle'] },
   { id: 'toNotify', key: 'search.section.toNotify', states: ['toNotify'] },
+  {
+    id: 'toDispatch',
+    key: 'search.section.toDispatch',
+    states: ['toDispatch'],
+  },
   { id: 'onTour', key: 'search.section.onTour', states: ['onTour'] },
   {
     id: 'waiting',
     key: 'search.section.waiting',
-    states: ['notified', 'late'],
+    states: ['deposited', 'notified', 'late'],
   },
   {
     id: 'handedOver',

@@ -1,0 +1,1 @@
+ALTER TABLE "parcel" ADD COLUMN "tour_shuttle_id" text;

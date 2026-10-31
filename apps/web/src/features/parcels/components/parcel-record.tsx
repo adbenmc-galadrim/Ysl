@@ -40,6 +40,7 @@ import {
   stepBackLabel,
 } from '#/features/parcels/record';
 import { changeParcelStatus, deleteParcel } from '#/features/parcels/status';
+import { putOnTour } from '#/features/parcels/tour';
 import { answeredWith } from '#/features/replies/record';
 import { EmployeeReply } from '#/features/replies/components/employee-reply';
 import { showsPendingBanner } from '#/features/sync/sync-value';
@@ -377,7 +378,9 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
           ? t('record.action.complete')
           : action?.kind === 'notify'
             ? t('record.action.notify')
-            : undefined
+            : action?.kind === 'dispatch' && access.receives
+              ? t('record.action.dispatch')
+              : undefined
       }
       onPrimaryAction={
         action?.kind === 'notify'
@@ -390,7 +393,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               })
           : action?.kind === 'complete'
             ? () => setCompleting(true)
-            : edit
+            : action?.kind === 'dispatch'
+              ? () =>
+                  void putOnTour(db, [parcelId], {
+                    agentId: session.user.id,
+                  })
+              : edit
       }
       secondaryAction={
         record.handover && cancellable && access.handsOver

@@ -71,9 +71,14 @@ export function namedRecipient(
   };
 }
 
-/** Received, not notified yet, and its record says who it is for. */
-export function awaitsNotice(parcel: LocalParcel): boolean {
+/**
+ * Received, not notified yet, and its record says who it is for. With tours
+ * (`tour`), a parcel « Reçu » is still with the shuttle: §8.3 has it leave
+ * before anyone is told. A parcel deposited waits for YSL-135.
+ */
+export function awaitsNotice(parcel: LocalParcel, tour = false): boolean {
   return (
+    !tour &&
     !parcel.deletedAt &&
     parcel.status === 'recu' &&
     (parcel.personId !== null || parcel.contactId !== null)
@@ -115,7 +120,8 @@ export function departmentOfParcel(
 export function groupByRecipient(
   parcels: readonly LocalParcel[],
   context: RecipientContext,
-  keep: (parcel: LocalParcel) => boolean = awaitsNotice,
+  keep: (parcel: LocalParcel) => boolean = (parcel) =>
+    awaitsNotice(parcel, context.tour),
 ): RecipientMail[] {
   const mails = new Map<string, RecipientMail>();
   const byReception = [...parcels]
