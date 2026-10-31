@@ -20,6 +20,8 @@ export const department = pgTable(
     name: text('name').notNull(),
     receptionPoint: text('reception_point'),
     pickup: jsonb('pickup'),
+    /** The address answers go to (mockup 16): a shared box, not a person's. */
+    replyEmail: text('reply_email'),
     /** The last transaction that took a row out of this department: a device behind it reads everything again. */
     scopeXid: bigint('scope_xid', { mode: 'number' }),
   },

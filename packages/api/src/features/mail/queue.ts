@@ -3,7 +3,7 @@ import type { AnyDb } from '@repo/db';
 import { emailOutbox, notification } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { logger } from '@repo/shared/logger';
-import { and, eq, inArray, lt, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
 import type { EmailMessage, Mailer, SendResult } from '#features/mail/mailer';
 import { senderOf } from '#features/mail/sender';
 import {
@@ -269,23 +269,44 @@ async function sendFrom(
 
 /**
  * Rows hold an address and a text: finished ones do not stay, nor do those
- * that never left (no key, account refused). Part of the retention purge, so
- * it runs even when the mail job is off.
+ * that never left (no key, account refused), nor one a stopped job left
+ * `sending`, its lease long over.
  */
-export async function eraseOldEmails(db: AnyDb, now: Date): Promise<void> {
-  const before = cutoff(now, RETENTION.emailOutbox);
+export function emailsPastTime(before: Date): SQL {
+  return or(
+    and(
+      inArray(emailOutbox.status, ['sent', 'failed']),
+      lt(emailOutbox.finishedAt, before),
+    ),
+    and(eq(emailOutbox.status, 'queued'), lt(emailOutbox.createdAt, before)),
+    and(eq(emailOutbox.status, 'sending'), lt(emailOutbox.leaseUntil, before)),
+  )!;
+}
+
+/** Part of the retention purge, so it runs even when the mail job is off. */
+export async function eraseCompanyEmails(
+  db: AnyDb,
+  organizationId: string,
+  before: Date,
+): Promise<void> {
   await db
     .delete(emailOutbox)
     .where(
-      or(
-        and(
-          inArray(emailOutbox.status, ['sent', 'failed']),
-          lt(emailOutbox.finishedAt, before),
-        ),
-        and(
-          eq(emailOutbox.status, 'queued'),
-          lt(emailOutbox.createdAt, before),
-        ),
+      and(
+        eq(emailOutbox.organizationId, organizationId),
+        emailsPastTime(before),
+      ),
+    );
+}
+
+/** A mail of no company (a test, a script) goes by the default. */
+export async function eraseUnownedEmails(db: AnyDb, now: Date): Promise<void> {
+  await db
+    .delete(emailOutbox)
+    .where(
+      and(
+        isNull(emailOutbox.organizationId),
+        emailsPastTime(cutoff(now, RETENTION.emailOutbox)),
       ),
     );
 }

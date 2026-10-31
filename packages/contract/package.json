@@ -27,6 +27,7 @@
     "./platform": "./src/platform.ts",
     "./recipient": "./src/recipient/index.ts",
     "./reminders": "./src/reminders.ts",
+    "./company-settings": "./src/company-settings.ts",
     "./retention": "./src/retention.ts",
     "./settings": "./src/settings.ts",
     "./sync": "./src/sync.ts",

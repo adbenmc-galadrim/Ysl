@@ -1,3 +1,4 @@
+import { FIRST_CLIENT } from './first-client';
 import { seeded } from '@repo/corpus/random';
 import { type Timing, timing } from '#metrics';
 import {
@@ -277,7 +278,7 @@ export function benchRecipients(
   const timings: SizeTiming[] = [];
   for (const size of sizes) {
     const people = syntheticDirectory(size, seed);
-    const index = indexRecipients(people);
+    const index = indexRecipients(people, FIRST_CLIENT.anchors);
     const random = seeded(seed + size);
     const picks = Array.from({ length: Math.min(perSize, size) }, () =>
       random.pick(people),
@@ -316,7 +317,7 @@ export function benchRecipients(
     }
     timings.push({ size, ...timing(times) });
   }
-  const empty = indexRecipients([]);
+  const empty = indexRecipients([], FIRST_CLIENT.anchors);
   const names = syntheticDirectory(perSize, seed);
   const kept = names.filter(
     (person) =>

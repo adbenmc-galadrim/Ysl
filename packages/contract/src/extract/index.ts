@@ -22,7 +22,6 @@ export {
   elsewhere,
   extractRecipient,
   extractRecipientField,
-  MAILROOM,
 } from './recipient';
 export type { RecipientCard, RecipientField, RecipientRead } from './recipient';
 export { aliasKey, bestAlias, LEARNED, learnedConfidence } from './learning';
@@ -169,6 +168,7 @@ export const extractFields = ({
   senders,
   directory,
   recipients: learnedRecipients,
+  reception,
 }: ExtractInput): Extraction => {
   const reads: Read[] = symbols.map((symbol) => ({
     symbol,
@@ -361,6 +361,7 @@ export const extractFields = ({
     recipients,
     directory ?? [],
     learnedRecipients ?? [],
+    reception ?? null,
   );
   return {
     tracking: capUnkeyed(mergeField(trackings), keyed),

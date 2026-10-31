@@ -1,7 +1,10 @@
 import type { AnyDb } from '@repo/db';
 import {
+  resolveRetention,
+  type ResolvedRetention,
+} from '@repo/contract/company-settings';
+import {
   cutoff,
-  RETENTION,
   type PurgeCounts,
   type PurgeRun,
   type PurgeTable,
@@ -10,7 +13,11 @@ import {
 import { organization, purgeRun } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
-import { eraseOldEmails } from '#features/mail/queue';
+import { readCompanySettings } from '#features/company/settings';
+import {
+  eraseCompanyEmails,
+  eraseUnownedEmails,
+} from '#features/mail/queue';
 
 /** Rows per transaction: short enough never to hold back a pull (YSL-28). */
 export const PURGE_BATCH = 500;
@@ -28,13 +35,13 @@ type Cutoffs = {
   syncOp: Date;
 };
 
-function cutoffsAt(now: Date): Cutoffs {
+function cutoffsAt(now: Date, retention: ResolvedRetention): Cutoffs {
   return {
-    parcel: cutoff(now, RETENTION.parcel),
-    contact: cutoff(now, RETENTION.contact),
-    inactivePerson: cutoff(now, RETENTION.inactivePerson),
-    tombstone: cutoff(now, RETENTION.tombstone),
-    syncOp: cutoff(now, RETENTION.syncOp),
+    parcel: cutoff(now, retention.parcel),
+    contact: cutoff(now, retention.contact),
+    inactivePerson: cutoff(now, retention.inactivePerson),
+    tombstone: cutoff(now, retention.tombstone),
+    syncOp: cutoff(now, retention.syncOp),
   };
 }
 
@@ -106,6 +113,16 @@ function recipientInUse(
     ),
     sql` or `,
   )})`;
+}
+
+/** A parcel past its time, the rule the screen's announcement reads too. */
+export function parcelExpired(before: Date): SQL {
+  return sql`(t.status = 'remis' and t.delivered_at < ${before}) or (t.status = 'retourne' and t.updated_at < ${before})`;
+}
+
+/** A contact past its time that nothing live still names. */
+export function contactExpired(before: Date): SQL {
+  return sql`coalesce(t.last_used_at, t.updated_at) < ${before} and not ${recipientInUse('contact_id', liveReference)}`;
 }
 
 /** Marks up to a batch of live rows of `table` matching `where`: they leave every iPhone at its next pull. */
@@ -197,7 +214,7 @@ function add(
 }
 
 /**
- * The retention purge of one mailroom (§9.2), in two passes. First the rows
+ * The retention purge of one mailroom (§9.2, by its own durations: D28), in two passes. First the rows
  * past their time get `deleted_at`, which every iPhone pulls and applies.
  * The aliases the agent's corrections taught follow their parent. Then the
  * rows marked longer ago than the tombstone delay are erased, the children
@@ -211,13 +228,16 @@ export async function purgeOrganization(
   now: Date,
   runId: string,
 ): Promise<PurgeCounts> {
-  const at = cutoffsAt(now);
+  const retention = resolveRetention(
+    (await readCompanySettings(db, organizationId)).retention,
+  );
+  const at = cutoffsAt(now, retention);
   const counts: PurgeCounts = {};
 
   const marks: [PurgeTable, SQL][] = [
     [
       'parcel',
-      sql`(t.status = 'remis' and t.delivered_at < ${at.parcel}) or (t.status = 'retourne' and t.updated_at < ${at.parcel})`,
+      parcelExpired(at.parcel),
     ],
     [
       'handover',
@@ -234,7 +254,7 @@ export async function purgeOrganization(
     ],
     [
       'contact',
-      sql`coalesce(t.last_used_at, t.updated_at) < ${at.contact} and not ${recipientInUse('contact_id', liveReference)}`,
+      contactExpired(at.contact),
     ],
     [
       'directory_person',
@@ -310,6 +330,12 @@ export async function purgeOrganization(
     ),
   );
   add(counts, 'sync_op', 'deleted', ops);
+
+  await eraseCompanyEmails(
+    db,
+    organizationId,
+    cutoff(now, retention.emailOutbox),
+  );
 
   return counts;
 }
@@ -439,7 +465,7 @@ export async function runPurge(
         failure ??= error instanceof Error ? error : new Error(String(error));
       }
     }
-    if (!organizationId) await eraseOldEmails(db, now);
+    if (!organizationId) await eraseUnownedEmails(db, now);
     if (failure) throw failure;
     return { status: 'done', runs };
   } finally {

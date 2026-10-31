@@ -1,6 +1,6 @@
+import type { ResolvedRetention } from '@repo/contract/company-settings';
 import {
   purgeTotals,
-  RETENTION,
   type PurgeRun,
   type RetentionDuration,
 } from '@repo/contract/retention';
@@ -15,7 +15,7 @@ export function formatDuration({ amount, unit }: RetentionDuration): string {
   return t(`privacy.duration.${unit}.${key}`, { count: amount });
 }
 
-export const retentionGroup: SettingsGroup = {
+export const retentionGroup = (retention: ResolvedRetention): SettingsGroup => ({
   header: t('privacy.retention.header'),
   items: [
     {
@@ -23,7 +23,7 @@ export const retentionGroup: SettingsGroup = {
       color: 'indigo',
       label: t('privacy.retention.photo'),
       subtitle: t('privacy.retention.photo.detail'),
-      value: formatDuration(RETENTION.photo),
+      value: formatDuration(retention.photo),
       chevron: false,
     },
     {
@@ -31,7 +31,7 @@ export const retentionGroup: SettingsGroup = {
       color: 'sky',
       label: t('privacy.retention.extraction'),
       subtitle: t('privacy.retention.extraction.detail'),
-      value: formatDuration(RETENTION.extraction),
+      value: formatDuration(retention.extraction),
       chevron: false,
     },
     {
@@ -39,7 +39,7 @@ export const retentionGroup: SettingsGroup = {
       color: 'ink',
       label: t('privacy.retention.parcel'),
       subtitle: t('privacy.retention.parcel.detail'),
-      value: formatDuration(RETENTION.parcel),
+      value: formatDuration(retention.parcel),
       chevron: false,
     },
     {
@@ -47,7 +47,7 @@ export const retentionGroup: SettingsGroup = {
       color: 'purple',
       label: t('privacy.retention.signature'),
       subtitle: t('privacy.retention.signature.detail'),
-      value: formatDuration(RETENTION.signature),
+      value: formatDuration(retention.signature),
       chevron: false,
     },
     {
@@ -55,11 +55,11 @@ export const retentionGroup: SettingsGroup = {
       color: 'orange',
       label: t('privacy.retention.contact'),
       subtitle: t('privacy.retention.contact.detail'),
-      value: formatDuration(RETENTION.contact),
+      value: formatDuration(retention.contact),
       chevron: false,
     },
   ],
-};
+});
 
 type Counted =
   | 'privacy.purge.parcels'

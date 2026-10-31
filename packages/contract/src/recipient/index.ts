@@ -21,6 +21,7 @@ export type {
 } from './match';
 export {
   fixOcrWord,
+  hostMarks,
   readableName,
   readTokens,
   toTitle,

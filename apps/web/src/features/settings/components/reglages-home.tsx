@@ -135,6 +135,12 @@ export function ReglagesHome() {
               label: t('settings.privacy'),
               onPress: () => void navigate({ to: '/reglages/donnees' }),
             },
+            {
+              icon: 'clock' as const,
+              color: 'indigo' as const,
+              label: t('company.retention.title'),
+              onPress: () => void navigate({ to: '/reglages/conservation' }),
+            },
           ]
         : []),
     ],
@@ -199,8 +205,8 @@ export function ReglagesHome() {
             {
               icon: 'globe' as const,
               color: 'indigo' as const,
-              label: t('settings.sender'),
-              onPress: () => void navigate({ to: '/reglages/expediteur' }),
+              label: t('company.identity.title'),
+              onPress: () => void navigate({ to: '/reglages/identite' }),
             },
           ]
         : []),

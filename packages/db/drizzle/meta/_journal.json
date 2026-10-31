@@ -204,6 +204,13 @@
       "when": 1793460129013,
       "tag": "0028_departement_choisi",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793465466480,
+      "tag": "0029_reglages_entreprise",
+      "breakpoints": true
     }
   ]
 }

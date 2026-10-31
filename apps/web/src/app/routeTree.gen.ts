@@ -33,11 +33,12 @@ import { Route as AuthenticatedReglagesApparenceRouteImport } from './routes/_au
 import { Route as AuthenticatedReglagesArrondisRouteImport } from './routes/_authenticated/reglages/arrondis'
 import { Route as AuthenticatedReglagesCompteRouteImport } from './routes/_authenticated/reglages/compte'
 import { Route as AuthenticatedReglagesComptesRouteImport } from './routes/_authenticated/reglages/comptes'
+import { Route as AuthenticatedReglagesConservationRouteImport } from './routes/_authenticated/reglages/conservation'
 import { Route as AuthenticatedReglagesDonneesRouteImport } from './routes/_authenticated/reglages/donnees'
 import { Route as AuthenticatedReglagesEMailsRouteImport } from './routes/_authenticated/reglages/e-mails'
-import { Route as AuthenticatedReglagesExpediteurRouteImport } from './routes/_authenticated/reglages/expediteur'
 import { Route as AuthenticatedReglagesExportRouteImport } from './routes/_authenticated/reglages/export'
 import { Route as AuthenticatedReglagesFonctionnementRouteImport } from './routes/_authenticated/reglages/fonctionnement'
+import { Route as AuthenticatedReglagesIdentiteRouteImport } from './routes/_authenticated/reglages/identite'
 import { Route as AuthenticatedReglagesImportV1RouteImport } from './routes/_authenticated/reglages/import-v1'
 import { Route as AuthenticatedReglagesLieuEtHorairesRouteImport } from './routes/_authenticated/reglages/lieu-et-horaires'
 import { Route as AuthenticatedReglagesMessagerieRouteImport } from './routes/_authenticated/reglages/messagerie'
@@ -187,6 +188,12 @@ const AuthenticatedReglagesComptesRoute =
     path: '/reglages/comptes',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedReglagesConservationRoute =
+  AuthenticatedReglagesConservationRouteImport.update({
+    id: '/reglages/conservation',
+    path: '/reglages/conservation',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedReglagesDonneesRoute =
   AuthenticatedReglagesDonneesRouteImport.update({
     id: '/reglages/donnees',
@@ -199,12 +206,6 @@ const AuthenticatedReglagesEMailsRoute =
     path: '/reglages/e-mails',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedReglagesExpediteurRoute =
-  AuthenticatedReglagesExpediteurRouteImport.update({
-    id: '/reglages/expediteur',
-    path: '/reglages/expediteur',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedReglagesExportRoute =
   AuthenticatedReglagesExportRouteImport.update({
     id: '/reglages/export',
@@ -215,6 +216,12 @@ const AuthenticatedReglagesFonctionnementRoute =
   AuthenticatedReglagesFonctionnementRouteImport.update({
     id: '/reglages/fonctionnement',
     path: '/reglages/fonctionnement',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedReglagesIdentiteRoute =
+  AuthenticatedReglagesIdentiteRouteImport.update({
+    id: '/reglages/identite',
+    path: '/reglages/identite',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedReglagesImportV1Route =
@@ -340,11 +347,12 @@ export interface FileRoutesByFullPath {
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/comptes': typeof AuthenticatedReglagesComptesRoute
+  '/reglages/conservation': typeof AuthenticatedReglagesConservationRoute
   '/reglages/donnees': typeof AuthenticatedReglagesDonneesRoute
   '/reglages/e-mails': typeof AuthenticatedReglagesEMailsRoute
-  '/reglages/expediteur': typeof AuthenticatedReglagesExpediteurRoute
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/reglages/fonctionnement': typeof AuthenticatedReglagesFonctionnementRoute
+  '/reglages/identite': typeof AuthenticatedReglagesIdentiteRoute
   '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
@@ -387,11 +395,12 @@ export interface FileRoutesByTo {
   '/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/reglages/comptes': typeof AuthenticatedReglagesComptesRoute
+  '/reglages/conservation': typeof AuthenticatedReglagesConservationRoute
   '/reglages/donnees': typeof AuthenticatedReglagesDonneesRoute
   '/reglages/e-mails': typeof AuthenticatedReglagesEMailsRoute
-  '/reglages/expediteur': typeof AuthenticatedReglagesExpediteurRoute
   '/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/reglages/fonctionnement': typeof AuthenticatedReglagesFonctionnementRoute
+  '/reglages/identite': typeof AuthenticatedReglagesIdentiteRoute
   '/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
@@ -436,11 +445,12 @@ export interface FileRoutesById {
   '/_authenticated/reglages/arrondis': typeof AuthenticatedReglagesArrondisRoute
   '/_authenticated/reglages/compte': typeof AuthenticatedReglagesCompteRoute
   '/_authenticated/reglages/comptes': typeof AuthenticatedReglagesComptesRoute
+  '/_authenticated/reglages/conservation': typeof AuthenticatedReglagesConservationRoute
   '/_authenticated/reglages/donnees': typeof AuthenticatedReglagesDonneesRoute
   '/_authenticated/reglages/e-mails': typeof AuthenticatedReglagesEMailsRoute
-  '/_authenticated/reglages/expediteur': typeof AuthenticatedReglagesExpediteurRoute
   '/_authenticated/reglages/export': typeof AuthenticatedReglagesExportRoute
   '/_authenticated/reglages/fonctionnement': typeof AuthenticatedReglagesFonctionnementRoute
+  '/_authenticated/reglages/identite': typeof AuthenticatedReglagesIdentiteRoute
   '/_authenticated/reglages/import-v1': typeof AuthenticatedReglagesImportV1Route
   '/_authenticated/reglages/lieu-et-horaires': typeof AuthenticatedReglagesLieuEtHorairesRoute
   '/_authenticated/reglages/messagerie': typeof AuthenticatedReglagesMessagerieRoute
@@ -485,11 +495,12 @@ export interface FileRouteTypes {
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/comptes'
+    | '/reglages/conservation'
     | '/reglages/donnees'
     | '/reglages/e-mails'
-    | '/reglages/expediteur'
     | '/reglages/export'
     | '/reglages/fonctionnement'
+    | '/reglages/identite'
     | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
     | '/reglages/messagerie'
@@ -532,11 +543,12 @@ export interface FileRouteTypes {
     | '/reglages/arrondis'
     | '/reglages/compte'
     | '/reglages/comptes'
+    | '/reglages/conservation'
     | '/reglages/donnees'
     | '/reglages/e-mails'
-    | '/reglages/expediteur'
     | '/reglages/export'
     | '/reglages/fonctionnement'
+    | '/reglages/identite'
     | '/reglages/import-v1'
     | '/reglages/lieu-et-horaires'
     | '/reglages/messagerie'
@@ -580,11 +592,12 @@ export interface FileRouteTypes {
     | '/_authenticated/reglages/arrondis'
     | '/_authenticated/reglages/compte'
     | '/_authenticated/reglages/comptes'
+    | '/_authenticated/reglages/conservation'
     | '/_authenticated/reglages/donnees'
     | '/_authenticated/reglages/e-mails'
-    | '/_authenticated/reglages/expediteur'
     | '/_authenticated/reglages/export'
     | '/_authenticated/reglages/fonctionnement'
+    | '/_authenticated/reglages/identite'
     | '/_authenticated/reglages/import-v1'
     | '/_authenticated/reglages/lieu-et-horaires'
     | '/_authenticated/reglages/messagerie'
@@ -782,6 +795,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesComptesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/reglages/conservation': {
+      id: '/_authenticated/reglages/conservation'
+      path: '/reglages/conservation'
+      fullPath: '/reglages/conservation'
+      preLoaderRoute: typeof AuthenticatedReglagesConservationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reglages/donnees': {
       id: '/_authenticated/reglages/donnees'
       path: '/reglages/donnees'
@@ -796,13 +816,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReglagesEMailsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/reglages/expediteur': {
-      id: '/_authenticated/reglages/expediteur'
-      path: '/reglages/expediteur'
-      fullPath: '/reglages/expediteur'
-      preLoaderRoute: typeof AuthenticatedReglagesExpediteurRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/reglages/export': {
       id: '/_authenticated/reglages/export'
       path: '/reglages/export'
@@ -815,6 +828,13 @@ declare module '@tanstack/react-router' {
       path: '/reglages/fonctionnement'
       fullPath: '/reglages/fonctionnement'
       preLoaderRoute: typeof AuthenticatedReglagesFonctionnementRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reglages/identite': {
+      id: '/_authenticated/reglages/identite'
+      path: '/reglages/identite'
+      fullPath: '/reglages/identite'
+      preLoaderRoute: typeof AuthenticatedReglagesIdentiteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/reglages/import-v1': {
@@ -959,11 +979,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReglagesArrondisRoute: typeof AuthenticatedReglagesArrondisRoute
   AuthenticatedReglagesCompteRoute: typeof AuthenticatedReglagesCompteRoute
   AuthenticatedReglagesComptesRoute: typeof AuthenticatedReglagesComptesRoute
+  AuthenticatedReglagesConservationRoute: typeof AuthenticatedReglagesConservationRoute
   AuthenticatedReglagesDonneesRoute: typeof AuthenticatedReglagesDonneesRoute
   AuthenticatedReglagesEMailsRoute: typeof AuthenticatedReglagesEMailsRoute
-  AuthenticatedReglagesExpediteurRoute: typeof AuthenticatedReglagesExpediteurRoute
   AuthenticatedReglagesExportRoute: typeof AuthenticatedReglagesExportRoute
   AuthenticatedReglagesFonctionnementRoute: typeof AuthenticatedReglagesFonctionnementRoute
+  AuthenticatedReglagesIdentiteRoute: typeof AuthenticatedReglagesIdentiteRoute
   AuthenticatedReglagesImportV1Route: typeof AuthenticatedReglagesImportV1Route
   AuthenticatedReglagesLieuEtHorairesRoute: typeof AuthenticatedReglagesLieuEtHorairesRoute
   AuthenticatedReglagesMessagerieRoute: typeof AuthenticatedReglagesMessagerieRoute
@@ -1005,12 +1026,14 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReglagesArrondisRoute: AuthenticatedReglagesArrondisRoute,
   AuthenticatedReglagesCompteRoute: AuthenticatedReglagesCompteRoute,
   AuthenticatedReglagesComptesRoute: AuthenticatedReglagesComptesRoute,
+  AuthenticatedReglagesConservationRoute:
+    AuthenticatedReglagesConservationRoute,
   AuthenticatedReglagesDonneesRoute: AuthenticatedReglagesDonneesRoute,
   AuthenticatedReglagesEMailsRoute: AuthenticatedReglagesEMailsRoute,
-  AuthenticatedReglagesExpediteurRoute: AuthenticatedReglagesExpediteurRoute,
   AuthenticatedReglagesExportRoute: AuthenticatedReglagesExportRoute,
   AuthenticatedReglagesFonctionnementRoute:
     AuthenticatedReglagesFonctionnementRoute,
+  AuthenticatedReglagesIdentiteRoute: AuthenticatedReglagesIdentiteRoute,
   AuthenticatedReglagesImportV1Route: AuthenticatedReglagesImportV1Route,
   AuthenticatedReglagesLieuEtHorairesRoute:
     AuthenticatedReglagesLieuEtHorairesRoute,

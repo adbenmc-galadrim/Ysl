@@ -1,11 +1,21 @@
 import 'fake-indexeddb/auto';
+import { resolveRetention } from '@repo/contract/company-settings';
 import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { commitLocal } from '#/features/db/commit';
-import type { CourrierDatabase, LocalExtraction } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  LocalExtraction,
+  LocalParcel,
+  LocalPhoto,
+} from '#/features/db/schema';
 import { addHandoverProof } from '#/features/handover/proofs';
 import { savePhoto } from '#/features/photos/store';
-import { LOCAL_PURGE_KEY, purgeLocal } from '#/features/retention/local-purge';
+import {
+  LOCAL_PURGE_KEY,
+  photoExpired,
+  purgeLocal,
+} from '#/features/retention/local-purge';
 import {
   AFTER_SYNC_EVERY_MS,
   createLocalPurgeScheduler,
@@ -249,5 +259,38 @@ describe('local purge scheduler', () => {
     clock += AFTER_SYNC_EVERY_MS;
     await expect(scheduler.schedule()).resolves.not.toBeNull();
     expect(idle).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('the durations of the company', () => {
+  const parcel = {
+    id: 'p',
+    status: 'remis',
+    deliveredAt: daysAgo(3),
+  } as unknown as LocalParcel;
+  const photo = {
+    id: 'ph',
+    kind: 'label',
+    parcelId: 'p',
+    createdAt: daysAgo(4),
+  } as unknown as LocalPhoto;
+  const context = {
+    parcels: new Map([['p', parcel]]),
+    drafts: new Set<string>(),
+    pending: new Set<string>(),
+    now: NOW,
+  };
+
+  it('keeps a photo for the 7 days of §9.2 without a setting', () => {
+    expect(photoExpired(photo, context)).toBe(false);
+  });
+
+  it('drops it sooner when the company chose less', () => {
+    expect(
+      photoExpired(photo, {
+        ...context,
+        retention: resolveRetention({ photo: 1 }),
+      }),
+    ).toBe(true);
   });
 });

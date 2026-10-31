@@ -45,7 +45,7 @@ Chronopost lu en 1D au format et au contexte, DHL Express sans contexte, OCR san
 plafonné à 0,89 avec le drapeau `unkeyed`, même lu par deux sources qui concordent. Un
 nombre imprimé n'entre qu'en concordance avec un code, ou seul s'il porte une clé valide :
 il ne contredit jamais un code. **Cohérence métier** : destinataire d'un code adressé hors
-75007 / FR, malus 0,15 et drapeau `forward` (« réexpédition ? ») ; nom de l'annuaire à
+l'adresse de réception de l'entreprise, malus 0,15 et drapeau `forward` (« réexpédition ? ») ; nom de l'annuaire à
 Jaro-Winkler ≥ 0,92, bonus 0,10 ; nom OCR à ≥ 0,92 du nom d'un code, même lecture
 (concordance) ; poids hors 0,01 à 70 kg et n > N écartés.
 
@@ -182,7 +182,7 @@ Ce qui a bougé depuis le 24/10 :
 - `web-usps-first-class-pkg-intl-…-lettre` : l'enveloppe porte deux S10 valides
   (USPS `LZ…US` et recommandé Deutsche Post `RN…DE`, photo vérifiée) ; l'annotation
   accepte les deux (`otherTrackings`) ;
-- destinataire : un nom de code 2D adressé hors 75007 passe « à vérifier » (`forward`) ;
+- destinataire : un nom de code 2D adressé hors de l'adresse de réception passe « à vérifier » (`forward`) ;
   le faux « sûr » restant (Colissimo réelle, nom de société contre nom de personne) relève
   du choix personne / société de la revue du lot (YSL-58).
 

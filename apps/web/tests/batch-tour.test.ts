@@ -73,6 +73,7 @@ const addDepartment = (
     id,
     name,
     receptionPoint: null,
+    replyEmail: null,
     pickup: null,
     createdAt: NOW,
     updatedAt: NOW,

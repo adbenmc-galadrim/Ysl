@@ -3,7 +3,8 @@ import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { type ParcelEvent, readParcelEvent } from '@repo/contract/parcel-event';
 import { fromDayKey } from '@repo/contract/parcel-reply';
 import { resumeOf } from '@repo/contract/reminders';
-import { cutoff, RETENTION } from '@repo/contract/retention';
+import { cutoff } from '@repo/contract/retention';
+import { currentRetention } from '#/features/settings/company-snapshot';
 import {
   isStepBack,
   PARCEL_STEPS,
@@ -661,7 +662,8 @@ function proofPlace(
   { now, t }: Pick<DescribeOptions, 'now' | 't'>,
 ): string {
   if (here.includes(kind)) return t('record.handover.proofHere');
-  const kept = kind === 'photo' ? RETENTION.photo : RETENTION.signature;
+  const retention = currentRetention();
+  const kept = kind === 'photo' ? retention.photo : retention.signature;
   return handover.at < cutoff(now, kept)
     ? t('record.handover.proofPurged')
     : t('record.handover.proofElsewhere');

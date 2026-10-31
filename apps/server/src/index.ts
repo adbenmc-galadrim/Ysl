@@ -5,6 +5,7 @@ import {
   appRouter,
   brevoMailer,
   createTRPCContext,
+  logoFile,
   mailRound,
   receiveMailEvent,
   runPurge,
@@ -23,6 +24,7 @@ import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
 import { authRoutes } from '#auth-routes';
 import { clientIp } from '#client-ip';
+import { logoRoute } from '#logo-route';
 import { startMailJob } from '#mail-job';
 import { mailWebhook } from '#mail-webhook';
 import { startPurgeJob } from '#purge-job';
@@ -31,6 +33,9 @@ import { requestLog } from '#request-log';
 const app = new Hono();
 
 app.use('/*', requestLog);
+
+// Before the headers below: this one answer is meant for any origin.
+app.route('/api/logos', logoRoute({ read: (id) => logoFile(db, id) }));
 
 app.use(
   '/*',

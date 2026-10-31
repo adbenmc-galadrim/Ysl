@@ -34,6 +34,7 @@ beforeEach(async () => {
     id: 'finance',
     name: 'Finance',
     receptionPoint: null,
+    replyEmail: null,
     pickup: null,
     createdAt: NOW,
     updatedAt: NOW,

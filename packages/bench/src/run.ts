@@ -1,3 +1,4 @@
+import { FIRST_CLIENT } from './first-client';
 import { decodeSource, type Symbol } from '@repo/barcode';
 import { extractFields } from '@repo/contract/extract';
 import type { Carrier, Source } from '@repo/corpus/schema';
@@ -51,7 +52,7 @@ export const runLabel = async (
     }
   }
   const started = performance.now();
-  const extraction = extractFields({ symbols });
+  const extraction = extractFields({ symbols, reception: FIRST_CLIENT });
   const extractMs = performance.now() - started;
 
   const entry = (contents[label.id] ??= {

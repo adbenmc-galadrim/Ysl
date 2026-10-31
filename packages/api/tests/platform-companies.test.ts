@@ -29,11 +29,13 @@ vi.mock('@repo/auth', () => ({
 const { callerFor, codeOf, sessionFor } = await import('./helpers/caller');
 const {
   AGENT_ID,
+  asAnyDb,
   OTHER_ORGANIZATION_ID,
   ORGANIZATION_ID,
   parcelRow,
   STRANGER_ID,
 } = await import('./helpers/pglite');
+const { logoFile } = await import('#features/company/logo');
 const { companyTablesInOrder, purgeCompanyRows, releaseCompanyDomain } =
   await import('#features/platform/purge-company');
 
@@ -177,6 +179,13 @@ async function seedEverything(organizationId: string, userId: string) {
     organizationId,
     key: 'pickup',
     value: {},
+  });
+  await db.insert(schema.companyLogo).values({
+    organizationId,
+    contentType: 'image/png',
+    bytes: Buffer.from([0x89, 0x50]),
+    width: 64,
+    height: 64,
   });
   await db.insert(schema.purgeRun).values({
     organizationId,
@@ -476,6 +485,9 @@ describe('deleting a company', () => {
       updatedAt: new Date(),
     });
     const otherBefore = await rowsLeft(OTHER_ORGANIZATION_ID);
+    const logos = await db.select().from(schema.companyLogo);
+    const logoOf = (organizationId: string) =>
+      logos.find((logo) => logo.organizationId === organizationId)!.id;
     expect(Object.keys(await rowsLeft(ORGANIZATION_ID)).length).toBeGreaterThan(
       15,
     );
@@ -487,6 +499,11 @@ describe('deleting a company', () => {
 
     expect(await rowsLeft(ORGANIZATION_ID)).toEqual({});
     expect(await rowsLeft(OTHER_ORGANIZATION_ID)).toEqual(otherBefore);
+    // Its public address answers nothing any more; the other company's still does.
+    expect(await logoFile(asAnyDb(db), logoOf(ORGANIZATION_ID))).toBeNull();
+    expect(
+      await logoFile(asAnyDb(db), logoOf(OTHER_ORGANIZATION_ID)),
+    ).not.toBeNull();
     expect(
       await db
         .select()

@@ -5,6 +5,7 @@ import {
   presetTemplateId,
   type NotificationStatus,
 } from '@repo/contract/mail';
+import { COMPANY_SETTINGS_KEY } from '@repo/contract/company-settings';
 import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
@@ -153,8 +154,8 @@ async function checkSetting(
         eq(setting.id, op.entityId),
       ),
     );
-  // Only `operating.save` writes it, after the announcement (D31): a device neither deletes nor reuses the row.
-  if (row?.key === OPERATING_PROFILE_KEY) {
+  // Only the server writes these (the profile after its announcement, D31): a device neither deletes nor reuses the row.
+  if (row?.key === OPERATING_PROFILE_KEY || row?.key === COMPANY_SETTINGS_KEY) {
     throw new SyncRejected(
       SYNC_STATUS.forbidden,
       `setting ${op.entityId} is written by the server`,

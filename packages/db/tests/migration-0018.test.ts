@@ -87,18 +87,15 @@ describe('0018_departements', () => {
 
     const departmentId = newId();
     const foreignDepartmentId = newId();
-    await db.insert(schema.department).values([
-      { id: departmentId, organizationId, name: 'Finance' },
-      {
-        id: foreignDepartmentId,
-        organizationId: otherOrganizationId,
-        name: 'Finance',
-      },
-    ]);
+    const addDepartment = (id: string, company: string, name: string) =>
+      client.query(
+        `insert into department (id, organization_id, name) values ($1, $2, $3)`,
+        [id, company, name],
+      );
+    await addDepartment(departmentId, organizationId, 'Finance');
+    await addDepartment(foreignDepartmentId, otherOrganizationId, 'Finance');
     await expect(
-      db
-        .insert(schema.department)
-        .values({ id: newId(), organizationId, name: 'finance' }),
+      addDepartment(newId(), organizationId, 'finance'),
     ).rejects.toThrow();
     await expect(
       db.insert(schema.departmentMember).values({

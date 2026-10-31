@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RETENTION } from '@repo/contract/retention';
 import {
   describePurge,
   formatDuration,
@@ -9,7 +10,7 @@ const now = new Date(2026, 9, 27, 9, 0);
 
 describe('privacy screen texts', () => {
   it('shows the §9.2 durations', () => {
-    expect(retentionGroup.items.map((item) => item.value)).toEqual([
+    expect(retentionGroup(RETENTION).items.map((item) => item.value)).toEqual([
       '7 jours',
       '30 jours',
       '12 mois',

@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  parseCompanySettings,
+  resolveRetention,
+  retentionProblem,
+} from '../src/company-settings';
 import { cutoff, purgeTotals, RETENTION } from '../src/retention';
 
 describe('retention', () => {
@@ -35,5 +40,37 @@ describe('retention', () => {
         directory_person: { marked: 1, deleted: 0 },
       }),
     ).toEqual({ parcels: 3, contacts: 2, rows: 16 });
+  });
+});
+
+describe('the durations of a company', () => {
+  it('keeps the defaults of §9.2 without a setting, or with one out of bounds', () => {
+    expect(resolveRetention(undefined)).toEqual(RETENTION);
+    expect(resolveRetention({ parcel: 0, emailOutbox: 1 })).toEqual(RETENTION);
+  });
+
+  it('takes its own, in the fixed unit of each', () => {
+    expect(resolveRetention({ photo: 3 }).photo).toEqual({
+      amount: 3,
+      unit: 'day',
+    });
+    expect(resolveRetention({ parcel: 24 }).parcel).toEqual({
+      amount: 24,
+      unit: 'month',
+    });
+  });
+
+  it('never lets a signature outlive its parcel', () => {
+    expect(resolveRetention({ parcel: 3 }).signature.amount).toBe(3);
+    expect(retentionProblem({ parcel: 3 })).toBeNull();
+    expect(retentionProblem({ parcel: 3, signature: 6 })).toBe(
+      'signatureOutlivesParcel',
+    );
+  });
+
+  it('reads an unreadable row as no setting at all', () => {
+    expect(parseCompanySettings('nope')).toEqual({});
+    expect(parseCompanySettings(undefined)).toEqual({});
+    expect(parseCompanySettings({ logoId: 'x' }).logoId).toBeNull();
   });
 });

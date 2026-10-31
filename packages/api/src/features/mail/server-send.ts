@@ -7,6 +7,7 @@ import {
   renderMail,
   replyReference,
 } from '@repo/contract/mail';
+import { logoPath } from '@repo/contract/company-settings';
 import { damageForEmail } from '@repo/contract/parcel-damage';
 import {
   newPickupToken,
@@ -26,16 +27,19 @@ import {
   emailSuppression,
   emailTemplate,
   notification,
+  organization,
   parcel,
   pickupCode,
   setting,
   user,
 } from '@repo/db/schema';
+import { env } from '@repo/shared/env/server';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { newId } from '@repo/shared/id';
 import { logger } from '@repo/shared/logger';
 import { randomInt } from 'node:crypto';
 import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm';
+import { readCompanySettings } from '#features/company/settings';
 import { qrAttachment, qrModules, qrTable } from '#features/mail/qr';
 import { enqueueEmail } from '#features/mail/queue';
 import {
@@ -94,8 +98,35 @@ const escapeHtml = (text: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+/** The company at the head of its mails: its name, and its logo if it has one (D28). */
+export type MailBrand = { name: string; logoUrl: string | null };
+
+function brandHtml({ name, logoUrl }: MailBrand): string {
+  if (!name) return '';
+  const logo = logoUrl
+    ? `<img src="${escapeHtml(logoUrl)}" alt="" style="display:block;margin:0 0 8px;border:0;border-radius:8px;height:40px;max-width:160px;width:auto">`
+    : '';
+  return `<div style="margin:0 0 16px">${logo}<strong>${escapeHtml(name)}</strong></div>`;
+}
+
+async function brandOf(tx: AnyDb, organizationId: string): Promise<MailBrand> {
+  const [company] = await tx
+    .select({ name: organization.name })
+    .from(organization)
+    .where(eq(organization.id, organizationId));
+  const { logoId } = await readCompanySettings(tx, organizationId);
+  return {
+    name: company?.name ?? '',
+    logoUrl: logoId ? `${env.BETTER_AUTH_URL}${logoPath(logoId)}` : null,
+  };
+}
+
 /** The text as it reads in the phone's mail, the reply links shortened, the QR above it. */
-export function mailHtml(text: string, token: string): string {
+export function mailHtml(
+  text: string,
+  token: string,
+  brand: MailBrand = { name: '', logoUrl: null },
+): string {
   const lines = text
     .split('\n')
     .map((line) =>
@@ -106,6 +137,7 @@ export function mailHtml(text: string, token: string): string {
     );
   return [
     '<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:22px;color:#1c1c1e">',
+    brandHtml(brand),
     `<p>${escapeHtml(t('mail.server.qr'))}</p>`,
     qrTable(qrModules(token)),
     `<p>${lines.join('<br>')}</p>`,
@@ -235,14 +267,20 @@ async function pickupOf(
 }
 
 /**
- * Where the answers go: to someone of the parcel's department (mockup 16), the
- * oldest account there; a department with no account yet: the agent who validated.
+ * Where the answers go (mockup 16): the department's shared address, else
+ * someone of the department, the oldest account there; a department with no
+ * account yet: the agent who validated.
  */
 async function replyToOf(
   tx: AnyDb,
   departmentId: string,
   agentEmail: string | null,
 ): Promise<string | null> {
+  const [own] = await tx
+    .select({ replyEmail: department.replyEmail })
+    .from(department)
+    .where(eq(department.id, departmentId));
+  if (own?.replyEmail) return own.replyEmail;
   const [member] = await tx
     .select({ email: user.email })
     .from(departmentMember)
@@ -369,7 +407,11 @@ async function queueMail(
     toName: who.name || null,
     subject: rendered.subject,
     text: rendered.body,
-    html: mailHtml(rendered.body, code.token),
+    html: mailHtml(
+      rendered.body,
+      code.token,
+      await brandOf(tx, row.organizationId),
+    ),
     replyTo,
     attachments: [qrAttachment(code.token)],
     pickupCodeId: code.id,
