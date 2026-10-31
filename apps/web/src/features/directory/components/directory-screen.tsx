@@ -1,4 +1,5 @@
 import { toUserRole } from '@repo/contract/auth';
+import type { MoveRequest } from '@repo/contract/directory';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   AnnuaireDesktop,
@@ -36,6 +37,7 @@ import {
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { usePersonForm } from '#/features/directory/components/person-form';
 import { useMove } from '#/features/directory/components/use-move';
+import { useMoveRequests } from '#/features/directory/components/use-move-requests';
 import {
   ALL_DEPARTMENTS,
   departmentLabel,
@@ -46,6 +48,7 @@ import {
   listed,
   moveEffectLines,
   NO_DEPARTMENT,
+  sameAddressElsewhere,
 } from '#/features/directory/people';
 import { initialsOf } from '#/features/settings/initials';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
@@ -54,6 +57,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const PAGE = 50;
 const CONTACTS_TAB = 'contacts';
+const REQUESTS_TAB = 'demandes';
 
 const DESK_NAV: CompanyShellNavSection[] = [
   {
@@ -91,6 +95,39 @@ function dateOf(date: Date | null | undefined): string {
     month: 'short',
     year: 'numeric',
   }).format(date);
+}
+
+/** What the admin should know of a card: a department's request, its address held elsewhere. */
+function recordNotes(
+  person: LocalDirectoryPerson,
+  directory: Directory,
+  request?: MoveRequest,
+) {
+  const elsewhere = sameAddressElsewhere(
+    person,
+    directory.people,
+    directory.names,
+  );
+  return [
+    ...(request
+      ? [
+          {
+            label: t('directory.request.from', {
+              department: request.departmentName,
+            }),
+            value: request.note || t('directory.request.noNote'),
+          },
+        ]
+      : []),
+    ...(elsewhere.length
+      ? [
+          {
+            label: t('directory.record.sameAddress'),
+            value: elsewhere.join(', '),
+          },
+        ]
+      : []),
+  ];
 }
 
 function recordDetails(person: LocalDirectoryPerson, directory: Directory) {
@@ -164,11 +201,15 @@ function DeskForm({
 function DeskRecord({
   person,
   directory,
+  request,
+  onDismissRequest,
   onEdit,
   onClose,
 }: {
   person: LocalDirectoryPerson;
   directory: Directory;
+  request?: MoveRequest;
+  onDismissRequest: () => void;
   onEdit: () => void;
   onClose: () => void;
 }) {
@@ -198,13 +239,17 @@ function DeskRecord({
       target={move.target}
       onTarget={move.setTarget}
       effects={effects}
-      details={recordDetails(person, directory)}
+      details={[
+        ...recordNotes(person, directory, request),
+        ...recordDetails(person, directory),
+      ]}
       moving={move.moving}
       canMove={move.canMove}
       message={move.message}
       onMove={() => void move.move()}
       onCancelMove={move.reset}
       onEdit={onEdit}
+      onDismissRequest={request && onDismissRequest}
       onClose={onClose}
     />
   );
@@ -226,10 +271,19 @@ function DirectoryDesktop({
   const [page, setPage] = useState(0);
   const [panel, setPanel] = useState<Open>(null);
   const [contact, setContact] = useState<LocalContact | null>(null);
+  const { requests, byPerson, close } = useMoveRequests();
 
   const listedPeople = people.filter(listed);
   const inContacts = tab === CONTACTS_TAB;
-  const found = inContacts ? [] : directoryPeople(people, names, query, tab);
+  const inRequests = tab === REQUESTS_TAB;
+  const found = inContacts
+    ? []
+    : directoryPeople(
+        people,
+        names,
+        query,
+        inRequests ? ALL_DEPARTMENTS : tab,
+      ).filter((person) => !inRequests || byPerson.has(person.id));
   const contactRows = inContacts ? contactEntries(contacts, query, people) : [];
   const total = inContacts ? contactRows.length : found.length;
   const lastPage = Math.max(0, Math.ceil(total / PAGE) - 1);
@@ -249,7 +303,9 @@ function DirectoryDesktop({
         name: fullName(person),
         email: person.email,
         department: departmentLabel(person, names),
-        place: person.site ?? '',
+        place: inRequests
+          ? (byPerson.get(person.id)?.note ?? '')
+          : (person.site ?? ''),
         open: open.get(person.id) ?? 0,
       }));
   const count = (id: string | null) =>
@@ -265,6 +321,14 @@ function DirectoryDesktop({
       id: row.id,
       label: `${row.name} ${count(row.id)}`,
     })),
+    ...(requests.length
+      ? [
+          {
+            id: REQUESTS_TAB,
+            label: t('directory.tab.requests', { count: requests.length }),
+          },
+        ]
+      : []),
     ...(withoutDepartment
       ? [
           {
@@ -317,6 +381,8 @@ function DirectoryDesktop({
         key={selected.id}
         person={selected}
         directory={directory}
+        request={byPerson.get(selected.id)}
+        onDismissRequest={() => close.mutate(selected.id)}
         onEdit={() => setPanel({ kind: 'edit', id: selected.id })}
         onClose={() => setPanel(null)}
       />
@@ -404,6 +470,8 @@ function MobileForm({
   person,
   query,
   directory,
+  request,
+  onDismissRequest,
   onDone,
   onShow,
   onMove,
@@ -412,6 +480,8 @@ function MobileForm({
   person?: LocalDirectoryPerson;
   query?: string;
   directory: Directory;
+  request?: MoveRequest;
+  onDismissRequest?: () => void;
   onDone: () => void;
   onShow: (person: LocalDirectoryPerson) => void;
   onMove?: () => void;
@@ -424,6 +494,7 @@ function MobileForm({
     onDone,
   });
   const { duplicate } = form;
+  const notes = person ? recordNotes(person, directory, request) : [];
   return (
     <PersonFormMobile
       title={person ? fullName(person) : t('directory.add.titleMobile')}
@@ -438,6 +509,11 @@ function MobileForm({
       departments={
         person ? undefined : departmentOptions(directory.departments, true)
       }
+      note={
+        notes.length
+          ? notes.map((row) => `${row.label} : ${row.value}`).join(' · ')
+          : undefined
+      }
       conflict={
         duplicate && {
           title: form.conflictTitle,
@@ -450,6 +526,12 @@ function MobileForm({
         onMove && {
           label: t('directory.move.action'),
           onClick: onMove,
+        }
+      }
+      secondaryAction={
+        request && {
+          label: t('directory.request.dismiss'),
+          onClick: onDismissRequest,
         }
       }
       onSubmit={form.onSubmit}
@@ -519,10 +601,15 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
   const [editing, setEditing] = useState<Open>(null);
   const [moving, setMoving] = useState(false);
   const [contact, setContact] = useState<LocalContact | null>(null);
+  const { requests, byPerson, close } = useMoveRequests();
 
+  const requestsLabel = t('directory.tab.requests', { count: requests.length });
+  const inRequests = requests.length > 0 && filter === requestsLabel;
   const tabId =
     departments.find((row) => row.name === filter)?.id ?? ALL_DEPARTMENTS;
-  const found = directoryPeople(people, names, query, tabId);
+  const found = directoryPeople(people, names, query, tabId).filter(
+    (person) => !inRequests || byPerson.has(person.id),
+  );
   const groups = new Map<string, typeof found>();
   for (const person of found) {
     const letter = letterOf(fullName(person));
@@ -542,6 +629,10 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
           person={selected}
           query={editing.kind === 'add' ? editing.query : undefined}
           directory={directory}
+          request={selected && byPerson.get(selected.id)}
+          onDismissRequest={() => {
+            if (selected) close.mutate(selected.id);
+          }}
           onDone={() => setEditing(null)}
           onShow={(person) => setEditing({ kind: 'edit', id: person.id })}
           onMove={
@@ -572,6 +663,7 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
                 options: [
                   t('directory.filter.all'),
                   ...departments.map((row) => row.name),
+                  ...(requests.length ? [requestsLabel] : []),
                 ],
                 value: filter,
                 onChange: setFilter,
