@@ -45,10 +45,21 @@ export const buttonVariants = tv({
       sm: 'h-[36px] gap-1.5 rounded-chip px-3.5 text-15',
       /** 32 px: the inline action on a list row or a section header. */
       xs: 'h-[32px] gap-1.5 rounded-chip px-3 text-14',
+      /** 32 px, tight corners, 13 px medium: the actions of the desktop pages. */
+      desk: 'h-8 gap-1.5 rounded-[6px] px-3 text-13 font-medium',
     },
     block: { true: 'w-full' },
   },
-  compoundVariants: [{ variant: 'link', class: 'h-auto px-0' }],
+  compoundVariants: [
+    { variant: 'link', class: 'h-auto px-0' },
+    // Penpot centres this stroke on the edge of the box, half outside it.
+    {
+      variant: 'outline',
+      size: 'desk',
+      class:
+        'border-0 shadow-[0_0_0_0.5px_var(--color-border),inset_0_0_0_0.5px_var(--color-border)]',
+    },
+  ],
   defaultVariants: { variant: 'primary', size: 'lg' },
 });
 
@@ -78,7 +89,8 @@ export function Button({
   ...props
 }: ButtonProps) {
   const iconSize =
-    iconSizeProp ?? (size === undefined || size === 'lg' ? 22 : 18);
+    iconSizeProp ??
+    (size === undefined || size === 'lg' ? 22 : size === 'desk' ? 16 : 18);
   return (
     <button
       type={type}
@@ -86,7 +98,11 @@ export function Button({
       {...props}
     >
       {icon && <Icon name={icon} size={iconSize} />}
-      {children}
+      {size === 'desk' ? (
+        <span className="-mt-[3.5px]">{children}</span>
+      ) : (
+        children
+      )}
     </button>
   );
 }

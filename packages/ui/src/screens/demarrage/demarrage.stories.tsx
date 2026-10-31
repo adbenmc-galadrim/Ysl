@@ -4,7 +4,6 @@ import { Banner } from '#components/banner';
 import { Button } from '#components/button';
 import { OFFLINE_PACKS } from '#fixtures/offline';
 import { CameraPermissionScreen } from '#screens/demarrage/camera-permission-screen';
-import { InstallScreen } from '#screens/demarrage/install-screen';
 import { OfflinePrepScreen } from '#screens/demarrage/offline-prep-screen';
 import { SignInScreen } from '#screens/demarrage/sign-in-screen';
 
@@ -23,14 +22,6 @@ const meta = {
 } satisfies Meta;
 
 export default meta;
-
-export const InstallerLApp: StoryObj<typeof InstallScreen> = {
-  name: 'Installer l’app',
-  parameters: { reference: '03-demarrage/demarrage--installer-l-app' },
-  // Safari, before the app is installed: light whatever the theme.
-  globals: { theme: 'clair' },
-  render: (args) => <InstallScreen {...args} />,
-};
 
 export const Connexion: StoryObj<typeof SignInScreen> = {
   parameters: { reference: '03-demarrage/demarrage--connexion' },

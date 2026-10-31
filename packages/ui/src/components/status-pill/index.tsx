@@ -16,8 +16,13 @@ export const statusPillVariants = tv({
       red: 'bg-red-soft text-red',
       blue: 'bg-blue-soft text-blue',
     },
+    size: {
+      md: '',
+      /** 28 px with a 14 px icon: the multi-company phone screens. */
+      sm: 'h-7 gap-1 pr-2.5 pl-2',
+    },
   },
-  defaultVariants: { tone: 'grey' },
+  defaultVariants: { tone: 'grey', size: 'md' },
 });
 
 export type StatusPillProps = VariantProps<typeof statusPillVariants> & {
@@ -26,14 +31,24 @@ export type StatusPillProps = VariantProps<typeof statusPillVariants> & {
   className?: string;
 };
 
-export function StatusPill({ icon, label, tone, className }: StatusPillProps) {
+export function StatusPill({
+  icon,
+  label,
+  tone,
+  size,
+  className,
+}: StatusPillProps) {
   return (
     <span
       role="status"
-      className={statusPillVariants({ tone, class: className })}
+      className={statusPillVariants({ tone, size, class: className })}
     >
-      <Icon name={icon} size={16} strokeWidth={2.2} />
-      {label}
+      <Icon
+        name={icon}
+        size={size === 'sm' ? 14 : 16}
+        strokeWidth={size === 'sm' ? 2 : 2.2}
+      />
+      {size === 'sm' ? <span className="-mt-0.5">{label}</span> : label}
     </span>
   );
 }

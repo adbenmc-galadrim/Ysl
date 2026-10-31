@@ -29,6 +29,8 @@ export const searchFieldVariants = tv({
       /** 48: the field a screen is about, under its title ("Qui retire ?"). */
       form: { root: 'h-12 gap-2.5 rounded-control pl-3.5 text-17' },
       sm: { root: 'h-9 gap-2 rounded-chip pl-3 text-14' },
+      /** 52 pill at 16 px beside a button: the bottom bar of the multi-company phone screens. */
+      dock: { root: 'h-[52px] gap-2 rounded-[26px] pl-3 text-16' },
       /** 44 at chip radius: the search screen's own field, beside "Annuler". */
       bar: {
         root: 'h-11 flex-1 gap-[9px] rounded-chip pr-[13px] pl-[15px] text-17 focus-within:ring-0',
@@ -45,6 +47,7 @@ const ICON: Record<SearchSize, { size: number; strokeWidth: number }> = {
   md: { size: 18, strokeWidth: 2.2 },
   form: { size: 20, strokeWidth: 2.2 },
   sm: { size: 16, strokeWidth: 2 },
+  dock: { size: 18, strokeWidth: 2 },
   bar: { size: 18, strokeWidth: 2.2 },
 };
 

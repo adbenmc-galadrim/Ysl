@@ -14,6 +14,8 @@ export type SectionHeaderProps = {
    */
   onToggle?: () => void;
   expanded?: boolean;
+  /** `lg` is the 22 px title of the multi-company phone screens. */
+  size?: 'md' | 'lg';
   className?: string;
 };
 
@@ -28,19 +30,25 @@ export function SectionHeader({
   action,
   onToggle,
   expanded = true,
+  size = 'md',
   className,
 }: SectionHeaderProps) {
   const label = (
     <>
       {title}
       {count !== undefined && (
-        <span className="font-medium text-muted">{`  ${count}`}</span>
+        <span className="font-medium text-muted">{size === 'lg' ? ` ${count}` : `  ${count}`}</span>
       )}
     </>
   );
   return (
     <div className={cn('flex h-6 items-center justify-between', className)}>
-      <h2 className="text-20 font-bold whitespace-pre text-ink">
+      <h2
+        className={cn(
+          'font-bold whitespace-pre text-ink',
+          size === 'lg' ? 'text-22' : 'text-20',
+        )}
+      >
         {onToggle ? (
           <button
             type="button"

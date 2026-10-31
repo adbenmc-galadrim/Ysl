@@ -108,6 +108,9 @@
   --color-label-ink-2: #222222;
   --color-label-ink-3: #333333;
   --color-label-line: #666666;
+  /* The scanned label and the table under it, on the shuttle's camera */
+  --color-scan-paper: #f6f5f0;
+  --color-scan-desk: #2b2622;
   --color-label-line-2: #888888;
   --color-label-rule: #bbbbbb;
   /* The grey-white envelope a registered letter's label is stuck on */
@@ -118,11 +121,6 @@
   /* The handover counter: one darker wall behind the employee's phone */
   --color-scene-counter: #2b2622;
   --color-scene-phone: #111111;
-
-  /* macOS window buttons, drawn by the desktop mockup's browser frame only */
-  --color-mac-close: #ff5f57;
-  --color-mac-minimize: #febc2e;
-  --color-mac-zoom: #28c840;
 
   /* The landing page (page 10 of Penpot). It is a product page, not an app
    * screen, so it borrows Apple's marketing greys: a softer near-black ink,

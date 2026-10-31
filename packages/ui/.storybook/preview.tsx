@@ -137,13 +137,8 @@ const preview: Preview = {
           type: 'mobile',
         },
         landingDesktop: {
-          name: 'Landing, ordinateur (maquette 1440 px)',
+          name: 'Ordinateur (maquette 1440 px)',
           styles: { width: '1440px', height: '900px' },
-          type: 'desktop',
-        },
-        desktop: {
-          name: 'Poste ordinateur',
-          styles: { width: '1280px', height: '800px' },
           type: 'desktop',
         },
       },

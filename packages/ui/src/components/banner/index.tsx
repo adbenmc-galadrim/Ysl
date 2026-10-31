@@ -44,6 +44,8 @@ export const bannerVariants = tv({
 
 export type BannerProps = VariantProps<typeof bannerVariants> & {
   icon: IconName;
+  /** Overrides the icon box, e.g. 18 on a desktop banner. */
+  iconSize?: number;
   title: ReactNode;
   description?: ReactNode;
   /** Slot overrides, e.g. a tighter `root` where the design is fixed. */
@@ -51,6 +53,8 @@ export type BannerProps = VariantProps<typeof bannerVariants> & {
   className?: string;
   /** Makes the whole card a button: the alert that opens the screen where one acts. */
   onClick?: () => void;
+  /** A button at the right end of the card. Not with `onClick`: a button cannot hold a button. */
+  action?: ReactNode;
 };
 
 /**
@@ -61,6 +65,7 @@ export type BannerProps = VariantProps<typeof bannerVariants> & {
  */
 export function Banner({
   icon,
+  iconSize,
   title,
   description,
   tone,
@@ -68,6 +73,7 @@ export function Banner({
   classNames,
   className,
   onClick,
+  action,
 }: BannerProps) {
   const s = bannerVariants({ tone, size });
   const Root = onClick ? 'button' : 'div';
@@ -81,7 +87,7 @@ export function Banner({
     >
       <Icon
         name={icon}
-        size={size === 'lg' ? 22 : 20}
+        size={iconSize ?? (size === 'lg' ? 22 : 20)}
         className={s.icon({ class: classNames?.icon })}
       />
       {/* Stretched so that, in a banner of fixed height, the text keeps to
@@ -100,6 +106,7 @@ export function Banner({
           </span>
         )}
       </span>
+      {action}
     </Root>
   );
 }

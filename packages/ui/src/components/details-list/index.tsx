@@ -5,18 +5,53 @@ import { cn } from '#lib/tv';
 export type DetailsItem = { label: ReactNode; value: ReactNode };
 
 export type DetailsListProps = {
-  /** Bold heading over the rows, e.g. "Détails". */
-  title?: ReactNode;
   items: DetailsItem[];
   className?: string;
-};
+} & (
+  | {
+      /** Bold heading over the rows, e.g. "Détails". */
+      title?: ReactNode;
+      variant?: 'phone';
+      labelWidth?: never;
+    }
+  | {
+      /**
+       * The 13 px record of the desktop panels: the value in a column
+       * `labelWidth` px from the label, on a 30 px pitch and without hairlines.
+       */
+      variant: 'desk';
+      title?: never;
+      labelWidth?: number;
+    }
+);
 
 /**
  * Key / value rows of a record, label grey on the left, value on the right.
  * Read-only: editing goes through the pencil of the screen, so the rows are
  * not dressed as buttons.
  */
-export function DetailsList({ title, items, className }: DetailsListProps) {
+export function DetailsList({
+  title,
+  items,
+  variant = 'phone',
+  labelWidth = 120,
+  className,
+}: DetailsListProps) {
+  if (variant === 'desk')
+    return (
+      <dl className={cn('flex flex-col gap-3.5 text-13', className)}>
+        {items.map((item, i) => (
+          <div key={i} className="flex">
+            <dt className="shrink-0 text-muted" style={{ width: labelWidth }}>
+              {item.label}
+            </dt>
+            <dd className="min-w-0 truncate font-medium text-ink">
+              {item.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    );
   return (
     <section className={cn('flex flex-col', className)}>
       {title && <h2 className="text-20 font-bold text-ink">{title}</h2>}
