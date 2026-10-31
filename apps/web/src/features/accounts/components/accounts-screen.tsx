@@ -31,7 +31,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { useDeferredValue, useState } from 'react';
+import { useDeferredValue, useEffect, useState } from 'react';
 import {
   devicesLine,
   hasNextPage,
@@ -275,7 +275,10 @@ function roleSelect(
   account: AccountRecord,
   onDialog: (dialog: Dialog) => void,
 ): ComptesSelect | undefined {
-  if (account.role !== 'shuttle' && account.role !== 'department') {
+  if (
+    account.state === 'revoked' ||
+    (account.role !== 'shuttle' && account.role !== 'department')
+  ) {
     return undefined;
   }
   return {
@@ -400,6 +403,12 @@ export function AccountsScreen() {
       await queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
     },
   });
+
+  // Bringing back the last row of a filtered page leaves that page empty.
+  const emptiedPage = page > 1 && list.data?.rows.length === 0;
+  useEffect(() => {
+    if (emptiedPage) setPage((current) => current - 1);
+  }, [emptiedPage]);
 
   const allDepartments = departments.data ?? [];
   const rows = list.data?.rows ?? [];

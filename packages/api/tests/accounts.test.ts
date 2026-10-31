@@ -334,6 +334,20 @@ describe('suspending and revoking', () => {
     expect((await userRow(SHUTTLE))?.banned).toBe(false);
   });
 
+  it('keeps a revoked account out of departments, or none could be archived', async () => {
+    await admin().accounts.revoke({ userId: SHUTTLE });
+    expect(
+      await codeOf(
+        admin().accounts.setRole({ userId: SHUTTLE, role: 'department', departmentId: STUDIO }),
+      ),
+    ).toBe('BAD_REQUEST');
+    expect(
+      await codeOf(
+        admin().departments.attachAccount({ userId: SHUTTLE, departmentId: STUDIO }),
+      ),
+    ).toBe('BAD_REQUEST');
+  });
+
   it('filters by state', async () => {
     await admin().accounts.suspend({ userId: SHUTTLE });
     const suspended = await admin().accounts.list({ state: 'suspended' });

@@ -21,7 +21,7 @@ lu sur l'entrée standard, jamais dans la commande :
 
 ```bash
 cd /app/packages/auth
-read -rs AUTH_USER_PASSWORD && export AUTH_USER_PASSWORD
+stty -echo; IFS= read -r AUTH_USER_PASSWORD; stty echo; export AUTH_USER_PASSWORD
 ./node_modules/.bin/tsx src/scripts/reset-password.ts --email <e-mail>
 unset AUTH_USER_PASSWORD
 ```

@@ -303,6 +303,12 @@ export async function setAccountRole(
         message: translate('accounts.error.adminRole'),
       });
     }
+    if (accountStateOf(target) === 'revoked') {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: translate('accounts.error.revoked'),
+      });
+    }
     if (input.departmentId) {
       await requireDepartment(tx, organizationId, input.departmentId);
       await tx

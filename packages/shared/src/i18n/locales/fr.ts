@@ -85,7 +85,7 @@ export const fr = {
   'accounts.suspend.action': 'Suspendre le compte',
   'accounts.suspend.title': 'Suspendre {{name}} ?',
   'accounts.suspend.description':
-    'Plus de connexion ni de synchronisation. Les photos et preuves de son téléphone sont gardées, même non envoyées : tout reprend à la réactivation.',
+    'Plus de connexion ni de synchronisation. Les photos et preuves de son téléphone sont gardées, même non envoyées : tout reprend à la réactivation. Seule limite : un téléphone resté fermé plus de 30 jours s’efface à sa réouverture.',
   'accounts.suspend.confirm': 'Suspendre',
   'accounts.revoke.action': 'Révoquer le compte',
   'accounts.revoke.title': 'Révoquer {{name}} ?',
@@ -130,6 +130,8 @@ export const fr = {
   'accounts.error.adminRole':
     'Le rôle d’un admin ne se change pas : seuls navette et département s’échangent.',
   'accounts.error.departmentNotFound': 'Ce département n’existe plus.',
+  'accounts.error.revoked':
+    'Ce compte est révoqué : rétablissez son accès d’abord.',
   'accounts.error.passwordRequired':
     'Un compte révoqué revient avec un nouveau mot de passe.',
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
