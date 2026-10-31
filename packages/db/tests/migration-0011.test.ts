@@ -34,10 +34,12 @@ function foldersBefore(tag: string): string {
 const client = new PGlite();
 const db = drizzle({ client, schema });
 const before = foldersBefore('0011_reponses_salaries');
+const beforeConversion = foldersBefore('0024_conversion_prod');
 
 afterAll(async () => {
   await client.close();
   rmSync(before, { recursive: true, force: true });
+  rmSync(beforeConversion, { recursive: true, force: true });
 });
 
 describe('0011_reponses_salaries', () => {
@@ -67,7 +69,7 @@ describe('0011_reponses_salaries', () => {
       ).rows[0];
     const old = await row();
 
-    await migrate(db, { migrationsFolder });
+    await migrate(db, { migrationsFolder: beforeConversion });
 
     expect(await row()).toEqual({
       ...old,

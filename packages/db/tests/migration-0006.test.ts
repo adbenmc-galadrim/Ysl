@@ -34,10 +34,12 @@ function foldersBefore(tag: string): string {
 const client = new PGlite();
 const db = drizzle({ client, schema });
 const before = foldersBefore('0006_reserve_colis');
+const beforeConversion = foldersBefore('0024_conversion_prod');
 
 afterAll(async () => {
   await client.close();
   rmSync(before, { recursive: true, force: true });
+  rmSync(beforeConversion, { recursive: true, force: true });
 });
 
 describe('0006_reserve_colis', () => {
@@ -67,7 +69,7 @@ describe('0006_reserve_colis', () => {
       ).rows[0];
     const old = await row();
 
-    await migrate(db, { migrationsFolder });
+    await migrate(db, { migrationsFolder: beforeConversion });
 
     // Later migrations add their own columns: only these are checked here.
     expect(await row()).toMatchObject({

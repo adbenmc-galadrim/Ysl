@@ -162,6 +162,20 @@
       "when": 1793441784575,
       "tag": "0022_email_par_departement",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793442822913,
+      "tag": "0023_departement_archive",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793442823368,
+      "tag": "0024_conversion_prod",
+      "breakpoints": true
     }
   ]
 }

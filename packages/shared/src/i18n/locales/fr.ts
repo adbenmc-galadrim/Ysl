@@ -10,6 +10,8 @@ export const fr = {
   'sync.op.forbidden': 'Cet élément appartient à un autre service courrier.',
   'sync.op.notFound': 'L’élément visé n’existe pas sur le serveur.',
   'sync.op.conflict': 'Un élément identique existe déjà (doublon).',
+  'sync.op.departmentArchived':
+    'Ce département est archivé : le colis ou le salarié ne peut pas y retourner.',
   'sync.op.transition':
     'Ce changement de statut n’est pas permis depuis le statut actuel du colis.',
   'sync.op.statusStale':

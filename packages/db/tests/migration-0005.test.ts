@@ -34,10 +34,12 @@ function foldersBefore(tag: string): string {
 const client = new PGlite();
 const db = drizzle({ client, schema });
 const before = foldersBefore('0005_statuts_reversibles');
+const beforeConversion = foldersBefore('0024_conversion_prod');
 
 afterAll(async () => {
   await client.close();
   rmSync(before, { recursive: true, force: true });
+  rmSync(beforeConversion, { recursive: true, force: true });
 });
 
 describe('0005_statuts_reversibles', () => {
@@ -67,7 +69,7 @@ describe('0005_statuts_reversibles', () => {
       ).rows[0];
     const old = await xid();
 
-    await migrate(db, { migrationsFolder });
+    await migrate(db, { migrationsFolder: beforeConversion });
 
     const now = await xid();
     expect(now?.status_seq).toBe(0);
