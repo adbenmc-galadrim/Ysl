@@ -365,7 +365,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ID | Exigence |
 | --- | --- |
 | ME24 | Statuts En route, Déposé et À régulariser (§8.3), réversibles comme les autres, règle partagée entre l'iPhone et le serveur |
-| ME25 | Département pris du destinataire à la revue du lot, modifiable ; colis sans département bloqué à « À compléter » |
+| ME25 | Département pris du destinataire à la revue du lot, modifiable ; colis sans département bloqué à « À compléter ». La navette faisant office de département ne passe pas par là : son colis reste « Reçu » (§8.3) |
 | ME26 | Écran « À déposer » groupé par département, hors ligne compris |
 | ME27 | QR imprimable de chaque département ; la navette le scanne ou choisit le département, l'app affiche le nombre ; le département confirme le nombre reçu |
 | ME28 | Écart au dépôt : colis « À régulariser », visible par la navette et l'admin entreprise, qui réaffecte |
