@@ -3,6 +3,7 @@ import { Button, EmptyState, SelectionScreen, Sheet, Toast } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useEffect, useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
 import { writeQueue } from '#/features/handover/queue';
@@ -54,6 +55,7 @@ export function ColisSelection({
 }: ColisSelectionProps) {
   const navigate = useNavigate();
   const session = useSession();
+  const access = useAccess();
   const [sheet, setSheet] = useState<'more' | 'delete' | null>(null);
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -319,6 +321,7 @@ export function ColisSelection({
         remindLabel={t(notices ? 'selection.notify' : 'selection.remind')}
         onRemind={() => void remind()}
         onHandover={() => void handOver()}
+        noHandover={!access.handsOver}
         onMore={() => setSheet('more')}
         toast={toast ? <Toast message={toast} /> : undefined}
       >

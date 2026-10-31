@@ -9,6 +9,7 @@ import {
 import { Navigate, useNavigate, useRouter } from '@tanstack/react-router';
 import { useMemo, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import { fullName } from '#/features/directory/people';
 import { useParcelRecord } from '#/features/parcels/api/parcel-record';
@@ -124,6 +125,7 @@ function EditForm({ record }: { record: ParcelRecord }) {
   const navigate = useNavigate();
   const router = useRouter();
   const session = useSession();
+  const { receives } = useAccess();
   const { parcel } = record;
   const [form, setForm] = useState<Form>(() => formOf(record));
   const [picking, setPicking] = useState(false);
@@ -166,6 +168,7 @@ function EditForm({ record }: { record: ParcelRecord }) {
     try {
       const result = await saveParcelEdit(db, parcel.id, editFrom(form), {
         agentId: session.user.id,
+        learns: receives,
       });
       if (result.kind === 'invalid') {
         setErrors(result.errors);

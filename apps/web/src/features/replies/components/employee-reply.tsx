@@ -10,6 +10,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
 import { parcelName } from '#/features/mail/recipients';
@@ -66,7 +67,8 @@ export function EmployeeReply({
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const writing = useRef(false);
-  const options = { agentId: session.user.id };
+  const { receives } = useAccess();
+  const options = { agentId: session.user.id, learns: receives };
 
   const write = async (change: () => Promise<unknown>, next?: () => void) => {
     if (writing.current) return;

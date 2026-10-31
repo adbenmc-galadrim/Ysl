@@ -68,6 +68,11 @@ export type EditOptions = {
    * « Choisir » of Colis, where only the name shows.
    */
   seesTracking?: boolean;
+  /**
+   * Teach the shuttle's lists of senders and names. A department neither reads
+   * nor writes them (§2.1): for it the server would refuse the whole change.
+   */
+  learns?: boolean;
 };
 
 const text = (value: string) => value.trim() || null;
@@ -318,7 +323,7 @@ export async function saveParcelEdit(
   db: CourrierDatabase,
   parcelId: string,
   edit: ParcelEdit,
-  { agentId, now = new Date(), seesTracking = true }: EditOptions,
+  { agentId, now = new Date(), seesTracking = true, learns = true }: EditOptions,
 ): Promise<EditResult> {
   const parcel = await liveParcel(db, parcelId);
   const errors = validateEdit(edit, parcel);
@@ -354,7 +359,7 @@ export async function saveParcelEdit(
   const renamed =
     senderName !== null &&
     normalizeName(senderName) !== normalizeName(parcel.senderName ?? '');
-  const learned = renamed
+  const learned = renamed && learns
     ? await correctedSender(db, parcelId, senderName, now)
     : null;
   const edited: LocalParcel = {
@@ -406,7 +411,7 @@ export async function saveParcelEdit(
       ? { kind: 'contact' as const, id: edited.contactId }
       : null;
   const recipients = recipientLessons(db, now);
-  if (card && fields.includes('recipient')) {
+  if (learns && card && fields.includes('recipient')) {
     await recipients.learn(await printedOn(db, parcel), {
       ...card,
       name: await cardName(db, card, contact),

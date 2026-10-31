@@ -2,6 +2,7 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Button, Sheet } from '@repo/ui';
 import { useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
 import {
@@ -40,7 +41,8 @@ export function CompleteParcel({
   const [busy, setBusy] = useState(false);
   const writing = useRef(false);
   const [failed, setFailed] = useState(false);
-  const options = { agentId: session.user.id };
+  const { receives } = useAccess();
+  const options = { agentId: session.user.id, learns: receives };
   const gaps = gapsOf(parcel);
   const numbered = parcel.type !== 'sans_suivi';
   const doubted = gaps.length === 0 && numbered && parcel.tracking !== null;

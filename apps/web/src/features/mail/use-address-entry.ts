@@ -1,9 +1,10 @@
+import { useAccess } from '#/features/auth/use-access';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import type { FixAddressSheetProps } from '@repo/ui';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
 import {
-  cardEditable,
+  cardWritable,
   checkAddress,
   type AddressCard,
   type AddressCheck,
@@ -41,25 +42,28 @@ export function useAddressEntry(
   card: AddressCard | null,
   initial: string,
 ): AddressEntry {
+  const { writesDirectory } = useAccess();
   const [value, setValue] = useState(initial);
   const [onCard, setOnCard] = useState(true);
   const [check, setCheck] = useState<AddressCheck | null>(null);
 
+  const editable = !card || cardWritable(card, writesDirectory);
+  const writesCard = onCard && editable;
+
   useEffect(() => {
     if (!card) return;
     let live = true;
-    void checkAddress(db, card, value, onCard).then((next) => {
+    void checkAddress(db, card, value, writesCard).then((next) => {
       if (live) setCheck(next);
     });
     return () => {
       live = false;
     };
-  }, [card, value, onCard]);
+  }, [card, value, writesCard]);
 
-  const editable = !card || cardEditable(card);
   return {
     address: check?.kind === 'ok' ? check.address : null,
-    onCard: onCard && editable,
+    onCard: writesCard,
     fields: (failed) => ({
       value,
       onValueChange: setValue,
@@ -71,7 +75,7 @@ export function useAddressEntry(
           : check?.kind === 'duplicate'
             ? t('mails.fix.duplicate', { name: check.name })
             : undefined,
-      updateDirectory: onCard,
+      updateDirectory: writesCard,
       onUpdateDirectoryChange: setOnCard,
       updateLabel:
         card?.kind === 'contact'

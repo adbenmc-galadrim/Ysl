@@ -6,12 +6,15 @@ import {
   EmptyState,
   ListRowValue,
   RemettreActions,
+  SearchTrigger,
   Toast,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { hasDesk } from '#/features/auth/route-access';
+import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import {
   type HandoverToast,
@@ -47,6 +50,7 @@ import {
 import { useSync } from '#/features/sync/use-sync';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
+import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -65,6 +69,9 @@ const NOBODY: ReadonlyMap<string, string | null> = new Map();
 export function ColisHome() {
   const navigate = useNavigate();
   const session = useSession();
+  const access = useAccess();
+  // The scan is on the phone (D23): the computer roles do not get it here.
+  const onDesk = useMediaQuery(DESK_WIDTH) && hasDesk(access.role);
   const sync = useSync();
   const update = useUpdate();
   const handed = useHandoverToast();
@@ -207,8 +214,11 @@ export function ColisHome() {
   );
   const foldedTitles = useMemo(() => sectionTitles(folded), [folded]);
 
-  const scan = () => void navigate({ to: '/scan' });
   const handover = () => void navigate({ to: '/remise' });
+  // A department scans the QR of whoever collects (D23), not labels.
+  const scan = access.receives
+    ? () => void navigate({ to: '/scan' })
+    : handover;
   const searchParcels = () => void navigate({ to: '/recherche' });
 
   if (selecting) {
@@ -320,11 +330,32 @@ export function ColisHome() {
         }
         bottomBar={!empty}
         actions={
-          <RemettreActions
-            onSearch={searchParcels}
-            onHandover={handover}
-            onScan={scan}
-          />
+          onDesk ? (
+            <>
+              <SearchTrigger
+                size="dock"
+                onClick={searchParcels}
+                className="min-w-0 flex-1"
+              />
+              {access.handsOver && (
+                <Button
+                  variant="secondary"
+                  icon="qr"
+                  iconSize={20}
+                  onClick={handover}
+                  className="w-[145px] gap-2 text-16"
+                >
+                  {t('colis.row.handover')}
+                </Button>
+              )}
+            </>
+          ) : access.receives && access.handsOver ? (
+            <RemettreActions
+              onSearch={searchParcels}
+              onHandover={handover}
+              onScan={scan}
+            />
+          ) : undefined
         }
         onMenu={() => void navigate({ to: '/reglages' })}
         onSelect={empty ? undefined : () => setSelecting(new Set())}
@@ -335,19 +366,31 @@ export function ColisHome() {
           <EmptyState
             icon="inbox"
             title={t('colis.empty.title')}
-            description={t('colis.empty.description')}
+            description={
+              access.receives
+                ? t('colis.empty.description')
+                : t('colis.empty.description.department')
+            }
             className="mt-[129px]"
           >
-            <Button onClick={scan} className="w-[201px]">
-              {t('colis.empty.scan')}
-            </Button>
-            <Button
-              variant="link"
-              onClick={handover}
-              className="text-16 font-semibold"
-            >
-              {t('colis.empty.handover')}
-            </Button>
+            {access.receives && !onDesk && (
+              <Button onClick={scan} className="w-[201px]">
+                {t('colis.empty.scan')}
+              </Button>
+            )}
+            {access.handsOver && (
+              <Button
+                variant={access.receives && !onDesk ? 'link' : undefined}
+                onClick={handover}
+                className={
+                  access.receives && !onDesk
+                    ? 'text-16 font-semibold'
+                    : 'w-[201px]'
+                }
+              >
+                {t('colis.empty.handover')}
+              </Button>
+            )}
           </EmptyState>
         ) : undefined}
       </ColisScreen>

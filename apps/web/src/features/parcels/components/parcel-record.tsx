@@ -13,6 +13,7 @@ import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
+import { useAccess } from '#/features/auth/use-access';
 import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
 import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
 import { proofLabels } from '#/features/handover/confirmation';
@@ -99,6 +100,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const navigate = useNavigate();
   const router = useRouter();
   const session = useSession();
+  const access = useAccess();
   const sync = useSync();
   const now = useMinuteClock();
   const record = useParcelRecord(parcelId);
@@ -388,7 +390,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
             : edit
       }
       secondaryAction={
-        record.handover && cancellable
+        record.handover && cancellable && access.handsOver
           ? {
               label: t('handover.cancel.action'),
               onClick: () => setCancelling(true),

@@ -1,7 +1,12 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
-import { cardOf, checkAddress, fixAddress } from '#/features/mail/fix-address';
+import {
+  cardOf,
+  cardWritable,
+  checkAddress,
+  fixAddress,
+} from '#/features/mail/fix-address';
 import { addressOf } from '#/features/mail/recipients';
 import {
   contactRow,
@@ -223,5 +228,22 @@ describe('fixing an address', () => {
       kind: 'ok',
       address: 'nora@example.com',
     });
+  });
+});
+
+describe('cardWritable', () => {
+  const person = {
+    kind: 'person',
+    person: personRow({ source: 'manuel' }),
+  } as const;
+  const contact = { kind: 'contact', contact: contactRow() } as const;
+
+  it('keeps a shuttle off the directory, whose write the server refuses', () => {
+    expect(cardWritable(person, false)).toBe(false);
+    expect(cardWritable(person, true)).toBe(true);
+  });
+
+  it('leaves it its contacts, which it does write', () => {
+    expect(cardWritable(contact, false)).toBe(true);
   });
 });
