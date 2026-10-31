@@ -104,6 +104,19 @@ export const scopedProcedure = memberProcedure.use(({ ctx, next }) => {
   return next({ ctx: { ...ctx, access } });
 });
 
+/** A department account, on its own people. */
+export const departmentProcedure = scopedProcedure.use(({ ctx, next }) => {
+  if (ctx.access.role !== 'department') throw forbidden();
+  return next();
+});
+
+/** Who tends a directory (D15 révisée): a department its own, the company admin all of them. */
+export const directoryKeeperProcedure = scopedProcedure.use(({ ctx, next }) => {
+  const { role } = ctx.access;
+  if (role !== 'department' && !isCompanyAdmin(role)) throw forbidden();
+  return next();
+});
+
 /** An admin of the company: the screens of Réglages › Service courrier. */
 export const adminMemberProcedure = memberProcedure.use(({ ctx, next }) => {
   if (!isCompanyAdmin(roleOf(ctx.session))) throw forbidden();

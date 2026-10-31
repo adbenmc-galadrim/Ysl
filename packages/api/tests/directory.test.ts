@@ -10,7 +10,13 @@ import {
   applyDirectoryImport,
   previewDirectoryImport,
 } from '#features/directory/import';
-import { moveEffectsOf, movePerson } from '#features/directory/service';
+import {
+  closeMoveRequest,
+  moveEffectsOf,
+  movePerson,
+  moveRequestsOf,
+  requestMove,
+} from '#features/directory/service';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
 import { accessOf, addDepartment, addPerson } from './helpers/departments';
@@ -483,5 +489,65 @@ describe('one address in several departments', () => {
     expect(preview.errors.map((error) => error.problem)).toEqual([
       'email-ambiguous',
     ]);
+  });
+});
+
+describe('a request to move someone', () => {
+  const mine = () => accessOf('department', studio);
+  const openFor = async (access: ReturnType<typeof accessOf>, id: string) =>
+    (await moveRequestsOf(any, access)).filter((row) => row.personId === id);
+
+  it('reaches the admin, not the other departments', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Parti' });
+
+    expect(await openFor(accessOf('company_admin'), person)).toMatchObject([
+      { departmentName: 'Studio', note: 'Parti' },
+    ]);
+    expect(await openFor(mine(), person)).toHaveLength(1);
+    expect(await openFor(accessOf('department', finance), person)).toEqual([]);
+  });
+
+  it('answers the same for someone elsewhere and for nobody', async () => {
+    const elsewhere = await addPerson(db, finance);
+    for (const personId of [elsewhere, newId()]) {
+      await expect(
+        requestMove(any, mine(), { personId, note: null }),
+      ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    }
+    expect(await openFor(accessOf('admin'), elsewhere)).toEqual([]);
+  });
+
+  it('asked twice stays one, with the last note', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: 'Un' });
+    await requestMove(any, mine(), { personId: person, note: 'Deux' });
+
+    expect(await openFor(accessOf('admin'), person)).toMatchObject([
+      { note: 'Deux' },
+    ]);
+  });
+
+  it('ends when the person moves', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: null });
+
+    await move(person, finance);
+
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
+  });
+
+  it('a department closes its own request only, the admin any', async () => {
+    const person = await addPerson(db, studio);
+    await requestMove(any, mine(), { personId: person, note: null });
+
+    await closeMoveRequest(any, accessOf('department', finance), person);
+    expect(await openFor(mine(), person)).toHaveLength(1);
+
+    await closeMoveRequest(any, accessOf('admin'), person);
+    expect(await openFor(mine(), person)).toEqual([]);
+
+    await requestMove(any, mine(), { personId: person, note: 'Encore' });
+    expect(await openFor(mine(), person)).toHaveLength(1);
   });
 });

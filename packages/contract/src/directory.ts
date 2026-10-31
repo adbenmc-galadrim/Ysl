@@ -32,6 +32,30 @@ export const moveEffects = z.object({
 
 export type MoveEffects = z.infer<typeof moveEffects>;
 
+export const MOVE_REQUEST_NOTE_MAX = 300;
+
+/** A department asks the admin to move one of its people; it moves nobody itself (ME21). */
+export const requestMoveInput = z.object({
+  personId,
+  note: z.string().trim().max(MOVE_REQUEST_NOTE_MAX).nullable(),
+});
+
+export type RequestMoveInput = z.infer<typeof requestMoveInput>;
+
+export const closeMoveRequestInput = z.object({ personId });
+
+export const moveRequest = z.object({
+  personId,
+  departmentId,
+  departmentName: z.string(),
+  note: z.string().nullable(),
+  createdAt: z.date(),
+});
+
+export type MoveRequest = z.infer<typeof moveRequest>;
+
+export const moveRequests = z.array(moveRequest);
+
 /** An employee file stays far below; a wrong file does not. */
 export const DIRECTORY_CSV_MAX_LENGTH = 5_000_000;
 
