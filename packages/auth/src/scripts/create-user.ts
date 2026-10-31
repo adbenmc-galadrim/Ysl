@@ -1,22 +1,15 @@
 import { parseArgs } from 'node:util';
-import {
-  password as passwordSchema,
-  USER_ROLES,
-  userRole,
-} from '@repo/contract/auth';
-import { closeDb, db } from '@repo/db';
+import { password as passwordSchema } from '@repo/contract/auth';
+import { closeDb } from '@repo/db';
 import { auth } from '#auth';
-import {
-  attachToOrganization,
-  chooseOrganizationFor,
-  ensureOrganization,
-} from '#organization';
 import { PASSWORD_VARIABLE, readPassword } from '#scripts/read-password';
 
-const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> --role ${USER_ROLES.join('|')} [--organization <name>]
-The password is read from standard input, or from ${PASSWORD_VARIABLE}.
-Without --organization, the only organization is used, or "Service courrier" is created.
-A platform_admin belongs to no organization: --organization is refused.`;
+const ROLE = 'platform_admin';
+
+const USAGE = `Usage: pnpm auth:create-user --email <email> --name <name> --role ${ROLE}
+The way in for the app's first admin, who belongs to no company. Every other account
+comes by invitation, from the app's admin or the company's (docs/comptes.md).
+The password is read from standard input, or from ${PASSWORD_VARIABLE}.`;
 
 async function main(): Promise<void> {
   const { values } = parseArgs({
@@ -24,43 +17,24 @@ async function main(): Promise<void> {
       email: { type: 'string' },
       name: { type: 'string' },
       role: { type: 'string' },
-      organization: { type: 'string' },
     },
   });
-
-  const role = userRole.safeParse(values.role);
-  if (!values.email || !values.name || !role.success) {
+  if (!values.email || !values.name || values.role !== ROLE) {
     throw new Error(USAGE);
   }
-
   const password = passwordSchema.safeParse(await readPassword());
   if (!password.success) {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
-
-  const choice = await chooseOrganizationFor(
-    db,
-    { email: values.email, role: role.data },
-    values.organization,
-  );
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,
       name: values.name,
       password: password.data,
-      role: role.data,
+      role: ROLE,
     },
   });
-  if (!choice) {
-    console.log(`Created ${role.data} ${user.email} (${user.id})`);
-    return;
-  }
-  const organization = await ensureOrganization(db, choice);
-  await attachToOrganization(db, user.id, organization.id);
-
-  console.log(
-    `Created ${role.data} ${user.email} (${user.id}) in ${organization.name}${organization.created ? ' (new)' : ''}`,
-  );
+  console.log(`Created ${ROLE} ${user.email} (${user.id})`);
 }
 
 try {

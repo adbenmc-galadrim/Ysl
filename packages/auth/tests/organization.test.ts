@@ -15,7 +15,6 @@ import {
   AlreadyAttachedError,
   attachToOrganization,
   chooseOrganization,
-  chooseOrganizationFor,
   createCompany,
   DEFAULT_ORGANIZATION_NAME,
   OrganizationChoiceError,
@@ -123,30 +122,6 @@ describe('chooseOrganization', () => {
       name: 'C',
     });
     expect(await db.select().from(schema.organization)).toHaveLength(2);
-  });
-});
-
-describe('chooseOrganizationFor', () => {
-  const appAdmin = { email: 'plateforme@example.test', role: 'platform_admin' };
-
-  it('gives an app admin no organization', async () => {
-    expect(await chooseOrganizationFor(db, appAdmin)).toBeNull();
-  });
-
-  it('refuses an organization named for an app admin', async () => {
-    await expect(chooseOrganizationFor(db, appAdmin, 'X')).rejects.toThrow(
-      PlatformAccountError,
-    );
-  });
-
-  it('still chooses one for any other account', async () => {
-    expect(
-      await chooseOrganizationFor(
-        db,
-        { email: 'un@example.test', role: 'shuttle' },
-        'X',
-      ),
-    ).toEqual({ kind: 'new', name: 'X' });
   });
 });
 

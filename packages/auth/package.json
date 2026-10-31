@@ -21,6 +21,7 @@
     "check-types": "tsc --noEmit",
     "auth:generate": "better-auth generate --config src/auth.ts --output ../db/src/schema/auth.ts --yes",
     "auth:create-user": "tsx src/scripts/create-user.ts",
+    "auth:dev-account": "tsx src/scripts/dev-account.ts",
     "auth:attach-organization": "tsx src/scripts/attach-organization.ts",
     "auth:reset-password": "tsx src/scripts/reset-password.ts",
     "test": "vitest run"

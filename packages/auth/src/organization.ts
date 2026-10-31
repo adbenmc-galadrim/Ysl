@@ -108,17 +108,6 @@ export async function chooseOrganization(
   return { kind: 'new', name: DEFAULT_ORGANIZATION_NAME };
 }
 
-/** Same choice for a new account; an app admin gets none, and naming one for it is a mistake. */
-export async function chooseOrganizationFor(
-  db: AnyDb,
-  account: { email: string; role: string },
-  name?: string,
-): Promise<OrganizationChoice | null> {
-  if (account.role !== 'platform_admin') return chooseOrganization(db, name);
-  if (name) throw new PlatformAccountError(account.email);
-  return null;
-}
-
 /** Makes the chosen organization real, once there is an account to put in it. */
 export async function ensureOrganization(
   db: AnyDb,
