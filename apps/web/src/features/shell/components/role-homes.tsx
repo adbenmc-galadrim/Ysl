@@ -1,7 +1,7 @@
 import { toUserRole } from '@repo/contract/auth';
-import { OPEN_STATUSES } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
+  type DeskStat,
   PlatformHomeScreen,
   RoleHomeDesktop,
   RoleHomeMobile,
@@ -15,26 +15,35 @@ import { hasDesk } from '#/features/auth/route-access';
 import { db } from '#/features/db/database';
 import { ColisPage } from '#/features/parcels/components/colis-page';
 import { signOutMessage } from '#/features/settings/components/account-screen';
+import { homeCounts, type HomeCounts } from '#/features/shell/home-counts';
 import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-/** The parcels of this device that wait for someone; a department pulls only its own. */
-function useWaitingCount(): string {
-  const count = useLiveQuery(
-    () =>
-      db.parcel
-        .filter(
-          (row) =>
-            !row.deletedAt &&
-            (OPEN_STATUSES as readonly string[]).includes(row.status),
-        )
-        .count(),
+/** The parcels of this device by where they stand; a department pulls only its own. */
+function useCounts(): HomeCounts | undefined {
+  return useLiveQuery(
+    async () =>
+      homeCounts(await db.parcel.filter((row) => !row.deletedAt).toArray()),
     [],
   );
-  return count === undefined ? '…' : String(count);
 }
+
+const shown = (count: number | undefined) =>
+  count === undefined ? '…' : String(count);
+
+/** Only when there is one: an orange figure asks for action. */
+const toSettleStat = (counts: HomeCounts | undefined): DeskStat[] =>
+  counts?.toSettle
+    ? [
+        {
+          label: t('parcel.state.a_regulariser'),
+          value: String(counts.toSettle),
+          tone: 'orange',
+        },
+      ]
+    : [];
 
 function RoleHome(props: RoleHomeProps) {
   const navigate = useNavigate();
@@ -76,7 +85,7 @@ export function TourHome() {
 
 /** Until YSL-82 and YSL-136: the parcels really here, and what is still to come. */
 export function DepartmentHome() {
-  const present = useWaitingCount();
+  const counts = useCounts();
   const name = useOwnDepartmentName();
   const desk = useMediaQuery(DESK_WIDTH);
   const action = useParcelsAction(desk);
@@ -84,7 +93,11 @@ export function DepartmentHome() {
     <RoleHome
       title={t('home.department.title')}
       subtitle={name}
-      stats={[{ label: t('home.stat.present'), value: present }]}
+      stats={[
+        { label: t('home.stat.coming'), value: shown(counts?.coming) },
+        { label: t('home.stat.present'), value: shown(counts?.present) },
+        ...toSettleStat(counts),
+      ]}
       notice={{
         title: t('home.department.notice.title'),
         description: t('home.department.notice.description'),
@@ -96,13 +109,21 @@ export function DepartmentHome() {
 
 /** Until YSL-137: what is waiting in the whole company, and nothing made up. */
 export function DashboardHome() {
-  const waiting = useWaitingCount();
+  const counts = useCounts();
   const desk = useMediaQuery(DESK_WIDTH);
   const action = useParcelsAction(desk);
   return (
     <RoleHome
       title={t('home.dashboard.title')}
-      stats={[{ label: t('home.stat.waiting'), value: waiting }]}
+      stats={[
+        {
+          label: t('home.stat.waiting'),
+          value: shown(
+            counts && counts.coming + counts.present + counts.toSettle,
+          ),
+        },
+        ...toSettleStat(counts),
+      ]}
       notice={{
         title: t('home.dashboard.notice.title'),
         description: t('home.dashboard.notice.description'),

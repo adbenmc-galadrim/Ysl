@@ -270,6 +270,7 @@ export const fr = {
   'shell.nav.dashboard': 'Tableau de bord',
   'shell.search': 'Rechercher un colis',
   'home.action.parcels': 'Voir les colis',
+  'home.stat.coming': 'À venir',
   'home.stat.present': 'Présents',
   'home.stat.waiting': 'Colis en attente',
   'home.tour.title': 'Tournée',
@@ -279,7 +280,7 @@ export const fr = {
   'home.department.title': 'À venir et présents',
   'home.department.notice.title': 'Les colis à venir arrivent avec la tournée',
   'home.department.notice.description':
-    'Dès que la navette annoncera ses dépôts, ils s’afficheront ici. Vos colis présents sont déjà dans Colis.',
+    'Dès que la navette annoncera ses dépôts, leur détail s’affichera ici. Les colis reçus et notifiés sont déjà dans Colis.',
   'home.dashboard.title': 'Tableau de bord',
   'home.dashboard.notice.title':
     'Le tableau de bord arrive dans une prochaine version',
