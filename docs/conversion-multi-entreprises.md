@@ -98,6 +98,7 @@ des migrations reviennent.
    bien la dernière migration appliquée. Il permet de rejouer la conversion plus tard.
    Tout compte `company_admin` ou `shuttle`, même antérieur à la conversion ou créé depuis,
    devient `admin` ou `agent` : un `admin` regagne les droits admin de Better Auth sur l'ancien code.
+   Un opérateur passé en `shuttle` après la conversion revient donc `agent` : le remettre `admin` à la main s'il l'était.
    Le profil posé reste sans effet sur eux : seul un compte `shuttle` lit ce réglage pour remettre.
 3. Redéployer le commit d'avant le merge (`git push --force-with-lease origin <sha>:prod`),
    puis contrôler `/ready` et une synchro.
