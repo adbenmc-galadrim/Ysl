@@ -1,9 +1,9 @@
 /**
  * When a notified parcel calls for a reminder, and when it is « en
  * souffrance » (F37, D12): reminders at J+2 and J+5 working days after the
- * first notice, then an alert to the agent. Nothing leaves by itself (D2):
- * the app says who is due, the agent sends. Working days run Monday to
- * Friday on the iPhone's calendar; public holidays are not known and count
+ * first notice, then an alert to the agent. The app says who is due and the
+ * agent sends, or the server by itself where the profile asks (§3.7.9). Working days run Monday to
+ * Friday on the calendar of whoever works it out, the iPhone or the server; public holidays are not known and count
  * as working days.
  */
 
@@ -53,6 +53,25 @@ export type ReminderHistory = {
 /** The working day the recipient is back: the one after the last day away. */
 export function resumeOf(pausedUntil: Date): Date {
   return addWorkingDays(pausedUntil, 1);
+}
+
+/**
+ * The reminders of a parcel from the dated mails at hand: one later than the
+ * notice counts, and `lastNotifiedAt` once more when no mail says it.
+ */
+export function knownReminders(
+  {
+    notifiedAt,
+    lastNotifiedAt,
+  }: { notifiedAt: Date; lastNotifiedAt: Date | null },
+  dated: readonly Date[],
+): Date[] {
+  const known = dated.filter((at) => at > notifiedAt);
+  return lastNotifiedAt &&
+    lastNotifiedAt > notifiedAt &&
+    !known.some((at) => at >= lastNotifiedAt)
+    ? [...known, lastNotifiedAt]
+    : known;
 }
 
 export type ReminderState = {

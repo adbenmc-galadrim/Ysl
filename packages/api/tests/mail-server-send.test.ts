@@ -1,5 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { pickupPinHash } from '@repo/contract/pickup';
+import { pickupPinHash, pickupVerdict } from '@repo/contract/pickup';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { brevoMailer } from '#features/mail/brevo';
 import { qrModules, qrPng } from '#features/mail/qr';
 import { drainEmailOutbox } from '#features/mail/queue';
+import { requestDueReminders } from '#features/mail/server-reminders';
 import { prepareServerMails } from '#features/mail/server-send';
 import { receiveMailEvent } from '#features/mail/webhook';
 import { startFakeBrevo } from './helpers/fake-brevo';
@@ -30,6 +31,7 @@ const {
   notification,
   parcel,
   pickupCode,
+  setting,
 } = schema;
 
 const NOW = new Date('2026-10-26T09:00:00Z');
@@ -461,6 +463,117 @@ describe('a corrected address after a bounce', () => {
 
     expect(await mailOf(fixed)).toMatchObject({ status: 'sent', type: 'avis' });
     expect((await parcelOf(parcelId)).notifiedAt).toEqual(later);
+  });
+});
+
+describe('automatic reminders', () => {
+  beforeEach(async () => {
+    await db.update(parcel).set({ deletedAt: NOW });
+  });
+
+  async function setProfile(reminders: 'optional' | 'required') {
+    await db.delete(setting).where(eq(setting.key, 'operatingProfile'));
+    await db.insert(setting).values({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      key: 'operatingProfile',
+      value: {
+        shuttleActsAsDepartment: false,
+        batchReview: 'optional',
+        depositConfirmation: 'disabled',
+        handoverProof: 'optional',
+        handoverScan: 'disabled',
+        signature: 'optional',
+        photo: 'optional',
+        emailMoment: 'scan',
+        reminders,
+      },
+    });
+  }
+
+  async function noticed() {
+    const { id: person } = await addPerson();
+    const parcelId = await addParcel(person);
+    await request(person, [parcelId]);
+    await round();
+    brevo.sent.length = 0;
+    return { person, parcelId };
+  }
+
+  const J2 = new Date('2026-10-28T09:00:00Z');
+
+  it('goes once at J+2 with a new code, and the former QR says replaced', async () => {
+    await setProfile('required');
+    const { person, parcelId } = await noticed();
+    const [former] = await liveCodes(person);
+
+    await requestDueReminders(any(), J2);
+    await round(J2);
+    expect(brevo.sent).toHaveLength(1);
+    expect(brevo.sent[0]!.subject).toContain('Rappel');
+    expect((await parcelOf(parcelId)).notifiedAt).toEqual(NOW);
+
+    expect(await requestDueReminders(any(), J2)).toBe(0);
+    await round(J2);
+    expect(brevo.sent).toHaveLength(1);
+
+    const [current] = await liveCodes(person);
+    expect(current!.id).not.toBe(former!.id);
+    const [old] = await db
+      .select()
+      .from(pickupCode)
+      .where(eq(pickupCode.id, former!.id));
+    expect(pickupVerdict([old!], J2)).toEqual({ status: 'replaced' });
+  });
+
+  it('waits for the rule, and for working hours', async () => {
+    await setProfile('required');
+    await noticed();
+    expect(
+      await requestDueReminders(any(), new Date('2026-10-27T09:00:00Z')),
+    ).toBe(0);
+    expect(
+      await requestDueReminders(any(), new Date('2026-10-28T04:00:00Z')),
+    ).toBe(0);
+  });
+
+  it('stays by hand when the profile says so', async () => {
+    await setProfile('optional');
+    await noticed();
+    expect(await requestDueReminders(any(), J2)).toBe(0);
+  });
+
+  it('leaves to the phone what the phone told', async () => {
+    await setProfile('required');
+    const { id: person } = await addPerson();
+    const parcelId = await addParcel(person, {
+      status: 'notifie',
+      notifiedAt: NOW,
+    });
+    await db.insert(notification).values({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      type: 'avis',
+      personId: person,
+      recipients: ['a@example.test'],
+      parcelIds: [parcelId],
+      status: 'sent',
+      sentAt: NOW,
+      preparedAt: NOW,
+      preparedBy: AGENT_ID,
+    });
+    expect(await requestDueReminders(any(), J2)).toBe(0);
+  });
+
+  it('holds back after a bounce: the address has to change first', async () => {
+    await setProfile('required');
+    const { parcelId } = await noticed();
+    await db
+      .update(notification)
+      .set({ deliveryStatus: 'bounced' })
+      .where(eq(notification.status, 'sent'));
+    expect(await parcelOf(parcelId)).toMatchObject({ status: 'notifie' });
+    expect(await requestDueReminders(any(), J2)).toBe(0);
   });
 });
 

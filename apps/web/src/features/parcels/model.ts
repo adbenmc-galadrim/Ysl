@@ -1,7 +1,12 @@
+import { parcelCarrierName } from '@repo/contract/mail';
 import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { standingReply } from '@repo/contract/parcel-reply';
-import { reminderState, type ReminderState } from '@repo/contract/reminders';
+import {
+  knownReminders,
+  reminderState,
+  type ReminderState,
+} from '@repo/contract/reminders';
 import type { TranslateFn } from '@repo/shared/i18n';
 import type { Parcel as ParcelRow, ParcelState } from '@repo/ui';
 import type {
@@ -53,16 +58,13 @@ export function reminderOf(
 ): ReminderState | undefined {
   if (parcel.deletedAt || parcel.status !== 'notifie') return undefined;
   const notifiedAt = firstNotification(parcel);
-  const known = (dates?.get(parcel.id) ?? []).filter((at) => at > notifiedAt);
-  const last = parcel.lastNotifiedAt;
-  const reminders =
-    last && last > notifiedAt && !known.some((at) => at >= last)
-      ? [...known, last]
-      : known;
   return reminderState(
     {
       notifiedAt,
-      reminders,
+      reminders: knownReminders(
+        { notifiedAt, lastNotifiedAt: parcel.lastNotifiedAt ?? null },
+        dates?.get(parcel.id) ?? [],
+      ),
       pausedUntil: parcel.remindersPausedUntil ?? null,
     },
     now,
@@ -234,10 +236,7 @@ export function carrierLabel(
   parcel: Pick<LocalParcel, 'carrier' | 'type'>,
   t: TranslateFn,
 ): string {
-  if (parcel.carrier) return parcel.carrier;
-  return parcel.type === 'sans_suivi'
-    ? t('parcel.carrier.none')
-    : t('parcel.carrier.unknown');
+  return parcelCarrierName(parcel, t);
 }
 
 /** A row of the home list, and whether a reminder is due for its parcel (F37). */
