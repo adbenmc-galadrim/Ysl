@@ -21,6 +21,7 @@ import {
 } from '#/features/install/browser-tab';
 import { startOfflinePrep } from '#/features/offline/prep';
 import { isPrepared } from '#/features/offline/prepared';
+import { RoleFrame } from '#/features/shell/components/role-frame';
 import { readKeptProfile } from '#/features/settings/operating-profile';
 import { startSync } from '#/features/sync/sync';
 import { DESK_WIDTH } from '#/lib/use-media-query';
@@ -45,7 +46,11 @@ function AuthenticatedLayout() {
     void navigate({ to: '/connexion', search: {} });
   }, [ended, navigate, queryClient]);
 
-  return <Outlet />;
+  return (
+    <RoleFrame>
+      <Outlet />
+    </RoleFrame>
+  );
 }
 
 export const Route = createFileRoute('/_authenticated')({

@@ -3,7 +3,6 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   AnnuaireDesktop,
   AnnuaireMobile,
-  type CompanyShellNavSection,
   MoveRequestPanel,
   MoveRequestSheetMobile,
   PersonFormMobile,
@@ -11,10 +10,8 @@ import {
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { useSession } from '#/features/auth/api/use-session';
 import type { LocalDirectoryPerson } from '#/features/db/schema';
 import { usePersonForm } from '#/features/directory/components/person-form';
-import { useCompanyName } from '#/features/directory/components/use-company-name';
 import {
   type Directory,
   useDirectory,
@@ -28,20 +25,12 @@ import {
   listed,
 } from '#/features/directory/people';
 import { initialsOf } from '#/features/settings/initials';
+import { useDeskShell } from '#/features/shell/components/use-desk-shell';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const PAGE = 50;
-
-const DESK_NAV: CompanyShellNavSection[] = [
-  {
-    items: [
-      { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
-      { id: 'annuaire', label: t('directory.nav.directory'), icon: 'users' },
-    ],
-  },
-];
 
 type Open =
   | { kind: 'add'; key: number; query?: string }
@@ -187,9 +176,7 @@ function DeskForm({
 }
 
 function Desk({ directory }: { directory: Directory }) {
-  const navigate = useNavigate();
-  const session = useSession();
-  const company = useCompanyName();
+  const shell = useDeskShell();
   const own = useOwnDepartment(directory);
   const { people, names, open } = directory;
   const [query, setQuery] = useState('');
@@ -205,25 +192,10 @@ function Desk({ directory }: { directory: Directory }) {
     panel && panel.kind !== 'add'
       ? people.find((person) => person.id === panel.id)
       : undefined;
-  const role = t('auth.role.department');
 
   return (
     <AnnuaireDesktop
-      company={{
-        name: company,
-        subtitle: `${role} ${own.name}`.trim(),
-        initials: initialsOf(company),
-      }}
-      nav={DESK_NAV}
-      account={{
-        initials: initialsOf(session.user.name),
-        name: session.user.name,
-        role: own.name || role,
-      }}
-      companyCrumb={own.name || company}
-      onNavigate={(id) => {
-        if (id === 'colis') void navigate({ to: '/' });
-      }}
+      {...shell}
       search={{
         value: query,
         onChange: (value) => {
