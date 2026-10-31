@@ -1,6 +1,8 @@
 import {
   operatingImpact,
+  stepsChangedFromModel,
   type OperatingProfile,
+  type ProfileModel,
 } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
@@ -37,6 +39,15 @@ const OPERATING_KEY = ['operating', 'get'] as const;
 /** Undoing skips the announcement: only while it is still the one just read. */
 const UNDO_MS = 10_000;
 
+function startModelLine(model: ProfileModel, profile: OperatingProfile) {
+  const count = stepsChangedFromModel(model, profile);
+  const name = t(`platform.model.${model}`);
+  if (count === 0) return t('operating.startModel.none', { model: name });
+  return count === 1
+    ? t('operating.startModel.one', { model: name })
+    : t('operating.startModel.many', { model: name, count });
+}
+
 /**
  * Réglages › Fonctionnement (admin): every step of the company, freely (D30).
  * It reads the server, which alone counts every parcel of the company; the
@@ -67,8 +78,12 @@ export function OperatingScreen() {
   const save = useMutation({
     mutationFn: (profile: OperatingProfile) =>
       trpcClient.operating.save.mutate({ profile }),
-    onSuccess: ({ profile, counts }) => {
-      queryClient.setQueryData(OPERATING_KEY, { profile, counts });
+    onSuccess: ({ profile, counts, profileModel }) => {
+      queryClient.setQueryData(OPERATING_KEY, {
+        profile,
+        counts,
+        profileModel,
+      });
       setDraft(null);
       setConfirming(false);
     },
@@ -167,6 +182,11 @@ export function OperatingScreen() {
       ) : (
         value && (
           <>
+            {settings?.profileModel && (
+              <p className="mt-3 text-13 text-muted">
+                {startModelLine(settings.profileModel, settings.profile)}
+              </p>
+            )}
             <Banner
               tone="orange"
               icon="info"

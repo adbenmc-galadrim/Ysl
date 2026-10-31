@@ -142,6 +142,8 @@ export function CompanyPage({ id }: { id: string }) {
     { label: t('platform.sheet.stat.parcels'), value: figure(company.parcels) },
   ];
   const model = modelName(company.profileModel, t);
+  const changedSteps =
+    company.changedSteps === null ? null : figure(company.changedSteps);
   const primary = () =>
     suspended ? actions.reactivate.mutate() : setAsked('suspend');
   const primaryLabel = suspended
@@ -194,7 +196,12 @@ export function CompanyPage({ id }: { id: string }) {
             : statusLine(company),
           suspended,
           stats,
-          profile: [[t('platform.sheet.model'), model]],
+          profile: [
+            [t('platform.sheet.model'), model],
+            ...(changedSteps === null
+              ? []
+              : [[t('platform.sheet.changedSteps'), changedSteps]]),
+          ],
           actions: (
             <>
               <Button
@@ -246,7 +253,17 @@ export function CompanyPage({ id }: { id: string }) {
         }
         stats={stats}
         error={errorOf(actions.reactivate)}
-        profile={[{ title: t('platform.sheet.model'), value: model }]}
+        profile={[
+          { title: t('platform.sheet.model'), value: model },
+          ...(changedSteps === null
+            ? []
+            : [
+                {
+                  title: t('platform.sheet.changedSteps'),
+                  value: changedSteps,
+                },
+              ]),
+        ]}
         onBack={() => void navigate({ to: '/' })}
         primaryLabel={primaryLabel}
         onPrimary={primary}

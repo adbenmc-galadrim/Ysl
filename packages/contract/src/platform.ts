@@ -34,6 +34,8 @@ export const platformCompanies = z.array(platformCompany);
 /** The record adds what a deletion would erase, as a figure. */
 export const platformCompanyDetail = platformCompany.extend({
   parcels: z.number().int().nonnegative(),
+  /** How far it moved from its model, as a figure; none without a model. */
+  changedSteps: z.number().int().nonnegative().nullable(),
 });
 
 export type PlatformCompanyDetail = z.infer<typeof platformCompanyDetail>;

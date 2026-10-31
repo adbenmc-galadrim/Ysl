@@ -285,6 +285,22 @@ describe('the back-office', () => {
     expect(await savedProfile(id)).toEqual(profile);
     expect(await platform().platform.company({ id })).toMatchObject({
       profileModel: 'multi_departments',
+      changedSteps: 1,
+    });
+  });
+
+  it('counts no changed step for a company without a model', async () => {
+    const { id } = await platform().platform.createCompany({
+      name: 'Sans modèle',
+      profileModel: 'small_site',
+    });
+    await db
+      .update(schema.organization)
+      .set({ profileModel: null })
+      .where(eq(schema.organization.id, id));
+    expect(await platform().platform.company({ id })).toMatchObject({
+      profileModel: null,
+      changedSteps: null,
     });
   });
 

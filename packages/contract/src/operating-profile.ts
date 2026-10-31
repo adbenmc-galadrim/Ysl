@@ -182,6 +182,8 @@ export function operatingImpact(
 
 export const operatingSettings = z.object({
   profile: operatingProfile,
+  /** What it started from; none for a company from before the models. */
+  profileModel: z.enum(PROFILE_MODELS).nullable(),
   counts: z.partialRecord(
     z.enum(PARCEL_STATUSES),
     z.number().int().nonnegative(),

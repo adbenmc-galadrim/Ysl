@@ -75,6 +75,7 @@ export const fr = {
   'platform.sheet.stat.departments': 'Départements',
   'platform.sheet.stat.parcels': 'Colis',
   'platform.sheet.model': 'Modèle de départ',
+  'platform.sheet.changedSteps': 'Étapes modifiées',
   'platform.sheet.suspend': 'Suspendre',
   'platform.sheet.reactivate': 'Réactiver',
   'platform.sheet.rename': 'Renommer',
@@ -1399,6 +1400,12 @@ export const fr = {
   'operating.failed': 'Fonctionnement indisponible pour le moment.',
   'operating.saveFailed': 'Enregistrement impossible. Réessayez.',
   'operating.modified': 'Modifié',
+  'operating.startModel.none':
+    'Modèle de départ : {{model}} · aucune étape changée depuis',
+  'operating.startModel.one':
+    'Modèle de départ : {{model}} · 1 étape changée depuis',
+  'operating.startModel.many':
+    'Modèle de départ : {{model}} · {{count}} étapes changées depuis',
   'operating.section.reception': 'Réception',
   'operating.section.deposit': 'Dépôt',
   'operating.section.handover': 'Remise',

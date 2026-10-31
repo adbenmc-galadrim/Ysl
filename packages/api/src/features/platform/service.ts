@@ -1,3 +1,4 @@
+import { stepsChangedFromModel } from '@repo/contract/operating-profile';
 import type {
   PlatformCompany,
   PlatformCompanyDetail,
@@ -6,6 +7,7 @@ import type {
 import type { AnyDb } from '@repo/db';
 import { organization, parcel } from '@repo/db/schema';
 import { and, asc, count, eq, isNull, ne, sql } from 'drizzle-orm';
+import { readOperatingProfile } from '#features/operating/service';
 
 export async function getPlatformOverview(
   db: AnyDb,
@@ -44,7 +46,16 @@ export async function getCompany(
     .select({ n: count() })
     .from(parcel)
     .where(and(eq(parcel.organizationId, id), isNull(parcel.deletedAt)));
-  return { ...row, parcels: parcels?.n ?? 0 };
+  return {
+    ...row,
+    parcels: parcels?.n ?? 0,
+    changedSteps: row.profileModel
+      ? stepsChangedFromModel(
+          row.profileModel,
+          await readOperatingProfile(db, id),
+        )
+      : null,
+  };
 }
 
 /** Two clients of one name could not be told apart, nor confirmed by typing it. */

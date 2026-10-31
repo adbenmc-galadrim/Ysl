@@ -47,6 +47,10 @@ describe('the operating profile', () => {
     expect(await rows()).toEqual([]);
   });
 
+  it('names no starting model for a company from before the models', async () => {
+    expect(await admin().operating.get()).toMatchObject({ profileModel: null });
+  });
+
   it('saving the same profile writes nothing', async () => {
     const saved = await admin().operating.save({
       profile: DEFAULT_OPERATING_PROFILE,
