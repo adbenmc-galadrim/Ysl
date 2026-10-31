@@ -45,7 +45,7 @@ export function constraintOf(error: unknown): string | undefined {
  * status outside the graph of §8.3, a copy that missed a change of status,
  * a delivery a stale copy would undo, a cancellation it would revive, a
  * notification or a delivery without anyone to give it to; and, by its
- * unique index, a person whose e-mail the directory already has (F50) and
+ * unique index, a person whose e-mail their department already has (F50) and
  * a setting another device saved first under its key.
  */
 export const GUARDS = {

@@ -394,3 +394,94 @@ describe('the CSV import', () => {
     expect(after).toMatchObject({ departmentId: finance });
   });
 });
+
+describe('one address in several departments', () => {
+  const email = (word: string) => `${word}.${newId()}@example.test`;
+  const addAt = async (departmentId: string | null, address: string) => {
+    const person = await addPerson(db, departmentId);
+    await db
+      .update(schema.directoryPerson)
+      .set({ email: address })
+      .where(eq(schema.directoryPerson.id, person));
+    return person;
+  };
+  const departmentOf = async (id: string) =>
+    (
+      await db
+        .select()
+        .from(schema.directoryPerson)
+        .where(eq(schema.directoryPerson.id, id))
+    )[0]!.departmentId;
+
+  it('a department adds an address another holds: nothing tells it so', async () => {
+    const address = email('hugo');
+    const other = await addAt(finance, address);
+    const id = newId();
+
+    const { results } = await push(any, accessOf('department', studio), {
+      ops: [
+        {
+          opId: newId(),
+          type: 'upsert',
+          entity: 'directory_person',
+          entityId: id,
+          patch: {
+            lastName: 'Lefèvre',
+            firstName: 'Hugo',
+            nameNorm: 'hugo lefevre',
+            email: address,
+          },
+          clientTs: new Date(),
+        },
+      ],
+    });
+
+    expect(results[0]?.status).toBe(200);
+    expect(await departmentOf(id)).toBe(studio);
+    expect(await departmentOf(other)).toBe(finance);
+  });
+
+  it('keeps one card per address inside a department, and among those in none', async () => {
+    for (const department of [studio, null]) {
+      const address = email('dup');
+      await addAt(department, address);
+      await expect(addAt(department, address.toUpperCase())).rejects.toThrow();
+    }
+  });
+
+  it('refuses to move someone onto the card of the same address, moving nothing', async () => {
+    const address = email('twin');
+    const here = await addAt(finance, address);
+    await addAt(studio, address);
+
+    await expect(move(here, studio)).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    expect(await departmentOf(here)).toBe(finance);
+  });
+
+  it('imports onto the card of the department the line names, or asks which', async () => {
+    const address = email('both');
+    await addAt(finance, address);
+    const there = await addAt(studio, address);
+    const csv = `nom,prenom,mail,service,bureau\nLefèvre,Hugo,${address},Studio,Étage 2`;
+
+    const report = await applyDirectoryImport(any, ORGANIZATION_ID, csv, []);
+    expect(report.updated).toBe(1);
+    const [row] = await db
+      .select()
+      .from(schema.directoryPerson)
+      .where(eq(schema.directoryPerson.id, there));
+    expect(row?.site).toBe('Étage 2');
+
+    const preview = await previewDirectoryImport(
+      any,
+      ORGANIZATION_ID,
+      `nom,prenom,mail\nLefèvre,Hugo,${address}`,
+      [],
+    );
+    expect(preview.errors.map((error) => error.problem)).toEqual([
+      'email-ambiguous',
+    ]);
+  });
+});

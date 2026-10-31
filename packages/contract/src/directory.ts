@@ -67,6 +67,7 @@ export const DIRECTORY_IMPORT_PROBLEMS = [
   'email-invalid',
   'duplicate-in-file',
   'department-unknown',
+  'email-ambiguous',
 ] as const;
 
 export type DirectoryImportProblem = (typeof DIRECTORY_IMPORT_PROBLEMS)[number];

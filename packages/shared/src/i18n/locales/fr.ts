@@ -725,6 +725,8 @@ export const fr = {
   'settings.directory': 'Annuaire',
   'directory.error.personNotFound':
     'Cette personne n’est plus dans l’annuaire.',
+  'directory.error.sameAddress':
+    '{{department}} a déjà une fiche à cette adresse.',
   'directory.error.name': 'Indiquez le prénom et le nom.',
   'directory.error.emailMissing': 'Indiquez l’adresse e-mail.',
   'directory.error.emailInvalid': 'Adresse e-mail incomplète.',
@@ -785,6 +787,8 @@ export const fr = {
   'directory.import.problem.email': 'E-mail incomplet',
   'directory.import.problem.duplicate': 'E-mail déjà présent dans le fichier',
   'directory.import.problem.department': 'Département inconnu',
+  'directory.import.problem.ambiguous':
+    'Adresse dans plusieurs départements : indiquez lequel',
   'directory.import.toAdd': 'À ajouter',
   'directory.import.toUpdate': 'À mettre à jour',
   'directory.import.unchanged': 'Déjà à jour',

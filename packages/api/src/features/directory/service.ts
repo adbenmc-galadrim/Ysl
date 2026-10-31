@@ -7,7 +7,7 @@ import type { AnyDb } from '@repo/db';
 import { department, directoryPerson, parcel } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { TRPCError } from '@trpc/server';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -27,7 +27,10 @@ function departmentNotFound(): TRPCError {
 
 async function personIn(tx: AnyDb, organizationId: string, personId: string) {
   const [row] = await tx
-    .select({ departmentId: directoryPerson.departmentId })
+    .select({
+      departmentId: directoryPerson.departmentId,
+      email: directoryPerson.email,
+    })
     .from(directoryPerson)
     .where(
       and(
@@ -87,6 +90,27 @@ export async function movePerson(
     const person = await personIn(tx, organizationId, personId);
     if (person.departmentId === departmentId) {
       return { follows: 0, toSettle: 0 };
+    }
+    // A department may have added the same address itself, without being able to know.
+    const [twin] = await tx
+      .select({ id: directoryPerson.id })
+      .from(directoryPerson)
+      .where(
+        and(
+          eq(directoryPerson.organizationId, organizationId),
+          eq(directoryPerson.departmentId, departmentId),
+          ne(directoryPerson.id, personId),
+          eq(sql`lower(${directoryPerson.email})`, person.email.toLowerCase()),
+          isNull(directoryPerson.deletedAt),
+        ),
+      );
+    if (twin) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: translate('directory.error.sameAddress', {
+          department: target.name,
+        }),
+      });
     }
     const effects = await moveEffectsOf(tx, organizationId, personId);
     await tx

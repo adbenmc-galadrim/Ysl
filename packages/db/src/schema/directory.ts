@@ -45,11 +45,51 @@ export const directoryPerson = pgTable(
       .where(sql`${table.departmentId} is not null`),
     oneOf('directory_person_source_check', table.source, DIRECTORY_SOURCES),
     uniqueIndex('directory_person_email_idx')
-      .on(table.organizationId, sql`lower(${table.email})`)
+      .on(
+        table.organizationId,
+        sql`coalesce(${table.departmentId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+        sql`lower(${table.email})`,
+      )
       .where(sql`${table.deletedAt} is null`),
     index('directory_person_name_norm_idx')
       .on(table.organizationId, table.nameNorm.op('text_pattern_ops'))
       .where(sql`${table.deletedAt} is null`),
+  ],
+);
+
+/**
+ * A department asking the company admin to move one of its people (ME21, ME22):
+ * it moves nobody itself. One open request per person; one whose person has
+ * left `departmentId` is over, however they moved.
+ */
+export const directoryMoveRequest = pgTable(
+  'directory_move_request',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: uuid('organization_id').notNull(),
+    personId: uuid('person_id').notNull(),
+    departmentId: uuid('department_id').notNull(),
+    requestedBy: text('requested_by'),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+  },
+  (table) => [
+    foreignKey({
+      name: 'directory_move_request_person_fk',
+      columns: [table.organizationId, table.personId],
+      foreignColumns: [directoryPerson.organizationId, directoryPerson.id],
+    }),
+    foreignKey({
+      name: 'directory_move_request_department_fk',
+      columns: [table.organizationId, table.departmentId],
+      foreignColumns: [department.organizationId, department.id],
+    }),
+    uniqueIndex('directory_move_request_open_idx')
+      .on(table.organizationId, table.personId)
+      .where(sql`${table.closedAt} is null`),
   ],
 );
 

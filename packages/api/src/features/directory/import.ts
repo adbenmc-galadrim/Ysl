@@ -135,9 +135,11 @@ async function plan(
       byName.set(normalizeName(choice.name), target);
     }
   }
-  const byEmail = new Map(
-    people.map((person) => [person.email.toLowerCase(), person]),
-  );
+  const byEmail = new Map<string, Existing[]>();
+  for (const person of people) {
+    const key = person.email.toLowerCase();
+    byEmail.set(key, [...(byEmail.get(key) ?? []), person]);
+  }
 
   const seen = new Set<string>();
   const errors: Plan['errors'] = [];
@@ -180,7 +182,15 @@ async function plan(
       refuse('department-unknown');
       continue;
     }
-    const person = byEmail.get(row.email);
+    // Two departments may hold one address: the line names which, or nothing can be told.
+    const cards = byEmail.get(row.email) ?? [];
+    const person =
+      cards.find((card) => target && card.departmentId === target.id) ??
+      (cards.length === 1 ? cards[0] : undefined);
+    if (cards.length > 1 && !person) {
+      refuse('email-ambiguous');
+      continue;
+    }
     if (!person) {
       // A card needs both: the form could not edit one without them.
       if (!row.firstName || !row.lastName) {
