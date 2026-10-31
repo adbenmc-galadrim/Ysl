@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { RemiseConfirmeePage } from '#/features/handover/components/remise-confirmee-page';
 import { readQueue, shiftQueue, writeQueue } from '#/features/handover/queue';
+import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -19,11 +20,12 @@ export const Route = createFileRoute('/_authenticated/remise/confirmee')({
 
 function RemiseConfirmeeRoute() {
   const navigate = useNavigate();
+  const workPath = useWorkPath();
   const { handover, signature, file } = Route.useSearch();
   const done = useCallback(() => {
     writeQueue([]);
-    void navigate({ to: '/', replace: true });
-  }, [navigate]);
+    void navigate({ to: workPath, replace: true });
+  }, [navigate, workPath]);
   // A selection handed over person by person (F31): the next one waits.
   const queued = file ? readQueue()[0] : undefined;
   const next = queued && {

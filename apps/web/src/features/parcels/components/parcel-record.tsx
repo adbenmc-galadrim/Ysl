@@ -44,6 +44,7 @@ import { answeredWith } from '#/features/replies/record';
 import { EmployeeReply } from '#/features/replies/components/employee-reply';
 import { showsPendingBanner } from '#/features/sync/sync-value';
 import { useSync } from '#/features/sync/use-sync';
+import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -98,6 +99,7 @@ const UNDO_DESCRIPTION: Record<'notifie' | 'retourne', string> = {
  */
 export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   const navigate = useNavigate();
+  const workPath = useWorkPath();
   const router = useRouter();
   const session = useSession();
   const access = useAccess();
@@ -128,7 +130,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
-    else void navigate({ to: '/' });
+    else void navigate({ to: workPath });
   };
 
   if (record === undefined) return <Screen>{null}</Screen>;
@@ -143,7 +145,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
         >
           <Button
             variant="link"
-            onClick={() => void navigate({ to: '/' })}
+            onClick={() => void navigate({ to: workPath })}
             className="text-16 font-semibold"
           >
             {t('record.missing.back')}

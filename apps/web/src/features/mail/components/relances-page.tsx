@@ -9,6 +9,7 @@ import {
   reminderSections,
   useReminderMails,
 } from '#/features/mail/reminder-mails';
+import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -21,6 +22,7 @@ const t = createTranslator(DEFAULT_LOCALE);
  */
 export function RelancesPage() {
   const navigate = useNavigate();
+  const workPath = useWorkPath();
   const router = useRouter();
   const mails = useReminderMails();
   const userId = useSession().user.id;
@@ -32,7 +34,7 @@ export function RelancesPage() {
   const due = dueCount(mails.filter((mail) => mail.address));
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
-    else void navigate({ to: '/' });
+    else void navigate({ to: workPath });
   };
 
   return (

@@ -66,6 +66,7 @@ import {
   selectionSecrets,
 } from '#/features/mail/selection-mails';
 import { readPickup } from '#/features/settings/pickup';
+import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -207,6 +208,7 @@ export function NotifierPage({
   skipped,
 }: NotifierScope) {
   const navigate = useNavigate();
+  const workPath = useWorkPath();
   const router = useRouter();
   const session = useSession();
   const userId = session.user.id;
@@ -277,7 +279,7 @@ export function NotifierPage({
 
   const back = () => {
     if (router.history.canGoBack()) router.history.back();
-    else void navigate({ to: '/' });
+    else void navigate({ to: workPath });
   };
 
   if (!opened) return null;
@@ -589,7 +591,7 @@ export function NotifierPage({
           search: { selection: [...then], relance: true },
           replace: true,
         })
-      : navigate({ to: '/' }));
+      : navigate({ to: workPath }));
 
   return (
     <NotifierScreen

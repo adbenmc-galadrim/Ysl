@@ -5,6 +5,7 @@ import {
   parseRemiseScanSearch,
   type RemiseColisSearch,
 } from '#/features/handover/route';
+import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 export const Route = createFileRoute('/_authenticated/remise/')({
   validateSearch: parseRemiseScanSearch,
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/_authenticated/remise/')({
 
 function RemisePage() {
   const navigate = useNavigate();
+  const workPath = useWorkPath();
   const { refus } = Route.useSearch();
   const onFound = useCallback(
     (search: RemiseColisSearch) =>
@@ -24,7 +26,7 @@ function RemisePage() {
       onFound={onFound}
       onTypeCode={() => void navigate({ to: '/remise/code' })}
       onSearchName={() => void navigate({ to: '/remise/nom' })}
-      onClose={() => void navigate({ to: '/' })}
+      onClose={() => void navigate({ to: workPath })}
       refused={refus}
     />
   );

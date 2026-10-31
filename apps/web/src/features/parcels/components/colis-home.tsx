@@ -13,7 +13,6 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
-import { hasDesk } from '#/features/auth/route-access';
 import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import {
@@ -50,7 +49,7 @@ import {
 import { useSync } from '#/features/sync/use-sync';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
-import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
+import { useOnDesk } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -71,7 +70,7 @@ export function ColisHome() {
   const session = useSession();
   const access = useAccess();
   // The scan is on the phone (D23): the computer roles do not get it here.
-  const onDesk = useMediaQuery(DESK_WIDTH) && hasDesk(access.role);
+  const onDesk = useOnDesk();
   const sync = useSync();
   const update = useUpdate();
   const handed = useHandoverToast();
