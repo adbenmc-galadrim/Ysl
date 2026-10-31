@@ -68,6 +68,8 @@ export const OPEN_STATUSES = [
   'a_completer',
   'recu',
   'en_route',
+  'depose',
+  'a_regulariser',
   'notifie',
 ] as const satisfies readonly ParcelStatus[];
 
@@ -79,11 +81,7 @@ export const TOUR_STATUSES = [
 ] as const satisfies readonly ParcelStatus[];
 
 /** Everything not yet out of the company's hands: a department holding one stays open. */
-export const UNFINISHED_STATUSES = [
-  ...OPEN_STATUSES,
-  'depose',
-  'a_regulariser',
-] as const satisfies readonly ParcelStatus[];
+export const UNFINISHED_STATUSES = OPEN_STATUSES;
 
 /** The progress line of the parcel sheet: Reçu, Notifié, Remis. */
 export const PARCEL_STEPS = [

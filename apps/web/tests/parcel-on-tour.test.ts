@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
@@ -83,5 +84,39 @@ describe('a parcel on tour', () => {
     });
     await db.parcel.update(onTour.id, { lastNotifiedAt: NOW });
     expect((await view()).action).toBeUndefined();
+  });
+});
+
+describe('handing over with tours', () => {
+  const profile = (value: unknown) =>
+    db.setting.put({
+      id: 'profile',
+      key: OPERATING_PROFILE_KEY,
+      value,
+      updatedBy: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+  const waiting = async () =>
+    (await listWaitingParcels(db, { kind: 'person', id: 'p-1' })).map(
+      ({ id }) => id,
+    );
+
+  beforeEach(async () => {
+    await db.parcel.bulkPut([
+      parcelRow({ id: 'at-desk', status: 'recu', personId: 'p-1' }),
+      parcelRow({ id: 'put-down', status: 'depose', personId: 'p-1' }),
+    ]);
+  });
+
+  it('offers what was deposited, not what the shuttle still carries', async () => {
+    await profile({ shuttleActsAsDepartment: false });
+    expect(await waiting()).toEqual(['put-down']);
+  });
+
+  it('leaves a parcel « Reçu » at the desk of a small site', async () => {
+    await profile({ shuttleActsAsDepartment: true });
+    expect(await waiting()).toEqual(expect.arrayContaining(['at-desk']));
   });
 });

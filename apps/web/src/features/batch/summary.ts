@@ -37,7 +37,7 @@ export function countBatch(parcels: readonly LocalParcel[]): BatchCounts {
     .sort((a, b) => a.receivedAt.getTime() - b.receivedAt.getTime());
   return {
     count: live.length,
-    toNotify: live.filter(awaitsNotice).length,
+    toNotify: live.filter((parcel) => awaitsNotice(parcel)).length,
     onTour: live.filter((parcel) => parcel.status === 'en_route').length,
     toComplete: live.filter((parcel) => parcel.status === 'a_completer'),
     damaged: live.filter((parcel) => damageOf(parcel) !== null).length,

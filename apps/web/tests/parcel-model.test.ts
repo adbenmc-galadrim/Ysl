@@ -6,6 +6,7 @@ import {
   toParcelRow,
   type RecipientContext,
 } from '#/features/parcels/model';
+import { awaitsNotice, groupByRecipient } from '#/features/mail/recipients';
 import { contactRow, NOW, parcelRow, personRow } from './helpers/local-rows';
 
 const t = createTranslator('fr');
@@ -28,6 +29,10 @@ describe('homeState', () => {
     );
     expect(homeState(parcel({ status: 'recu' }), NOW)).toBe('toNotify');
     expect(homeState(parcel({ status: 'en_route' }), NOW)).toBe('onTour');
+    expect(homeState(parcel({ status: 'depose' }), NOW)).toBe('deposited');
+    expect(homeState(parcel({ status: 'a_regulariser' }), NOW)).toBe(
+      'toSettle',
+    );
     expect(
       homeState(parcel({ status: 'notifie', notifiedAt: hoursAgo(47) }), NOW),
     ).toBe('notified');
@@ -311,5 +316,18 @@ describe('toParcelRow', () => {
       state: 'handedOver',
       status: 'Remis à 9 h 12',
     });
+  });
+});
+
+describe('a parcel « Reçu » in a company that runs tours', () => {
+  it('waits to leave, not to be notified', () => {
+    const received = parcel({ status: 'recu', personId: camille.id });
+    expect(homeState(received, NOW, undefined, true)).toBe('toDispatch');
+    expect(awaitsNotice(received, true)).toBe(false);
+    expect(groupByRecipient([received], { ...context, tour: true })).toEqual(
+      [],
+    );
+    expect(homeState(received, NOW)).toBe('toNotify');
+    expect(awaitsNotice(received)).toBe(true);
   });
 });
