@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import type { Session } from '@repo/auth';
+import { EMPTY_PICKUP } from '@repo/contract/settings';
 import { newId } from '@repo/shared/id';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -46,7 +47,34 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
   'devices.list': (caller) => caller.devices.list(),
   'maintenance.status': (caller) => caller.maintenance.status(),
   'imports.v1Csv': (caller) => caller.imports.v1Csv({ csv: '' }),
+  'maintenance.purgeNow': (caller) => caller.maintenance.purgeNow(),
+  'devices.revoke': (caller) => caller.devices.revoke({ id: newId() }),
   'agents.list': (caller) => caller.agents.list(),
+  'agents.create': (caller) =>
+    caller.agents.create({
+      name: 'Test',
+      email: 'test@example.com',
+      password: 'motdepasse-1',
+    }),
+  'agents.setActive': (caller) =>
+    caller.agents.setActive({ userId: 'x', active: false }),
+  'agents.resetPassword': (caller) =>
+    caller.agents.resetPassword({ userId: 'x', password: 'motdepasse-1' }),
+  'departments.list': (caller) => caller.departments.list(),
+  'departments.create': (caller) =>
+    caller.departments.create({ name: 'Finance' }),
+  'departments.update': (caller) =>
+    caller.departments.update({
+      id: newId(),
+      name: 'Finance',
+      receptionPoint: null,
+    }),
+  'departments.updatePickup': (caller) =>
+    caller.departments.updatePickup({ id: newId(), pickup: EMPTY_PICKUP }),
+  'departments.archive': (caller) =>
+    caller.departments.archive({ id: newId() }),
+  'departments.attachAccount': (caller) =>
+    caller.departments.attachAccount({ userId: 'x', departmentId: null }),
 };
 
 const WHOLE_COMPANY = [
@@ -56,15 +84,34 @@ const WHOLE_COMPANY = [
   'exports.parcelsCsv',
   'exports.selectionCsv',
 ];
-const ADMIN = ['devices.list', 'maintenance.status', 'imports.v1Csv'];
+const ADMIN = [
+  'devices.list',
+  'devices.revoke',
+  'maintenance.status',
+  'maintenance.purgeNow',
+  'imports.v1Csv',
+  'departments.create',
+  'departments.update',
+  'departments.updatePickup',
+  'departments.archive',
+  'departments.attachAccount',
+];
+const AGENTS = [
+  'agents.list',
+  'agents.create',
+  'agents.setActive',
+  'agents.resetPassword',
+];
+const READ_DEPARTMENTS = ['departments.list'];
+const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
 
 const ALLOWED: Record<string, string[]> = {
-  agent: WHOLE_COMPANY,
-  none: WHOLE_COMPANY,
-  admin: [...WHOLE_COMPANY, ...ADMIN, 'agents.list'],
-  company_admin: [...WHOLE_COMPANY, ...ADMIN],
-  shuttle: WHOLE_COMPANY,
-  department: [],
+  agent: OPERATIONS,
+  none: OPERATIONS,
+  admin: [...OPERATIONS, ...ADMIN, ...AGENTS],
+  company_admin: [...OPERATIONS, ...ADMIN],
+  shuttle: OPERATIONS,
+  department: READ_DEPARTMENTS,
   platform_admin: [],
 };
 
