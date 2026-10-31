@@ -155,6 +155,11 @@ export const fr = {
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
   'handover.received.yesterday': 'Reçu hier',
   'handover.received.on': 'Reçu le {{date}}',
+  'sender.error.taken':
+    'Ce domaine est déjà utilisé sur la plateforme. Contactez le support si c’est bien le vôtre.',
+  'sender.error.platform':
+    'Ce domaine est celui de la plateforme : indiquez le domaine de votre entreprise.',
+  'sender.error.invalid': 'Ce domaine n’est pas accepté. Vérifiez l’adresse.',
   'devices.title': 'Appareils connectés',
   'devices.header': 'Sessions ouvertes',
   'devices.footer':

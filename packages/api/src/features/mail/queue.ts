@@ -3,6 +3,7 @@ import type { AnyDb } from '@repo/db';
 import { emailOutbox } from '@repo/db/schema';
 import { and, eq, inArray, lt, or, sql } from 'drizzle-orm';
 import type { EmailMessage, Mailer, SendResult } from '#features/mail/mailer';
+import { senderOf } from '#features/mail/sender';
 
 /** Waits after the 1st, 2nd… failed attempt; one attempt more, then `failed`. */
 export const RETRY_DELAYS_MS = [
@@ -204,15 +205,18 @@ export async function drainEmailOutbox(
   for (let index = 0; index < limit && !signal?.aborted; index += 1) {
     const row = await claimOne(db, now());
     if (!row) break;
-    const result = await mailer
-      .send({
-        idempotencyKey: row.idempotencyKey,
-        to: row.recipient,
-        toName: row.recipientName,
-        subject: row.subject,
-        text: row.textBody,
-        html: row.htmlBody,
-      })
+    const result = await senderOf(db, row.organizationId)
+      .then((from) =>
+        mailer.send({
+          idempotencyKey: row.idempotencyKey,
+          to: row.recipient,
+          toName: row.recipientName,
+          subject: row.subject,
+          text: row.textBody,
+          html: row.htmlBody,
+          from,
+        }),
+      )
       .catch((error: unknown): SendResult => ({
         status: 'retry',
         reason: error instanceof Error ? error.name : 'unknown error',
