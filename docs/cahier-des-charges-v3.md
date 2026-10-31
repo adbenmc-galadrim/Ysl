@@ -408,7 +408,7 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Confirmé : le serveur tire le code quand il met le mail en file et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
 | Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise (confirmé) | YSL-116 |
-| Durées de conservation d'une entreprise neuve (D28) | Celles du §9.2 par défaut | YSL-126 |
+| Durées de conservation d'une entreprise neuve (D28) | Confirmé : celles du §9.2 par défaut ; une entreprise sans réglage garde exactement ces durées | YSL-126 |
 | Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
 | Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Confirmé : le serveur tire un nouveau code à chaque relance et retire l'ancien, rétabli si le mail échoue ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
@@ -1109,7 +1109,11 @@ Durées validées par le premier client (décision D7, YSL-55). Chaque entrepris
 
 La purge est automatique (job serveur) et s'applique aussi aux appareils au moment de la synchronisation.
 
-Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une ligne marquée supprimée est effacée 30 jours plus tard (le temps que chaque appareil la retire), une personne désactivée est retirée après 30 jours, le journal des opérations synchronisées (`sync_op`) est gardé 90 jours.
+Délais techniques de la mise en œuvre (YSL-55, hors tableau validé) : une ligne marquée supprimée est effacée 30 jours plus tard (le temps que chaque appareil la retire), une personne désactivée est retirée après 30 jours, le journal des opérations synchronisées (`sync_op`) est gardé 90 jours. Ces délais ne se règlent pas par entreprise.
+
+Historique des e-mails (`email_outbox`, à faire valider par le DPO) : 30 jours par défaut après la fin de l'envoi, réglable de 7 à 90 jours. Une ligne restée en cours d'envoi est effacée au même délai après la fin de son bail. Adresses désinscrites ou en plainte (`email_suppression`) : gardées sans durée et sans réinscription, pour que l'opposition tienne ; à faire valider par le DPO.
+
+Réglage par entreprise (D28, YSL-126) : photos et lectures de 1 à 90 jours, colis, signatures et contacts de 1 à 60 mois. Une signature ne survit pas à son colis. L'écran annonce les lignes touchées avant d'enregistrer une durée réduite ; photos d'étiquettes et lectures, sur les iPhone seulement, ne peuvent pas être comptées par le serveur.
 
 ### 9.3 Points à faire valider par la DSI et le DPO
 
