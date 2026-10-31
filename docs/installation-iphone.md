@@ -219,7 +219,7 @@ utilisable sur place avec ce qu'elle avait déjà ; elle se vide à la première
 | La caméra reste noire ou « bloquée »                                             | Voir l'étape 5 (Réglages › Safari › Caméra). Si elle reste noire, fermez et rouvrez l'app.                                                                                                                     |
 | L'app s'ouvre avec la barre de Safari                                            | Elle a été ouverte depuis Safari, pas depuis l'icône. Ouvrez l'icône de l'écran d'accueil ; si elle manque, refaites l'étape 2.                                                                                |
 | Safari annonce que les données d'un site sont effacées après 7 jours sans visite | Cela concerne les sites ouverts dans Safari, pas l'app installée sur l'écran d'accueil, qui garde ses données. C'est une raison de plus pour toujours passer par l'icône.                                      |
-| Mot de passe oublié                                                              | L'administrateur ne peut pas encore le réinitialiser depuis l'app : contactez l'équipe technique.                                                                                                              |
+| Mot de passe oublié                                                              | L'administrateur de l'entreprise renvoie un lien depuis Comptes ; les photos et preuves restent sur l'iPhone. |
 
 ## Vérification
 

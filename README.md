@@ -44,26 +44,23 @@ Un compte `department` n'atteint que ses colis, son annuaire, ses codes de retra
 département, les réglages et ses modèles (`docs/synchronisation.md`).
 L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
 
-Un compte `platform_admin` n'appartient à aucune organisation (`auth:create-user` sans
-`--organization`, `auth:attach-organization` refuse) ; il atteint le routeur `platform`,
+Un compte `platform_admin` n'appartient à aucune organisation
+(`auth:attach-organization` refuse) ; il atteint le routeur `platform`,
 qui ne rend que des chiffres, et aucune donnée d'une entreprise.
 
-Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription
-publique : le premier administrateur se crée en ligne de commande, les comptes suivants
-aussi tant que l'écran d'équipe n'existe pas.
+Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription publique : les comptes
+arrivent par invitation (`docs/comptes.md`). `auth:create-user` crée le premier admin de
+l'app ; en local, `auth:dev-account` crée un compte d'entreprise pour une démo, et
+refuse en production.
 
 ```bash
-echo 'un-mot-de-passe' | pnpm auth:create-user --email admin@example.com --name "Admin" --role company_admin
+echo 'un-mot-de-passe' | pnpm auth:create-user --email admin@example.com --name "Admin" --role platform_admin
 ```
 
-Le mot de passe se lit sur l'entrée standard ou dans `AUTH_USER_PASSWORD`, jamais en
-argument. `--role` est obligatoire. Rien ne réinitialise encore un mot de passe oublié : cela
-vient avec l'écran d'équipe (YSL-83).
+Le mot de passe se lit sur l'entrée standard ou dans `AUTH_USER_PASSWORD`, jamais en argument.
 
-Chaque compte appartient à un service courrier (une organisation), la clé de toutes les
-données synchronisées. `--organization "<nom>"` le désigne (créé s'il n'existe pas) ;
-sans l'option, le script prend l'unique organisation de la base, ou crée « Service
-courrier » si elle est vide. Un compte créé avant la synchronisation se rattache après
+Chaque compte d'entreprise appartient à une organisation, la clé de toutes les données
+synchronisées. Un compte créé avant la synchronisation se rattache après
 coup :
 
 ```bash
@@ -118,11 +115,11 @@ deux fois. Le workflow se relance à la main depuis l'onglet Actions. Les UUID d
 ressources Coolify sont une variable `COOLIFY_RESOURCE_UUIDS` de l'environnement GitHub
 `production`.
 
-Pour créer un compte en production, depuis le terminal du conteneur de l'API dans Coolify :
+Pour créer le premier admin de l'app en production, depuis le terminal du conteneur de l'API dans Coolify :
 
 ```bash
 cd /app/packages/auth
-AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-user.ts --email admin@example.com --name "Admin" --role company_admin
+AUTH_USER_PASSWORD='un-mot-de-passe' ./node_modules/.bin/tsx src/scripts/create-user.ts --email admin@example.com --name "Admin" --role platform_admin
 ```
 
 Ce terminal est interactif, le script n'y lit donc pas l'entrée standard : le mot de
@@ -235,7 +232,8 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation (`platform_admin` : à aucune) |
+| `pnpm auth:create-user` | Crée le premier admin de l'app, hors de toute entreprise |
+| `pnpm auth:dev-account` | Crée un compte d'entreprise pour une démo locale, refusé en production |
 | `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
 | `pnpm auth:reset-password` | Change le mot de passe d'un compte, sans fermer ses sessions (`--close-sessions` les ferme et efface ses téléphones) |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |

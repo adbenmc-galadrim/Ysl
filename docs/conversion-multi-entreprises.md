@@ -45,13 +45,7 @@ rejoigne un département archivé.
    UPDATE "user" SET role = 'shuttle' WHERE email = '<e-mail de l''opérateur>';
    ```
 
-   Depuis le terminal du conteneur de l'API, pour tout nouveau compte (`--role company_admin`
-   ou `--role shuttle`) :
-
-   ```bash
-   cd /app/packages/auth
-   AUTH_USER_PASSWORD='…' ./node_modules/.bin/tsx src/scripts/create-user.ts --email <e-mail> --name "<nom>" --role shuttle
-   ```
+   Tout nouveau compte arrive par invitation (`docs/comptes.md`).
 
    Un ancien `agent` devenu `shuttle` n'écrit plus l'annuaire (D15 révisée). Une navette n'a pas
    les réglages d'administration.
