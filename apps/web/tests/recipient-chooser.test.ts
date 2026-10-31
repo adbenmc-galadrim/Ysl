@@ -331,7 +331,7 @@ describe('searchOptions with departments (ME23)', () => {
     );
   });
 
-  it('falls back on the word a card came with, before the conversion', () => {
+  it('falls back on the word a card came with, on a row pulled before the conversion', () => {
     const before = { ...twin('a', null), department: 'Studio' };
 
     expect(searchOptions([before], [], 'studio', names)[0]?.detail).toBe(

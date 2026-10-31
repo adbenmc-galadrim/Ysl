@@ -16,7 +16,7 @@ export type RecipientEntry = {
   lastName: string;
   /** How many parcels the mailroom gave a contact (F27): a visitor who comes back rises on a tie. */
   uses?: number;
-  /** The department that holds a card; none before the conversion. Tells two cards of one name apart. */
+  /** The department that holds a card, none on a row the device has not pulled again. Tells two cards of one name apart. */
   departmentId?: string | null;
   /** Its name, as the agent reads it. */
   department?: string;
