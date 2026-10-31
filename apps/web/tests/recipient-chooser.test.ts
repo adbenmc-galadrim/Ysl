@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { assignRecipient } from '#/features/parcels/complete';
 import {
-  outsideDuplicate,
+  outsideDuplicates,
   saveOutsideContact,
 } from '#/features/recipient/contacts';
 import { searchOptions } from '#/features/recipient/options';
@@ -122,12 +122,52 @@ describe('Personne hors annuaire', () => {
     const camille = personRow();
     const temp = contactRow({ name: 'Marc Petit', email: 'marc@interim.fr' });
     expect(
-      outsideDuplicate(' CAMILLE@example.com', [camille], [temp]),
-    ).toMatchObject({ kind: 'person', id: camille.id });
+      outsideDuplicates(' CAMILLE@example.com', [camille], [temp]),
+    ).toMatchObject([{ kind: 'person', id: camille.id }]);
     expect(
-      outsideDuplicate('marc@interim.fr', [camille], [temp]),
-    ).toMatchObject({ kind: 'contact', id: temp.id });
-    expect(outsideDuplicate('', [camille], [temp])).toBeNull();
+      outsideDuplicates('marc@interim.fr', [camille], [temp]),
+    ).toMatchObject([{ kind: 'contact', id: temp.id }]);
+    expect(outsideDuplicates('', [camille], [temp])).toEqual([]);
+  });
+
+  it('takes no twin for a typed address: it stays a contact', async () => {
+    const db = await openTestDatabase();
+    const twin = (departmentId: string) =>
+      personRow({ email: 'anne@example.com', departmentId });
+    await db.directoryPerson.bulkPut([twin('a'), twin('b')]);
+
+    const chosen = await saveOutsideContact(
+      db,
+      { name: 'Anne Martin', email: 'anne@example.com', department: '' },
+      { agentId: 'agent-1', now: NOW },
+    );
+
+    expect(chosen.kind).toBe('contact');
+  });
+
+  it('offers every twin at the address, each with its department', () => {
+    const twin = (id: string, departmentId: string) =>
+      personRow({
+        id,
+        email: 'anne@example.com',
+        departmentId,
+        department: null,
+      });
+
+    expect(
+      outsideDuplicates(
+        'anne@example.com',
+        [twin('a', 'finance'), twin('b', 'presse')],
+        [],
+        new Map([
+          ['finance', 'Finance'],
+          ['presse', 'Presse'],
+        ]),
+      ).map((choice) => [choice.id, choice.detail]),
+    ).toEqual([
+      ['a', 'Finance'],
+      ['b', 'Presse'],
+    ]);
   });
 });
 
@@ -276,5 +316,47 @@ describe('assignRecipient', () => {
     const saved = await db.parcel.get(parcel.id);
     expect(saved).toMatchObject({ status: 'recu', department: 'Intérim' });
     expect(saved?.contactId).toBe((await db.contact.toArray())[0]?.id);
+  });
+});
+
+describe('searchOptions with departments (ME23)', () => {
+  const twin = (id: string, departmentId: string | null) =>
+    personRow({
+      id,
+      firstName: 'Anne',
+      lastName: 'Martin',
+      nameNorm: 'anne martin',
+      email: 'anne@example.com',
+      department: null,
+      departmentId,
+    });
+  const names = new Map([
+    ['finance', 'Finance'],
+    ['presse', 'Presse'],
+  ]);
+
+  it('tells twins apart by their department, and finds them by its name', () => {
+    const people = [twin('a', 'finance'), twin('b', 'presse')];
+
+    expect(
+      searchOptions(people, [], 'martin', names).map((o) => o.detail),
+    ).toEqual(['Finance', 'Presse']);
+    expect(searchOptions(people, [], 'presse', names).map((o) => o.id)).toEqual(
+      ['b'],
+    );
+  });
+
+  it('falls back on the word a card came with, on a row pulled before the conversion', () => {
+    const before = { ...twin('a', null), department: 'Studio' };
+
+    expect(searchOptions([before], [], 'studio', names)[0]?.detail).toBe(
+      'Studio',
+    );
+  });
+
+  it('falls back on the address for a card without department', () => {
+    expect(
+      searchOptions([twin('a', null)], [], 'martin', names)[0]?.detail,
+    ).toBe('anne@example.com');
   });
 });

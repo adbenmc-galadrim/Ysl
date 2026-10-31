@@ -103,9 +103,10 @@ export function contactDraft(contact: LocalContact): OutsideContactDraft {
 
 /**
  * The directory card a contact is the same human as, now that the
- * directory lists them: the same e-mail, or, for a contact without one,
- * the same name and nobody else under it. The agent decides; nothing is
- * merged without them.
+ * directory lists them: the only card at that e-mail, or, for a contact
+ * without one, the same name and nobody else under it. Twins in two
+ * departments propose nothing: the contact does not say which. The agent
+ * decides; nothing is merged without them.
  */
 export function mergeTarget(
   contact: Pick<LocalContact, 'email' | 'nameNorm'>,
@@ -114,7 +115,10 @@ export function mergeTarget(
   const cards = people.filter(listed);
   if (contact.email) {
     const key = normalizeEmail(contact.email);
-    return cards.find((person) => normalizeEmail(person.email) === key) ?? null;
+    const twins = cards.filter(
+      (person) => normalizeEmail(person.email) === key,
+    );
+    return twins.length === 1 ? twins[0]! : null;
   }
   const named = cards.filter((person) => person.nameNorm === contact.nameNorm);
   return named.length === 1 ? named[0]! : null;

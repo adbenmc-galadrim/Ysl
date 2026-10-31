@@ -4,7 +4,13 @@ import type {
   LocalContact,
   LocalDirectoryPerson,
 } from '#/features/db/schema';
-import { fullName } from '#/features/directory/people';
+import {
+  departmentLabel,
+  departmentNames,
+  type DepartmentNames,
+  fullName,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
 import type { HandoverRecipient } from '#/features/handover/waiting';
 import { outsideDetail } from '#/features/recipient/options';
 import { initialsOf } from '#/features/settings/initials';
@@ -22,6 +28,7 @@ export function describeRecipient(
   row:
     | { kind: 'person'; person: LocalDirectoryPerson }
     | { kind: 'contact'; contact: LocalContact },
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): HandoverPerson {
   if (row.kind === 'person') {
     const name = fullName(row.person);
@@ -29,7 +36,7 @@ export function describeRecipient(
       name,
       firstName: row.person.firstName || name,
       initials: initialsOf(name),
-      department: row.person.department ?? undefined,
+      department: departmentLabel(row.person, names) || undefined,
     };
   }
   const { contact } = row;
@@ -52,7 +59,7 @@ export async function loadHandoverPerson(
   if (kind === 'person') {
     const person = await db.directoryPerson.get(id);
     return person && !person.deletedAt
-      ? describeRecipient({ kind, person })
+      ? describeRecipient({ kind, person }, await departmentNames(db))
       : null;
   }
   const contact = await db.contact.get(id);

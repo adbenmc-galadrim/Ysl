@@ -7,9 +7,13 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { type ReactNode, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
-import { isEmail, normalizeEmail } from '#/features/directory/people';
+import {
+  isEmail,
+  NO_DEPARTMENT_NAMES,
+  normalizeEmail,
+} from '#/features/directory/people';
 import { loadRecipientBook } from '#/features/parcels/recipients';
-import { outsideDuplicate } from '#/features/recipient/contacts';
+import { outsideDuplicates } from '#/features/recipient/contacts';
 import {
   type Choice,
   optionOf,
@@ -59,10 +63,11 @@ export function RecipientChooser({
   const picking = useRef(false);
   const people = book?.people ?? [];
   const contacts = book?.contacts ?? [];
+  const names = book?.names ?? NO_DEPARTMENT_NAMES;
   const searching = query.trim() !== '';
-  const duplicate = typing
-    ? outsideDuplicate(typing.email, people, contacts)
-    : null;
+  const [duplicate = null, ...twins] = typing
+    ? outsideDuplicates(typing.email, people, contacts, names)
+    : [];
 
   // One answer per chooser: a double tap must not save the same contact twice.
   const answer = async (picked: RecipientPick) => {
@@ -80,13 +85,14 @@ export function RecipientChooser({
   const pick = (id: string) => {
     const choice =
       suggestions.find((option) => option.id === id) ??
-      optionOf('person', id, people, contacts) ??
+      optionOf('person', id, people, contacts, names) ??
       optionOf('contact', id, people, contacts);
     if (choice) void answer({ kind: 'card', choice });
   };
 
   const submit = () => {
-    if (!typing?.name.trim()) return;
+    // Until the book is read, a twin at this address could not be offered.
+    if (!book || !typing?.name.trim()) return;
     const email = normalizeEmail(typing.email);
     if (email && !isEmail(email)) {
       setEmailError(true);
@@ -106,11 +112,15 @@ export function RecipientChooser({
         query={query}
         onQueryChange={setQuery}
         results={
-          searching ? searchOptions(people, contacts, query) : [...suggestions]
+          searching
+            ? searchOptions(people, contacts, query, names)
+            : [...suggestions]
         }
         resultsTitle={searching ? undefined : t('recipient.suggestions')}
         recents={
-          searching ? [] : recentOptions(book?.latest ?? [], people, contacts)
+          searching
+            ? []
+            : recentOptions(book?.latest ?? [], people, contacts, 3, names)
         }
         onClose={onClose}
         onPick={pick}
@@ -140,6 +150,11 @@ export function RecipientChooser({
               ? () => void answer({ kind: 'card', choice: duplicate })
               : undefined
           }
+          twins={twins}
+          onUseTwin={(id) => {
+            const choice = twins.find((twin) => twin.id === id);
+            if (choice) void answer({ kind: 'card', choice });
+          }}
           onSubmit={submit}
           onDismiss={() => setTyping(null)}
         />

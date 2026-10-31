@@ -74,6 +74,15 @@ describe('collectorCard', () => {
     });
   });
 
+  it('names no department for two cards of one name', () => {
+    expect(
+      collectorCard('Paul Mercier', [paul, { ...paul, id: 'twin' }], [marc]),
+    ).toEqual({
+      name: 'Paul Mercier',
+      initials: 'PM',
+    });
+  });
+
   it('keeps a name nobody bears as it was said', () => {
     expect(collectorCard('Léa Roux', [paul], [marc])).toEqual({
       name: 'Léa Roux',

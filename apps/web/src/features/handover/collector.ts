@@ -4,7 +4,11 @@ import type {
   LocalDirectoryPerson,
   LocalParcel,
 } from '#/features/db/schema';
-import { fullName } from '#/features/directory/people';
+import {
+  type DepartmentNames,
+  fullName,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
 import { OTHERS_LIMIT, toCollectee } from '#/features/handover/collectors';
 import {
   type Choice,
@@ -65,11 +69,14 @@ export function collectorCard(
   name: string,
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): CollectorCard {
-  const person = people.find(
+  const named = people.filter(
     (p) => p.active && !p.deletedAt && sameName(fullName(p), name),
   );
-  if (person) return choiceCard(personOption(person));
+  // Two cards of this name: nothing says which department is the right one.
+  if (named.length > 1) return { name, initials: initialsOf(name) };
+  if (named[0]) return choiceCard(personOption(named[0], names));
   const contact = contacts.find((c) => !c.deletedAt && sameName(c.name, name));
   if (contact) return choiceCard(contactOption(contact));
   return { name, initials: initialsOf(name) };
@@ -80,9 +87,10 @@ export function collectorChoices(
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
   query: string,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): { choices: Choice[]; listed: Collectee[] } {
   const choices = query.trim()
-    ? searchOptions(people, contacts, query).slice(0, OTHERS_LIMIT)
+    ? searchOptions(people, contacts, query, names).slice(0, OTHERS_LIMIT)
     : [];
   return { choices, listed: choices.map(toCollectee) };
 }

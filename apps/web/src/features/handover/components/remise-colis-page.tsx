@@ -168,7 +168,9 @@ export function RemiseColisPage({
   const contacts = book?.contacts ?? [];
   const candidate =
     collector ??
-    (announced ? collectorCard(announced.name, people, contacts) : null);
+    (announced
+      ? collectorCard(announced.name, people, contacts, book?.names)
+      : null);
   const pick = (card: CollectorCard) => {
     const next = collectorName(card.name, person.name) ? card : null;
     // A signature drawn by someone else no longer stands for who collects.
@@ -185,7 +187,12 @@ export function RemiseColisPage({
   };
 
   if (choosing === 'search') {
-    const { choices, listed } = collectorChoices(people, contacts, query);
+    const { choices, listed } = collectorChoices(
+      people,
+      contacts,
+      query,
+      book?.names,
+    );
     const typed = collectorName(query, '');
     return (
       <QuiRetireScreen

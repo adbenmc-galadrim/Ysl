@@ -232,3 +232,43 @@ describe('readableName', () => {
     expect(readableName('SAINT LAURENT')).toBeNull();
   });
 });
+
+describe('twin cards (ME23)', () => {
+  const twin = (id: string, department?: string): RecipientEntry => ({
+    id,
+    kind: 'person',
+    firstName: 'Anne',
+    lastName: 'Martin',
+    ...(department ? { departmentId: `${id}-dep`, department } : {}),
+  });
+
+  it('settles neither of two cards of one name, even from a code, and brings both with their department', () => {
+    const result = matchRecipient(
+      indexRecipients([twin('b', 'Presse'), twin('a', 'Finance')]),
+      [{ text: 'Anne Martin', source: 'code' }],
+    );
+
+    expect(result.best).toBeNull();
+    expect(silentMatch(result)).toBeNull();
+    expect(
+      result.suggestions.map(({ entry }) => [
+        entry.id,
+        entry.departmentId,
+        entry.department,
+      ]),
+    ).toEqual([
+      ['a', 'a-dep', 'Finance'],
+      ['b', 'b-dep', 'Presse'],
+    ]);
+  });
+
+  it('keeps a card without department among the suggestions, and a stable order', () => {
+    const { suggestions, best } = matchRecipient(
+      indexRecipients([twin('b'), twin('a', 'Finance'), twin('c')]),
+      [{ text: 'Anne Martin', source: 'ocr' }],
+    );
+
+    expect(best).toBeNull();
+    expect(suggestions.map(({ entry }) => entry.id)).toEqual(['b', 'c', 'a']);
+  });
+});

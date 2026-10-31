@@ -3,7 +3,9 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { normalizeName } from '@repo/shared/text';
 import type { RecipientOption } from '@repo/ui';
 import {
+  type DepartmentNames,
   directoryEntries,
+  NO_DEPARTMENT_NAMES,
   normalizeEmail,
   toEntry,
 } from '#/features/directory/people';
@@ -19,8 +21,12 @@ const t = createTranslator(DEFAULT_LOCALE);
 /** A card or a contact, as the two screens of F18 list it, and what choosing it records. */
 export type Choice = RecipientOption & { kind: RecipientKind };
 
-export function personOption(person: LocalDirectoryPerson): Choice {
-  return { ...toEntry(person), email: person.email, kind: 'person' };
+/** A card, its department telling it from a twin at the same address (ME23). */
+export function personOption(
+  person: LocalDirectoryPerson,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
+): Choice {
+  return { ...toEntry(person, names), email: person.email, kind: 'person' };
 }
 
 /** « Hors annuaire », with the department when known: how a contact is told from a card. */
@@ -49,10 +55,13 @@ export function optionOf(
   id: string,
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): Choice | null {
   if (kind === 'person') {
     const person = people.find((p) => p.id === id);
-    return person?.active && !person.deletedAt ? personOption(person) : null;
+    return person?.active && !person.deletedAt
+      ? personOption(person, names)
+      : null;
   }
   const contact = contacts.find((c) => c.id === id);
   return contact && !contact.deletedAt ? contactOption(contact) : null;
@@ -69,14 +78,15 @@ export function searchOptions(
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
   query: string,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): Choice[] {
   const needle = normalizeName(query);
   if (!needle) return [];
   const mail = normalizeEmail(query);
   const byId = new Map(people.map((person) => [person.id, person]));
-  const cards = directoryEntries(people, query).map((entry) => ({
+  const cards = directoryEntries(people, query, names).map((entry) => ({
     key: byId.get(entry.id)!.nameNorm,
-    choice: personOption(byId.get(entry.id)!),
+    choice: personOption(byId.get(entry.id)!, names),
   }));
   const found = contacts.filter(
     (c) =>
@@ -106,6 +116,7 @@ export function recentOptions(
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
   limit = 3,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): Choice[] {
   const seen = new Set<string>();
   const recents: Choice[] = [];
@@ -121,7 +132,7 @@ export function recentOptions(
         : [null, null];
     if (!kind || parcel.deletedAt || seen.has(`${kind}:${id}`)) continue;
     seen.add(`${kind}:${id}`);
-    const option = optionOf(kind, id, people, contacts);
+    const option = optionOf(kind, id, people, contacts, names);
     if (option) recents.push(option);
   }
   return recents;

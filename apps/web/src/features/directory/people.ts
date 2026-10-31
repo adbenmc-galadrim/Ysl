@@ -193,18 +193,30 @@ export type DirectoryEntry = {
   detail?: string;
 };
 
-export function toEntry(person: LocalDirectoryPerson): DirectoryEntry {
+/** Departments by id, for the people who name one. */
+export type DepartmentNames = ReadonlyMap<string, string>;
+
+export const NO_DEPARTMENT_NAMES: DepartmentNames = new Map();
+
+export async function departmentNames(
+  db: CourrierDatabase,
+): Promise<DepartmentNames> {
+  const rows = await db.department.toArray();
+  return new Map(rows.map((row) => [row.id, row.name]));
+}
+
+export function toEntry(
+  person: LocalDirectoryPerson,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
+): DirectoryEntry {
   const name = fullName(person);
   return {
     id: person.id,
     name,
     initials: initialsOf(name),
-    detail: person.department ?? person.email,
+    detail: departmentLabel(person, names) || person.email,
   };
 }
-
-/** Departments by id, for the people who name one. */
-export type DepartmentNames = ReadonlyMap<string, string>;
 
 /** Where a person belongs: their department, or the word they came with until that column goes. */
 export function departmentLabel(
@@ -254,8 +266,11 @@ export function directoryPeople(
 export function directoryEntries(
   people: readonly LocalDirectoryPerson[],
   query = '',
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): DirectoryEntry[] {
-  return directoryPeople(people, new Map(), query).map(toEntry);
+  return directoryPeople(people, names, query).map((person) =>
+    toEntry(person, names),
+  );
 }
 
 /** The section letter of a name: its first letter, without accent. */

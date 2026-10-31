@@ -2,6 +2,10 @@ import type { RecipientKind } from '@repo/contract/recipient';
 import type { Collectee, Collector } from '@repo/ui';
 import type { LocalContact, LocalDirectoryPerson } from '#/features/db/schema';
 import {
+  type DepartmentNames,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
+import {
   type Choice,
   contactOption,
   personOption,
@@ -41,11 +45,14 @@ export function collectors(
   contacts: readonly LocalContact[],
   counts: ReadonlyMap<string, number>,
   query: string,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): { waiting: Collector[]; others: Collectee[] } {
   const choices = query.trim()
-    ? searchOptions(people, contacts, query)
+    ? searchOptions(people, contacts, query, names)
     : [
-        ...people.filter((p) => p.active && !p.deletedAt).map(personOption),
+        ...people
+          .filter((p) => p.active && !p.deletedAt)
+          .map((p) => personOption(p, names)),
         ...contacts.filter((c) => !c.deletedAt).map(contactOption),
       ]
         .filter((choice) => counts.has(recipientKey(choice)))
