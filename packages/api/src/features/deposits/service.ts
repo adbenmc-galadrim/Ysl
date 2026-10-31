@@ -1,5 +1,6 @@
 import { eventColumns, PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import {
+  gapOfReceived,
   parcelsToSettle,
   type ConfirmDepositInput,
   type SettleParcelInput,
@@ -87,8 +88,20 @@ export async function confirmDeposit(
   tx: AnyDb,
   actor: Actor,
   departmentId: string | null,
-  input: ConfirmDepositInput,
-  now = new Date(),
+  input: Omit<ConfirmDepositInput, 'received'> & {
+    received?: ConfirmDepositInput['received'];
+  },
+  {
+    now = new Date(),
+    each = false,
+    asAnnounced = false,
+  }: {
+    now?: Date;
+    /** The profile asks parcel by parcel: `received` is required. */
+    each?: boolean;
+    /** No department counts: every parcel still on its way is taken as there. */
+    asAnnounced?: boolean;
+  } = {},
 ): Promise<{ deposited: number; toSettle: number }> {
   const [row] = await tx
     .select()
@@ -122,19 +135,22 @@ export async function confirmDeposit(
     )
     .for('update');
 
-  const { gap, counted } = input;
+  const liveIds = live.map(({ id }) => id);
+  if (each && !input.received) {
+    throw refused('BAD_REQUEST', 'deposit.error.each');
+  }
+  const gap =
+    each && input.received
+      ? gapOfReceived(liveIds, input.received, input.gap)
+      : input.gap;
+  const counted = asAnnounced ? live.length : input.counted;
   if (
     (!gap && counted !== live.length) ||
     (gap?.kind === 'extra' && counted <= live.length)
   ) {
     throw refused('BAD_REQUEST', 'deposit.error.count');
   }
-  const settled = new Set(
-    parcelsToSettle(
-      live.map(({ id }) => id),
-      gap,
-    ),
-  );
+  const settled = new Set(parcelsToSettle(liveIds, gap));
   for (const one of live) {
     if (!settled.has(one.id)) {
       await moveParcel(tx, one, depositedStatus(one), actor, now);

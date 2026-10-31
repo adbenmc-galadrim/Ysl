@@ -1,4 +1,5 @@
 import { readDepartmentQr } from '@repo/contract/deposits';
+import { departmentConfirmsDeposit } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   CameraPermissionScreen,
@@ -32,7 +33,7 @@ import {
 import { loadTour } from '#/features/parcels/api/use-tour';
 import { pendingParcelIds, postDeposit } from '#/features/parcels/deposit';
 import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
-import { departmentConfirms } from '#/features/parcels/tour';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 import { decodeQueue } from '#/features/scan/decoder';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -105,7 +106,7 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
     const pending = pendingParcelIds(deposits);
     return {
       departments,
-      confirms: await departmentConfirms(db),
+      confirms: departmentConfirmsDeposit(await readOperatingProfile(db)),
       stops: tour.stops
         .map((row) => ({
           id: row.departmentId,

@@ -171,6 +171,16 @@ export function mayHandOverByName(
   );
 }
 
+/** Without a confirmation, the shuttle's word is the deposit (§3.7.4). */
+export const departmentConfirmsDeposit = (
+  profile: Pick<OperatingProfile, 'depositConfirmation'>,
+): boolean => profile.depositConfirmation !== 'disabled';
+
+/** « Colis par colis »: the department says which arrived, not only how many (ME18). */
+export const confirmsEachParcel = (
+  profile: Pick<OperatingProfile, 'depositConfirmation'>,
+): boolean => profile.depositConfirmation === 'each';
+
 /** The review holds the save while a doubt is neither settled nor passed. */
 export function reviewHoldsSave(state: StepState, doubts: number): boolean {
   return state === 'required' && doubts > 0;

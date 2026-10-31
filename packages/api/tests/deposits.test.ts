@@ -11,6 +11,7 @@ import {
   entrustParcels,
   settleParcel,
 } from '#features/deposits/service';
+import { saveOperatingProfile } from '#features/operating/service';
 import { pull } from '#features/sync/pull';
 import { push } from '#features/sync/push';
 import { accessOf, addDepartment, addPerson } from './helpers/departments';
@@ -305,6 +306,50 @@ describe('a deposit', () => {
       depositId,
     ]);
     expect(await entities(accessOf('department', legal), true)).toEqual([]);
+  });
+});
+
+describe('the profile', () => {
+  it('parcel by parcel: what did not arrive waits, and a bare count is refused', async () => {
+    const here = await onRoute();
+    const gone = await onRoute();
+    const depositId = await announced([here, gone]);
+    const each = { each: true };
+    await expect(
+      confirmDeposit(
+        sync,
+        actor,
+        finance,
+        { depositId, counted: 2, gap: null },
+        each,
+      ),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+    await confirmDeposit(
+      sync,
+      actor,
+      finance,
+      { depositId, counted: 1, gap: null, received: [here] },
+      each,
+    );
+    expect((await parcelOf(here)).status).toBe('depose');
+    expect((await parcelOf(gone)).status).toBe('a_regulariser');
+  });
+
+  it('turning the confirmation off settles what already waits (D31)', async () => {
+    const id = await onRoute();
+    await announced([id]);
+    await saveOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      {
+        ...DEFAULT_OPERATING_PROFILE,
+        shuttleActsAsDepartment: false,
+        depositConfirmation: 'disabled',
+      },
+      AGENT_ID,
+    );
+    await setProfile('count');
+    expect((await parcelOf(id)).status).toBe('depose');
   });
 });
 

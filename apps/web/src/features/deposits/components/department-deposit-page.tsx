@@ -1,4 +1,5 @@
 import { DEPOSIT_GAPS, type DepositGap } from '@repo/contract/deposits';
+import { confirmsEachParcel } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { DepartmentDepositMobile, DepositDoneScreen } from '@repo/ui';
 import { useMutation } from '@tanstack/react-query';
@@ -14,6 +15,7 @@ import {
   formatTime,
 } from '#/features/parcels/model';
 import { parcelsLabel } from '#/features/parcels/tour-view';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { syncNow } from '#/features/sync/sync';
 import { trpcClient } from '#/lib/trpc';
@@ -53,6 +55,9 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
       ),
     };
   }, [depositId]);
+  const profile = useOperatingProfile();
+  const each = profile !== undefined && confirmsEachParcel(profile);
+  const [received, setReceived] = useState<readonly string[]>([]);
   const live = data?.parcels.length ?? 0;
   const [counted, setCounted] = useState<number | null>(null);
   const [opened, setOpened] = useState(false);
@@ -63,14 +68,15 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
     () => setCounted((seen) => seen ?? (data ? live : null)),
     [data, live],
   );
-  const count = counted ?? live;
-  const gapOpen = opened || count !== live;
+  const count = each ? received.length : (counted ?? live);
+  const gapOpen = !each && (opened || count !== live);
   const gapKind = kind ?? kindOf(count, live);
   const confirm = useMutation({
     mutationFn: () =>
       trpcClient.deposits.confirm.mutate({
         depositId,
         counted: count,
+        received: each ? [...received] : null,
         gap: gapOpen
           ? {
               kind: gapKind,
@@ -142,7 +148,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
       onCount={setCounted}
       countedLabel={t('deposits.counted')}
       confirmLabel={
-        gapOpen
+        gapOpen || (each && count !== live)
           ? t('deposits.confirm.gap', { count })
           : t('deposits.confirm', { parcels: parcelsLabel(count, t) })
       }
@@ -163,9 +169,26 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
       onConfirm={() => confirm.mutate()}
       onClose={close}
       gapAction={
-        gapOpen
+        gapOpen || each
           ? undefined
           : { label: t('deposits.gap.open'), onClick: () => setOpened(true) }
+      }
+      each={
+        each
+          ? {
+              hint: t('deposits.each.hint'),
+              parcels: parcels.map((parcel) => ({
+                ...parcel,
+                checked: received.includes(parcel.id),
+              })),
+              onParcel: (id) =>
+                setReceived((seen) =>
+                  seen.includes(id)
+                    ? seen.filter((one) => one !== id)
+                    : [...seen, id],
+                ),
+            }
+          : undefined
       }
       gap={
         gapOpen

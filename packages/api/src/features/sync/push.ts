@@ -6,7 +6,10 @@ import {
   type NotificationStatus,
 } from '@repo/contract/mail';
 import { COMPANY_SETTINGS_KEY } from '@repo/contract/company-settings';
-import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
+import {
+  departmentConfirmsDeposit,
+  OPERATING_PROFILE_KEY,
+} from '@repo/contract/operating-profile';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
@@ -333,17 +336,13 @@ async function confirmWithoutDepartment(
   { organizationId, userId }: Writer,
 ): Promise<void> {
   const profile = await readOperatingProfile(tx, organizationId);
-  if (profile.depositConfirmation !== 'disabled') return;
+  if (departmentConfirmsDeposit(profile)) return;
   await confirmDeposit(
     tx,
     { organizationId, userId, name: null },
     null,
-    {
-      depositId: op.entityId,
-      counted: Number(op.patch.announced),
-      gap: null,
-    },
-    op.clientTs,
+    { depositId: op.entityId, counted: 0, gap: null },
+    { now: op.clientTs, asAnnounced: true },
   ).catch((error: unknown) => {
     if (error instanceof TRPCError) {
       throw new SyncRejected(SYNC_STATUS.conflict, error.message);

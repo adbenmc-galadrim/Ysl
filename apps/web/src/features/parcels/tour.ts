@@ -29,19 +29,6 @@ export async function goesOnTour(db: CourrierDatabase): Promise<boolean> {
   return value?.shuttleActsAsDepartment === false;
 }
 
-/** Whether a department counts what is put down; without it the shuttle's word is the deposit (§3.7.4). */
-export async function departmentConfirms(
-  db: CourrierDatabase,
-): Promise<boolean> {
-  const rows = await db.setting
-    .where('key')
-    .equals(OPERATING_PROFILE_KEY)
-    .toArray();
-  const value = rows.find((row) => !row.deletedAt)?.value as
-    { depositConfirmation?: unknown } | null | undefined;
-  return value?.depositConfirmation !== 'disabled';
-}
-
 type DepartmentSources = {
   chosen?: string | null;
   person?: Pick<LocalDirectoryPerson, 'departmentId'>;

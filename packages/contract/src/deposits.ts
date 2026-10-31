@@ -27,6 +27,8 @@ export const confirmDepositInput = z.object({
       parcelIds: z.array(z.uuid()).max(10_000).nullable(),
     })
     .nullable(),
+  /** « Colis par colis » (`confirmsEachParcel`): those it has in hand. */
+  received: z.array(z.uuid()).max(10_000).nullable().default(null),
 });
 
 export type ConfirmDepositInput = z.infer<typeof confirmDepositInput>;
@@ -35,6 +37,20 @@ export const confirmDepositOutput = z.object({
   deposited: z.number(),
   toSettle: z.number(),
 });
+
+/** Parcel by parcel, what did not arrive is the gap: no count can say otherwise. */
+export function gapOfReceived(
+  parcelIds: readonly string[],
+  received: readonly string[],
+  gap: ConfirmDepositInput['gap'],
+): ConfirmDepositInput['gap'] {
+  const absent = parcelIds.filter((id) => !received.includes(id));
+  if (absent.length === 0) return gap?.kind === 'extra' ? gap : null;
+  return {
+    kind: gap?.kind === 'left' ? 'left' : 'missing',
+    parcelIds: absent,
+  };
+}
 
 /** Which of the parcels of a deposit wait « À régulariser »; the others are deposited. */
 export function parcelsToSettle(

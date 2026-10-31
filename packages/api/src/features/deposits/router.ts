@@ -5,6 +5,7 @@ import {
   settlementOutput,
   settleParcelInput,
 } from '@repo/contract/deposits';
+import { confirmsEachParcel } from '@repo/contract/operating-profile';
 import { tourParcelsOutput } from '@repo/contract/tour';
 import { db } from '@repo/db';
 import {
@@ -20,6 +21,7 @@ import {
   settleParcel,
   settlementOf,
 } from '#features/deposits/service';
+import { readOperatingProfile } from '#features/operating/service';
 
 /** The count is the department's own (§2.1): no other role confirms. */
 const departmentProcedure = memberProcedure.use(({ ctx, next }) => {
@@ -42,11 +44,14 @@ export const depositsRouter = router({
   confirm: departmentProcedure
     .input(confirmDepositInput)
     .output(confirmDepositOutput)
-    .mutation(({ ctx, input }) =>
-      db.transaction((tx) =>
-        confirmDeposit(tx, actorOf(ctx), ctx.departmentId, input),
-      ),
-    ),
+    .mutation(async ({ ctx, input }) => {
+      const profile = await readOperatingProfile(db, ctx.organizationId);
+      return db.transaction((tx) =>
+        confirmDeposit(tx, actorOf(ctx), ctx.departmentId, input, {
+          each: confirmsEachParcel(profile),
+        }),
+      );
+    }),
   settlement: adminMemberProcedure
     .output(settlementOutput)
     .query(({ ctx }) => settlementOf(db, ctx.organizationId)),

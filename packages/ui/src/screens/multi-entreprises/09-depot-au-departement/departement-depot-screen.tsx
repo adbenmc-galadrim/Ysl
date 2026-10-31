@@ -490,6 +490,12 @@ export type DepartmentDepositProps = {
   notice?: { title: string; description: string };
   onClose?: () => void;
   gapAction?: { label: string; onClick: () => void };
+  /** « Colis par colis »: the count is what is ticked. */
+  each?: {
+    hint: string;
+    parcels: readonly DepartmentDepositParcel[];
+    onParcel: (id: string) => void;
+  };
   /** The gap open: its kind and the parcels it concerns. */
   gap?: {
     banner: { title: string; description: string };
@@ -516,6 +522,7 @@ export function DepartmentDepositMobile({
   notice,
   onClose,
   gapAction,
+  each,
   gap,
 }: DepartmentDepositProps) {
   return (
@@ -560,10 +567,31 @@ export function DepartmentDepositMobile({
       <DepositCounter
         value={counted}
         alert={Boolean(gap)}
-        onChange={onCount}
+        onChange={each ? undefined : onCount}
         className="mt-[46px]"
       />
-      {gap ? (
+      {each && (
+        <div className="mt-4">
+          <p className="text-center text-15 text-muted">{each.hint}</p>
+          {each.parcels.map((parcel) => (
+            <button
+              key={parcel.id}
+              type="button"
+              className="block w-full cursor-pointer text-left"
+              onClick={() => each.onParcel(parcel.id)}
+            >
+              <PhoneRow
+                leading={<KraftThumb />}
+                title={parcel.title}
+                lines={[parcel.line]}
+                mark={<TickMark checked={parcel.checked} />}
+                separator
+              />
+            </button>
+          ))}
+        </div>
+      )}
+      {each ? null : gap ? (
         <>
           <PhoneBanner
             tone="red"

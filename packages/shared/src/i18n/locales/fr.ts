@@ -66,7 +66,8 @@ export const fr = {
   'platform.journal.action.company_admin_invite_refused': 'Invitation refusée',
   'platform.journal.detail.model': 'Modèle {{model}}',
   'platform.journal.detail.renamed': 'Ancien nom : {{name}}',
-  'platform.journal.detail.deleted': '{{accounts}}, {{departments}}, {{parcels}} effacés',
+  'platform.journal.detail.deleted':
+    '{{accounts}}, {{departments}}, {{parcels}} effacés',
   'platform.journal.detail.refused': 'Adresse déjà utilisée',
   'platform.list.tab.all': 'Toutes',
   'platform.list.tab.active': 'Actives',
@@ -157,7 +158,10 @@ export const fr = {
     'Le dépôt et sa régularisation passent par le serveur : ouvrez le colis une fois en ligne.',
   'deposit.error.notFound': 'Ce dépôt n’existe plus.',
   'deposit.error.confirmed': 'Ce dépôt est déjà confirmé.',
-  'deposit.error.count': 'Le nombre compté ne correspond pas à l’écart déclaré.',
+  'deposit.error.each': 'Ce dépôt se confirme colis par colis.',
+  'deposits.each.hint': 'Touchez chaque colis reçu.',
+  'deposit.error.count':
+    'Le nombre compté ne correspond pas à l’écart déclaré.',
   'deposit.error.department': 'Ce département ne peut pas recevoir ce colis.',
   'deposit.error.followsPerson':
     'Ce colis suit son destinataire : changez le salarié ou sa fiche.',
@@ -240,7 +244,8 @@ export const fr = {
   'accounts.link.sent.descriptionAnonymous':
     'L’invitation est partie. Elle est valable jusqu’au {{date}}.',
   'accounts.link.copy.titleAnonymous': 'Lien à transmettre',
-  'accounts.link.sent.notArrived': 'L’e-mail n’arrive pas ? Obtenir un lien à copier',
+  'accounts.link.sent.notArrived':
+    'L’e-mail n’arrive pas ? Obtenir un lien à copier',
   'accounts.link.copy.title': 'Lien à transmettre à {{name}}',
   'accounts.link.copy.off':
     'Aucun e-mail n’est parti : l’envoi n’est pas activé sur ce serveur. Copiez ce lien et transmettez-le vous-même.',
@@ -282,7 +287,8 @@ export const fr = {
   'invitations.page.submitReset': 'Enregistrer mon mot de passe',
   'invitations.page.expires': 'Ce lien expire le {{date}}.',
   'invitations.page.loading': 'Lecture du lien…',
-  'invitations.page.failed': 'Une erreur est survenue. Vérifiez votre connexion et réessayez.',
+  'invitations.page.failed':
+    'Une erreur est survenue. Vérifiez votre connexion et réessayez.',
   'invitations.page.unreachableTitle': 'Lien non vérifié',
   'invitations.page.retry': 'Réessayer',
   'invitations.page.doneTitle': 'Votre mot de passe est enregistré',
@@ -519,8 +525,7 @@ export const fr = {
     'Le QR ou le code présenté vaut preuve pour {{name}} ; notez qui retire.',
   'handover.collector.mustSign':
     'Sans QR ni code, faites signer la personne qui retire.',
-  'handover.collector.nameNote':
-    'Remise par le nom : notez qui retire.',
+  'handover.collector.nameNote': 'Remise par le nom : notez qui retire.',
   'handover.collector.signNote':
     'Sans QR ni code, vous pouvez faire signer la personne qui retire.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
@@ -553,7 +558,8 @@ export const fr = {
   'company.reception.description':
     'Un colis adressé ailleurs est signalé « réexpédition ? » à la lecture.',
   'company.reception.postalCode': 'Code postal',
-  'company.reception.postalCode.hint': 'Vide : ni contrôle de l’adresse, ni noms retenus.',
+  'company.reception.postalCode.hint':
+    'Vide : ni contrôle de l’adresse, ni noms retenus.',
   'company.reception.anchors': 'Noms sur les étiquettes',
   'company.reception.anchors.hint':
     'Votre nom et votre rue, séparés par des virgules.',
@@ -583,7 +589,8 @@ export const fr = {
   'company.retention.next': 'À la prochaine purge',
   'company.retention.export': 'Exporter avant la purge',
   'company.retention.impact': 'Seront effacés : {{rows}}.',
-  'company.retention.impact.none': 'Rien de ce que compte le serveur ne sera effacé.',
+  'company.retention.impact.none':
+    'Rien de ce que compte le serveur ne sera effacé.',
   'company.retention.impact.device':
     'Les photos d’étiquettes et les lectures, gardées sur les iPhone, seront aussi effacées : le serveur ne peut pas les compter.',
   'company.retention.count.parcels.one': '{{count}} colis',
@@ -601,9 +608,11 @@ export const fr = {
     'Le nombre a changé depuis l’annonce : voici le nouveau.',
   'company.retention.confirm.action': 'Enregistrer les durées',
   'company.retention.confirm.cancel': 'Annuler',
-  'company.logo.error.type': 'Choisissez une image PNG ou JPEG. Les SVG ne sont pas acceptés.',
+  'company.logo.error.type':
+    'Choisissez une image PNG ou JPEG. Les SVG ne sont pas acceptés.',
   'company.logo.error.size': 'Ce logo dépasse 512 Ko.',
-  'company.logo.error.dimensions': 'Ce logo doit mesurer entre 16 et 4 096 px de côté.',
+  'company.logo.error.dimensions':
+    'Ce logo doit mesurer entre 16 et 4 096 px de côté.',
   'company.retention.error.bounds': 'Une durée sort des limites permises.',
   'company.retention.error.signatureOutlivesParcel':
     'Une signature disparaît avec son colis : sa durée ne peut pas dépasser celle des colis.',
@@ -753,7 +762,8 @@ export const fr = {
   'deposits.confirm.gap': 'Confirmer {{count}} et signaler',
   'deposits.failed': 'Confirmation refusée',
   'deposits.offline.title': 'Hors ligne',
-  'deposits.offline.description': 'La confirmation part du serveur : revenez en ligne.',
+  'deposits.offline.description':
+    'La confirmation part du serveur : revenez en ligne.',
   'deposits.gap.open': 'Le compte n’y est pas',
   'deposits.gap.short': 'Il manque {{count}} colis',
   'deposits.gap.extra': '{{count}} colis en trop',
@@ -784,7 +794,8 @@ export const fr = {
   'settlement.section.withoutDepartment': 'Sans département',
   'settlement.section.carried': 'Avec une navette',
   'settlement.section.extras': 'Comptés en trop',
-  'settlement.extra': '{{department}} : {{counted}} comptés sur {{announced}}, {{when}}',
+  'settlement.extra':
+    '{{department}} : {{counted}} comptés sur {{announced}}, {{when}}',
   'settlement.column.name': 'Destinataire',
   'settlement.column.department': 'Département',
   'settlement.column.cause': 'Cause',
@@ -811,27 +822,33 @@ export const fr = {
   'poster.back': 'Retour',
   'poster.print': 'Imprimer',
   'poster.none': 'Aucun département.',
-  'poster.instruction': 'Navette : scannez ce code pour déposer les colis de {{name}}.',
+  'poster.instruction':
+    'Navette : scannez ce code pour déposer les colis de {{name}}.',
   'deposit.scan.hint': 'Visez le QR affiché au point de réception',
-  'deposit.scan.camera': 'La caméra n’est pas disponible : choisissez le département.',
+  'deposit.scan.camera':
+    'La caméra n’est pas disponible : choisissez le département.',
   'deposit.scan.list': 'Choisir dans la liste',
   'deposit.scan.other.title': 'C’est le QR de {{department}}',
-  'deposit.scan.other.text': 'Vous avez {{parcels}} pour {{department}}. Déposer ici ?',
+  'deposit.scan.other.text':
+    'Vous avez {{parcels}} pour {{department}}. Déposer ici ?',
   'deposit.scan.other.nothing': 'Vous n’avez aucun colis pour ce département.',
   'deposit.scan.unknown': 'Ce QR n’est pas celui d’un département',
   'deposit.scan.other.action': 'Déposer à {{department}}',
   'deposit.choose.title': 'Quel département ?',
   'deposit.count.read': 'QR de {{department}} lu',
   'deposit.count.line': 'colis à poser à {{department}}',
-  'deposit.count.hint': 'Posez-les au point de réception et demandez qu’on les compte.',
+  'deposit.count.hint':
+    'Posez-les au point de réception et demandez qu’on les compte.',
   'deposit.count.list': 'Voir les colis',
   'deposit.count.action': 'J’ai posé {{parcels}}',
   'deposit.waiting.title': 'À {{department}} de confirmer',
-  'deposit.waiting.text': 'Un collègue du département compte les {{parcels}} sur son poste ou son iPhone.',
+  'deposit.waiting.text':
+    'Un collègue du département compte les {{parcels}} sur son poste ou son iPhone.',
   'deposit.waiting.posted': 'Posé à {{time}}',
   'deposit.waiting.status': 'Confirmation',
   'deposit.waiting.pending': 'En attente',
-  'deposit.waiting.note': 'Inutile d’attendre : la confirmation arrivera dans la tournée.',
+  'deposit.waiting.note':
+    'Inutile d’attendre : la confirmation arrivera dans la tournée.',
   'deposit.waiting.action': 'Continuer la tournée',
   'deposit.done.title.one': '1 colis déposé à {{department}}',
   'deposit.done.title': '{{count}} colis déposés à {{department}}',
@@ -1893,7 +1910,7 @@ export const fr = {
   'operating.saved': 'Appliqué à {{count}} colis',
   'operating.undo': 'Annuler',
   'operating.notYet':
-    'Seuls « Confirmation du dépôt » et « Moment de l’e-mail » n’agissent pas encore : ils prendront effet avec les prochaines versions. Les autres réglages s’appliquent tout de suite.',
+    'Seul « Moment de l’e-mail » n’agit pas encore : il prendra effet avec une prochaine version. Les autres réglages s’appliquent tout de suite.',
   'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',
