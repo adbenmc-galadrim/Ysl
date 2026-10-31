@@ -22,6 +22,8 @@ import { formatTime } from '#/features/parcels/model';
 export type BatchCounts = {
   count: number;
   toNotify: number;
+  /** Left on the tour, nobody told yet (§3.7.6). */
+  onTour: number;
   /** In scan order; a lone one opens its record from the screen. */
   toComplete: LocalParcel[];
   damaged: number;
@@ -36,6 +38,7 @@ export function countBatch(parcels: readonly LocalParcel[]): BatchCounts {
   return {
     count: live.length,
     toNotify: live.filter(awaitsNotice).length,
+    onTour: live.filter((parcel) => parcel.status === 'en_route').length,
     toComplete: live.filter((parcel) => parcel.status === 'a_completer'),
     damaged: live.filter((parcel) => damageOf(parcel) !== null).length,
     pieces: live.filter((parcel) => (parcel.pieceTotal ?? 0) > 1).length,

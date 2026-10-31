@@ -62,6 +62,8 @@ export type ParcelRecord = {
   contact?: LocalContact;
   /** On tour, the department it goes to. */
   goesTo?: string;
+  /** The company runs tours: a parcel with nowhere to go says so. */
+  tour?: boolean;
   /** The `event` rows of this parcel, from every iPhone. */
   events: readonly LocalEvent[];
   /** The outbox ops of the parcel and of its events. */
@@ -206,7 +208,7 @@ function stateCard(
       return {
         icon: 'alert',
         title: t('record.state.a_completer'),
-        description: missingOf(parcel, t) || description,
+        description: missingOf(parcel, t, [], record.tour) || description,
       };
     case 'recu':
       return {

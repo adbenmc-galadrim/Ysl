@@ -10,10 +10,12 @@ import {
   isComplete,
   type RecipientChoice,
   saveParcelEdit,
+  trackingVouched,
 } from '#/features/parcels/edit';
 import { parcelEvent } from '#/features/parcels/events';
 import { newInternalTracking } from '#/features/parcels/internal-tracking';
 import { liveParcel } from '#/features/parcels/status';
+import { onTourWrites, tourDepartment } from '#/features/parcels/tour';
 
 /**
  * The recipient chosen for a recorded parcel outside its form — the
@@ -81,8 +83,15 @@ export async function completeTracking(
     ...(edited.tracking !== parcel.tracking ? (['tracking'] as const) : []),
     ...(edited.carrier !== parcel.carrier ? (['carrier'] as const) : []),
   ];
+  const goesTo =
+    parcel.status === 'a_completer'
+      ? await tourDepartment(db, parcel, edited)
+      : undefined;
+  if (goesTo) edited.departmentId = goesTo;
   const to =
-    parcel.status === 'a_completer' && isComplete(edited) ? 'recu' : undefined;
+    parcel.status === 'a_completer' && isComplete(edited) && goesTo !== null
+      ? 'recu'
+      : undefined;
   if (fields.length === 0 && edited.type === parcel.type && !to) {
     return parcel.status;
   }
@@ -101,7 +110,52 @@ export async function completeTracking(
           ),
         ]
       : []),
+    ...(to && goesTo ? onTourWrites(row, options) : []),
   ];
   await commitLocal(db, { upserts }, { now });
-  return row.status;
+  return to && goesTo ? 'en_route' : row.status;
+}
+
+/**
+ * The department chosen for a parcel « À compléter » with nowhere to go (ME25):
+ * it leaves on its tour if nothing else holds it back. Returns the status it ends in.
+ */
+export async function assignDepartment(
+  db: CourrierDatabase,
+  parcelId: string,
+  departmentId: string,
+  { agentId, now = new Date() }: EditOptions,
+): Promise<ParcelStatus> {
+  const parcel = await liveParcel(db, parcelId);
+  const options = { agentId, now };
+  const edited: LocalParcel = { ...parcel, departmentId };
+  const leaves =
+    parcel.status === 'a_completer' &&
+    isComplete(edited) &&
+    (parcel.type === 'sans_suivi' || (await trackingVouched(db, edited)));
+  if (!leaves) {
+    await commitLocal(
+      db,
+      { upserts: [{ entity: 'parcel', row: edited }] },
+      { now },
+    );
+    return parcel.status;
+  }
+  const row = { ...edited, ...statusPatch(edited, 'recu', options) };
+  await commitLocal(
+    db,
+    {
+      upserts: [
+        { entity: 'parcel', row },
+        parcelEvent(
+          parcelId,
+          { type: 'parcel.status', from: parcel.status, to: 'recu' },
+          options,
+        ),
+        ...onTourWrites(row, options),
+      ],
+    },
+    { now },
+  );
+  return 'en_route';
 }

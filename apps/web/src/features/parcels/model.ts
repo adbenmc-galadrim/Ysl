@@ -28,6 +28,8 @@ export type RecipientContext = {
   handovers?: ReadonlyMap<string, LocalHandover>;
   /** The names of the departments, by id: a parcel on tour names where it goes. */
   departments?: ReadonlyMap<string, string>;
+  /** The company runs tours: a parcel with nowhere to go says so. */
+  tour?: boolean;
 };
 
 export function startOfDay(now: Date): Date {
@@ -128,14 +130,24 @@ export function gapsOf(
 export function missingOf(
   parcel: Pick<
     LocalParcel,
-    'status' | 'type' | 'carrier' | 'tracking' | 'personId' | 'contactId'
+    | 'status'
+    | 'type'
+    | 'carrier'
+    | 'tracking'
+    | 'personId'
+    | 'contactId'
+    | 'departmentId'
   >,
   t: TranslateFn,
   /** Gaps the screen already says otherwise: the row's title names a missing recipient. */
   shown: readonly ParcelGap[] = [],
+  tour = false,
 ): string {
   if (parcel.status !== 'a_completer') return '';
   const gaps = gapsOf(parcel);
+  if (tour && !parcel.departmentId && gaps.length === 0) {
+    return t('parcel.missing.department');
+  }
   if (gaps.length === 0) {
     return parcel.type === 'sans_suivi' ? '' : t('parcel.missing.doubt');
   }
@@ -193,10 +205,11 @@ function statusLine(
   t: TranslateFn,
   dates?: ReminderDates,
   handover?: LocalHandover,
+  tour?: boolean,
 ): string {
   switch (state) {
     case 'incomplete':
-      return missingOf(parcel, t, ['recipient']);
+      return missingOf(parcel, t, ['recipient'], tour);
     case 'toNotify':
     case 'onTour':
       return t('parcel.status.received', {
@@ -413,6 +426,7 @@ export function describeParcel(
       t,
       dates,
       context.handovers?.get(parcel.id),
+      context.tour,
     ),
     detail: department ? `${department}, ${carrierLine}` : carrierLine,
     note,

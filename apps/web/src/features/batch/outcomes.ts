@@ -20,7 +20,7 @@ export type OutcomeRow = Omit<LotOutcome, 'onClick'> & {
  */
 export function lotOutcomes(
   summary: Pick<BatchSummary, 'mails' | 'toComplete' | 'damaged' | 'pieces'> &
-    Partial<Pick<BatchSummary, 'serverMails'>>,
+    Partial<Pick<BatchSummary, 'serverMails' | 'onTour'>>,
   { online, t }: { online: boolean; t: TranslateFn },
 ): { rows: OutcomeRow[]; ready: number } {
   const ready = summary.mails.filter((mail) => mail.address);
@@ -66,6 +66,13 @@ export function lotOutcomes(
       }),
       detail: t('lot.missing.detail'),
       target: { to: 'otherWay' },
+    });
+  if (summary.onTour)
+    rows.push({
+      icon: 'truck',
+      tone: 'neutral',
+      title: t('lot.onTour', { count: summary.onTour }),
+      detail: t('lot.onTour.detail'),
     });
   const [first] = toComplete;
   if (first)
