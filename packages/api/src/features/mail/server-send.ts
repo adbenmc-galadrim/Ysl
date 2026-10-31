@@ -104,7 +104,7 @@ export type MailBrand = { name: string; logoUrl: string | null };
 function brandHtml({ name, logoUrl }: MailBrand): string {
   if (!name) return '';
   const logo = logoUrl
-    ? `<img src="${escapeHtml(logoUrl)}" alt="" width="40" height="40" style="display:block;margin:0 0 8px;border:0;border-radius:8px">`
+    ? `<img src="${escapeHtml(logoUrl)}" alt="" style="display:block;margin:0 0 8px;border:0;border-radius:8px;height:40px;max-width:160px;width:auto">`
     : '';
   return `<div style="margin:0 0 16px">${logo}<strong>${escapeHtml(name)}</strong></div>`;
 }

@@ -362,7 +362,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ME18 | Trois modèles à la création : « Petit site, la navette remet », « Multi-départements », « Traçabilité stricte » |
 | ME19 | Réglages : nom et logo dans l'app et les e-mails, interface neutre sinon (D14) ; expéditeur ; durées de conservation propres à l'entreprise |
 | ME20 | Les étapes livrées suivent le profil : revue du lot, preuve, signature et photo, destinataire sans e-mail, retrait par un collègue, réserves |
-| ME34 | Nom et adresse de réception réglés par entreprise, qui remplacent les ancres d'extraction et le code postal aujourd'hui écrits en dur pour le premier client (`packages/contract/src/extract/recipient.ts`, `packages/contract/src/recipient/words.ts`) et le libellé « Adressé hors de 75007 » (`packages/shared/src/i18n/locales/fr.ts`) ; le préfixe technique `YSL:RETRAIT:` des QR reste, il n'est pas affiché et les codes émis doivent rester lisibles ; sans ces réglages, le colis d'une autre entreprise prend un malus et le drapeau « réexpédition ? » |
+| ME34 | Nom et adresse de réception réglés par entreprise, qui remplacent les ancres d'extraction et le code postal autrefois écrits en dur pour le premier client et le libellé « Adressé hors de 75007 » (fait par YSL-126) ; le préfixe technique `YSL:RETRAIT:` des QR reste, il n'est pas affiché et les codes émis doivent rester lisibles ; sans ces réglages, le colis d'une autre entreprise prend un malus et le drapeau « réexpédition ? » |
 
 #### 3.7.5 Annuaire partagé (F39, D15 révisée)
 

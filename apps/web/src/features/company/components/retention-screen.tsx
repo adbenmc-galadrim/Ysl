@@ -166,7 +166,9 @@ export function RetentionScreen() {
     <DurationSelect
       name={key}
       value={resolved[key].amount}
-      amounts={choicesOf(key, resolved[key].amount)}
+      amounts={choicesOf(key, resolved[key].amount).filter(
+        (amount) => key !== 'signature' || amount <= resolved.parcel.amount,
+      )}
       disabled={save.isPending}
       onChange={(amount) => {
         save.reset();

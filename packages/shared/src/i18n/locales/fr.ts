@@ -368,7 +368,7 @@ export const fr = {
   'company.reception.description':
     'Un colis adressé ailleurs est signalé « réexpédition ? » à la lecture.',
   'company.reception.postalCode': 'Code postal',
-  'company.reception.postalCode.hint': 'Vide : aucun contrôle de l’adresse.',
+  'company.reception.postalCode.hint': 'Vide : ni contrôle de l’adresse, ni noms retenus.',
   'company.reception.anchors': 'Noms sur les étiquettes',
   'company.reception.anchors.hint':
     'Votre nom et votre rue, séparés par des virgules.',
@@ -827,7 +827,7 @@ export const fr = {
     'Ce colis a été importé ou saisi à la main : aucune étiquette n’a été lue.',
   'reading.empty.purged.title': 'Lecture purgée',
   'reading.empty.purged.description':
-    'Ce qui a été lu sur l’étiquette est effacé de l’iPhone 30 jours après la réception.',
+    'Ce qui a été lu sur l’étiquette est effacé de l’iPhone passé sa durée de conservation.',
   'reading.empty.elsewhere.title': 'Lu sur un autre iPhone',
   'reading.empty.elsewhere.description':
     'La lecture reste sur l’iPhone qui a scanné ce colis : ouvrez ce diagnostic depuis celui-ci.',
@@ -954,7 +954,7 @@ export const fr = {
   'export.done.one': '{{count}} colis exporté à {{time}}.',
   'export.done.many': '{{count}} colis exportés à {{time}}.',
   'settings.privacy': 'Données et confidentialité',
-  'privacy.retention.header': 'Durées de conservation (validées par le DPO)',
+  'privacy.retention.header': 'Durées de conservation de l’entreprise',
   'privacy.retention.photo': 'Photos d’étiquettes et de remise',
   'privacy.retention.photo.detail': 'Après la remise ou le retour du colis',
   'privacy.retention.extraction': 'Lectures des étiquettes',
