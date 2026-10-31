@@ -637,3 +637,7 @@ Ref "event_actor_id_fk":"organization_member".("organization_id", "user_id") ?<?
 Ref "setting_updated_by_fk":"organization_member".("organization_id", "user_id") ?<? "setting".("organization_id", "updated_by") [delete: no action]
 
 Ref "sync_op_user_id_fk":"organization_member".("organization_id", "user_id") <? "sync_op".("organization_id", "user_id") [delete: no action]
+
+Ref "directory_move_request_person_fk":"directory_person".("organization_id", "id") < "directory_move_request".("organization_id", "person_id") [update: no action, delete: cascade]
+
+Ref "directory_move_request_department_fk":"department".("organization_id", "id") < "directory_move_request".("organization_id", "department_id") [update: no action, delete: no action]

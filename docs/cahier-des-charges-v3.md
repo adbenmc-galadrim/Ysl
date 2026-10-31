@@ -934,7 +934,8 @@ Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont
 | `organization` | id, nom, logo, profil de fonctionnement, durées de conservation, statut | L'entreprise. Toutes les autres tables y sont rattachées |
 | `mail_sender` | entreprise, nom et adresse d'expédition, domaine, statut, enregistrements DNS | L'expéditeur de l'entreprise (YSL-114), non synchronisé. Un domaine n'appartient qu'à une entreprise |
 | `department` | id, organization_id, nom, point de réception, lieu, horaires, consignes, QR de dépôt | Le service courrier est un département comme un autre |
-| `directory_person` | id, nom, prénom, email, department_id, site, source (`manuel`, `csv`, `entra`), actif | Minimisation : pas de téléphone ni de manager |
+| `directory_person` | id, nom, prénom, email, department_id, site, source (`manuel`, `csv`, `entra`), actif | Minimisation : pas de téléphone ni de manager. E-mail unique par département (ME22) |
+| `directory_move_request` | id, person_id, department_id, requested_by, note, created_at, closed_at | Demande de déplacement d'un département à l'admin (ME22), hors synchro ; fermée au départ du salarié, effacée avec sa fiche |
 | `contact` | id, nom, email?, créé par, nb_utilisations | Destinataires hors annuaire |
 | `batch` | id, agent_id, started_at, ended_at, nb_colis | Lot de réception |
 | `parcel` | id, batch_id, type (`colis`, `recommande`, `sans_suivi`), statut, transporteur, tracking, tracking_norm, destinataire (`person_id` ou `contact_id`), nom_lu, email_notification, service, sender_id, sender_libre, piece_n, piece_total, poids_kg, service_transporteur, reference, emplacement, notes, department_id, tour_id, deposited_at, received_at, received_by, validated_at, delivered_at, delivered_by | `tracking_norm` est indexé (doublons) |
@@ -1191,7 +1192,7 @@ D1 à D20 viennent de la v2, D21 à D31 du modèle multi-entreprises du 29/10/20
 | D12 | Regroupement et rythme des e-mails | Utilisateur | Un e-mail par personne ; relances à J+2 et J+5 ouvrés, puis alerte ; jours fériés comptés comme ouvrés (YSL-67). **Revu avec D2 révisée :** le serveur envoie et relance, au moment fixé par le profil (D30), à partir du dépôt |
 | D13 | Lieu, horaires et consignes de retrait affichés dans les e-mails | Utilisateur | Rien d'imposé par le client ; portés par chaque département depuis le modèle multi-entreprises (ME05) |
 | D14 | Usage du nom et de l'identité visuelle du client | Entreprise | Non pour le premier client : interface sobre, sans marque. Le nom et le logo d'une entreprise sont un réglage (D28), neutre par défaut |
-| D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | **Révisée le 29/10/2026 :** annuaire tenu par l'admin entreprise (tous les départements) et par chaque département (le sien), import CSV possible ; la navette le lit en entier ; Entra en cible |
+| D15 | Source de l'annuaire pour le MVP | Utilisateur + DSI/RH | **Révisée le 29/10/2026 :** annuaire tenu par l'admin entreprise (tous les départements) et par chaque département (le sien), import CSV possible ; la navette le lit en entier ; Entra en cible. E-mail unique par département, déplacement par l'admin seul (ME22) |
 | D16 | Sort du dépôt public v1 | Utilisateur | Archiver, purger l'historique (annuaire, `worker.js`), migrer les données par l'export CSV v1 |
 | D17 | Connexion des agents au MVP | Utilisateur | E-mail + mot de passe (Better Auth) ; Entra ID en cible |
 | D18 | Déploiement par MDM (web clip, autorisation caméra, code de verrouillage) | DSI | Tranchée : non, installation manuelle depuis Safari ([guide](installation-iphone.md)) |

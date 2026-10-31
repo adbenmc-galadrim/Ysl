@@ -202,7 +202,7 @@ function DeskRecord({
   person,
   directory,
   request,
-  dismissFailed,
+  dismissMessage,
   onDismissRequest,
   onEdit,
   onClose,
@@ -210,7 +210,7 @@ function DeskRecord({
   person: LocalDirectoryPerson;
   directory: Directory;
   request?: MoveRequest;
-  dismissFailed: boolean;
+  dismissMessage?: string;
   onDismissRequest: () => void;
   onEdit: () => void;
   onClose: () => void;
@@ -247,10 +247,7 @@ function DeskRecord({
       ]}
       moving={move.moving}
       canMove={move.canMove}
-      message={
-        move.message ??
-        (dismissFailed ? t('directory.request.failed') : undefined)
-      }
+      message={move.message ?? (request ? dismissMessage : undefined)}
       onMove={() => void move.move()}
       onCancelMove={move.reset}
       onEdit={onEdit}
@@ -276,7 +273,8 @@ function DirectoryDesktop({
   const [page, setPage] = useState(0);
   const [panel, setPanel] = useState<Open>(null);
   const [contact, setContact] = useState<LocalContact | null>(null);
-  const { requests, byPerson, close } = useMoveRequests();
+  const { requests, byPerson, close, dismiss, dismissMessage } =
+    useMoveRequests();
   // The last request closed takes its tab away.
   const tab =
     chosenTab === REQUESTS_TAB && !requests.length
@@ -366,6 +364,7 @@ function DirectoryDesktop({
     if (inContacts) {
       setContact(contacts.find((row) => row.id === id) ?? null);
     } else {
+      close.reset();
       setPanel({ kind: 'record', id });
     }
   };
@@ -392,8 +391,8 @@ function DirectoryDesktop({
         person={selected}
         directory={directory}
         request={byPerson.get(selected.id)}
-        dismissFailed={close.isError}
-        onDismissRequest={() => close.mutate(selected.id)}
+        dismissMessage={dismissMessage}
+        onDismissRequest={() => dismiss(selected.id)}
         onEdit={() => setPanel({ kind: 'edit', id: selected.id })}
         onClose={() => setPanel(null)}
       />
@@ -482,7 +481,7 @@ function MobileForm({
   query,
   directory,
   request,
-  dismissFailed,
+  dismissMessage,
   onDismissRequest,
   onDone,
   onShow,
@@ -493,7 +492,7 @@ function MobileForm({
   query?: string;
   directory: Directory;
   request?: MoveRequest;
-  dismissFailed?: boolean;
+  dismissMessage?: string;
   onDismissRequest?: () => void;
   onDone: () => void;
   onShow: (person: LocalDirectoryPerson) => void;
@@ -518,10 +517,7 @@ function MobileForm({
       onChange={form.onChange}
       errors={form.errors}
       saving={form.saving}
-      message={
-        form.message ??
-        (dismissFailed ? t('directory.request.failed') : undefined)
-      }
+      message={form.message ?? (request ? dismissMessage : undefined)}
       departments={
         person ? undefined : departmentOptions(directory.departments, true)
       }
@@ -617,7 +613,8 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
   const [editing, setEditing] = useState<Open>(null);
   const [moving, setMoving] = useState(false);
   const [contact, setContact] = useState<LocalContact | null>(null);
-  const { requests, byPerson, close } = useMoveRequests();
+  const { requests, byPerson, close, dismiss, dismissMessage } =
+    useMoveRequests();
 
   const requestsLabel = t('directory.tab.requests', { count: requests.length });
   const inRequests = requests.length > 0 && filter === REQUESTS_TAB;
@@ -646,9 +643,9 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
           query={editing.kind === 'add' ? editing.query : undefined}
           directory={directory}
           request={selected && byPerson.get(selected.id)}
-          dismissFailed={close.isError}
+          dismissMessage={dismissMessage}
           onDismissRequest={() => {
-            if (selected) close.mutate(selected.id);
+            if (selected) dismiss(selected.id);
           }}
           onDone={() => setEditing(null)}
           onShow={(person) => setEditing({ kind: 'edit', id: person.id })}
@@ -703,7 +700,10 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
         }))}
         query={query}
         onQueryChange={setQuery}
-        onSelect={(id) => setEditing({ kind: 'edit', id })}
+        onSelect={(id) => {
+          close.reset();
+          setEditing({ kind: 'edit', id });
+        }}
         onAdd={() =>
           setEditing({
             kind: 'add',

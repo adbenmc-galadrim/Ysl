@@ -764,6 +764,7 @@ export const fr = {
   'directory.request.from': 'Demande de {{department}}',
   'directory.request.noNote': 'Sans précision',
   'directory.request.dismiss': 'Classer la demande',
+  'directory.request.dismissFailed': 'Demande non classée, réessayez.',
   'directory.request.sent': 'Demandé le {{date}}',
   'directory.request.offline': 'Cette demande nécessite une connexion.',
   'directory.request.failed': 'Demande non envoyée, réessayez.',

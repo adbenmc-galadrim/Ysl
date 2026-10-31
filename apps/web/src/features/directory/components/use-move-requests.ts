@@ -1,8 +1,11 @@
 import type { MoveRequest, RequestMoveInput } from '@repo/contract/directory';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useOnline } from '#/lib/use-online';
 import { trpcClient } from '#/lib/trpc';
+
+const t = createTranslator(DEFAULT_LOCALE);
 
 export const MOVE_REQUESTS_KEY = ['directory', 'moveRequests'];
 
@@ -33,5 +36,22 @@ export function useMoveRequests() {
     () => new Map(data.map((row) => [row.personId, row])),
     [data],
   );
-  return { online, requests: data, byPerson, ask, close };
+  /** Closed by the admin: the network is needed, and a failure is shown until the next record. */
+  const dismiss = (personId: string) => {
+    if (online) close.mutate(personId);
+  };
+  const dismissMessage = !online
+    ? t('directory.request.offline')
+    : close.isError
+      ? t('directory.request.dismissFailed')
+      : undefined;
+  return {
+    online,
+    requests: data,
+    byPerson,
+    ask,
+    close,
+    dismiss,
+    dismissMessage,
+  };
 }
