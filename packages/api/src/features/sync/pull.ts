@@ -6,9 +6,16 @@ import {
   type PullOutput,
   type PullPage,
 } from '@repo/contract/sync';
-import { emailTemplate, event, syncGeneration } from '@repo/db/schema';
+import {
+  department,
+  emailTemplate,
+  event,
+  syncGeneration,
+} from '@repo/db/schema';
 import { and, asc, eq, gte, lt, sql } from 'drizzle-orm';
+import { parcelScope, type Access } from '#lib/access';
 import { purgeHorizon } from '#features/maintenance/purge';
+import { readerGeneration, visibleRows } from '#features/sync/scope';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 
 type Row = Record<string, unknown> & { id: string; serverXid: number };
@@ -41,29 +48,34 @@ async function snapshot(
   return { generation: row.generation, bound: Number(row.bound) };
 }
 
-/**
- * Who pulls: the mailroom's rows are theirs, but for the e-mail templates,
- * each agent's own (D2): a colleague's never reach the phone.
- */
-export type Reader = { organizationId: string; userId: string };
-
 async function pageOf(
   db: AnyDb,
   table: SyncTable,
-  { organizationId, userId }: Reader,
+  access: Access,
   page: Pick<PullPage, 'from' | 'bound' | 'after'>,
   limit: number,
   now: Date,
 ): Promise<Row[]> {
+  const inRange = and(
+    gte(table.serverXid, page.from),
+    lt(table.serverXid, page.bound),
+  );
   const rows = await db
     .select()
     .from(table)
     .where(
       and(
-        eq(table.organizationId, organizationId),
-        table === emailTemplate ? eq(emailTemplate.ownerId, userId) : undefined,
-        gte(table.serverXid, page.from),
-        lt(table.serverXid, page.bound),
+        eq(table.organizationId, access.organizationId),
+        table === emailTemplate
+          ? eq(emailTemplate.ownerId, access.userId)
+          : undefined,
+        visibleRows(
+          table,
+          parcelScope(access),
+          access.organizationId,
+          page,
+          inRange,
+        ),
         table === event && page.from === 0
           ? gte(event.at, horizon(now))
           : undefined,
@@ -77,29 +89,52 @@ async function pageOf(
   return rows;
 }
 
-function withoutOrganization(row: Row): PullChange['row'] {
-  const { organizationId: _organizationId, ...rest } = row;
+function withoutServerColumns(row: Row): PullChange['row'] {
+  const { organizationId: _organizationId, scopeXid: _scopeXid, ...rest } = row;
   void _organizationId;
+  void _scopeXid;
   return rest;
 }
 
 /**
- * `sync.pull`: the rows of one mailroom written since the cursor (of its
- * e-mail templates, the reader's own), up to the
+ * Where a device must have read past to keep its copy: a purge's horizon, or
+ * the last time a row left the reader's department.
+ */
+async function isStale(
+  db: AnyDb,
+  { organizationId }: Access,
+  scope: ReturnType<typeof parcelScope>,
+  from: number,
+): Promise<boolean> {
+  if (from < (await purgeHorizon(db, organizationId))) return true;
+  if (scope.kind !== 'department') return false;
+  const [row] = await db
+    .select({ scopeXid: department.scopeXid })
+    .from(department)
+    .where(eq(department.id, scope.departmentId));
+  return row?.scopeXid != null && from <= row.scopeXid;
+}
+
+/**
+ * `sync.pull`: the rows the reader reaches written since the cursor (of the
+ * e-mail templates, its own: D2), up to the
  * snapshot bound fixed by the first page, entity after entity in
  * `(server_xid, id)` order. A row may come back twice across two pulls; the
  * device upserts. A cursor from another generation, beyond the bound, or
  * below the purge horizon (a mark it never pulled was erased since) is
- * unusable: the pull starts over and says so.
+ * unusable: the pull starts over and says so. So is one from before a row
+ * left the reader's department, or before the reader changed scope: nothing
+ * else would take those rows off the device.
  */
 export async function pull(
   db: AnyDb,
-  reader: Reader,
+  access: Access,
   input: PullInput,
   now = new Date(),
 ): Promise<PullOutput> {
-  const { organizationId } = reader;
-  const { generation, bound } = await snapshot(db);
+  const scope = parcelScope(access);
+  const { generation: serverGeneration, bound } = await snapshot(db);
+  const generation = readerGeneration(serverGeneration, scope);
   let reset = false;
   let range: Pick<PullPage, 'from' | 'bound'>;
   let entity = 0;
@@ -109,12 +144,10 @@ export async function pull(
     range = { from: input.page.from, bound: input.page.bound };
     entity = input.page.entity;
     after = input.page.after;
-    // A purge may have erased a mark of this range since the first page:
-    // the device would never see it go, so the read starts over.
-    if (
-      range.from > 0 &&
-      range.from < (await purgeHorizon(db, organizationId))
-    ) {
+    // A purge may have erased a mark of this range since the first page, or a
+    // row left the department: the device would never see it go, so the read
+    // starts over.
+    if (range.from > 0 && (await isStale(db, access, scope, range.from))) {
       reset = true;
       range = { from: 0, bound: range.bound };
       entity = 0;
@@ -126,7 +159,7 @@ export async function pull(
       cursor !== null &&
       cursor.generation === generation &&
       cursor.xid <= bound &&
-      cursor.xid >= (await purgeHorizon(db, organizationId));
+      !(await isStale(db, access, scope, cursor.xid));
     reset = cursor !== null && !usable;
     range = { from: usable ? cursor.xid : 0, bound };
   }
@@ -136,18 +169,19 @@ export async function pull(
   for (; entity < SYNCED_ENTITIES.length; entity += 1) {
     const name = SYNCED_ENTITIES[entity];
     if (!name) break;
+    if (name === 'department' && !input.departments) continue;
     const room = input.limit - rows.length;
     const page = await pageOf(
       db,
       tableOf(name),
-      reader,
+      access,
       { ...range, after },
       room + 1,
       now,
     );
     const kept = page.slice(0, room);
     rows.push(
-      ...kept.map((row) => ({ entity: name, row: withoutOrganization(row) })),
+      ...kept.map((row) => ({ entity: name, row: withoutServerColumns(row) })),
     );
     if (page.length > room) {
       const last = kept[kept.length - 1];

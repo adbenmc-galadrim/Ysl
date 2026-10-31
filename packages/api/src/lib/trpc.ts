@@ -2,13 +2,13 @@ import type { Session } from '@repo/auth';
 import { db } from '@repo/db';
 import {
   isCompanyAdmin,
-  seesWholeCompany,
   toUserRole,
   type UserRole,
 } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
+import type { Access } from '#lib/access';
 import { membershipOf } from '#lib/organization';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -86,9 +86,27 @@ export const memberProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx: { ...ctx, ...membership } });
 });
 
-/** The data of the whole company, closed to an account that may only see its department. */
-export const wholeCompanyProcedure = memberProcedure.use(({ ctx, next }) => {
-  if (!seesWholeCompany(roleOf(ctx.session))) throw forbidden();
+/** The data of the company as this role reaches it (`parcelScope`); a department account attached nowhere has none. */
+export const scopedProcedure = memberProcedure.use(({ ctx, next }) => {
+  const role = roleOf(ctx.session);
+  if (role === 'department' && !ctx.departmentId) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: translate('sync.error.noDepartment'),
+    });
+  }
+  const access: Access = {
+    organizationId: ctx.organizationId,
+    userId: ctx.session.user.id,
+    role,
+    departmentId: ctx.departmentId,
+  };
+  return next({ ctx: { ...ctx, access } });
+});
+
+/** Closed to a department until its reads and writes are held to its own. */
+export const wholeCompanyProcedure = scopedProcedure.use(({ ctx, next }) => {
+  if (ctx.access.role === 'department') throw forbidden();
   return next();
 });
 
