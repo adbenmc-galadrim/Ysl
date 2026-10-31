@@ -124,7 +124,12 @@ describe('areaOf', () => {
     const block = /interface FileRoutesByTo \{([\s\S]*?)\n\}/.exec(tree)?.[1];
     const paths = [...(block ?? '').matchAll(/'(\/[^']*)':/g)]
       .map(([, path]) => path as string)
-      .filter((path) => !['/bienvenue', '/connexion'].includes(path));
+      .filter(
+        (path) =>
+          !['/bienvenue', '/connexion', '/invitation', '/mot-de-passe'].includes(
+            path,
+          ),
+      );
     expect(paths.length).toBeGreaterThan(30);
     expect(paths.filter((path) => areaOf(path) === null)).toEqual([]);
   });
