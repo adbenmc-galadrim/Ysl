@@ -46,7 +46,25 @@ Un statut par opération, dans l'ordre envoyé :
 | 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard                                    |
 
-Ces statuts valent par opération. Un compte `department` ou `platform_admin` est refusé avant : `sync.push` et `sync.pull` entiers répondent 403.
+Ces statuts valent par opération. Un compte `platform_admin`, ou `department` rattaché à aucun département, est refusé avant : `sync.push` et `sync.pull` entiers répondent 403.
+
+## Ce que chaque rôle atteint (§2.1 du cahier)
+
+| Rôle | Colis | Annuaire | Remise (`handover`, passage à `remis`, code utilisé, `pickup.verify`) |
+| --- | --- | --- | --- |
+| `admin`, `agent`, rôle nul (jusqu'à YSL-118) | toute l'entreprise | lecture, écriture | oui |
+| `company_admin` | toute l'entreprise | lecture, écriture | non |
+| `shuttle` | toute l'entreprise, jusqu'à YSL-133 (`parcelScope`) | lecture | non, jusqu'au profil (YSL-124, `canHandOver`) |
+| `department` | les siens | le sien, lecture et écriture | les siens |
+| `platform_admin` | aucun | aucun | non |
+
+Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal, e-mails, remises), ses codes, les réglages et ses modèles ; ni les lots, ni les expéditeurs, ni les alias. Un colis sans département lui reste invisible. En écriture il ne crée pas de colis et n'en donne aucun à un autre département : 403 `sync.op.outOfScope`.
+
+**Département d'un colis.** Le serveur le pose (trigger `parcel_department_of_person`) : celui de la personne, à la création et quand la personne change. Sans personne, celui qu'indique un compte de l'entreprise (contact, §3.7.9). Un salarié déplacé ne déplace pas ses colis : YSL-128.
+
+**Curseur.** Une ligne devenue visible remonte : les lignes liées à un colis suivent la plage du colis. Une ligne sortie de la portée ne laisse aucune marque : `department.scope_xid` retient la dernière transaction qui en a fait sortir une, et un curseur qui ne l'a pas dépassée repart de zéro (`reset`). Un compte qui change de département ou de rôle détient un curseur d'une autre génération (`readerGeneration`) et repart de zéro lui aussi.
+
+**`department`** se lit seulement et ne s'envoie qu'au client qui l'annonce (`departments: true`) : une PWA d'avant ne connaît pas cette table et sa synchronisation s'arrêterait.
 
 Le suivi d'un colis (`tracking_norm`) n'est pas une clé naturelle : un même numéro peut
 être reçu deux fois (« Ajouter quand même », F10), l'index `parcel_tracking_norm_idx` n'est
