@@ -71,7 +71,8 @@ Code : `apps/web/src/features/photos/`.
   base : remise, nature `signature` ou `photo`, chemin, dimensions, octets), et leurs
   fichiers dans le même répertoire `photos/` (`<id>.png` pour la signature, `<id>.jpg`
   pour la photo). Même ordre d'écriture, une seule preuve de chaque nature par remise ;
-  la remise synchronisée ne porte que `hasSignature` et `hasPhoto`.
+  la remise synchronisée ne porte que `hasSignature`, `hasPhoto` et `hasScan` (colis
+  scannés à la remise).
 - **Ordre d'écriture** (S4) : le fichier d'abord, la ligne ensuite. Une ligne sans fichier
   serait une perte ; un fichier sans ligne est une orpheline que le **balayage au
   lancement** (`sweepOrphanPhotos`) retire une fois vieille d'une heure, délai qui laisse

@@ -160,10 +160,12 @@ export function RemiseColisPage({
   const scanLabel =
     labelled.length > 0 && readCount === labelled.length
       ? t('handover.scan.done')
-      : t('handover.scan.progress', {
-          read: readCount,
-          count: labelled.length,
-        });
+      : readCount === 0 && profile.handoverScan === 'optional'
+        ? t('handover.scan.offer')
+        : t('handover.scan.progress', {
+            read: readCount,
+            count: labelled.length,
+          });
 
   const toggle = (parcelId: string) =>
     setUnticked(
@@ -268,7 +270,9 @@ export function RemiseColisPage({
       ? t('handover.collector.proofNote', { name: person.name })
       : profile.signature === 'disabled'
         ? t('handover.collector.nameNote')
-        : t('handover.collector.signNote');
+        : profile.signature === 'required'
+          ? t('handover.collector.mustSign')
+          : t('handover.collector.signNote');
 
   if (scanning) {
     return (
@@ -379,7 +383,13 @@ export function RemiseColisPage({
         }
         onCollector={openCollector}
         signed={signed.length > 0}
-        registeredNote={t('handover.registered')}
+        registeredNote={
+          profile.signature === 'optional'
+            ? t('handover.registered')
+            : profile.signature === 'required'
+              ? t('handover.registered.required')
+              : t('handover.registered.none')
+        }
         signatureRequired={profile.signature === 'required'}
         onSignature={signatureOffered ? () => setDraft(signed) : undefined}
         photo={

@@ -387,6 +387,8 @@ export const fr = {
   'handover.verified.pin': 'Code vérifié à {{time}}',
   'handover.verified.manuel': 'Sans vérification',
   'handover.registered': 'Un recommandé : la signature est facultative.',
+  'handover.registered.required': 'Un recommandé : la signature est exigée.',
+  'handover.registered.none': 'Un recommandé parmi ces colis.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
   'handover.sign.titleFor':
     '{{name}} signe pour {{recipient}}, {{count}} colis',
@@ -455,6 +457,7 @@ export const fr = {
   'handover.scan.title': 'Vérifier les colis',
   'handover.scan.progress': '{{read}} sur {{count}} colis scannés',
   'handover.scan.done': 'Colis scannés',
+  'handover.scan.offer': 'Scanner pour vérifier',
   'handover.scan.type': 'Saisir le numéro',
   'handover.scan.number': 'Numéro du colis',
   'handover.scan.check': 'Vérifier',
@@ -502,6 +505,8 @@ export const fr = {
   'handover.collector.continue': 'Continuer',
   'handover.collector.proofNote':
     'Le QR ou le code présenté vaut preuve pour {{name}} ; notez qui retire.',
+  'handover.collector.mustSign':
+    'Sans QR ni code, faites signer la personne qui retire.',
   'handover.collector.nameNote':
     'Remise par le nom : notez qui retire.',
   'handover.collector.signNote':
