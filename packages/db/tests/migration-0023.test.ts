@@ -99,7 +99,7 @@ describe('0023_departement_archive', () => {
     );
   });
 
-  it('lets a parcel reopen, but not there: 0032 takes it off the archived department', async () => {
+  it('lets a parcel reopen, but not there: 0034 takes it off the archived department', async () => {
     const delivered = newId();
     await client.query(
       `update department set deleted_at = null where id = $1`,
