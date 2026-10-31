@@ -7,7 +7,11 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { type ReactNode, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
-import { isEmail, normalizeEmail } from '#/features/directory/people';
+import {
+  isEmail,
+  NO_DEPARTMENT_NAMES,
+  normalizeEmail,
+} from '#/features/directory/people';
 import { loadRecipientBook } from '#/features/parcels/recipients';
 import { outsideDuplicate } from '#/features/recipient/contacts';
 import {
@@ -59,6 +63,7 @@ export function RecipientChooser({
   const picking = useRef(false);
   const people = book?.people ?? [];
   const contacts = book?.contacts ?? [];
+  const names = book?.names ?? NO_DEPARTMENT_NAMES;
   const searching = query.trim() !== '';
   const duplicate = typing
     ? outsideDuplicate(typing.email, people, contacts)
@@ -80,7 +85,7 @@ export function RecipientChooser({
   const pick = (id: string) => {
     const choice =
       suggestions.find((option) => option.id === id) ??
-      optionOf('person', id, people, contacts) ??
+      optionOf('person', id, people, contacts, names) ??
       optionOf('contact', id, people, contacts);
     if (choice) void answer({ kind: 'card', choice });
   };
@@ -106,11 +111,15 @@ export function RecipientChooser({
         query={query}
         onQueryChange={setQuery}
         results={
-          searching ? searchOptions(people, contacts, query) : [...suggestions]
+          searching
+            ? searchOptions(people, contacts, query, names)
+            : [...suggestions]
         }
         resultsTitle={searching ? undefined : t('recipient.suggestions')}
         recents={
-          searching ? [] : recentOptions(book?.latest ?? [], people, contacts)
+          searching
+            ? []
+            : recentOptions(book?.latest ?? [], people, contacts, 3, names)
         }
         onClose={onClose}
         onPick={pick}

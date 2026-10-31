@@ -278,3 +278,37 @@ describe('assignRecipient', () => {
     expect(saved?.contactId).toBe((await db.contact.toArray())[0]?.id);
   });
 });
+
+describe('searchOptions with departments (ME23)', () => {
+  const twin = (id: string, departmentId: string | null) =>
+    personRow({
+      id,
+      firstName: 'Anne',
+      lastName: 'Martin',
+      nameNorm: 'anne martin',
+      email: 'anne@example.com',
+      department: null,
+      departmentId,
+    });
+  const names = new Map([
+    ['finance', 'Finance'],
+    ['presse', 'Presse'],
+  ]);
+
+  it('tells twins apart by their department, and finds them by its name', () => {
+    const people = [twin('a', 'finance'), twin('b', 'presse')];
+
+    expect(
+      searchOptions(people, [], 'martin', names).map((o) => o.detail),
+    ).toEqual(['Finance', 'Presse']);
+    expect(searchOptions(people, [], 'presse', names).map((o) => o.id)).toEqual(
+      ['b'],
+    );
+  });
+
+  it('falls back on the address for a card without department', () => {
+    expect(
+      searchOptions([twin('a', null)], [], 'martin', names)[0]?.detail,
+    ).toBe('anne@example.com');
+  });
+});

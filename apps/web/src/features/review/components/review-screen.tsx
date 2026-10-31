@@ -21,6 +21,10 @@ import type {
 } from '#/features/db/schema';
 import { ReadingView } from '#/features/diagnostic/components/reading-view';
 import { settleRecipients } from '#/features/recipient/check';
+import {
+  departmentNames,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
 import { recipientEntries } from '#/features/recipient/entries';
 import { recipientMatcher } from '#/features/recipient/matcher';
 import { skipDraft } from '#/features/review/actions';
@@ -101,6 +105,11 @@ export function ReviewScreen() {
     NO_PEOPLE,
   );
   const contacts = useLiveQuery(() => db.contact.toArray(), [], NO_CONTACTS);
+  const names = useLiveQuery(
+    () => departmentNames(db),
+    [],
+    NO_DEPARTMENT_NAMES,
+  );
   const drafts = useLiveQuery(
     () => (batchId ? listDrafts(db, batchId) : undefined),
     [batchId],
@@ -118,8 +127,8 @@ export function ReviewScreen() {
   const urls = useDraftPhotos(drafts ?? []);
 
   useEffect(() => {
-    matcher.setEntries(recipientEntries(people, contacts));
-  }, [matcher, people, contacts]);
+    matcher.setEntries(recipientEntries(people, contacts, names));
+  }, [matcher, people, contacts, names]);
 
   /* Once per visit: the exact names a code prints settle their card silently. */
   useEffect(() => {
@@ -134,6 +143,7 @@ export function ReviewScreen() {
         recipientEntries(
           await db.directoryPerson.toArray(),
           await db.contact.toArray(),
+          await departmentNames(db),
         ),
       );
       await settleRecipients(db, batchId, matcher);
@@ -278,6 +288,7 @@ export function ReviewScreen() {
             matcher={matcher}
             people={people}
             contacts={contacts}
+            names={names}
           />
         ) : step.field === 'sender' ? (
           <SenderStep key={key} {...frame} />

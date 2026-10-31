@@ -4,7 +4,11 @@ import type {
   LocalDirectoryPerson,
   LocalParcel,
 } from '#/features/db/schema';
-import { fullName } from '#/features/directory/people';
+import {
+  type DepartmentNames,
+  fullName,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
 import { OTHERS_LIMIT, toCollectee } from '#/features/handover/collectors';
 import {
   type Choice,
@@ -80,9 +84,10 @@ export function collectorChoices(
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
   query: string,
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): { choices: Choice[]; listed: Collectee[] } {
   const choices = query.trim()
-    ? searchOptions(people, contacts, query).slice(0, OTHERS_LIMIT)
+    ? searchOptions(people, contacts, query, names).slice(0, OTHERS_LIMIT)
     : [];
   return { choices, listed: choices.map(toCollectee) };
 }

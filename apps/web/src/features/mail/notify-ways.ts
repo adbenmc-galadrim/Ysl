@@ -2,6 +2,7 @@ import { notifyParcel, type NotifyChange } from '@repo/contract/mail';
 import type { RecipientKind } from '@repo/contract/recipient';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type { CourrierDatabase } from '#/features/db/schema';
+import { departmentNames } from '#/features/directory/people';
 import {
   pickupCodeWrites,
   pickupToWrite,
@@ -46,7 +47,9 @@ async function optionOfKey(
   if (!id) return null;
   if (kind === 'person') {
     const person = await db.directoryPerson.get(id);
-    return person?.active && !person.deletedAt ? personOption(person) : null;
+    return person?.active && !person.deletedAt
+      ? personOption(person, await departmentNames(db))
+      : null;
   }
   if (kind === 'contact') {
     const contact = await db.contact.get(id);
@@ -82,7 +85,7 @@ export async function rememberedRelay(
   const person = (
     await db.directoryPerson.where('email').equals(address).toArray()
   ).find((row) => row.active && !row.deletedAt);
-  if (person) return personOption(person);
+  if (person) return personOption(person, await departmentNames(db));
   const known = (
     await db.contact.where('email').equals(address).toArray()
   ).find((row) => !row.deletedAt);

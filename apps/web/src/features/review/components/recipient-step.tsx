@@ -6,6 +6,7 @@ import { useSession } from '#/features/auth/api/use-session';
 import { updateDraft } from '#/features/batch/store';
 import { db } from '#/features/db/database';
 import type { LocalContact, LocalDirectoryPerson } from '#/features/db/schema';
+import type { DepartmentNames } from '#/features/directory/people';
 import {
   nameLine,
   preselection,
@@ -29,6 +30,7 @@ type RecipientStepProps = StepProps & {
   matcher: MatchEngine;
   people: readonly LocalDirectoryPerson[];
   contacts: readonly LocalContact[];
+  names: DepartmentNames;
 };
 
 /**
@@ -44,6 +46,7 @@ export function RecipientStep({
   matcher,
   people,
   contacts,
+  names,
   photo,
   submitLabel,
   ...frame
@@ -71,13 +74,13 @@ export function RecipientStep({
   if (!result) return null;
 
   const suggestions = result.suggestions
-    .map(({ entry }) => optionOf(entry.kind, entry.id, people, contacts))
+    .map(({ entry }) => optionOf(entry.kind, entry.id, people, contacts, names))
     .filter((option): option is Choice => option !== null);
   const preselected = preselection(draft, result);
   const selected =
     chosen ??
     (preselected
-      ? (optionOf(preselected.kind, preselected.id, people, contacts) ??
+      ? (optionOf(preselected.kind, preselected.id, people, contacts, names) ??
         undefined)
       : undefined);
   const learned = draft.learnedRecipient
@@ -86,6 +89,7 @@ export function RecipientStep({
         draft.learnedRecipient.id,
         people,
         contacts,
+        names,
       )
     : null;
   const first = [selected, learned].filter(

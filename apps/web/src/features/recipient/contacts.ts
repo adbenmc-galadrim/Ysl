@@ -6,7 +6,7 @@ import type {
   LocalContact,
   LocalDirectoryPerson,
 } from '#/features/db/schema';
-import { normalizeEmail } from '#/features/directory/people';
+import { departmentNames, normalizeEmail } from '#/features/directory/people';
 import {
   type Choice,
   contactOption,
@@ -109,7 +109,7 @@ export async function saveOutsideContact(
     const person = (
       await db.directoryPerson.where('email').equals(key).toArray()
     ).find((p) => p.active && !p.deletedAt);
-    if (person) return personOption(person);
+    if (person) return personOption(person, await departmentNames(db));
   }
   const contact = await typedContact(
     db,

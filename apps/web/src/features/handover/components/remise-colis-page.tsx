@@ -185,7 +185,12 @@ export function RemiseColisPage({
   };
 
   if (choosing === 'search') {
-    const { choices, listed } = collectorChoices(people, contacts, query);
+    const { choices, listed } = collectorChoices(
+      people,
+      contacts,
+      query,
+      book?.names,
+    );
     const typed = collectorName(query, '');
     return (
       <QuiRetireScreen

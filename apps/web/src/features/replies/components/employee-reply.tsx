@@ -194,7 +194,9 @@ function ColleagueChooser({
   const book = useLiveQuery(() => loadRecipientBook(db), []);
   const [query, setQuery] = useState('');
   const typed = delegateName(query);
-  const results = book ? searchOptions(book.people, book.contacts, query) : [];
+  const results = book
+    ? searchOptions(book.people, book.contacts, query, book.names)
+    : [];
   return (
     <div className="fixed inset-0 z-50">
       <ChoisirDestinataireScreen
