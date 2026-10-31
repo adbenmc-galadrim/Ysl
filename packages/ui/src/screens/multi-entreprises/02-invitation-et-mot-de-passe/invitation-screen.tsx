@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { CompanyLogo, DeskAuthPage } from '#components/company-parts';
@@ -22,6 +23,26 @@ function DeskRule({ children }: { children: string }) {
       <Icon name="tick" size={14} className="relative top-px shrink-0 text-green" />
       {children}
     </li>
+  );
+}
+
+export type PasswordRule = { label: string; ok: boolean };
+
+/** What the password still lacks, read as it is typed. */
+export function PasswordRules({ rules }: { rules: readonly PasswordRule[] }) {
+  return (
+    <ul className="mt-[19px] flex flex-col gap-[9px]">
+      {rules.map((rule) => (
+        <li key={rule.label} className="flex items-center gap-2 text-14 text-ink-2">
+          <Icon
+            name={rule.ok ? 'tick' : 'x'}
+            size={16}
+            className={rule.ok ? 'shrink-0 text-green' : 'shrink-0 text-muted'}
+          />
+          <span className="relative -top-px">{rule.label}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -125,20 +146,44 @@ export function InvitationEmailMobile() {
 }
 
 /** The password an invited account chooses, on the computer. */
-export function CreerMotDePasseDesktop() {
+export function CreerMotDePasseDesktop({
+  logo = 'AL',
+  brand = 'Atelier Lumen',
+  product = 'avec Courrier',
+  footer = 'Une question ? Écrivez à Claire Bonnet, administratrice d’Atelier Lumen.',
+  title = 'Créer votre mot de passe',
+  subtitle = 'Julie Perrin · département Studio',
+  form,
+  fluid = false,
+}: {
+  logo?: string;
+  brand?: string;
+  product?: string;
+  footer?: string;
+  title?: string;
+  subtitle?: string;
+  /** The live form; left out, the mockup's fields. */
+  form?: ReactNode;
+  fluid?: boolean;
+}) {
   return (
     <DeskAuthPage
-      logo="AL"
-      brand="Atelier Lumen"
-      product="avec Courrier"
-      footer="Une question ? Écrivez à Claire Bonnet, administratrice d’Atelier Lumen."
+      logo={logo}
+      brand={brand}
+      product={product}
+      footer={footer}
+      fluid={fluid}
     >
-      <h1 className="text-26 font-bold tracking-[-0.3px]">
-        Créer votre mot de passe
-      </h1>
-      <p className="mt-1.5 text-14 text-muted">
-        Julie Perrin · département Studio
-      </p>
+      <h1 className="text-26 font-bold tracking-[-0.3px]">{title}</h1>
+      <p className="mt-1.5 text-14 text-muted">{subtitle}</p>
+      {form ?? <MockFieldsDesktop />}
+    </DeskAuthPage>
+  );
+}
+
+function MockFieldsDesktop() {
+  return (
+    <>
       <DeskField
         label="Mot de passe"
         value={SAMPLE_PASSWORD}
@@ -162,26 +207,47 @@ export function CreerMotDePasseDesktop() {
       <p className="mt-4 text-12 text-muted">
         Ce lien d’invitation expire le 5 novembre.
       </p>
-    </DeskAuthPage>
+    </>
   );
 }
 
 /** The password an invited account chooses, on the phone. */
-export function CreerMotDePasseMobile() {
+export function CreerMotDePasseMobile({
+  logo = 'AL',
+  title = 'Bienvenue, Karim',
+  subtitle = 'Navette chez Atelier Lumen · karim.daoud@atelier-lumen.fr',
+  form,
+  submit,
+}: {
+  logo?: string;
+  title?: string;
+  subtitle?: string;
+  /** The live form and its button; left out, the mockup's. */
+  form?: ReactNode;
+  submit?: ReactNode;
+}) {
   return (
     <Screen
       className="pt-28"
       bottom={
         <BottomBar surface="plain" className="pt-6 pb-9">
-          <Button block>Créer mon mot de passe</Button>
+          {submit ?? <Button block>Créer mon mot de passe</Button>}
         </BottomBar>
       }
     >
-      <CompanyLogo initials="AL" className="ml-36 size-16 rounded-[16px] text-26" />
-      <h1 className="relative -top-px mt-5 text-center text-28 font-bold">Bienvenue, Karim</h1>
+      <CompanyLogo initials={logo} className="ml-36 size-16 rounded-[16px] text-26" />
+      <h1 className="relative -top-px mt-5 text-center text-28 font-bold">{title}</h1>
       <p className="mx-auto mt-1.5 w-[320px] text-center text-15 whitespace-break-spaces text-muted">
-        Navette chez Atelier Lumen · karim.daoud@atelier-lumen.fr
+        {subtitle}
       </p>
+      {form ?? <MockFieldsMobile />}
+    </Screen>
+  );
+}
+
+function MockFieldsMobile() {
+  return (
+    <>
       <PhoneField
         label="Mot de passe"
         value={SAMPLE_PASSWORD}
@@ -200,6 +266,6 @@ export function CreerMotDePasseMobile() {
         <Rule>12 caractères au moins</Rule>
         <Rule>Les deux mots de passe sont identiques</Rule>
       </ul>
-    </Screen>
+    </>
   );
 }

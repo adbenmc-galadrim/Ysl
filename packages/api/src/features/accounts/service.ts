@@ -1,20 +1,23 @@
-import { credentialRow, setPassword } from '@repo/auth/password';
+import { CREDENTIAL_PROVIDER, setPassword } from '@repo/auth/password';
 import {
   ACCOUNTS_PAGE_SIZE,
   type AccountRecord,
   accountStateOf,
   BAN_REASON,
   type CreateAccountInput,
+  type LinkDelivery,
   type ListAccountsInput,
   type ListAccountsOutput,
   type ReinstateAccountInput,
   type ResetAccountPasswordInput,
+  type SendAccountLinkInput,
   type SetAccountRoleInput,
 } from '@repo/contract/accounts';
 import { toUserRole } from '@repo/contract/auth';
 import type { AnyDb } from '@repo/db';
 import {
   account,
+  accountInvitation,
   department,
   departmentMember,
   organization,
@@ -34,9 +37,13 @@ import {
   inArray,
   isNull,
   ne,
+  not,
   or,
   sql,
 } from 'drizzle-orm';
+import { deliverLink } from '#features/invitations/delivery';
+import { issueLink } from '#features/invitations/link';
+import { HAS_PASSWORD } from '#features/invitations/service';
 import { sqlState } from '#features/sync/errors';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -113,6 +120,32 @@ async function withDevices(
         .from(session)
         .where(inArray(session.userId, ids))
     : [];
+  const credentials = ids.length
+    ? await db
+        .select({ userId: account.userId })
+        .from(account)
+        .where(
+          and(
+            inArray(account.userId, ids),
+            eq(account.providerId, CREDENTIAL_PROVIDER),
+          ),
+        )
+    : [];
+  const withPassword = new Set(credentials.map((row) => row.userId));
+  const links = ids.length
+    ? await db
+        .select({
+          userId: accountInvitation.userId,
+          expiresAt: accountInvitation.expiresAt,
+        })
+        .from(accountInvitation)
+        .where(
+          and(
+            inArray(accountInvitation.userId, ids),
+            isNull(accountInvitation.usedAt),
+          ),
+        )
+    : [];
   return rows.map((row) => {
     const own = sessions.filter((entry) => entry.userId === row.id);
     const last = own.reduce<Date | null>(
@@ -127,11 +160,16 @@ async function withDevices(
       role: toUserRole(row.role),
       departmentId: row.departmentId,
       departmentName: row.departmentName,
-      state: accountStateOf(row),
+      state:
+        accountStateOf(row) === 'active' && !withPassword.has(row.id)
+          ? 'invited'
+          : accountStateOf(row),
       lastSignInAt: last,
       deviceAgents: own
         .filter((entry) => entry.expiresAt > now)
         .map((entry) => entry.userAgent),
+      linkExpiresAt:
+        links.find((link) => link.userId === row.id)?.expiresAt ?? null,
     };
   });
 }
@@ -139,7 +177,12 @@ async function withDevices(
 function stateFilter(state: ListAccountsInput['state']) {
   switch (state) {
     case 'active':
-      return or(isNull(user.banned), eq(user.banned, false));
+      return and(or(isNull(user.banned), eq(user.banned, false)), HAS_PASSWORD);
+    case 'invited':
+      return and(
+        or(isNull(user.banned), eq(user.banned, false)),
+        not(HAS_PASSWORD),
+      );
     case 'revoked':
       return and(eq(user.banned, true), eq(user.banReason, BAN_REASON.revoked));
     case 'suspended':
@@ -188,6 +231,11 @@ export async function listAccounts(
     .innerJoin(user, eq(user.id, organizationMember.userId))
     .where(inCompany(organizationId))
     .groupBy(user.role);
+  const [invited] = await db
+    .select({ total: count() })
+    .from(organizationMember)
+    .innerJoin(user, eq(user.id, organizationMember.userId))
+    .where(and(inCompany(organizationId), stateFilter('invited')));
   const countOf = (role: string) =>
     byRole.find((entry) => entry.role === role)?.total ?? 0;
   return {
@@ -198,6 +246,7 @@ export async function listAccounts(
       shuttle: countOf('shuttle'),
       department: countOf('department'),
       company_admin: countOf(ADMIN_ROLE),
+      invited: invited?.total ?? 0,
     },
   };
 }
@@ -233,24 +282,27 @@ async function requireDepartment(
   if (!found) throw departmentNotFound();
 }
 
-/** Written here rather than by Better Auth's admin API, which ignores companies: all or nothing. */
+/**
+ * Written here rather than by Better Auth's admin API, which ignores companies:
+ * all or nothing. No credential: nobody can sign in until the link is used.
+ */
 export async function createAccount(
   db: AnyDb,
   organizationId: string,
   input: CreateAccountInput,
-): Promise<AccountRecord> {
+  invitedBy: string,
+): Promise<{ account: AccountRecord; link: LinkDelivery }> {
   const userId = newId();
-  const credential = await credentialRow(userId, input.password);
   const email = input.email.toLowerCase();
+  let issued: Awaited<ReturnType<typeof issueLink>>;
   try {
-    await db.transaction(async (tx) => {
+    issued = await db.transaction(async (tx) => {
       await tx.insert(user).values({
         id: userId,
         name: input.name,
         email,
         role: input.role,
       });
-      await tx.insert(account).values(credential);
       await tx.insert(organizationMember).values({ userId, organizationId });
       if (input.departmentId) {
         await requireDepartment(tx, organizationId, input.departmentId);
@@ -260,6 +312,7 @@ export async function createAccount(
           departmentId: input.departmentId,
         });
       }
+      return issueLink(tx, { userId, organizationId });
     });
   } catch (error) {
     if (sqlState(error) !== UNIQUE_VIOLATION) throw error;
@@ -268,7 +321,49 @@ export async function createAccount(
       message: translate('accounts.error.emailTaken'),
     });
   }
-  return getAccountRecord(db, organizationId, userId);
+  const link = await deliverLink(
+    db,
+    {
+      organizationId,
+      name: input.name,
+      email,
+      role: input.role,
+      kind: 'invite',
+      invitedBy,
+    },
+    issued,
+  );
+  return { account: await getAccountRecord(db, organizationId, userId), link };
+}
+
+/** « Renvoyer un lien »: the old one stops working, open sessions stay. */
+export async function sendAccountLink(
+  db: AnyDb,
+  organizationId: string,
+  input: SendAccountLinkInput,
+  invitedBy: string,
+): Promise<LinkDelivery> {
+  const target = await getAccountRecord(db, organizationId, input.userId);
+  if (target.state === 'revoked' || target.state === 'suspended') {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: translate(`accounts.error.link.${target.state}`),
+    });
+  }
+  const issued = await issueLink(db, { userId: target.id, organizationId });
+  return deliverLink(
+    db,
+    {
+      organizationId,
+      name: target.name,
+      email: target.email,
+      role: target.role,
+      kind: target.state === 'invited' ? 'invite' : 'reset',
+      invitedBy,
+    },
+    issued,
+    { copy: input.copy },
+  );
 }
 
 /** The target, or a 404 for anyone outside this company. */
@@ -362,6 +457,8 @@ async function refuseLastAdmin(
         eq(user.role, ADMIN_ROLE),
         ne(user.id, userId),
         sql`${user.banned} is not true`,
+        // An invitation nobody answered runs nothing: the company would be left without an admin.
+        HAS_PASSWORD,
       ),
     );
   if (!others?.total) {
@@ -414,6 +511,9 @@ export async function revokeAccount(
       })
       .where(eq(user.id, userId));
     await tx.delete(session).where(eq(session.userId, userId));
+    await tx
+      .delete(accountInvitation)
+      .where(eq(accountInvitation.userId, userId));
     // A department with only revoked accounts must stay archivable.
     await tx
       .delete(departmentMember)
@@ -437,7 +537,12 @@ export async function reinstateAccount(
     if (input.password) await setPassword(tx, input.userId, input.password);
     await tx
       .update(user)
-      .set({ banned: false, banReason: null, updatedAt: new Date() })
+      .set({
+        banned: false,
+        banReason: null,
+        updatedAt: new Date(),
+        ...(input.password ? { passwordChangeRequiredAt: new Date() } : {}),
+      })
       .where(eq(user.id, input.userId));
   });
 }
@@ -450,6 +555,11 @@ export async function resetAccountPassword(
   await db.transaction(async (tx) => {
     await targetOf(tx, organizationId, input.userId);
     await setPassword(tx, input.userId, input.password);
+    // Handed over by an admin: changed at the next sign-in. Sessions already open are not concerned.
+    await tx
+      .update(user)
+      .set({ passwordChangeRequiredAt: new Date(), updatedAt: new Date() })
+      .where(eq(user.id, input.userId));
     if (input.closeSessions) {
       await tx.delete(session).where(eq(session.userId, input.userId));
     }

@@ -51,9 +51,10 @@ describe('0005_statuts_reversibles', () => {
       organizationId,
       'Service courrier',
     ]);
-    await db
-      .insert(schema.user)
-      .values({ id: 'agent-1', name: 'Agent', email: 'agent@example.test' });
+    await client.query(
+      `insert into "user" (id, name, email) values ($1, $2, $3)`,
+      ['agent-1', 'Agent', 'agent@example.test'],
+    );
     await db
       .insert(schema.organizationMember)
       .values({ userId: 'agent-1', organizationId });

@@ -7,6 +7,7 @@ import { directoryRouter } from '#features/directory/router';
 import { exportsRouter } from '#features/exports/router';
 import { healthRouter } from '#features/health/router';
 import { importsRouter } from '#features/imports/router';
+import { invitationsRouter } from '#features/invitations/router';
 import { mailSenderRouter } from '#features/mail/router';
 import { maintenanceRouter } from '#features/maintenance/router';
 import { operatingRouter } from '#features/operating/router';
@@ -25,6 +26,7 @@ export const appRouter = router({
   exports: exportsRouter,
   health: healthRouter,
   imports: importsRouter,
+  invitations: invitationsRouter,
   mailSender: mailSenderRouter,
   maintenance: maintenanceRouter,
   operating: operatingRouter,

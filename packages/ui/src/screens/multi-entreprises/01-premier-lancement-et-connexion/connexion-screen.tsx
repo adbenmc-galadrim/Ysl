@@ -112,27 +112,46 @@ export function ConnexionMobile({
   );
 }
 
-/** The invitation link once its seven days are over. */
-export function LienExpireMobile() {
+/** A message on the phone about an invitation link; by default, its seven days are over. */
+export function LienExpireMobile({
+  title = 'Ce lien a expiré',
+  text = 'Les invitations sont valables 7 jours. Demandez à votre administrateur de vous en renvoyer une.',
+  action,
+  done = false,
+}: {
+  title?: string;
+  text?: string;
+  /** The link has done its work: a tick rather than the clock. */
+  done?: boolean;
+  /** Left out, the mockup's button. */
+  action?: ReactNode;
+} = {}) {
   return (
     <Screen className="items-center pt-[220px] pr-[21px]">
-      <span className="flex size-[88px] items-center justify-center rounded-full bg-orange-soft text-orange">
-        <Icon name="clock" size={40} />
-      </span>
-      <h1 className="mt-5 text-22 font-bold">Ce lien a expiré</h1>
-      <p className="mt-[9px] w-[320px] text-center text-15 leading-[1.35] whitespace-break-spaces text-muted">
-        Les invitations sont valables 7 jours. Demandez à votre administrateur de
-        vous en renvoyer une.
-      </p>
-      <Button
-        variant="secondary"
-        size="md"
-        icon="mail"
-        iconSize={20}
-        className="mt-[25px] h-12 w-[250px] rounded-[24px]"
+      <span
+        className={
+          done
+            ? 'flex size-[88px] items-center justify-center rounded-full bg-green-soft text-green'
+            : 'flex size-[88px] items-center justify-center rounded-full bg-orange-soft text-orange'
+        }
       >
-        Écrire à Claire Bonnet
-      </Button>
+        <Icon name={done ? 'tick' : 'clock'} size={40} />
+      </span>
+      <h1 className="mt-5 text-center text-22 font-bold">{title}</h1>
+      <p className="mt-[9px] w-[320px] text-center text-15 leading-[1.35] whitespace-break-spaces text-muted">
+        {text}
+      </p>
+      {action ?? (
+        <Button
+          variant="secondary"
+          size="md"
+          icon="mail"
+          iconSize={20}
+          className="mt-[25px] h-12 w-[250px] rounded-[24px]"
+        >
+          Écrire à Claire Bonnet
+        </Button>
+      )}
     </Screen>
   );
 }

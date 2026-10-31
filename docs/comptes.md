@@ -7,7 +7,8 @@ plateforme n'y figurent jamais et `/api/auth/admin/*` reste en 404.
 |---|---|---|
 | Suspendre | refusée, toute requête répond 403 (seule la lecture de session reste ouverte, pour dire au téléphone qu'il est suspendu) | **données gardées**, écran « Compte suspendu », tout reprend à la réactivation |
 | Révoquer | refusée, sessions supprimées | **photos et preuves effacées** à sa prochaine requête, y compris ce qui n'est pas envoyé |
-| Changer le mot de passe | nouveau mot de passe | données gardées, sauf si « fermer ses sessions » est coché |
+| Renvoyer un lien | le compte choisit son mot de passe, l'ancien lien cesse de marcher | données gardées |
+| Changer le mot de passe | mot de passe provisoire, à changer à la prochaine connexion | données gardées, sauf si « fermer ses sessions » est coché ; les téléphones déjà connectés ne sont pas bloqués |
 
 Une session non utilisée pendant 30 jours expire : le téléphone suspendu qui reste fermé aussi
 longtemps s'efface à sa réouverture après réactivation, comme tout autre téléphone.
@@ -24,6 +25,40 @@ après la réactivation et retrouve ses données. Supprimer l'entreprise, ou ré
 
 Pendant la suspension d'un compte seul, une session expirée n'efface rien non plus ; après sa
 réactivation, la règle ci-dessus s'applique.
+
+## Invitation
+
+Tout compte arrive par invitation : l'admin entreprise invite navettes, départements et autres
+admins. Le compte n'a aucun mot de passe tant que le lien n'a pas servi : personne ne peut s'y
+connecter. Le lien vaut 7 jours, sert une fois, et le suivant le remplace. Seule son empreinte
+est en base ; il part directement par `Mailer`, sans passer par la file des e-mails, et le
+jeton est après `#` : il n'apparaît dans aucun journal serveur.
+
+Sans `BREVO_API_KEY` et `MAIL_FROM_ADDRESS`, ou si Brevo refuse, aucun e-mail ne part : l'écran
+le dit et donne le lien à copier, une seule fois. Si l'e-mail est parti, l'admin peut quand
+même demander un lien à copier.
+
+Sur iPhone, le lien s'ouvre dans Safari, où le mot de passe se choisit ; la connexion se fait
+ensuite dans l'app installée.
+
+Le changement forcé ne concerne que les sessions ouvertes après qu'un admin a posé un mot de
+passe provisoire. Aucune session déjà ouverte n'est bloquée ni fermée ; les comptes d'avant ce
+changement n'ont aucune demande en cours.
+
+## Admin de l'app
+
+Le premier `platform_admin` se crée par `auth:create-user --role platform_admin` (voir
+`README.md`) ; ce script ne crée aucun autre compte.
+
+L'admin de l'app invite le premier admin d'une entreprise, ou un remplaçant s'il n'y a plus
+d'admin actif (§3.7.9) : il saisit un nom et une adresse, et ne relit rien. Un admin révoqué
+peut revenir à la même adresse : son ancien mot de passe est supprimé, seul le lien le fait
+entrer. Un admin suspendu garde ses sessions : c'est une autre adresse qu'il faut inviter. Tant qu'un admin
+actif existe, l'invitation est refusée : c'est à lui d'inviter, ou d'utiliser le script
+ci-dessous s'il a perdu son mot de passe.
+
+Mot de passe oublié : pas de demande en libre-service sur l'écran de connexion, l'admin de
+l'entreprise renvoie un lien.
 
 ## Mot de passe perdu, sans admin disponible
 

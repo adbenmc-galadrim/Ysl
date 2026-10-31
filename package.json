@@ -17,6 +17,7 @@
     "db:migrate": "turbo run db:migrate",
     "auth:generate": "turbo run auth:generate",
     "auth:create-user": "pnpm --filter @repo/auth auth:create-user",
+    "auth:dev-account": "pnpm --filter @repo/auth auth:dev-account",
     "auth:attach-organization": "pnpm --filter @repo/auth auth:attach-organization",
     "auth:reset-password": "pnpm --filter @repo/auth auth:reset-password",
     "mail:send-test": "pnpm --filter @repo/server mail:send-test"

@@ -52,3 +52,25 @@ export const password = z
 
 /** Why a suspended company's account is refused, at sign-in and on the API alike. */
 export const COMPANY_SUSPENDED = 'COMPANY_SUSPENDED';
+
+/** What an account chooses for itself; the one an admin hands over only has to last one sign-in. */
+export const MIN_CHOSEN_PASSWORD_LENGTH = 12;
+
+export const chosenPassword = z
+  .string()
+  .min(MIN_CHOSEN_PASSWORD_LENGTH)
+  .max(MAX_PASSWORD_LENGTH);
+
+/**
+ * Only a session opened after an admin set the password has to change it: a
+ * phone already signed in keeps working, nothing else ever signs it out.
+ */
+export function mustChangePassword(signedIn: {
+  user: { passwordChangeRequiredAt?: Date | string | null };
+  session: { createdAt: Date | string };
+}): boolean {
+  const required = signedIn.user.passwordChangeRequiredAt;
+  return (
+    !!required && new Date(signedIn.session.createdAt) >= new Date(required)
+  );
+}

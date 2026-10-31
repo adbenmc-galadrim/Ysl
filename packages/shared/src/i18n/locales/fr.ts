@@ -60,9 +60,9 @@ export const fr = {
   'platform.model.strict_traceability.feature.proof': 'QR ou code obligatoire',
   'platform.new.confirm': 'Créer',
   'platform.new.continue': 'Continuer',
-  'platform.new.note': 'Étape 1 sur 2',
+  'platform.new.note': 'Étape 1 sur 3',
   'platform.new.note.adjust':
-    'Étape 2 sur 2 · l’entreprise pourra tout modifier ensuite',
+    'Étape 2 sur 3 · l’entreprise pourra tout modifier ensuite',
   'platform.new.summary': '{{model}} · {{changed}}',
   'platform.new.summary.desk': 'Modèle « {{model}} » · {{changed}}',
   'platform.new.changed.none': 'aucune étape modifiée',
@@ -78,6 +78,7 @@ export const fr = {
   'platform.sheet.changedSteps': 'Étapes modifiées',
   'platform.sheet.suspend': 'Suspendre',
   'platform.sheet.reactivate': 'Réactiver',
+  'platform.sheet.invite': 'Inviter un administrateur',
   'platform.sheet.rename': 'Renommer',
   'platform.sheet.delete': 'Supprimer',
   'platform.sheet.notice.title': 'Suspendue depuis le {{since}}',
@@ -151,6 +152,8 @@ export const fr = {
   'accounts.subtitle.one': '1 compte',
   'accounts.subtitle.many': '{{count}} comptes',
   'accounts.state.active': 'Actif',
+  'accounts.state.invited': 'Invitation en attente',
+  'accounts.state.invitedExpired': 'Invitation expirée',
   'accounts.state.suspended': 'Suspendu',
   'accounts.state.revoked': 'Révoqué',
   'accounts.tab.all': 'Tous',
@@ -162,6 +165,31 @@ export const fr = {
   'accounts.segment.admin': 'Admin',
   'accounts.role': 'Rôle',
   'accounts.state': 'État',
+  'accounts.subtitle.invited': '{{count}} invitations en attente',
+  'accounts.subtitle.invitedOne': '1 invitation en attente',
+  'accounts.link.action': 'Renvoyer un lien de mot de passe',
+  'accounts.link.invite': 'Renvoyer l’invitation',
+  'accounts.link.validUntil': 'Lien valable jusqu’au {{date}}',
+  'accounts.link.expired': 'Lien expiré le {{date}}',
+  'accounts.link.line': 'Lien',
+  'accounts.link.sent.title': 'E-mail envoyé',
+  'accounts.link.sent.description':
+    '{{name}} a reçu un lien à {{email}}, valable jusqu’au {{date}}.',
+  'accounts.link.sent.descriptionAnonymous':
+    'L’invitation est partie. Elle est valable jusqu’au {{date}}.',
+  'accounts.link.copy.titleAnonymous': 'Lien à transmettre',
+  'accounts.link.sent.notArrived': 'L’e-mail n’arrive pas ? Obtenir un lien à copier',
+  'accounts.link.copy.title': 'Lien à transmettre à {{name}}',
+  'accounts.link.copy.off':
+    'Aucun e-mail n’est parti : l’envoi n’est pas activé sur ce serveur. Copiez ce lien et transmettez-le vous-même.',
+  'accounts.link.copy.failed':
+    'L’e-mail n’a pas pu partir. Copiez ce lien et transmettez-le vous-même.',
+  'accounts.link.copy.asked': 'Copiez ce lien et transmettez-le vous-même.',
+  'accounts.link.copy.note':
+    'Il remplace les liens précédents, ne sert qu’une fois et n’est plus affiché ensuite. Valable jusqu’au {{date}}.',
+  'accounts.link.copy.action': 'Copier le lien',
+  'accounts.link.copy.done': 'Lien copié',
+  'accounts.link.close': 'Fermer',
   'accounts.department': 'Département',
   'accounts.lastSignIn': 'Dernière connexion',
   'accounts.devices': 'Appareils',
@@ -173,10 +201,54 @@ export const fr = {
   'accounts.next': 'Suivant',
   'accounts.failed': 'Impossible pour le moment. Rien n’a été modifié.',
   'accounts.cancel': 'Annuler',
-  'accounts.create.title': 'Créer un compte',
-  'accounts.create.submit': 'Créer le compte',
-  'accounts.create.password': 'Mot de passe provisoire',
-  'accounts.create.hint': 'À lui transmettre, {{min}} caractères au moins.',
+  'accounts.create.title': 'Inviter un compte',
+  'accounts.create.submit': 'Envoyer l’invitation',
+  'accounts.create.hint': 'Il recevra un lien valable {{days}} jours.',
+  'invitations.page.password': 'Mot de passe',
+  'invitations.page.confirm': 'Confirmer le mot de passe',
+  'invitations.page.ruleLength': '{{min}} caractères au moins',
+  'invitations.page.ruleSame': 'Les deux sont identiques',
+  'invitations.page.title': 'Créer votre mot de passe',
+  'invitations.page.titleReset': 'Choisir un nouveau mot de passe',
+  'invitations.page.welcome': 'Bienvenue, {{name}}',
+  'invitations.page.subtitle': '{{role}} chez {{company}} · {{email}}',
+  'invitations.page.with': 'avec {{app}}',
+  'invitations.page.footer':
+    'Une question ? Adressez-vous à l’administrateur de {{company}}.',
+  'invitations.page.neutralFooter': 'Gestion du courrier d’entreprise',
+  'invitations.page.submit': 'Créer mon mot de passe',
+  'invitations.page.submitReset': 'Enregistrer mon mot de passe',
+  'invitations.page.expires': 'Ce lien expire le {{date}}.',
+  'invitations.page.loading': 'Lecture du lien…',
+  'invitations.page.failed': 'Une erreur est survenue. Vérifiez votre connexion et réessayez.',
+  'invitations.page.unreachableTitle': 'Lien non vérifié',
+  'invitations.page.retry': 'Réessayer',
+  'invitations.page.doneTitle': 'Votre mot de passe est enregistré',
+  'invitations.page.doneSignIn': 'Vous pouvez maintenant vous connecter.',
+  'invitations.page.doneInstall':
+    'Installez maintenant l’app sur cet iPhone, puis connectez-vous dedans.',
+  'invitations.page.signIn': 'Se connecter',
+  'invitations.page.install': 'Installer l’app',
+  'invitations.page.expiredTitle': 'Ce lien a expiré',
+  'invitations.page.expiredText':
+    'Les liens sont valables 7 jours. Demandez à votre administrateur de vous en renvoyer un.',
+  'invitations.page.usedTitle': 'Ce lien a déjà servi',
+  'invitations.page.usedText':
+    'Votre mot de passe a été enregistré. Si ce n’est pas vous, prévenez votre administrateur.',
+  'invitations.page.invalidTitle': 'Ce lien n’est plus valable',
+  'invitations.page.invalidText':
+    'Un lien plus récent l’a peut-être remplacé. Demandez à votre administrateur de vous en renvoyer un.',
+  'invitations.forced.title': 'Choisissez votre mot de passe',
+  'invitations.forced.text':
+    'Vous vous êtes connecté avec un mot de passe provisoire. Remplacez-le avant de continuer.',
+  'invitations.forced.submit': 'Enregistrer et continuer',
+  'invitations.admin.title': 'Inviter un administrateur',
+  'invitations.admin.description':
+    'Possible seulement sans administrateur actif. Il recevra un lien valable 7 jours.',
+  'invitations.admin.titleStep': 'Étape 3 sur 3 · Inviter un administrateur',
+  'invitations.admin.name': 'Nom',
+  'invitations.admin.email': 'E-mail',
+  'invitations.admin.submit': 'Envoyer l’invitation',
   'accounts.suspend.action': 'Suspendre le compte',
   'accounts.suspend.title': 'Suspendre {{name}} ?',
   'accounts.suspend.description':
@@ -195,12 +267,12 @@ export const fr = {
   'accounts.reinstate.action': 'Rétablir l’accès',
   'accounts.reinstate.title': 'Rétablir l’accès de {{name}} ?',
   'accounts.reinstate.description':
-    'Avec un nouveau mot de passe. Les données effacées de son téléphone ne reviennent pas ; un compte département doit ensuite être rattaché.',
+    'Avec un mot de passe provisoire, à changer à sa prochaine connexion. Les données effacées de son téléphone ne reviennent pas ; un compte département doit ensuite être rattaché.',
   'accounts.reinstate.confirm': 'Rétablir',
   'accounts.password.action': 'Changer le mot de passe',
   'accounts.password.title': 'Mot de passe de {{name}}',
   'accounts.password.description':
-    'Ses appareils restent connectés et gardent leurs données.',
+    'Un mot de passe provisoire à lui transmettre : il le changera à sa prochaine connexion. Son téléphone déjà connecté continue de marcher, sans rien perdre.',
   'accounts.password.field': 'Nouveau mot de passe',
   'accounts.password.closeSessions':
     'Mot de passe compromis : déconnecter ses appareils. Ses téléphones effaceront leurs photos et preuves.',
@@ -218,6 +290,36 @@ export const fr = {
   'accounts.error.suspended':
     'Ce compte est suspendu. Les données de ce téléphone sont gardées.',
   'accounts.error.notFound': 'Ce compte n’existe pas dans votre entreprise.',
+  'accounts.error.passwordChange':
+    'Changez d’abord votre mot de passe provisoire.',
+  'accounts.error.link.suspended':
+    'Ce compte est suspendu : réactivez-le pour lui envoyer un lien.',
+  'accounts.error.link.revoked':
+    'Ce compte est révoqué : rétablissez-le pour lui envoyer un lien.',
+  'invitations.error.expired': 'Ce lien a expiré.',
+  'invitations.error.used': 'Ce lien a déjà servi.',
+  'invitations.error.invalid': 'Ce lien n’est plus valable.',
+  'invitations.error.samePassword':
+    'Choisissez un mot de passe différent de celui qui vous a été transmis.',
+  'invitations.error.companySuspended':
+    'Cette entreprise est suspendue : réactivez-la avant d’inviter.',
+  'invitations.error.companyNotFound': 'Cette entreprise n’existe plus.',
+  'invitations.error.companyHasAdmin':
+    'Cette entreprise a déjà un administrateur actif : c’est à lui d’inviter.',
+  'invitations.mail.invite.subject': 'Votre compte {{role}} chez {{company}}',
+  'invitations.mail.invite.leadBy':
+    '{{name}} vous a ouvert un compte {{role}} chez {{company}}. Votre identifiant : {{email}}.',
+  'invitations.mail.invite.lead':
+    'Un compte {{role}} vous attend chez {{company}}. Votre identifiant : {{email}}.',
+  'invitations.mail.invite.action': 'Créer mon mot de passe',
+  'invitations.mail.reset.subject': 'Votre mot de passe chez {{company}}',
+  'invitations.mail.reset.lead':
+    'Votre administrateur vous envoie un lien pour choisir un nouveau mot de passe. Votre identifiant : {{email}}.',
+  'invitations.mail.reset.action': 'Choisir mon mot de passe',
+  'invitations.mail.validity':
+    'Ce lien est valable {{days}} jours et ne sert qu’une fois.',
+  'invitations.mail.ignore':
+    'Vous n’attendiez pas cet e-mail ? Ignorez-le : rien ne changera.',
   'accounts.error.emailTaken':
     'Cette adresse a déjà un compte ou une invitation en attente.',
   'accounts.error.lastAdmin':
@@ -499,7 +601,7 @@ export const fr = {
   'auth.signIn.submit': 'Se connecter',
   'auth.signIn.forgot': 'Mot de passe oublié',
   'auth.signIn.forgotNotice':
-    'Demandez à votre administrateur de réinitialiser votre mot de passe.',
+    'Demandez à votre administrateur de vous renvoyer un lien.',
   'auth.signIn.error.invalid': 'E-mail ou mot de passe incorrect.',
   'auth.signIn.error.suspended':
     'Votre entreprise est suspendue. Contactez votre administrateur.',

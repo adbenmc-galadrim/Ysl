@@ -17,6 +17,18 @@ const ROLE_TAG: Partial<Record<string, CompteRole>> = {
 export const stateLabel = (state: AccountState, t: TranslateFn): string =>
   t(`accounts.state.${state}`);
 
+/** An invitation out of date says so: the admin has to send another. */
+export function accountLabel(
+  account: Pick<AccountRecord, 'state' | 'linkExpiresAt'>,
+  t: TranslateFn,
+  now = new Date(),
+): string {
+  return account.state === 'invited' &&
+    (!account.linkExpiresAt || account.linkExpiresAt <= now)
+    ? t('accounts.state.invitedExpired')
+    : stateLabel(account.state, t);
+}
+
 export const lastSignIn = (
   account: Pick<AccountRecord, 'lastSignInAt'>,
   now = new Date(),
@@ -41,7 +53,7 @@ export function tableRow(account: AccountRecord, t: TranslateFn): CompteRow {
     email: account.email,
     role: account.role ? (ROLE_TAG[account.role] ?? null) : null,
     department: account.departmentName ?? '—',
-    state: stateLabel(account.state, t),
+    state: accountLabel(account, t),
     stateKind: account.state satisfies CompteStateKind,
     lastLogin: lastSignIn(account),
   };

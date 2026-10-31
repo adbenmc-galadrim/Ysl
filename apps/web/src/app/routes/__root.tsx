@@ -37,6 +37,10 @@ function RootComponent() {
   const landing = useRouterState({
     select: (state) => state.matches.some((m) => m.routeId === '/bienvenue'),
   });
+  // The link opens in Safari: the password is chosen there, before any installation.
+  const invitation = useRouterState({
+    select: (state) => state.matches.some((m) => m.routeId === '/invitation'),
+  });
   const shell = useRef<HTMLDivElement>(null);
   const locked = !browserTab && !landing;
   useEffect(() => {
@@ -48,7 +52,7 @@ function RootComponent() {
     return (
       <div data-shell="site" className="flex min-h-screen flex-col">
         <HeadContent />
-        {browserTab ? <InstallLanding /> : <Outlet />}
+        {browserTab && !invitation ? <InstallLanding /> : <Outlet />}
       </div>
     );
   }
