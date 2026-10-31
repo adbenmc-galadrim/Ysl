@@ -72,20 +72,26 @@ app.get('/ready', async (c) => {
 
 app.route(
   '/api/auth',
-  authRoutes((c) => {
-    // The rate limit keys on the socket address, or on the entry appended by the
-    // trusted proxy; never on a value the client chose.
-    const headers = new Headers(c.req.raw.headers);
-    headers.set(
-      CLIENT_IP_HEADER,
-      clientIp({
-        socketAddress: getConnInfo(c).remote.address,
-        forwardedFor: c.req.header('x-forwarded-for'),
-        trustProxy: env.TRUST_PROXY,
-      }),
-    );
-    return auth.handler(new Request(c.req.raw, { headers }));
-  }),
+  authRoutes(
+    (c) => {
+      // The rate limit keys on the socket address, or on the entry appended by the
+      // trusted proxy; never on a value the client chose.
+      const headers = new Headers(c.req.raw.headers);
+      headers.set(
+        CLIENT_IP_HEADER,
+        clientIp({
+          socketAddress: getConnInfo(c).remote.address,
+          forwardedFor: c.req.header('x-forwarded-for'),
+          trustProxy: env.TRUST_PROXY,
+        }),
+      );
+      return auth.handler(new Request(c.req.raw, { headers }));
+    },
+    async (headers) => {
+      const session = await auth.api.getSession({ headers }).catch(() => null);
+      return Boolean(session?.user.banned);
+    },
+  ),
 );
 
 app.route(
