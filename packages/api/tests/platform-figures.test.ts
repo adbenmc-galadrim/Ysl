@@ -93,6 +93,17 @@ describe('the figures, on a known set', () => {
     expect(first?.accounts).toBe(1);
   });
 
+  it('leaves out a parcel dated later in the month by a fast clock', async () => {
+    const earlier = new Date('2026-10-20T08:00:30Z');
+    const companies = await listCompanies(asAnyDb(db), earlier);
+    const first = companies.find((row) => row.id === ORGANIZATION_ID);
+    // 30/09 22:00Z and 20/10: 22/10 and 31/10 are still ahead.
+    expect(first?.parcelsThisMonth).toBe(2);
+    expect(
+      (await getPlatformOverview(asAnyDb(db), earlier)).parcelsThisMonth,
+    ).toBe(companies.reduce((sum, row) => sum + row.parcelsThisMonth, 0));
+  });
+
   it('dates the last activity from events and parcels, never after now', async () => {
     const companies = await listCompanies(asAnyDb(db), NOW);
     const first = companies.find((row) => row.id === ORGANIZATION_ID);
