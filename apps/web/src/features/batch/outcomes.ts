@@ -72,7 +72,9 @@ export function lotOutcomes(
       icon: 'truck',
       tone: 'neutral',
       title: t('lot.onTour', { count: summary.onTour }),
-      detail: t('lot.onTour.detail'),
+      detail: t(
+        summary.onTour === 1 ? 'lot.onTour.detail.one' : 'lot.onTour.detail',
+      ),
     });
   const [first] = toComplete;
   if (first)

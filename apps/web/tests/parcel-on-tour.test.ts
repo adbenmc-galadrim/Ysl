@@ -8,6 +8,7 @@ import { loadParcelRecord } from '#/features/parcels/api/parcel-record';
 import { listHomeParcels } from '#/features/parcels/api/use-parcels';
 import { describeRecord } from '#/features/parcels/record';
 import { listSearchEntries } from '#/features/search/api/search-entries';
+import { groupResults } from '#/features/search/search-index';
 import {
   NOW,
   openTestDatabase,
@@ -53,6 +54,10 @@ describe('a parcel on tour', () => {
   it('is found by the search', async () => {
     const entries = await listSearchEntries(db, NOW);
     expect(entries.map((entry) => entry.row.state)).toEqual(['onTour']);
+    const sections = groupResults(entries, 'status', NOW, t);
+    expect(
+      sections.map(({ title, parcels }) => [title, parcels.length]),
+    ).toEqual([['En route', 1]]);
   });
 
   it('waits for no mail and no handover yet', async () => {

@@ -29,6 +29,17 @@ describe('homeCounts', () => {
     });
   });
 
+  it('keeps what is not deposited out of « Présents » with a tour', () => {
+    expect(
+      homeCounts(rows('a_completer', 'recu', 'en_route', 'depose'), true),
+    ).toEqual({
+      coming: 3,
+      present: 1,
+      toSettle: 0,
+    });
+    expect(homeCounts(rows('a_completer', 'recu'), false).present).toBe(2);
+  });
+
   it('counts every unfinished status once, so the admin total is theirs', () => {
     const { coming, present, toSettle } = homeCounts(
       rows(...UNFINISHED_STATUSES),

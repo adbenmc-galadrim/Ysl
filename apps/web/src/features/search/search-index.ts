@@ -211,6 +211,7 @@ const STATUS_GROUPS = [
     states: ['incomplete'],
   },
   { id: 'toNotify', key: 'search.section.toNotify', states: ['toNotify'] },
+  { id: 'onTour', key: 'search.section.onTour', states: ['onTour'] },
   {
     id: 'waiting',
     key: 'search.section.waiting',
