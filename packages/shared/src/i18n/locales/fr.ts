@@ -177,7 +177,8 @@ export const fr = {
   'sender.pending.platform':
     'En attendant, les e-mails envoyés par le serveur partent de {{address}} au nom de « {{name}} ».',
   'sender.verified.title': '{{domain}} vérifié le {{date}}',
-  'sender.verified.description': 'Les e-mails envoyés par le serveur partent de {{address}}.',
+  'sender.verified.description':
+    'Les e-mails envoyés par le serveur partent de {{address}}.',
   'sender.unconfigured.title': 'Envoi par le serveur pas encore activé',
   'sender.unconfigured.description':
     'L’expéditeur est gardé. La vérification du domaine ouvrira à l’activation ; d’ici là, la messagerie du téléphone reste utilisable.',

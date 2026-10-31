@@ -324,7 +324,7 @@ l'entreprise ; sinon `MAIL_FROM_ADDRESS` au nom de l'entreprise. Toutes les entr
 partagent un compte Brevo, où `authenticated` ne dit pas à qui est le domaine : un
 domaine n'appartient qu'à une entreprise, et un domaine déjà authentifié chez Brevo sans
 propriétaire ici est refusé, comme celui de la plateforme. Changer de domaine retire
-l'ancien chez Brevo, s'il a été déclaré ou prouvé par cette entreprise. Sans `BREVO_API_KEY`, l'expéditeur s'enregistre et la vérification
+l'ancien chez Brevo, s'il a été déclaré ou prouvé par cette entreprise. Sans `BREVO_API_KEY` ou `MAIL_FROM_ADDRESS`, l'expéditeur s'enregistre et la vérification
 reste indisponible ; le domaine se déclare à la première vérification après la pose de
 la clé.
 
