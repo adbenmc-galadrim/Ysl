@@ -14,7 +14,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { COMPANIES_KEY } from '#/features/platform/companies-page';
+import { COMPANIES_KEY } from '#/features/platform/components/companies-page';
 import {
   counted,
   figure,
@@ -22,7 +22,7 @@ import {
   modelName,
 } from '#/features/platform/company-view';
 import { platformErrorMessage } from '#/features/platform/errors';
-import { usePlatformChrome } from '#/features/platform/use-platform-chrome';
+import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
 import { initialsOf } from '#/features/settings/initials';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 import { trpcClient } from '#/lib/trpc';
@@ -93,15 +93,20 @@ export function CompanyPage({ id }: { id: string }) {
   const company = query.data;
 
   if (!company) {
-    if (query.isError && desk) {
-      return (
-        <EntreprisesErreurDesktop
-          chrome={chrome}
-          onRetry={() => void query.refetch()}
-        />
-      );
-    }
-    return null;
+    if (query.isPending) return null;
+    return desk ? (
+      <EntreprisesErreurDesktop
+        chrome={chrome}
+        onRetry={() => void query.refetch()}
+      />
+    ) : (
+      <div className="flex h-dvh flex-col items-center justify-center gap-4 px-6 text-center">
+        <p role="alert">{platformErrorMessage(query.error)}</p>
+        <Button variant="secondary" onClick={() => void navigate({ to: '/' })}>
+          {t('platform.nav.companies')}
+        </Button>
+      </div>
+    );
   }
 
   const close = () => {
@@ -184,7 +189,9 @@ export function CompanyPage({ id }: { id: string }) {
         data={{
           name: company.name,
           initials: initialsOf(company.name),
-          status: statusLine(company),
+          status: actions.reactivate.isError
+            ? platformErrorMessage(actions.reactivate.error)
+            : statusLine(company),
           suspended,
           stats,
           profile: [[t('platform.sheet.model'), model]],
@@ -238,6 +245,7 @@ export function CompanyPage({ id }: { id: string }) {
             : undefined
         }
         stats={stats}
+        error={errorOf(actions.reactivate)}
         profile={[{ title: t('platform.sheet.model'), value: model }]}
         onBack={() => void navigate({ to: '/' })}
         primaryLabel={primaryLabel}

@@ -254,6 +254,7 @@ export function FicheEntrepriseMountedMobile({
   onBack,
   primaryLabel,
   onPrimary,
+  error,
   children,
 }: {
   name: string;
@@ -266,6 +267,7 @@ export function FicheEntrepriseMountedMobile({
   onBack?: () => void;
   primaryLabel: string;
   onPrimary?: () => void;
+  error?: string;
   children?: ReactNode;
 }) {
   return (
@@ -307,6 +309,11 @@ export function FicheEntrepriseMountedMobile({
           description={notice.description}
           {...BANNER_CLASSES}
         />
+      )}
+      {error && (
+        <p role="alert" className="mt-3 text-13 text-red">
+          {error}
+        </p>
       )}
       <div className="mt-6 grid grid-cols-2 gap-x-[11px] gap-y-3">
         {stats.map((stat) => (

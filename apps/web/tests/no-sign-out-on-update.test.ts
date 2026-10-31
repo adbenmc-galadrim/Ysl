@@ -68,7 +68,12 @@ describe('an update never signs a device out', () => {
     async (role) => {
       const store = keptBy(role);
       const wipe = vi.fn(() => Promise.resolve());
-      const session = await settleSession({ kind: 'unreachable' }, store, wipe, active);
+      const session = await settleSession(
+        { kind: 'unreachable' },
+        store,
+        wipe,
+        active,
+      );
       expect(wipe).not.toHaveBeenCalled();
       expect(session?.user.id).toBe('u1');
       expect(store.data.has(SESSION_KEY)).toBe(true);

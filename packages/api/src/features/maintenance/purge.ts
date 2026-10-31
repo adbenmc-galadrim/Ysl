@@ -39,7 +39,7 @@ function cutoffsAt(now: Date): Cutoffs {
 }
 
 /** The rows of a raw query, the same through node-postgres and PGlite. */
-async function rowsOf<Row>(db: AnyDb, query: SQL): Promise<Row[]> {
+export async function rowsOf<Row>(db: AnyDb, query: SQL): Promise<Row[]> {
   const result: unknown = await db.execute(query);
   return (result as { rows: Row[] }).rows;
 }

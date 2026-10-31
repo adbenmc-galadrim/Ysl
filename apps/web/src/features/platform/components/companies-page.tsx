@@ -18,7 +18,7 @@ import {
   isActive,
   matchesFilter,
 } from '#/features/platform/company-view';
-import { usePlatformChrome } from '#/features/platform/use-platform-chrome';
+import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 import { trpcClient } from '#/lib/trpc';
 

@@ -195,6 +195,24 @@ export async function isInSuspendedCompany(
   return Boolean(row?.suspendedAt);
 }
 
+/** `gone` once its company was deleted; an account with no company yet counts as active. */
+export async function accountStanding(
+  db: AnyDb,
+  userId: string,
+): Promise<'suspended' | 'active' | 'gone'> {
+  const [row] = await db
+    .select({ suspendedAt: organization.suspendedAt })
+    .from(user)
+    .leftJoin(organizationMember, eq(organizationMember.userId, user.id))
+    .leftJoin(
+      organization,
+      eq(organization.id, organizationMember.organizationId),
+    )
+    .where(eq(user.id, userId));
+  if (!row) return 'gone';
+  return row.suspendedAt ? 'suspended' : 'active';
+}
+
 export async function findUserByEmail(
   db: AnyDb,
   email: string,

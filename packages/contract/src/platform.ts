@@ -56,11 +56,13 @@ export const deleteCompanyInput = z.strictObject({
   confirmName: z.string(),
 });
 
-/** Whether a phone that lost its session must keep what it holds: only ever a yes or no. */
+export const ACCOUNT_STANDINGS = ['suspended', 'active', 'gone'] as const;
+
+/** Whether a phone that lost its session must keep what it holds, and nothing else of the account. */
 export const accountSuspensionInput = z.strictObject({
   userId: z.string().min(1).max(200),
 });
 
 export const accountSuspensionOutput = z.strictObject({
-  suspended: z.boolean(),
+  standing: z.enum(ACCOUNT_STANDINGS),
 });

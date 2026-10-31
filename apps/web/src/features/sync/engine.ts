@@ -67,7 +67,7 @@ function isUnauthorized(error: unknown): boolean {
   return data?.code === 'UNAUTHORIZED';
 }
 
-function isCompanySuspended(error: unknown): boolean {
+function refusedAsSuspended(error: unknown): boolean {
   const data = (error as { data?: { reason?: string } } | null)?.data;
   return data?.reason === COMPANY_SUSPENDED;
 }
@@ -150,7 +150,7 @@ export function createSyncEngine({
       };
     } catch (error) {
       if (isUnauthorized(error)) onUnauthorized?.();
-      if (isCompanySuspended(error)) onCompanySuspended?.(true);
+      if (refusedAsSuspended(error)) onCompanySuspended?.(true);
       return failed(error);
     }
   }

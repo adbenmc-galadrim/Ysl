@@ -1,4 +1,4 @@
-import { createCompany, isInSuspendedCompany } from '@repo/auth/organization';
+import { accountStanding, createCompany } from '@repo/auth/organization';
 import {
   accountSuspensionInput,
   accountSuspensionOutput,
@@ -13,7 +13,7 @@ import {
 import { db } from '@repo/db';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { TRPCError } from '@trpc/server';
-import { mailDomainProvider } from '#features/mail/router';
+import { mailDomainProvider } from '#features/mail/provider';
 import {
   purgeCompanyRows,
   releaseCompanyDomain,
@@ -105,13 +105,13 @@ export const platformRouter = router({
     }),
   /**
    * Asked by a phone the auth server just told it has no session, before it
-   * empties itself. No session to check, hence public; it says one bit, about
+   * empties itself. No session to check, hence public; it gives one word, about
    * an id nobody can guess, and nothing that names anyone.
    */
   accountSuspension: publicProcedure
     .input(accountSuspensionInput)
     .output(accountSuspensionOutput)
     .query(async ({ input }) => ({
-      suspended: await isInSuspendedCompany(db, input.userId),
+      standing: await accountStanding(db, input.userId),
     })),
 });

@@ -17,6 +17,23 @@ export type SenderContext = {
   platformAddress: string | null;
 };
 
+/**
+ * The account is shared: only what this company declared or proved is its to
+ * remove. Never a reason to fail: the log says what is left to do by hand.
+ */
+export async function releaseDomain(
+  sender: { domain: string; declared: boolean; status: string },
+  provider: MailDomains,
+): Promise<void> {
+  if (!sender.declared && sender.status !== 'verified') return;
+  await provider.remove(sender.domain).catch((error: unknown) => {
+    logger.warn(
+      { err: error, domain: sender.domain },
+      'mail domain not removed at the provider',
+    );
+  });
+}
+
 const domainOf = (email: string) =>
   (email.split('@').at(-1) ?? '').toLowerCase();
 
@@ -146,17 +163,8 @@ export async function saveSender(
     throw error;
   }
 
-  // Left authenticated, the old domain could not be claimed again by anyone. The
-  // account is shared: only what this company declared or proved is its to remove.
-  if (
-    current &&
-    provider &&
-    (current.declared || current.status === 'verified')
-  ) {
-    await provider.remove(current.domain).catch((error: unknown) => {
-      logger.warn({ err: error }, 'mail domain not removed at the provider');
-    });
-  }
+  // Left authenticated, the old domain could not be claimed again by anyone.
+  if (current && provider) await releaseDomain(current, provider);
   return settings(row, context, problem);
 }
 

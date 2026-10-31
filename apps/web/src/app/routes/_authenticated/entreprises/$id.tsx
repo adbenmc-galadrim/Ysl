@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { CompanyPage } from '#/features/platform/company-page';
+import { CompanyPage } from '#/features/platform/components/company-page';
 
 function Page() {
   const { id } = Route.useParams();

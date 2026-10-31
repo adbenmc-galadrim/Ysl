@@ -12,7 +12,7 @@ import { useSession } from '#/features/auth/api/use-session';
 import { hasDesk } from '#/features/auth/route-access';
 import { db } from '#/features/db/database';
 import { ColisPage } from '#/features/parcels/components/colis-page';
-import { CompaniesPage } from '#/features/platform/companies-page';
+import { CompaniesPage } from '#/features/platform/components/companies-page';
 import { homeCounts, type HomeCounts } from '#/features/shell/home-counts';
 import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';

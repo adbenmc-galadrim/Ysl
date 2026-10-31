@@ -96,7 +96,7 @@ async function requestUnderLock(db: AnyDb, now: Date): Promise<number> {
       and(
         eq(setting.key, OPERATING_PROFILE_KEY),
         isNull(setting.deletedAt),
-        // A suspended company writes to nobody: it may be over for good.
+        // No new reminder while suspended: it may be over for good. A mail already queued still leaves.
         isNull(organization.suspendedAt),
       ),
     );

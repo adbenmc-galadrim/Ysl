@@ -18,7 +18,6 @@ export const fr = {
   'platform.loading': 'Chargement…',
   'platform.list.subtitle': '{{count}} entreprises clientes',
   'platform.list.subtitle.one': '1 entreprise cliente',
-  'platform.list.subtitle.phone': '{{active}} actives · {{accounts}} comptes',
   'platform.list.stat.active': 'Entreprises actives',
   'platform.list.stat.suspended': 'Suspendues',
   'platform.list.stat.accounts': 'Comptes',

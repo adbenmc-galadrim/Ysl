@@ -13,9 +13,17 @@ function changed(): void {
   for (const listener of listeners) listener();
 }
 
-export function markCompanySuspended(store: SessionStore): void {
+/** The account the phone's data belongs to: another one signing in must not find it. */
+export function suspendedAccount(store: SessionStore): string | null {
+  return store.getItem(SUSPENDED_KEY);
+}
+
+export function markCompanySuspended(
+  store: SessionStore,
+  userId: string,
+): void {
   if (isCompanySuspended(store)) return;
-  store.setItem(SUSPENDED_KEY, '1');
+  store.setItem(SUSPENDED_KEY, userId);
   changed();
 }
 

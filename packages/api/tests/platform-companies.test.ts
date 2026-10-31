@@ -3,6 +3,7 @@ import type { Session } from '@repo/auth';
 import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
+import { logger } from '@repo/shared/logger';
 import { and, eq, sql } from 'drizzle-orm';
 
 const { client, db } = await vi.hoisted(async () => {
@@ -304,10 +305,11 @@ describe('a suspended company', () => {
       shuttle().sync.pull({ cursors: {} } as never),
     );
     expect(refused?.code).toBe('FORBIDDEN');
+    expect(refused?.cause).toBeInstanceOf(Error);
     expect(await codeOf(shuttle().account.company())).toBe('FORBIDDEN');
     expect(
       await callerFor(null).platform.accountSuspension({ userId: AGENT_ID }),
-    ).toEqual({ suspended: true });
+    ).toEqual({ standing: 'suspended' });
   });
 
   it('touches no other company', async () => {
@@ -317,7 +319,7 @@ describe('a suspended company', () => {
     });
     expect(
       await callerFor(null).platform.accountSuspension({ userId: STRANGER_ID }),
-    ).toEqual({ suspended: false });
+    ).toEqual({ standing: 'active' });
   });
 
   it('keeps the first date when asked twice', async () => {
@@ -416,6 +418,9 @@ describe('deleting a company', () => {
     expect(await db.select().from(schema.session)).toEqual([]);
     expect(await db.select().from(schema.verification)).toEqual([]);
     expect(
+      await callerFor(null).platform.accountSuspension({ userId: AGENT_ID }),
+    ).toEqual({ standing: 'gone' });
+    expect(
       await codeOf(platform().platform.company({ id: ORGANIZATION_ID })),
     ).toBe('NOT_FOUND');
   });
@@ -437,6 +442,7 @@ describe('deleting a company', () => {
 });
 
 describe('the mail domain of a deleted company', () => {
+  const ours = { domain: 'a.test', declared: true, status: 'pending' };
   const provider = () => ({
     register: vi.fn(),
     check: vi.fn(),
@@ -445,24 +451,28 @@ describe('the mail domain of a deleted company', () => {
 
   it('is removed at the provider when the company declared it', async () => {
     const mails = provider();
-    await releaseCompanyDomain({ domain: 'a.test', ours: true }, mails);
+    await releaseCompanyDomain(ours, mails);
     expect(mails.remove).toHaveBeenCalledWith('a.test');
   });
 
   it('stays when another company could own it at the shared account', async () => {
     const mails = provider();
-    await releaseCompanyDomain({ domain: 'a.test', ours: false }, mails);
+    await releaseCompanyDomain(
+      { domain: 'a.test', declared: false, status: 'pending' },
+      mails,
+    );
     expect(mails.remove).not.toHaveBeenCalled();
   });
 
   it('never fails the deletion, with no key or a provider down', async () => {
-    await expect(
-      releaseCompanyDomain({ domain: 'a.test', ours: true }, null),
-    ).resolves.toBeUndefined();
+    const info = vi.spyOn(logger, 'info');
+    await releaseCompanyDomain(ours, null);
+    expect(info).toHaveBeenCalledWith(
+      { domain: 'a.test' },
+      expect.stringContaining('no key'),
+    );
     const down = provider();
     down.remove.mockRejectedValueOnce(new Error('down'));
-    await expect(
-      releaseCompanyDomain({ domain: 'a.test', ours: true }, down),
-    ).resolves.toBeUndefined();
+    await expect(releaseCompanyDomain(ours, down)).resolves.toBeUndefined();
   });
 });

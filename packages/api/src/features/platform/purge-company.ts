@@ -1,18 +1,16 @@
 import type { AnyDb } from '@repo/db';
 import { logger } from '@repo/shared/logger';
 import {
+  mailSender,
   organization,
   organizationMember,
   user,
   verification,
 } from '@repo/db/schema';
-import { eq, inArray, or, sql, type SQL } from 'drizzle-orm';
+import { eq, inArray, or, sql } from 'drizzle-orm';
 import type { MailDomains } from '#features/mail/mailer';
-
-async function rowsOf<Row>(db: AnyDb, query: SQL): Promise<Row[]> {
-  const result: unknown = await db.execute(query);
-  return (result as { rows: Row[] }).rows;
-}
+import { releaseDomain } from '#features/mail/sender';
+import { rowsOf } from '#features/maintenance/purge';
 
 /**
  * Every table holding a company's rows, read from the catalog so that a table
@@ -64,7 +62,11 @@ export async function companyTablesInOrder(db: AnyDb): Promise<string[]> {
   return ordered;
 }
 
-export type CompanyDomain = { domain: string; ours: boolean };
+export type CompanyDomain = {
+  domain: string;
+  declared: boolean;
+  status: string;
+};
 
 /**
  * Everything of a company, in one transaction: its rows in every table, then
@@ -84,14 +86,14 @@ export async function purgeCompanyRows(
       .for('update');
     if (!found) return null;
 
-    const [sender] = await rowsOf<{
-      domain: string;
-      declared: boolean;
-      status: string;
-    }>(
-      tx,
-      sql`select domain, declared, status from mail_sender where organization_id = ${id}`,
-    );
+    const [sender] = await tx
+      .select({
+        domain: mailSender.domain,
+        declared: mailSender.declared,
+        status: mailSender.status,
+      })
+      .from(mailSender)
+      .where(eq(mailSender.organizationId, id));
     const members = await tx
       .select({ id: user.id, email: user.email })
       .from(organizationMember)
@@ -108,6 +110,7 @@ export async function purgeCompanyRows(
 
     if (members.length > 0) {
       const ids = members.map((member) => member.id);
+      // Better Auth's reset tokens name an account by its id or its address, with no foreign key.
       await tx.delete(verification).where(
         or(
           inArray(verification.value, ids),
@@ -121,38 +124,22 @@ export async function purgeCompanyRows(
     }
     await tx.delete(organization).where(eq(organization.id, id));
 
-    return {
-      domain: sender
-        ? {
-            domain: sender.domain,
-            ours: sender.declared || sender.status === 'verified',
-          }
-        : null,
-    };
+    return { domain: sender ?? null };
   });
 }
 
-/**
- * The account is shared with every company: only a domain this one declared or
- * proved is removed. After the commit, and never a reason to fail: the company
- * is gone, and the log says what is left to do by hand.
- */
+/** After the commit: the company is gone, whatever the provider answers. */
 export async function releaseCompanyDomain(
   domain: CompanyDomain | null,
   provider: MailDomains | null,
 ): Promise<void> {
-  if (!domain?.ours) return;
-  if (!provider) {
-    logger.info(
-      { domain: domain.domain },
-      'mail domain of a deleted company left at the provider: no key',
-    );
+  if (!domain) return;
+  if (provider) {
+    await releaseDomain(domain, provider);
     return;
   }
-  await provider.remove(domain.domain).catch((error: unknown) => {
-    logger.warn(
-      { err: error, domain: domain.domain },
-      'mail domain of a deleted company not removed at the provider',
-    );
-  });
+  logger.info(
+    { domain: domain.domain },
+    'mail domain of a deleted company left at the provider: no key',
+  );
 }

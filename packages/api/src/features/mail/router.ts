@@ -3,8 +3,7 @@ import { db } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { TRPCError } from '@trpc/server';
-import { brevoDomains } from '#features/mail/brevo';
-import type { MailDomains } from '#features/mail/mailer';
+import { mailDomainProvider } from '#features/mail/provider';
 import {
   checkSender,
   getSender,
@@ -14,13 +13,6 @@ import {
 import { adminMemberProcedure, router } from '#lib/trpc';
 
 const translate = createTranslator(DEFAULT_LOCALE);
-
-/** The mail job needs both: without the address, nothing would leave. */
-export function mailDomainProvider(): MailDomains | null {
-  return env.BREVO_API_KEY && env.MAIL_FROM_ADDRESS
-    ? brevoDomains({ apiKey: env.BREVO_API_KEY })
-    : null;
-}
 
 function context(): SenderContext {
   return {

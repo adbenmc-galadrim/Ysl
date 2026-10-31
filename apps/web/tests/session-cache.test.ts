@@ -6,7 +6,10 @@ import {
   SESSION_KEY,
   settleSession,
 } from '#/features/auth/session-cache';
-import { isCompanySuspended } from '#/features/auth/company-suspension';
+import {
+  isCompanySuspended,
+  markCompanySuspended,
+} from '#/features/auth/company-suspension';
 
 const session = {
   user: {
@@ -75,9 +78,9 @@ describe('settleSession', () => {
       return Promise.resolve();
     });
 
-    await expect(settleSession({ kind: 'none' }, store, wipe, active)).resolves.toBe(
-      null,
-    );
+    await expect(
+      settleSession({ kind: 'none' }, store, wipe, active),
+    ).resolves.toBe(null);
     expect(wipe).toHaveBeenCalledOnce();
     expect(store.data.has(SESSION_KEY)).toBe(false);
   });
@@ -119,12 +122,37 @@ describe('a phone of a suspended company that lost its session', () => {
     expect(store.getItem(SESSION_KEY)).not.toBeNull();
   });
 
-  it('empties itself once the account is simply gone: a deleted company', async () => {
+  it('empties itself once the account is gone: a deleted company', async () => {
     const store = keptStore();
+    markCompanySuspended(store, 'u1');
+    const wipe = vi.fn(() => Promise.resolve());
+    await expect(
+      settleSession({ kind: 'none' }, store, wipe, () =>
+        Promise.resolve('gone'),
+      ),
+    ).resolves.toBeNull();
+    expect(wipe).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the proofs when reactivated with its session run out, and asks to sign in', async () => {
+    const store = keptStore();
+    markCompanySuspended(store, 'u1');
     const wipe = vi.fn(() => Promise.resolve());
     await expect(
       settleSession({ kind: 'none' }, store, wipe, active),
     ).resolves.toBeNull();
+    expect(wipe).not.toHaveBeenCalled();
+    expect(isCompanySuspended(store)).toBe(true);
+
+    await settleSession({ kind: 'session', session }, store, wipe, active);
+    expect(wipe).not.toHaveBeenCalled();
+  });
+
+  it('empties itself when another account signs in', async () => {
+    const store = memoryStore();
+    markCompanySuspended(store, 'someone-else');
+    const wipe = vi.fn(() => Promise.resolve());
+    await settleSession({ kind: 'session', session }, store, wipe, active);
     expect(wipe).toHaveBeenCalledOnce();
   });
 });

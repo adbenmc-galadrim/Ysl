@@ -11,9 +11,9 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { COMPANIES_KEY } from '#/features/platform/companies-page';
+import { COMPANIES_KEY } from '#/features/platform/components/companies-page';
 import { platformErrorMessage } from '#/features/platform/errors';
-import { usePlatformChrome } from '#/features/platform/use-platform-chrome';
+import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
 import { DESK_WIDTH, useMediaQuery } from '#/lib/use-media-query';
 import { trpcClient } from '#/lib/trpc';
 
