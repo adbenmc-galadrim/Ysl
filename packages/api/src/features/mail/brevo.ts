@@ -1,7 +1,15 @@
-import type { Mailer, SendResult } from '#features/mail/mailer';
+import { DNS_RECORD_KINDS, type DnsRecord } from '@repo/contract/mail';
+import type {
+  DomainResult,
+  Mailer,
+  MailDomains,
+  SendResult,
+} from '#features/mail/mailer';
 
 const ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
+const DOMAINS_ENDPOINT = 'https://api.brevo.com/v3/senders/domains';
 const SEND_TIMEOUT_MS = 15_000;
+const DOMAIN_TIMEOUT_MS = 10_000;
 
 export type BrevoOptions = {
   apiKey: string;
@@ -66,7 +74,7 @@ export function brevoMailer({
             accept: 'application/json',
           },
           body: JSON.stringify({
-            sender: from,
+            sender: { ...from, ...message.from },
             to: [
               {
                 email: message.to,
@@ -85,6 +93,128 @@ export function brevoMailer({
         return { status: 'retry', reason: `brevo unreachable: ${name}` };
       }
       return readResult(response);
+    },
+  };
+}
+
+export type BrevoDomainsOptions = {
+  apiKey: string;
+  fetch?: typeof globalThis.fetch;
+};
+
+function recordKind(key: string): DnsRecord['kind'] {
+  const name = key.toLowerCase();
+  if (name.includes('dkim')) return 'dkim';
+  if (name.includes('dmarc')) return 'dmarc';
+  if (name.includes('spf')) return 'spf';
+  return 'code';
+}
+
+/** Brevo names its records differently across accounts: only their shape is relied on. */
+function readRecords(raw: unknown): DnsRecord[] {
+  if (typeof raw !== 'object' || raw === null) return [];
+  const records: DnsRecord[] = [];
+  for (const [key, entry] of Object.entries(raw)) {
+    const { type, host_name, value, status } = (entry ?? {}) as Record<
+      string,
+      unknown
+    >;
+    if (typeof value !== 'string' || !value) continue;
+    records.push({
+      kind: recordKind(key),
+      type: typeof type === 'string' ? type : 'TXT',
+      host: typeof host_name === 'string' ? host_name : '@',
+      value,
+      configured: status === true,
+    });
+  }
+  return records.sort(
+    (a, b) =>
+      DNS_RECORD_KINDS.indexOf(a.kind) - DNS_RECORD_KINDS.indexOf(b.kind),
+  );
+}
+
+/** Brevo's domain API, one implementation of `MailDomains`. */
+export function brevoDomains({
+  apiKey,
+  fetch: send = globalThis.fetch,
+}: BrevoDomainsOptions): MailDomains {
+  const call = (path: string, method: string, body?: unknown) =>
+    send(`${DOMAINS_ENDPOINT}${path}`, {
+      method,
+      headers: {
+        'api-key': apiKey,
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(DOMAIN_TIMEOUT_MS),
+    });
+  const pathOf = (domain: string) => `/${encodeURIComponent(domain)}`;
+
+  const read = async (
+    domain: string,
+    created: boolean,
+  ): Promise<DomainResult> => {
+    const response = await call(pathOf(domain), 'GET');
+    if (response.status === 404 || response.status === 400) {
+      return { status: 'notFound' };
+    }
+    if (!response.ok) {
+      return { status: 'unavailable', reason: `brevo ${response.status}` };
+    }
+    const body = (await response.json().catch(() => null)) as {
+      authenticated?: unknown;
+      dns_records?: unknown;
+    } | null;
+    if (!body) return { status: 'unavailable', reason: 'brevo unreadable' };
+    return {
+      status: 'found',
+      created,
+      authenticated: body.authenticated === true,
+      records: readRecords(body.dns_records),
+    };
+  };
+
+  const guarded = async (
+    work: () => Promise<DomainResult>,
+  ): Promise<DomainResult> => {
+    try {
+      return await work();
+    } catch (error) {
+      const name = error instanceof Error ? error.name : 'error';
+      return { status: 'unavailable', reason: `brevo unreachable: ${name}` };
+    }
+  };
+
+  return {
+    // A 400 is either a domain already there or a name refused: the read tells them apart.
+    register: (domain) =>
+      guarded(async () => {
+        const response = await call('', 'POST', { name: domain });
+        if (!response.ok && response.status !== 400) {
+          return { status: 'unavailable', reason: `brevo ${response.status}` };
+        }
+        const result = await read(domain, response.ok);
+        return result.status === 'notFound' ? { status: 'invalid' } : result;
+      }),
+    // Authentication answers 400 until the DNS is in place: only the read decides.
+    check: (domain) =>
+      guarded(async () => {
+        const response = await call(`${pathOf(domain)}/authenticate`, 'PUT');
+        if (
+          [401, 402, 403].includes(response.status) ||
+          response.status >= 500
+        ) {
+          return { status: 'unavailable', reason: `brevo ${response.status}` };
+        }
+        return read(domain, false);
+      }),
+    remove: async (domain) => {
+      const response = await call(pathOf(domain), 'DELETE');
+      if (!response.ok && response.status !== 404) {
+        throw new Error(`brevo ${response.status}`);
+      }
     },
   };
 }

@@ -1,3 +1,5 @@
+import type { DnsRecord } from '@repo/contract/mail';
+
 export type EmailMessage = {
   /** Stable across attempts: the provider may use it to drop a repeat. */
   idempotencyKey: string;
@@ -6,6 +8,8 @@ export type EmailMessage = {
   subject: string;
   text: string;
   html?: string | null;
+  /** Overrides the mailer's own sender, field by field. */
+  from?: { email?: string; name?: string };
 };
 
 /**
@@ -23,4 +27,27 @@ export type SendResult =
 /** How the server sends a mail; callers only know the queue, never the provider. */
 export type Mailer = {
   send: (message: EmailMessage) => Promise<SendResult>;
+};
+
+/**
+ * What the provider knows of a domain. `authenticated` says the DNS is in
+ * place, not who the domain belongs to. `notFound`: the provider does not have
+ * it. `invalid`: it refuses this name. `unavailable`: try again later.
+ */
+export type DomainResult =
+  | {
+      status: 'found';
+      created: boolean;
+      authenticated: boolean;
+      records: DnsRecord[];
+    }
+  | { status: 'notFound' }
+  | { status: 'invalid' }
+  | { status: 'unavailable'; reason: string };
+
+/** How the server declares and checks sending domains at the provider. */
+export type MailDomains = {
+  register: (domain: string) => Promise<DomainResult>;
+  check: (domain: string) => Promise<DomainResult>;
+  remove: (domain: string) => Promise<void>;
 };
