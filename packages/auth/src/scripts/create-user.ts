@@ -9,7 +9,7 @@ import { closeDb, db } from '@repo/db';
 import { auth } from '#auth';
 import {
   attachToOrganization,
-  chooseOrganization,
+  chooseOrganizationFor,
   ensureOrganization,
 } from '#organization';
 
@@ -53,13 +53,11 @@ async function main(): Promise<void> {
     throw new Error(`Invalid or missing password.\n${USAGE}`);
   }
 
-  const platformAccount = role.data === 'platform_admin';
-  if (platformAccount && values.organization) {
-    throw new Error(USAGE);
-  }
-  const choice = platformAccount
-    ? null
-    : await chooseOrganization(db, values.organization);
+  const choice = await chooseOrganizationFor(
+    db,
+    { email: values.email, role: role.data },
+    values.organization,
+  );
   const { user } = await auth.api.createUser({
     body: {
       email: values.email,

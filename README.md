@@ -236,7 +236,7 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation |
+| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation (`platform_admin` : à aucune) |
 | `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
