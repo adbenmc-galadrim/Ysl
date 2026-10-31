@@ -6,12 +6,14 @@ import {
   OPERATING_PROFILE_KEY,
   SMALL_SITE_OPERATING_PROFILE,
 } from '@repo/contract/operating-profile';
+import { COMPANY_SETTINGS_KEY } from '@repo/contract/company-settings';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
 import type { SyncOp, SyncedEntity } from '@repo/contract/sync';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { writeCompanySettings } from '#features/company/settings';
 import { writeOperatingProfile } from '#features/operating/service';
 import { push } from '#features/sync/push';
 import type { Access } from '#lib/access';
@@ -201,6 +203,31 @@ describe('sync.push by role', () => {
           }),
         ),
       ).toBe(400);
+    });
+
+    it('lets no device write the settings of the company', async () => {
+      const admin = accessOf('company_admin');
+      const value = { retention: { parcel: 1 } };
+      expect(
+        await statusOf(
+          admin,
+          op('setting', newId(), { key: COMPANY_SETTINGS_KEY, value }),
+        ),
+      ).toBe(400);
+      await writeCompanySettings(sync, ORGANIZATION_ID, value, AGENT_ID);
+      const [row] = await db
+        .select({ id: schema.setting.id })
+        .from(schema.setting)
+        .where(eq(schema.setting.key, COMPANY_SETTINGS_KEY));
+      expect(await statusOf(admin, op('setting', row!.id, {}, 'delete'))).toBe(
+        403,
+      );
+      expect(
+        await statusOf(
+          admin,
+          op('setting', row!.id, { key: 'pickup', value: EMPTY_PICKUP }),
+        ),
+      ).toBe(403);
     });
 
     it('lets no device delete or reuse the row of the profile', async () => {
