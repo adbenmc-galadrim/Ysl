@@ -47,6 +47,8 @@ export const handover = pgTable(
      */
     hasSignature: boolean('has_signature').notNull().default(false),
     hasPhoto: boolean('has_photo').notNull().default(false),
+    /** Every tracked parcel it hands over was scanned at the counter (§3.7.4). */
+    hasScan: boolean('has_scan').notNull().default(false),
   },
   (table) => [
     ...syncConstraints('handover', table),

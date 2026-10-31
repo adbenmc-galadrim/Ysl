@@ -181,6 +181,8 @@ export const fr = {
   'sync.op.directoryReadOnly':
     'L’annuaire est en lecture seule pour ce compte.',
   'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
+  'sync.op.handoverSteps':
+    'Cette remise n’a pas une étape que votre entreprise exige désormais (preuve, signature, photo ou scan). Mettez l’app à jour, annulez la modification refusée, puis refaites la remise.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':

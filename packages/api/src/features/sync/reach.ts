@@ -1,4 +1,10 @@
 import { canWriteDirectory } from '@repo/contract/auth';
+import {
+  missingHandoverSteps,
+  OPERATING_PROFILE_KEY,
+  parseOperatingProfile,
+  requiresHandoverSteps,
+} from '@repo/contract/operating-profile';
 import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import { SYNC_STATUS, type SyncOp } from '@repo/contract/sync';
 import type { AnyDb } from '@repo/db';
@@ -9,9 +15,10 @@ import {
   notification,
   parcel,
   pickupCode,
+  setting,
 } from '@repo/db/schema';
 import type { TranslationKey } from '@repo/shared/i18n';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, arrayContains, eq, inArray, isNull } from 'drizzle-orm';
 import { SyncRejected } from '#features/sync/errors';
 import { isHiddenFromDepartment } from '#features/sync/scope';
 import { tableOf } from '#features/sync/tables';
@@ -74,6 +81,87 @@ async function checkHandOver(
       noHandover();
     }
   }
+}
+
+/** The company's profile and when it last changed; only a profile that requires a step counts. */
+async function requiringProfile(tx: AnyDb, organizationId: string) {
+  const [row] = await tx
+    .select({ value: setting.value, updatedAt: setting.updatedAt })
+    .from(setting)
+    .where(
+      and(
+        eq(setting.organizationId, organizationId),
+        eq(setting.key, OPERATING_PROFILE_KEY),
+        isNull(setting.deletedAt),
+      ),
+    );
+  if (!row) return null;
+  const profile = parseOperatingProfile(row.value);
+  return requiresHandoverSteps(profile)
+    ? { profile, updatedAt: row.updatedAt }
+    : null;
+}
+
+const noStep = (op: SyncOp): never =>
+  refuse(op, 'misses a step the profile requires', 'sync.op.handoverSteps');
+
+/**
+ * The profile on what the phones send (ME16). A handover has already happened
+ * at the counter: one made before the profile changed, or by a version without
+ * this rule, which never sends `hasScan`, stays accepted. Its parcels and its
+ * event follow the refusal, so no parcel is `remis` without a handover.
+ */
+async function checkHandoverSteps(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId }: Access,
+): Promise<void> {
+  if (op.type !== 'upsert') return;
+  const { patch } = op;
+  const delivered =
+    op.entity === 'event' && patch.type === 'parcel.delivered'
+      ? (patch.detail as { handoverId?: unknown } | null)?.handoverId
+      : undefined;
+  const isDelivery = op.entity === 'parcel' && patch.status === 'remis';
+  if (op.entity !== 'handover' && !isDelivery && delivered === undefined) {
+    return;
+  }
+  const required = await requiringProfile(tx, organizationId);
+  if (!required) return;
+  if (op.entity === 'handover') {
+    const [known] = await tx
+      .select({ id: handover.id })
+      .from(handover)
+      .where(
+        and(
+          eq(handover.organizationId, organizationId),
+          eq(handover.id, op.entityId),
+        ),
+      );
+    if (known || !('hasScan' in patch) || patch.cancelledAt) return;
+    if (new Date(patch.at as string | Date) < required.updatedAt) return;
+    const missing = missingHandoverSteps(required.profile, {
+      method: patch.method as never,
+      hasSignature: patch.hasSignature as boolean,
+      hasPhoto: patch.hasPhoto as boolean,
+      hasScan: patch.hasScan as boolean,
+    });
+    if (missing.length > 0) noStep(op);
+    return;
+  }
+  const [listed] = await tx
+    .select({ id: handover.id })
+    .from(handover)
+    .where(
+      and(
+        eq(handover.organizationId, organizationId),
+        isDelivery
+          ? arrayContains(handover.parcelIds, [op.entityId])
+          : eq(handover.id, String(delivered)),
+      ),
+    )
+    .limit(1);
+  if (!listed) noStep(op);
 }
 
 const idsOf = (value: unknown): string[] =>
@@ -347,6 +435,7 @@ export async function checkReach(
     refuse(op, 'is not written by a device', 'sync.op.readOnly');
   }
   if (!(await mayHandOver(tx, access))) await checkHandOver(tx, op, access);
+  await checkHandoverSteps(tx, op, access);
   if (op.entity === 'directory_person' && !canWriteDirectory(access.role)) {
     refuse(op, 'is read-only for this account', 'sync.op.directoryReadOnly');
   }

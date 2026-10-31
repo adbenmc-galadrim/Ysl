@@ -1,0 +1,1 @@
+ALTER TABLE "handover" ADD COLUMN "has_scan" boolean DEFAULT false NOT NULL;
