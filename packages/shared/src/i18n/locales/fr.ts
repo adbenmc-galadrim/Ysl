@@ -59,7 +59,15 @@ export const fr = {
   'platform.model.strict_traceability.feature.photo': 'Photo facultative',
   'platform.model.strict_traceability.feature.proof': 'QR ou code obligatoire',
   'platform.new.confirm': 'Créer',
-  'platform.new.note': 'L’entreprise pourra tout modifier ensuite',
+  'platform.new.continue': 'Continuer',
+  'platform.new.note': 'Étape 1 sur 2',
+  'platform.new.note.adjust':
+    'Étape 2 sur 2 · l’entreprise pourra tout modifier ensuite',
+  'platform.new.summary': '{{model}} · {{changed}}',
+  'platform.new.summary.desk': 'Modèle « {{model}} » · {{changed}}',
+  'platform.new.changed.none': 'aucune étape modifiée',
+  'platform.new.changed.one': '1 étape modifiée',
+  'platform.new.changed.many': '{{count}} étapes modifiées',
   'platform.sheet.status.active': 'Active · créée le {{date}} · modèle {{model}}',
   'platform.sheet.status.suspended':
     'Suspendue depuis le {{since}} · créée le {{date}} · modèle {{model}}',

@@ -96,6 +96,16 @@ export const PROFILE_OF_MODEL: Record<ProfileModel, OperatingProfile> = {
   strict_traceability: STRICT_TRACEABILITY_OPERATING_PROFILE,
 };
 
+/** How far a profile has moved from the model it started from. */
+export function stepsChangedFromModel(
+  model: ProfileModel,
+  profile: OperatingProfile,
+): number {
+  const start = PROFILE_OF_MODEL[model];
+  return OPERATING_PARAMS.filter((param) => profile[param] !== start[param])
+    .length;
+}
+
 /** A stored value this version cannot read counts as no profile. Unknown fields are a later version's. */
 export function parseOperatingProfile(value: unknown): OperatingProfile {
   const parsed = z.object(shape).safeParse(value);

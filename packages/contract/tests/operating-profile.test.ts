@@ -8,6 +8,7 @@ import {
   parseOperatingProfile,
   reminderMode,
   SMALL_SITE_OPERATING_PROFILE,
+  stepsChangedFromModel,
   type OperatingProfile,
 } from '@repo/contract/operating-profile';
 import { describe, expect, it } from 'vitest';
@@ -85,6 +86,18 @@ describe('profile models', () => {
     expect(canHandOver('shuttle', PROFILE_OF_MODEL.strict_traceability)).toBe(
       false,
     );
+  });
+
+  it('counts the steps moved away from the model', () => {
+    const start = PROFILE_OF_MODEL.multi_departments;
+    expect(stepsChangedFromModel('multi_departments', start)).toBe(0);
+    expect(
+      stepsChangedFromModel('multi_departments', {
+        ...start,
+        signature: 'required',
+        shuttleActsAsDepartment: true,
+      }),
+    ).toBe(2);
   });
 
   it('leaves a company without a profile as it was', () => {

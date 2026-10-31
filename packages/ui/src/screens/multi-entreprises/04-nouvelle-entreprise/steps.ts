@@ -1,9 +1,16 @@
 const LEVELS = ['Désactivée', 'Facultative', 'Obligatoire'] as const;
 
+export type WizardOption = string | { value: string; label: string };
+
+export const optionOf = (option: WizardOption) =>
+  typeof option === 'string' ? { value: option, label: option } : option;
+
 export type WizardStep = {
+  /** What a choice is reported under; without it the step only shows. */
+  id?: string;
   title: string;
   hint: string;
-  options: readonly string[];
+  options: readonly WizardOption[];
   value: string;
   modified?: boolean;
 };
