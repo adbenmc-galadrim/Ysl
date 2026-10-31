@@ -5,6 +5,7 @@ import type { OcrLine } from '@repo/ocr/worker';
 import type {
   batch,
   contact,
+  department,
   directoryPerson,
   emailTemplate,
   event,
@@ -42,9 +43,13 @@ export type LocalRow<Row> = Omit<Row, 'organizationId' | 'serverXid'> & {
   serverXid?: number;
 };
 
-export type LocalDirectoryPerson = LocalRow<
-  typeof directoryPerson.$inferSelect
->;
+/** `departmentId` is missing on a row pulled before YSL-117: read it as none. */
+export type LocalDirectoryPerson = Omit<
+  LocalRow<typeof directoryPerson.$inferSelect>,
+  'departmentId'
+> & {
+  departmentId?: string | null;
+};
 /** `notifyVia` is missing on a row pulled before YSL-72: read it as nobody. */
 export type LocalContact = Omit<
   LocalRow<typeof contact.$inferSelect>,
@@ -64,12 +69,17 @@ export type LocalSenderAccount = Omit<
 export type LocalSenderAlias = LocalRow<typeof senderAlias.$inferSelect>;
 export type LocalRecipientAlias = LocalRow<typeof recipientAlias.$inferSelect>;
 export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
-/** `statusSeq` is missing on a row pulled before the column existed: read it as 0. */
+/**
+ * `statusSeq` is missing on a row pulled before the column existed: read it
+ * as 0. `departmentId`, on one pulled before YSL-117 or written here: the
+ * server gives it, read it as none.
+ */
 export type LocalParcel = Omit<
   LocalRow<typeof parcel.$inferSelect>,
-  'statusSeq'
+  'statusSeq' | 'departmentId'
 > & {
   statusSeq?: number;
+  departmentId?: string | null;
 };
 export type LocalEmailTemplate = LocalRow<typeof emailTemplate.$inferSelect>;
 /**
@@ -85,7 +95,13 @@ export type LocalNotification = Omit<
   deliveryStatus?: DeliveryStatus | null;
   deliveryAt?: Date | null;
 };
-export type LocalPickupCode = LocalRow<typeof pickupCode.$inferSelect>;
+/** `departmentId` is missing on a row pulled before YSL-117: read it as none. */
+export type LocalPickupCode = Omit<
+  LocalRow<typeof pickupCode.$inferSelect>,
+  'departmentId'
+> & {
+  departmentId?: string | null;
+};
 /** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */
 export type LocalHandover = Omit<
   LocalRow<typeof handover.$inferSelect>,
@@ -96,6 +112,10 @@ export type LocalHandover = Omit<
 };
 export type LocalEvent = LocalRow<typeof event.$inferSelect>;
 export type LocalSetting = LocalRow<typeof setting.$inferSelect>;
+export type LocalDepartment = Omit<
+  LocalRow<typeof department.$inferSelect>,
+  'scopeXid'
+>;
 
 export type SyncedRows = {
   directory_person: LocalDirectoryPerson;
@@ -112,6 +132,7 @@ export type SyncedRows = {
   setting: LocalSetting;
   sender_alias: LocalSenderAlias;
   recipient_alias: LocalRecipientAlias;
+  department: LocalDepartment;
 };
 
 export type OutboxOpType = 'upsert' | 'delete';
@@ -349,7 +370,10 @@ export type LocalExtraction = {
 
 /** Indexes of the synced tables: the primary key, then what the app queries. */
 const FIRST_SYNCED_STORES: Record<
-  Exclude<SyncedEntity, keyof typeof ALIAS_STORES>,
+  Exclude<
+    SyncedEntity,
+    keyof typeof ALIAS_STORES | keyof typeof DEPARTMENT_STORES
+  >,
   string
 > = {
   directory_person: 'id, nameNorm, email',
@@ -396,9 +420,13 @@ const ALIAS_STORES = {
 /** Version 7 (YSL-75): the signatures and photos of the handovers. */
 const PROOF_STORES = { handover_proof: 'id, handoverId, kind, createdAt' };
 
+/** Version 8 (YSL-117): the departments of the company, or the account's own. */
+const DEPARTMENT_STORES = { department: 'id, name' };
+
 const SYNCED_STORES: Record<SyncedEntity, string> = {
   ...FIRST_SYNCED_STORES,
   ...ALIAS_STORES,
+  ...DEPARTMENT_STORES,
 };
 
 /** Version 3 (YSL-28): the outbox tells queued operations from rejected ones. */
@@ -417,6 +445,7 @@ export class CourrierDatabase extends Dexie {
   recipientAlias!: Table<LocalRecipientAlias, string>;
   batch!: Table<LocalBatch, string>;
   parcel!: Table<LocalParcel, string>;
+  department!: Table<LocalDepartment, string>;
   emailTemplate!: Table<LocalEmailTemplate, string>;
   notification!: Table<LocalNotification, string>;
   pickupCode!: Table<LocalPickupCode, string>;
@@ -449,6 +478,10 @@ export class CourrierDatabase extends Dexie {
     this.version(5).stores(NOTIFICATION_V5);
     this.version(6).stores(ALIAS_STORES);
     this.version(7).stores(PROOF_STORES);
+    // The cursor is past the departments the server held back from this app: read everything again.
+    this.version(8)
+      .stores(DEPARTMENT_STORES)
+      .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -463,6 +496,7 @@ export class CourrierDatabase extends Dexie {
     this.handover = this.table('handover');
     this.event = this.table('event');
     this.setting = this.table('setting');
+    this.department = this.table('department');
     this.outbox = this.table('outbox');
     this.photo = this.table('photo');
     this.syncState = this.table('sync_state');

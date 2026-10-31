@@ -6,6 +6,7 @@ import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  foreignKey,
   index,
   pgTable,
   text,
@@ -13,9 +14,13 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { department } from '#schema/department';
 import { user } from '#schema/auth';
 import { contact, directoryPerson } from '#schema/directory';
 import { oneOf, syncColumns, syncConstraints } from '#schema/sync';
+
+/** Stands for « none » in a unique index, where two nulls never clash. */
+const NO_DEPARTMENT = sql.raw("'00000000-0000-0000-0000-000000000000'::uuid");
 
 export const handover = pgTable(
   'handover',
@@ -85,6 +90,8 @@ export const pickupCode = pgTable(
     ...syncColumns(),
     personId: uuid('person_id'),
     contactId: uuid('contact_id'),
+    /** The only department it opens (§3.7.9); null on a code of before, or of a parcel without one. */
+    departmentId: uuid('department_id'),
     tokenHash: text('token_hash').notNull(),
     pinHash: text('pin_hash').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -92,12 +99,26 @@ export const pickupCode = pgTable(
   },
   (table) => [
     ...syncConstraints('pickup_code', table),
+    foreignKey({
+      name: 'pickup_code_department_fk',
+      columns: [table.organizationId, table.departmentId],
+      foreignColumns: [department.organizationId, department.id],
+    }),
+    index('pickup_code_department_idx')
+      .on(table.organizationId, table.departmentId)
+      .where(sql`${table.departmentId} is not null`),
     uniqueIndex('pickup_code_token_hash_idx').on(table.tokenHash),
     uniqueIndex('pickup_code_active_person_idx')
-      .on(table.personId)
+      .on(
+        table.personId,
+        sql`coalesce(${table.departmentId}, ${NO_DEPARTMENT})`,
+      )
       .where(sql`${table.usedAt} is null and ${table.deletedAt} is null`),
     uniqueIndex('pickup_code_active_contact_idx')
-      .on(table.contactId)
+      .on(
+        table.contactId,
+        sql`coalesce(${table.departmentId}, ${NO_DEPARTMENT})`,
+      )
       .where(sql`${table.usedAt} is null and ${table.deletedAt} is null`),
     index('pickup_code_person_id_idx')
       .on(table.organizationId, table.personId)

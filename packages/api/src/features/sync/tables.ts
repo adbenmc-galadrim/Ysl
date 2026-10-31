@@ -2,6 +2,7 @@ import type { SyncedEntity } from '@repo/contract/sync';
 import {
   batch,
   contact,
+  department,
   directoryPerson,
   emailTemplate,
   event,
@@ -32,6 +33,7 @@ export const SYNC_TABLES = {
   setting,
   sender_alias: senderAlias,
   recipient_alias: recipientAlias,
+  department,
 } as const satisfies Record<SyncedEntity, unknown>;
 
 export type SyncTable = (typeof SYNC_TABLES)[SyncedEntity];

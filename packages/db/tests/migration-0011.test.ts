@@ -75,6 +75,7 @@ describe('0011_reponses_salaries', () => {
       replied_at: null,
       expected_delegate: null,
       reminders_paused_until: null,
+      department_id: null,
     });
     await expect(
       client.query(`update parcel set reply = 'absent' where id = $1`, [

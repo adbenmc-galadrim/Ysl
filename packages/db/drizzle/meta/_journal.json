@@ -141,6 +141,13 @@
       "when": 1793427311674,
       "tag": "0019_expediteur_entreprise",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793429628567,
+      "tag": "0020_synchro_par_departement",
+      "breakpoints": true
     }
   ]
 }

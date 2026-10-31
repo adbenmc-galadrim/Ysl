@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import {
+  bigint,
   foreignKey,
   index,
   jsonb,
@@ -19,6 +20,8 @@ export const department = pgTable(
     name: text('name').notNull(),
     receptionPoint: text('reception_point'),
     pickup: jsonb('pickup'),
+    /** The last transaction that took a row out of this department: a device behind it reads everything again. */
+    scopeXid: bigint('scope_xid', { mode: 'number' }),
   },
   (table) => [
     ...syncConstraints('department', table, { referenced: true }),
