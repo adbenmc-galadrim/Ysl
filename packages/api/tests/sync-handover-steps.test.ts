@@ -200,4 +200,51 @@ describe('the profile on the handovers pushed', () => {
       ]),
     ).toEqual([200]);
   });
+
+  it('a handover cancelled does not cover a later one that was refused', async () => {
+    await writeOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      SIGNATURE_REQUIRED,
+      AGENT_ID,
+    );
+    const first = await handoverOps({
+      hasScan: false,
+      method: 'signature',
+      hasSignature: true,
+    });
+    await db.insert(schema.handover).values({
+      id: newId(),
+      organizationId: ORGANIZATION_ID,
+      parcelIds: [first.parcel],
+      personId,
+      recipientName: 'Léa Martin',
+      method: 'qr',
+      agentId: AGENT_ID,
+      at: new Date(),
+      cancelledAt: new Date(),
+    });
+    const [write] = first.ops.filter((one) => one.entity === 'parcel');
+    expect(await statuses([write!])).toEqual([403]);
+    expect(await statusOfParcel(first.parcel)).toBe('notifie');
+  });
+
+  it('a parcel already handed over, or imported as such, stays writable', async () => {
+    const imported = {
+      ...parcelRow(),
+      id: newId(),
+      personId,
+      status: 'remis' as const,
+      deliveredAt: new Date(),
+      deliveredBy: AGENT_ID,
+    };
+    expect(await statuses([op('parcel', imported.id, imported)])).toEqual([
+      200,
+    ]);
+    expect(
+      await statuses([
+        op('parcel', imported.id, { ...imported, senderName: 'Fnac' }),
+      ]),
+    ).toEqual([200]);
+  });
 });

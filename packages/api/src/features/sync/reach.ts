@@ -1,4 +1,5 @@
 import { canWriteDirectory } from '@repo/contract/auth';
+import type { HandoverMethod } from '@repo/contract/handover';
 import {
   missingHandoverSteps,
   OPERATING_PROFILE_KEY,
@@ -141,7 +142,7 @@ async function checkHandoverSteps(
     if (known || !('hasScan' in patch) || patch.cancelledAt) return;
     if (new Date(patch.at as string | Date) < required.updatedAt) return;
     const missing = missingHandoverSteps(required.profile, {
-      method: patch.method as never,
+      method: patch.method as HandoverMethod,
       hasSignature: patch.hasSignature as boolean,
       hasPhoto: patch.hasPhoto as boolean,
       hasScan: patch.hasScan as boolean,
@@ -149,12 +150,28 @@ async function checkHandoverSteps(
     if (missing.length > 0) noStep(op);
     return;
   }
+  if (isDelivery) {
+    // Only a parcel going to `remis` needs a handover: one already there, or
+    // arriving as such from an import, hands nothing over.
+    const [row] = await tx
+      .select({ status: parcel.status })
+      .from(parcel)
+      .where(
+        and(
+          eq(parcel.organizationId, organizationId),
+          eq(parcel.id, op.entityId),
+        ),
+      );
+    if (!row || row.status === 'remis') return;
+  }
   const [listed] = await tx
     .select({ id: handover.id })
     .from(handover)
     .where(
       and(
         eq(handover.organizationId, organizationId),
+        isNull(handover.cancelledAt),
+        isNull(handover.deletedAt),
         isDelivery
           ? arrayContains(handover.parcelIds, [op.entityId])
           : eq(handover.id, String(delivered)),
