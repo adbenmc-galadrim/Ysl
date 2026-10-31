@@ -1,3 +1,7 @@
+import {
+  resolveRetention,
+  type ResolvedRetention,
+} from '@repo/contract/company-settings';
 import { cutoff, RETENTION } from '@repo/contract/retention';
 import type {
   CourrierDatabase,
@@ -9,6 +13,7 @@ import type {
 import { deleteProof } from '#/features/handover/proofs';
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { deletePhoto, ORPHAN_GRACE_MS } from '#/features/photos/store';
+import { readCompanySettings } from '#/features/settings/company-settings';
 
 export type LocalPurgeReport = {
   at: Date;
@@ -33,6 +38,8 @@ type PhotoContext = {
   drafts: Set<string>;
   pending: Set<string>;
   now: Date;
+  /** The company's durations; without any, those of §9.2. */
+  retention?: ResolvedRetention;
 };
 
 /**
@@ -46,10 +53,10 @@ type PhotoContext = {
  */
 export function photoExpired(
   photo: LocalPhoto,
-  { parcels, drafts, pending, now }: PhotoContext,
+  { parcels, drafts, pending, now, retention = RETENTION }: PhotoContext,
 ): boolean {
   if (photo.kind === 'signature') {
-    return photo.createdAt < cutoff(now, RETENTION.signature);
+    return photo.createdAt < cutoff(now, retention.signature);
   }
   if (photo.parcelId === null) return false;
   const parcel = parcels.get(photo.parcelId);
@@ -60,7 +67,7 @@ export function photoExpired(
   const settled = settledAt(parcel);
   return (
     settled !== null &&
-    settled < cutoff(now, RETENTION.photo) &&
+    settled < cutoff(now, retention.photo) &&
     !pending.has(parcel.id)
   );
 }
@@ -69,6 +76,7 @@ type ProofContext = {
   handovers: Map<string, LocalHandover>;
   pending: Set<string>;
   now: Date;
+  retention?: ResolvedRetention;
 };
 
 /**
@@ -80,17 +88,17 @@ type ProofContext = {
  */
 export function proofExpired(
   proof: LocalHandoverProof,
-  { handovers, pending, now }: ProofContext,
+  { handovers, pending, now, retention = RETENTION }: ProofContext,
 ): boolean {
   const handover = handovers.get(proof.handoverId);
   if (!handover || handover.deletedAt) {
     return now.getTime() - proof.createdAt.getTime() >= ORPHAN_GRACE_MS;
   }
   if (proof.kind === 'signature') {
-    return proof.createdAt < cutoff(now, RETENTION.signature);
+    return proof.createdAt < cutoff(now, retention.signature);
   }
   return (
-    handover.at < cutoff(now, RETENTION.photo) && !pending.has(handover.id)
+    handover.at < cutoff(now, retention.photo) && !pending.has(handover.id)
   );
 }
 
@@ -98,6 +106,7 @@ async function purgeProofs(
   db: CourrierDatabase,
   files: PhotoFiles,
   now: Date,
+  retention: ResolvedRetention,
 ): Promise<number> {
   const proofs = await db.handoverProof.toArray();
   if (!proofs.length) return 0;
@@ -116,6 +125,7 @@ async function purgeProofs(
     handovers,
     pending: new Set(queued.map((op) => op.entityId)),
     now,
+    retention,
   };
   let removed = 0;
   for (const proof of proofs) {
@@ -127,9 +137,9 @@ async function purgeProofs(
 }
 
 /**
- * The purge of this iPhone (§9.2): photos and handover proofs past their
- * time, and what the reader made of labels after 30 days or once their
- * parcel is gone. Rows
+ * The purge of this iPhone (§9.2, with the company's durations): photos and
+ * handover proofs past their time, and what the reader made of labels past
+ * theirs or once their parcel is gone. Rows
  * the server purged leave with the pull; this covers what never goes to
  * the server. Photos go one by one, row then file: a crash in between
  * leaves an orphan file, which the launch sweep removes.
@@ -139,7 +149,10 @@ export async function purgeLocal(
   files: PhotoFiles | null,
   now = new Date(),
 ): Promise<LocalPurgeReport> {
-  const extractionCut = cutoff(now, RETENTION.extraction);
+  const retention = resolveRetention(
+    (await readCompanySettings(db)).retention,
+  );
+  const extractionCut = cutoff(now, retention.extraction);
   // One transaction: a batch finished meanwhile writes its parcels and their
   // readings together, never a reading this purge would take for an orphan.
   const extractions = await db.transaction(
@@ -162,7 +175,7 @@ export async function purgeLocal(
   let photos = 0;
   let proofs = 0;
   if (files) {
-    proofs = await purgeProofs(db, files, now);
+    proofs = await purgeProofs(db, files, now, retention);
     const stored = await db.photo
       .filter((row) => row.parcelId !== null)
       .toArray();
@@ -178,7 +191,7 @@ export async function purgeLocal(
       .filter((op) => op.entity === 'parcel')
       .toArray();
     const pending = new Set(queued.map((op) => op.entityId));
-    const context = { parcels, drafts, pending, now };
+    const context = { parcels, drafts, pending, now, retention };
     for (const photo of await db.photo.toArray()) {
       if (!photoExpired(photo, context)) continue;
       await deletePhoto(db, files, photo.id);

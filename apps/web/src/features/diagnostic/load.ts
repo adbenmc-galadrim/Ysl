@@ -1,4 +1,5 @@
-import { cutoff, RETENTION } from '@repo/contract/retention';
+import { cutoff } from '@repo/contract/retention';
+import { currentRetention } from '#/features/settings/company-snapshot';
 import { extractionOf } from '#/features/batch/extraction';
 import type { CourrierDatabase, LocalExtraction } from '#/features/db/schema';
 import { findLabelPhoto } from '#/features/parcels/api/parcel-record';
@@ -46,7 +47,7 @@ export async function loadReading(
   const parcel = await db.parcel.get(id);
   if (!parcel || parcel.deletedAt) return { kind: 'none', reason: 'missing' };
   if (!parcel.batchId) return { kind: 'none', reason: 'never' };
-  if (parcel.receivedAt < cutoff(now, RETENTION.extraction)) {
+  if (parcel.receivedAt < cutoff(now, currentRetention().extraction)) {
     return { kind: 'none', reason: 'purged' };
   }
   return { kind: 'none', reason: 'elsewhere' };

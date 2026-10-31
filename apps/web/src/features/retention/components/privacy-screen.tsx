@@ -1,3 +1,4 @@
+import { resolveRetention } from '@repo/contract/company-settings';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Banner, Button, DonneesScreen, Sheet } from '@repo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,6 +14,7 @@ import {
   retentionGroup,
 } from '#/features/retention/describe';
 import { localPurge } from '#/features/retention/start';
+import { useCompanySettings } from '#/features/settings/use-company-settings';
 import { syncNow } from '#/features/sync/sync';
 import { trpcClient } from '#/lib/trpc';
 import { useOnline } from '#/lib/use-online';
@@ -40,6 +42,7 @@ function eraseMessage(error: unknown): string {
 export function PrivacyScreen() {
   const navigate = useNavigate();
   const online = useOnline();
+  const company = useCompanySettings();
   const queryClient = useQueryClient();
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [confirming, setConfirming] = useState(false);
@@ -87,7 +90,7 @@ export function PrivacyScreen() {
   return (
     <>
       <DonneesScreen
-        retention={retentionGroup}
+        retention={retentionGroup(resolveRetention(company.retention))}
         purge={{
           title: t('privacy.purge.title'),
           subtitle,
