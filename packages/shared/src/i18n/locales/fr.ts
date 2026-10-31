@@ -727,14 +727,6 @@ export const fr = {
   'directory.error.emailMissing': 'Indiquez l’adresse e-mail.',
   'directory.error.emailInvalid': 'Adresse e-mail incomplète.',
   'directory.error.save': 'Fiche non enregistrée sur l’iPhone, réessayez.',
-  'directory.banner.one': '1 personne, ajoutée à l’usage',
-  'directory.banner.many': '{{count}} personnes, ajoutées à l’usage',
-  'directory.banner.detail':
-    'Ici ou à la remise d’un colis, sur tous les iPhone.',
-  'directory.error.firstName': 'Indiquez le prénom.',
-  'directory.error.lastName': 'Indiquez le nom.',
-  'directory.edit.description':
-    'Le changement vaut sur tous les iPhone du service.',
   'directory.title': 'Annuaire',
   'directory.subtitle.one': '{{people}} dans 1 département',
   'directory.subtitle.many': '{{people}} dans {{count}} départements',

@@ -4,7 +4,13 @@ import { Button } from '#components/button';
 import { ContactRow } from '#components/contact-row';
 import { Field, FieldInput } from '#components/field';
 import { Sheet } from '#components/sheet';
-import type { ContactDuplicate } from '#screens/reglages/new-contact-sheet';
+
+/** The person the directory already has under the typed e-mail. */
+export type ContactDuplicate = {
+  name: string;
+  initials: string;
+  detail?: string;
+};
 
 export type OutsideContactDraft = {
   name: string;

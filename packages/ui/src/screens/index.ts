@@ -48,7 +48,5 @@ export * from '#screens/remise/remise-detail-screen';
 export * from '#screens/remise/retire-par-screen';
 export * from '#screens/remise/scanner-qr-screen';
 export * from '#screens/remise/signature-screen';
-export * from '#screens/reglages/annuaire-screen';
-export * from '#screens/reglages/new-contact-sheet';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';
