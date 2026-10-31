@@ -552,6 +552,30 @@ describe('sync.push by role', () => {
       });
     });
 
+    it('empties when the parcel goes to a card without one', async () => {
+      const access = accessOf('shuttle');
+      const id = newId();
+      const personId = await addPerson(db, finance);
+      await statusOf(access, op('parcel', id, newParcel({ personId })));
+      const blank = await addPerson(db, null);
+      await statusOf(access, op('parcel', id, newParcel({ personId: blank })));
+      expect((await storedParcel(id))?.departmentId).toBeNull();
+    });
+
+    it('stays on a parcel on tour whose card has none', async () => {
+      const access = accessOf('shuttle');
+      const id = newId();
+      const personId = await addPerson(db, finance);
+      const parcel = newParcel({ status: 'en_route', personId });
+      await statusOf(
+        access,
+        op('parcel', id, { ...parcel, departmentId: legal }),
+      );
+      const blank = await addPerson(db, null);
+      await statusOf(access, op('parcel', id, { ...parcel, personId: blank }));
+      expect((await storedParcel(id))?.departmentId).toBe(legal);
+    });
+
     it('is required to be born on tour', async () => {
       const personId = await addPerson(db, null);
       expect(
