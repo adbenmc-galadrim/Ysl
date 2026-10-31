@@ -1,7 +1,7 @@
 # Conversion de la prod vers le modèle multi-entreprises
 
 Ticket YSL-118, ME09 (cahier v3, §3.7.2), D21, D22, D30, §3.7.9. La conversion est la
-migration `packages/db/drizzle/0023_conversion_prod.sql` : `apps/server/docker-entrypoint.sh`
+migration `packages/db/drizzle/0024_conversion_prod.sql` : `apps/server/docker-entrypoint.sh`
 la joue au déploiement, avant le démarrage de l'API.
 
 ## Ce qu'elle fait
@@ -12,7 +12,7 @@ Pour chaque organisation, en ne remplissant que ce qui est vide :
 | --- | --- |
 | Départements | « Service courrier », plus un par valeur du texte `department` (fiches, colis, contacts ayant un colis), casse et espaces ignorés |
 | `department.pickup` | Copie du réglage `pickup` ; le réglage reste, les e-mails le lisent encore |
-| Personne | Le département de son texte, sinon « Service courrier » |
+| Personne | Le département de son texte, sinon « Service courrier » ; si ce département a déjà son e-mail (unique par département, `0022`), elle reste sans département, ses colis vont à « Service courrier », et un admin tranche depuis l'annuaire (onglet « Sans département ») |
 | Colis en attente d'une personne | Suit la personne (trigger `directory_person_moved`) |
 | Autre colis (`remis`, `retourne`, supprimé, contact, sans destinataire) | Son texte, puis sa personne, puis le texte du contact, puis « Service courrier » |
 | Code ouvert | Suit la personne ; celui d'un contact prend le département de son dernier colis en attente |
@@ -26,7 +26,7 @@ Sur une base vide, ou jouée deux fois, elle ne change rien.
 
 État de la prod relevé le 31/10/2026 : 3 comptes, tous `admin`, aucun `agent`.
 
-`0022_departement_archive.sql`, jouée juste avant, refuse qu'un colis ou une personne
+`0023_departement_archive.sql`, jouée juste avant, refuse qu'un colis ou une personne
 rejoigne un département archivé.
 
 ## Après le déploiement
@@ -72,7 +72,9 @@ le commit d'avant le merge (`git push --force-with-lease origin <sha>:prod`), co
 ### Des écritures à garder depuis le déploiement
 
 Les colonnes `department_id`, les départements et le profil restent : l'ancien code les
-tolère (il les connaît depuis `0020`). Seuls les rôles, les gardes de `0022` et le journal
+tolère (il les connaît depuis `0020`). `0022` n'est pas défaite : l'unicité de l'e-mail par
+département et les demandes de déplacement appartiennent à l'ancien code aussi. Une personne
+rattachée à la conversion a déjà fermé ses demandes ouvertes, qu'un retour ne rouvre pas. Seuls les rôles, les gardes de `0023` et le journal
 des migrations reviennent.
 
 1. Arrêter l'API.
@@ -94,7 +96,7 @@ des migrations reviennent.
    COMMIT;
    ```
 
-   Le `DELETE` retire les deux dernières lignes du journal : à ne jouer que si `0023` est
+   Le `DELETE` retire les deux dernières lignes du journal : à ne jouer que si `0024` est
    bien la dernière migration appliquée. Il permet de rejouer la conversion plus tard.
    Tout compte `company_admin` ou `shuttle`, même antérieur à la conversion ou créé depuis,
    devient `admin` ou `agent` : un `admin` regagne les droits admin de Better Auth sur l'ancien code.
