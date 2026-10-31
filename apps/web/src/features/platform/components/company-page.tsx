@@ -21,6 +21,7 @@ import {
   longDate,
   modelName,
 } from '#/features/platform/company-view';
+import { InviteCompanyAdmin } from '#/features/invitations/components/invite-company-admin';
 import { platformErrorMessage } from '#/features/platform/errors';
 import { usePlatformChrome } from '#/features/platform/components/use-platform-chrome';
 import { initialsOf } from '#/features/settings/initials';
@@ -78,13 +79,14 @@ function useCompanyActions(id: string, onDone: () => void) {
 }
 
 /** One client: its name and figures, what can be done to it. No account is named (D26). */
-export function CompanyPage({ id }: { id: string }) {
+export function CompanyPage({ id, invite }: { id: string; invite?: true }) {
   const desk = useMediaQuery(DESK_WIDTH);
   const navigate = useNavigate();
   const chrome = usePlatformChrome();
   const [asked, setAsked] = useState<Asked>(null);
   const [typed, setTyped] = useState('');
   const [newName, setNewName] = useState('');
+  const [inviting, setInviting] = useState(Boolean(invite));
   const actions = useCompanyActions(id, () => setAsked(null));
   const query = useQuery({
     queryKey: ['platform', 'company', id],
@@ -109,6 +111,21 @@ export function CompanyPage({ id }: { id: string }) {
     );
   }
 
+  const inviteSheet = inviting && (
+    <InviteCompanyAdmin
+      organizationId={company.id}
+      afterCreation={invite === true}
+      onClose={() => {
+        setInviting(false);
+        void navigate({
+          to: '/entreprises/$id',
+          params: { id },
+          search: {},
+          replace: true,
+        });
+      }}
+    />
+  );
   const close = () => {
     setAsked(null);
     setTyped('');
@@ -185,49 +202,60 @@ export function CompanyPage({ id }: { id: string }) {
       />
     );
     return (
-      <FicheEntrepriseDesktop
-        chrome={chrome}
-        overlay={renameDialog || suspendDialog || deleteDialog || undefined}
-        data={{
-          name: company.name,
-          initials: initialsOf(company.name),
-          status: actions.reactivate.isError
-            ? platformErrorMessage(actions.reactivate.error)
-            : statusLine(company),
-          suspended,
-          stats,
-          profile: [
-            [t('platform.sheet.model'), model],
-            ...(changedSteps === null
-              ? []
-              : [[t('platform.sheet.changedSteps'), changedSteps]]),
-          ],
-          actions: (
-            <>
-              <Button
-                variant="outline"
-                size="desk"
-                icon={suspended ? 'refresh' : 'pause'}
-                disabled={actions.reactivate.isPending}
-                onClick={primary}
-              >
-                {primaryLabel}
-              </Button>
-              <Button variant="outline" size="desk" onClick={askRename}>
-                {t('platform.sheet.rename')}
-              </Button>
-              <Button
-                variant="outline"
-                size="desk"
-                className="text-red"
-                onClick={() => setAsked('delete')}
-              >
-                {t('platform.sheet.delete')}
-              </Button>
-            </>
-          ),
-        }}
-      />
+      <>
+        {inviteSheet}
+        <FicheEntrepriseDesktop
+          chrome={chrome}
+          overlay={renameDialog || suspendDialog || deleteDialog || undefined}
+          data={{
+            name: company.name,
+            initials: initialsOf(company.name),
+            status: actions.reactivate.isError
+              ? platformErrorMessage(actions.reactivate.error)
+              : statusLine(company),
+            suspended,
+            stats,
+            profile: [
+              [t('platform.sheet.model'), model],
+              ...(changedSteps === null
+                ? []
+                : [[t('platform.sheet.changedSteps'), changedSteps]]),
+            ],
+            actions: (
+              <>
+                <Button
+                  variant="outline"
+                  size="desk"
+                  icon="userPlus"
+                  onClick={() => setInviting(true)}
+                >
+                  {t('platform.sheet.invite')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="desk"
+                  icon={suspended ? 'refresh' : 'pause'}
+                  disabled={actions.reactivate.isPending}
+                  onClick={primary}
+                >
+                  {primaryLabel}
+                </Button>
+                <Button variant="outline" size="desk" onClick={askRename}>
+                  {t('platform.sheet.rename')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="desk"
+                  className="text-red"
+                  onClick={() => setAsked('delete')}
+                >
+                  {t('platform.sheet.delete')}
+                </Button>
+              </>
+            ),
+          }}
+        />
+      </>
     );
   }
   return (
@@ -269,6 +297,9 @@ export function CompanyPage({ id }: { id: string }) {
         onPrimary={primary}
       >
         <div className="mt-6 flex flex-col gap-3">
+          <Button block variant="secondary" onClick={() => setInviting(true)}>
+            {t('platform.sheet.invite')}
+          </Button>
           <Button block variant="secondary" onClick={askRename}>
             {t('platform.sheet.rename')}
           </Button>
@@ -277,6 +308,7 @@ export function CompanyPage({ id }: { id: string }) {
           </Button>
         </div>
       </FicheEntrepriseMountedMobile>
+      {inviteSheet}
       {asked === 'suspend' && (
         <SuspendreMobile
           fixed

@@ -60,9 +60,9 @@ export const fr = {
   'platform.model.strict_traceability.feature.proof': 'QR ou code obligatoire',
   'platform.new.confirm': 'Créer',
   'platform.new.continue': 'Continuer',
-  'platform.new.note': 'Étape 1 sur 2',
+  'platform.new.note': 'Étape 1 sur 3',
   'platform.new.note.adjust':
-    'Étape 2 sur 2 · l’entreprise pourra tout modifier ensuite',
+    'Étape 2 sur 3 · l’entreprise pourra tout modifier ensuite',
   'platform.new.summary': '{{model}} · {{changed}}',
   'platform.new.summary.desk': 'Modèle « {{model}} » · {{changed}}',
   'platform.new.changed.none': 'aucune étape modifiée',
@@ -245,6 +245,7 @@ export const fr = {
   'invitations.admin.title': 'Inviter un administrateur',
   'invitations.admin.description':
     'Possible seulement sans administrateur actif. Il recevra un lien valable 7 jours.',
+  'invitations.admin.titleStep': 'Étape 3 sur 3 · Inviter un administrateur',
   'invitations.admin.name': 'Nom',
   'invitations.admin.email': 'E-mail',
   'invitations.admin.submit': 'Envoyer l’invitation',

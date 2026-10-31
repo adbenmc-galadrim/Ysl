@@ -63,8 +63,8 @@ const FEATURES = {
   ],
 } as const;
 
-/** Two steps until the invitation comes as the third. */
-const TOTAL_STEPS = 2;
+/** The third, the invitation, opens on the company's page once it exists. */
+const TOTAL_STEPS = 3;
 
 function stepGroups(
   profile: OperatingProfile,
@@ -90,7 +90,7 @@ function changedLine(count: number): string {
     : t('platform.new.changed.many', { count });
 }
 
-/** A name, a model, then each step of it (D30): what is written is what this page shows. */
+/** A name, a model, then each step of it (D30): what is written is what this page shows. The invitation follows on the company's page. */
 export function NewCompanyPage() {
   const desk = useMediaQuery(DESK_WIDTH);
   const navigate = useNavigate();
@@ -111,7 +111,11 @@ export function NewCompanyPage() {
       }),
     onSuccess: async ({ id }) => {
       await queryClient.invalidateQueries({ queryKey: COMPANIES_KEY });
-      void navigate({ to: '/entreprises/$id', params: { id } });
+      void navigate({
+        to: '/entreprises/$id',
+        params: { id },
+        search: { invite: true },
+      });
     },
     // The name is what gets refused: back where it is typed, adjustments kept.
     onError: () => setAdjusting(false),
