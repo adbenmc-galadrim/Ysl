@@ -69,11 +69,14 @@ export function collectorCard(
   name: string,
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
 ): CollectorCard {
-  const person = people.find(
+  const named = people.filter(
     (p) => p.active && !p.deletedAt && sameName(fullName(p), name),
   );
-  if (person) return choiceCard(personOption(person));
+  // Two cards of this name: nothing says which department is the right one.
+  if (named.length > 1) return { name, initials: initialsOf(name) };
+  if (named[0]) return choiceCard(personOption(named[0], names));
   const contact = contacts.find((c) => !c.deletedAt && sameName(c.name, name));
   if (contact) return choiceCard(contactOption(contact));
   return { name, initials: initialsOf(name) };

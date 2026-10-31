@@ -305,6 +305,42 @@ export const PersonneHorsAnnuaire: Story = {
 };
 
 /** Réglages › Annuaire › a contact: its card, and the directory card it can now join. */
+const TWINS: RecipientOption[] = [
+  { id: 'a', name: 'Anne Martin', initials: 'AM', detail: 'Finance' },
+  { id: 'b', name: 'Anne Martin', initials: 'AM', detail: 'Presse' },
+];
+
+export const VerifierFichesJumelles: Story = {
+  name: 'Vérifier, fiches jumelles',
+  render: () => (
+    <VerifierColisScreen
+      step={{ index: 1, total: 1 }}
+      readName="ANNE MARTIN"
+      candidates={TWINS}
+      fields={[]}
+    />
+  ),
+};
+
+export const PersonneHorsAnnuaireJumelles: Story = {
+  name: 'Personne hors annuaire, même adresse',
+  render: () => (
+    <HorsAnnuaireSheet
+      value={{
+        name: 'Anne Martin',
+        email: 'anne.martin@maison.fr',
+        department: '',
+      }}
+      onChange={() => {}}
+      onSubmit={() => {}}
+      duplicate={TWINS[0]}
+      onUseDuplicate={() => {}}
+      twins={TWINS.slice(1)}
+      onUseTwin={() => {}}
+    />
+  ),
+};
+
 export const ModifierContact: Story = {
   name: 'Modifier un contact hors annuaire',
   render: () => (

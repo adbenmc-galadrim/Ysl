@@ -13,7 +13,7 @@ import {
   normalizeEmail,
 } from '#/features/directory/people';
 import { loadRecipientBook } from '#/features/parcels/recipients';
-import { outsideDuplicate } from '#/features/recipient/contacts';
+import { outsideDuplicates } from '#/features/recipient/contacts';
 import {
   type Choice,
   optionOf,
@@ -65,9 +65,9 @@ export function RecipientChooser({
   const contacts = book?.contacts ?? [];
   const names = book?.names ?? NO_DEPARTMENT_NAMES;
   const searching = query.trim() !== '';
-  const duplicate = typing
-    ? outsideDuplicate(typing.email, people, contacts)
-    : null;
+  const [duplicate = null, ...twins] = typing
+    ? outsideDuplicates(typing.email, people, contacts, names)
+    : [];
 
   // One answer per chooser: a double tap must not save the same contact twice.
   const answer = async (picked: RecipientPick) => {
@@ -149,6 +149,11 @@ export function RecipientChooser({
               ? () => void answer({ kind: 'card', choice: duplicate })
               : undefined
           }
+          twins={twins}
+          onUseTwin={(id) => {
+            const choice = twins.find((twin) => twin.id === id);
+            if (choice) void answer({ kind: 'card', choice });
+          }}
           onSubmit={submit}
           onDismiss={() => setTyping(null)}
         />

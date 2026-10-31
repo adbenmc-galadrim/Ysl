@@ -6,7 +6,12 @@ import type {
   LocalContact,
   LocalDirectoryPerson,
 } from '#/features/db/schema';
-import { departmentNames, normalizeEmail } from '#/features/directory/people';
+import {
+  type DepartmentNames,
+  departmentNames,
+  NO_DEPARTMENT_NAMES,
+  normalizeEmail,
+} from '#/features/directory/people';
 import {
   type Choice,
   contactOption,
@@ -24,24 +29,26 @@ export type OutsideContact = {
 
 /**
  * Whoever this mailroom already knows under the e-mail typed for someone
- * outside the directory: a card of the directory first, then a contact.
- * The sheet offers them instead of a second contact for the same address.
+ * outside the directory: every card of the directory at that address, one
+ * per department (ME23), else a contact. The sheet offers them instead of a
+ * second contact for the same address.
  */
-export function outsideDuplicate(
+export function outsideDuplicates(
   email: string,
   people: readonly LocalDirectoryPerson[],
   contacts: readonly LocalContact[],
-): Choice | null {
+  names: DepartmentNames = NO_DEPARTMENT_NAMES,
+): Choice[] {
   const key = normalizeEmail(email);
-  if (!key) return null;
-  const person = people.find(
+  if (!key) return [];
+  const cards = people.filter(
     (p) => p.active && !p.deletedAt && normalizeEmail(p.email) === key,
   );
-  if (person) return personOption(person);
+  if (cards.length > 0) return cards.map((p) => personOption(p, names));
   const contact = contacts.find(
     (c) => !c.deletedAt && c.email !== null && normalizeEmail(c.email) === key,
   );
-  return contact ? contactOption(contact) : null;
+  return contact ? [contactOption(contact)] : [];
 }
 
 /**

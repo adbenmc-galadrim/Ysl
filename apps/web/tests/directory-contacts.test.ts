@@ -93,6 +93,12 @@ describe('mergeTarget', () => {
     expect(
       mergeTarget({ email: null, nameNorm: 'marc petit' }, [card, homonym]),
     ).toBeNull();
+    expect(
+      mergeTarget(marc(), [
+        card,
+        { ...card, id: newId(), departmentId: 'presse' },
+      ]),
+    ).toBeNull();
   });
 });
 

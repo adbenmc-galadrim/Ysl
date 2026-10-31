@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { assignRecipient } from '#/features/parcels/complete';
 import {
-  outsideDuplicate,
+  outsideDuplicates,
   saveOutsideContact,
 } from '#/features/recipient/contacts';
 import { searchOptions } from '#/features/recipient/options';
@@ -122,12 +122,37 @@ describe('Personne hors annuaire', () => {
     const camille = personRow();
     const temp = contactRow({ name: 'Marc Petit', email: 'marc@interim.fr' });
     expect(
-      outsideDuplicate(' CAMILLE@example.com', [camille], [temp]),
-    ).toMatchObject({ kind: 'person', id: camille.id });
+      outsideDuplicates(' CAMILLE@example.com', [camille], [temp]),
+    ).toMatchObject([{ kind: 'person', id: camille.id }]);
     expect(
-      outsideDuplicate('marc@interim.fr', [camille], [temp]),
-    ).toMatchObject({ kind: 'contact', id: temp.id });
-    expect(outsideDuplicate('', [camille], [temp])).toBeNull();
+      outsideDuplicates('marc@interim.fr', [camille], [temp]),
+    ).toMatchObject([{ kind: 'contact', id: temp.id }]);
+    expect(outsideDuplicates('', [camille], [temp])).toEqual([]);
+  });
+
+  it('offers every twin at the address, each with its department', () => {
+    const twin = (id: string, departmentId: string) =>
+      personRow({
+        id,
+        email: 'anne@example.com',
+        departmentId,
+        department: null,
+      });
+
+    expect(
+      outsideDuplicates(
+        'anne@example.com',
+        [twin('a', 'finance'), twin('b', 'presse')],
+        [],
+        new Map([
+          ['finance', 'Finance'],
+          ['presse', 'Presse'],
+        ]),
+      ).map((choice) => [choice.id, choice.detail]),
+    ).toEqual([
+      ['a', 'Finance'],
+      ['b', 'Presse'],
+    ]);
   });
 });
 

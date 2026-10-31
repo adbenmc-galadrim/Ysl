@@ -12,6 +12,9 @@ export type ContactDuplicate = {
   detail?: string;
 };
 
+/** One of several cards at that address, one per department (ME23). */
+export type ContactTwin = ContactDuplicate & { id: string };
+
 export type OutsideContactDraft = {
   name: string;
   email: string;
@@ -38,6 +41,9 @@ export type HorsAnnuaireSheetProps = {
   duplicate?: ContactDuplicate | null;
   /** « Utiliser cette fiche »: takes the one already there. */
   onUseDuplicate?: () => void;
+  /** The cards after `duplicate` at that address, each with its own button. */
+  twins?: readonly ContactTwin[];
+  onUseTwin?: (id: string) => void;
   /** Offered without blocking the save: the directory now lists this person. */
   merge?: HorsAnnuaireMerge | null;
   /** Opens the sheet on the e-mail, e.g. from « Sans e-mail ». */
@@ -65,6 +71,8 @@ export function HorsAnnuaireSheet({
   emailError,
   duplicate,
   onUseDuplicate,
+  twins = [],
+  onUseTwin,
   merge,
   focusEmail = false,
   onDelete,
@@ -149,6 +157,24 @@ export function HorsAnnuaireSheet({
                 Utiliser cette fiche
               </Button>
             )}
+            {twins.map((twin) => (
+              <div key={twin.id} className="flex flex-col gap-3">
+                <ContactRow
+                  name={twin.name}
+                  initials={twin.initials}
+                  detail={twin.detail}
+                  trailing={null}
+                />
+                <Button
+                  variant="outline"
+                  size="md"
+                  block
+                  onClick={() => onUseTwin?.(twin.id)}
+                >
+                  Utiliser cette fiche
+                </Button>
+              </div>
+            ))}
           </div>
         )}
         <Field label="Service (facultatif)" className="mt-4">
