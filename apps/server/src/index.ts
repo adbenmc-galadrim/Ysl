@@ -17,6 +17,7 @@ import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { secureHeaders } from 'hono/secure-headers';
+import { authRoutes } from '#auth-routes';
 import { clientIp } from '#client-ip';
 import { startMailJob } from '#mail-job';
 import { mailWebhook } from '#mail-webhook';
@@ -69,20 +70,23 @@ app.get('/ready', async (c) => {
   }
 });
 
-app.on(['GET', 'POST'], '/api/auth/*', (c) => {
-  // The rate limit keys on the socket address, or on the entry appended by the
-  // trusted proxy; never on a value the client chose.
-  const headers = new Headers(c.req.raw.headers);
-  headers.set(
-    CLIENT_IP_HEADER,
-    clientIp({
-      socketAddress: getConnInfo(c).remote.address,
-      forwardedFor: c.req.header('x-forwarded-for'),
-      trustProxy: env.TRUST_PROXY,
-    }),
-  );
-  return auth.handler(new Request(c.req.raw, { headers }));
-});
+app.route(
+  '/api/auth',
+  authRoutes((c) => {
+    // The rate limit keys on the socket address, or on the entry appended by the
+    // trusted proxy; never on a value the client chose.
+    const headers = new Headers(c.req.raw.headers);
+    headers.set(
+      CLIENT_IP_HEADER,
+      clientIp({
+        socketAddress: getConnInfo(c).remote.address,
+        forwardedFor: c.req.header('x-forwarded-for'),
+        trustProxy: env.TRUST_PROXY,
+      }),
+    );
+    return auth.handler(new Request(c.req.raw, { headers }));
+  }),
+);
 
 app.route(
   '/api/webhooks/mail',
