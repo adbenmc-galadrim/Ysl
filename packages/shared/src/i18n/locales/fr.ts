@@ -1002,6 +1002,7 @@ export const fr = {
   'mail.server.superseded': 'Déjà prévenu autrement',
   'mail.server.expired': 'Envoi abandonné : demande trop ancienne',
   'mail.server.noAddress': 'Pas d’adresse e-mail',
+  'mail.server.noDepartment': 'Colis sans département',
   'mail.server.unsubscribed': 'Adresse désinscrite des e-mails',
   'mail.server.failed': 'Non envoyé par le serveur',
   'mail.parcel.today': 'reçu à {{time}}',

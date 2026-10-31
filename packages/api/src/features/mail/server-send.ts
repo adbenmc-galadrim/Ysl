@@ -49,6 +49,10 @@ export const REQUEST_MAX_AGE_MS = 3 * 24 * 60 * 60_000;
 
 type Request = typeof notification.$inferSelect;
 type Parcel = typeof parcel.$inferSelect;
+type Placed = Parcel & { departmentId: string };
+
+/** A person may still be filed under no department: a code opens one, so none is drawn. */
+const isPlaced = (item: Parcel): item is Placed => item.departmentId !== null;
 
 const DAY = new Intl.DateTimeFormat('fr-FR', {
   timeZone: ZONE,
@@ -314,14 +318,13 @@ async function whoOf(tx: AnyDb, row: Request, parcels: Parcel[]): Promise<Who> {
 async function queueMail(
   tx: AnyDb,
   row: Request,
-  parcels: Parcel[],
+  parcels: Placed[],
   address: string,
   who: Who,
   type: 'avis' | 'relance',
   now: Date,
 ): Promise<void> {
-  // Set on every parcel since the conversion and `parcel_department_of_contact`.
-  const departmentId = parcels[0]!.departmentId!;
+  const { departmentId } = parcels[0]!;
   const [agent] = await tx
     .select({ name: user.name, email: user.email })
     .from(user)
@@ -403,18 +406,20 @@ async function prepareOne(tx: AnyDb, id: string, now: Date): Promise<void> {
   const who = await whoOf(tx, row, told);
   // Moved to someone else since the request: their code and name are not this mail's.
   const asked = row.recipients[0]?.toLowerCase();
-  const parcels = told.filter(
+  const mine = told.filter(
     (item) =>
       (row.personId !== null && item.personId === row.personId) ||
       (row.contactId !== null && item.contactId === row.contactId) ||
       who.addressOf(item)?.toLowerCase() === asked,
   );
-  if (parcels.length === 0) return fail(id, t('mail.server.superseded'));
+  if (mine.length === 0) return fail(id, t('mail.server.superseded'));
+  const parcels = mine.filter(isPlaced);
+  if (parcels.length === 0) return fail(id, t('mail.server.noDepartment'));
   const type =
     firstRead || row.type !== 'relance' ? 'avis' : ('relance' as const);
 
   // One mail per department: a code opens one, and a second mail there would withdraw it.
-  const groups = new Map<string | null, Parcel[]>();
+  const groups = new Map<string, Placed[]>();
   for (const item of parcels) {
     groups.set(item.departmentId, [
       ...(groups.get(item.departmentId) ?? []),

@@ -101,4 +101,8 @@ BEGIN
 END;
 $$;--> statement-breakpoint
 -- Named to fire before `parcel_department_open`, which checks what it sets.
-CREATE TRIGGER "parcel_department_of_contact" BEFORE INSERT OR UPDATE ON "parcel" FOR EACH ROW EXECUTE FUNCTION "public"."parcel_department_of_contact"();
+CREATE TRIGGER "parcel_department_of_contact" BEFORE INSERT OR UPDATE ON "parcel" FOR EACH ROW EXECUTE FUNCTION "public"."parcel_department_of_contact"();--> statement-breakpoint
+-- The contacts' parcels written since the conversion: the trigger above places them.
+UPDATE "parcel" SET updated_at = updated_at
+ WHERE person_id IS NULL AND contact_id IS NOT NULL AND department_id IS NULL
+   AND status IN ('a_completer', 'recu', 'notifie');

@@ -312,6 +312,25 @@ describe('a request written by the iPhone', () => {
     expect(brevo.sent).toHaveLength(0);
   });
 
+  it('draws no code for a person filed under no department', async () => {
+    const { id: person } = await addPerson();
+    await db
+      .update(directoryPerson)
+      .set({ departmentId: null })
+      .where(eq(directoryPerson.id, person));
+    const row = { ...parcelRow(), personId: person };
+    await db.insert(parcel).values(row);
+    const mail = await request(person, [row.id]);
+    await round();
+    expect(brevo.sent).toHaveLength(0);
+    expect(await liveCodes(person)).toHaveLength(0);
+    expect(await mailOf(mail)).toMatchObject({
+      status: 'failed',
+      failedReason: 'Colis sans département',
+    });
+    expect(await parcelOf(row.id)).toMatchObject({ status: 'recu' });
+  });
+
   it('sends one mail for a double tap', async () => {
     const { id: person } = await addPerson();
     const parcelId = await addParcel(person);
