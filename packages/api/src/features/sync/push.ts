@@ -5,6 +5,7 @@ import {
   presetTemplateId,
   type NotificationStatus,
 } from '@repo/contract/mail';
+import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { isSettingKey, SETTING_VALUES } from '@repo/contract/settings';
 import type { AnyDb } from '@repo/db';
 import {
@@ -20,6 +21,7 @@ import {
   notification,
   pickupCode,
   syncOp as syncOpTable,
+  setting,
 } from '@repo/db/schema';
 import { logger } from '@repo/shared/logger';
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
@@ -129,12 +131,33 @@ function updatesOf(table: SyncTable, values: Values): Values {
  * an agent cannot change them, and a value that does not match its key would
  * end up in every e-mail.
  */
-function checkSetting(op: SyncOp, { role }: Writer): void {
+async function checkSetting(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId, role }: Writer,
+): Promise<void> {
   if (!isCompanyAdmin(role)) {
     throw new SyncRejected(
       SYNC_STATUS.forbidden,
       `setting ${op.entityId} written by a non-admin`,
       'sync.op.adminOnly',
+    );
+  }
+  const [row] = await tx
+    .select({ key: setting.key })
+    .from(setting)
+    .where(
+      and(
+        eq(setting.organizationId, organizationId),
+        eq(setting.id, op.entityId),
+      ),
+    );
+  // Only `operating.save` writes it, after the announcement (D31): a device neither deletes nor reuses the row.
+  if (row?.key === OPERATING_PROFILE_KEY) {
+    throw new SyncRejected(
+      SYNC_STATUS.forbidden,
+      `setting ${op.entityId} is written by the server`,
+      'sync.op.readOnly',
     );
   }
   if (op.type === 'delete') return;
@@ -418,7 +441,7 @@ async function applyOne(
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
         await checkReach(tx, op, writer);
-        if (op.entity === 'setting') checkSetting(op, writer);
+        if (op.entity === 'setting') await checkSetting(tx, op, writer);
         if (op.entity === 'email_template') await checkTemplate(tx, op, writer);
         if (op.entity === 'notification') {
           await checkNotification(tx, op, writer);

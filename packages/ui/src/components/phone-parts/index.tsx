@@ -280,15 +280,17 @@ export function PhoneField({
 }
 
 /** Mutually exclusive words in a grey track; the measures come from the page. */
-export function PhoneSegments({
+export function PhoneSegments<T extends string>({
   options,
   value,
+  onChange,
   label,
   className,
   optionClassName,
 }: {
-  options: readonly string[];
-  value: string;
+  options: readonly (T | { value: T; label: string })[];
+  value: T;
+  onChange?: (value: T) => void;
   label: string;
   className?: string;
   optionClassName?: string;
@@ -299,20 +301,25 @@ export function PhoneSegments({
       aria-label={label}
       className={cn('grid auto-cols-fr grid-flow-col bg-fill-2 p-0.5', className)}
     >
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          role="radio"
-          aria-checked={option === value}
-          className={cn(
-            'cursor-pointer font-semibold text-ink-2 aria-checked:bg-ink aria-checked:text-on-ink',
-            optionClassName,
-          )}
-        >
-          {option}
-        </button>
-      ))}
+      {options.map((option) => {
+        const { value: id, label: word } =
+          typeof option === 'string' ? { value: option, label: option } : option;
+        return (
+          <button
+            key={id}
+            type="button"
+            role="radio"
+            aria-checked={id === value}
+            onClick={() => onChange?.(id)}
+            className={cn(
+              'cursor-pointer font-semibold text-ink-2 aria-checked:bg-ink aria-checked:text-on-ink',
+              optionClassName,
+            )}
+          >
+            {word}
+          </button>
+        );
+      })}
     </div>
   );
 }

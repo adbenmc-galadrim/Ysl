@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { OperatingProfile } from './operating-profile';
 
 export const USER_ROLES = [
   'agent',
@@ -31,14 +32,14 @@ export function seesWholeCompany(role: UserRole): boolean {
 }
 
 /**
- * A shuttle hands over only when the profile makes it act as a department
- * (§2.1). The profile comes with YSL-124, which replaces this answer.
+ * Gives a parcel to an employee (§2.1): the shuttle when the profile makes it
+ * act as a department; `admin` and `agent` still do, until the conversion.
  */
-const SHUTTLE_ACTS_AS_DEPARTMENT = false;
-
-/** Gives a parcel to an employee (§2.1); `admin` and `agent` still do, until the conversion. */
-export function canHandOver(role: UserRole): boolean {
-  if (role === 'shuttle') return SHUTTLE_ACTS_AS_DEPARTMENT;
+export function canHandOver(
+  role: UserRole,
+  profile: Pick<OperatingProfile, 'shuttleActsAsDepartment'>,
+): boolean {
+  if (role === 'shuttle') return profile.shuttleActsAsDepartment;
   return role === 'department' || role === 'admin' || role === 'agent';
 }
 

@@ -331,7 +331,7 @@ Ces exigences sont toutes de lot L2 et priorité M, sauf mention contraire. Chaq
 
 #### 3.7.4 Profil de fonctionnement et réglages (F38, D28, D30, D31)
 
-Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèle est choisi par l'admin de l'app à la création ; l'admin entreprise modifie ensuite librement, sans verrou.
+Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèle est choisi par l'admin de l'app à la création ; l'admin entreprise modifie ensuite librement, sans verrou. Sans profil enregistré, une entreprise garde le comportement d'avant le profil ; le profil est lu à chaque usage, rien ne le recopie sur un colis.
 
 | Paramètre | Valeurs |
 | --- | --- |

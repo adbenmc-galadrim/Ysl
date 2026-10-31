@@ -197,6 +197,16 @@ export function ReglagesHome() {
         label: t('settings.pickup'),
         onPress: () => void navigate({ to: '/reglages/lieu-et-horaires' }),
       },
+      ...(isCompanyAdmin(role)
+        ? [
+            {
+              icon: 'list' as const,
+              color: 'grey' as const,
+              label: t('settings.operating'),
+              onPress: () => void navigate({ to: '/reglages/fonctionnement' }),
+            },
+          ]
+        : []),
       {
         icon: 'upload',
         color: 'indigo',

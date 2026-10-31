@@ -1,4 +1,4 @@
-import { canHandOver, canWriteDirectory } from '@repo/contract/auth';
+import { canWriteDirectory } from '@repo/contract/auth';
 import { PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import { SYNC_STATUS, type SyncOp } from '@repo/contract/sync';
 import type { AnyDb } from '@repo/db';
@@ -16,6 +16,7 @@ import { SyncRejected } from '#features/sync/errors';
 import { isHiddenFromDepartment } from '#features/sync/scope';
 import { tableOf } from '#features/sync/tables';
 import { parcelScope, type Access } from '#lib/access';
+import { mayHandOver } from '#features/operating/service';
 
 type Values = Record<string, unknown>;
 
@@ -282,7 +283,7 @@ export async function checkReach(
   if (op.entity === 'department') {
     refuse(op, 'is not written by a device', 'sync.op.readOnly');
   }
-  if (!canHandOver(access.role)) await checkHandOver(tx, op, access);
+  if (!(await mayHandOver(tx, access))) await checkHandOver(tx, op, access);
   if (op.entity === 'directory_person' && !canWriteDirectory(access.role)) {
     refuse(op, 'is read-only for this account', 'sync.op.directoryReadOnly');
   }
