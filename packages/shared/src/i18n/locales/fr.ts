@@ -37,6 +37,12 @@ export const fr = {
   'agents.error.emailTaken': 'Un compte existe déjà avec cet e-mail.',
   'agents.error.notFound': 'Ce compte n’existe pas.',
   'agents.error.invalid': 'Les informations saisies sont invalides.',
+  'departments.error.nameTaken': 'Un département porte déjà ce nom.',
+  'departments.error.notFound': 'Ce département n’existe pas.',
+  'departments.error.hasMembers':
+    'Ce département a encore des comptes rattachés.',
+  'departments.error.notDepartmentAccount':
+    'Seul un compte département se rattache à un département.',
   'devices.error.notFound': 'Cet appareil est déjà déconnecté.',
   'devices.error.current':
     'Pour cet appareil, utilisez « Effacer les données de cet iPhone » dans Données et confidentialité.',

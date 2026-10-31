@@ -8,6 +8,7 @@
     "./agents": "./src/agents.ts",
     "./auth": "./src/auth.ts",
     "./codes": "./src/codes/index.ts",
+    "./departments": "./src/departments.ts",
     "./devices": "./src/devices.ts",
     "./exports": "./src/exports.ts",
     "./extract": "./src/extract/index.ts",
