@@ -33,6 +33,19 @@ export const QrVerifie: Story = {
   },
 };
 
+/** The profile requires each step: « Remettre » waits, and says for what. */
+export const EtapesExigees: Story = {
+  name: 'Étapes exigées',
+  args: {
+    ...QrVerifie.args,
+    onSignature: () => {},
+    signatureRequired: true,
+    photo: { taken: true, onTake: () => {} },
+    scan: { label: '1 colis sur 3 scanné', done: false, onScan: () => {} },
+    confirmNote: 'Faites signer avant de remettre.',
+  },
+};
+
 /** One parcel left on the shelf: the button counts two, the header offers to tick all again. */
 export const Partielle: Story = {
   args: { ...QrVerifie.args, excluded: ['p-4472'] },
