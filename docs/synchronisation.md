@@ -67,6 +67,8 @@ Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal
 
 **`department`** se lit seulement et ne s'envoie qu'au client qui l'annonce (`departments: true`) : une PWA d'avant ne connaît pas cette table et sa synchronisation s'arrêterait.
 
+**Statuts d'une tournée** (`en_route`, `depose`, `a_regulariser`) : seul le client qui l'annonce (`tourStatuses: true`) les reçoit. Une PWA d'avant reçoit ces colis comme retirés (`deletedAt`) : ils quittent l'appareil sans casser sa synchronisation, et reviennent à leur prochaine écriture dans un statut qu'elle connaît. Sa copie restée en file est refusée par `parcel_status_guard`. Elle perd l'historique déjà reçu de ces colis jusqu'à sa mise à jour. À la mise à jour, le curseur s'efface (Dexie 9) pour tout relire.
+
 Le suivi d'un colis (`tracking_norm`) n'est pas une clé naturelle : un même numéro peut
 être reçu deux fois (« Ajouter quand même », F10), l'index `parcel_tracking_norm_idx` n'est
 pas unique et le doublon se traite sur l'appareil, à la lecture

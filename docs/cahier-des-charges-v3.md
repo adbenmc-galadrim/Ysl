@@ -973,6 +973,7 @@ stateDiagram-v2
     A_regulariser --> En_route: réaffecté
     Notifie --> A_regulariser: écart ou salarié déplacé
     Depose --> Notifie: e-mail envoyé
+    En_route --> Notifie: dépôt confirmé, e-mail déjà parti au scan (§3.7.9)
     Depose --> Retourne: retour à l'expéditeur
     A_regulariser --> Retourne: retour à l'expéditeur
     Recu --> Notifie: navette = département, e-mail envoyé
