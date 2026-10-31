@@ -14,11 +14,7 @@ import { newId } from '@repo/shared/id';
 import { and, count, eq, isNull, sql } from 'drizzle-orm';
 import type { Access } from '#lib/access';
 
-/** The company's profile; without a saved one, what the app did before (D30). */
-export async function readOperatingProfile(
-  db: AnyDb,
-  organizationId: string,
-): Promise<OperatingProfile> {
+async function readProfileRow(db: AnyDb, organizationId: string) {
   const [row] = await db
     .select({ value: setting.value })
     .from(setting)
@@ -29,6 +25,15 @@ export async function readOperatingProfile(
         isNull(setting.deletedAt),
       ),
     );
+  return row;
+}
+
+/** The company's profile; without a saved one, what the app did before (D30). */
+export async function readOperatingProfile(
+  db: AnyDb,
+  organizationId: string,
+): Promise<OperatingProfile> {
+  const row = await readProfileRow(db, organizationId);
   return row ? parseOperatingProfile(row.value) : DEFAULT_OPERATING_PROFILE;
 }
 
@@ -41,16 +46,7 @@ export async function goesOnTour(
   db: AnyDb,
   organizationId: string,
 ): Promise<boolean> {
-  const [row] = await db
-    .select({ value: setting.value })
-    .from(setting)
-    .where(
-      and(
-        eq(setting.organizationId, organizationId),
-        eq(setting.key, OPERATING_PROFILE_KEY),
-        isNull(setting.deletedAt),
-      ),
-    );
+  const row = await readProfileRow(db, organizationId);
   const value = row?.value as
     { shuttleActsAsDepartment?: unknown } | null | undefined;
   return value?.shuttleActsAsDepartment === false;

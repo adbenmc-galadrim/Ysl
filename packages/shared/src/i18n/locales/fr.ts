@@ -8,13 +8,15 @@ export const fr = {
   'company.suspended.title': 'Votre entreprise est suspendue',
   'company.suspended.description':
     'La connexion et la synchronisation sont arrêtées. Vos colis, photos et preuves restent sur ce téléphone : rien n’est effacé. Tout repartira quand l’entreprise sera réactivée.',
-  'company.suspended.pending': 'Modifications en attente sur ce téléphone : {{count}}',
+  'company.suspended.pending':
+    'Modifications en attente sur ce téléphone : {{count}}',
   'company.suspended.retry': 'Vérifier à nouveau',
   'platform.nav.companies': 'Entreprises',
   'platform.account.role': 'Administrateur de l’app',
   'platform.signOut': 'Se déconnecter',
   'platform.search': 'Rechercher une entreprise',
-  'platform.note': 'Chiffres seulement : ni colis, ni annuaire, ni nom de salarié.',
+  'platform.note':
+    'Chiffres seulement : ni colis, ni annuaire, ni nom de salarié.',
   'platform.loading': 'Chargement…',
   'platform.list.subtitle': '{{count}} entreprises clientes',
   'platform.list.subtitle.one': '1 entreprise cliente',
@@ -46,14 +48,12 @@ export const fr = {
     'Dépôt confirmé au nombre',
   'platform.model.multi_departments.feature.email': 'E-mail au dépôt',
   'platform.model.multi_departments.feature.proof': 'QR ou code obligatoire',
-  'platform.model.multi_departments.feature.reminders':
-    'Relances automatiques',
+  'platform.model.multi_departments.feature.reminders': 'Relances automatiques',
   'platform.model.strict_traceability': 'Traçabilité stricte',
   'platform.model.strict_traceability.title': 'Traçabilité stricte',
   'platform.model.strict_traceability.description':
     'Chaque geste est prouvé, du dépôt à la remise.',
-  'platform.model.strict_traceability.feature.deposit':
-    'Dépôt colis par colis',
+  'platform.model.strict_traceability.feature.deposit': 'Dépôt colis par colis',
   'platform.model.strict_traceability.feature.handover':
     'Scan et signature obligatoires',
   'platform.model.strict_traceability.feature.photo': 'Photo facultative',
@@ -68,7 +68,8 @@ export const fr = {
   'platform.new.changed.none': 'aucune étape modifiée',
   'platform.new.changed.one': '1 étape modifiée',
   'platform.new.changed.many': '{{count}} étapes modifiées',
-  'platform.sheet.status.active': 'Active · créée le {{date}} · modèle {{model}}',
+  'platform.sheet.status.active':
+    'Active · créée le {{date}} · modèle {{model}}',
   'platform.sheet.status.suspended':
     'Suspendue depuis le {{since}} · créée le {{date}} · modèle {{model}}',
   'platform.sheet.stat.accounts': 'Comptes',
@@ -283,8 +284,7 @@ export const fr = {
     'Effet à sa prochaine requête. Son téléphone se recharge alors sur ce que ce rôle voit.',
   'accounts.role.confirm': 'Changer le rôle',
   'accounts.suspended.title': 'Compte suspendu',
-  'accounts.suspended.data':
-    'Vos photos et preuves restent sur ce téléphone.',
+  'accounts.suspended.data': 'Vos photos et preuves restent sur ce téléphone.',
   'accounts.suspended.action':
     'Demandez à votre administrateur de réactiver le compte.',
   'accounts.suspended.retry': 'Vérifier à nouveau',
@@ -643,6 +643,8 @@ export const fr = {
   'tour.progress.many': '{{count}} départements sur {{total}} déposés',
   'tour.left.one': '1 colis reste',
   'tour.left.many': '{{count}} colis restent',
+  'tour.subtitle': '{{served}} · {{left}}',
+  'tour.stop.subtitle': '{{place}} · {{parcels}}',
   'tour.done.line': '{{parcels}} · confirmé à {{time}}',
   'tour.department.unknown': 'Département inconnu',
   'tour.toSettle.one': '1 colis à régulariser',
@@ -828,7 +830,8 @@ export const fr = {
   'parcel.todo.dispatch': 'À mettre en route vers son département',
   'parcel.todo.en_route': 'En route vers son département',
   'parcel.todo.depose': 'Déposé au département : prévenir le destinataire',
-  'parcel.todo.a_regulariser': 'Bloqué : à réaffecter par l’admin de l’entreprise',
+  'parcel.todo.a_regulariser':
+    'Bloqué : à réaffecter par l’admin de l’entreprise',
   'parcel.todo.notifie': 'En attente de retrait par le destinataire',
   'parcel.todo.remis': 'Rien à faire : remis au destinataire',
   'parcel.todo.retourne': 'Rien à faire : retourné à l’expéditeur',
@@ -1507,7 +1510,8 @@ export const fr = {
   'remind.section.otherWay': 'À prévenir autrement',
   'remind.section.bounced': 'Adresse refusée',
   'remind.row.fix': 'Corriger',
-  'remind.row.bounced': 'Le dernier e-mail n’est pas arrivé : adresse à corriger',
+  'remind.row.bounced':
+    'Le dernier e-mail n’est pas arrivé : adresse à corriger',
   'remind.row.parcels': '{{count}} colis · {{names}}',
   'remind.row.never': 'Notifié il y a {{days}} jours, jamais relancé',
   'remind.row.reminded':

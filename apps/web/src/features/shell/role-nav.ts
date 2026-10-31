@@ -35,7 +35,13 @@ export function deskNav(
         { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
         { id: 'annuaire', label: t('directory.nav.directory'), icon: 'users' },
         ...(role === 'company_admin'
-          ? [{ id: 'comptes', label: t('accounts.title'), icon: 'key' } as const]
+          ? [
+              {
+                id: 'comptes',
+                label: t('accounts.title'),
+                icon: 'key',
+              } as const,
+            ]
           : []),
         { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
       ],
@@ -64,7 +70,7 @@ export type RoleSpace = {
   label: string;
 };
 
-/** On the phone, Colis stays the home: the role's own space opens from Réglages. */
+/** The role's own space, opened from Réglages on the phone. A shuttle on tour also opens on it (`HomePage`). */
 export function roleSpace(
   role: AccountRole,
   t: TranslateFn,

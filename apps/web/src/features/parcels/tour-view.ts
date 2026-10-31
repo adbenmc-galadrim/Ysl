@@ -1,4 +1,5 @@
-import type { LocalParcel } from '#/features/db/schema';
+import type { TranslateFn } from '@repo/shared/i18n';
+import type { LocalDepartment, LocalParcel } from '#/features/db/schema';
 import { startOfDay } from '#/features/parcels/model';
 
 type TourParcel = Pick<
@@ -28,6 +29,14 @@ export type TourView<Row> = {
   /** Every parcel of the tour is deposited (§3.7.9). */
   closed: boolean;
 };
+
+export const parcelsLabel = (count: number, t: TranslateFn) =>
+  count === 1 ? t('tour.parcels.one') : t('tour.parcels.many', { count });
+
+export const departmentName = (
+  department: LocalDepartment | undefined,
+  t: TranslateFn,
+) => department?.name ?? t('tour.department.unknown');
 
 /** Carried: on its way. A gap (« À régulariser ») or a return leaves the tour: neither holds it open. */
 const onItsWay = (parcel: TourParcel) => parcel.status === 'en_route';

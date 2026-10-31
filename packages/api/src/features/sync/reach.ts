@@ -363,7 +363,7 @@ const withoutDepartment = ({ departmentId: _dropped, ...rest }: Values) => {
 };
 
 /**
- * The department a row gets. A department stamps its own and cannot give a
+ * The department a row gets, and on tour who received it. A department stamps its own and cannot give a
  * parcel away. A parcel for a person follows that person (the trigger of
  * drizzle/0020): once it has a department, a copy's, perhaps stale, says
  * nothing; a new parcel or one without any takes what the agent chose at the

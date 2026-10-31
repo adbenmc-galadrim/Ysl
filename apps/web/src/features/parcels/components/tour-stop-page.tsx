@@ -4,9 +4,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '#/features/db/database';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
-import { departmentName } from '#/features/parcels/components/tour-page';
 import { loadTour } from '#/features/parcels/api/use-tour';
-import { carrierLabel, recipientOf } from '#/features/parcels/model';
+import { carrierLineOf, describeParcel } from '#/features/parcels/model';
+import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -18,35 +18,26 @@ export function TourStopPage({ departmentId }: { departmentId: string }) {
     const parcels =
       tour.stops.find((row) => row.departmentId === departmentId)?.parcels ??
       [];
+    const context = await loadRecipientContext(db, parcels);
+    const now = new Date();
     return {
       department: departments.get(departmentId),
-      parcels,
-      context: await loadRecipientContext(db, parcels),
+      rows: parcels.map((parcel) => ({
+        id: parcel.id,
+        title: describeParcel(parcel, 'onTour', context, now, t).recipient,
+        line: carrierLineOf(parcel, t),
+      })),
     };
   }, [departmentId]);
-  const count = stop?.parcels.length ?? 0;
-  const parcelsLine =
-    count === 1 ? t('tour.parcels.one') : t('tour.parcels.many', { count });
+  const count = parcelsLabel(stop?.rows.length ?? 0, t);
   const place = stop?.department?.receptionPoint;
   return (
     <TourStopScreen
-      name={departmentName(stop?.department)}
-      subtitle={place ? `${place} · ${parcelsLine}` : parcelsLine}
-      parcels={(stop?.parcels ?? []).map((parcel) => {
-        const { person, contact } = recipientOf(parcel, stop!.context);
-        const carrier = carrierLabel(parcel, t);
-        const last4 =
-          parcel.tracking && parcel.type !== 'sans_suivi'
-            ? parcel.tracking.slice(-4)
-            : '';
-        return {
-          id: parcel.id,
-          title: person
-            ? `${person.firstName} ${person.lastName}`
-            : (contact?.name ?? t('parcel.recipient.unknown')),
-          line: last4 ? `${carrier} ···${last4}` : carrier,
-        };
-      })}
+      name={departmentName(stop?.department, t)}
+      subtitle={
+        place ? t('tour.stop.subtitle', { place, parcels: count }) : count
+      }
+      parcels={stop?.rows ?? []}
       onBack={() => void navigate({ to: '/' })}
       onParcel={(parcelId) =>
         void navigate({ to: '/colis/$parcelId', params: { parcelId } })

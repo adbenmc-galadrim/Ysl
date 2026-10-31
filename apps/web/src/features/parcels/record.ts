@@ -63,7 +63,7 @@ export type ParcelRecord = {
   contact?: LocalContact;
   /** On tour, the department it goes to. */
   goesTo?: string;
-  /** The company runs tours: a parcel with nowhere to go says so. */
+  /** The company runs tours, read for a parcel not on its way yet: where it goes, or that it should leave. */
   tour?: boolean;
   /** The `event` rows of this parcel, from every iPhone. */
   events: readonly LocalEvent[];

@@ -14,7 +14,10 @@ import { newId } from '@repo/shared/id';
 import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { writeCompanySettings } from '#features/company/settings';
-import { writeOperatingProfile } from '#features/operating/service';
+import {
+  goesOnTour,
+  writeOperatingProfile,
+} from '#features/operating/service';
 import { push } from '#features/sync/push';
 import type { Access } from '#lib/access';
 import {
@@ -752,7 +755,7 @@ describe('sync.push of a shuttle on tour', () => {
     });
   });
 
-  it('refuses an event or a notification on a parcel of another tour', async () => {
+  it('refuses an event on a parcel of another tour', async () => {
     const theirs = await addParcel({ receivedBy: other });
     const event = op('event', newId(), {
       entity: PARCEL_EVENT_ENTITY,
@@ -768,7 +771,6 @@ describe('sync.push of a shuttle on tour', () => {
 
 describe('whether a company runs tours', () => {
   it('reads the profile as the app does: only an explicit false', async () => {
-    const { goesOnTour } = await import('#features/operating/service');
     const company = OTHER_ORGANIZATION_ID;
     expect(await goesOnTour(sync, company)).toBe(false);
     await writeOperatingProfile(

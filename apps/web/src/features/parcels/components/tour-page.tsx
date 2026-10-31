@@ -12,10 +12,10 @@ import { useEffect, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { ReprendreLot } from '#/features/batch/components/reprendre-lot';
 import { db } from '#/features/db/database';
-import type { LocalDepartment } from '#/features/db/schema';
 import { useTour } from '#/features/parcels/api/use-tour';
 import { formatTime } from '#/features/parcels/model';
 import { putOnTour } from '#/features/parcels/tour';
+import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
 import { useSync } from '#/features/sync/use-sync';
 import {
   pendingBanner,
@@ -28,12 +28,6 @@ import { trpcClient } from '#/lib/trpc';
 import { useOnline } from '#/lib/use-online';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-const parcelsLabel = (count: number) =>
-  count === 1 ? t('tour.parcels.one') : t('tour.parcels.many', { count });
-
-export const departmentName = (department: LocalDepartment | undefined) =>
-  department?.name ?? t('tour.department.unknown');
 
 /** Asked of the server: nobody's phone holds these parcels. Offline, the line is simply absent. */
 function useUnclaimed() {
@@ -84,18 +78,18 @@ export function TourPage() {
       const department = data?.departments.get(departmentId);
       return {
         id: departmentId,
-        name: departmentName(department),
+        name: departmentName(department, t),
         place: department?.receptionPoint ?? '',
-        parcels: parcelsLabel(parcels.length),
+        parcels: parcelsLabel(parcels.length, t),
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
   const done: TourDoneRow[] = (tour?.done ?? [])
     .map(({ departmentId, count, confirmedAt }) => ({
       id: departmentId,
-      name: departmentName(data?.departments.get(departmentId)),
+      name: departmentName(data?.departments.get(departmentId), t),
       line: t('tour.done.line', {
-        parcels: parcelsLabel(count),
+        parcels: parcelsLabel(count, t),
         time: formatTime(confirmedAt),
       }),
     }))
@@ -109,7 +103,7 @@ export function TourPage() {
           {
             id: 'incomplete',
             icon: 'alert',
-            title: parcelsLabel(incomplete),
+            title: parcelsLabel(incomplete, t),
             line: t('tour.task.incomplete'),
             onClick: () => void navigate({ to: '/colis' }),
           } as const,
@@ -120,7 +114,7 @@ export function TourPage() {
           {
             id: 'dispatch',
             icon: 'package',
-            title: parcelsLabel(toDispatch.length),
+            title: parcelsLabel(toDispatch.length, t),
             line: t('tour.task.dispatch'),
             action: {
               label: t('tour.task.dispatch.action'),
@@ -139,7 +133,7 @@ export function TourPage() {
           {
             id: 'unclaimed',
             icon: 'users',
-            title: parcelsLabel(unclaimed.parcels),
+            title: parcelsLabel(unclaimed.parcels, t),
             line: unclaimed.failed
               ? t('tour.task.unclaimed.failed')
               : t('tour.task.unclaimed'),
@@ -166,11 +160,13 @@ export function TourPage() {
       ? undefined
       : tour.closed
         ? servedLine
-        : `${servedLine} · ${
-            tour.left === 1
-              ? t('tour.left.one')
-              : t('tour.left.many', { count: tour.left })
-          }`;
+        : t('tour.subtitle', {
+            served: servedLine ?? '',
+            left:
+              tour.left === 1
+                ? t('tour.left.one')
+                : t('tour.left.many', { count: tour.left }),
+          });
 
   return (
     <>
@@ -204,7 +200,7 @@ export function TourPage() {
                       ? 'tour.closed.text.one'
                       : 'tour.closed.text',
                     {
-                      parcels: parcelsLabel(tour.deposited),
+                      parcels: parcelsLabel(tour.deposited, t),
                       deposits: tour.departments,
                     },
                   ),
