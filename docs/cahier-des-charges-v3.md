@@ -413,7 +413,7 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | L'admin entreprise seul | YSL-134 |
 | Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Confirmé : le serveur tire un nouveau code à chaque relance et retire l'ancien, rétabli si le mail échoue ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
 | Conversion de la prod : profil de l'entreprise convertie et colis en cours | Profil qui reproduit l'agent unique (la navette remet, « Petit site ») ; les colis gardent leur statut | YSL-118 |
-| Cycle de vie d'une tournée : ouverture, clôture, colis « À compléter » | Un colis entre dans la tournée de la navette qui l'a validé ; la tournée se clôt quand tous sont déposés ; un colis « À compléter » reste visible de cette navette | YSL-133 |
+| Cycle de vie d'une tournée : ouverture, clôture, colis « À compléter » | Un colis entre dans la tournée de la navette qui l'a validé ; la tournée se clôt quand tous sont déposés ; un colis « À compléter » reste visible de cette navette. Confirmé par YSL-133 : la tournée se déduit des colis, sans table `tour` ; un colis À régulariser ou retourné ne la retient pas ; la navette faisant office de département n'a pas de tournée | YSL-133 |
 | Un même code de retrait couvre des colis de deux départements, ou un contact hors annuaire | Un code par personne et par département ; un contact prend le département du colis | YSL-117, YSL-136 |
 | Second admin d'une entreprise, ou remplacement du seul | L'admin entreprise invite un autre admin ; s'il n'y en a plus, l'admin de l'app réinvite, sans voir de donnée nominative | YSL-122 |
 | Trois états sur une étape sans geste humain ou sans objet | Relances : désactivées, à la main (facultatives), automatiques (obligatoires). Preuve désactivée : remise par le nom, tracée `manuel` | YSL-124, YSL-127 |
@@ -960,7 +960,7 @@ Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont
 | `pickup_code` | id, person_id ou contact_id, department_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne et par département, qui couvre ses colis en attente dans ce département (§3.7.9) |
 | `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
-| `tour`, `deposit` | Tournée : navette, dates. Dépôt : département, navette, nombre attendu, nombre confirmé, écart, confirmé par, à | Le nombre confirmé suffit ; le détail dépend du profil |
+| `deposit` | Tournée : pas de table, déduite des colis (§3.7.9). Dépôt : département, navette, nombre attendu, nombre confirmé, écart, confirmé par, à | Le nombre confirmé suffit ; le détail dépend du profil |
 | `setting` | clé, valeur | Réglages restants par entreprise ; lieu et horaires passent au département |
 
 **Côté client (Dexie)**, on retrouve les mêmes tables, à l'exception de `user`, ainsi que :

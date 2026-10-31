@@ -53,11 +53,13 @@ Ces statuts valent par opération. Un compte `platform_admin`, de rôle inconnu,
 | Rôle | Colis | Annuaire | Remise (`handover`, passage à `remis`, code utilisé, `pickup.verify`) |
 | --- | --- | --- | --- |
 | `company_admin` | toute l'entreprise | lecture, écriture | non |
-| `shuttle` | toute l'entreprise, jusqu'à YSL-133 (`parcelScope`) | lecture | selon le profil : « Navette = département » (`canHandOver`, relu à chaque écriture) |
+| `shuttle` | avec des tournées : les colis de ses tournées et ce qui s'y rattache, tout l'annuaire et les contacts ; sans tournée (« Navette = département ») ou sans profil : toute l'entreprise (`parcelScope`) | lecture | selon le profil : « Navette = département » (`canHandOver`, relu à chaque écriture) |
 | `department` | les siens | le sien, lecture et écriture | les siens |
 | `platform_admin` | aucun | aucun | non |
 
 Le profil de fonctionnement est la ligne `setting` de clé `operatingProfile`. Le serveur seul l'écrit (`operating.save`) : `sync.push` refuse cette clé, même d'un admin. Il descend à tous les appareils ; sans ligne, l'entreprise garde `DEFAULT_OPERATING_PROFILE`. La conversion (`docs/conversion-multi-entreprises.md`) pose `SMALL_SITE_OPERATING_PROFILE`. Une remise faite hors ligne par une navette dont le profil vient de changer est refusée au push (403) et part en « Corriger ».
+
+Un colis est dans la tournée de `coalesce(tour_shuttle_id, received_by)`. `tour_shuttle_id` ne descend jamais sur un appareil et une copie ne peut l'écrire, ni réécrire `received_by` : seul `tour.claim` le pose, sur les colis en cours d'aucune navette active. Changer de profil change la génération lue par la navette : son appareil relit tout et retire ce qu'il n'atteint plus, sans déconnexion. La tournée elle-même n'a pas de ligne : l'app la déduit des colis (`currentTour`), hors ligne compris.
 
 Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal, e-mails, remises), ses codes, les réglages et ses modèles ; ni les lots, ni les expéditeurs, ni les alias. Un colis sans département lui reste invisible. En écriture il ne crée pas de colis et n'en donne aucun à un autre département : 403 `sync.op.outOfScope`.
 
