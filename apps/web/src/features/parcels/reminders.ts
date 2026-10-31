@@ -1,5 +1,8 @@
 import { readParcelEvent } from '@repo/contract/parcel-event';
+import { reminderMode } from '@repo/contract/operating-profile';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
+import type { ReminderDates } from '#/features/parcels/model';
 
 /**
  * When each notified parcel was reminded: the mails confirmed sent after
@@ -10,7 +13,7 @@ import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 export async function loadReminderDates(
   db: CourrierDatabase,
   parcels: readonly LocalParcel[],
-): Promise<Map<string, Date[]>> {
+): Promise<Map<string, Date[]> & ReminderDates> {
   const notified = new Map(
     parcels
       .filter(
@@ -19,7 +22,9 @@ export async function loadReminderDates(
       )
       .map((parcel) => [parcel.id, parcel.notifiedAt!]),
   );
-  const dates = new Map<string, Date[]>();
+  const dates: Map<string, Date[]> & ReminderDates = new Map<string, Date[]>();
+  dates.remindersOff =
+    reminderMode((await readOperatingProfile(db)).reminders) === 'none';
   if (!notified.size) return dates;
   const since = new Date(
     Math.min(...[...notified.values()].map((at) => at.getTime())),

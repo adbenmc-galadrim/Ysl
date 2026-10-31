@@ -34,6 +34,8 @@ export type RevueLotScreenProps = {
   ready: ReviewRow[];
   readyCount?: number;
   saving?: boolean;
+  /** The batch cannot be saved yet: the button stays greyed out and this says why. */
+  saveNote?: string;
   onBack?: () => void;
   /** Opens « Vérifier un colis » on that parcel. */
   onOpen?: (id: string) => void;
@@ -110,6 +112,7 @@ export function RevueLotScreen({
   ready,
   readyCount = ready.length,
   saving = false,
+  saveNote,
   onBack,
   onOpen,
   onOpenReady,
@@ -119,12 +122,18 @@ export function RevueLotScreen({
     <Screen
       bottomInset={132}
       bottom={
-        <BottomBar surface="line">
+        <BottomBar
+          surface="line"
+          className={saveNote ? 'flex-col gap-0' : undefined}
+        >
+          {saveNote && (
+            <p className="mb-3 text-center text-14 text-muted">{saveNote}</p>
+          )}
           {/* Penpot sets the label 1 px above the middle. */}
           <Button
             block
             className="pb-0.5"
-            disabled={saving || count === 0}
+            disabled={saving || count === 0 || saveNote !== undefined}
             onClick={onSave}
           >
             Enregistrer {count} colis

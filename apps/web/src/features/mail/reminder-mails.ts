@@ -46,6 +46,8 @@ export async function loadReminderMails(
   db: CourrierDatabase,
   now = new Date(),
 ): Promise<ReminderMail[]> {
+  const profile = await readOperatingProfile(db);
+  if (reminderMode(profile.reminders) === 'none') return [];
   const notified = await db.parcel
     .where('[status+receivedAt]')
     .between(['notifie', Dexie.minKey], ['notifie', Dexie.maxKey])
@@ -63,8 +65,7 @@ export async function loadReminderMails(
   const onServer = await parcelsOnServer(db, now);
   // Automatic (§3.7.9): the server reminds whom it told, until only the alert is left.
   const automatic =
-    (await serverMailOn(db)) &&
-    reminderMode((await readOperatingProfile(db)).reminders) === 'automatic';
+    (await serverMailOn(db)) && reminderMode(profile.reminders) === 'automatic';
   const mailsAboutThem = (await db.notification.toArray()).filter(
     (row) => !row.deletedAt,
   );

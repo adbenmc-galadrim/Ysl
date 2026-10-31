@@ -18,6 +18,12 @@ export type ScannerQrScreenProps = {
   torchOn?: boolean;
   /** Takes the place of the hint until the next QR is read. */
   notice?: ScannerQrNotice;
+  /** For another reading than the QR of the e-mail: a parcel's label. */
+  title?: string;
+  hint?: string;
+  typeLabel?: string;
+  /** Without it, « Chercher un nom » is not offered. */
+  nameSearch?: boolean;
   onClose?: () => void;
   onTorch?: () => void;
   onTypeCode?: () => void;
@@ -35,6 +41,10 @@ export function ScannerQrScreen({
   torch = true,
   torchOn = false,
   notice,
+  title = 'Remise',
+  hint = 'Scannez le QR code de l’e-mail du salarié',
+  typeLabel = 'Taper le code',
+  nameSearch = true,
   onClose,
   onTorch,
   onTypeCode,
@@ -49,7 +59,7 @@ export function ScannerQrScreen({
       className="bg-scene-counter"
     >
       <CameraTopBar
-        title="Remise"
+        title={title}
         titleStyle="text"
         torch={torch}
         torchOn={torchOn}
@@ -72,27 +82,29 @@ export function ScannerQrScreen({
           )}
         </div>
       ) : (
-        <p className="px-5 text-center text-17 font-semibold">
-          Scannez le QR code de l’e-mail du salarié
-        </p>
+        <p className="px-5 text-center text-17 font-semibold">{hint}</p>
       )}
-      <div className="mt-[clamp(16px,calc(100dvh-764px),88px)] mb-[clamp(0px,calc(100dvh-784px),68px)] grid grid-cols-2 gap-3 px-5">
+      <div
+        className={`mt-[clamp(16px,calc(100dvh-764px),88px)] mb-[clamp(0px,calc(100dvh-784px),68px)] grid gap-3 px-5 ${nameSearch ? 'grid-cols-2' : 'grid-cols-1'}`}
+      >
         <Button
           variant="night"
           onClick={onTypeCode}
           className="justify-start gap-2.5 px-4 text-15"
         >
           <Icon name="hash" size={20} className="shrink-0" />
-          Taper le code
+          {typeLabel}
         </Button>
-        <Button
-          variant="night"
-          onClick={onSearchName}
-          className="justify-start gap-2.5 px-4 text-15"
-        >
-          <Icon name="search" size={20} className="shrink-0" />
-          Chercher un nom
-        </Button>
+        {nameSearch && (
+          <Button
+            variant="night"
+            onClick={onSearchName}
+            className="justify-start gap-2.5 px-4 text-15"
+          >
+            <Icon name="search" size={20} className="shrink-0" />
+            Chercher un nom
+          </Button>
+        )}
       </div>
     </CameraViewport>
   );

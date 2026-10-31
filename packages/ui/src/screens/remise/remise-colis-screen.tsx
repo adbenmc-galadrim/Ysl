@@ -45,12 +45,18 @@ export type RemiseColisScreenProps = {
   excluded?: string[];
   /**
    * Picked by the name, nothing proves who collects: the agent may have the
-   * recipient sign (`onSignature`), never required. A note says something
+   * recipient sign (`onSignature`), unless the profile requires it. A note says something
    * beside « Faire signer »; without `onSignature` the line is greyed out.
    */
   signatureNote?: string;
   /** The recipient signed: the line says so and opens the signature again. */
   signed?: boolean;
+  /** The profile requires a signature: the line shows whatever the proof. */
+  signatureRequired?: boolean;
+  /** The profile requires a photo before the handover. */
+  photo?: { taken: boolean; onTake: () => void };
+  /** Each parcel scanned against the list: « 1 sur 3 colis scannés ». */
+  scan?: { label: string; done: boolean; onScan: () => void };
   /**
    * Who collects, when not the recipient: « Retiré par Paul Mercier ». With
    * `onCollector`, a card under the banner opens the choice.
@@ -72,6 +78,19 @@ export type RemiseColisScreenProps = {
   onConfirm?: () => void;
   onBack?: () => void;
 };
+
+const Done = ({ children }: { children: string }) => (
+  <span className="flex items-center gap-2">
+    {children}
+    <Icon
+      name="tick"
+      size={16}
+      strokeWidth={2.6}
+      aria-label="Fait"
+      className="text-green"
+    />
+  </span>
+);
 
 /** « Reçu hier · Zalando, recommandé, abîmé »: what to check on the shelf. */
 function detailOf(parcel: RemiseParcel): string {
@@ -102,11 +121,14 @@ export function RemiseColisScreen({
   excluded = [],
   signatureNote,
   signed = false,
+  signatureRequired = false,
+  photo,
+  scan,
   collector,
   announced,
   onCollector,
   // The mockup's wording, kept so its reference holds; the app says the
-  // signature is optional (D6).
+  // signature is optional unless the profile requires it (D6).
   registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,
@@ -173,22 +195,13 @@ export function RemiseColisScreen({
           className="mt-3"
         />
       )}
-      {verifiedBy === 'name' &&
+      {(verifiedBy === 'name' || signatureRequired) &&
         (signatureNote !== undefined || onSignature) && (
           <LinkCard
             icon="sign"
             label={
               signed ? (
-                <span className="flex items-center gap-2">
-                  Signature ajoutée
-                  <Icon
-                    name="tick"
-                    size={16}
-                    strokeWidth={2.6}
-                    aria-label="Fait"
-                    className="text-green"
-                  />
-                </span>
+                <Done>Signature ajoutée</Done>
               ) : (
                 <>
                   Faire signer
@@ -203,6 +216,22 @@ export function RemiseColisScreen({
             className="mt-3 disabled:cursor-default disabled:opacity-60"
           />
         )}
+      {photo && (
+        <LinkCard
+          icon="camera"
+          label={photo.taken ? <Done>Photo ajoutée</Done> : 'Prendre la photo'}
+          onClick={photo.onTake}
+          className="mt-3"
+        />
+      )}
+      {scan && parcels.length > 0 && (
+        <LinkCard
+          icon="scan"
+          label={scan.done ? <Done>{scan.label}</Done> : scan.label}
+          onClick={scan.onScan}
+          className="mt-3"
+        />
+      )}
       {parcels.length === 0 ? (
         <EmptyState
           icon="inbox"

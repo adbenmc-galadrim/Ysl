@@ -2,7 +2,6 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { PhotoViewer, RemiseConfirmeeScreen, SignatureScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
-import { encodePhoto } from '#/features/camera/capture';
 import { db } from '#/features/db/database';
 import type { HandoverProofKind } from '#/features/db/schema';
 import {
@@ -14,26 +13,17 @@ import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remis
 import { announceHandover } from '#/features/handover/done-toast';
 import { loadHandoverEntry } from '#/features/handover/entry';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
+import { photoProof } from '#/features/handover/photo-proof';
 import { addHandoverProof, type ProofInput } from '#/features/handover/proofs';
 import { strokesToPng } from '#/features/handover/signature-png';
 import { signatureHeading } from '#/features/handover/signing';
 import { photoFiles } from '#/features/photos/opfs';
-import { readImageFile } from '#/features/scan/read-file';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { useOnline } from '#/lib/use-online';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
 const PROOF_LABELS = proofLabels(t);
-
-/** The photo of the handover as kept: upright, 1 600 px, JPEG without EXIF. */
-async function photoProof(file: File): Promise<ProofInput> {
-  const bitmap = await readImageFile(file);
-  try {
-    return { kind: 'photo', ...(await encodePhoto(bitmap)) };
-  } finally {
-    bitmap.close();
-  }
-}
 
 export type RemiseConfirmeePageProps = {
   handoverId: string;
@@ -51,7 +41,7 @@ export type RemiseConfirmeePageProps = {
 /**
  * P4 step 4, once the handover is written on this iPhone: the agent shows it
  * to the recipient, and may still have them sign or photograph the parcels
- * handed over (D6, never required). The sync line follows the outbox live,
+ * handed over, as far as the profile offers it. The sync line follows the outbox live,
  * so « Envoyée au serveur » ticks itself while the screen is up. The file
  * input is rendered once, outside the signature's branch, so the camera
  * always hands its photo to a mounted input.
@@ -69,6 +59,7 @@ export function RemiseConfirmeePage({
     () => loadHandoverEntry(db, handoverId),
     [handoverId],
   );
+  const profile = useOperatingProfile();
   const urls = useProofUrls(handoverId);
   const [draft, setDraft] = useState<string[] | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
@@ -116,6 +107,8 @@ export function RemiseConfirmeePage({
           onSign: () => setDraft([]),
           onPhoto: () => input.current?.click(),
           failed,
+          noSignature: profile?.signature === 'disabled',
+          noPhoto: profile?.photo === 'disabled',
         })
       : null;
   return (

@@ -417,6 +417,9 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Un même code de retrait couvre des colis de deux départements, ou un contact hors annuaire | Un code par personne et par département ; un contact prend le département du colis | YSL-117, YSL-136 |
 | Second admin d'une entreprise, ou remplacement du seul | L'admin entreprise invite un autre admin ; s'il n'y en a plus, l'admin de l'app réinvite, sans voir de donnée nominative | YSL-122 |
 | Trois états sur une étape sans geste humain ou sans objet | Relances : désactivées, à la main (facultatives), automatiques (obligatoires). Preuve désactivée : remise par le nom, tracée `manuel` | YSL-124, YSL-127 |
+| Preuve obligatoire et remise sans QR ni code | Par le nom, la signature tient lieu de preuve (D6) ; signature désactivée : le nom n'est plus proposé | YSL-127 |
+| Destinataire sans e-mail, retrait par un collègue, réserves (ME20) : aucun paramètre au tableau ci-dessus | Ils n'ont pas d'état propre : ils suivent preuve, signature et relances ; une réserve reste toujours possible | YSL-127 |
+| Remise déjà faite quand le profil se durcit (D31) | Une remise antérieure au changement, ou d'une version sans la règle, est acceptée ; après le changement, le serveur refuse et l'explique | YSL-127 |
 | La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | Confirmé par YSL-117 : la synchronisation filtrée par rôle reste sur Dexie, le filtre et les relectures étant côté serveur (`docs/synchronisation.md`) ; à revoir si les volumes le demandent | YSL-117 |
 
 ---
@@ -958,7 +961,7 @@ Les noms des tables et des champs ajoutés par le modèle multi-entreprises sont
 | `sender_account` | transporteur, n° de compte, sender_id, nb_confirmations | Dictionnaire appris |
 | `notification` | id, type (`avis`, `relance`, `resume_service`), destinataires, cc, parcel_ids, modèle, voie (`serveur`, `mailto`, `outlook`, `gmail`), statut, tentatives, identifiant du fournisseur, dates, failed_reason | Voie `serveur` : statut réel remonté par les webhooks (délivré, rebond, plainte, désinscription). Voies de repli : suivi déclaratif, l'agent confirme l'envoi. Le texte de l'e-mail n'est pas stocké |
 | `pickup_code` | id, person_id ou contact_id, department_id, empreinte du jeton QR, empreinte du PIN, expire_at, used_at | Un code actif par personne et par département, qui couvre ses colis en attente dans ce département (§3.7.9) |
-| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
+| `handover` | id, parcel_ids, retiré_par (personne ou délégué), méthode (`qr`, `pin`, `signature`, `manuel`), has_signature, has_photo, has_scan, agent_id, at, annulé_at?, motif_annulation?, précision?, annulé_par? | Preuve de remise ; la signature et la photo restent sur l'iPhone qui les a prises (D8), le serveur sait seulement qu'elles existent. Une remise par le nom signée passe en `signature` |
 | `event` | id, entité, entité_id, type, acteur, at, détail | Journal d'audit et historique de la fiche |
 | `deposit` | Tournée : pas de table, déduite des colis (§3.7.9). Dépôt : département, navette, nombre attendu, nombre confirmé, écart, confirmé par, à | Le nombre confirmé suffit ; le détail dépend du profil |
 | `setting` | clé, valeur | Réglages restants par entreprise ; lieu et horaires passent au département |

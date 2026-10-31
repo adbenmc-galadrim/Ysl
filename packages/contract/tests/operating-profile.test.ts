@@ -1,14 +1,20 @@
 import { canHandOver, toUserRole } from '@repo/contract/auth';
 import {
   DEFAULT_OPERATING_PROFILE,
+  mayHandOverByName,
+  missingHandoverSteps,
+  MULTI_DEPARTMENTS_OPERATING_PROFILE,
   operatingImpact,
   operatingProfile,
   PROFILE_MODELS,
   PROFILE_OF_MODEL,
   parseOperatingProfile,
   reminderMode,
+  requiresHandoverSteps,
+  reviewHoldsSave,
   SMALL_SITE_OPERATING_PROFILE,
   stepsChangedFromModel,
+  STRICT_TRACEABILITY_OPERATING_PROFILE,
   type OperatingProfile,
 } from '@repo/contract/operating-profile';
 import { describe, expect, it } from 'vitest';
@@ -203,5 +209,95 @@ describe('operatingImpact on the parcels under way', () => {
 
   it('finds nothing when nothing changed', () => {
     expect(impactOf({})).toEqual({ changes: [], parcels: 0 });
+  });
+});
+
+describe('étapes de remise', () => {
+  const bare = { method: 'manuel' } as const;
+
+  it.each([
+    ['défaut sans profil', DEFAULT_OPERATING_PROFILE],
+    ['Petit site', SMALL_SITE_OPERATING_PROFILE],
+  ])('%s : une remise par le nom, sans rien, passe', (_name, profile) => {
+    expect(requiresHandoverSteps(profile)).toBe(false);
+    expect(missingHandoverSteps(profile, bare)).toEqual([]);
+    expect(mayHandOverByName(profile)).toBe(true);
+    expect(reviewHoldsSave(profile.batchReview, 3)).toBe(false);
+  });
+
+  it('le défaut sans profil relit les valeurs de YSL-124, étape par étape', () => {
+    expect(DEFAULT_OPERATING_PROFILE).toEqual({
+      shuttleActsAsDepartment: false,
+      batchReview: 'optional',
+      depositConfirmation: 'disabled',
+      handoverProof: 'optional',
+      handoverScan: 'disabled',
+      signature: 'optional',
+      photo: 'optional',
+      emailMoment: 'scan',
+      reminders: 'optional',
+    });
+  });
+
+  it('preuve obligatoire : la signature tient lieu de preuve (D6), le nom seul non', () => {
+    const profile = MULTI_DEPARTMENTS_OPERATING_PROFILE;
+    expect(missingHandoverSteps(profile, bare)).toEqual(['proof']);
+    expect(missingHandoverSteps(profile, { method: 'signature' })).toEqual([]);
+    expect(missingHandoverSteps(profile, { method: 'qr' })).toEqual([]);
+  });
+
+  it('sans signature possible, le nom ne mène plus à une remise', () => {
+    expect(
+      mayHandOverByName({ handoverProof: 'required', signature: 'disabled' }),
+    ).toBe(false);
+    expect(
+      mayHandOverByName({ handoverProof: 'required', signature: 'optional' }),
+    ).toBe(true);
+    expect(
+      mayHandOverByName({ handoverProof: 'disabled', signature: 'disabled' }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ['signature', { signature: 'required' }, { hasSignature: true }],
+    ['photo', { photo: 'required' }, { hasPhoto: true }],
+    ['scan', { handoverScan: 'required' }, { hasScan: true }],
+  ] as const)('%s obligatoire : exigée, puis levée', (step, change, done) => {
+    const profile = { ...DEFAULT_OPERATING_PROFILE, ...change };
+    expect(requiresHandoverSteps(profile)).toBe(true);
+    expect(missingHandoverSteps(profile, { method: 'qr' })).toEqual([step]);
+    expect(missingHandoverSteps(profile, { method: 'qr', ...done })).toEqual(
+      [],
+    );
+  });
+
+  it('une étape facultative ou désactivée ne manque jamais', () => {
+    for (const state of ['disabled', 'optional'] as const) {
+      expect(
+        missingHandoverSteps(
+          {
+            ...DEFAULT_OPERATING_PROFILE,
+            handoverProof: state,
+            signature: state,
+            photo: state,
+            handoverScan: state,
+          },
+          bare,
+        ),
+      ).toEqual([]);
+    }
+  });
+
+  it('traçabilité stricte : tout manque à une remise nue', () => {
+    expect(
+      missingHandoverSteps(STRICT_TRACEABILITY_OPERATING_PROFILE, bare),
+    ).toEqual(['proof', 'signature', 'scan']);
+  });
+
+  it('la revue obligatoire retient le lot tant qu’un doute reste', () => {
+    expect(reviewHoldsSave('required', 1)).toBe(true);
+    expect(reviewHoldsSave('required', 0)).toBe(false);
+    expect(reviewHoldsSave('optional', 1)).toBe(false);
+    expect(reviewHoldsSave('disabled', 1)).toBe(false);
   });
 });

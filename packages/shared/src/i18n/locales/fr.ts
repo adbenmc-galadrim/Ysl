@@ -181,6 +181,8 @@ export const fr = {
   'sync.op.directoryReadOnly':
     'L’annuaire est en lecture seule pour ce compte.',
   'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
+  'sync.op.handoverSteps':
+    'Cette remise n’a pas une étape que votre entreprise exige désormais : preuve, signature, photo ou scan.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
@@ -385,6 +387,8 @@ export const fr = {
   'handover.verified.pin': 'Code vérifié à {{time}}',
   'handover.verified.manuel': 'Sans vérification',
   'handover.registered': 'Un recommandé : la signature est facultative.',
+  'handover.registered.required': 'Un recommandé : la signature est exigée.',
+  'handover.registered.none': 'Un recommandé parmi ces colis.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
   'handover.sign.titleFor':
     '{{name}} signe pour {{recipient}}, {{count}} colis',
@@ -443,6 +447,22 @@ export const fr = {
   'handover.conflict.colleague': 'Déjà remis à {{name}} par un collègue',
   'handover.conflict.colleague.unnamed': 'Déjà remis par un collègue',
   'handover.empty': 'Rien n’attend {{name}} au comptoir.',
+  'handover.step.proof': 'QR ou code obligatoire : à défaut, faites signer.',
+  'handover.step.proof.only': 'QR ou code obligatoire pour remettre.',
+  'handover.step.signature': 'Faites signer avant de remettre.',
+  'handover.step.photo': 'Prenez la photo avant de remettre.',
+  'handover.step.scan': 'Scannez les colis cochés avant de remettre.',
+  'handover.step.lost':
+    'Signature ou photo non enregistrée sur cet iPhone : recommencez.',
+  'handover.scan.title': 'Vérifier les colis',
+  'handover.scan.progress': '{{read}} sur {{count}} colis scannés',
+  'handover.scan.done': 'Colis scannés',
+  'handover.scan.offer': 'Scanner pour vérifier',
+  'handover.scan.type': 'Saisir le numéro',
+  'handover.scan.number': 'Numéro du colis',
+  'handover.scan.check': 'Vérifier',
+  'handover.scan.other': 'Ce colis n’est pas dans la liste',
+  'handover.scan.other.detail': 'Il n’attend pas cette personne.',
   'handover.qr.notPickup': 'Ce n’est pas un QR de retrait',
   'handover.qr.notPickup.detail':
     'Visez le QR de l’e-mail « Colis en attente de retrait ».',
@@ -485,6 +505,10 @@ export const fr = {
   'handover.collector.continue': 'Continuer',
   'handover.collector.proofNote':
     'Le QR ou le code présenté vaut preuve pour {{name}} ; notez qui retire.',
+  'handover.collector.mustSign':
+    'Sans QR ni code, faites signer la personne qui retire.',
+  'handover.collector.nameNote':
+    'Remise par le nom : notez qui retire.',
   'handover.collector.signNote':
     'Sans QR ni code, vous pouvez faire signer la personne qui retire.',
   'handover.received.today': 'Reçu aujourd’hui à {{time}}',
@@ -1364,6 +1388,7 @@ export const fr = {
   'review.summary.toCompleteOne': '{{count}} reste à compléter',
   'review.summary.ready': 'les autres sont prêts',
   'review.summary.allSure': 'Tout est sûr.',
+  'review.hold': 'Réglez ou passez chaque doute avant d’enregistrer.',
   'recipient.submit.next': 'Valider et suivant',
   'recipient.suggestions': 'Suggestions',
   'recipient.outside': 'Hors annuaire',
@@ -1741,7 +1766,7 @@ export const fr = {
   'operating.saved': 'Appliqué à {{count}} colis',
   'operating.undo': 'Annuler',
   'operating.notYet':
-    'Pour l’instant, seuls « Navette = département » et les relances automatiques agissent sur les colis. Les autres réglages sont gardés et prendront effet avec les prochaines versions.',
+    'Seuls « Confirmation du dépôt » et « Moment de l’e-mail » n’agissent pas encore : ils prendront effet avec les prochaines versions. Les autres réglages s’appliquent tout de suite.',
   'record.mail': 'Dernier e-mail',
   'mails.when.today': 'à {{time}}',
   'mails.when.yesterday': 'hier à {{time}}',

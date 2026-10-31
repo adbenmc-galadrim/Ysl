@@ -25,6 +25,7 @@ import { useEffect, useState } from 'react';
 import { impactLine } from '#/features/settings/operating-impact';
 import {
   choiceOf,
+  NOT_YET_PARAMS,
   OPTIONS,
   SECTIONS,
   withChoice,
@@ -256,7 +257,7 @@ export function OperatingScreen() {
               </div>
             ))}
           </div>
-          {changed.some((param) => param !== 'shuttleActsAsDepartment') && (
+          {changed.some((param) => NOT_YET_PARAMS.includes(param)) && (
             <p className="mt-3 text-13 text-muted">{t('operating.notYet')}</p>
           )}
           {save.isError && (

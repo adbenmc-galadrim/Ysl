@@ -1,3 +1,5 @@
+import { reminderMode } from '@repo/contract/operating-profile';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 import {
   PARCEL_EVENT_ENTITY,
   readParcelEvent,
@@ -67,6 +69,8 @@ export async function loadParcelRecord(
   );
   return {
     parcel,
+    remindersOff:
+      reminderMode((await readOperatingProfile(database)).reminders) === 'none',
     person,
     tour:
       (parcel.status === 'a_completer' || parcel.status === 'recu') &&

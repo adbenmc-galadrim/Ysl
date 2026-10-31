@@ -25,7 +25,7 @@ export type ConfirmationView = Pick<
 >;
 
 function syncProof(
-  { sync }: HandoverEntry,
+  { sync, refusal }: HandoverEntry,
   online: boolean,
   t: TranslateFn,
 ): CheckListItem {
@@ -33,7 +33,12 @@ function syncProof(
     return { icon: 'cloud', label: t('handover.confirm.synced'), done: true };
   }
   if (sync === 'rejected') {
-    return { icon: 'alert', label: t('handover.confirm.rejected') };
+    // Refused for a step the profile now requires: what the agent can act on.
+    const steps = t('sync.op.handoverSteps');
+    return {
+      icon: 'alert',
+      label: refusal === steps ? steps : t('handover.confirm.rejected'),
+    };
   }
   return {
     icon: 'cloud',
@@ -49,6 +54,9 @@ export type ConfirmationActions = {
   onPhoto?: () => void;
   /** The last signature or photo could not be kept on this iPhone. */
   failed?: HandoverProofKind | null;
+  /** The profile turned the step off: nothing to add, what was taken still shows. */
+  noSignature?: boolean;
+  noPhoto?: boolean;
 };
 
 /** « Signature », « Photo de la remise »: how the screens name each proof. */
@@ -65,7 +73,7 @@ export function proofLabels(t: TranslateFn): Record<HandoverProofKind, string> {
  */
 function evidenceProofs(
   { handover }: HandoverEntry,
-  { onSign, onPhoto, failed }: ConfirmationActions,
+  { onSign, onPhoto, failed, noSignature, noPhoto }: ConfirmationActions,
   t: TranslateFn,
 ): CheckListItem[] {
   const signature: CheckListItem[] =
@@ -73,16 +81,32 @@ function evidenceProofs(
       ? []
       : handover.hasSignature
         ? [{ icon: 'sign', label: t('handover.confirm.signed'), done: true }]
-        : [
-            {
-              icon: 'sign',
-              label: t('handover.confirm.signature'),
-              onClick: onSign,
-            },
-          ];
-  const photo: CheckListItem = handover.hasPhoto
-    ? { icon: 'camera', label: t('handover.confirm.photographed'), done: true }
-    : { icon: 'camera', label: t('handover.confirm.photo'), onClick: onPhoto };
+        : noSignature
+          ? []
+          : [
+              {
+                icon: 'sign',
+                label: t('handover.confirm.signature'),
+                onClick: onSign,
+              },
+            ];
+  const photo: CheckListItem[] = handover.hasPhoto
+    ? [
+        {
+          icon: 'camera',
+          label: t('handover.confirm.photographed'),
+          done: true,
+        },
+      ]
+    : noPhoto
+      ? []
+      : [
+          {
+            icon: 'camera',
+            label: t('handover.confirm.photo'),
+            onClick: onPhoto,
+          },
+        ];
   const lost: CheckListItem[] = failed
     ? [
         {
@@ -91,13 +115,13 @@ function evidenceProofs(
         },
       ]
     : [];
-  return [...signature, photo, ...lost];
+  return [...signature, ...photo, ...lost];
 }
 
 /**
  * P4 step 4, the screen the agent turns to the recipient: how many parcels,
  * to whom and when, how they proved it, whether the server has it. A
- * signature or a photo may still be added, never required (D6).
+ * signature or a photo may still be added, when the profile offers it.
  */
 export function describeConfirmation(
   entry: HandoverEntry,

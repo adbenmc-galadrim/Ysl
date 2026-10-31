@@ -53,6 +53,39 @@ const handedOver = async (
 };
 
 describe('describeConfirmation', () => {
+  it('says which refusal it is only for a step the profile requires', async () => {
+    const entry = await handedOver('manuel');
+    const labelOf = (refusal: string) =>
+      describeConfirmation(
+        { ...entry, sync: 'rejected', refusal },
+        true,
+        t,
+      ).proofs.at(-1)?.label;
+
+    expect(labelOf(t('sync.op.handoverSteps'))).toBe(
+      t('sync.op.handoverSteps'),
+    );
+    expect(labelOf('HTTP 409')).toBe('Refusée par le serveur');
+  });
+
+  it('offers neither signature nor photo once the profile turned them off', async () => {
+    const labels = (entry: Awaited<ReturnType<typeof handedOver>>) =>
+      describeConfirmation(entry, true, t, {
+        noSignature: true,
+        noPhoto: true,
+      }).proofs.map((proof) => proof.label);
+
+    expect(labels(await handedOver('qr'))).toEqual([
+      'QR code vérifié',
+      expect.any(String),
+    ]);
+    expect(
+      labels(await handedOver('qr', { hasSignature: true, hasPhoto: true })),
+    ).toEqual(
+      expect.arrayContaining(['Signature enregistrée', 'Photo enregistrée']),
+    );
+  });
+
   it('says how many, to whom and when, and lists the parcels', async () => {
     const view = describeConfirmation(await handedOver('qr'), true, t);
 

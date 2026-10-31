@@ -1,3 +1,4 @@
+import { reviewHoldsSave } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   IconButton,
@@ -47,6 +48,7 @@ import {
 } from '#/features/review/model';
 import { usePhoto } from '#/features/review/photo';
 import { readCompanySettings } from '#/features/settings/company-settings';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { useCompanySettings } from '#/features/settings/use-company-settings';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -100,7 +102,8 @@ const doubtLines = ({ draft, steps }: ReviewItem) => {
  * « Vérifier un colis » one field at a time; the parcels passed wait
  * « À compléter »; the sure ones are saved with the batch in one tap.
  * Every answer is written on the draft at once, so a batch cut short
- * comes back with its review where the agent left it.
+ * comes back with its review where the agent left it. The profile may turn
+ * it off: the batch is saved as it stands, the doubts « À compléter » (§3.7.4).
  */
 export function ReviewScreen() {
   const navigate = useNavigate();
@@ -123,6 +126,7 @@ export function ReviewScreen() {
     [batchId],
   );
   const tour = useLiveQuery(() => goesOnTour(db), []);
+  const profile = useOperatingProfile();
   const departments = useLiveQuery(
     () => db.department.toArray(),
     [],
@@ -206,7 +210,42 @@ export function ReviewScreen() {
     setWalk(next === -1 ? null : { ...walk, at: next });
   }, [walk, drafts, step, departmentOf]);
 
-  if (!settled || !drafts || tour === undefined) return null;
+  const save = async () => {
+    if (!batchId || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const saved = await finishBatch(db, {
+        batchId,
+        agentId: session.user.id,
+      });
+      if (saved.length > 0) {
+        await requestBatchMails(db, batchId, {
+          userId: session.user.id,
+        }).catch(() => undefined);
+      }
+      await (saved.length > 0
+        ? navigate({
+            to: '/lot/$batchId',
+            params: { batchId },
+            replace: true,
+          })
+        : navigate({ to: '/' }));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
+  const unreviewed = settled && !!drafts && profile?.batchReview === 'disabled';
+  const saveNow = useRef(save);
+  saveNow.current = save;
+  useEffect(() => {
+    if (unreviewed) void saveNow.current();
+  }, [unreviewed]);
+
+  if (!settled || !drafts || tour === undefined || !profile) return null;
+  if (unreviewed) return null;
 
   const review = reviewBatch(drafts, departmentOf);
   const thumbnail = (draft: DraftParcel) => {
@@ -259,33 +298,6 @@ export function ReviewScreen() {
         ? { queue: [id], at: 0, passed: [] }
         : { queue: doubts, at, passed: [] },
     );
-  };
-
-  const save = async () => {
-    if (!batchId || savingRef.current) return;
-    savingRef.current = true;
-    setSaving(true);
-    try {
-      const saved = await finishBatch(db, {
-        batchId,
-        agentId: session.user.id,
-      });
-      if (saved.length > 0) {
-        await requestBatchMails(db, batchId, {
-          userId: session.user.id,
-        }).catch(() => undefined);
-      }
-      await (saved.length > 0
-        ? navigate({
-            to: '/lot/$batchId',
-            params: { batchId },
-            replace: true,
-          })
-        : navigate({ to: '/' }));
-    } finally {
-      savingRef.current = false;
-      setSaving(false);
-    }
   };
 
   if (walk && current && step) {
@@ -415,6 +427,11 @@ export function ReviewScreen() {
       toComplete={review.toComplete.map(doubtRow)}
       ready={review.ready.map(readyRow)}
       saving={saving}
+      saveNote={
+        reviewHoldsSave(profile.batchReview, review.toCheck.length)
+          ? t('review.hold')
+          : undefined
+      }
       onBack={() => void navigate({ to: '/scan' })}
       onOpen={open}
       onOpenReady={tour ? setChanging : undefined}

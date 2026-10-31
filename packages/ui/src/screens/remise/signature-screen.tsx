@@ -18,9 +18,9 @@ export type SignatureScreenProps = {
 };
 
 /**
- * The signature, never required (D6): offered before the handover when the
- * recipient was picked by the name, and after any handover from its
- * confirmation. The pad takes the whole middle of the screen: the phone is
+ * The signature, as far as the profile asks: before the handover when the
+ * recipient was picked by the name or the profile requires it, and after any
+ * handover from its confirmation. The pad takes the whole middle of the screen: the phone is
  * handed over the desk and signed upright, with whatever finger is free.
  */
 export function SignatureScreen({

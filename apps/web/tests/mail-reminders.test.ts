@@ -4,6 +4,10 @@ import {
   pickupPinHash,
   pickupTokenHash,
 } from '@repo/contract/pickup';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -23,6 +27,8 @@ import {
   loadReminderMails,
   reminderSections,
 } from '#/features/mail/reminder-mails';
+import { reminderOf } from '#/features/parcels/model';
+import { loadReminderDates } from '#/features/parcels/reminders';
 import {
   contactRow,
   NOW,
@@ -146,6 +152,44 @@ describe('the code a mail writes', () => {
     expect(pickupToWrite(open, { withQr: true })).toBe(open);
     expect(pickupToWrite(fresh, { withQr: false })).toBe(fresh);
     expect(pickupToWrite(fresh, { withQr: true })).toBe(fresh);
+  });
+});
+
+describe('reminders turned off by the profile', () => {
+  it('leaves nothing to send and nothing due, while a late parcel stays late', async () => {
+    const person = personRow({ email: 'nora@example.test' });
+    const notifiedAt = new Date(NOW.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const parcel = parcelRow({
+      personId: person.id,
+      status: 'notifie',
+      notifiedAt,
+    });
+    const dueSoon = parcelRow({
+      personId: person.id,
+      status: 'notifie',
+      notifiedAt: new Date(NOW.getTime() - 3 * 24 * 60 * 60 * 1000),
+    });
+    await db.directoryPerson.put(person);
+    await db.parcel.bulkPut([parcel, dueSoon]);
+    expect(await loadReminderMails(db, NOW)).not.toEqual([]);
+    expect(
+      reminderOf(dueSoon, NOW, await loadReminderDates(db, [dueSoon]))?.due,
+    ).toBe(true);
+
+    await db.setting.put({
+      id: newId(),
+      key: OPERATING_PROFILE_KEY,
+      value: { ...SMALL_SITE_OPERATING_PROFILE, reminders: 'disabled' },
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+      updatedBy: 'admin-1',
+    });
+
+    expect(await loadReminderMails(db, NOW)).toEqual([]);
+    const dates = await loadReminderDates(db, [parcel, dueSoon]);
+    expect(reminderOf(dueSoon, NOW, dates)?.due).toBe(false);
+    expect(reminderOf(parcel, NOW, dates)?.late).toBe(true);
   });
 });
 

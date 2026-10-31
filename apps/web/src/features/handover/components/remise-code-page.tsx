@@ -21,7 +21,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 export type RemiseCodePageProps = {
   onFound: (search: RemiseColisSearch) => void;
   onBack: () => void;
-  onSearchName: () => void;
+  onSearchName?: () => void;
 };
 
 /**

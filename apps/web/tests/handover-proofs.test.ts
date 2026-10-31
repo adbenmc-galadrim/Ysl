@@ -1,4 +1,10 @@
 import 'fake-indexeddb/auto';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+  type OperatingProfile,
+} from '@repo/contract/operating-profile';
+import { newId } from '@repo/shared/id';
 import { readParcelEvent } from '@repo/contract/parcel-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type {
@@ -13,7 +19,12 @@ import {
   proofsOf,
   readProof,
 } from '#/features/handover/proofs';
-import { recordHandover } from '#/features/handover/record-handover';
+import {
+  type HandoverInput,
+  type HandoverOptions,
+  HandoverRefusedError,
+  recordHandover,
+} from '#/features/handover/record-handover';
 import type { RemiseColisSearch } from '#/features/handover/route';
 import { sweepOrphanPhotos } from '#/features/photos/store';
 import {
@@ -283,5 +294,88 @@ describe('sweepOrphanPhotos', () => {
 
     expect(removed).toEqual(['lost.png']);
     expect(files.files.has(`${kept.id}.png`)).toBe(true);
+  });
+});
+
+describe('recordHandover under the profile', () => {
+  const hand = (
+    options: Partial<HandoverOptions> = {},
+    input: Partial<HandoverInput> = {},
+  ) =>
+    recordHandover(
+      db,
+      { ...byName(), ...input },
+      { ...AGENT, now: LATER, ...options },
+    );
+  const requires = (change: Partial<OperatingProfile>) =>
+    db.setting.put({
+      id: newId(),
+      key: OPERATING_PROFILE_KEY,
+      value: { ...SMALL_SITE_OPERATING_PROFILE, ...change },
+      createdAt: LATER,
+      updatedAt: LATER,
+      deletedAt: null,
+      updatedBy: 'admin-1',
+    });
+  const steps = new HandoverRefusedError('steps');
+
+  it('Petit site: a handover by the name, with nothing, is written', async () => {
+    await requires({});
+    const done = await hand();
+    expect(await db.handover.get(done.handoverId)).toMatchObject({
+      method: 'manuel',
+      hasScan: false,
+    });
+  });
+
+  it('writes nothing when a required signature is missing', async () => {
+    await requires({ signature: 'required' });
+    await expect(hand()).rejects.toEqual(steps);
+    expect(await db.handover.count()).toBe(0);
+    expect((await db.parcel.get(parcels[0]!.id))?.status).toBe('notifie');
+  });
+
+  it('a required signature that cannot be kept stops the handover', async () => {
+    await requires({ signature: 'required' });
+    files.failNextSave = true;
+    await expect(
+      hand({ signature: { proof: signature(), files } }),
+    ).rejects.toEqual(steps);
+    expect(await db.handover.count()).toBe(0);
+  });
+
+  it('a required photo is kept with the handover, and without it nothing is written', async () => {
+    await requires({ photo: 'required' });
+    await expect(hand()).rejects.toEqual(steps);
+    const done = await hand({
+      photo: { proof: photo(), files },
+    });
+    expect(await db.handover.get(done.handoverId)).toMatchObject({
+      hasPhoto: true,
+      method: 'manuel',
+    });
+    expect((await proofsOf(db, done.handoverId)).photo).toBeDefined();
+  });
+
+  it('proof required: the name alone is refused, signed it stands in (D6)', async () => {
+    await requires({ handoverProof: 'required' });
+    await expect(hand()).rejects.toEqual(steps);
+    const done = await hand({ signature: { proof: signature(), files } });
+    expect((await db.handover.get(done.handoverId))?.method).toBe('signature');
+  });
+
+  it('scan required: the flag lifts the step', async () => {
+    await requires({ handoverScan: 'required' });
+    await expect(hand()).rejects.toEqual(steps);
+    const done = await hand({}, { hasScan: true });
+    expect((await db.handover.get(done.handoverId))?.hasScan).toBe(true);
+  });
+
+  it('a refusal leaves no proof behind', async () => {
+    await requires({ photo: 'required', signature: 'optional' });
+    await expect(
+      hand({ signature: { proof: signature(), files } }),
+    ).rejects.toEqual(steps);
+    expect(await db.handoverProof.count()).toBe(0);
   });
 });

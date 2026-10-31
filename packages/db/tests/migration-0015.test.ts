@@ -78,6 +78,7 @@ describe('0015_annulation_remise', () => {
 
     expect(await row()).toEqual({
       ...old,
+      has_scan: false,
       cancel_reason: null,
       cancel_note: null,
       cancelled_by_name: null,

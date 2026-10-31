@@ -55,6 +55,8 @@ export type RemiseScanPageProps = {
   onClose: () => void;
   /** The code of a handover no longer opened when it was written: why. */
   refused?: Refusal;
+  /** The profile leaves a way by the name (§3.7.9). */
+  nameSearch?: boolean;
 };
 
 /**
@@ -68,6 +70,7 @@ export function RemiseScanPage({
   onSearchName,
   onClose,
   refused,
+  nameSearch = true,
 }: RemiseScanPageProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const camera = useCameraState();
@@ -181,6 +184,7 @@ export function RemiseScanPage({
         onTorch={() => void cameraStream.toggleTorch()}
         onTypeCode={onTypeCode}
         onSearchName={onSearchName}
+        nameSearch={nameSearch}
       />
     </div>
   );

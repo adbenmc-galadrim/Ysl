@@ -103,13 +103,14 @@ export type LocalPickupCode = Omit<
 > & {
   departmentId?: string | null;
 };
-/** `hasSignature` and `hasPhoto` are missing on a row pulled before YSL-75: read them as false. */
+/** `hasSignature`, `hasPhoto` and `hasScan` are missing on a row pulled before they existed: read them as false. */
 export type LocalHandover = Omit<
   LocalRow<typeof handover.$inferSelect>,
-  'hasSignature' | 'hasPhoto'
+  'hasSignature' | 'hasPhoto' | 'hasScan'
 > & {
   hasSignature?: boolean;
   hasPhoto?: boolean;
+  hasScan?: boolean;
 };
 export type LocalEvent = LocalRow<typeof event.$inferSelect>;
 export type LocalSetting = LocalRow<typeof setting.$inferSelect>;
