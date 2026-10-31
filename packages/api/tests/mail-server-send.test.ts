@@ -221,6 +221,32 @@ describe('a request written by the iPhone', () => {
     expect(await parcelOf(b)).toMatchObject({ status: 'notifie' });
   });
 
+  it.each(['en_route', 'depose', 'a_regulariser'] as const)(
+    'sends nothing for a parcel %s, and leaves it where it is',
+    async (status) => {
+      const { id: person } = await addPerson();
+      const parcelId = await addParcel(person);
+      await db
+        .update(parcel)
+        .set({ status: 'en_route', statusSeq: 1 })
+        .where(eq(parcel.id, parcelId));
+      if (status !== 'en_route') {
+        await db
+          .update(parcel)
+          .set({ status, statusSeq: 2 })
+          .where(eq(parcel.id, parcelId));
+      }
+      await request(person, [parcelId]);
+      await round();
+      expect(brevo.sent).toHaveLength(0);
+      expect(await liveCodes(person)).toHaveLength(0);
+      expect(await parcelOf(parcelId)).toMatchObject({
+        status,
+        departmentId: finance,
+      });
+    },
+  );
+
   it('sends nothing for a phone mail: only a request of the server goes', async () => {
     const { id: person } = await addPerson();
     const parcelId = await addParcel(person);

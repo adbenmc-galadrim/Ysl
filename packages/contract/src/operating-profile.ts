@@ -74,19 +74,16 @@ export const HANDOVER_METHOD_WITHOUT_PROOF: HandoverMethod = 'manuel';
 
 export type ParcelCounts = Partial<Record<ParcelStatus, number>>;
 
-/**
- * The parcels under way each parameter applies to. The deposit and the moment
- * of the e-mail touch parcels on their way, a status that comes with YSL-131.
- */
+/** The parcels under way each parameter applies to. */
 const TOUCHED_STATUSES: Record<OperatingParam, readonly ParcelStatus[]> = {
-  shuttleActsAsDepartment: ['recu', 'notifie'],
+  shuttleActsAsDepartment: ['recu', 'en_route', 'depose', 'notifie'],
   batchReview: ['a_completer'],
-  depositConfirmation: [],
-  handoverProof: ['recu', 'notifie'],
-  handoverScan: ['recu', 'notifie'],
-  signature: ['recu', 'notifie'],
-  photo: ['recu', 'notifie'],
-  emailMoment: [],
+  depositConfirmation: ['en_route'],
+  handoverProof: ['recu', 'depose', 'notifie'],
+  handoverScan: ['recu', 'depose', 'notifie'],
+  signature: ['recu', 'depose', 'notifie'],
+  photo: ['recu', 'depose', 'notifie'],
+  emailMoment: ['en_route', 'depose'],
   reminders: ['notifie'],
 };
 

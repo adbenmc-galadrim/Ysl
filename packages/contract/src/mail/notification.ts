@@ -115,8 +115,9 @@ export function reachedNobody(
  * becomes notified, a notified one records the reminder in `lastNotifiedAt`,
  * keeping its first notice. `firstRead`: nothing reached the recipient before
  * (`reachedNobody`), so this mail is the notice, and J+2 runs from it. A parcel
- * already handed over, returned, deleted, still to complete or with nobody on
- * it stays as it is.
+ * already handed over, returned, to settle, deleted, still to complete or with
+ * nobody on it stays as it is. On tour (§3.7.9), the mail is traced and the parcel stays
+ * « En route » until its deposit (`depositedStatus`).
  */
 export function notifyParcel(
   parcel: NotifiableParcel,
@@ -130,13 +131,31 @@ export function notifyParcel(
   if (
     parcel.deletedAt ||
     parcel.status === 'remis' ||
-    parcel.status === 'retourne'
+    parcel.status === 'retourne' ||
+    parcel.status === 'a_regulariser'
   ) {
     return { parcelId, skip: 'closed' };
   }
   if (parcel.status === 'a_completer') return { parcelId, skip: 'incomplete' };
   if (!parcel.personId && !parcel.contactId) {
     return { parcelId, skip: 'no-recipient' };
+  }
+  if (parcel.status === 'en_route') {
+    if (parcel.lastNotifiedAt) return { parcelId, skip: 'closed' };
+    return {
+      parcelId,
+      from: parcel.status,
+      reminder: false,
+      patch: {
+        status: 'en_route',
+        statusSeq: parcel.statusSeq ?? 0,
+        notifiedAt: null,
+        lastNotifiedAt: sentAt,
+        deliveredAt: null,
+        deliveredBy: null,
+        depositedAt: null,
+      },
+    };
   }
   if (parcel.status === 'notifie') {
     return {

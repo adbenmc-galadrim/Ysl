@@ -9,7 +9,16 @@ import {
 } from '@repo/contract/operating-profile';
 import { describe, expect, it } from 'vitest';
 
-const COUNTS = { a_completer: 3, recu: 5, notifie: 7, remis: 100, retourne: 9 };
+const COUNTS = {
+  a_completer: 3,
+  recu: 5,
+  en_route: 4,
+  depose: 2,
+  a_regulariser: 6,
+  notifie: 7,
+  remis: 100,
+  retourne: 9,
+};
 
 const impactOf = (change: Partial<OperatingProfile>) =>
   operatingImpact(
@@ -71,14 +80,14 @@ describe('reminderMode', () => {
 
 describe('operatingImpact on the parcels under way', () => {
   it.each([
-    ['shuttleActsAsDepartment', { shuttleActsAsDepartment: true }, 12],
+    ['shuttleActsAsDepartment', { shuttleActsAsDepartment: true }, 18],
     ['batchReview', { batchReview: 'required' }, 3],
-    ['depositConfirmation', { depositConfirmation: 'count' }, 0],
-    ['handoverProof', { handoverProof: 'required' }, 12],
-    ['handoverScan', { handoverScan: 'required' }, 12],
-    ['signature', { signature: 'required' }, 12],
-    ['photo', { photo: 'disabled' }, 12],
-    ['emailMoment', { emailMoment: 'deposit' }, 0],
+    ['depositConfirmation', { depositConfirmation: 'count' }, 4],
+    ['handoverProof', { handoverProof: 'required' }, 14],
+    ['handoverScan', { handoverScan: 'required' }, 14],
+    ['signature', { signature: 'required' }, 14],
+    ['photo', { photo: 'disabled' }, 14],
+    ['emailMoment', { emailMoment: 'deposit' }, 6],
     ['reminders', { reminders: 'required' }, 7],
   ] satisfies [string, Partial<OperatingProfile>, number][])(
     '%s touches its parcels, never those already handed over or returned',
@@ -97,14 +106,14 @@ describe('operatingImpact on the parcels under way', () => {
       photo: 'required',
       reminders: 'disabled',
     });
-    expect(impact.changes.map((change) => change.parcels)).toEqual([12, 12, 7]);
-    expect(impact.parcels).toBe(12);
+    expect(impact.changes.map((change) => change.parcels)).toEqual([14, 14, 7]);
+    expect(impact.parcels).toBe(14);
   });
 
   it('adds up parcels at different stages', () => {
     expect(
       impactOf({ batchReview: 'disabled', signature: 'required' }).parcels,
-    ).toBe(15);
+    ).toBe(17);
   });
 
   it('finds nothing when nothing changed', () => {
