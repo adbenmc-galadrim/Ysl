@@ -1,9 +1,14 @@
 import 'fake-indexeddb/auto';
+import { newId } from '@repo/shared/id';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
   directoryEntries,
+  directoryPeople,
   draftFromQuery,
+  letterOf,
+  moveEffectLines,
+  openParcelsByPerson,
   savePerson,
   toDraft,
 } from '#/features/directory/people';
@@ -16,10 +21,10 @@ beforeEach(async () => {
 });
 
 const draft = {
-  firstName: ' Inès ',
-  lastName: 'Garnier',
+  name: ' Inès  Garnier ',
   email: ' Ines.Garnier@Example.com ',
-  department: '',
+  site: ' 2e étage ',
+  departmentId: '',
 };
 
 describe('savePerson', () => {
@@ -34,6 +39,8 @@ describe('savePerson', () => {
       nameNorm: 'ines garnier',
       email: 'ines.garnier@example.com',
       department: null,
+      departmentId: null,
+      site: '2e étage',
       source: 'manuel',
       active: true,
     });
@@ -67,10 +74,10 @@ describe('savePerson', () => {
     const result = await savePerson(
       db,
       {
-        firstName: 'Camille',
-        lastName: 'Morel-Petit',
+        name: 'Camille Morel-Petit',
         email: 'camille@example.com',
-        department: 'Presse',
+        site: 'poste 214',
+        departmentId: '',
       },
       { id: camille.id, now: NOW },
     );
@@ -78,7 +85,7 @@ describe('savePerson', () => {
     expect(result.kind).toBe('saved');
     expect(await db.directoryPerson.get(camille.id)).toMatchObject({
       lastName: 'Morel-Petit',
-      department: 'Presse',
+      site: 'poste 214',
       createdAt: camille.createdAt,
     });
   });
@@ -95,18 +102,123 @@ describe('savePerson', () => {
   it('refuses a card without a name or with an unfinished e-mail', async () => {
     const result = await savePerson(db, {
       ...draft,
-      lastName: ' ',
+      name: 'Inès',
       email: 'ines@',
     });
 
     expect(result).toEqual({
       kind: 'invalid',
       errors: {
-        lastName: 'Indiquez le nom.',
+        name: 'Indiquez le prénom et le nom.',
         email: 'Adresse e-mail incomplète.',
       },
     });
     expect(await db.outbox.count()).toBe(0);
+  });
+});
+
+describe('a department on the card', () => {
+  it('takes the one chosen on a new card, with its name', async () => {
+    const id = newId();
+    await db.department.put({
+      id,
+      name: 'Finance',
+      receptionPoint: null,
+      pickup: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+
+    await savePerson(db, { ...draft, departmentId: id }, { now: NOW });
+
+    const [stored] = await db.directoryPerson.toArray();
+    expect(stored).toMatchObject({ departmentId: id, department: 'Finance' });
+  });
+
+  it('never moves an existing card: only the server does', async () => {
+    const camille = personRow({ departmentId: 'finance' });
+    await db.directoryPerson.put(camille);
+
+    await savePerson(
+      db,
+      { ...toDraft(camille), departmentId: 'studio' },
+      { id: camille.id, now: NOW },
+    );
+
+    expect((await db.directoryPerson.get(camille.id))?.departmentId).toBe(
+      'finance',
+    );
+  });
+
+  it('keeps a compound name as written when the name is not touched', async () => {
+    const jean = personRow({ firstName: 'Jean Pierre', lastName: 'Dupont' });
+    await db.directoryPerson.put(jean);
+
+    await savePerson(db, toDraft(jean), { id: jean.id, now: NOW });
+
+    expect(await db.directoryPerson.get(jean.id)).toMatchObject({
+      firstName: 'Jean Pierre',
+      lastName: 'Dupont',
+    });
+  });
+});
+
+describe('directoryPeople', () => {
+  it('narrows by tab and finds a department by its name', () => {
+    const names = new Map([['f', 'Finance']]);
+    const nora = personRow({
+      departmentId: 'f',
+      department: null,
+      nameNorm: 'nora',
+    });
+    const ines = personRow({
+      departmentId: null,
+      department: null,
+      nameNorm: 'ines',
+    });
+
+    expect(directoryPeople([nora, ines], names, '', 'f')).toEqual([nora]);
+    expect(directoryPeople([nora, ines], names, '', 'sans')).toEqual([ines]);
+    expect(directoryPeople([nora, ines], names, 'financ')).toEqual([nora]);
+  });
+});
+
+describe('letterOf', () => {
+  it('files a name under its bare initial, the rest under #', () => {
+    expect(letterOf('Élodie')).toBe('E');
+    expect(letterOf('1 rue')).toBe('#');
+  });
+});
+
+describe('moveEffectLines', () => {
+  it('says what follows, what is to settle, and when nothing changes', () => {
+    expect(
+      moveEffectLines({ follows: 2, toSettle: 1 }, 'Finance', 'Studio').map(
+        (line) => line.text,
+      ),
+    ).toEqual([
+      '2 colis à venir iront à Finance',
+      '1 colis déposé à Studio passera « À régulariser »',
+    ]);
+    expect(
+      moveEffectLines({ follows: 0, toSettle: 0 }, 'Finance', 'Studio')[0]
+        ?.text,
+    ).toBe('Aucun colis en cours');
+  });
+});
+
+describe('openParcelsByPerson', () => {
+  it('counts the parcels still at the desk', () => {
+    expect(
+      openParcelsByPerson([
+        { personId: 'a', status: 'recu', deletedAt: null },
+        { personId: 'a', status: 'notifie', deletedAt: null },
+        { personId: 'a', status: 'remis', deletedAt: null },
+        { personId: 'b', status: 'recu', deletedAt: NOW },
+        { personId: null, status: 'recu', deletedAt: null },
+      ]).get('a'),
+    ).toBe(2);
   });
 });
 
@@ -115,10 +227,9 @@ describe('draftFromQuery', () => {
     expect(draftFromQuery(' ines@atelier.test ')).toEqual({
       email: 'ines@atelier.test',
     });
-    expect(draftFromQuery('Garnier')).toEqual({ lastName: 'Garnier' });
+    expect(draftFromQuery('Garnier')).toEqual({ name: 'Garnier' });
     expect(draftFromQuery('Inès  de la Tour')).toEqual({
-      firstName: 'Inès',
-      lastName: 'de la Tour',
+      name: 'Inès  de la Tour',
     });
     expect(draftFromQuery('  ')).toEqual({});
   });

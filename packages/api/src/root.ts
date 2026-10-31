@@ -2,6 +2,7 @@ import { accountRouter } from '#features/account/router';
 import { agentsRouter } from '#features/agents/router';
 import { departmentsRouter } from '#features/departments/router';
 import { devicesRouter } from '#features/devices/router';
+import { directoryRouter } from '#features/directory/router';
 import { exportsRouter } from '#features/exports/router';
 import { healthRouter } from '#features/health/router';
 import { importsRouter } from '#features/imports/router';
@@ -18,6 +19,7 @@ export const appRouter = router({
   agents: agentsRouter,
   departments: departmentsRouter,
   devices: devicesRouter,
+  directory: directoryRouter,
   exports: exportsRouter,
   health: healthRouter,
   imports: importsRouter,

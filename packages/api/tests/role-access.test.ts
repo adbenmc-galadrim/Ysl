@@ -80,6 +80,15 @@ const ROUTES: Record<string, (caller: Caller) => Promise<unknown>> = {
     caller.departments.archive({ id: newId() }),
   'departments.attachAccount': (caller) =>
     caller.departments.attachAccount({ userId: 'x', departmentId: null }),
+  'account.company': (caller) => caller.account.company(),
+  'directory.moveEffects': (caller) =>
+    caller.directory.moveEffects({ personId: newId() }),
+  'directory.move': (caller) =>
+    caller.directory.move({ personId: newId(), departmentId: newId() }),
+  'directory.previewImport': (caller) =>
+    caller.directory.previewImport({ csv: 'nom,mail', choices: [] }),
+  'directory.applyImport': (caller) =>
+    caller.directory.applyImport({ csv: 'nom,mail', choices: [] }),
 };
 
 const WHOLE_COMPANY = [
@@ -102,6 +111,10 @@ const ADMIN = [
   'departments.attachAccount',
   'operating.get',
   'operating.save',
+  'directory.moveEffects',
+  'directory.move',
+  'directory.previewImport',
+  'directory.applyImport',
 ];
 const AGENTS = [
   'agents.list',
@@ -109,7 +122,7 @@ const AGENTS = [
   'agents.setActive',
   'agents.resetPassword',
 ];
-const READ_DEPARTMENTS = ['departments.list'];
+const READ_DEPARTMENTS = ['departments.list', 'account.company'];
 const OPERATIONS = [...WHOLE_COMPANY, ...READ_DEPARTMENTS];
 const WITHOUT_HANDOVER = OPERATIONS.filter(
   (route) => route !== 'pickup.verify',

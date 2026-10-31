@@ -148,7 +148,7 @@ describe('0020_synchro_par_departement', () => {
     expect(await departmentOf(parcelId)).toBe(legal);
   });
 
-  it('leaves a parcel where it is when its person moves, and one without a person alone', async () => {
+  it('moves a parcel with its person (0021), and leaves one without a person alone', async () => {
     const parcelId = newId();
     const loose = newId();
     await addParcel(parcelId, personId);
@@ -165,7 +165,7 @@ describe('0020_synchro_par_departement', () => {
       loose,
     ]);
 
-    expect(await departmentOf(parcelId)).toBe(finance);
+    expect(await departmentOf(parcelId)).toBe(legal);
     expect(await departmentOf(loose)).toBe(finance);
     await client.query(
       `update directory_person set department_id = $1 where id = $2`,
