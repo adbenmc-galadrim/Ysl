@@ -1383,6 +1383,7 @@ export const fr = {
   'review.summary.toCompleteOne': '{{count}} reste à compléter',
   'review.summary.ready': 'les autres sont prêts',
   'review.summary.allSure': 'Tout est sûr.',
+  'review.hold': 'Réglez ou passez chaque doute avant d’enregistrer.',
   'recipient.submit.next': 'Valider et suivant',
   'recipient.suggestions': 'Suggestions',
   'recipient.outside': 'Hors annuaire',
