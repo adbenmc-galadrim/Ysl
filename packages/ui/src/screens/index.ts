@@ -52,3 +52,5 @@ export * from '#screens/multi-entreprises/01-premier-lancement-et-connexion/conn
 export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';
+export * from '#screens/multi-entreprises/15-comptes/comptes-desktop-screen';
+export * from '#screens/multi-entreprises/15-comptes/comptes-mobile-screen';
