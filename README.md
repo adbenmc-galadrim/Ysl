@@ -9,7 +9,7 @@ Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
 | `apps/web` | Application Vite, React 19, TanStack Router, Query et Form |
 | `apps/server` | API Hono qui sert le routeur tRPC |
 | `packages/api` | Routeur tRPC ; l'app web n'en importe que le type |
-| `packages/auth` | Better Auth : comptes, rôles agent et admin, client web |
+| `packages/auth` | Better Auth : comptes, rôles, client web |
 | `packages/contract` | Schémas zod partagés entre l'app et l'API |
 | `packages/db` | Client Drizzle et schéma Postgres 17 |
 | `packages/shared` | Variables d'environnement, logs, traductions |
@@ -36,7 +36,15 @@ impossible. `pnpm db:down` arrête la base.
 
 ## Comptes
 
-Chaque agent a son compte, avec le rôle `agent` ou `admin`. Il n'y a pas d'inscription
+Quatre rôles (`docs/cahier-des-charges-v3.md`, §2.1) : `platform_admin` (admin de
+l'app), `company_admin` (admin entreprise), `department` (département, rattaché par
+`departments.attachAccount`) et `shuttle` (navette). `admin` et `agent` restent les
+rôles des comptes existants, jusqu'à la conversion : `admin` vaut admin entreprise,
+`agent` garde tous les colis de son organisation. Un compte `department` n'atteint ni
+la synchronisation ni les exports tant qu'ils ne sont pas filtrés par département.
+L'API admin de Better Auth (`/api/auth/admin/*`) est fermée en HTTP.
+
+Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription
 publique : le premier administrateur se crée en ligne de commande, les comptes suivants
 aussi tant que l'écran d'équipe n'existe pas.
 
@@ -223,7 +231,7 @@ passer en mode avion, fermer l'app puis la relancer : l'écran de connexion s'af
 | `pnpm build` | Build de production ; exige `PUBLIC_SERVER_URL` et `PUBLIC_APP_URL` (ex. `PUBLIC_SERVER_URL=http://localhost:3101 PUBLIC_APP_URL=http://localhost:3100 pnpm build`) |
 | `pnpm db:generate` | Génère une migration Drizzle depuis le schéma |
 | `pnpm db:migrate` | Applique les migrations |
-| `pnpm auth:create-user` | Crée un compte agent ou admin, rattaché à son organisation |
+| `pnpm auth:create-user` | Crée un compte, rattaché à son organisation |
 | `pnpm auth:attach-organization` | Rattache un compte existant à une organisation |
 | `pnpm auth:generate` | Régénère le schéma Drizzle des tables Better Auth |
 | `pnpm storybook` | Storybook du design system sur http://localhost:6006 |
