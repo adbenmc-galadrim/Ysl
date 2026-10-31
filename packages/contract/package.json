@@ -22,6 +22,7 @@
     "./parcel-reply": "./src/parcel-reply.ts",
     "./parcel-status": "./src/parcel-status.ts",
     "./pickup": "./src/pickup.ts",
+    "./platform": "./src/platform.ts",
     "./recipient": "./src/recipient/index.ts",
     "./reminders": "./src/reminders.ts",
     "./retention": "./src/retention.ts",
