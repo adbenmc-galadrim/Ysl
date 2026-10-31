@@ -419,6 +419,8 @@ export type CompteRecordPanelProps = {
   message?: string;
   passwordLabel: string;
   onPassword?: () => void;
+  /** Under it: the other way to give a password. */
+  secondary?: { label: string; onClick?: () => void };
   /** The red button at the foot: suspend, or bring back. */
   stateAction?: { label: string; danger: boolean; icon: IconName; onClick?: () => void };
   /** Above it, once the record can be revoked. */
@@ -437,6 +439,7 @@ export function CompteRecordPanel({
   message,
   passwordLabel,
   onPassword,
+  secondary,
   stateAction,
   revoke,
   onClose,
@@ -485,8 +488,24 @@ export function CompteRecordPanel({
       >
         {passwordLabel}
       </Button>
+      {secondary && (
+        <Button
+          variant="outline"
+          size="desk"
+          className="absolute inset-x-[15px] top-[423px] h-9 justify-start"
+          onClick={secondary.onClick}
+        >
+          {secondary.label}
+        </Button>
+      )}
       {message && (
-        <p role="alert" className="absolute inset-x-[15px] top-[421px] text-12 text-red">
+        <p
+          role="alert"
+          className={cn(
+            'absolute inset-x-[15px] text-12 text-red',
+            secondary ? 'top-[463px]' : 'top-[421px]',
+          )}
+        >
           {message}
         </p>
       )}

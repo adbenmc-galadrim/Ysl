@@ -59,5 +59,6 @@ export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entrep
 export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-mobile-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';
+export * from '#screens/multi-entreprises/02-invitation-et-mot-de-passe/invitation-screen';
 export * from '#screens/multi-entreprises/15-comptes/comptes-desktop-screen';
 export * from '#screens/multi-entreprises/15-comptes/comptes-mobile-screen';
