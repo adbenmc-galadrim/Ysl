@@ -48,7 +48,18 @@ changement n'ont aucune demande en cours.
 ## Admin de l'app
 
 Le premier `platform_admin` se crée par `auth:create-user --role platform_admin` (voir
-`README.md`) ; ce script ne crée aucun autre compte.
+`README.md`) ; ce script ne crée aucun autre compte, et refuse d'en créer un second. Mot de
+passe perdu : `auth:reset-password`.
+
+Il voit des chiffres par entreprise : comptes, départements, colis reçus depuis le 1er du mois
+(heure de Paris), date de la dernière activité (dernier événement ou dernier colis reçu). Ni
+colis, ni annuaire, ni nom de salarié (D26).
+
+Le journal garde 12 mois ses créations, renommages, suspensions, réactivations, suppressions
+et invitations, avec le nom de l'entreprise à ce moment-là et le nom du compte de plateforme.
+Il survit à la suppression de l'entreprise (table `platform_journal`, sans `organization_id`,
+hors de la purge). Pas d'adresse, pas de nom de salarié, pas de texte libre : la suspension ne
+demande pas de raison.
 
 L'admin de l'app invite le premier admin d'une entreprise, ou un remplaçant s'il n'y a plus
 d'admin actif (§3.7.9) : il saisit un nom et une adresse, et ne relit rien. Un admin révoqué

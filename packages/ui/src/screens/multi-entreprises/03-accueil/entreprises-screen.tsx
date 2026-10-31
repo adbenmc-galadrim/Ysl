@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
@@ -187,15 +187,23 @@ export type EntreprisesDesktopProps = {
   activeTab?: number;
   onSelectTab?: (index: number) => void;
   rows?: Company[];
-  /** Colis du mois, dernière activité and the filters: the mockup's, until the figures exist. */
-  withUsage?: boolean;
+  /** The two lists above the table; the mockup's otherwise. */
+  filters?: ComponentProps<typeof DeskSelect>[];
   range?: string;
   note?: string;
   onNew?: () => void;
   onOpen?: (company: Company) => void;
 };
 
-const USAGE_COLUMNS = new Set(['parcels', 'activity']);
+const MOCK_FILTERS: ComponentProps<typeof DeskSelect>[] = [
+  { icon: 'filter', label: 'Modèle', value: 'Tous', className: 'w-[137px]' },
+  {
+    icon: 'list',
+    label: 'Tri',
+    value: 'Dernière activité',
+    className: 'w-[176px]',
+  },
+];
 
 /** The platform's home: its clients, as figures and never as their content. */
 export function EntreprisesDesktop({
@@ -211,7 +219,7 @@ export function EntreprisesDesktop({
   activeTab = 0,
   onSelectTab,
   rows = COMPANIES,
-  withUsage = true,
+  filters = MOCK_FILTERS,
   range = '1–5 sur 5',
   note = 'Chiffres seulement : ni colis, ni annuaire, ni nom de salarié (D26).',
   onNew,
@@ -235,30 +243,15 @@ export function EntreprisesDesktop({
       />
       <DeskStats className="mt-6" stats={stats} />
       <CompanyTabs tabs={tabs} active={activeTab} onSelect={onSelectTab} />
-      {withUsage && (
-        <div className="mt-[19px] flex gap-2">
-          <DeskSelect
-            icon="filter"
-            label="Modèle"
-            value="Tous"
-            className="w-[137px]"
-          />
-          <DeskSelect
-            icon="list"
-            label="Tri"
-            value="Dernière activité"
-            className="w-[176px]"
-          />
-        </div>
-      )}
+      <div className="mt-[19px] flex gap-2">
+        {filters.map((filter) => (
+          <DeskSelect key={filter.label} {...filter} />
+        ))}
+      </div>
       <DeskTable
         label="Entreprises clientes"
         className="mt-4 shrink-0"
-        columns={
-          withUsage
-            ? COLUMNS
-            : COLUMNS.filter((column) => !USAGE_COLUMNS.has(column.key))
-        }
+        columns={COLUMNS}
         rows={rows}
         rowKey={(c) => c.id}
         rowHeight={44}
@@ -355,6 +348,8 @@ export type EntreprisesMobileProps = {
   onOpen?: (company: Company) => void;
   signOutLabel: string;
   onSignOut?: () => void;
+  journalLabel?: string;
+  onJournal?: () => void;
   search?: { value: string; onChange: (value: string) => void };
   searchPlaceholder?: string;
 };
@@ -368,6 +363,8 @@ export function EntreprisesListMobile({
   onOpen,
   signOutLabel,
   onSignOut,
+  journalLabel,
+  onJournal,
   search,
   searchPlaceholder,
 }: EntreprisesMobileProps) {
@@ -394,7 +391,16 @@ export function EntreprisesListMobile({
         </BottomBar>
       }
     >
-      <div className="flex h-11 items-center justify-end">
+      <div className="flex h-11 items-center justify-end gap-2">
+        {journalLabel && (
+          <IconButton
+            icon="file"
+            label={journalLabel}
+            size="lg"
+            iconSize={22}
+            onClick={onJournal}
+          />
+        )}
         <IconButton
           icon="logout"
           label={signOutLabel}

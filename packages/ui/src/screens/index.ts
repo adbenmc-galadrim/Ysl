@@ -63,6 +63,7 @@ export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entrep
 export * from '#screens/multi-entreprises/04-nouvelle-entreprise/nouvelle-entreprise-mobile-screen';
 export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-desktop-screen';
 export * from '#screens/multi-entreprises/05-fiche-d-une-entreprise/fiche-entreprise-mobile-screen';
+export * from '#screens/multi-entreprises/06-journal-de-la-plateforme/journal-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-desktop-screen';
 export * from '#screens/multi-entreprises/14-annuaire/annuaire-mobile-screen';
 export * from '#screens/multi-entreprises/02-invitation-et-mot-de-passe/invitation-screen';

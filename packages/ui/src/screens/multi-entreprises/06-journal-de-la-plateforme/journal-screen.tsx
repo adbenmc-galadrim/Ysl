@@ -1,3 +1,5 @@
+import type { ComponentProps } from 'react';
+
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskSelect } from '#components/desk-form';
@@ -9,6 +11,7 @@ import {
 import { IconTile } from '#components/icon-tile';
 import { PhoneNav, PhoneRow } from '#components/phone-parts';
 import { Screen } from '#components/screen';
+import type { PlatformChrome } from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 import { Skeleton } from '#components/skeleton';
 import { ACCOUNT, COMPANY, crumbs, PLATFORM_NAV } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
@@ -43,12 +46,29 @@ const KIND = {
     tag: 'bg-red-soft text-red',
     tile: 'bg-red-soft text-red',
   },
+  reactivation: {
+    label: 'Réactivation',
+    icon: 'refresh',
+    width: 102.6,
+    tag: 'bg-green-soft text-green',
+    tile: 'bg-green-soft text-green',
+  },
+  renaming: {
+    label: 'Renommage',
+    icon: 'edit',
+    width: 102.6,
+    tag: 'bg-fill text-ink',
+    tile: 'bg-fill text-ink',
+  },
 } as const satisfies Record<
   string,
   { label: string; icon: IconName; width: number; tag: string; tile: string }
 >;
 
-type Entry = {
+export type JournalKind = keyof typeof KIND;
+
+export type JournalLine = {
+  id?: string;
   when: string;
   kind: keyof typeof KIND;
   action: string;
@@ -57,7 +77,7 @@ type Entry = {
   by: string;
 };
 
-const ENTRIES: Entry[] = [
+const ENTRIES: JournalLine[] = [
   {
     when: 'Aujourd’hui, 9:14',
     kind: 'invitation',
@@ -116,7 +136,7 @@ const ENTRIES: Entry[] = [
   },
 ];
 
-const COLUMNS: DeskTableColumn<Entry>[] = [
+const COLUMNS: DeskTableColumn<JournalLine>[] = [
   {
     key: 'when',
     header: 'Quand',
@@ -146,7 +166,12 @@ const COLUMNS: DeskTableColumn<Entry>[] = [
     width: 200,
     cell: (e) => <span className="font-semibold">{e.action}</span>,
   },
-  { key: 'company', header: 'Entreprise', width: 180, cell: (e) => e.company },
+  {
+    key: 'company',
+    header: 'Entreprise',
+    width: 180,
+    cell: (e) => <span className="block w-[168px] truncate">{e.company}</span>,
+  },
   { key: 'detail', header: 'Détail', width: 364, cell: (e) => e.detail },
   {
     key: 'by',
@@ -159,8 +184,37 @@ const COLUMNS: DeskTableColumn<Entry>[] = [
   },
 ];
 
+const MOCK_FILTERS: ComponentProps<typeof DeskSelect>[] = [
+  { icon: 'filter', label: 'Type', value: 'Tous', className: 'w-[123px]' },
+  {
+    icon: 'building',
+    label: 'Entreprise',
+    value: 'Toutes',
+    className: 'w-[164px]',
+  },
+  {
+    icon: 'calendar',
+    label: 'Période',
+    value: '30 derniers jours',
+    className: 'w-[209px]',
+  },
+];
+
+/** The real record: no export, no filter by company, a search instead. */
+export type JournalData = {
+  chrome?: PlatformChrome;
+  searchPlaceholder: string;
+  filters: ComponentProps<typeof DeskSelect>[];
+  lines: JournalLine[];
+  range: string;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  /** Instead of the lines: nothing found, or the server's refusal. */
+  message?: string;
+};
+
 /** What was done on the platform, by whom, kept for twelve months. */
-export function JournalDesktop() {
+export function JournalDesktop({ data }: { data?: JournalData } = {}) {
   return (
     <CompanyShell
       company={COMPANY.platform}
@@ -168,45 +222,49 @@ export function JournalDesktop() {
       active="journal"
       account={ACCOUNT.platform}
       breadcrumb={crumbs('Plateforme', 'Journal')}
-      searchPlaceholder="Entreprise ou personne"
+      searchPlaceholder={data?.searchPlaceholder ?? 'Entreprise ou personne'}
+      {...data?.chrome}
     >
       <DeskPageHeader
         title="Journal"
         subtitle="Les actions faites sur la plateforme, gardées 12 mois"
         actions={
-          <Button
-            variant="outline"
-            size="desk"
-            icon="download"
-            className="w-[103.6px] justify-start"
-          >
-            Exporter
-          </Button>
+          data ? undefined : (
+            <Button
+              variant="outline"
+              size="desk"
+              icon="download"
+              className="w-[103.6px] justify-start"
+            >
+              Exporter
+            </Button>
+          )
         }
       />
       <div className="mt-6 flex gap-2">
-        <DeskSelect icon="filter" label="Type" value="Tous" className="w-[123px]" />
-        <DeskSelect
-          icon="building"
-          label="Entreprise"
-          value="Toutes"
-          className="w-[164px]"
-        />
-        <DeskSelect
-          icon="calendar"
-          label="Période"
-          value="30 derniers jours"
-          className="w-[209px]"
-        />
+        {(data?.filters ?? MOCK_FILTERS).map((filter) => (
+          <DeskSelect key={filter.label} {...filter} />
+        ))}
       </div>
+      {data?.message && (
+        <p role="status" className="mt-4 text-13 text-muted">
+          {data.message}
+        </p>
+      )}
       <DeskTable
         label="Journal de la plateforme"
         className="mt-4 shrink-0"
         columns={COLUMNS}
-        rows={ENTRIES}
-        rowKey={(e) => `${e.when}-${e.action}`}
+        rows={data?.lines ?? ENTRIES}
+        rowKey={(e) => e.id ?? `${e.when}-${e.action}`}
         rowHeight={44}
-        footer={<DeskTablePagination range="1–7 sur 42" />}
+        footer={
+          <DeskTablePagination
+            range={data?.range ?? '1–7 sur 42'}
+            onPrevious={data?.onPrevious}
+            onNext={data?.onNext}
+          />
+        }
       />
     </CompanyShell>
   );
@@ -249,8 +307,60 @@ function JournalRow({
   );
 }
 
-function JournalNav() {
-  return <PhoneNav title="Journal" />;
+function JournalNav({ onBack }: { onBack?: () => void }) {
+  return <PhoneNav title="Journal" onBack={onBack} />;
+}
+
+/** The record on the phone from real lines, by day, newest first. */
+export function JournalListMobile({
+  days,
+  onBack,
+  search,
+  searchPlaceholder,
+  moreLabel,
+  onMore,
+}: {
+  days: { title: string; lines: JournalLine[] }[];
+  onBack?: () => void;
+  search?: { value: string; onChange: (value: string) => void };
+  searchPlaceholder?: string;
+  moreLabel?: string;
+  onMore?: () => void;
+}) {
+  return (
+    <Screen className="pt-[calc(var(--safe-top)+6px)]">
+      <JournalNav onBack={onBack} />
+      {search && (
+        <input
+          type="search"
+          aria-label={searchPlaceholder}
+          placeholder={searchPlaceholder}
+          value={search.value}
+          onChange={(event) => search.onChange(event.target.value)}
+          className="mt-2 h-11 w-full shrink-0 rounded-full bg-fill px-4 text-15 outline-none"
+        />
+      )}
+      {days.map((day, i) => (
+        <div key={day.title}>
+          <DayTitle first={i === 0}>{day.title}</DayTitle>
+          {day.lines.map((line) => (
+            <JournalRow
+              key={line.id ?? `${line.when}-${line.action}`}
+              kind={line.kind}
+              title={line.action}
+              company={line.company}
+              detail={line.detail}
+            />
+          ))}
+        </div>
+      ))}
+      {moreLabel && (
+        <Button block variant="secondary" className="my-4" onClick={onMore}>
+          {moreLabel}
+        </Button>
+      )}
+    </Screen>
+  );
 }
 
 /** The same record on the phone, by day. */
@@ -296,10 +406,12 @@ export function JournalMobile() {
 }
 
 /** The record while it loads. */
-export function JournalChargementMobile() {
+export function JournalChargementMobile({
+  onBack,
+}: { onBack?: () => void } = {}) {
   return (
     <Screen className="pt-[calc(var(--safe-top)+6px)]">
-      <JournalNav />
+      <JournalNav onBack={onBack} />
       <Skeleton width={100} height={12} radius={6} className="mt-[18px]" />
       <div className="mt-[22px] flex flex-col gap-7">
         {Array.from({ length: 7 }, (_, i) => (
@@ -317,17 +429,21 @@ export function JournalChargementMobile() {
 }
 
 /** The record before anything has been done on the platform. */
-export function JournalVideMobile() {
+export function JournalVideMobile({
+  onBack,
+  title = 'Aucune action',
+  description = 'Les créations, invitations et suspensions apparaîtront ici.',
+}: { onBack?: () => void; title?: string; description?: string } = {}) {
   return (
     <Screen className="pt-[calc(var(--safe-top)+6px)]">
-      <JournalNav />
+      <JournalNav onBack={onBack} />
       <div className="mt-40 flex flex-col text-center">
         <span className="ml-[132px] flex size-[88px] items-center justify-center rounded-full bg-fill">
           <Icon name="file" size={40} />
         </span>
-        <h2 className="mt-5 ml-[26px] w-[300px] text-22 font-bold">Aucune action</h2>
+        <h2 className="mt-5 ml-[26px] w-[300px] text-22 font-bold">{title}</h2>
         <p className="mt-[9px] ml-[26px] w-[300px] text-15 leading-5 text-muted">
-          Les créations, invitations et suspensions apparaîtront ici.
+          {description}
         </p>
       </div>
     </Screen>

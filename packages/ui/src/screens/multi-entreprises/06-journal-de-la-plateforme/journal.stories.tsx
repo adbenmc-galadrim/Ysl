@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   JournalChargementMobile,
   JournalDesktop,
+  JournalListMobile,
   JournalMobile,
   JournalVideMobile,
 } from '#screens/multi-entreprises/06-journal-de-la-plateforme/journal-screen';
@@ -47,4 +48,58 @@ export const VideMobile: Story = {
   parameters: { device: { tone: 'light' }, reference: `${page}vide-mobile` },
   globals: mobile,
   render: () => <JournalVideMobile />,
+};
+
+/** No reference: the mockup names people, the app never does (D26). */
+const LINES = [
+  {
+    id: '1',
+    when: 'Aujourd’hui, 9:14',
+    kind: 'suspension',
+    action: 'Entreprise suspendue',
+    company: 'Studio Kerval',
+    detail: '',
+    by: 'SL',
+  },
+  {
+    id: '2',
+    when: 'Hier, 18:02',
+    kind: 'deletion',
+    action: 'Entreprise supprimée',
+    company: 'Imprimerie Vasse',
+    detail: '12 comptes, 3 départements, 940 colis effacés',
+    by: 'SL',
+  },
+] as const;
+
+export const Monte: Story = {
+  name: 'Journal réel · ordinateur',
+  globals: desktop,
+  render: () => (
+    <JournalDesktop
+      data={{
+        searchPlaceholder: 'Rechercher une entreprise',
+        filters: [
+          { icon: 'filter', label: 'Type', value: 'Tous', className: 'w-[260px]' },
+        ],
+        lines: [...LINES],
+        range: '1–2 sur 2',
+      }}
+    />
+  ),
+};
+
+export const MonteMobile: Story = {
+  name: 'Journal réel · mobile',
+  parameters: { device: { tone: 'light' } },
+  globals: mobile,
+  render: () => (
+    <JournalListMobile
+      days={[
+        { title: 'Aujourd’hui', lines: [LINES[0]] },
+        { title: 'Hier', lines: [LINES[1]] },
+      ]}
+      moreLabel="Voir plus"
+    />
+  ),
 };

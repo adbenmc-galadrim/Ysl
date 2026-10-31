@@ -16,6 +16,7 @@ import { Route as InvitationRouteImport } from './routes/invitation'
 import { Route as MotDePasseRouteImport } from './routes/mot-de-passe'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedDepartementRouteImport } from './routes/_authenticated/departement'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
@@ -95,6 +96,11 @@ const AuthenticatedDepartementRoute =
     path: '/departement',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNotifierRoute = AuthenticatedNotifierRouteImport.update({
   id: '/notifier',
   path: '/notifier',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
   '/departement': typeof AuthenticatedDepartementRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
   '/departement': typeof AuthenticatedDepartementRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
   '/recherche': typeof AuthenticatedRechercheRoute
@@ -455,6 +463,7 @@ export interface FileRoutesById {
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
   '/_authenticated/departement': typeof AuthenticatedDepartementRoute
+  '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
@@ -509,6 +518,7 @@ export interface FileRouteTypes {
     | '/invitation'
     | '/mot-de-passe'
     | '/departement'
+    | '/journal'
     | '/notifier'
     | '/preparation'
     | '/recherche'
@@ -559,6 +569,7 @@ export interface FileRouteTypes {
     | '/invitation'
     | '/mot-de-passe'
     | '/departement'
+    | '/journal'
     | '/notifier'
     | '/preparation'
     | '/recherche'
@@ -611,6 +622,7 @@ export interface FileRouteTypes {
     | '/invitation'
     | '/mot-de-passe'
     | '/_authenticated/departement'
+    | '/_authenticated/journal'
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
     | '/_authenticated/recherche'
@@ -714,6 +726,13 @@ declare module '@tanstack/react-router' {
       path: '/departement'
       fullPath: '/departement'
       preLoaderRoute: typeof AuthenticatedDepartementRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/notifier': {
@@ -1022,6 +1041,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDepartementRoute: typeof AuthenticatedDepartementRoute
+  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
@@ -1070,6 +1090,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDepartementRoute: AuthenticatedDepartementRoute,
+  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
