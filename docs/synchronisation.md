@@ -1,7 +1,7 @@
 # Synchronisation et outbox
 
 Ticket YSL-28 (cahier des charges §7.2, §8.4, §8.6 ; décision D3 : Dexie + outbox,
-pas PowerSync). Chaque iPhone et chaque ordinateur du service tient une copie des
+pas PowerSync, confirmé pour la synchronisation filtrée par rôle, YSL-117). Chaque iPhone et chaque ordinateur du service tient une copie des
 tables du serveur dans Dexie (`apps/web/src/features/db`) et lui envoie ses
 changements par une file locale, l'outbox. Deux procédures tRPC suffisent :
 `sync.push` et `sync.pull` (`packages/api/src/features/sync`, contrat dans
@@ -13,7 +13,7 @@ téléphone (D7, D8, §8.5) : la synchronisation ne porte que ce que le serveur 
 | Sens               | Quoi                                                                                                                                       | Clé                                                               |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | Appareil → serveur | une opération par écriture locale : `upsert` (la ligne entière) ou `delete` (suppression logique), avec son `op_id` et l'horodatage client | `op_id` (UUID v7, `sync_op`)                                      |
-| Serveur → appareil | les lignes des quatorze tables synchronisées de l'organisation, écrites depuis le curseur                                                  | `server_xid` (identifiant de la transaction qui a écrit la ligne) |
+| Serveur → appareil | les lignes des quinze tables synchronisées que le rôle atteint, écrites depuis le curseur                                                      | `server_xid` (identifiant de la transaction qui a écrit la ligne) |
 
 Un appareil appartient à une organisation par le compte connecté
 (`organization_member`) ; sans rattachement, les deux procédures répondent 403
@@ -41,7 +41,7 @@ Un statut par opération, dans l'ordre envoyé :
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | 200    | appliquée, maintenant ou par un envoi précédent                                                                                                                                                                | retirée de l'outbox                                                                            |
 | 400    | colonne inconnue, valeur invalide, `not null` manquant, destinataire absent sur `notifie`/`remis`, autre garde-fou (SQLSTATE `22xxx`, `23502`, `23514`, `P0xxx`)                                               | `rejected`, à corriger                                                                         |
-| 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails »)                              | `rejected`                                                                                     |
+| 403    | identifiant d'une autre organisation ; réglage écrit par un non-admin ; modèle d'e-mail d'un autre agent ; notification préparée par un autre agent (voir « Modèles et e-mails ») ; écriture hors de ce que le rôle atteint (voir plus bas)                            | `rejected`                                                                                     |
 | 404    | référence absente (`23503`), suppression d'une ligne inconnue                                                                                                                                                  | `rejected`                                                                                     |
 | 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas) | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard                                    |
@@ -60,7 +60,7 @@ Ces statuts valent par opération. Un compte `platform_admin`, ou `department` r
 
 Un compte `department` reçoit ses colis et ce qui en dépend (contacts, journal, e-mails, remises), ses codes, les réglages et ses modèles ; ni les lots, ni les expéditeurs, ni les alias. Un colis sans département lui reste invisible. En écriture il ne crée pas de colis et n'en donne aucun à un autre département : 403 `sync.op.outOfScope`.
 
-**Département d'un colis.** Le serveur le pose (trigger `parcel_department_of_person`) : celui de la personne, à la création et quand la personne change. Sans personne, celui qu'indique un compte de l'entreprise (contact, §3.7.9). Un salarié déplacé ne déplace pas ses colis : YSL-128.
+**Département d'un colis.** Le serveur le pose (trigger `parcel_department_of_person`) : celui de la personne, à la création et quand la personne change. Sans personne, celui qu'indique un compte de l'entreprise (cas d'un contact). Un salarié déplacé ne déplace pas ses colis : YSL-128.
 
 **Curseur.** Une ligne devenue visible remonte : les lignes liées à un colis suivent la plage du colis. Une ligne sortie de la portée ne laisse aucune marque : `department.scope_xid` retient la dernière transaction qui en a fait sortir une, et un curseur qui ne l'a pas dépassée repart de zéro (`reset`). Un compte qui change de département ou de rôle détient un curseur d'une autre génération (`readerGeneration`) et repart de zéro lui aussi.
 

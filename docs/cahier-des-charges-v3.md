@@ -405,7 +405,7 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Un même code de retrait couvre des colis de deux départements, ou un contact hors annuaire | Un code par personne et par département ; un contact prend le département du colis | YSL-117, YSL-136 |
 | Second admin d'une entreprise, ou remplacement du seul | L'admin entreprise invite un autre admin ; s'il n'y en a plus, l'admin de l'app réinvite, sans voir de donnée nominative | YSL-122 |
 | Trois états sur une étape sans geste humain ou sans objet | Relances : désactivées, à la main (facultatives), automatiques (obligatoires). Preuve désactivée : remise par le nom, tracée `manuel` | YSL-124, YSL-127 |
-| La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | La synchronisation filtrée par rôle reste sur Dexie ; à revoir si les volumes le demandent | YSL-117 |
+| La clause de revoyure PowerSync (§7.2) vise plusieurs sites et de nombreux agents sur les mêmes colis | Confirmé par YSL-117 : la synchronisation filtrée par rôle reste sur Dexie, le filtre et les relectures étant côté serveur (`docs/synchronisation.md`) ; à revoir si les volumes le demandent | YSL-117 |
 
 ---
 
