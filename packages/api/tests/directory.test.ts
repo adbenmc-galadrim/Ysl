@@ -533,7 +533,9 @@ describe('a request to move someone', () => {
     await requestMove(any, mine(), { personId: person, note: null });
 
     await move(person, finance);
+    expect(await openFor(accessOf('admin'), person)).toEqual([]);
 
+    await move(person, studio);
     expect(await openFor(accessOf('admin'), person)).toEqual([]);
   });
 

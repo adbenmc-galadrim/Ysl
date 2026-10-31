@@ -267,11 +267,16 @@ function DirectoryDesktop({
   const { people, contacts, departments, names, open } = directory;
   const company = useCompanyName();
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState(ALL_DEPARTMENTS);
+  const [chosenTab, setTab] = useState(ALL_DEPARTMENTS);
   const [page, setPage] = useState(0);
   const [panel, setPanel] = useState<Open>(null);
   const [contact, setContact] = useState<LocalContact | null>(null);
   const { requests, byPerson, close } = useMoveRequests();
+  // The last request closed takes its tab away.
+  const tab =
+    chosenTab === REQUESTS_TAB && !requests.length
+      ? ALL_DEPARTMENTS
+      : chosenTab;
 
   const listedPeople = people.filter(listed);
   const inContacts = tab === CONTACTS_TAB;
@@ -604,7 +609,7 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
   const { requests, byPerson, close } = useMoveRequests();
 
   const requestsLabel = t('directory.tab.requests', { count: requests.length });
-  const inRequests = requests.length > 0 && filter === requestsLabel;
+  const inRequests = requests.length > 0 && filter === REQUESTS_TAB;
   const tabId =
     departments.find((row) => row.name === filter)?.id ?? ALL_DEPARTMENTS;
   const found = directoryPeople(people, names, query, tabId).filter(
@@ -665,8 +670,13 @@ function DirectoryPhone({ directory }: { directory: Directory }) {
                   ...departments.map((row) => row.name),
                   ...(requests.length ? [requestsLabel] : []),
                 ],
-                value: filter,
-                onChange: setFilter,
+                value: inRequests
+                  ? requestsLabel
+                  : filter === REQUESTS_TAB
+                    ? t('directory.filter.all')
+                    : filter,
+                onChange: (option) =>
+                  setFilter(option === requestsLabel ? REQUESTS_TAB : option),
               }
             : undefined
         }

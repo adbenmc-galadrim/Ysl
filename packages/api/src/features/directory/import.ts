@@ -187,7 +187,7 @@ async function plan(
     const person =
       cards.find((card) => target && card.departmentId === target.id) ??
       (cards.length === 1 ? cards[0] : undefined);
-    if (cards.length > 1 && !person) {
+    if (cards.length > 1 && !person && !target) {
       refuse('email-ambiguous');
       continue;
     }

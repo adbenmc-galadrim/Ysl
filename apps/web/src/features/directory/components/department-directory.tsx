@@ -1,3 +1,4 @@
+import { MOVE_REQUEST_NOTE_MAX } from '@repo/contract/directory';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   AnnuaireDesktop,
@@ -93,7 +94,7 @@ function useRequestForm(person: LocalDirectoryPerson, onDone: () => void) {
       ? t('directory.request.sent', { date: dayOf(open.createdAt) })
       : undefined,
     note: note ?? open?.note ?? '',
-    onNote: setNote,
+    onNote: (text: string) => setNote(text.slice(0, MOVE_REQUEST_NOTE_MAX)),
     saving: ask.isPending || close.isPending,
     message: !online
       ? t('directory.request.offline')
@@ -272,7 +273,7 @@ function Desk({ directory }: { directory: Directory }) {
             person={selected}
             onDone={() => setPanel({ kind: 'edit', id: selected.id })}
           />
-        ) : panel && panel.kind !== 'request' ? (
+        ) : panel?.kind === 'add' || (panel?.kind === 'edit' && selected) ? (
           <DeskForm
             key={panel.kind === 'add' ? `add-${panel.key}` : panel.id}
             person={selected}
@@ -362,7 +363,8 @@ function Phone({ directory }: { directory: Directory }) {
       ? people.find((person) => person.id === open.id)
       : undefined;
 
-  if (open) {
+  // A card that left the department while open must not become a new one.
+  if (open && (open.kind === 'add' || selected)) {
     return (
       <>
         <PhoneForm

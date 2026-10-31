@@ -1,4 +1,4 @@
-import type { MoveRequest } from '@repo/contract/directory';
+import type { MoveRequest, RequestMoveInput } from '@repo/contract/directory';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useOnline } from '#/lib/use-online';
@@ -20,7 +20,7 @@ export function useMoveRequests() {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: MOVE_REQUESTS_KEY });
   const ask = useMutation({
-    mutationFn: (input: { personId: string; note: string }) =>
+    mutationFn: (input: RequestMoveInput) =>
       trpcClient.directory.requestMove.mutate(input),
     onSuccess: refresh,
   });

@@ -23,8 +23,8 @@ const EMPTY: PersonFormValue = {
 
 /**
  * The state of the add and edit forms, whichever draws them. The duplicate
- * shows as soon as the typed e-mail is someone's; that person's record is one
- * touch away, as an e-mail never makes a second card.
+ * shows as soon as the typed e-mail is that of someone this account sees; that
+ * person's record is one touch away, as it makes no second card for them.
  */
 export function usePersonForm({
   person,

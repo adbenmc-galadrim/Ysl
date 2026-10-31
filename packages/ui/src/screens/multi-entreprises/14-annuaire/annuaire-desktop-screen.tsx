@@ -486,7 +486,9 @@ export function PersonRecordPanel({
   // The figures of the mockup: the block of effects takes 148 px, the actions 48.
   const lower = effects ? (message ? 379 : 355) : message ? 183 : 159;
   return (
-    <DeskSidePanel className="h-[640px] w-[360px]">
+    <DeskSidePanel
+      className={`w-[360px] ${onDismissRequest ? 'h-[760px]' : 'h-[640px]'}`}
+    >
       <Avatar
         initials={initials}
         tone="fill"

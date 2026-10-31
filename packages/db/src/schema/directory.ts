@@ -59,8 +59,8 @@ export const directoryPerson = pgTable(
 
 /**
  * A department asking the company admin to move one of its people (ME21, ME22):
- * it moves nobody itself. One open request per person; one whose person has
- * left `departmentId` is over, however they moved.
+ * it moves nobody itself. One open request per person, closed by the trigger
+ * of drizzle/0022 once that person leaves the department, however they moved.
  */
 export const directoryMoveRequest = pgTable(
   'directory_move_request',

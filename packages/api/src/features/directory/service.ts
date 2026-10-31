@@ -175,8 +175,7 @@ export async function requestMove(
 
 /**
  * The requests still open, oldest first: all of them for the admin, its own
- * for a department. One whose person has left the department is over, however
- * they moved (`directory.move`, the import).
+ * for a department.
  */
 export async function moveRequestsOf(
   db: AnyDb,

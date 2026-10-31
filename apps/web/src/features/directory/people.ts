@@ -20,7 +20,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 export { isEmail };
 
-/** The key the directory is deduplicated on (F50): the e-mail, trimmed, in lower case. */
+/** The key a department's directory is deduplicated on (F50): the e-mail, trimmed, in lower case. */
 export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }

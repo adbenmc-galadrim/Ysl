@@ -152,8 +152,23 @@ Table "directory_person" {
   Indexes {
     (organization_id, server_xid, id) [type: btree, name: "directory_person_cursor_idx"]
     (organization_id, id) [type: btree, unique, name: "directory_person_organization_id_idx"]
-    (organization_id, `lower("email")`) [type: btree, unique, name: "directory_person_email_idx", note: 'partiel : where deleted_at is null']
+    (organization_id, `coalesce("department_id", '00000000-0000-0000-0000-000000000000'::uuid)`, `lower("email")`) [type: btree, unique, name: "directory_person_email_idx", note: 'partiel : where deleted_at is null']
     (organization_id, name_norm) [type: btree, name: "directory_person_name_norm_idx", note: 'partiel : where deleted_at is null']
+  }
+}
+
+Table "directory_move_request" {
+  id uuid [pk, not null]
+  organization_id uuid [not null]
+  person_id uuid [not null]
+  department_id uuid [not null]
+  requested_by text
+  note text
+  created_at timestamptz [not null, default: `now()`]
+  closed_at timestamptz
+
+  Indexes {
+    (organization_id, person_id) [type: btree, unique, name: "directory_move_request_open_idx", note: 'partiel : where closed_at is null']
   }
 }
 
