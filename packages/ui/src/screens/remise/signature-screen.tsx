@@ -36,7 +36,7 @@ export function SignatureScreen({
   return (
     <Screen
       bottom={
-        <BottomBar surface="plain">
+        <BottomBar surface="plain" className="pt-6 pb-9">
           <Button block disabled={empty} onClick={onConfirm}>
             Valider la signature
           </Button>
@@ -57,20 +57,22 @@ export function SignatureScreen({
             className="-ml-0.5"
           />
         }
-        trailing={<NavBarAction onClick={onClear}>Effacer</NavBarAction>}
+        trailing={
+          <NavBarAction onClick={onClear} className="font-normal">
+            Effacer
+          </NavBarAction>
+        }
       />
-      <h2 className="mt-4 text-22 font-bold">{title}</h2>
-      {detail && <p className="mt-1.5 text-15 text-muted">{detail}</p>}
+      <h1 className="mt-3 text-22 font-bold">{title}</h1>
+      {detail && (
+        <p className="relative -top-px mt-[5px] text-14 text-muted">{detail}</p>
+      )}
       <SignaturePad
         strokes={strokes}
         onChange={onChange}
-        // 420 px on the mockup's 852 px phone; it gives way on shorter ones
-        // so the hint under it stays above the button.
-        className="mt-[30px] h-[clamp(240px,calc(100dvh-432px),420px)]"
+        // 380 px on the mockup's 852 px phone; it gives way on shorter ones.
+        className="mt-[25px] h-[clamp(240px,calc(100dvh-472px),380px)]"
       />
-      <p className="mt-6 text-center text-14 text-muted">
-        Tournez l’iPhone pour plus de place
-      </p>
     </Screen>
   );
 }

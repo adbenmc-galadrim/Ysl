@@ -2,6 +2,7 @@ import type { ChangeEvent, ReactNode } from 'react';
 
 import { Avatar } from '#components/avatar';
 import { Banner, type BannerProps } from '#components/banner';
+import type { CheckListItem } from '#components/check-list';
 import { Field, FieldInput } from '#components/field';
 import { GroupedList } from '#components/grouped-list';
 import { IconButton } from '#components/icon-button';
@@ -543,5 +544,72 @@ export function PhoneSettingRow({
         />
       )}
     </div>
+  );
+}
+
+/** The big green disc that closes a handover. */
+export function DoneDisc({ className = 'mt-[92px]' }: { className?: string }) {
+  return (
+    <span className={cn('flex size-[88px] shrink-0 items-center justify-center self-center rounded-full bg-green-solid text-white', className)}>
+      <Icon name="tick" size={44} />
+    </span>
+  );
+}
+
+/** The bordered card of what the handover secured. */
+export function ProofCard({
+  items,
+}: {
+  items: CheckListItem[];
+}) {
+  return (
+    <ul className="mt-[30px] flex shrink-0 flex-col gap-6 rounded-[16px] border border-separator pt-[17px] pr-[19px] pb-[30px] pl-[15px]">
+      {items.map((item, i) => (
+        <li key={i} className="flex h-[18px] items-center text-15">
+          <Icon name={item.icon} size={18} className={cn('shrink-0', item.onClick ? 'text-blue' : 'text-ink-2')} />
+          {item.onClick ? (
+            <button type="button" onClick={item.onClick} className="-my-3 ml-3 min-w-0 flex-1 cursor-pointer py-3 text-left text-blue">
+              {item.label}
+            </button>
+          ) : (
+            <span className={cn('ml-3 min-w-0 flex-1', item.soon && 'text-muted')}>{item.label}</span>
+          )}
+          {item.soon && <span className="text-13 text-muted">{item.soon}</span>}
+          {item.done && (
+            <Icon name="tick" size={18} aria-label="Fait" className="relative top-px shrink-0 text-green" />
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Four corners of two rounded bars, around the square the camera looks at. */
+export function ScanCorners({
+  x,
+  y,
+  size,
+  color,
+}: {
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+}) {
+  const bar = cn('absolute rounded-[2px]', color);
+  return (
+    <span aria-hidden="true" className="absolute" style={{ left: x, top: y, width: size, height: size }}>
+      {[
+        ['top-0 left-0', 'top-0 left-0'],
+        ['top-0 right-0', 'top-0 right-0'],
+        ['bottom-0 left-0', 'bottom-0 left-0'],
+        ['bottom-0 right-0', 'bottom-0 right-0'],
+      ].map(([h, v]) => (
+        <span key={h}>
+          <span className={cn(bar, 'h-1 w-8', h)} />
+          <span className={cn(bar, 'h-8 w-1', v)} />
+        </span>
+      ))}
+    </span>
   );
 }

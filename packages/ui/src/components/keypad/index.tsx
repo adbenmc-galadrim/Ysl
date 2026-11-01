@@ -25,6 +25,8 @@ export type KeypadProps = {
   onDelete?: () => void;
   /** Every key greyed out and inert: too many wrong codes, a wait before the next. */
   disabled?: boolean;
+  /** On each digit and on erase: another mockup's size. */
+  keyClassName?: string;
   className?: string;
 };
 
@@ -43,6 +45,7 @@ export function Keypad({
   onDelete,
   letters: initialLetters = false,
   disabled = false,
+  keyClassName,
   className,
 }: KeypadProps) {
   const [letters, setLetters] = useState(initialLetters);
@@ -51,7 +54,7 @@ export function Keypad({
       type="button"
       disabled={disabled}
       aria-label="Effacer"
-      className={cn(keyClass)}
+      className={cn(keyClass, keyClassName)}
       onClick={onDelete}
     >
       <Icon name="back" size={24} />
@@ -91,7 +94,7 @@ export function Keypad({
           key={digit}
           type="button"
           disabled={disabled}
-          className={cn(keyClass)}
+          className={cn(keyClass, keyClassName)}
           onClick={() => onDigit?.(digit)}
         >
           {digit}
@@ -114,7 +117,7 @@ export function Keypad({
       <button
         type="button"
         disabled={disabled}
-        className={cn(keyClass)}
+        className={cn(keyClass, keyClassName)}
         onClick={() => onDigit?.('0')}
       >
         0

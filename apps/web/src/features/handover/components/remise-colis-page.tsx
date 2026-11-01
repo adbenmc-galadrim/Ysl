@@ -413,7 +413,6 @@ export function RemiseColisPage({
         parcels={parcels.map((parcel) => toRemiseParcel(parcel, now, t))}
         excluded={excluded}
         empty={t('handover.empty', { name: person.firstName })}
-        extras={false}
         busy={busy}
         onToggle={toggle}
         onToggleAll={toggleAll}

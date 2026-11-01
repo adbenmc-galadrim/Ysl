@@ -2,8 +2,7 @@ import type { ReactNode } from 'react';
 
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
-import { Icon, type IconName } from '#icons';
-import { cn } from '#lib/tv';
+import type { IconName } from '#icons';
 
 /** The bar of these screens: one 52 px action at y 764. */
 export function PhoneAction({
@@ -19,34 +18,6 @@ export function PhoneAction({
         {children}
       </Button>
     </BottomBar>
-  );
-}
-
-/** The big green disc that closes a handover. */
-export function DoneDisc() {
-  return (
-    <span className="mt-[92px] flex size-[88px] shrink-0 items-center justify-center self-center rounded-full bg-green-solid text-white">
-      <Icon name="tick" size={44} />
-    </span>
-  );
-}
-
-/** The bordered card of what the handover secured. */
-export function ProofCard({
-  items,
-}: {
-  items: { icon: IconName; label: string }[];
-}) {
-  return (
-    <ul className="mt-[30px] flex h-[150px] shrink-0 flex-col gap-6 rounded-[16px] border border-separator pt-[17px] pr-[19px] pl-[15px]">
-      {items.map((item) => (
-        <li key={item.label} className="flex h-[18px] items-center text-15">
-          <Icon name={item.icon} size={18} className="shrink-0 text-ink-2" />
-          <span className="ml-3 min-w-0 flex-1">{item.label}</span>
-          <Icon name="tick" size={18} aria-label="Fait" className="relative top-px shrink-0 text-green" />
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -97,36 +68,6 @@ export function EmployeePhone() {
         </p>
       </div>
     </div>
-  );
-}
-
-/** Four corners of two rounded bars, around the square the camera looks at. */
-export function ScanCorners({
-  x,
-  y,
-  size,
-  color,
-}: {
-  x: number;
-  y: number;
-  size: number;
-  color: string;
-}) {
-  const bar = cn('absolute rounded-[2px]', color);
-  return (
-    <span aria-hidden="true" className="absolute" style={{ left: x, top: y, width: size, height: size }}>
-      {[
-        ['top-0 left-0', 'top-0 left-0'],
-        ['top-0 right-0', 'top-0 right-0'],
-        ['bottom-0 left-0', 'bottom-0 left-0'],
-        ['bottom-0 right-0', 'bottom-0 right-0'],
-      ].map(([h, v]) => (
-        <span key={h}>
-          <span className={cn(bar, 'h-1 w-8', h)} />
-          <span className={cn(bar, 'h-8 w-1', v)} />
-        </span>
-      ))}
-    </span>
   );
 }
 

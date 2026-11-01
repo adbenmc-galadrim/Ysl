@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import {
-  AnnulerRemiseMobile,
   QuiRetireMobile,
   RetireParCollegueMobile,
 } from '#screens/multi-entreprises/11-remise-au-salarie/cas-particuliers-screen';
+import { PARCELS } from '#fixtures/parcels';
+import { AnnulerRemiseScreen } from '#screens/remise/annuler-remise-screen';
 
 const meta = {
   title: 'Écrans/Multi-entreprises/11 Remise au salarié/Cas particuliers',
@@ -42,5 +43,13 @@ export const AnnulerUneRemise: Story = {
     reference: 'multi-entreprises/11-remise-au-salarie/remise--departement-cas-particuliers-annuler-une-remise-mobile',
   },
   globals: { viewport: { value: 'iphone15', isRotated: false } },
-  render: () => <AnnulerRemiseMobile />,
+  render: () => (
+    <AnnulerRemiseScreen
+      parcel={PARCELS.malik}
+      handedOver="Remis hier à 9 h 12"
+      proof="À Malik Benali, QR code vérifié, par Karim"
+      reason="wrong_parcel"
+      note="Le colis remis était celui de M. Bernard"
+    />
+  ),
 };

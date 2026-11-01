@@ -1,15 +1,18 @@
-import { Avatar } from '#components/avatar';
-import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { EmptyState } from '#components/empty-state';
-import { LinkCard } from '#components/link-card';
 import { NavBar } from '#components/nav-bar';
-import { ParcelCheckRow } from '#components/parcel-check-row';
+import {
+  KraftThumb,
+  PhoneBanner,
+  PhoneRow,
+  PhoneSection,
+  TickMark,
+} from '#components/phone-parts';
 import { Screen } from '#components/screen';
-import { SectionHeader } from '#components/section-header';
 import type { HandoverParcel } from '#fixtures/handover';
-import { Icon } from '#icons';
+import { Icon, type IconName } from '#icons';
+import { cn } from '#lib/tv';
 
 export type RemiseParcel = HandoverParcel;
 
@@ -25,7 +28,7 @@ export type RemiseColisScreenProps = {
   /** Where to find them, after the department: "3e étage". */
   location?: string;
   /** "QR code vérifié à 11 h 20", or how the person was picked. */
-  verified: string;
+  verified?: string;
   /**
    * `proof`: a QR or a code was checked, the banner is green. `name`: the
    * agent picked the person, nothing was checked, the banner only informs.
@@ -39,8 +42,8 @@ export type RemiseColisScreenProps = {
    * this says why, above it.
    */
   confirmNote?: string;
-  /** « Scanner pour vérifier » and « Retiré par quelqu’un d’autre ». */
-  extras?: boolean;
+  /** The shuttle stands in for a department: said at the top (profile « Petit site »). */
+  standIn?: { title: string; description: string };
   /** Ids of the parcels unticked by the agent; all are handed over by default. */
   excluded?: string[];
   /**
@@ -56,10 +59,20 @@ export type RemiseColisScreenProps = {
   /** The profile requires a photo before the handover. */
   photo?: { taken: boolean; onTake: () => void };
   /** Each parcel scanned against the list: « 1 sur 3 colis scannés ». */
-  scan?: { label: string; done: boolean; onScan: () => void };
+  scan?: {
+    label: string;
+    done: boolean;
+    /** The company asks for it: the main button scans until all are read. */
+    required?: boolean;
+    /** Over `label` on that button: « Scanner les 2 colis ». */
+    action?: string;
+    /** What the banner says of the rule. */
+    banner?: { title: string; description: string };
+    onScan: () => void;
+  };
   /**
    * Who collects, when not the recipient: « Retiré par Paul Mercier ». With
-   * `onCollector`, a card under the banner opens the choice.
+   * `onCollector`, a line under the list opens the choice.
    */
   collector?: string;
   /** In place of « Retiré par quelqu’un d’autre »: « Paul Mercier, annoncé par e-mail ». */
@@ -73,24 +86,51 @@ export type RemiseColisScreenProps = {
   /** « Tout décocher » while all are ticked, « Tout cocher » otherwise. */
   onToggleAll?: () => void;
   onSignature?: () => void;
-  onScan?: () => void;
-  onSomeoneElse?: () => void;
   onConfirm?: () => void;
   onBack?: () => void;
 };
 
-const Done = ({ children }: { children: string }) => (
-  <span className="flex items-center gap-2">
-    {children}
-    <Icon
-      name="tick"
-      size={16}
-      strokeWidth={2.6}
-      aria-label="Fait"
-      className="text-green"
-    />
-  </span>
-);
+/** A line of the grey card under the list: an icon tile, what it does, how it stands. */
+function OptionRow({
+  icon,
+  label,
+  value,
+  done = false,
+  disabled = false,
+  onClick,
+}: {
+  icon: IconName;
+  label: string;
+  value?: string;
+  done?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="flex h-[52px] w-full cursor-pointer items-center pl-3.5 text-left text-16 not-first:border-t-0 disabled:cursor-default disabled:opacity-60"
+    >
+      <span className="flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-muted text-white">
+        <Icon name={icon} size={16} />
+      </span>
+      <span className="ml-3.5 min-w-0 flex-1 truncate">{label}</span>
+      {done && (
+        <Icon
+          name="tick"
+          size={16}
+          strokeWidth={2.6}
+          aria-label="Fait"
+          className="mr-1.5 text-green"
+        />
+      )}
+      {value && <span className="mr-1.5 text-muted">{value}</span>}
+      <Icon name="chevron" size={16} className="mr-3.5 text-faint" />
+    </button>
+  );
+}
 
 /** « Reçu hier · Zalando, recommandé, abîmé »: what to check on the shelf. */
 function detailOf(parcel: RemiseParcel): string {
@@ -117,7 +157,7 @@ export function RemiseColisScreen({
   parcels,
   empty,
   confirmNote,
-  extras = true,
+  standIn,
   excluded = [],
   signatureNote,
   signed = false,
@@ -134,103 +174,89 @@ export function RemiseColisScreen({
   onToggle,
   onToggleAll,
   onSignature,
-  onScan,
-  onSomeoneElse,
   onConfirm,
   onBack,
 }: RemiseColisScreenProps) {
   const count = parcels.filter((p) => !excluded.includes(p.id)).length;
   const registered = parcels.some((p) => p.registered);
   const allTicked = count === parcels.length;
+  const scanFirst = scan?.required && !scan.done && parcels.length > 0;
+  const signatureLine =
+    (onSignature !== undefined || signatureNote !== undefined) &&
+    parcels.length > 0;
   return (
     <Screen
       bottom={
         <BottomBar
-          surface="line"
-          className={confirmNote ? 'flex-col gap-0' : undefined}
+          surface="plain"
+          className={cn(
+            'pt-6 pb-9',
+            confirmNote && !scanFirst && 'flex-col gap-0',
+          )}
         >
-          {confirmNote && (
+          {confirmNote && !scanFirst && (
             <p className="mb-3 text-center text-14 text-muted">{confirmNote}</p>
           )}
-          <Button
-            block
-            disabled={!count || busy || confirmNote !== undefined}
-            onClick={onConfirm}
-          >
-            Remettre {count} colis
-          </Button>
+          {scanFirst ? (
+            <Button
+              block
+              icon="scan"
+              iconSize={20}
+              onClick={scan.onScan}
+              className="gap-2"
+            >
+              {scan.action ?? scan.label}
+            </Button>
+          ) : (
+            <Button
+              block
+              disabled={!count || busy || confirmNote !== undefined}
+              onClick={onConfirm}
+            >
+              Remettre {count} colis
+            </Button>
+          )}
         </BottomBar>
       }
     >
       <NavBar onBack={onBack} />
-      <header className="mt-3 flex items-start gap-3.5">
-        <Avatar initials={recipient.initials} size="xl" />
-        <div className="flex min-w-0 flex-col">
+      <header className="mt-3 flex h-[52px] shrink-0 gap-3">
+        <span className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-ink text-[19px] leading-[23px] font-semibold text-on-ink">
+          {recipient.initials}
+        </span>
+        <div className="min-w-0">
           <h1 className="truncate text-26 font-bold">{recipient.name}</h1>
           {recipient.department && (
-            <p className="mt-[3px] truncate text-15 text-muted">
+            <p className="relative -top-px mt-[3px] truncate text-14 text-muted">
               {location
-                ? `${recipient.department}, ${location}`
+                ? `${recipient.department} · ${location}`
                 : recipient.department}
             </p>
           )}
         </div>
       </header>
-      <Banner
-        tone={verifiedBy === 'proof' ? 'green' : 'blue'}
-        icon={verifiedBy === 'proof' ? 'check' : 'info'}
-        title={verified}
-        classNames={{ root: 'h-[52px] items-start rounded-control pt-4 pb-0' }}
-        className="mt-5"
-      />
-      {onCollector && (
-        <LinkCard
-          icon={collector || announced ? 'users' : 'user'}
-          label={
-            collector
-              ? `Retiré par ${collector}`
-              : (announced ?? 'Retiré par quelqu’un d’autre')
-          }
-          onClick={onCollector}
-          className="mt-3"
+      {standIn && (
+        <PhoneBanner
+          icon="truck"
+          title={standIn.title}
+          description={standIn.description}
+          height={83}
+          descriptionClassName="text-ink"
+          className="mt-[26px]"
         />
       )}
-      {(verifiedBy === 'name' || signatureRequired) &&
-        (signatureNote !== undefined || onSignature) && (
-          <LinkCard
-            icon="sign"
-            label={
-              signed ? (
-                <Done>Signature ajoutée</Done>
-              ) : (
-                <>
-                  Faire signer
-                  {signatureNote && (
-                    <span className="ml-2 text-muted">{signatureNote}</span>
-                  )}
-                </>
-              )
-            }
-            disabled={!onSignature}
-            onClick={onSignature}
-            className="mt-3 disabled:cursor-default disabled:opacity-60"
-          />
-        )}
-      {photo && (
-        <LinkCard
-          icon="camera"
-          label={photo.taken ? <Done>Photo ajoutée</Done> : 'Prendre la photo'}
-          onClick={photo.onTake}
-          className="mt-3"
-        />
-      )}
-      {scan && parcels.length > 0 && (
-        <LinkCard
-          icon="scan"
-          label={scan.done ? <Done>{scan.label}</Done> : scan.label}
-          onClick={scan.onScan}
-          className="mt-3"
-        />
+      {verified && (
+        <div
+          className={cn(
+            'mt-5 flex h-11 shrink-0 items-center gap-2.5 rounded-[12px] pl-3.5 text-15 font-semibold',
+            verifiedBy === 'proof'
+              ? 'bg-green-soft text-green'
+              : 'bg-blue-soft text-blue-strong',
+          )}
+        >
+          <Icon name={verifiedBy === 'proof' ? 'check' : 'info'} size={18} />
+          {verified}
+        </div>
       )}
       {parcels.length === 0 ? (
         <EmptyState
@@ -241,91 +267,118 @@ export function RemiseColisScreen({
         />
       ) : (
         <>
-          <SectionHeader
-            title="Ses colis"
-            count={parcels.length}
-            action={
-              onToggleAll &&
-              parcels.length > 1 && (
-                <Button
-                  variant="link"
-                  onClick={onToggleAll}
-                  className="h-auto text-15 font-semibold"
+          <div
+            className={cn(
+              'flex items-center justify-between',
+              standIn ? 'mt-[27px]' : 'mt-5',
+            )}
+          >
+            <PhoneSection title="Ses colis" count={parcels.length} />
+            {onToggleAll && parcels.length > 1 && (
+              <Button
+                variant="link"
+                onClick={onToggleAll}
+                className="h-auto text-15 font-semibold"
+              >
+                {allTicked ? 'Tout décocher' : 'Tout cocher'}
+              </Button>
+            )}
+          </div>
+          <div className="mt-2.5">
+            {parcels.map((parcel, i) => {
+              const checked = !excluded.includes(parcel.id);
+              return (
+                <button
+                  key={parcel.id}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={checked}
+                  onClick={() => onToggle?.(parcel.id)}
+                  className="block w-full cursor-pointer text-left"
                 >
-                  {allTicked ? 'Tout décocher' : 'Tout cocher'}
-                </Button>
-              )
-            }
-            className="mt-[26px]"
-          />
-          <div className="mt-[21px]">
-            {parcels.map((parcel, i) => (
-              <ParcelCheckRow
-                key={parcel.id}
-                title={
-                  parcel.last4
-                    ? `${parcel.carrier} ···${parcel.last4}`
-                    : parcel.carrier
-                }
-                detail={detailOf(parcel)}
-                detailTone={
-                  parcel.registered || parcel.damaged ? 'orange' : 'muted'
-                }
-                checked={!excluded.includes(parcel.id)}
-                onToggle={() => onToggle?.(parcel.id)}
-                separator={i < parcels.length - 1}
-              />
-            ))}
+                  <PhoneRow
+                    leading={<KraftThumb />}
+                    title={
+                      parcel.last4
+                        ? `${parcel.carrier} ···${parcel.last4}`
+                        : parcel.carrier
+                    }
+                    lines={[
+                      parcel.registered || parcel.damaged ? (
+                        <span className="text-orange">{detailOf(parcel)}</span>
+                      ) : (
+                        detailOf(parcel)
+                      ),
+                    ]}
+                    mark={<TickMark checked={checked} />}
+                    separator={i < parcels.length - 1}
+                  />
+                </button>
+              );
+            })}
           </div>
         </>
       )}
-      {extras && parcels.length > 0 && (
-        <>
-          {/* Dashed: an optional check, not a step every handover goes through.
-              An SVG stroke rather than `border-dashed`, whose dashes are too
-              short next to Penpot's 10 px ones. */}
-          <Button
-            variant="outline"
-            block
-            onClick={onScan}
-            // The mockup sets icon and label 15 px left of the middle.
-            className="relative mt-[25px] gap-2.5 rounded-control border-0 pr-[30px] pl-0 text-15"
-          >
-            <svg
-              aria-hidden="true"
-              className="absolute inset-0 size-full overflow-visible"
-            >
-              <rect
-                x="0.5"
-                y="0.5"
-                rx="13.5"
-                fill="none"
-                strokeDasharray="10 10"
-                className="h-[calc(100%-1px)] w-[calc(100%-1px)] stroke-border"
-              />
-            </svg>
-            <Icon name="scan" size={20} />
-            Scanner pour vérifier
-          </Button>
-          <LinkCard
-            icon="user"
-            label="Retiré par quelqu’un d’autre"
-            onClick={onSomeoneElse}
-            className="mt-6"
-          />
-        </>
-      )}
-      {registered && (
-        <Banner
-          tone="orange"
-          icon="info"
-          title={registeredNote}
-          classNames={{
-            root: 'h-[52px] items-start rounded-control pt-4 pb-0',
-            title: 'text-14 font-normal',
-          }}
+      {scan?.banner && parcels.length > 0 && (
+        <PhoneBanner
+          icon="scan"
+          iconClassName="text-ink-2"
+          title={scan.banner.title}
+          description={scan.banner.description}
+          height={83}
           className="mt-4"
         />
+      )}
+      {parcels.length > 0 && (
+        <div className="mt-[11px] shrink-0 divide-y divide-separator overflow-hidden rounded-[14px] bg-fill">
+          {onCollector && (
+            <OptionRow
+              icon={collector || announced ? 'users' : 'user'}
+              label={
+                collector
+                  ? `Retiré par ${collector}`
+                  : (announced ?? 'Retiré par quelqu’un d’autre')
+              }
+              onClick={onCollector}
+            />
+          )}
+          {signatureLine && (
+            <OptionRow
+              icon="sign"
+              label={signed ? 'Signature ajoutée' : 'Faire signer'}
+              done={signed}
+              value={
+                signed
+                  ? undefined
+                  : (signatureNote ??
+                    (signatureRequired ? 'Obligatoire' : 'Facultatif'))
+              }
+              disabled={!onSignature}
+              onClick={onSignature}
+            />
+          )}
+          {photo && (
+            <OptionRow
+              icon="camera"
+              label={photo.taken ? 'Photo ajoutée' : 'Prendre la photo'}
+              done={photo.taken}
+              onClick={photo.onTake}
+            />
+          )}
+          {scan && !scanFirst && (
+            <OptionRow
+              icon="scan"
+              label={scan.label}
+              done={scan.done}
+              onClick={scan.onScan}
+            />
+          )}
+        </div>
+      )}
+      {registered && (
+        <p className="mt-4 shrink-0 rounded-[12px] bg-orange-soft px-3.5 py-3 text-14 text-orange">
+          {registeredNote}
+        </p>
       )}
     </Screen>
   );
