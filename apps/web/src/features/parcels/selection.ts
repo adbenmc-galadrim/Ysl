@@ -1,3 +1,4 @@
+import { noticeDue } from '@repo/contract/mail';
 import type { TranslateFn } from '@repo/shared/i18n';
 import { normalizeName } from '@repo/shared/text';
 import type { Parcel } from '@repo/ui';
@@ -99,7 +100,10 @@ export function planMails(
       !parcel.deletedAt &&
       (parcel.status === 'a_completer' ||
         parcel.status === 'notifie' ||
-        (parcel.status === 'recu' && !context.tour)),
+        noticeDue(parcel, {
+          tour: context.tour === true,
+          atScan: context.atScan === true,
+        })),
   );
   const writable = open.filter((parcel) => {
     if (
@@ -119,7 +123,7 @@ export function planMails(
   const reminder: string[] = [];
   for (const mail of groupByRecipient(writable, context, () => true)) {
     const ids = mail.parcels.map(({ id }) => id);
-    if (mail.parcels.some((parcel) => parcel.status === 'recu'))
+    if (mail.parcels.some((parcel) => parcel.status !== 'notifie'))
       notice.push(...ids);
     else reminder.push(...ids);
   }

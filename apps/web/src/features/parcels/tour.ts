@@ -1,3 +1,4 @@
+import { noticeRuleOf, type NoticeRule } from '@repo/contract/mail';
 import { OPERATING_PROFILE_KEY } from '@repo/contract/operating-profile';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { normalizeName } from '@repo/shared/text';
@@ -20,13 +21,16 @@ import { parcelEvent } from '#/features/parcels/events';
  * default has no shuttle acting as department.
  */
 export async function goesOnTour(db: CourrierDatabase): Promise<boolean> {
+  return (await noticeRule(db)).tour;
+}
+
+/** When this company tells the employee (ME29), read raw for the same reason. */
+export async function noticeRule(db: CourrierDatabase): Promise<NoticeRule> {
   const rows = await db.setting
     .where('key')
     .equals(OPERATING_PROFILE_KEY)
     .toArray();
-  const value = rows.find((row) => !row.deletedAt)?.value as
-    { shuttleActsAsDepartment?: unknown } | null | undefined;
-  return value?.shuttleActsAsDepartment === false;
+  return noticeRuleOf(rows.find((row) => !row.deletedAt)?.value);
 }
 
 type DepartmentSources = {

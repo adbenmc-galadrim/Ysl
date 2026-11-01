@@ -154,7 +154,13 @@ describe('a batch saved with a tour', () => {
     expect(parcel).toMatchObject({ status: 'en_route', departmentId: 'legal' });
   });
 
-  it('prepares no mail yet', async () => {
+  it('prepares the mail at the scan on the profile « au scan »', async () => {
+    await saved({ recipient: toCard('in-finance') });
+    expect(await loadPendingMails(db)).toHaveLength(1);
+  });
+
+  it('prepares no mail before the deposit on the profile « au dépôt »', async () => {
+    await useProfile({ ...ON_TOUR, emailMoment: 'deposit' });
     await saved({ recipient: toCard('in-finance') });
     expect(await loadPendingMails(db)).toEqual([]);
   });

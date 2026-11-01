@@ -33,7 +33,11 @@ const SECTIONS: {
     states: ['incomplete'],
   },
   { id: 'toSettle', title: t('colis.section.toSettle'), states: ['toSettle'] },
-  { id: 'toNotify', title: t('colis.section.toNotify'), states: ['toNotify'] },
+  {
+    id: 'toNotify',
+    title: t('colis.section.toNotify'),
+    states: ['toNotify', 'deposited'],
+  },
   {
     id: 'toDispatch',
     title: t('colis.section.toDispatch'),
@@ -43,7 +47,7 @@ const SECTIONS: {
   {
     id: 'waiting',
     title: t('colis.section.waiting'),
-    states: ['deposited', 'notified', 'late'],
+    states: ['notified', 'late'],
   },
   {
     id: 'handedOver',

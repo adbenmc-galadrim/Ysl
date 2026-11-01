@@ -1,3 +1,4 @@
+import { noticeDue } from '@repo/contract/mail';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
 import {
   drawSecrets,
@@ -34,7 +35,11 @@ export async function loadSelectionMails(
       !onServer.has(parcel.id) &&
       (parcel.personId !== null || parcel.contactId !== null) &&
       (parcel.status === 'notifie' ||
-        (!reminder && !context.tour && parcel.status === 'recu')),
+        (!reminder &&
+          noticeDue(parcel, {
+            tour: context.tour === true,
+            atScan: context.atScan === true,
+          }))),
   );
 }
 

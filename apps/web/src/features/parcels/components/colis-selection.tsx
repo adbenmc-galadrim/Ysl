@@ -103,7 +103,9 @@ export function ColisSelection({
 
   const tickedRows = rows.filter((row) => selection.has(row.id));
   // A notice is due as soon as one ticked parcel was never notified.
-  const notices = tickedRows.some((row) => row.state === 'toNotify');
+  const notices = tickedRows.some(
+    (row) => row.state === 'toNotify' || row.state === 'deposited',
+  );
 
   const loadTicked = async (): Promise<LocalParcel[]> =>
     (await db.parcel.bulkGet(ticked)).filter((parcel) => parcel !== undefined);

@@ -8,6 +8,7 @@ import {
 import { newId } from '@repo/shared/id';
 import { commitLocal } from '#/features/db/commit';
 import type { CourrierDatabase, LocalSetting } from '#/features/db/schema';
+import { goesOnTour } from '#/features/parcels/tour';
 
 export const PICKUP_KEY = 'pickup' satisfies SettingKey;
 
@@ -35,6 +36,23 @@ async function pickupRow(
 
 export async function readPickup(db: CourrierDatabase): Promise<PickupSetting> {
   return parsePickup((await pickupRow(db))?.value);
+}
+
+/**
+ * The departments' own pickups (ME29), by id, for the mail of a parcel there;
+ * one without any quotes the company's, as on the server. Only with tours: a
+ * shuttle acting as department keeps quoting what it always quoted.
+ */
+export async function readDepartmentPickups(
+  db: CourrierDatabase,
+): Promise<ReadonlyMap<string, PickupSetting>> {
+  if (!(await goesOnTour(db))) return new Map();
+  const departments = await db.department.toArray();
+  return new Map(
+    departments.flatMap((row): [string, PickupSetting][] =>
+      row.pickup ? [[row.id, parsePickup(row.pickup)]] : [],
+    ),
+  );
 }
 
 /** What the e-mails will quote: no stray spaces around a line. */
