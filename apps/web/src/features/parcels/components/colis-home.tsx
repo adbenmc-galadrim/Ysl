@@ -348,11 +348,12 @@ export function ColisHome() {
                 </Button>
               )}
             </>
-          ) : access.receives && access.handsOver ? (
+          ) : access.handsOver ? (
             <RemettreActions
               onSearch={searchParcels}
               onHandover={handover}
               onScan={scan}
+              handoverOnly={!access.receives}
             />
           ) : undefined
         }

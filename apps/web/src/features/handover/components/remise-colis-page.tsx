@@ -27,6 +27,7 @@ import { hasLabel, scanComplete } from '#/features/handover/parcel-scan';
 import { photoProof } from '#/features/handover/photo-proof';
 import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 import {
+  listParcelsOfCode,
   type HandoverDone,
   HandoverRefusedError,
   recordHandover,
@@ -39,10 +40,8 @@ import {
   type RemiseColisSearch,
   untickedAtFirst,
 } from '#/features/handover/route';
-import {
-  listWaitingParcels,
-  toRemiseParcel,
-} from '#/features/handover/waiting';
+import { toRemiseParcel } from '#/features/handover/waiting';
+import { useAccess } from '#/features/auth/use-access';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import { formatTime } from '#/features/parcels/model';
 import { loadRecipientBook } from '#/features/parcels/recipients';
@@ -80,6 +79,7 @@ export function RemiseColisPage({
   onDone,
 }: RemiseColisPageProps) {
   const now = useMinuteClock();
+  const access = useAccess();
   const { kind, id, via, at } = search;
   // Opened from a selection, the parcels not ticked on Colis start unticked.
   const [unticked, setUnticked] = useState<string[] | null>(null);
@@ -106,11 +106,11 @@ export function RemiseColisPage({
   const loaded = useLiveQuery(async () => {
     const [person, parcels, profile] = await Promise.all([
       loadHandoverPerson(db, { kind, id }),
-      listWaitingParcels(db, { kind, id }),
+      listParcelsOfCode(db, { kind, id }, search.code),
       readOperatingProfile(db),
     ]);
     return { person, parcels, profile };
-  }, [kind, id]);
+  }, [kind, id, search.code]);
 
   const gone = loaded !== undefined && loaded.person === null;
   useEffect(() => {
@@ -405,6 +405,18 @@ export function RemiseColisPage({
             ? {
                 label: scanLabel,
                 done: readCount === labelled.length,
+                required: profile.handoverScan === 'required',
+                action:
+                  readCount > 0
+                    ? scanLabel
+                    : t('handover.scan.action', { count: labelled.length }),
+                banner:
+                  profile.handoverScan === 'required'
+                    ? {
+                        title: t('handover.scan.banner'),
+                        description: t('handover.scan.banner.detail'),
+                      }
+                    : undefined,
                 onScan: () => setScanning(true),
               }
             : undefined
@@ -413,6 +425,14 @@ export function RemiseColisPage({
         parcels={parcels.map((parcel) => toRemiseParcel(parcel, now, t))}
         excluded={excluded}
         empty={t('handover.empty', { name: person.firstName })}
+        standIn={
+          access.role === 'shuttle'
+            ? {
+                title: t('handover.standIn'),
+                description: t('handover.standIn.detail', { name: agentName }),
+              }
+            : undefined
+        }
         busy={busy}
         onToggle={toggle}
         onToggleAll={toggleAll}
