@@ -125,7 +125,6 @@ export function NewCompanyPage() {
     const step = {
       totalSteps: TOTAL_STEPS,
       groups: stepGroups(profile, model),
-      notice: t('operating.notYet'),
       onChoose: (param: string, choice: string) =>
         setProfile(withChoice(profile, param as OperatingParam, choice)),
       onBack: () => setAdjusting(false),

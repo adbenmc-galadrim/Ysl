@@ -8,6 +8,10 @@ import {
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '#/features/db/database';
+import {
+  depositMailRows,
+  loadDepositMails,
+} from '#/features/mail/deposit-mails';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { loadTour } from '#/features/parcels/api/use-tour';
 import {
@@ -49,11 +53,13 @@ export function TourStopPage({ departmentId }: { departmentId: string }) {
         };
       })
       .find((row) => row.id !== departmentId && row.count > 0);
+    const last = here.find((row) => row.confirmedAt);
     return {
       tour,
       department: departments.get(departmentId),
       waiting: here.find(isPending),
-      last: here.find((row) => row.confirmedAt),
+      last,
+      mails: last && (await loadDepositMails(db, last.parcelIds)),
       next: next && {
         ...next,
         name: departmentName(departments.get(next.id), t),
@@ -118,6 +124,7 @@ export function TourStopPage({ departmentId }: { departmentId: string }) {
             : undefined
         }
         rows={[
+          ...depositMailRows(stop.mails, t),
           {
             icon: 'route',
             title: t('deposit.done.tour'),

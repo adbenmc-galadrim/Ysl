@@ -8,7 +8,7 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 const count = (
   parcels: number,
-  stage: 'ready' | 'review' | 'notified' | 'signature',
+  stage: 'ready' | 'review' | 'notified' | 'signature' | 'onTour',
 ) =>
   parcels === 1
     ? t(`operating.impact.${stage}.one`)
@@ -34,6 +34,8 @@ export function impactLine(change: OperatingChange): string {
       return `${count(parcels, 'notified')} : ${t(`operating.effect.reminders.${change.to}`)}`;
     case 'shuttleActsAsDepartment':
       return `${count(parcels, 'ready')} : ${t(change.to ? 'operating.effect.shuttle.on' : 'operating.effect.shuttle.off')}`;
+    case 'emailMoment':
+      return `${count(parcels, 'onTour')} : ${t(`operating.effect.email.${change.to}`)}`;
     default:
       return t('operating.impact.none');
   }

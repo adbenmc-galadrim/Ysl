@@ -25,7 +25,6 @@ import { useEffect, useState } from 'react';
 import { impactLine } from '#/features/settings/operating-impact';
 import {
   choiceOf,
-  NOT_YET_PARAMS,
   OPTIONS,
   SECTIONS,
   withChoice,
@@ -188,12 +187,6 @@ export function OperatingScreen() {
                 {startModelLine(settings.profileModel, settings.profile)}
               </p>
             )}
-            <Banner
-              tone="orange"
-              icon="info"
-              className="mt-3"
-              title={t('operating.notYet')}
-            />
             {SECTIONS.map((section) => (
               <section key={section.id}>
                 <PhoneGroupTitle className="mt-4">
@@ -206,7 +199,12 @@ export function OperatingScreen() {
                         {t(`operating.param.${param}`)}
                       </p>
                       <p className="mt-1 text-13 text-muted">
-                        {t(`operating.help.${param}`)}
+                        {t(
+                          param === 'emailMoment' &&
+                            value.shuttleActsAsDepartment
+                            ? 'operating.help.emailMoment.shuttle'
+                            : `operating.help.${param}`,
+                        )}
                       </p>
                       <PhoneSegments
                         options={OPTIONS[param]}
@@ -257,9 +255,6 @@ export function OperatingScreen() {
               </div>
             ))}
           </div>
-          {changed.some((param) => NOT_YET_PARAMS.includes(param)) && (
-            <p className="mt-3 text-13 text-muted">{t('operating.notYet')}</p>
-          )}
           {save.isError && (
             <p role="alert" className="mt-3 text-14 text-red">
               {t('operating.saveFailed')}
