@@ -1,5 +1,5 @@
 import { eventColumns, PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
-import { notifyParcel, reachedNobody } from '@repo/contract/mail';
+import { noticeDue, notifyParcel, reachedNobody } from '@repo/contract/mail';
 import type { AnyDb } from '@repo/db';
 import { event, notification, parcel, pickupCode } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
@@ -14,6 +14,7 @@ import {
   ne,
   sql,
 } from 'drizzle-orm';
+import { noticeRule } from '#features/operating/service';
 
 /** A reminder asked this soon after a mail repeats it: a second tap, a stale screen. */
 const RECENT_MS = 60 * 60_000;
@@ -44,14 +45,15 @@ export async function earlierMails(tx: AnyDb, row: Request) {
 }
 
 /**
- * The parcels a request may still tell. A notice: those received, and those
- * marked notified whose every mail bounced. A reminder: those notified. What the
- * phone told in the meantime leaves the list, so no mail goes twice.
+ * The parcels a request may still tell. A notice: those whose moment has come
+ * (ME29), and those told whose every mail bounced. A reminder: those notified. What
+ * the phone told in the meantime leaves the list, so no mail goes twice. `early`:
+ * only the moment holds them back, which is what the agent is told.
  */
 export async function parcelsToTell(
   tx: AnyDb,
   row: Request,
-): Promise<{ parcels: Parcel[]; firstRead: boolean }> {
+): Promise<{ parcels: Parcel[]; firstRead: boolean; early: boolean }> {
   const rows = await tx
     .select()
     .from(parcel)
@@ -63,7 +65,11 @@ export async function parcelsToTell(
       ),
     );
   const before = await earlierMails(tx, row);
+  const rule = await noticeRule(tx, row.organizationId);
   const bounced = (id: string) => reachedNobody(id, before);
+  const traced = (item: Parcel) =>
+    item.status === 'notifie' ||
+    (item.status === 'en_route' && rule.atScan && item.lastNotifiedAt !== null);
   const others = await tx
     .select({
       parcelIds: notification.parcelIds,
@@ -103,15 +109,22 @@ export async function parcelsToTell(
     if (claimed.has(item.id)) return false;
     if (row.type === 'relance' && justReminded(item.id)) return false;
     if (row.type === 'relance') return item.status === 'notifie';
-    return (
-      item.status === 'recu' || (item.status === 'notifie' && bounced(item.id))
-    );
+    return noticeDue(item, rule) || (traced(item) && bounced(item.id));
   });
-  const notified = parcels.filter((item) => item.status === 'notifie');
+  const notified = parcels.filter(traced);
   return {
     parcels,
     firstRead:
       notified.length > 0 && notified.every((item) => bounced(item.id)),
+    early:
+      row.type !== 'relance' &&
+      parcels.length === 0 &&
+      rows.some(
+        (item) =>
+          !claimed.has(item.id) &&
+          (item.status === 'recu' || item.status === 'en_route') &&
+          !item.lastNotifiedAt,
+      ),
   };
 }
 
@@ -137,6 +150,7 @@ export async function settleSent(
     .set({ status: 'sent', sentAt: now, failedReason: null, updatedAt: now })
     .where(eq(notification.id, row.id));
   const before = await earlierMails(tx, row);
+  const { tour } = await noticeRule(tx, row.organizationId);
   const parcels = await tx
     .select()
     .from(parcel)
@@ -152,6 +166,7 @@ export async function settleSent(
       sentAt: now,
       agentId: row.preparedBy,
       firstRead,
+      tour,
     });
     if ('skip' in change) continue;
     await tx

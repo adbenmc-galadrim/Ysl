@@ -51,11 +51,12 @@ export function searchState(
   now: Date,
   dates?: ReminderDates,
   tour?: boolean,
+  atScan?: boolean,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   if (parcel.status === 'remis') return 'handedOver';
   if (parcel.status === 'retourne') return 'returned';
-  return homeState(parcel, now, dates, tour);
+  return homeState(parcel, now, dates, tour, atScan);
 }
 
 /**
@@ -99,7 +100,7 @@ export function toSearchEntry(
   t: TranslateFn,
   dates?: ReminderDates,
 ): SearchEntry | undefined {
-  const state = searchState(parcel, now, dates, context.tour);
+  const state = searchState(parcel, now, dates, context.tour, context.atScan);
   if (!state) return undefined;
   const described = describeParcel(parcel, state, context, now, t, dates);
   const status = datedStatus(parcel, state, now, t);

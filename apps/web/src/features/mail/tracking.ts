@@ -81,7 +81,10 @@ function stillToTell(
   parcel: LocalParcel | undefined,
 ): parcel is LocalParcel {
   if (!parcel || parcel.deletedAt) return false;
-  if (parcel.status === 'recu') return true;
+  if (parcel.status === 'recu' || parcel.status === 'depose') return true;
+  if (parcel.status === 'en_route') {
+    return !parcel.lastNotifiedAt || bounced(notification);
+  }
   return bounced(notification) && parcel.status === 'notifie';
 }
 

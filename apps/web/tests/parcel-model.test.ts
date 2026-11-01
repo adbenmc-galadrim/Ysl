@@ -323,7 +323,7 @@ describe('a parcel « Reçu » in a company that runs tours', () => {
   it('waits to leave, not to be notified', () => {
     const received = parcel({ status: 'recu', personId: camille.id });
     expect(homeState(received, NOW, undefined, true)).toBe('toDispatch');
-    expect(awaitsNotice(received, true)).toBe(false);
+    expect(awaitsNotice(received, { tour: true, atScan: false })).toBe(false);
     expect(groupByRecipient([received], { ...context, tour: true })).toEqual(
       [],
     );

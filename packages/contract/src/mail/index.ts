@@ -56,12 +56,15 @@ export {
   notificationRow,
   reachedNobody,
   RELAY_NAME_MAX,
+  noticeDue,
+  noticeRuleOf,
   notifyParcel,
 } from './notification';
 export type {
   NotifiableParcel,
   NotificationRow,
   NotificationStatus,
+  NoticeRule,
   NotifyChange,
   NotifySkip,
 } from './notification';

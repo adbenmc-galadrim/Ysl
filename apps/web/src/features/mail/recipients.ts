@@ -1,6 +1,8 @@
 import {
   damageNotice,
   mailValues,
+  noticeDue,
+  type NoticeRule,
   parcelMailLine,
   parcelMailName,
   type MailValues,
@@ -72,15 +74,17 @@ export function namedRecipient(
 }
 
 /**
- * Received, not notified yet, and its record says who it is for. With tours
- * (`tour`), a parcel « Reçu » is still with the shuttle: §8.3 has it leave
- * before anyone is told. A parcel deposited waits for YSL-135.
+ * Its moment has come (ME29), nobody told yet, and its record says who it is
+ * for. With tours, a parcel « Reçu » is still with the shuttle: §8.3 has it leave
+ * before anyone is told. Without a rule: a company with no tour.
  */
-export function awaitsNotice(parcel: LocalParcel, tour = false): boolean {
+export function awaitsNotice(
+  parcel: LocalParcel,
+  rule: NoticeRule = { tour: false, atScan: false },
+): boolean {
   return (
-    !tour &&
     !parcel.deletedAt &&
-    parcel.status === 'recu' &&
+    noticeDue(parcel, rule) &&
     (parcel.personId !== null || parcel.contactId !== null)
   );
 }
@@ -121,7 +125,10 @@ export function groupByRecipient(
   parcels: readonly LocalParcel[],
   context: RecipientContext,
   keep: (parcel: LocalParcel) => boolean = (parcel) =>
-    awaitsNotice(parcel, context.tour),
+    awaitsNotice(parcel, {
+      tour: context.tour === true,
+      atScan: context.atScan === true,
+    }),
 ): RecipientMail[] {
   const mails = new Map<string, RecipientMail>();
   const byReception = [...parcels]

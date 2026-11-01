@@ -65,7 +65,7 @@ import {
   loadSelectionMails,
   selectionSecrets,
 } from '#/features/mail/selection-mails';
-import { readPickup } from '#/features/settings/pickup';
+import { readDepartmentPickups, readPickup } from '#/features/settings/pickup';
 import { useWorkPath } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -97,6 +97,7 @@ type Session = {
   secrets: PickupSecret[];
   templates: EmailTemplateView[];
   pickup: PickupSetting;
+  pickups: ReadonlyMap<string, PickupSetting>;
   now: Date;
 };
 
@@ -121,16 +122,18 @@ async function openSession(
       await loadSelectionMails(db, selection, reminder === true),
     );
     const type = reminder ? 'relance' : 'avis';
-    const [secrets, templates, pickup] = await Promise.all([
+    const [secrets, templates, pickup, pickups] = await Promise.all([
       selectionSecrets(db, mails, reminder === true, now),
       listTemplates(db, userId),
       readPickup(db),
+      readDepartmentPickups(db),
     ]);
     return {
       mails,
       secrets,
       templates: templates.filter((template) => template.type === type),
       pickup,
+      pickups,
       now,
     };
   }
@@ -142,16 +145,18 @@ async function openSession(
         ? mailsAbout(all, parcelId)
         : all.filter((mail) => mail.due && mail.address),
     );
-    const [secrets, templates, pickup] = await Promise.all([
+    const [secrets, templates, pickup, pickups] = await Promise.all([
       recallSecrets(db, mails, { now }),
       listTemplates(db, userId),
       readPickup(db),
+      readDepartmentPickups(db),
     ]);
     return {
       mails,
       secrets,
       templates: templates.filter((template) => template.type === 'relance'),
       pickup,
+      pickups,
       now,
     };
   }
@@ -167,16 +172,18 @@ async function openSession(
         ? mailsOfBatch(all, batchId)
         : all,
   );
-  const [secrets, templates, pickup] = await Promise.all([
+  const [secrets, templates, pickup, pickups] = await Promise.all([
     drawSecrets(db, mails.length, { now }),
     listTemplates(db, userId),
     readPickup(db),
+    readDepartmentPickups(db),
   ]);
   return {
     mails,
     secrets,
     templates: templates.filter((template) => template.type === 'avis'),
     pickup,
+    pickups,
     now,
   };
 }
@@ -283,7 +290,7 @@ export function NotifierPage({
   };
 
   if (!opened) return null;
-  const { mails, secrets, templates, pickup, now } = opened;
+  const { mails, secrets, templates, pickup, pickups, now } = opened;
   const mail = mails[index];
   if (!mail) {
     return (
@@ -307,7 +314,7 @@ export function NotifierPage({
   const secret = secrets[index];
   const code = secret?.pin ?? null;
   const values = recipientValues(mail, {
-    pickup,
+    pickup: (mail.departmentId && pickups.get(mail.departmentId)) || pickup,
     agent: session.user.name,
     replyTo: session.user.email,
     code,

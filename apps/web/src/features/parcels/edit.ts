@@ -437,6 +437,14 @@ export async function saveParcelEdit(
       : undefined;
     edited.departmentId = person?.departmentId ?? parcel.departmentId;
   }
+  // The e-mail traced went to someone else: the deposit tells the new recipient (ME29).
+  if (
+    parcel.status === 'en_route' &&
+    (edited.personId !== parcel.personId ||
+      edited.contactId !== parcel.contactId)
+  ) {
+    edited.lastNotifiedAt = null;
+  }
   const complete = isComplete(edited);
   // A parcel the recipient disowned was notified: its number was vouched
   // for then (YSL-70).

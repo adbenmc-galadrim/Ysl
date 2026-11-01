@@ -1,4 +1,4 @@
-import { parcelCarrierName } from '@repo/contract/mail';
+import { noticeDue, parcelCarrierName } from '@repo/contract/mail';
 import { type ParcelGap, parcelGaps } from '@repo/contract/parcel-completion';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { standingReply } from '@repo/contract/parcel-reply';
@@ -30,6 +30,8 @@ export type RecipientContext = {
   departments?: ReadonlyMap<string, string>;
   /** The company runs tours: a parcel with nowhere to go says so. */
   tour?: boolean;
+  /** On tour, the e-mail leaves at the scan (ME29). */
+  atScan?: boolean;
 };
 
 export function startOfDay(now: Date): Date {
@@ -81,14 +83,15 @@ export function reminderOf(
 
 /**
  * Where the parcel sits on the home list; nothing when it is not shown.
- * `tour`: the company runs tours, so a parcel still « Reçu » has yet to leave:
- * nobody is told before its deposit (§8.3).
+ * `tour`: the company runs tours, so a parcel still « Reçu » has yet to leave
+ * (§8.3). `atScan`: its e-mail leaves on the way, not at the deposit (ME29).
  */
 export function homeState(
   parcel: LocalParcel,
   now: Date,
   dates?: ReminderDates,
   tour = false,
+  atScan = false,
 ): ParcelState | undefined {
   if (parcel.deletedAt) return undefined;
   switch (parcel.status) {
@@ -97,7 +100,7 @@ export function homeState(
     case 'recu':
       return tour ? 'toDispatch' : 'toNotify';
     case 'en_route':
-      return 'onTour';
+      return noticeDue(parcel, { tour, atScan }) ? 'toNotify' : 'onTour';
     case 'depose':
       return 'deposited';
     case 'a_regulariser':
@@ -300,13 +303,13 @@ export function toParcelRow(
   t: TranslateFn,
   dates?: ReminderDates,
 ): HomeParcel | undefined {
-  const state = homeState(parcel, now, dates, context.tour);
+  const state = homeState(parcel, now, dates, context.tour, context.atScan);
   if (!state) return undefined;
   return {
     ...describeParcel(parcel, state, context, now, t, dates),
     remindDue: reminderOf(parcel, now, dates)?.due ?? false,
     noAddress:
-      state === 'toNotify' &&
+      (state === 'toNotify' || state === 'deposited') &&
       addressMissing({ parcel, ...recipientOf(parcel, context) }),
   };
 }
@@ -352,6 +355,8 @@ export function addressMissing({
   return (
     (parcel.status === 'a_completer' ||
       parcel.status === 'recu' ||
+      parcel.status === 'en_route' ||
+      parcel.status === 'depose' ||
       parcel.status === 'notifie') &&
     !parcel.notificationEmail?.trim() &&
     (person

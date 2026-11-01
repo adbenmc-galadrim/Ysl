@@ -29,7 +29,7 @@ import {
   type Access,
   type ParcelScope,
 } from '#lib/access';
-import { mayHandOver } from '#features/operating/service';
+import { mayHandOver, noticeRule } from '#features/operating/service';
 
 type Values = Record<string, unknown>;
 
@@ -522,6 +522,51 @@ export async function checkReach(
     await checkDepartment(tx, op, access, scope.departmentId);
   }
   if (scope.kind === 'tour') await checkTour(tx, op, access, scope);
+}
+
+/**
+ * A phone that does not know the tours (an old PWA, no profile yet) told a parcel
+ * still « Reçu ». The mail has left: it is kept and traced, as on tour, and the
+ * parcel still has to leave, so its deposit sends nothing more (§3.7.9).
+ */
+export async function noticeOnTourWrite(
+  tx: AnyDb,
+  op: SyncOp,
+  { organizationId }: Access,
+  values: Values,
+): Promise<Values> {
+  if (op.entity !== 'parcel') return values;
+  const [row] = await tx
+    .select({
+      status: parcel.status,
+      personId: parcel.personId,
+      contactId: parcel.contactId,
+    })
+    .from(parcel)
+    .where(
+      and(
+        eq(parcel.organizationId, organizationId),
+        eq(parcel.id, op.entityId),
+      ),
+    );
+  if (row?.status === 'en_route') {
+    const changed =
+      (values.personId !== undefined && values.personId !== row.personId) ||
+      (values.contactId !== undefined && values.contactId !== row.contactId);
+    // The e-mail traced went to someone else: the deposit tells the new recipient.
+    return changed ? { ...values, lastNotifiedAt: null } : values;
+  }
+  if (row?.status !== 'recu' || values.status !== 'notifie') return values;
+  if (!(await noticeRule(tx, organizationId)).tour) return values;
+  // The status does not move: the counter of a change that did not happen stays out.
+  const { statusSeq: _dropped, ...kept } = values;
+  void _dropped;
+  return {
+    ...kept,
+    status: 'recu',
+    notifiedAt: null,
+    lastNotifiedAt: values.lastNotifiedAt ?? values.notifiedAt,
+  };
 }
 
 const withoutDepartment = ({ departmentId: _dropped, ...rest }: Values) => {

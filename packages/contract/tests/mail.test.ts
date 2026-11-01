@@ -18,6 +18,8 @@ import {
   SAMPLE_PICKUP_VALUES,
   type MailFields,
   type NotifiableParcel,
+  noticeDue,
+  noticeRuleOf,
 } from '@repo/contract/mail';
 import { readParcelEvent, eventColumns } from '@repo/contract/parcel-event';
 import { EMPTY_PICKUP } from '@repo/contract/settings';
@@ -532,6 +534,69 @@ describe('reachedNobody', () => {
     expect(change).toMatchObject({
       reminder: false,
       patch: { notifiedAt: later, lastNotifiedAt: later },
+    });
+  });
+});
+
+describe('the moment of the first notice (ME29)', () => {
+  const smallSite = noticeRuleOf({
+    shuttleActsAsDepartment: true,
+    emailMoment: 'scan',
+  });
+  const atScan = noticeRuleOf({
+    shuttleActsAsDepartment: false,
+    emailMoment: 'scan',
+  });
+  const atDeposit = noticeRuleOf({
+    shuttleActsAsDepartment: false,
+    emailMoment: 'deposit',
+  });
+
+  it.each([
+    ['recu', smallSite, null, true],
+    ['recu', atScan, null, false],
+    ['recu', atDeposit, null, false],
+    ['en_route', atScan, null, true],
+    ['en_route', atScan, new Date(), false],
+    ['en_route', atDeposit, null, false],
+    ['en_route', smallSite, null, false],
+    ['depose', atDeposit, null, true],
+    ['depose', smallSite, null, true],
+    ['notifie', atDeposit, null, false],
+    ['a_regulariser', atDeposit, null, false],
+  ] as const)('%s, %o, traced %s: %s', (status, rule, lastNotifiedAt, due) => {
+    expect(noticeDue({ status, lastNotifiedAt }, rule)).toBe(due);
+  });
+
+  it('keeps the old path without a profile, and waits for the deposit on an unreadable moment', () => {
+    expect(noticeRuleOf(undefined).tour).toBe(false);
+    expect(noticeRuleOf({ shuttleActsAsDepartment: 'oui' }).tour).toBe(false);
+    expect(
+      noticeRuleOf({ shuttleActsAsDepartment: false, emailMoment: 3 }),
+    ).toEqual({
+      tour: true,
+      atScan: false,
+    });
+  });
+
+  it('traces a mail that left about a parcel still « Reçu » on tour', () => {
+    const sentAt = new Date('2026-11-01T09:00:00Z');
+    const change = notifyParcel(
+      {
+        id: 'p',
+        personId: 'x',
+        contactId: null,
+        deletedAt: null,
+        status: 'recu',
+        notifiedAt: null,
+        lastNotifiedAt: null,
+        deliveredAt: null,
+        deliveredBy: null,
+      },
+      { sentAt, agentId: 'a', tour: true },
+    );
+    expect(change).toMatchObject({
+      patch: { status: 'recu', notifiedAt: null, lastNotifiedAt: sentAt },
     });
   });
 });

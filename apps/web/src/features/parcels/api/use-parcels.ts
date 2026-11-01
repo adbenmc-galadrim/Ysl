@@ -1,5 +1,5 @@
 import { OPEN_STATUSES } from '@repo/contract/parcel-status';
-import { goesOnTour } from '#/features/parcels/tour';
+import { noticeRule } from '#/features/parcels/tour';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { Dexie } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -36,19 +36,20 @@ export async function loadRecipientContext(
   const contactIds = [
     ...new Set(parcels.flatMap((parcel) => parcel.contactId ?? [])),
   ];
-  const [people, contacts, handovers, departments, tour] = await Promise.all([
+  const [people, contacts, handovers, departments, rule] = await Promise.all([
     database.directoryPerson.bulkGet(personIds),
     database.contact.bulkGet(contactIds),
     handoversOf(database, parcels),
     database.department.toArray(),
-    goesOnTour(database),
+    noticeRule(database),
   ]);
   return {
     people: byId<LocalDirectoryPerson>(people),
     contacts: byId<LocalContact>(contacts),
     handovers,
     departments: new Map(departments.map(({ id, name }) => [id, name])),
-    tour,
+    tour: rule.tour,
+    atScan: rule.atScan,
   };
 }
 

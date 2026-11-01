@@ -39,6 +39,7 @@ import {
   isNull,
   sql,
 } from 'drizzle-orm';
+import { requestDepositMails } from '#features/mail/deposit-mails';
 import { parcelCarrier } from '#lib/access';
 
 const translate = createTranslator(DEFAULT_LOCALE);
@@ -52,7 +53,7 @@ type Actor = { organizationId: string; userId: string; name: string | null };
 type ParcelRow = typeof parcel.$inferSelect;
 
 /** A change of status, its counter and its line in the history, as a device would write them. */
-async function moveParcel(
+export async function moveParcel(
   tx: AnyDb,
   row: ParcelRow,
   to: ParcelStatus,
@@ -83,6 +84,7 @@ async function moveParcel(
  * The department's word on a deposit (D24), in one transaction: every parcel
  * still on its way there is deposited or waits « À régulariser ». The only way
  * out of `en_route` to a deposit (`depositedStatus`): a device never writes it.
+ * The employee can now come: those not told yet are told here (ME29).
  */
 export async function confirmDeposit(
   tx: AnyDb,
@@ -187,6 +189,14 @@ export async function confirmDeposit(
       updatedAt: now,
     })
     .where(eq(deposit.id, row.id));
+  await requestDepositMails(
+    tx,
+    actor,
+    live.filter(
+      (one) => !settled.has(one.id) && depositedStatus(one) === 'depose',
+    ),
+    now,
+  );
   return { deposited: live.length - settled.size, toSettle: settled.size };
 }
 
@@ -209,8 +219,9 @@ async function openDepartment(
 }
 
 /**
- * The department changes: the e-mail traced named the old one, so the deposit
- * tells again (ME29, as for a person who moves).
+ * The department or the recipient changes: the e-mail traced named another
+ * place or went to someone else, so the deposit tells again (ME29, as for a
+ * person who moves).
  */
 async function sendTo(
   tx: AnyDb,
@@ -220,7 +231,9 @@ async function sendTo(
   now: Date,
   more: Partial<typeof parcel.$inferInsert> = {},
 ): Promise<void> {
-  const moved = row.departmentId !== departmentId;
+  const moved =
+    row.departmentId !== departmentId ||
+    (more.personId !== undefined && more.personId !== row.personId);
   const notice = moved ? { lastNotifiedAt: null } : {};
   if (row.status === 'a_regulariser') {
     await moveParcel(tx, { ...row, departmentId }, 'en_route', actor, now, {

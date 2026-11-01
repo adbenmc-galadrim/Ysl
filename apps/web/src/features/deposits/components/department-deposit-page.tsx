@@ -7,6 +7,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
+import {
+  depositMailRows,
+  loadDepositMails,
+} from '#/features/mail/deposit-mails';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import { gapLine, isPending } from '#/features/parcels/deposit';
 import {
@@ -34,7 +38,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
   const name = useOwnDepartmentName();
   const data = useLiveQuery(async () => {
     const deposit = await db.deposit.get(depositId);
-    if (!deposit) return { deposit: undefined, parcels: [] };
+    if (!deposit) return { deposit: undefined, parcels: [], mails: undefined };
     const rows = (await db.parcel.bulkGet(deposit.parcelIds)).filter(
       (row) => row !== undefined,
     );
@@ -42,6 +46,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
     const now = new Date();
     return {
       deposit,
+      mails: await loadDepositMails(db, deposit.parcelIds),
       parcels: rows.flatMap((row) =>
         row.status === 'en_route' && row.departmentId === deposit.departmentId
           ? [
@@ -121,7 +126,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
               }
             : undefined
         }
-        rows={[]}
+        rows={depositMailRows(data.mails, t)}
         actionLabel={t('deposits.done.action')}
         actionIcon={false}
         onAction={close}

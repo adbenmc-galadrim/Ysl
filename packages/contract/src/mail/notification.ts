@@ -110,6 +110,48 @@ export function reachedNobody(
   );
 }
 
+/** When a company tells the employee (§3.7.4), as far as it can be read. */
+export type NoticeRule = {
+  /** It runs tours: a parcel « Reçu » has yet to leave. */
+  tour: boolean;
+  /** On tour, the e-mail leaves at the scan rather than at the deposit. */
+  atScan: boolean;
+};
+
+/**
+ * Read raw, as `goesOnTour`: no profile, or one this version cannot read, keeps
+ * the path it always had. A tour with an unreadable moment waits for the deposit:
+ * a mail too late is sent again by hand, a mail too early cannot be taken back.
+ */
+export function noticeRuleOf(profile: unknown): NoticeRule {
+  const value = profile as
+    | { shuttleActsAsDepartment?: unknown; emailMoment?: unknown }
+    | null
+    | undefined;
+  return {
+    tour: value?.shuttleActsAsDepartment === false,
+    atScan: value?.emailMoment === 'scan',
+  };
+}
+
+/** The moment of the first notice (ME29): the parcel's status against the company's rule. */
+export function noticeDue(
+  parcel: Pick<StatusFields, 'status'> &
+    Partial<Pick<StatusFields, 'lastNotifiedAt'>>,
+  { tour, atScan }: NoticeRule,
+): boolean {
+  switch (parcel.status) {
+    case 'recu':
+      return !tour;
+    case 'en_route':
+      return tour && atScan && !parcel.lastNotifiedAt;
+    case 'depose':
+      return true;
+    default:
+      return false;
+  }
+}
+
 /**
  * What a confirmed e-mail does to each of its parcels (§8.3): a received one
  * becomes notified, a notified one records the reminder in `lastNotifiedAt`,
@@ -117,7 +159,8 @@ export function reachedNobody(
  * (`reachedNobody`), so this mail is the notice, and J+2 runs from it. A parcel
  * already handed over, returned, to settle, deleted, still to complete or with
  * nobody on it stays as it is. On tour (§3.7.9), the mail is traced and the parcel stays
- * « En route » until its deposit (`depositedStatus`).
+ * « En route » until its deposit (`depositedStatus`). `tour`: a mail that left about a
+ * parcel « Reçu » is not lost, it is traced too, and the parcel still has to leave.
  */
 export function notifyParcel(
   parcel: NotifiableParcel,
@@ -125,7 +168,8 @@ export function notifyParcel(
     sentAt,
     agentId,
     firstRead = false,
-  }: { sentAt: Date; agentId: string; firstRead?: boolean },
+    tour = false,
+  }: { sentAt: Date; agentId: string; firstRead?: boolean; tour?: boolean },
 ): NotifyChange {
   const parcelId = parcel.id;
   if (
@@ -140,14 +184,16 @@ export function notifyParcel(
   if (!parcel.personId && !parcel.contactId) {
     return { parcelId, skip: 'no-recipient' };
   }
-  if (parcel.status === 'en_route') {
-    if (parcel.lastNotifiedAt) return { parcelId, skip: 'closed' };
+  if (parcel.status === 'en_route' || (tour && parcel.status === 'recu')) {
+    if (parcel.lastNotifiedAt && !firstRead) {
+      return { parcelId, skip: 'closed' };
+    }
     return {
       parcelId,
       from: parcel.status,
       reminder: false,
       patch: {
-        status: 'en_route',
+        status: parcel.status,
         statusSeq: parcel.statusSeq ?? 0,
         notifiedAt: null,
         lastNotifiedAt: sentAt,

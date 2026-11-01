@@ -21,6 +21,7 @@ import {
   type PickupSecret,
 } from '#/features/mail/pickup-code';
 import { parcelEvent } from '#/features/parcels/events';
+import { goesOnTour } from '#/features/parcels/tour';
 
 export type PrepareNotification = {
   type: NotificationType;
@@ -223,6 +224,7 @@ export async function markSent(
       now,
       also: async (row) => {
         const parcels = await db.parcel.bulkGet(row.parcelIds);
+        const tour = await goesOnTour(db);
         const others = (await db.notification.toArray()).filter(
           (mail) => mail.id !== row.id,
         );
@@ -233,6 +235,7 @@ export async function markSent(
                 sentAt: now,
                 agentId: userId,
                 firstRead: reachedNobody(parcelId, others),
+                tour,
               })
             : { parcelId, skip: 'missing' };
         });
