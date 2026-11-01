@@ -1914,7 +1914,7 @@ export const fr = {
   'operating.impact.onTour.one': '1 colis en route ou déposé',
   'operating.impact.onTour.many': '{{count}} colis en route ou déposés',
   'operating.effect.email.scan': 'à prévenir sans attendre le dépôt',
-  'operating.effect.email.deposit': 'prévenus à la confirmation du dépôt',
+  'operating.effect.email.deposit': 'à prévenir à la confirmation du dépôt',
   'operating.effect.reminders.disabled': 'plus de relance',
   'operating.effect.reminders.optional': 'relances à la main',
   'operating.effect.reminders.required': 'relances automatiques',
