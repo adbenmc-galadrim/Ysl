@@ -475,6 +475,13 @@ export const fr = {
   'handover.scan.title': 'Vérifier les colis',
   'handover.scan.progress': '{{read}} sur {{count}} colis scannés',
   'handover.scan.done': 'Colis scannés',
+  'handover.scan.action': 'Scanner les {{count}} colis',
+  'handover.scan.banner': 'Scan du colis demandé',
+  'handover.scan.banner.detail':
+    'Scannez chaque colis remis (réglage de l’entreprise).',
+  'handover.standIn': 'La navette fait office de département',
+  'handover.standIn.detail':
+    'Profil « Petit site » : {{name}} remet lui-même, au service courrier.',
   'handover.scan.offer': 'Scanner pour vérifier',
   'handover.scan.type': 'Saisir le numéro',
   'handover.scan.number': 'Numéro du colis',
@@ -486,7 +493,16 @@ export const fr = {
     'Visez le QR de l’e-mail « Colis en attente de retrait ».',
   'handover.qr.unknown': 'QR inconnu sur cet iPhone',
   'handover.qr.unknown.detail':
-    'Il n’est peut-être pas encore synchronisé. Tapez le code ou cherchez le nom.',
+    'Il n’est peut-être pas encore synchronisé, ou il est d’un autre département. Tapez le code ou cherchez le nom.',
+  'handover.elsewhere.qr': 'Ce colis est à {{department}}',
+  'handover.elsewhere.pin': 'Ce code est pour {{department}}',
+  'handover.elsewhere.named':
+    '{{name}} le retire à {{location}}. Rien n’a été remis.',
+  'handover.elsewhere.place':
+    'Il se retire à {{location}}. Rien n’a été remis.',
+  'handover.elsewhere.nowhere':
+    'Il se retire dans ce département. Rien n’a été remis.',
+  'handover.elsewhere.retry': 'Scanner un autre code',
   'handover.qr.expired': 'Ce QR a expiré',
   'handover.qr.expired.detail':
     'Il date de plus de 30 jours. Cherchez le nom du salarié.',
@@ -504,7 +520,8 @@ export const fr = {
   'handover.qr.blocked': 'Caméra indisponible',
   'handover.qr.blocked.detail': 'Tapez le code ou cherchez le nom.',
   'handover.qr.typeCode': 'Taper le code à la place',
-  'handover.pin.unknown': 'Code inconnu. Vérifiez-le avec le salarié.',
+  'handover.pin.unknown':
+    'Code inconnu ici. Vérifiez-le avec le salarié : il est peut-être d’un autre département.',
   'handover.pin.expired': 'Ce code a expiré. Cherchez plutôt le nom.',
   'handover.pin.used': 'Ce code a déjà servi. Cherchez plutôt le nom.',
   'handover.pin.replaced':

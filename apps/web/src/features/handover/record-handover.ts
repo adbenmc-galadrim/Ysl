@@ -110,6 +110,28 @@ export async function recheckCode(
   return row;
 }
 
+/**
+ * What this QR or code opens at the counter: the recipient's waiting parcels
+ * in its department only (§3.7.9). A code of before has none and opens all.
+ */
+export async function listParcelsOfCode(
+  db: CourrierDatabase,
+  recipient: HandoverRecipient,
+  codeId: string | undefined,
+): Promise<LocalParcel[]> {
+  const parcels = await listWaitingParcels(db, recipient);
+  const code = codeId ? await db.pickupCode.get(codeId) : undefined;
+  if (!code?.departmentId) return parcels;
+  const home =
+    recipient.kind === 'person'
+      ? await db.directoryPerson.get(recipient.id)
+      : undefined;
+  return parcels.filter((parcel) => {
+    const department = departmentOfParcel(parcel, home);
+    return !department || department === code.departmentId;
+  });
+}
+
 async function openCodeOf(
   db: CourrierDatabase,
   recipient: HandoverRecipient,
