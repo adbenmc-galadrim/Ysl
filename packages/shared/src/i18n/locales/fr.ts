@@ -476,12 +476,15 @@ export const fr = {
   'handover.scan.progress': '{{read}} sur {{count}} colis scannés',
   'handover.scan.done': 'Colis scannés',
   'handover.scan.action': 'Scanner les {{count}} colis',
+  'handover.scan.action.one': 'Scanner le colis',
+  'handover.scan.good': '{{parcel}} · c’est le bon colis',
+  'handover.scan.proof': 'Colis scannés : {{count}}',
   'handover.scan.banner': 'Scan du colis demandé',
   'handover.scan.banner.detail':
     'Scannez chaque colis remis (réglage de l’entreprise).',
   'handover.standIn': 'La navette fait office de département',
   'handover.standIn.detail':
-    'Profil « Petit site » : {{name}} remet lui-même, au service courrier.',
+    '{{name}} remet aux salariés, au service courrier.',
   'handover.scan.offer': 'Scanner pour vérifier',
   'handover.scan.type': 'Saisir le numéro',
   'handover.scan.number': 'Numéro du colis',

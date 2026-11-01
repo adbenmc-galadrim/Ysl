@@ -21,6 +21,7 @@ import {
   QR_SCAN_INTERVAL_MS,
   readFrameTexts,
 } from '#/features/handover/qr-scan';
+import { carrierLabel } from '#/features/parcels/model';
 import { decodeQueue } from '#/features/scan/decoder';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -47,7 +48,8 @@ export function RemiseVerifierColis({
   const videoRef = useRef<HTMLVideoElement>(null);
   const camera = useCameraState();
   const torch = useTorchState();
-  const [notice, setNotice] = useState<ScannerQrNotice>();
+  const [refused, setRefused] = useState(false);
+  const [good, setGood] = useState<string>();
   const [typing, setTyping] = useState<string | null>(null);
   usePageLock(true);
 
@@ -61,16 +63,37 @@ export function RemiseVerifierColis({
   const read = (text: string): boolean => {
     const parcel = parcelOfRead(text, parcels);
     if (parcel) {
-      setNotice(undefined);
+      setRefused(false);
+      setGood(
+        t('handover.scan.good', {
+          parcel: [
+            carrierLabel(parcel, t),
+            parcel.tracking && `···${parcel.tracking.slice(-4)}`,
+          ]
+            .filter(Boolean)
+            .join(' '),
+        }),
+      );
       onRead(parcel.id);
       return true;
     }
-    setNotice({
-      title: t('handover.scan.other'),
-      description: t('handover.scan.other.detail'),
-    });
+    setGood(undefined);
+    setRefused(true);
     return false;
   };
+  const notice: ScannerQrNotice | undefined = refused
+    ? {
+        title: t('handover.scan.other'),
+        description: t('handover.scan.other.detail'),
+        icon: { name: 'alert', className: 'text-ios-red' },
+      }
+    : good
+      ? {
+          title: good,
+          description: progress,
+          icon: { name: 'check', className: 'text-ios-green' },
+        }
+      : undefined;
   const latest = useRef(read);
   latest.current = read;
 
@@ -124,6 +147,7 @@ export function RemiseVerifierColis({
         torch={torch !== 'none'}
         torchOn={torch === 'on'}
         notice={notice}
+        corners="bg-white"
         onClose={onClose}
         onTorch={() => void cameraStream.toggleTorch()}
         onTypeCode={() => setTyping('')}

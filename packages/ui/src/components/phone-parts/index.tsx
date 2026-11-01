@@ -565,7 +565,7 @@ export function ProofCard({
   return (
     <ul className="mt-[30px] flex shrink-0 flex-col gap-6 rounded-[16px] border border-separator pt-[17px] pr-[19px] pb-[30px] pl-[15px]">
       {items.map((item, i) => (
-        <li key={i} className="flex h-[18px] items-center text-15">
+        <li key={i} className="flex min-h-[18px] items-center text-15">
           <Icon name={item.icon} size={18} className={cn('shrink-0', item.onClick ? 'text-blue' : 'text-ink-2')} />
           {item.onClick ? (
             <button type="button" onClick={item.onClick} className="-my-3 ml-3 min-w-0 flex-1 cursor-pointer py-3 text-left text-blue">

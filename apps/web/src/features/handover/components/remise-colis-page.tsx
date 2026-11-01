@@ -279,7 +279,11 @@ export function RemiseColisPage({
       <RemiseVerifierColis
         parcels={parcels}
         progress={scanLabel}
-        onRead={(parcelId) => setScanned((read) => new Set(read).add(parcelId))}
+        onRead={(parcelId) => {
+          const next = new Set(scanned).add(parcelId);
+          setScanned(next);
+          if (scanComplete(leaving, next)) setScanning(false);
+        }}
         onClose={() => setScanning(false)}
       />
     );
@@ -409,7 +413,9 @@ export function RemiseColisPage({
                 action:
                   readCount > 0
                     ? scanLabel
-                    : t('handover.scan.action', { count: labelled.length }),
+                    : labelled.length === 1
+                      ? t('handover.scan.action.one')
+                      : t('handover.scan.action', { count: labelled.length }),
                 banner:
                   profile.handoverScan === 'required'
                     ? {
