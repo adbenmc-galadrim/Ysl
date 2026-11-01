@@ -13,8 +13,9 @@ import { noticeRuleOf, type NoticeRule } from '@repo/contract/mail';
 import type { AnyDb } from '@repo/db';
 import { deposit, organization, parcel, setting } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
-import { and, count, eq, isNull, sql } from 'drizzle-orm';
-import { confirmDeposit } from '#features/deposits/service';
+import { depositedStatus } from '@repo/contract/parcel-status';
+import { and, count, eq, isNotNull, isNull, sql } from 'drizzle-orm';
+import { confirmDeposit, moveParcel } from '#features/deposits/service';
 import type { Access } from '#lib/access';
 
 async function readProfileRow(db: AnyDb, organizationId: string) {
@@ -143,28 +144,72 @@ export async function saveOperatingProfile(
   if (impact.changes.length === 0) return { ...before, applied: 0 };
   await db.transaction(async (tx) => {
     await writeOperatingProfile(tx, organizationId, profile, updatedBy);
-    // The step just turned off holds for what already waits on it (D31).
-    if (departmentConfirmsDeposit(profile)) return;
-    const waiting = await tx
-      .select({ id: deposit.id })
-      .from(deposit)
-      .where(
-        and(
-          eq(deposit.organizationId, organizationId),
-          isNull(deposit.confirmedAt),
-          isNull(deposit.deletedAt),
-        ),
-      )
-      .for('update');
-    for (const { id } of waiting) {
-      await confirmDeposit(
-        tx,
-        { organizationId, userId: updatedBy, name: null },
-        null,
-        { depositId: id, counted: 0, gap: null },
-        { asAnnounced: true },
-      );
+    await closeDeposits(tx, organizationId, profile, updatedBy);
+    if (profile.shuttleActsAsDepartment) {
+      await bringBackTold(tx, organizationId, updatedBy);
     }
   });
   return { ...before, profile, applied: impact.parcels };
+}
+
+/** The step just turned off holds for what already waits on it (D31). */
+async function closeDeposits(
+  tx: AnyDb,
+  organizationId: string,
+  profile: OperatingProfile,
+  updatedBy: string,
+): Promise<void> {
+  if (departmentConfirmsDeposit(profile)) return;
+  const waiting = await tx
+    .select({ id: deposit.id })
+    .from(deposit)
+    .where(
+      and(
+        eq(deposit.organizationId, organizationId),
+        isNull(deposit.confirmedAt),
+        isNull(deposit.deletedAt),
+      ),
+    )
+    .for('update');
+  for (const { id } of waiting) {
+    await confirmDeposit(
+      tx,
+      { organizationId, userId: updatedBy, name: null },
+      null,
+      { depositId: id, counted: 0, gap: null },
+      { asAnnounced: true },
+    );
+  }
+}
+
+/**
+ * No tour any more: a parcel on its way whose e-mail left has no deposit to
+ * wait for, and undoing the tour would tell the employee twice (§3.7.9).
+ */
+async function bringBackTold(
+  tx: AnyDb,
+  organizationId: string,
+  updatedBy: string,
+): Promise<void> {
+  const told = await tx
+    .select()
+    .from(parcel)
+    .where(
+      and(
+        eq(parcel.organizationId, organizationId),
+        eq(parcel.status, 'en_route'),
+        isNotNull(parcel.lastNotifiedAt),
+        isNull(parcel.deletedAt),
+      ),
+    )
+    .for('update');
+  for (const one of told) {
+    await moveParcel(
+      tx,
+      one,
+      depositedStatus(one),
+      { organizationId, userId: updatedBy, name: null },
+      new Date(),
+    );
+  }
 }
