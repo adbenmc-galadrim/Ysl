@@ -535,9 +535,13 @@ export async function noticeOnTourWrite(
   { organizationId }: Access,
   values: Values,
 ): Promise<Values> {
-  if (op.entity !== 'parcel' || values.status !== 'notifie') return values;
+  if (op.entity !== 'parcel') return values;
   const [row] = await tx
-    .select({ status: parcel.status })
+    .select({
+      status: parcel.status,
+      personId: parcel.personId,
+      contactId: parcel.contactId,
+    })
     .from(parcel)
     .where(
       and(
@@ -545,7 +549,14 @@ export async function noticeOnTourWrite(
         eq(parcel.id, op.entityId),
       ),
     );
-  if (row?.status !== 'recu') return values;
+  if (row?.status === 'en_route') {
+    const changed =
+      (values.personId !== undefined && values.personId !== row.personId) ||
+      (values.contactId !== undefined && values.contactId !== row.contactId);
+    // The e-mail traced went to someone else: the deposit tells the new recipient.
+    return changed ? { ...values, lastNotifiedAt: null } : values;
+  }
+  if (row?.status !== 'recu' || values.status !== 'notifie') return values;
   if (!(await noticeRule(tx, organizationId)).tour) return values;
   // The status does not move: the counter of a change that did not happen stays out.
   const { statusSeq: _dropped, ...kept } = values;

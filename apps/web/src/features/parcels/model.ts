@@ -355,6 +355,8 @@ export function addressMissing({
   return (
     (parcel.status === 'a_completer' ||
       parcel.status === 'recu' ||
+      parcel.status === 'en_route' ||
+      parcel.status === 'depose' ||
       parcel.status === 'notifie') &&
     !parcel.notificationEmail?.trim() &&
     (person

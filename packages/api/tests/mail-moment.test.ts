@@ -322,6 +322,41 @@ describe('a parcel given to someone else in the same department', () => {
   });
 });
 
+describe('a recipient corrected on the way', () => {
+  it('tells the new one at the deposit, even from a stale copy of the trace', async () => {
+    await setProfile({ emailMoment: 'scan' });
+    const id = await addParcel({ lastNotifiedAt: SCAN });
+    const colleague = await addPerson(db, finance);
+    const {
+      serverXid: _xid,
+      organizationId: _org,
+      ...row
+    } = await parcelOf(id);
+    void _xid;
+    void _org;
+    const { results } = await push(any(), accessOf('company_admin'), {
+      ops: [
+        {
+          opId: newId(),
+          entity: 'parcel',
+          entityId: id,
+          type: 'upsert',
+          patch: { ...row, personId: colleague },
+          clientTs: SCAN,
+        },
+      ],
+    });
+    expect(results[0]!.status).toBe(200);
+    expect((await parcelOf(id)).lastNotifiedAt).toBeNull();
+
+    await deposited([id]);
+    await round(DEPOSIT);
+
+    expect(brevo.sent).toHaveLength(1);
+    expect((await parcelOf(id)).status).toBe('notifie');
+  });
+});
+
 describe('profile « au scan »', () => {
   beforeEach(() => setProfile({ emailMoment: 'scan', reminders: 'required' }));
 
