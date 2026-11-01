@@ -500,9 +500,9 @@ export const fr = {
   'handover.elsewhere.qr': 'Ce colis est à {{department}}',
   'handover.elsewhere.pin': 'Ce code est pour {{department}}',
   'handover.elsewhere.named':
-    '{{name}} le retire à {{location}}. Rien n’a été remis.',
+    'Pour {{name}}, point de réception : {{location}}. Rien n’a été remis.',
   'handover.elsewhere.place':
-    'Il se retire à {{location}}. Rien n’a été remis.',
+    'Point de réception : {{location}}. Rien n’a été remis.',
   'handover.elsewhere.nowhere':
     'Il se retire dans ce département. Rien n’a été remis.',
   'handover.elsewhere.retry': 'Scanner un autre code',
