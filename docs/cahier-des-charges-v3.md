@@ -381,7 +381,7 @@ Une étape du profil est **désactivée, facultative ou obligatoire**. Le modèl
 | ME26 | Écran « À déposer » groupé par département, hors ligne compris |
 | ME27 | QR imprimable de chaque département ; la navette le scanne ou choisit le département, l'app affiche le nombre ; le département confirme le nombre reçu |
 | ME28 | Écart au dépôt : colis « À régulariser », visible par la navette et l'admin entreprise, qui réaffecte |
-| ME29 | E-mail au scan ou au dépôt selon le profil, avec les lieu, horaires et consignes du département ; relances comptées à partir du dépôt, ou de la réception si la navette fait office de département |
+| ME29 | E-mail au scan ou au dépôt selon le profil, avec les lieu, horaires et consignes du département ; relances comptées à partir du dépôt, ou du premier avis si la navette fait office de département (§3.7.9) |
 
 #### 3.7.7 Espace département (F41, D23)
 
@@ -404,12 +404,12 @@ Le modèle du 29/10/2026 ne les tranche pas. Le choix provisoire vaut jusqu'au t
 | Point | Choix provisoire | Ticket |
 | --- | --- | --- |
 | Confirmation au nombre (D24) : quels colis passent « À régulariser » quand le nombre ne correspond pas ? | Confirmé par YSL-134 : le département désigne les colis ; « Je ne sais pas » les bloque tous ; « En trop » ne bloque aucun colis listé, le nombre reste au dépôt et s'affiche à l'admin ; « Salarié parti » bloque un colis qui est bien là | YSL-134 |
-| Profil « e-mail au scan » : quel statut avant le dépôt ? | Le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là | YSL-131, YSL-135 |
+| Profil « e-mail au scan » : quel statut avant le dépôt ? | Confirmé par YSL-135 : le colis reste « En route », avec son e-mail tracé ; il passe « Notifié » à la confirmation du dépôt, sans nouvel e-mail, et ne se remet qu'à partir de là. Sans e-mail parti, le dépôt prévient. Profil repassé en « la navette remet » : ces colis passent « Notifié » à l'enregistrement. Un appareil qui ignore les tournées et prévient un colis « Reçu » : l'e-mail est gardé et tracé, le colis reste « Reçu » | YSL-131, YSL-135 |
 | L'iPhone tire aujourd'hui le QR et le code, le serveur n'en a que les empreintes : comment le serveur met-il le QR dans l'e-mail ? | Confirmé : le serveur tire le code quand il met le mail en file et les empreintes redescendent par la synchronisation ; le repli par la messagerie garde le tirage sur l'iPhone | YSL-115 |
 | Photos d'étiquettes sur l'iPhone de la navette seulement (D8) : que voit le département sur la fiche ? | Les champs lus, sans photo ; un doute sur l'étiquette repasse par la navette | YSL-82 |
 | Qui règle le lieu, les horaires et les consignes d'un département ? | Le département, et l'admin entreprise (confirmé) | YSL-116 |
 | Durées de conservation d'une entreprise neuve (D28) | Confirmé : celles du §9.2 par défaut ; une entreprise sans réglage garde exactement ces durées | YSL-126 |
-| Navette faisant office de département : point de départ des relances | La réception | YSL-135 |
+| Navette faisant office de département : point de départ des relances | Corrigé par YSL-135 : le premier avis, comme aujourd'hui, pour ne rien changer aux navettes en service ; l'avis part à la réception. Avec une tournée, le dépôt confirmé, ou l'avis s'il part après (repli par la messagerie) : on ne relance pas un salarié qu'on n'a pas encore prévenu | YSL-135 |
 | Colis réaffectés (D25) : qui réaffecte ? Le texte « la navette et l'admin entreprise, qui réaffecte » se lit de deux façons | Confirmé par YSL-134 : l'admin entreprise seul désigne un autre département, la navette voit. Un colis à personne ne se déplace que par la personne : la navette qui corrige un destinataire fait suivre le colis (YSL-133). Un changement de département efface la trace de l'e-mail : le dépôt prévient de nouveau | YSL-134 |
 | Relance par le serveur « avec le même code », alors qu'il n'en garde que les empreintes | Confirmé : le serveur tire un nouveau code à chaque relance et retire l'ancien, rétabli si le mail échoue ; « même code » ne vaut que pour le repli par la messagerie | YSL-115 |
 | Conversion de la prod : profil de l'entreprise convertie et colis en cours | Profil qui reproduit l'agent unique (la navette remet, « Petit site ») ; les colis gardent leur statut | YSL-118 |
@@ -1006,7 +1006,7 @@ stateDiagram-v2
 
 « En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3).
 
-La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt, ou de la réception si la navette fait office de département (§3.7.9).
+La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt, ou du premier avis si la navette fait office de département (§3.7.9).
 
 ### 8.4 Synchronisation et outbox
 
