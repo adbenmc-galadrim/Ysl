@@ -461,6 +461,29 @@ describe('sync.push by role', () => {
       ).toBe(200);
     });
 
+    it('marks a parcel remis only behind a handover, whatever the profile', async () => {
+      const personId = await addPerson(db, finance);
+      const parcelId = await addParcel({ personId, status: 'notifie' });
+      const delivered = newParcel({
+        personId,
+        status: 'remis',
+        deliveredAt: NOW,
+        deliveredBy: AGENT_ID,
+      });
+      expect(await statusOf(own(), op('parcel', parcelId, delivered))).toBe(
+        403,
+      );
+      expect(
+        await statusOf(
+          own(),
+          op('handover', newId(), handoverRow([parcelId], personId)),
+        ),
+      ).toBe(200);
+      expect(await statusOf(own(), op('parcel', parcelId, delivered))).toBe(
+        200,
+      );
+    });
+
     it('issues codes in its own department only', async () => {
       const personId = await addPerson(db, finance);
       const id = newId();
