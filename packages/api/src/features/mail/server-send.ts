@@ -443,9 +443,9 @@ async function prepareOne(tx: AnyDb, id: string, now: Date): Promise<void> {
   if (now.getTime() - row.preparedAt.getTime() > REQUEST_MAX_AGE_MS) {
     return fail(id, t('mail.server.expired'));
   }
-  const { parcels: told, firstRead } = await parcelsToTell(tx, row);
+  const { parcels: told, firstRead, early } = await parcelsToTell(tx, row);
   if (told.length === 0 || (!row.personId && !row.contactId)) {
-    return fail(id, t('mail.server.superseded'));
+    return fail(id, t(early ? 'mail.server.early' : 'mail.server.superseded'));
   }
   const who = await whoOf(tx, row, told);
   // Moved to someone else since the request, a twin card at the same address

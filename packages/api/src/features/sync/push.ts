@@ -44,7 +44,11 @@ import {
   SyncRejected,
 } from '#features/sync/errors';
 import { withRetry } from '#features/sync/retry';
-import { checkReach, departmentWrite } from '#features/sync/reach';
+import {
+  checkReach,
+  departmentWrite,
+  noticeOnTourWrite,
+} from '#features/sync/reach';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 import type { Access } from '#lib/access';
 
@@ -355,7 +359,12 @@ async function upsert(tx: AnyDb, op: SyncOp, writer: Writer): Promise<void> {
   const { organizationId } = writer;
   const table = tableOf(op.entity);
   const values: Values = {
-    ...(await departmentWrite(tx, op, writer, valuesOf(table, op))),
+    ...(await departmentWrite(
+      tx,
+      op,
+      writer,
+      await noticeOnTourWrite(tx, op, writer, valuesOf(table, op)),
+    )),
     organizationId,
   };
   if (op.entity === 'setting') values.updatedBy = writer.userId;

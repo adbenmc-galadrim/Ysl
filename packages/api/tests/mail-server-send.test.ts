@@ -265,7 +265,7 @@ describe('a request written by the iPhone', () => {
     expect(await parcelOf(b)).toMatchObject({ status: 'notifie' });
   });
 
-  it.each(['en_route', 'depose', 'a_regulariser'] as const)(
+  it.each(['en_route', 'a_regulariser'] as const)(
     'sends nothing for a parcel %s, and leaves it where it is',
     async (status) => {
       const { id: person } = await addPerson();
@@ -656,7 +656,7 @@ describe('automatic reminders', () => {
       organizationId: ORGANIZATION_ID,
       key: 'operatingProfile',
       value: {
-        shuttleActsAsDepartment: false,
+        shuttleActsAsDepartment: true,
         batchReview: 'optional',
         depositConfirmation: 'disabled',
         handoverProof: 'optional',

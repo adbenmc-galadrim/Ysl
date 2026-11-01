@@ -1655,6 +1655,8 @@ export const fr = {
   'mail.server.qr': 'Présentez ce QR code au comptoir :',
   'mail.server.reply': 'Répondre',
   'mail.server.superseded': 'Déjà prévenu autrement',
+  'mail.server.early':
+    'Pas encore déposé : le salarié sera prévenu au dépôt',
   'mail.server.expired': 'Envoi abandonné : demande trop ancienne',
   'mail.server.noAddress': 'Pas d’adresse e-mail',
   'mail.server.noDepartment': 'Colis sans département',

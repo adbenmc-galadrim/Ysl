@@ -9,6 +9,7 @@ import {
   type ParcelCounts,
   departmentConfirmsDeposit,
 } from '@repo/contract/operating-profile';
+import { noticeRuleOf, type NoticeRule } from '@repo/contract/mail';
 import type { AnyDb } from '@repo/db';
 import { deposit, organization, parcel, setting } from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
@@ -52,6 +53,14 @@ export async function goesOnTour(
   const value = row?.value as
     { shuttleActsAsDepartment?: unknown } | null | undefined;
   return value?.shuttleActsAsDepartment === false;
+}
+
+/** When this company tells the employee (ME29), read raw like `goesOnTour`. */
+export async function noticeRule(
+  db: AnyDb,
+  organizationId: string,
+): Promise<NoticeRule> {
+  return noticeRuleOf((await readProfileRow(db, organizationId))?.value);
 }
 
 /** Only the shuttle's answer depends on the profile: nobody else pays for the read. */
