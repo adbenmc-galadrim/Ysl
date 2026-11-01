@@ -6,6 +6,8 @@ export type RemettreActionsProps = {
   onSearch?: () => void;
   onHandover?: () => void;
   onScan?: () => void;
+  /** The account receives nothing: no « Scanner », « Remettre » is the primary. */
+  handoverOnly?: boolean;
 };
 
 /**
@@ -18,6 +20,7 @@ export function RemettreActions({
   onSearch,
   onHandover,
   onScan,
+  handoverOnly = false,
 }: RemettreActionsProps) {
   return (
     <>
@@ -28,18 +31,20 @@ export function RemettreActions({
         onClick={onSearch}
         className="size-[52px]"
       />
-      {/* 16 px label and 20 px icon: a notch under Scanner, the primary. */}
+      {/* 16 px label and 20 px icon: a notch under Scanner when it is there. */}
       <Button
-        variant="secondary"
+        variant={handoverOnly ? undefined : 'secondary'}
         onClick={onHandover}
         className="min-w-0 flex-1 gap-2 px-0 text-16"
       >
         <Icon name="qr" size={20} />
         Remettre
       </Button>
-      <Button icon="scan" onClick={onScan} className="w-[141px]">
-        Scanner
-      </Button>
+      {!handoverOnly && (
+        <Button icon="scan" onClick={onScan} className="w-[141px]">
+          Scanner
+        </Button>
+      )}
     </>
   );
 }

@@ -19,7 +19,6 @@ type Story = StoryObj<typeof meta>;
 
 export const TroisChiffres: Story = {
   name: 'Trois chiffres saisis',
-  parameters: { reference: '07-remise/remise--remise-code' },
   args: { code: '482' },
 };
 

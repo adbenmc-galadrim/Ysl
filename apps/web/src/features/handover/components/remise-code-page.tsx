@@ -3,7 +3,10 @@ import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { RemiseCodeScreen } from '@repo/ui';
 import { useEffect, useRef, useState } from 'react';
 import { db } from '#/features/db/database';
-import { lookupPickupPin } from '#/features/handover/pickup-lookup';
+import {
+  elsewhereLines,
+  lookupPickupPin,
+} from '#/features/handover/pickup-lookup';
 import {
   pinLockLeft,
   pinOutcome,
@@ -36,6 +39,8 @@ export function RemiseCodePage({
 }: RemiseCodePageProps) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string>();
+  const [elsewhere, setElsewhere] =
+    useState<ReturnType<typeof elsewhereLines>>();
   const [attempts, setAttempts] = useState(readPinAttempts);
   const [clock, setClock] = useState(Date.now);
   const checking = useRef(false);
@@ -63,7 +68,9 @@ export function RemiseCodePage({
         onFound(searchForCode(match.code, 'pin', Date.now()));
         return;
       }
-      setError(t(`handover.pin.${match.status}`));
+      if (match.status === 'other_department') {
+        setElsewhere(elsewhereLines(match.elsewhere, 'pin', t));
+      } else setError(t(`handover.pin.${match.status}`));
       setCode('');
     } finally {
       checking.current = false;
@@ -75,6 +82,7 @@ export function RemiseCodePage({
     if (code.length >= PICKUP_PIN_LENGTH) return;
     const next = code + digit;
     setError(undefined);
+    setElsewhere(undefined);
     setCode(next);
     if (next.length === PICKUP_PIN_LENGTH) void check(next);
   };
@@ -84,6 +92,7 @@ export function RemiseCodePage({
       code={code}
       length={PICKUP_PIN_LENGTH}
       error={error}
+      elsewhere={elsewhere}
       locked={
         waiting
           ? t('handover.pin.locked', { seconds: Math.ceil(left / 1000) })
@@ -93,6 +102,7 @@ export function RemiseCodePage({
       onDelete={() => {
         if (checking.current) return;
         setError(undefined);
+        setElsewhere(undefined);
         setCode((typed) => typed.slice(0, -1));
       }}
       onBack={onBack}

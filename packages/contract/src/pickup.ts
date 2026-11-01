@@ -160,6 +160,8 @@ export function pickupVerdict<Row extends PickupCodeState>(
 export const pickupVerifyInput = z.object({
   kind: z.enum(PICKUP_HASH_KINDS),
   hash: z.string().regex(/^[0-9a-f]{64}$/),
+  /** This client can say « another department »: an older one reads `unknown`. */
+  elsewhere: z.boolean().optional(),
 });
 
 export type PickupVerifyInput = z.infer<typeof pickupVerifyInput>;
@@ -170,7 +172,7 @@ export type PickupVerifyInput = z.infer<typeof pickupVerifyInput>;
  * `recipient` whom it names; both null when no code or two active ones.
  */
 export const pickupVerifyOutput = z.object({
-  status: z.enum(['active', ...PICKUP_REFUSALS]),
+  status: z.enum(['active', ...PICKUP_REFUSALS, 'other_department']),
   codeId: z.string().nullable(),
   recipient: z
     .object({
@@ -179,6 +181,14 @@ export const pickupVerifyOutput = z.object({
       name: z.string(),
     })
     .nullable(),
+  /** Where the code opens, for `other_department`; no name behind a guessable PIN. */
+  elsewhere: z
+    .object({
+      department: z.string(),
+      location: z.string().nullable(),
+      name: z.string().nullable(),
+    })
+    .optional(),
 });
 
 export type PickupVerifyOutput = z.infer<typeof pickupVerifyOutput>;

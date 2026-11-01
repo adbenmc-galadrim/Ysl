@@ -74,7 +74,7 @@ function useParcelsAction(desk: boolean): RoleHomeProps['action'] {
   };
 }
 
-/** Until YSL-82 and YSL-136: the parcels really here, and what is still to come. */
+/** Until YSL-82: the parcels really here, and what is still to come. */
 export function DepartmentHome() {
   const counts = useCounts();
   const name = useOwnDepartmentName();

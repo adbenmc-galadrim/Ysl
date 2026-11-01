@@ -5,6 +5,7 @@ import { mergeContact } from '#/features/directory/contacts';
 import { pullChanges } from '#/features/sync/pull';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
+  listParcelsOfCode,
   recordHandover,
   type HandoverRefusedError,
 } from '#/features/handover/record-handover';
@@ -203,6 +204,50 @@ describe('a handover on a code', () => {
     ).rejects.toMatchObject({
       reason: 'mismatch',
     } satisfies Partial<HandoverRefusedError>);
+  });
+
+  it('refuses offline a copy left here of a department this iPhone no longer holds', async () => {
+    const { code } = await seed();
+    await db.department.put({
+      id: LEGAL,
+      name: 'Juridique',
+      receptionPoint: null,
+      replyEmail: null,
+      pickup: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+
+    expect(
+      (await findActivePickupCode(db, 'token', code.tokenHash, NOW)).status,
+    ).toBe('unknown');
+    await db.department.put({
+      id: FINANCE,
+      name: 'Finance',
+      receptionPoint: null,
+      replyEmail: null,
+      pickup: null,
+      createdAt: NOW,
+      updatedAt: NOW,
+      deletedAt: null,
+    });
+    expect(
+      (await findActivePickupCode(db, 'token', code.tokenHash, NOW)).status,
+    ).toBe('active');
+  });
+
+  it('lists only what the code opens, and all for a code of before', async () => {
+    const { here, elsewhere, code } = await seed();
+    const person = { kind: 'person' as const, id: nora.id };
+
+    expect(
+      (await listParcelsOfCode(db, person, code.id)).map((p) => p.id),
+    ).toEqual([here.id]);
+    await db.pickupCode.update(code.id, { departmentId: null });
+    expect(
+      (await listParcelsOfCode(db, person, code.id)).map((p) => p.id).sort(),
+    ).toEqual([here.id, elsewhere.id].sort());
   });
 
   it('closes the code once its own department has nothing left, whatever waits elsewhere', async () => {

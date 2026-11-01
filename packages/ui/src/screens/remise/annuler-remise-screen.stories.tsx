@@ -20,7 +20,6 @@ type Story = StoryObj<typeof meta>;
 
 export const MotifChoisi: Story = {
   name: 'Motif choisi',
-  parameters: { reference: '09-zones-d-ombre/remise--annuler-une-remise' },
   args: {
     parcel: PARCELS.malik,
     handedOver: 'Remis hier à 9 h 12',

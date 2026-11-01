@@ -110,12 +110,13 @@ const noStep = (op: SyncOp): never =>
  * The profile on what the phones send (ME16). A handover has already happened
  * at the counter: one made before the profile changed, or by a version without
  * this rule, which never sends `hasScan`, stays accepted. Its parcels and its
- * event follow the refusal, so no parcel is `remis` without a handover.
+ * event follow the refusal, so no parcel is `remis` without a handover; for a
+ * department, which came with the rule, whatever the profile requires.
  */
 async function checkHandoverSteps(
   tx: AnyDb,
   op: SyncOp,
-  { organizationId }: Access,
+  { organizationId, role }: Access,
 ): Promise<void> {
   if (op.type !== 'upsert') return;
   const { patch } = op;
@@ -128,8 +129,9 @@ async function checkHandoverSteps(
     return;
   }
   const required = await requiringProfile(tx, organizationId);
-  if (!required) return;
+  if (!required && role !== 'department') return;
   if (op.entity === 'handover') {
+    if (!required) return;
     const [known] = await tx
       .select({ id: handover.id })
       .from(handover)

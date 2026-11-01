@@ -21,7 +21,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Confirmee: Story = {
   name: 'Confirmée',
-  parameters: { reference: '07-remise/remise--remise-confirmee' },
   args: {
     title: '3 colis remis',
     description: 'à Nora Haddad, à 11 h 21',

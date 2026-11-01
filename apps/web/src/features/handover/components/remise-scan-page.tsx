@@ -18,7 +18,11 @@ import {
   useTorchState,
 } from '#/features/camera/stream';
 import { db } from '#/features/db/database';
-import { lookupPickupText } from '#/features/handover/pickup-lookup';
+import {
+  elsewhereLines,
+  lookupPickupText,
+  type OtherDepartment,
+} from '#/features/handover/pickup-lookup';
 import {
   grabVideoFrame,
   QR_SCAN_INTERVAL_MS,
@@ -79,6 +83,7 @@ export function RemiseScanPage({
     wasExplained() ? 'scan' : 'pending',
   );
   const [refusal, setRefusal] = useState<Refusal | undefined>(refused);
+  const [elsewhere, setElsewhere] = useState<OtherDepartment['elsewhere']>();
   const found = useRef(false);
 
   useEffect(() => {
@@ -134,7 +139,13 @@ export function RemiseScanPage({
           found.current = true;
           onFound(searchForCode(match.code, 'qr', Date.now()));
           return;
-        } else setRefusal(match.status);
+        } else if (match.status === 'other_department') {
+          setRefusal(undefined);
+          setElsewhere(match.elsewhere);
+        } else {
+          setElsewhere(undefined);
+          setRefusal(match.status);
+        }
       }
       if (!stopped) timer = setTimeout(() => void look(), QR_SCAN_INTERVAL_MS);
     };
@@ -177,9 +188,21 @@ export function RemiseScanPage({
             className="size-full object-cover"
           />
         }
+        corners={shown || elsewhere ? 'bg-ios-red' : 'bg-white'}
         torch={torch !== 'none'}
         torchOn={torch === 'on'}
-        notice={shown ? notice(shown) : undefined}
+        notice={
+          cameraRefusal || !elsewhere
+            ? shown && notice(shown)
+            : {
+                ...elsewhereLines(elsewhere, 'qr', t),
+                icon: { name: 'alert', className: 'text-ios-red' },
+                action: {
+                  label: t('handover.elsewhere.retry'),
+                  onClick: () => setElsewhere(undefined),
+                },
+              }
+        }
         onClose={onClose}
         onTorch={() => void cameraStream.toggleTorch()}
         onTypeCode={onTypeCode}

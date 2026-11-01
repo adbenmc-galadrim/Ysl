@@ -83,7 +83,7 @@ afterAll(async () => {
   await client.close();
 });
 
-function sessionOf(userId: string): Session {
+function sessionOf(userId: string, role = 'shuttle'): Session {
   const now = new Date();
   return {
     session: {
@@ -101,24 +101,24 @@ function sessionOf(userId: string): Session {
       emailVerified: false,
       createdAt: now,
       updatedAt: now,
-      role: 'shuttle',
+      role,
       banned: false,
     },
   };
 }
 
-function apiOf(userId: string) {
+function apiOf(userId: string, role?: string) {
   return appRouter.createCaller(
     createTRPCContext({
       headers: new Headers({ cookie: 'session=abc' }),
-      session: sessionOf(userId),
+      session: sessionOf(userId, role),
     }),
   );
 }
 
 /** An iPhone of the mailroom: its own base, its engine, the real router. */
-function iphone(db: Db, userId: string) {
-  const api = apiOf(userId);
+function iphone(db: Db, userId: string, role?: string) {
+  const api = apiOf(userId, role);
   return createSyncEngine({
     db,
     push: (input) => api.sync.push(input),
@@ -582,6 +582,73 @@ describe('a handover undone between two iPhones (F44)', () => {
     expect(run).toMatchObject({ rejected: 0 });
     expect((await serverParcel(lostOne))?.status).toBe('recu');
     expect((await serverParcel(keptOne))?.status).toBe('remis');
+  });
+});
+
+describe('a handover at a department', () => {
+  it('goes from the offline counter to the server, with its journal, on the code of its department', async () => {
+    const finance = newId();
+    const clerk = `clerk-${newId()}`;
+    await server
+      .insert(schema.department)
+      .values({
+        id: finance,
+        organizationId: ORGANIZATION_ID,
+        name: 'Finance',
+      });
+    await server.insert(schema.user).values({
+      id: clerk,
+      name: 'Inès',
+      email: `${clerk}@example.test`,
+    });
+    await server
+      .insert(schema.organizationMember)
+      .values({ userId: clerk, organizationId: ORGANIZATION_ID });
+    await server.insert(schema.departmentMember).values({
+      userId: clerk,
+      departmentId: finance,
+      organizationId: ORGANIZATION_ID,
+    });
+    await server
+      .update(schema.directoryPerson)
+      .set({ departmentId: finance })
+      .where(eq(schema.directoryPerson.id, nora.id));
+    await iphone(first, KARIM).syncNow({ force: true });
+    const token = newPickupToken();
+    const code = await pickupCodeRow(
+      { personId: nora.id, departmentId: finance },
+      { token, now: new Date() },
+    );
+    await server
+      .insert(schema.pickupCode)
+      .values({ ...code, organizationId: ORGANIZATION_ID });
+    const counter = await openTestDatabase();
+    const desk = iphone(counter, clerk, 'department');
+    await desk.syncNow({ force: true });
+
+    const match = await lookupPickupText(counter, token);
+    if (match.status !== 'active') throw new Error(match.status);
+    const done = await recordHandover(
+      counter,
+      {
+        ...searchForCode(match.code, 'qr', Date.now()),
+        parcelIds: parcels.map((parcel) => parcel.id),
+      },
+      { agentId: clerk, agentName: 'Inès' },
+    );
+    await desk.syncNow({ force: true });
+
+    expect((await serverParcel(parcels[0]!.id))?.status).toBe('remis');
+    const [row] = await server
+      .select()
+      .from(schema.handover)
+      .where(eq(schema.handover.id, done.handoverId));
+    expect(row?.parcelIds).toHaveLength(2);
+    const events = await server
+      .select()
+      .from(schema.event)
+      .where(eq(schema.event.entityId, parcels[0]!.id));
+    expect(events.map((event) => event.type)).toContain('parcel.delivered');
   });
 });
 

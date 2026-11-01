@@ -3,10 +3,19 @@ import type { ReactNode } from 'react';
 import { Button } from '#components/button';
 import { CameraTopBar } from '#components/camera-controls';
 import { CameraViewport } from '#components/camera-viewport';
-import { Icon } from '#icons';
+import { ScanCorners } from '#components/phone-parts';
+import { Icon, type IconName } from '#icons';
+import { cn } from '#lib/tv';
 
-/** Why nothing opens: a QR unknown, expired or used, or a camera refused. */
-export type ScannerQrNotice = { title: string; description?: string };
+/** What the reading gave: a QR that opens nothing, a camera refused, a parcel checked. */
+export type ScannerQrNotice = {
+  title: string;
+  description?: string;
+  /** Before the title: what kind of news this is. */
+  icon?: { name: IconName; className: string };
+  /** The way forward, inside the notice: « Scanner un autre code ». */
+  action?: { label: string; onClick: () => void };
+};
 
 export type ScannerQrScreenProps = {
   /** The live `<video>` of the app, full bleed. */
@@ -18,10 +27,14 @@ export type ScannerQrScreenProps = {
   torchOn?: boolean;
   /** Takes the place of the hint until the next QR is read. */
   notice?: ScannerQrNotice;
+  /** The square the QR goes in. */
+  corners?: 'bg-white' | 'bg-ios-red';
   /** For another reading than the QR of the e-mail: a parcel's label. */
   title?: string;
   hint?: string;
   typeLabel?: string;
+  /** The ways around the camera; the mockup of a scan in progress has none. */
+  actions?: boolean;
   /** Without it, « Chercher un nom » is not offered. */
   nameSearch?: boolean;
   onClose?: () => void;
@@ -41,9 +54,11 @@ export function ScannerQrScreen({
   torch = true,
   torchOn = false,
   notice,
+  corners,
   title = 'Remise',
-  hint = 'Scannez le QR code de l’e-mail du salarié',
+  hint = 'Scannez le QR de l’e-mail du salarié',
   typeLabel = 'Taper le code',
+  actions = true,
   nameSearch = true,
   onClose,
   onTorch,
@@ -66,46 +81,98 @@ export function ScannerQrScreen({
         onClose={onClose}
         onTorch={onTorch}
       />
+      {corners && <ScanCorners x={96} y={236} size={200} color={corners} />}
       {/* Anchored to the actions. On a short phone the gaps close up so the
           hint stays under the picture instead of over it. */}
       <div className="flex-1" />
       {notice ? (
         <div
           role="alert"
-          className="mx-5 rounded-card bg-black/70 px-4 py-3.5 text-center"
+          className={cn(
+            'relative mx-5 shrink-0 rounded-[18px] bg-night p-4',
+            notice.icon && 'pl-[46px]',
+          )}
         >
-          <p className="text-17 font-semibold">{notice.title}</p>
+          {notice.icon && (
+            <Icon
+              name={notice.icon.name}
+              size={20}
+              className={cn(
+                'absolute left-4',
+                notice.action ? 'top-[18px]' : 'top-[26px]',
+                notice.icon.className,
+              )}
+            />
+          )}
+          <p
+            className={cn(
+              'font-semibold',
+              notice.action ? 'text-17' : 'text-15',
+            )}
+          >
+            {notice.title}
+          </p>
           {notice.description && (
-            <p className="mt-1 text-15 leading-5 text-white/70">
+            <p
+              className={cn(
+                'text-night-muted',
+                notice.action ? 'mt-[5px]' : 'mt-1',
+                notice.action ? 'text-14' : 'text-13',
+              )}
+            >
               {notice.description}
             </p>
+          )}
+          {notice.action && (
+            <Button
+              variant="light"
+              size="md"
+              block
+              onClick={notice.action.onClick}
+              className="mt-[22px] -ml-[30px] h-12 w-[calc(100%+30px)] rounded-[24px]"
+            >
+              {notice.action.label}
+            </Button>
           )}
         </div>
       ) : (
         <p className="px-5 text-center text-17 font-semibold">{hint}</p>
       )}
-      <div
-        className={`mt-[clamp(16px,calc(100dvh-764px),88px)] mb-[clamp(0px,calc(100dvh-784px),68px)] grid gap-3 px-5 ${nameSearch ? 'grid-cols-2' : 'grid-cols-1'}`}
-      >
-        <Button
-          variant="night"
-          onClick={onTypeCode}
-          className="justify-start gap-2.5 px-4 text-15"
+      {!actions ? (
+        <div className="h-[clamp(16px,calc(100dvh-724px),128px)] shrink-0" />
+      ) : notice?.action ? (
+        <div className="h-[clamp(16px,calc(100dvh-752px),100px)] shrink-0" />
+      ) : (
+        <div
+          className={cn(
+            'mt-[clamp(16px,calc(100dvh-672px),180px)] -mb-2 grid shrink-0 gap-3 px-5',
+            nameSearch ? 'grid-cols-2' : 'grid-cols-1',
+          )}
         >
-          <Icon name="hash" size={20} className="shrink-0" />
-          {typeLabel}
-        </Button>
-        {nameSearch && (
           <Button
-            variant="night"
-            onClick={onSearchName}
-            className="justify-start gap-2.5 px-4 text-15"
+            variant="light"
+            size="md"
+            icon="hash"
+            iconSize={20}
+            onClick={onTypeCode}
+            className="h-12 justify-start gap-2 rounded-[24px] pr-0 pl-[22.5px]"
           >
-            <Icon name="search" size={20} className="shrink-0" />
-            Chercher un nom
+            {typeLabel}
           </Button>
-        )}
-      </div>
+          {nameSearch && (
+            <Button
+              variant="light"
+              size="md"
+              icon="search"
+              iconSize={20}
+              onClick={onSearchName}
+              className="h-12 justify-start gap-2 rounded-[24px] pr-0 pl-[9px]"
+            >
+              Chercher un nom
+            </Button>
+          )}
+        </div>
+      )}
     </CameraViewport>
   );
 }

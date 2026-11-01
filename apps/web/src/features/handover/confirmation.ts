@@ -154,6 +154,15 @@ export function describeConfirmation(
         label: methodLabel(handover.method, t),
         done: handover.method !== 'manuel',
       },
+      ...(handover.hasScan
+        ? [
+            {
+              icon: 'scan' as const,
+              label: t('handover.scan.proof', { count: parcels.length }),
+              done: true,
+            },
+          ]
+        : []),
       ...evidenceProofs(entry, actions, t),
       syncProof(entry, online, t),
     ],

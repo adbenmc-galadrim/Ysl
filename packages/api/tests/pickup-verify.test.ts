@@ -7,6 +7,7 @@ import {
 } from '@repo/contract/pickup';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { verifyPickup } from '#features/pickup/service';
 import {
@@ -182,6 +183,89 @@ describe('pickup.verify by department', () => {
       status: 'unknown',
       codeId: null,
       recipient: null,
+    });
+  });
+
+  describe('for a client that can say another department', () => {
+    const askAs = (
+      departmentId: string,
+      kind: 'token' | 'pin',
+      hash: string,
+      organizationId = ORGANIZATION_ID,
+    ) =>
+      verifyPickup(
+        asAnyDb(db),
+        organizationId,
+        { kind, hash, elsewhere: true },
+        NOW,
+        { kind: 'department', departmentId },
+      );
+
+    it('names the counter and the employee behind a QR', async () => {
+      const finance = await addDepartment('Finance 3');
+      await db
+        .update(schema.department)
+        .set({ receptionPoint: 'Bâtiment B, 4e étage' })
+        .where(eq(schema.department.id, finance));
+      const legal = await addDepartment('Juridique 3');
+      const hash = await departmentCode(finance);
+
+      expect(await askAs(legal, 'token', hash)).toMatchObject({
+        status: 'other_department',
+        recipient: null,
+        elsewhere: {
+          department: 'Finance 3',
+          location: 'Bâtiment B, 4e étage',
+          name: 'Nora Haddad',
+        },
+      });
+    });
+
+    it('names nobody behind a PIN, which can be guessed', async () => {
+      const finance = await addDepartment('Finance 4');
+      const legal = await addDepartment('Juridique 4');
+      const pin = '7301';
+      await code(
+        { personId: await person() },
+        { pin, departmentId: finance, createdAt: NOW },
+      );
+
+      const answer = await askAs(legal, 'pin', await pickupPinHash(pin));
+      expect(answer.status).toBe('other_department');
+      expect(answer.elsewhere?.name).toBeNull();
+    });
+
+    it('opens its own code even when a PIN also exists elsewhere', async () => {
+      const finance = await addDepartment('Finance 5');
+      const legal = await addDepartment('Juridique 5');
+      const pin = '7302';
+      await code(
+        { personId: await person() },
+        { pin, departmentId: finance, createdAt: NOW },
+      );
+      await code(
+        { personId: await person() },
+        { pin, departmentId: legal, createdAt: NOW },
+      );
+
+      const answer = await askAs(legal, 'pin', await pickupPinHash(pin));
+      expect(answer.status).toBe('active');
+    });
+
+    it('stays unknown for a closed code or for another company', async () => {
+      const finance = await addDepartment('Finance 6');
+      const legal = await addDepartment('Juridique 6');
+      const used = await departmentCode(finance);
+      await db
+        .update(schema.pickupCode)
+        .set({ usedAt: NOW })
+        .where(eq(schema.pickupCode.tokenHash, used));
+
+      expect((await askAs(legal, 'token', used)).status).toBe('unknown');
+
+      const open = await departmentCode(finance);
+      const other = await askAs(legal, 'token', open, OTHER_ORGANIZATION_ID);
+      expect(other.status).toBe('unknown');
     });
   });
 

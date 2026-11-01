@@ -4,7 +4,12 @@ import {
   type PickupVerifyOutput,
 } from '@repo/contract/pickup';
 import type { AnyDb } from '@repo/db';
-import { contact, directoryPerson, pickupCode } from '@repo/db/schema';
+import {
+  contact,
+  department,
+  directoryPerson,
+  pickupCode,
+} from '@repo/db/schema';
 import { and, eq } from 'drizzle-orm';
 import type { ParcelScope } from '#lib/access';
 
@@ -49,18 +54,63 @@ async function recipientOf(
   return row ? { kind: 'contact', id: code.contactId, name: row.name } : null;
 }
 
+/** The one code of this hash open in the company, and the counter it opens. */
+async function otherDepartment(
+  db: AnyDb,
+  organizationId: string,
+  kind: PickupVerifyInput['kind'],
+  hash: string,
+  now: Date,
+): Promise<PickupVerifyOutput | null> {
+  const rows = await db
+    .select()
+    .from(pickupCode)
+    .where(
+      and(
+        eq(pickupCode.organizationId, organizationId),
+        eq(kind === 'token' ? pickupCode.tokenHash : pickupCode.pinHash, hash),
+      ),
+    );
+  const verdict = pickupVerdict(rows, now);
+  if (verdict.status !== 'active' || !verdict.code.departmentId) return null;
+  const { code } = verdict;
+  const [home] = await db
+    .select({ name: department.name, location: department.receptionPoint })
+    .from(department)
+    .where(
+      and(
+        eq(department.organizationId, organizationId),
+        eq(department.id, verdict.code.departmentId),
+      ),
+    );
+  if (!home) return null;
+  const recipient =
+    kind === 'token' ? await recipientOf(db, organizationId, code) : null;
+  return {
+    status: 'other_department',
+    codeId: code.id,
+    recipient: null,
+    elsewhere: {
+      department: home.name,
+      location: home.location,
+      name: recipient?.name ?? null,
+    },
+  };
+}
+
 /**
  * `pickup.verify` (§8.6): the server's word on a QR or a PIN of this
  * mailroom, for the desk whose own copy does not know it yet (a code a
  * colleague has just issued) or may be behind (used on another iPhone).
  * The same rule as on the iPhone (`pickupVerdict`); nothing is written,
- * the handover alone uses a code. A department knows its own codes only:
- * another's is `unknown`, as on its iPhone (§3.7.9).
+ * the handover alone uses a code. A department opens its own codes only:
+ * another's is `unknown` on its iPhone, and here `other_department` for a
+ * client that can say so, to send the employee to the right counter.
  */
 export async function verifyPickup(
   db: AnyDb,
   organizationId: string,
-  { kind, hash }: PickupVerifyInput,
+  { kind, hash, elsewhere }: PickupVerifyInput,
   now = new Date(),
   scope: ParcelScope = { kind: 'company' },
 ): Promise<PickupVerifyOutput> {
@@ -76,6 +126,10 @@ export async function verifyPickup(
           : undefined,
       ),
     );
+  if (rows.length === 0 && elsewhere && scope.kind === 'department') {
+    const other = await otherDepartment(db, organizationId, kind, hash, now);
+    if (other) return other;
+  }
   const verdict = pickupVerdict(rows, now);
   const code =
     verdict.status === 'active'

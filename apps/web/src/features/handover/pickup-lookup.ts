@@ -8,6 +8,7 @@ import {
   type PickupVerifyOutput,
   readPickupToken,
 } from '@repo/contract/pickup';
+import type { TranslateFn } from '@repo/shared/i18n';
 import type { CourrierDatabase, LocalPickupCode } from '#/features/db/schema';
 
 export {
@@ -17,11 +18,48 @@ export {
 } from '@repo/contract/pickup';
 
 /**
- * What a QR or a PIN opens. Only `active` names someone; the others say
- * why not, so the desk tells an old mail from a typo (`PickupRefusal`).
+ * What a QR or a PIN opens. `active` names who collects; the others say
+ * why not, so the desk tells an old mail from a typo (`PickupRefusal`), and
+ * `other_department` where the code does open.
  */
-export type PickupMatch =
+export type PickupMatch = LocalMatch | OtherDepartment;
+
+/** What this iPhone can tell by itself. */
+export type LocalMatch =
   { status: 'active'; code: LocalPickupCode } | { status: PickupRefusal };
+
+/** Open in another department, as the server alone can tell (§3.7.9). */
+export type OtherDepartment = {
+  status: 'other_department';
+  elsewhere: NonNullable<PickupVerifyOutput['elsewhere']>;
+};
+
+/** What the desk says of a code that opens at another counter. */
+export function elsewhereLines(
+  { department, location, name }: OtherDepartment['elsewhere'],
+  via: 'qr' | 'pin',
+  t: TranslateFn,
+) {
+  return {
+    title: t(`handover.elsewhere.${via}`, { department }),
+    description:
+      name && location
+        ? t('handover.elsewhere.named', { name, location })
+        : location
+          ? t('handover.elsewhere.place', { location })
+          : t('handover.elsewhere.nowhere'),
+  };
+}
+
+const refusalOf = ({
+  status,
+  elsewhere,
+}: PickupVerifyOutput): Exclude<PickupMatch, { status: 'active' }> => {
+  if (status === 'other_department') {
+    return elsewhere ? { status, elsewhere } : { status: 'unknown' };
+  }
+  return { status: status === 'active' ? 'unknown' : status };
+};
 
 /**
  * The code behind a hash, checked on this iPhone only (F41): the synced
@@ -33,12 +71,27 @@ export async function findActivePickupCode(
   kind: PickupHashKind,
   hash: string,
   now = new Date(),
-): Promise<PickupMatch> {
+): Promise<LocalMatch> {
   const rows =
     kind === 'token'
       ? await db.pickupCode.where('tokenHash').equals(hash).toArray()
       : await db.pickupCode.filter((row) => row.pinHash === hash).toArray();
-  return pickupVerdict(rows, now);
+  const verdict = pickupVerdict(rows, now);
+  if (verdict.status === 'active' && (await outOfReach(db, verdict.code))) {
+    return { status: 'unknown' };
+  }
+  return verdict;
+}
+
+/**
+ * A copy of a code this iPhone cannot open: a department pulls only itself, so
+ * a code of a department it does not hold was left by a move (§3.7.9). Before
+ * the first pull of the departments, nothing can be told.
+ */
+async function outOfReach(db: CourrierDatabase, code: LocalPickupCode) {
+  if (!code.departmentId) return false;
+  const held = await db.department.get(code.departmentId);
+  return !held && (await db.department.count()) > 0;
 }
 
 /**
@@ -92,7 +145,7 @@ export async function checkPickupCode(
   }
   if (!check.online()) return local;
   const server = await within(
-    check.verify({ kind, hash }),
+    check.verify({ kind, hash, elsewhere: true }),
     check.waitMs ?? SERVER_CHECK_MS,
   );
   if (!server) return local;
@@ -102,9 +155,9 @@ export async function checkPickupCode(
       codeId === local.code.id && status !== 'active' && status !== 'ambiguous';
     if (!closed) return local;
     void check.sync().catch(() => undefined);
-    return { status };
+    return refusalOf(server);
   }
-  if (status !== 'active') return { status };
+  if (status !== 'active') return refusalOf(server);
   await within(check.sync(), SERVER_SYNC_MS);
   return findActivePickupCode(db, kind, hash, now);
 }

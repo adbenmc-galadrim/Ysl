@@ -9,6 +9,8 @@ export type CodeInputProps = {
   focused?: boolean;
   /** Red frames, after a wrong code. */
   invalid?: boolean;
+  /** On each box: another mockup's size. */
+  boxClassName?: string;
   className?: string;
 };
 
@@ -23,6 +25,7 @@ export function CodeInput({
   length = 4,
   focused = true,
   invalid = false,
+  boxClassName,
   className,
 }: CodeInputProps) {
   return (
@@ -42,6 +45,7 @@ export function CodeInput({
                 ? 'border-2 border-ink bg-fill'
                 : 'border border-border bg-surface',
               invalid && 'border-red text-red',
+              boxClassName,
             )}
           >
             {value[i] ?? ''}

@@ -21,7 +21,6 @@ type Story = StoryObj<typeof meta>;
 
 export const QrVerifie: Story = {
   name: 'QR vérifié',
-  parameters: { reference: '07-remise/remise--remise-colis' },
   args: {
     recipient: PEOPLE.nora,
     location: '3e étage',
@@ -75,7 +74,6 @@ export const ChoisiParLeNom: Story = {
     verified: 'Sans vérification',
     verifiedBy: 'name',
     parcels: NORA_HANDOVER,
-    extras: false,
     registeredNote: 'Un recommandé : la signature est facultative.',
     onSignature: () => {},
     onToggle: () => {},
@@ -95,7 +93,6 @@ export const CollegueAnnonce: Story = {
   name: 'Collègue annoncé',
   args: {
     ...QrVerifie.args,
-    extras: false,
     announced: 'Paul Mercier, annoncé par e-mail',
     onCollector: () => {},
   },
@@ -119,6 +116,5 @@ export const AucunColis: Story = {
     verified: 'Code vérifié à 11 h 20',
     parcels: [],
     empty: 'Rien n’attend Nora au comptoir.',
-    extras: false,
   },
 };

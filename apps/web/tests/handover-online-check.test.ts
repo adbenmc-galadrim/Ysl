@@ -73,6 +73,41 @@ describe('the server at the desk', () => {
     });
   });
 
+  it('says which counter a code of another department opens', async () => {
+    const elsewhere = {
+      department: 'Finance',
+      location: 'Bâtiment B',
+      name: 'Léa Fontaine',
+    };
+    const { check, verify } = server({
+      status: 'other_department',
+      elsewhere,
+    });
+
+    expect(await lookupPickupPin(db, '4821', LATER, check)).toEqual({
+      status: 'other_department',
+      elsewhere,
+    });
+    expect(verify).toHaveBeenCalledWith(
+      expect.objectContaining({ elsewhere: true }),
+    );
+  });
+
+  it('lets the server close a copy left here by a move to another department', async () => {
+    const token = newPickupToken();
+    const code = await pickupCodeRow({ personId: 'nora' }, { token });
+    await db.pickupCode.put(code);
+    const { check } = server({
+      status: 'other_department',
+      codeId: code.id,
+      elsewhere: { department: 'Finance', location: null, name: null },
+    });
+
+    const match = await lookupPickupText(db, token, LATER, check);
+
+    expect(match.status).toBe('other_department');
+  });
+
   it('says why the server refuses a code this iPhone does not know', async () => {
     const { check } = server({ status: 'replaced' });
 

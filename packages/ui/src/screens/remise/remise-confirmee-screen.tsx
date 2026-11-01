@@ -1,9 +1,9 @@
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
-import { CheckList, type CheckListItem } from '#components/check-list';
+import type { CheckListItem } from '#components/check-list';
 import { DetailsList } from '#components/details-list';
+import { DoneDisc, ProofCard } from '#components/phone-parts';
 import { ProofMedia, type ProofMediaProps } from '#components/proof-media';
-import { ResultHero } from '#components/result-hero';
 import { Screen } from '#components/screen';
 import { SYNC_PILL, StatusPill } from '#components/status-pill';
 import { Toast } from '#components/toast';
@@ -64,12 +64,13 @@ export function RemiseConfirmeeScreen({
     <Screen
       bottomInset={next ? 240 : 180}
       bottom={
-        <BottomBar surface="none" className="flex-col gap-7">
+        <BottomBar surface="plain" className="flex-col gap-9 pt-0 pb-9">
           {undoable && (
             <Toast
               message="Remise enregistrée"
               actionLabel={undoLabel}
               onAction={onUndo}
+              className="w-full rounded-[14px] px-4 [&>button]:text-white"
             />
           )}
           {next ? (
@@ -103,21 +104,16 @@ export function RemiseConfirmeeScreen({
       {offline && (
         <StatusPill {...SYNC_PILL.offline} className="mt-3 self-center" />
       )}
-      {/* 162 px down on the mockup's phone; on a shorter one the hero rises
-          so the proofs stay clear of the toast. The parcel list (about
-          100 px) and the offline pill (44 px) take their room from it. */}
-      <ResultHero
-        title={title}
-        description={description}
+      <DoneDisc
         className={
-          offline
-            ? 'mt-[clamp(16px,calc(100dvh-850px),118px)]'
-            : parcels?.length
-              ? 'mt-[clamp(24px,calc(100dvh-790px),162px)]'
-              : 'mt-[clamp(24px,calc(100dvh-690px),162px)]'
+          offline || parcels?.length
+            ? 'mt-[clamp(16px,calc(100dvh-790px),92px)]'
+            : 'mt-[clamp(24px,calc(100dvh-690px),92px)]'
         }
       />
-      <CheckList items={proofs} className="mt-[34px]" />
+      <h1 className="mt-6 text-center text-28 font-bold">{title}</h1>
+      <p className="mt-1.5 text-center text-15 text-muted">{description}</p>
+      <ProofCard items={proofs} />
       {media && <ProofMedia {...media} className="mt-3 px-1" />}
       {parcels && parcels.length > 0 && (
         <DetailsList
