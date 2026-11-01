@@ -21,7 +21,6 @@ type Story = StoryObj<typeof meta>;
 
 export const TelephoneDuSalarie: Story = {
   name: 'Téléphone du salarié',
-  parameters: { reference: '07-remise/remise--remise-scanner-le-qr' },
   args: { subject: <EmployeePhone code="4821" qr={QR_4821_PHONE} /> },
 };
 

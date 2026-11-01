@@ -20,7 +20,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Signee: Story = {
   name: 'Signée',
-  parameters: { reference: '07-remise/remise--signature' },
   args: {
     title: 'Nora Haddad signe pour 3 colis',
     detail: 'Dont 1 recommandé UPS ···8810',
