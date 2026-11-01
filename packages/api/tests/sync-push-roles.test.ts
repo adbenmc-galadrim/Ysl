@@ -14,10 +14,7 @@ import { newId } from '@repo/shared/id';
 import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { writeCompanySettings } from '#features/company/settings';
-import {
-  goesOnTour,
-  writeOperatingProfile,
-} from '#features/operating/service';
+import { goesOnTour, writeOperatingProfile } from '#features/operating/service';
 import { push } from '#features/sync/push';
 import type { Access } from '#lib/access';
 import {
@@ -482,6 +479,28 @@ describe('sync.push by role', () => {
       expect(await statusOf(own(), op('parcel', parcelId, delivered))).toBe(
         200,
       );
+    });
+
+    it('cannot cancel the handover of another department', async () => {
+      const personId = await addPerson(db, legal);
+      const parcelId = await addParcel({ personId, status: 'notifie' });
+      const id = newId();
+      const row = {
+        ...handoverRow([parcelId], personId),
+        method: 'pin' as const,
+      };
+      await db
+        .insert(schema.handover)
+        .values({ id, organizationId: ORGANIZATION_ID, ...row });
+      expect(
+        await statusOf(
+          own(),
+          op('handover', id, {
+            cancelledAt: new Date(NOW.getTime() + 1000),
+            cancelReason: 'wrong_parcel',
+          }),
+        ),
+      ).toBe(403);
     });
 
     it('issues codes in its own department only', async () => {
