@@ -51,6 +51,7 @@ describe('profile models', () => {
         photo: 'optional',
         emailMoment: 'scan',
         reminders: 'optional',
+        registeredMail: false,
       },
       multi_departments: {
         shuttleActsAsDepartment: false,
@@ -62,6 +63,7 @@ describe('profile models', () => {
         photo: 'disabled',
         emailMoment: 'deposit',
         reminders: 'required',
+        registeredMail: false,
       },
       strict_traceability: {
         shuttleActsAsDepartment: false,
@@ -73,6 +75,7 @@ describe('profile models', () => {
         photo: 'optional',
         emailMoment: 'deposit',
         reminders: 'required',
+        registeredMail: false,
       },
     });
   });
@@ -237,6 +240,7 @@ describe('étapes de remise', () => {
       photo: 'optional',
       emailMoment: 'scan',
       reminders: 'optional',
+      registeredMail: false,
     });
   });
 
@@ -298,6 +302,17 @@ describe('étapes de remise', () => {
       ]),
     ).toBe(true);
     expect(holdsRegistered([{ type: 'colis' }])).toBe(false);
+  });
+
+  it('un profil enregistré avant les recommandés garde ses réglages, option éteinte', () => {
+    const saved: Partial<OperatingProfile> = {
+      ...STRICT_TRACEABILITY_OPERATING_PROFILE,
+    };
+    delete saved.registeredMail;
+    expect(parseOperatingProfile(saved)).toEqual({
+      ...STRICT_TRACEABILITY_OPERATING_PROFILE,
+      registeredMail: false,
+    });
   });
 
   it('une étape facultative ou désactivée ne manque jamais', () => {

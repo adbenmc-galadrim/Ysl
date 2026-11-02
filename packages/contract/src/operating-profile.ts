@@ -22,6 +22,8 @@ const shape = {
   photo: stepState,
   emailMoment: z.enum(EMAIL_MOMENTS),
   reminders: stepState,
+  /** Off in a profile saved before it: reading it that way keeps the rest of that profile. */
+  registeredMail: z.boolean().default(false),
 };
 
 /** What a company turned on (§3.7.4, D30): read each time, so a change holds for every parcel (D31). */
@@ -47,6 +49,7 @@ export const DEFAULT_OPERATING_PROFILE: OperatingProfile = {
   photo: 'optional',
   emailMoment: 'scan',
   reminders: 'optional',
+  registeredMail: false,
 };
 
 /** « Petit site, la navette remet » (ME18): the converted agent keeps the handover (§3.7.9). */
@@ -66,6 +69,7 @@ export const MULTI_DEPARTMENTS_OPERATING_PROFILE: OperatingProfile = {
   photo: 'disabled',
   emailMoment: 'deposit',
   reminders: 'required',
+  registeredMail: false,
 };
 
 /** « Traçabilité stricte » (ME18): on tour too, every gesture proved from the deposit on. */
@@ -79,6 +83,7 @@ export const STRICT_TRACEABILITY_OPERATING_PROFILE: OperatingProfile = {
   photo: 'optional',
   emailMoment: 'deposit',
   reminders: 'required',
+  registeredMail: false,
 };
 
 /** The models offered when a company is created (D30). */
@@ -208,6 +213,8 @@ const TOUCHED_STATUSES: Record<OperatingParam, readonly ParcelStatus[]> = {
   photo: ['recu', 'en_route', 'depose', 'notifie'],
   emailMoment: ['en_route', 'depose'],
   reminders: ['notifie'],
+  // Only what is received from now on: one already registered keeps its signature.
+  registeredMail: [],
 };
 
 const countOf = (statuses: Iterable<ParcelStatus>, counts: ParcelCounts) =>

@@ -1177,6 +1177,8 @@ export const fr = {
   'record.lift.description':
     'Le colis ne sera plus signalé abîmé. L’historique garde la réserve.',
   'record.lift.confirm': 'Lever la réserve',
+  'record.detail.type': 'Type',
+  'record.detail.ar': 'N° d’AR',
   'record.detail.sender': 'Expéditeur',
   'record.detail.pieces': 'Nombre de colis',
   'record.detail.weight': 'Poids',
@@ -1953,6 +1955,9 @@ export const fr = {
   'operating.state.required': 'Obligatoire',
   'operating.yes': 'Oui',
   'operating.no': 'Non',
+  'operating.param.registeredMail': 'Lettres recommandées',
+  'operating.help.registeredMail':
+    'Proposer le type Recommandé à la réception ; il se remet toujours signé',
   'operating.param.shuttleActsAsDepartment': 'Navette = département',
   'operating.help.shuttleActsAsDepartment':
     'Elle remet elle-même les colis aux salariés',
@@ -2261,6 +2266,8 @@ export const fr = {
   'scan.storageFailed.hint':
     'Cet iPhone ne peut pas stocker la photo : quittez la navigation privée.',
   'scan.field.carrier': 'Transporteur',
+  'scan.kind.label': 'Type d’envoi',
+  'scan.field.ar': 'N° d’AR',
   'scan.field.tracking': 'Suivi',
   'scan.field.recipient': 'Destinataire',
   'scan.field.sender': 'Expéditeur',
