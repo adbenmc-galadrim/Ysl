@@ -282,6 +282,7 @@ export function carrierLabel(
 
 /** A row of the home list, and whether a reminder is due for its parcel (F37). */
 export type HomeParcel = ParcelRow & {
+  departmentId: string | null;
   remindDue: boolean;
   /** To notify, and nobody to write to: « Prévenir » instead (YSL-72). */
   noAddress: boolean;
@@ -307,6 +308,7 @@ export function toParcelRow(
   if (!state) return undefined;
   return {
     ...describeParcel(parcel, state, context, now, t, dates),
+    departmentId: parcel.departmentId ?? null,
     remindDue: reminderOf(parcel, now, dates)?.due ?? false,
     noAddress:
       (state === 'toNotify' || state === 'deposited') &&
