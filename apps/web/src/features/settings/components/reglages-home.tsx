@@ -231,7 +231,21 @@ export function ReglagesHome() {
   };
   const ownDirectory: SettingsGroup = {
     header: t('settings.group.service'),
-    items: [directoryItem, posterItem],
+    items: [
+      directoryItem,
+      posterItem,
+      ...(role === 'department'
+        ? [
+            {
+              icon: 'pin' as const,
+              color: 'red' as const,
+              label: t('departmentSpace.place.title'),
+              value: t('departmentSpace.place.readOnly'),
+              onPress: () => void navigate({ to: '/departement/lieu' }),
+            },
+          ]
+        : []),
+    ],
   };
 
   const service: SettingsGroup = {

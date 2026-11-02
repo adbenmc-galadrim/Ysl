@@ -9,6 +9,8 @@ export type DeskEntry =
   | 'regulariser'
   | 'annuaire'
   | 'comptes'
+  | 'emails'
+  | 'mine'
   | 'reglages';
 
 /** Where each entry of the computer's sidebar leads. */
@@ -19,17 +21,68 @@ export const DESK_PATH = {
   regulariser: '/tableau-de-bord/regulariser',
   annuaire: '/reglages/annuaire',
   comptes: '/reglages/comptes',
+  emails: '/reglages/e-mails',
+  mine: '/departement/lieu',
   reglages: '/reglages',
 } as const satisfies Record<DeskEntry, string>;
 
+export type DepartmentNav = {
+  name: string;
+  present?: number;
+  toConfirm?: number;
+  people?: number;
+};
+
+/** The department's sidebar (maquette 03), with Réglages for leaving the account. */
+function departmentNav(
+  t: TranslateFn,
+  { name, present, toConfirm, people }: DepartmentNav,
+): CompanyShellNavSection[] {
+  return [
+    {
+      items: [
+        {
+          id: 'colis',
+          label: t('directory.nav.parcels'),
+          icon: 'package',
+          count: present,
+        },
+        {
+          id: 'depots',
+          label: t('departmentSpace.nav.depots'),
+          icon: 'truck',
+          count: toConfirm || undefined,
+          countTone: 'orange',
+        },
+        {
+          id: 'annuaire',
+          label: t('directory.nav.directory'),
+          icon: 'users',
+          count: people,
+        },
+        { id: 'emails', label: t('departmentSpace.nav.emails'), icon: 'send' },
+      ],
+    },
+    {
+      title: name.toLocaleUpperCase('fr'),
+      items: [
+        { id: 'mine', label: t('departmentSpace.nav.mine'), icon: 'building' },
+        { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
+      ],
+    },
+  ];
+}
+
 /**
  * The sidebar of the two computer roles (D23), limited to what exists: the
- * mockups' deposits and reports join it with their tickets.
+ * mockups' reports join it with their ticket.
  */
 export function deskNav(
   role: AccountRole,
   t: TranslateFn,
+  department: DepartmentNav = { name: '' },
 ): CompanyShellNavSection[] {
+  if (role === 'department') return departmentNav(t, department);
   const home =
     role === 'company_admin'
       ? ({
@@ -42,15 +95,6 @@ export function deskNav(
       items: [
         { id: 'home', ...home },
         { id: 'colis', label: t('directory.nav.parcels'), icon: 'package' },
-        ...(role === 'department'
-          ? [
-              {
-                id: 'depots',
-                label: t('deposits.title'),
-                icon: 'truck',
-              } as const,
-            ]
-          : []),
         ...(role === 'company_admin'
           ? [
               {
@@ -76,11 +120,20 @@ export function deskNav(
   ];
 }
 
-const SPACE_PATHS = ['/tableau-de-bord', '/departement'];
+const SPACE_PATHS = ['/tableau-de-bord'];
 
 /** The entry a path belongs to; a parcel's record stays under Colis. */
-export function activeDeskEntry(pathname: string): DeskEntry {
-  if (pathname === '/' || SPACE_PATHS.includes(pathname)) return 'home';
+export function activeDeskEntry(
+  pathname: string,
+  role?: AccountRole,
+): DeskEntry {
+  if (pathname === '/' || SPACE_PATHS.includes(pathname)) {
+    return role === 'department' ? 'colis' : 'home';
+  }
+  if (pathname.startsWith(DESK_PATH.mine)) return 'mine';
+  if (role === 'department' && pathname.startsWith(DESK_PATH.emails)) {
+    return 'emails';
+  }
   if (pathname.startsWith(DESK_PATH.depots)) return 'depots';
   if (pathname.startsWith(DESK_PATH.regulariser)) return 'regulariser';
   if (pathname.startsWith(DESK_PATH.annuaire)) return 'annuaire';
@@ -94,10 +147,11 @@ export const isDeskPage = (pathname: string): boolean =>
   pathname === '/' ||
   SPACE_PATHS.includes(pathname) ||
   pathname === DESK_PATH.depots ||
+  pathname === DESK_PATH.mine ||
   pathname === DESK_PATH.regulariser;
 
 export type RoleSpace = {
-  to: '/tournee' | '/departement' | '/tableau-de-bord';
+  to: '/tournee' | '/tableau-de-bord';
   icon: IconName;
   label: string;
 };
@@ -116,12 +170,8 @@ export function roleSpace(
         icon: 'dashboard',
         label: t('shell.nav.dashboard'),
       };
+    // Its Colis is its space, and its place sits in Réglages.
     case 'department':
-      return {
-        to: '/departement',
-        icon: 'inbox',
-        label: t('home.department.title'),
-      };
     case 'platform_admin':
       return null;
     default:

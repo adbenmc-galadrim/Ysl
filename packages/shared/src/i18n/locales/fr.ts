@@ -743,9 +743,6 @@ export const fr = {
   'shell.nav.home': 'Accueil',
   'shell.nav.dashboard': 'Vue d’ensemble',
   'shell.search': 'Rechercher un colis',
-  'home.action.parcels': 'Voir les colis',
-  'home.stat.coming': 'À venir',
-  'home.stat.present': 'Présents',
   'home.tour.title': 'Tournée',
   'tour.parcels.one': '1 colis',
   'tour.parcels.many': '{{count}} colis',
@@ -799,7 +796,6 @@ export const fr = {
   'deposits.done.title.one': '1 colis présent',
   'deposits.done.title': '{{count}} colis présents',
   'deposits.done.action': 'Terminé',
-  'deposits.home.action.one': '1 dépôt à confirmer',
   'deposits.home.action': '{{count}} dépôts à confirmer',
   'settlement.title': 'À régulariser',
   'settlement.subtitle.one': '1 colis bloqué',
@@ -902,10 +898,6 @@ export const fr = {
   'tour.empty.text':
     'Scannez les colis reçus : ils se rangent ici par département.',
   'tour.allParcels': 'Tous mes colis',
-  'home.department.title': 'À venir et présents',
-  'home.department.notice.title': 'Les colis à venir arrivent avec la tournée',
-  'home.department.notice.description':
-    'Dès que la navette annoncera ses dépôts, leur détail s’affichera ici. Les colis reçus et notifiés sont déjà dans Colis.',
   'dashboard.noDepartment': 'Sans département',
   'dashboard.depositSince': 'Depuis {{when}}',
   'dashboard.delay': '{{days}} j',

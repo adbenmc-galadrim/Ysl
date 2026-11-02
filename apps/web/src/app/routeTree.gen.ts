@@ -15,7 +15,6 @@ import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as InvitationRouteImport } from './routes/invitation'
 import { Route as MotDePasseRouteImport } from './routes/mot-de-passe'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedDepartementRouteImport } from './routes/_authenticated/departement'
 import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
@@ -25,6 +24,8 @@ import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedTableauDeBordRouteImport } from './routes/_authenticated/tableau-de-bord'
 import { Route as AuthenticatedColisIndexRouteImport } from './routes/_authenticated/colis/index'
+import { Route as AuthenticatedDepartementHistoriqueRouteImport } from './routes/_authenticated/departement_.historique'
+import { Route as AuthenticatedDepartementLieuRouteImport } from './routes/_authenticated/departement_.lieu'
 import { Route as AuthenticatedEntreprisesIdRouteImport } from './routes/_authenticated/entreprises/$id'
 import { Route as AuthenticatedEntreprisesNouvelleRouteImport } from './routes/_authenticated/entreprises/nouvelle'
 import { Route as AuthenticatedLotBatchIdRouteImport } from './routes/_authenticated/lot/$batchId'
@@ -95,12 +96,6 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedDepartementRoute =
-  AuthenticatedDepartementRouteImport.update({
-    id: '/departement',
-    path: '/departement',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
   id: '/journal',
   path: '/journal',
@@ -148,6 +143,18 @@ const AuthenticatedColisIndexRoute = AuthenticatedColisIndexRouteImport.update({
   path: '/colis/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDepartementHistoriqueRoute =
+  AuthenticatedDepartementHistoriqueRouteImport.update({
+    id: '/departement_/historique',
+    path: '/departement/historique',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDepartementLieuRoute =
+  AuthenticatedDepartementLieuRouteImport.update({
+    id: '/departement_/lieu',
+    path: '/departement/lieu',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEntreprisesIdRoute =
   AuthenticatedEntreprisesIdRouteImport.update({
     id: '/entreprises/$id',
@@ -392,7 +399,6 @@ export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
-  '/departement': typeof AuthenticatedDepartementRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
@@ -401,6 +407,8 @@ export interface FileRoutesByFullPath {
   '/revue': typeof AuthenticatedRevueRoute
   '/scan': typeof AuthenticatedScanRoute
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
+  '/departement/historique': typeof AuthenticatedDepartementHistoriqueRoute
+  '/departement/lieu': typeof AuthenticatedDepartementLieuRoute
   '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -448,7 +456,6 @@ export interface FileRoutesByTo {
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
-  '/departement': typeof AuthenticatedDepartementRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
@@ -458,6 +465,8 @@ export interface FileRoutesByTo {
   '/scan': typeof AuthenticatedScanRoute
   '/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
   '/': typeof AuthenticatedIndexRoute
+  '/departement/historique': typeof AuthenticatedDepartementHistoriqueRoute
+  '/departement/lieu': typeof AuthenticatedDepartementLieuRoute
   '/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -507,7 +516,6 @@ export interface FileRoutesById {
   '/connexion': typeof ConnexionRoute
   '/invitation': typeof InvitationRoute
   '/mot-de-passe': typeof MotDePasseRoute
-  '/_authenticated/departement': typeof AuthenticatedDepartementRoute
   '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
@@ -517,6 +525,8 @@ export interface FileRoutesById {
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/tableau-de-bord': typeof AuthenticatedTableauDeBordRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/departement_/historique': typeof AuthenticatedDepartementHistoriqueRoute
+  '/_authenticated/departement_/lieu': typeof AuthenticatedDepartementLieuRoute
   '/_authenticated/entreprises/$id': typeof AuthenticatedEntreprisesIdRoute
   '/_authenticated/entreprises/nouvelle': typeof AuthenticatedEntreprisesNouvelleRoute
   '/_authenticated/lot/$batchId': typeof AuthenticatedLotBatchIdRoute
@@ -567,7 +577,6 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/invitation'
     | '/mot-de-passe'
-    | '/departement'
     | '/journal'
     | '/notifier'
     | '/preparation'
@@ -576,6 +585,8 @@ export interface FileRouteTypes {
     | '/revue'
     | '/scan'
     | '/tableau-de-bord'
+    | '/departement/historique'
+    | '/departement/lieu'
     | '/entreprises/$id'
     | '/entreprises/nouvelle'
     | '/lot/$batchId'
@@ -623,7 +634,6 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/invitation'
     | '/mot-de-passe'
-    | '/departement'
     | '/journal'
     | '/notifier'
     | '/preparation'
@@ -633,6 +643,8 @@ export interface FileRouteTypes {
     | '/scan'
     | '/tableau-de-bord'
     | '/'
+    | '/departement/historique'
+    | '/departement/lieu'
     | '/entreprises/$id'
     | '/entreprises/nouvelle'
     | '/lot/$batchId'
@@ -681,7 +693,6 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/invitation'
     | '/mot-de-passe'
-    | '/_authenticated/departement'
     | '/_authenticated/journal'
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
@@ -691,6 +702,8 @@ export interface FileRouteTypes {
     | '/_authenticated/scan'
     | '/_authenticated/tableau-de-bord'
     | '/_authenticated/'
+    | '/_authenticated/departement_/historique'
+    | '/_authenticated/departement_/lieu'
     | '/_authenticated/entreprises/$id'
     | '/_authenticated/entreprises/nouvelle'
     | '/_authenticated/lot/$batchId'
@@ -786,13 +799,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/departement': {
-      id: '/_authenticated/departement'
-      path: '/departement'
-      fullPath: '/departement'
-      preLoaderRoute: typeof AuthenticatedDepartementRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/journal': {
       id: '/_authenticated/journal'
       path: '/journal'
@@ -854,6 +860,20 @@ declare module '@tanstack/react-router' {
       path: '/colis'
       fullPath: '/colis/'
       preLoaderRoute: typeof AuthenticatedColisIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/departement_/historique': {
+      id: '/_authenticated/departement_/historique'
+      path: '/departement/historique'
+      fullPath: '/departement/historique'
+      preLoaderRoute: typeof AuthenticatedDepartementHistoriqueRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/departement_/lieu': {
+      id: '/_authenticated/departement_/lieu'
+      path: '/departement/lieu'
+      fullPath: '/departement/lieu'
+      preLoaderRoute: typeof AuthenticatedDepartementLieuRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/entreprises/$id': {
@@ -1140,7 +1160,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedDepartementRoute: typeof AuthenticatedDepartementRoute
   AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
@@ -1150,6 +1169,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedTableauDeBordRoute: typeof AuthenticatedTableauDeBordRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedDepartementHistoriqueRoute: typeof AuthenticatedDepartementHistoriqueRoute
+  AuthenticatedDepartementLieuRoute: typeof AuthenticatedDepartementLieuRoute
   AuthenticatedEntreprisesIdRoute: typeof AuthenticatedEntreprisesIdRoute
   AuthenticatedEntreprisesNouvelleRoute: typeof AuthenticatedEntreprisesNouvelleRoute
   AuthenticatedLotBatchIdRoute: typeof AuthenticatedLotBatchIdRoute
@@ -1194,7 +1215,6 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedDepartementRoute: AuthenticatedDepartementRoute,
   AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
@@ -1204,6 +1224,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedTableauDeBordRoute: AuthenticatedTableauDeBordRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedDepartementHistoriqueRoute:
+    AuthenticatedDepartementHistoriqueRoute,
+  AuthenticatedDepartementLieuRoute: AuthenticatedDepartementLieuRoute,
   AuthenticatedEntreprisesIdRoute: AuthenticatedEntreprisesIdRoute,
   AuthenticatedEntreprisesNouvelleRoute: AuthenticatedEntreprisesNouvelleRoute,
   AuthenticatedLotBatchIdRoute: AuthenticatedLotBatchIdRoute,

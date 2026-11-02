@@ -38,7 +38,7 @@ describe('deskNav', () => {
 });
 
 describe('roleSpace', () => {
-  it.each(['company_admin', 'department', 'shuttle', null] as const)(
+  it.each(['company_admin', 'shuttle', null] as const)(
     'opens a space %s may reach',
     (role) => {
       const space = roleSpace(role, t);
@@ -48,6 +48,7 @@ describe('roleSpace', () => {
 
   it('offers the app admin none', () => {
     expect(roleSpace('platform_admin', t)).toBeNull();
+    expect(roleSpace('department', t)).toBeNull();
   });
 });
 
@@ -62,6 +63,27 @@ describe('activeDeskEntry', () => {
     ['/reglages/compte', 'reglages'],
   ] as const)('marks %s under %s', (path, entry) => {
     expect(activeDeskEntry(path)).toBe(entry);
+  });
+});
+
+describe('the department on its computer', () => {
+  const ids = deskNav('department', t, { name: 'Studio' })
+    .flatMap((section) => section.items)
+    .map((item) => item.id);
+
+  it('opens on Colis, with no separate home', () => {
+    expect(ids).not.toContain('home');
+    expect(activeDeskEntry('/', 'department')).toBe('colis');
+  });
+
+  it('reaches its deposits, its e-mails and its place', () => {
+    expect(ids).toEqual(expect.arrayContaining(['depots', 'emails', 'mine']));
+    expect(activeDeskEntry('/reglages/e-mails', 'department')).toBe('emails');
+    expect(activeDeskEntry('/departement/lieu', 'department')).toBe('mine');
+  });
+
+  it('leaves the e-mails under Réglages for the admin, who has no such entry', () => {
+    expect(activeDeskEntry('/reglages/e-mails', 'company_admin')).toBe('reglages');
   });
 });
 

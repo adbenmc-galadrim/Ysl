@@ -69,7 +69,6 @@ export {
 } from '#screens/multi-entreprises/10-colis/departement-colis-screen';
 export * from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 export * from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
-export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
 export * from '#screens/multi-entreprises/03-accueil/vue-d-ensemble-screen';
 export {
   DepartmentDepositMobile,
