@@ -315,10 +315,10 @@ export function FonctionnementHorsLigneMobile() {
 }
 
 /** The reports before the first parcel. */
-export function RapportsVideMobile() {
+export function RapportsVideMobile({ onBack }: { onBack?: () => void }) {
   return (
     <Screen>
-      <NavBar title="Rapports" />
+      <NavBar title="Rapports" onBack={onBack} />
       <StateHero
         top={240}
         icon="chart"

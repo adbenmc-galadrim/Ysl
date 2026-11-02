@@ -4,11 +4,12 @@ import { z } from 'zod';
 export const EXPORT_TIME_ZONE = 'Europe/Paris';
 
 /**
- * The parcels ticked on Colis (F31). Sent in a POST body: a few hundred
- * ids would not fit a query's URL.
+ * The parcels ticked on Colis (F31), or a report's period (a quarter of a
+ * large company runs to thousands). Sent in a POST body: a few hundred ids
+ * would not fit a query's URL.
  */
 export const selectionCsvInput = z.object({
-  parcelIds: z.array(z.uuid()).min(1).max(5000),
+  parcelIds: z.array(z.uuid()).min(1).max(20000),
 });
 
 export const parcelsCsvOutput = z.object({

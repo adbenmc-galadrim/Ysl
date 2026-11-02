@@ -7,28 +7,13 @@ import { useRef, useState } from 'react';
 import { db } from '#/features/db/database';
 import { useCompanyName } from '#/features/directory/components/use-company-name';
 import { initialsOf } from '#/features/settings/initials';
+import { printAlone } from '#/lib/print-alone';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-/**
- * In a frame of its own: printing narrows the window, which swaps the computer's
- * layout for the phone's and takes the page away from under the printer. The zoom
- * brings the poster's 595 px up to the 794 of a sheet.
- */
-function printAlone(poster: HTMLElement) {
-  const frame = document.createElement('iframe');
-  frame.title = t('poster.print');
-  frame.style.cssText = 'position:fixed;width:0;height:0;border:0';
-  const styles = [...document.querySelectorAll('link[rel=stylesheet], style')]
-    .map((node) => node.outerHTML)
-    .join('');
-  frame.srcdoc = `<!doctype html><html><head><base href="${document.baseURI}">${styles}<style>@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{zoom:1.33}</style></head><body>${poster.innerHTML}</body></html>`;
-  frame.onload = () => {
-    frame.contentWindow?.addEventListener('afterprint', () => frame.remove());
-    frame.contentWindow?.print();
-  };
-  document.body.append(frame);
-}
+/** The zoom brings the poster's 595 px up to the 794 of a sheet. */
+const POSTER_CSS =
+  '@page{size:A4;margin:0}html,body{margin:0;background:#fff}body{zoom:1.33}';
 
 /**
  * QR to print for the reception point (ME27). A department pulls only itself; the
@@ -87,7 +72,10 @@ export function PosterPage() {
           icon="printer"
           iconSize={18}
           className="ml-auto w-fit gap-2 px-4"
-          onClick={() => posterRef.current && printAlone(posterRef.current)}
+          onClick={() =>
+            posterRef.current &&
+            printAlone(posterRef.current, t('poster.print'), POSTER_CSS)
+          }
         >
           {t('poster.print')}
         </Button>

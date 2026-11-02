@@ -51,7 +51,7 @@ export type OverviewProps = {
   onOpenLine: (id: string) => void;
 };
 
-function StaleBanner({
+export function StaleBanner({
   stale,
   className,
 }: {

@@ -40,6 +40,7 @@ const AREA_OF_FIRST_SEGMENT = new Map<string, RouteArea>(
     remise: 'handover',
     tournee: 'tour',
     'tableau-de-bord': 'dashboard',
+    rapports: 'dashboard',
     departement: 'departmentSpace',
     entreprises: 'platform',
     journal: 'platform',

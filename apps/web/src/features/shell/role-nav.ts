@@ -9,6 +9,7 @@ export type DeskEntry =
   | 'regulariser'
   | 'annuaire'
   | 'comptes'
+  | 'rapports'
   | 'emails'
   | 'mine'
   | 'reglages';
@@ -21,6 +22,7 @@ export const DESK_PATH = {
   regulariser: '/tableau-de-bord/regulariser',
   annuaire: '/reglages/annuaire',
   comptes: '/reglages/comptes',
+  rapports: '/rapports',
   emails: '/reglages/e-mails',
   mine: '/departement/lieu',
   reglages: '/reglages',
@@ -74,8 +76,7 @@ function departmentNav(
 }
 
 /**
- * The sidebar of the two computer roles (D23), limited to what exists: the
- * mockups' reports join it with their ticket.
+ * The sidebar of the two computer roles (D23), limited to what exists.
  */
 export function deskNav(
   role: AccountRole,
@@ -112,6 +113,11 @@ export function deskNav(
                 label: t('accounts.title'),
                 icon: 'key',
               } as const,
+              {
+                id: 'rapports',
+                label: t('reports.title'),
+                icon: 'chart',
+              } as const,
             ]
           : []),
         { id: 'reglages', label: t('directory.nav.settings'), icon: 'sliders' },
@@ -138,6 +144,7 @@ export function activeDeskEntry(
   if (pathname.startsWith(DESK_PATH.regulariser)) return 'regulariser';
   if (pathname.startsWith(DESK_PATH.annuaire)) return 'annuaire';
   if (pathname.startsWith(DESK_PATH.comptes)) return 'comptes';
+  if (pathname.startsWith(DESK_PATH.rapports)) return 'rapports';
   if (pathname.startsWith(DESK_PATH.reglages)) return 'reglages';
   return 'colis';
 }
@@ -148,6 +155,7 @@ export const isDeskPage = (pathname: string): boolean =>
   SPACE_PATHS.includes(pathname) ||
   pathname === DESK_PATH.depots ||
   pathname === DESK_PATH.mine ||
+  pathname === DESK_PATH.rapports ||
   pathname === DESK_PATH.regulariser;
 
 export type RoleSpace = {

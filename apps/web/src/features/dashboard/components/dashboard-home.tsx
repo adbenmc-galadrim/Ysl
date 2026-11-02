@@ -12,6 +12,9 @@ import {
   clockTime,
   type DashboardFigures,
   type DashboardLine,
+  formatDelay,
+  sameDay,
+  syncedWhen as when,
   loadDashboard,
   NO_DEPARTMENT,
 } from '#/features/dashboard/figures';
@@ -35,14 +38,6 @@ const longDay = (date: Date) =>
     month: 'long',
   });
 
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-
-/** Figures kept from another day say which: « 9:12 » alone would read as this morning. */
-const when = (date: Date, now: Date) =>
-  sameDay(date, now)
-    ? clockTime(date)
-    : `${shortDate(date, now)}, ${clockTime(date)}`;
-
 function toLine(line: DashboardLine, now: Date): OverviewLine {
   const since = line.depositSince;
   return {
@@ -57,15 +52,7 @@ function toLine(line: DashboardLine, now: Date): OverviewLine {
         when: sameDay(since, now) ? clockTime(since) : shortDate(since, now),
       }),
     }),
-    delay:
-      line.delayDays === null
-        ? '—'
-        : t('dashboard.delay', {
-            days: line.delayDays.toLocaleString('fr-FR', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            }),
-          }),
+    delay: formatDelay(line.delayDays, t),
   };
 }
 

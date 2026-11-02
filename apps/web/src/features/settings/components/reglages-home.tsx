@@ -118,6 +118,17 @@ export function ReglagesHome() {
   const steering: SettingsGroup = {
     header: t('settings.group.steering'),
     items: [
+      // On a computer, the sidebar already leads there.
+      ...(isCompanyAdmin(role) && !desk
+        ? [
+            {
+              icon: 'chart' as const,
+              color: 'blue' as const,
+              label: t('reports.title'),
+              onPress: () => void navigate({ to: '/rapports' }),
+            },
+          ]
+        : []),
       {
         icon: 'list',
         color: 'sky',

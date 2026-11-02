@@ -109,6 +109,7 @@ describe('areaOf', () => {
     ['/departement/historique', 'departmentSpace'],
     ['/departement/lieu', 'departmentSpace'],
     ['/tableau-de-bord/regulariser', 'dashboard'],
+    ['/rapports', 'dashboard'],
     ['/tournee/abc/depot', 'tour'],
     ['/reglages/fonctionnement', 'companySettings'],
   ] as const)('files %s under %s', (path, area) => {

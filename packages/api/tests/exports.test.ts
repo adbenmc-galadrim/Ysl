@@ -361,7 +361,7 @@ describe('exports by department', () => {
       receivedBy: AGENT_ID,
       departmentId,
     });
-    const mine = row(finance);
+    const mine = { ...row(finance), department: 'Achats' };
     const theirs = row(legal);
     const loose = row(null);
     await db.insert(parcel).values([mine, theirs, loose]);
@@ -376,6 +376,8 @@ describe('exports by department', () => {
     );
     expect(all.count).toBe(1);
     expect(all.csv).toContain(mine.id);
+    const [header, line] = parseCsv(all.csv);
+    expect(line![header!.indexOf('departement')]).toBe('Finance');
 
     const picked = await exportParcelsCsv(
       db,
