@@ -66,6 +66,13 @@ describe('the parcels waiting for someone', () => {
 });
 
 describe('a parcel as the handover lists it', () => {
+  it('says which shelf to fetch it from, and nothing when none was given', () => {
+    expect(
+      toRemiseParcel(parcelRow({ location: 'Étagère A' }), NOW, t).shelf,
+    ).toBe('Étagère A');
+    expect(toRemiseParcel(parcelRow(), NOW, t)).not.toHaveProperty('shelf');
+  });
+
   it('says when it came in, as the desk says it', () => {
     expect(receivedLine(new Date(2026, 9, 24, 10, 15), NOW, t)).toBe(
       'Reçu aujourd’hui à 10 h 15',

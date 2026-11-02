@@ -309,6 +309,16 @@ export function RemiseColisScreen({
                       ) : (
                         detailOf(parcel)
                       ),
+                      ...(parcel.shelf
+                        ? [
+                            <span
+                              key="shelf"
+                              className="font-semibold text-ink"
+                            >
+                              {parcel.shelf}
+                            </span>,
+                          ]
+                        : []),
                     ]}
                     mark={<TickMark checked={checked} />}
                     separator={i < parcels.length - 1}

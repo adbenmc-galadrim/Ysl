@@ -123,6 +123,7 @@ export function toRemiseParcel(
       delegateLine(parcel, t),
     ),
     ...(parcel.senderName ? { sender: parcel.senderName } : {}),
+    ...(parcel.location ? { shelf: parcel.location } : {}),
     registered: parcel.type === 'recommande',
     damaged: damageOf(parcel) !== null,
   };
