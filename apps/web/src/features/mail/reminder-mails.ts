@@ -115,6 +115,20 @@ export function dueCount(mails: readonly ReminderMail[]): number {
   return mails.filter((mail) => mail.due).length;
 }
 
+/** Those a reminder is due for over these parcels: not over a parcel of another department. */
+export function dueAmong(
+  mails: readonly ReminderMail[],
+  parcelIds: ReadonlySet<string>,
+): ReminderMail[] {
+  return mails.filter(
+    (mail) =>
+      mail.due &&
+      mail.parcels.some(
+        ({ id }) => parcelIds.has(id) && mail.reminders.get(id)?.due,
+      ),
+  );
+}
+
 /** The reminders as they stand, moved on with the clock and the database. */
 export function useReminderMails(): ReminderMail[] | undefined {
   const now = useMinuteClock();

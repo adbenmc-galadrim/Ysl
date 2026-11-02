@@ -2,6 +2,7 @@ import type { SettlementParcel } from '@repo/contract/deposits';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { SettlementContent, SettlementPanel } from '@repo/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { db } from '#/features/db/database';
@@ -51,7 +52,11 @@ export function SettlementPage() {
     () => db.directoryPerson.filter((row) => !row.deletedAt).toArray(),
     [],
   );
-  const [openId, setOpenId] = useState<string | null>(null);
+  // « Réaffecter » on the overview opens this parcel at once.
+  const { colis } = useSearch({
+    from: '/_authenticated/tableau-de-bord_/regulariser',
+  });
+  const [openId, setOpenId] = useState<string | null>(colis ?? null);
   const [choice, setChoice] = useState<Choice | null>(null);
   const [target, setTarget] = useState('');
 

@@ -10,6 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useSession } from '#/features/auth/api/use-session';
 import { hasDesk } from '#/features/auth/route-access';
+import { DashboardHome } from '#/features/dashboard/components/dashboard-home';
 import { db } from '#/features/db/database';
 import { useGoesOnTour } from '#/features/parcels/api/use-tour';
 import { ColisPage } from '#/features/parcels/components/colis-page';
@@ -106,39 +107,6 @@ export function DepartmentHome() {
       notice={{
         title: t('home.department.notice.title'),
         description: t('home.department.notice.description'),
-      }}
-      action={action}
-    />
-  );
-}
-
-/** Until YSL-137: what is waiting in the whole company, and nothing made up. */
-export function DashboardHome() {
-  const counts = useCounts();
-  const desk = useMediaQuery(DESK_WIDTH);
-  const parcels = useParcelsAction(desk);
-  const navigate = useNavigate();
-  const action = counts?.toSettle
-    ? {
-        label: t('settlement.home.action'),
-        onPress: () => void navigate({ to: '/tableau-de-bord/regulariser' }),
-      }
-    : parcels;
-  return (
-    <RoleHome
-      title={t('home.dashboard.title')}
-      stats={[
-        {
-          label: t('home.stat.waiting'),
-          value: shown(
-            counts && counts.coming + counts.present + counts.toSettle,
-          ),
-        },
-        ...toSettleStat(counts, 'orange'),
-      ]}
-      notice={{
-        title: t('home.dashboard.notice.title'),
-        description: t('home.dashboard.notice.description'),
       }}
       action={action}
     />

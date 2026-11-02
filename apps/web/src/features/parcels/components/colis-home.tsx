@@ -9,17 +9,22 @@ import {
   SearchTrigger,
   Toast,
 } from '@repo/ui';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
+import { NO_DEPARTMENT } from '#/features/dashboard/figures';
 import { db } from '#/features/db/database';
 import {
   type HandoverToast,
   useHandoverToast,
 } from '#/features/handover/done-toast';
-import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
+import {
+  dueAmong,
+  dueCount,
+  useReminderMails,
+} from '#/features/mail/reminder-mails';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import {
@@ -74,7 +79,28 @@ export function ColisHome() {
   const sync = useSync();
   const update = useUpdate();
   const handed = useHandoverToast();
-  const parcels = useHomeParcels();
+  const everyParcel = useHomeParcels();
+  // A line of the overview: the parcels it counted, those of a deleted department under « none ».
+  const { departement } = useSearch({ strict: false });
+  const departments = useLiveQuery(
+    () => db.department.filter((row) => !row.deletedAt).toArray(),
+    [],
+  );
+  const parcels = useMemo(
+    () =>
+      departement
+        ? departments && everyParcel?.filter((row) =>
+            departement === NO_DEPARTMENT
+              ? !departments.some(({ id }) => id === row.departmentId)
+              : row.departmentId === departement,
+          )
+        : everyParcel,
+    [everyParcel, departement, departments],
+  );
+  const departmentName =
+    departement === NO_DEPARTMENT
+      ? t('dashboard.noDepartment')
+      : departments?.find(({ id }) => id === departement)?.name;
   const [folded, toggleFolded] = useFoldedSections();
   // The rows already on the iPhone show at once; only what the server may
   // still send is drawn as a skeleton, and "nothing waits" only once it spoke.
@@ -89,7 +115,9 @@ export function ColisHome() {
   // F37: the reminders due, counted per person; the app proposes, the
   // agent sends (D2). Read again as the app comes back to the front.
   const reminders = useReminderMails();
-  const toRemind = reminders ? dueCount(reminders) : 0;
+  const toRemind = reminders
+    ? dueCount(dueAmong(reminders, new Set(rows.map(({ id }) => id))))
+    : 0;
   // « Choisir » (maquette 05): the parcels « À compléter » nobody is set
   // for, with the name read on their label, open the picker in place.
   const unaddressed = useLiveQuery(() => listUnaddressed(db), [], NOBODY);
@@ -236,7 +264,11 @@ export function ColisHome() {
     <>
       <ColisScreen
         sync={syncPill(sync)}
-        summary={counted ? summarize(rows) : t('colis.summary.loading')}
+        summary={
+          counted
+            ? [departmentName, summarize(rows)].filter(Boolean).join(' · ')
+            : t('colis.summary.loading')
+        }
         sections={sections}
         counters={
           empty

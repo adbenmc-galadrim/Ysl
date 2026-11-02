@@ -109,12 +109,13 @@ export type CounterId = (typeof COUNTER_IDS)[number];
 /** A home row, and whether a reminder is due for its parcel (`HomeParcel`). */
 type CountedRow = Parcel & { remindDue?: boolean };
 
+/** At the department, to be collected: « À retirer » here, « En attente de retrait » on the overview. */
+export const awaitsPickup = (state: ParcelState): boolean =>
+  state === 'deposited' || state === 'notified' || state === 'late';
+
 const COUNTER_ROWS: Record<CounterId, (row: CountedRow) => boolean> = {
   incomplete: (row) => row.state === 'incomplete',
-  waiting: (row) =>
-    row.state === 'deposited' ||
-    row.state === 'notified' ||
-    row.state === 'late',
+  waiting: (row) => awaitsPickup(row.state),
   remind: (row) => row.remindDue === true,
   late: (row) => row.state === 'late',
 };
