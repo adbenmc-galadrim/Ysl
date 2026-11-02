@@ -266,7 +266,8 @@ est un point de départ à recaler sur ce chiffre.
 
 - Retenu : le détecteur maison, avec zxing-wasm pour décoder le symbole redressé. Aucun mix : les autres options gratuites n'ajoutent aucune lecture, et rien n'est envoyé hors de l'appareil.
 - rxing-wasm échoue aussi sur un symbole bwip-js propre (témoin) : le paquet publié ne lit pas le MaxiCode, ou nos réglages ne le permettent pas. @zxing/library rend 5 textes faux sur 20 images, aucun bon suivi.
-- Ajouts : ellipse de la cible, redressement, perspective, déformation locale, trois seuillages, plusieurs départs d'échelle. Coût borné à 2 s de recherche.
+- Ajouts : ellipse de la cible, redressement, perspective, déformation locale, trois seuillages, plusieurs départs d'échelle. Après 2 s de recherche, aucun nouvel essai n'est lancé ; l'essai en cours se termine, la localisation n'est pas comptée.
+- Comparatif rxing-wasm et @zxing/library et grille d'inclinaison joués par des scripts jetables, non conservés ; `pnpm --filter @repo/bench maxicode` rejoue les lignes zxing et maison.
 - Échecs restants : 2 synthèses à fort flou, 1 photo réelle avec reflet, 3 images web (cible non trouvée sur 2 : miniature trop petite, et une étiquette sans MaxiCode annoté ; code net mais non décodé sur la 3e, cause non établie).
 
 Grille de synthèse hors corpus (un symbole, 9 vues par inclinaison, net) :
@@ -287,8 +288,8 @@ Banc complet, 252 étiquettes, avant → après :
 | Faux sûrs, tous champs                                                              | 6 → 6                | 6 → 6                   |
 | MaxiCode lu                                                                         | 2 → 2                | 12 → 14                 |
 | Autres symbologies (Code 128, Code 39, ITF, EAN-13, Data Matrix, Aztec, PDF417, QR) | identiques           | identiques              |
-| Décodage p50 / p95                                                                  | 20 / 79 → 20 / 95 ms | 99 / 548 → 109 / 613 ms |
-| Décodage maximum                                                                    | 839 → 889 ms         | 980 → 1 430 ms          |
+| Décodage p50 / p95                                                                  | 20 / 79 → 19 / 92 ms | 99 / 548 → 108 / 612 ms |
+| Décodage maximum                                                                    | 839 → 913 ms         | 980 → 1 446 ms          |
 
 `first` s'arrête au premier code lu, avant la passe MaxiCode : le gain vient de la seconde passe de l'app, limitée aux formats attendus d'UPS, que le banc ne reproduit pas. Corpus petit : 2 lectures de plus sur 20, à confirmer sur de vraies photos du service.
 

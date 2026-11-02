@@ -63,5 +63,5 @@ const symbols = await readSymbols({ data, width, height });
 
 - Une image à la fois dans le Worker (mémoire de Safari sur iPhone).
 - Un canvas ne dépasse pas 16,7 Mpx : au-delà, l'image est réduite avant lecture.
-- MaxiCode : la perspective est corrigée jusqu'à une vingtaine de degrés (ellipse de la cible, homographie, déformation locale) ; au-delà, ou sur un fort flou, il reste illisible. La passe s'arrête après 2 s de recherche.
+- MaxiCode : la perspective est corrigée (ellipse de la cible, homographie, déformation locale) : lecture fiable jusqu'à une dizaine de degrés, partielle jusqu'à 40° environ, nulle à 50° sur la grille du banc ; un fort flou reste illisible. La recherche ne lance plus d'essai après 2 s, l'essai en cours se termine.
 - `BarcodeDetector` n'est jamais utilisé (absent d'iOS).

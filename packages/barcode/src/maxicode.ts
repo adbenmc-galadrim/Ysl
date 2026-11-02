@@ -296,7 +296,7 @@ const fitConic = (points: { x: number; y: number }[]) => {
   };
 };
 
-export const fitRing = (
+const fitRing = (
   dark: Uint8Array,
   gray: Gray,
   seed: { x: number; y: number; unit: number },
@@ -587,7 +587,7 @@ const viewsOf = (b: Bullseye): Bullseye[] => {
   return isSkewed(b) ? [b, round] : [round];
 };
 
-export const rectify = (gray: Gray, b: Bullseye) => {
+const rectify = (gray: Gray, b: Bullseye) => {
   const shape = b.shape ?? [b.unit, 0, 0, b.unit];
   const side = 2 * PATCH_RADIUS_UNITS * PATCH_UNIT;
   const data = new Uint8Array(side * side);
@@ -964,19 +964,14 @@ export const readMaxiCode = async (
   read: RasterReader,
   { budgetMs = MAXICODE_BUDGET_MS }: { budgetMs?: number } = {},
 ): Promise<MaxiCodeRead | null> => {
-  const deadline = performance.now() + budgetMs;
   const located = locateBullseyes(raster);
+  const deadline = performance.now() + budgetMs;
+  const spent = () => performance.now() >= deadline;
   let candidates = 0;
   for (const bullseye of located.bullseyes) {
     for (const shaped of viewsOf(bullseye)) {
-      if (performance.now() > deadline) return null;
+      if (spent()) return null;
       const view = rectify(located.gray, shaped);
-      const fits = rotationCandidates(view.gray, view.bullseye).map(
-        (rotation) => ({
-          rotation,
-          alignment: bestAlignment(view.gray, view.bullseye, rotation),
-        }),
-      );
       const attempt = async (
         rotation: number,
         values: Float32Array,
@@ -990,7 +985,11 @@ export const readMaxiCode = async (
         }
         return null;
       };
-      for (const { rotation, alignment } of fits) {
+      const fits: { rotation: number; alignment: Alignment }[] = [];
+      for (const rotation of rotationCandidates(view.gray, view.bullseye)) {
+        if (spent()) return null;
+        const alignment = bestAlignment(view.gray, view.bullseye, rotation);
+        fits.push({ rotation, alignment });
         const hit = await attempt(
           rotation,
           sampleModules(view.gray, view.bullseye, rotation, alignment),
@@ -998,7 +997,7 @@ export const readMaxiCode = async (
         if (hit) return hit;
       }
       for (const { rotation, alignment } of fits) {
-        if (performance.now() > deadline) return null;
+        if (spent()) return null;
         const warp = fitWarp(view.gray, view.bullseye, rotation, alignment);
         const hit = await attempt(
           rotation,
