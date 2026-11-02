@@ -100,8 +100,9 @@ Un seul environnement, avec son app, son API et sa base Postgres 17 gérée par 
 celle qu'ajoute le proxy de Coolify : sans elle, le rate limit de connexion verrait tous
 les clients sous l'IP du proxy. En local, sans proxy, la laisser absente.
 
-Il n'y a pas de stockage objet : le serveur ne garde que les comptes, leurs annuaires
-(D7) et les e-mails en cours d'envoi, et les photos ne quittent jamais l'iPhone (D8).
+Il n'y a pas de stockage objet : le serveur garde les comptes, les annuaires et les
+données synchronisées (`docs/synchronisation.md`), et les photos ne quittent jamais
+l'iPhone (D8).
 
 nginx pose `Cross-Origin-Opener-Policy: same-origin` et
 `Cross-Origin-Embedder-Policy: require-corp` sur toute l'app
