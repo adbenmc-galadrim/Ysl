@@ -195,5 +195,3 @@ export function createSyncEngine({
     },
   };
 }
-
-export type SyncEngine = ReturnType<typeof createSyncEngine>;

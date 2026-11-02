@@ -17,8 +17,6 @@ export function setModelsSnapshot(next: ModelsSnapshot): void {
   for (const listener of listeners) listener();
 }
 
-export const getModelsSnapshot = () => models;
-
 export const modelsReady = () => models.state === 'done';
 
 export const subscribeModels = (listener: () => void) => {

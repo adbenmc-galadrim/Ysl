@@ -9,5 +9,3 @@ export const DAMAGE_REASONS = [
   'Contenu cassé',
   'Autre',
 ] as const;
-
-export type DamageReason = (typeof DAMAGE_REASONS)[number];
