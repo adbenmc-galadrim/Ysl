@@ -70,6 +70,8 @@ export {
 export * from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 export * from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
 export * from '#screens/multi-entreprises/03-accueil/vue-d-ensemble-screen';
+export * from '#screens/multi-entreprises/19-rapports/rapports-screen';
+export { RapportsVideMobile } from '#screens/multi-entreprises/21-etats/admin-entreprise-screen';
 export {
   DepartmentDepositMobile,
   DepartmentDepositsContent,
