@@ -71,3 +71,7 @@ vérifier » de 0,60 à 0,90, vide en dessous. Un faux « sûr » est une valeur
 ## En CI
 
 `pnpm test` ne lit aucune image du corpus : `tests/fixtures.test.ts` rejoue en texte les contenus des codes des gabarits de synthèse (recopiés de `templates.ts` ; O1 et O2 sur 96 étiquettes), `tests/roundtrip.test.ts` rend avec bwip-js le code 2D des cinq transporteurs de synthèse qui en portent un, le lit avec `@repo/barcode` et l'extrait. Le banc image reste une commande locale.
+
+## MaxiCode
+
+`pnpm --filter @repo/bench maxicode --corpus <dir> [--private <dir>]` compte, par source, les étiquettes UPS dont le MaxiCode donne le bon suivi, avec zxing seul et avec le recadrage maison.
