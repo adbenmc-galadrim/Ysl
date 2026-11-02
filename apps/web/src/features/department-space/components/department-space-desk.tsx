@@ -5,6 +5,7 @@ import {
   type DepartementFilter,
   type DepartementParcelRow,
   HistoriqueDesktop,
+  Toast,
 } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -37,16 +38,25 @@ import {
   METHOD_ICON,
   methodLabel,
 } from '#/features/handover/entry';
+import {
+  handoverToastMessage,
+  useHandoverToast,
+} from '#/features/handover/done-toast';
+import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
 import { lastMailLine } from '#/features/mail/tracking';
-import { useLatestMail } from '#/features/mail/use-sent-mails';
+import { useLatestMail, useMailNotes } from '#/features/mail/use-sent-mails';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import { formatTracking, formatWhen } from '#/features/parcels/record';
-import {
-  matchesQuery,
-  prepareQuery,
-} from '#/features/search/search-index';
+import { matchesQuery, prepareQuery } from '#/features/search/search-index';
 import { useOwnDepartment } from '#/features/department-space/use-own-department';
 import { useDeskShell } from '#/features/shell/components/use-desk-shell';
+import {
+  awaitsServer,
+  pendingBanner,
+  showsPendingBanner,
+} from '#/features/sync/sync-value';
+import { useSync } from '#/features/sync/use-sync';
+import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { shareFile } from '#/lib/share-file';
 import { trpcClient } from '#/lib/trpc';
 import { useOnline } from '#/lib/use-online';
@@ -54,11 +64,43 @@ import { useOnline } from '#/lib/use-online';
 const t = createTranslator(DEFAULT_LOCALE);
 
 const PAGE = 10;
-const TAB_KEY = 'courrier.departement.onglet';
+const VIEW_KEY = 'courrier.departement.vue';
 
-function readTab(): SpaceTab {
-  const stored = sessionStorage.getItem(TAB_KEY);
-  return SPACE_TABS.find((tab) => tab === stored) ?? 'present';
+type SpaceView = {
+  tab: SpaceTab;
+  query: string;
+  page: number;
+  status: string;
+  arrival: Arrival;
+  period: Period;
+  proof: HandoverMethod | 'all';
+};
+
+const FIRST_VIEW: SpaceView = {
+  tab: 'present',
+  query: '',
+  page: 0,
+  status: 'all',
+  arrival: 'all',
+  period: 'last30',
+  proof: 'all',
+};
+
+function readView(): SpaceView {
+  try {
+    const stored = JSON.parse(
+      sessionStorage.getItem(VIEW_KEY) ?? '{}',
+    ) as SpaceView;
+    return {
+      ...FIRST_VIEW,
+      ...stored,
+      tab: SPACE_TABS.find((tab) => tab === stored.tab) ?? 'present',
+      arrival: ARRIVALS.find((value) => value === stored.arrival) ?? 'all',
+      period: PERIODS.find((value) => value === stored.period) ?? 'last30',
+    };
+  } catch {
+    return FIRST_VIEW;
+  }
 }
 
 function parcelRow(row: SpaceParcel, now: Date): DepartementParcelRow {
@@ -73,7 +115,12 @@ function parcelRow(row: SpaceParcel, now: Date): DepartementParcelRow {
     id: parcel.id,
     recipient: entry.row.recipient,
     state,
-    status: t(`departmentSpace.status.${state}`),
+    status:
+      entry.row.state === 'toNotify'
+        ? t('colis.section.toNotify')
+        : entry.row.state === 'incomplete'
+          ? t('colis.section.incomplete')
+          : t(`departmentSpace.status.${state}`),
     carrier: entry.row.carrier ?? '',
     tracking: parcel.tracking ? formatTracking(parcel.tracking) : '—',
     arrived: formatWhen(arrivedAt(row), now, t),
@@ -124,22 +171,29 @@ export function DepartmentSpaceDesk() {
   const own = useOwnDepartment();
   const parcels = useLiveQuery(() => loadSpace(db, now), [now]);
   const deposits = useLiveQuery(() => db.deposit.toArray(), []);
-  const [tab, setTabState] = useState<SpaceTab>(readTab);
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [status, setStatus] = useState('all');
-  const [arrival, setArrival] = useState<Arrival>('all');
-  const [period, setPeriod] = useState<Period>('last30');
-  const [proof, setProof] = useState<HandoverMethod | 'all'>('all');
+  const sync = useSync();
+  const update = useUpdate();
+  const handed = useHandoverToast();
+  const mails = useMailNotes();
+  const reminders = useReminderMails();
+  // Kept for the time the app stays open: back from a record, nothing moved.
+  const [view, setView] = useState<SpaceView>(readView);
+  const { tab, query, page, status, arrival, period, proof } = view;
+  const change = (next: Partial<SpaceView>) => {
+    const merged = { ...view, ...next };
+    sessionStorage.setItem(VIEW_KEY, JSON.stringify(merged));
+    setView(merged);
+  };
+  const setPage = (next: number) => change({ page: next });
   const [openId, setOpenId] = useState<string | null>(null);
   const [exportNote, setExportNote] = useState<string>();
   const mail = useLatestMail(openId ?? '');
 
   const setTab = (next: string) => {
-    const known = SPACE_TABS.find((id) => id === next) ?? 'present';
-    sessionStorage.setItem(TAB_KEY, known);
-    setTabState(known);
-    setPage(0);
+    change({
+      tab: SPACE_TABS.find((id) => id === next) ?? 'present',
+      page: 0,
+    });
     setOpenId(null);
   };
 
@@ -168,15 +222,103 @@ export function DepartmentSpaceDesk() {
   };
 
   const notice = deposits && depositNotice(deposits, t);
+  const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
+  const toNotify = found.filter(
+    ({ entry }) =>
+      entry.row.state === 'toNotify' || entry.row.state === 'deposited',
+  ).length;
+  const toRemind = reminders ? dueCount(reminders) : 0;
+  const answers = all.filter(({ entry }) => entry.row.reply).length;
+  const notices = [
+    ...(banner
+      ? [
+          {
+            id: 'sync',
+            tone:
+              banner.tone === 'red' ? ('red' as const) : ('orange' as const),
+            icon: banner.icon,
+            title: banner.title,
+            description: banner.description,
+            onClick: () => void navigate({ to: '/reglages/synchronisation' }),
+          },
+        ]
+      : []),
+    ...(toNotify
+      ? [
+          {
+            id: 'notify',
+            tone: 'orange' as const,
+            icon: 'mail' as const,
+            title: `${t('colis.section.toNotify')} : ${toNotify}`,
+            onClick: () => void navigate({ to: '/notifier' }),
+          },
+        ]
+      : []),
+    ...(toRemind
+      ? [
+          {
+            id: 'remind',
+            tone: 'orange' as const,
+            icon: 'clock' as const,
+            title:
+              toRemind === 1
+                ? t('colis.remind.one')
+                : t('colis.remind.many', { count: toRemind }),
+            description: t('colis.remind.description'),
+            onClick: () => void navigate({ to: '/relances' }),
+          },
+        ]
+      : []),
+    ...(mails?.stale
+      ? [
+          {
+            id: 'stale',
+            tone: 'orange' as const,
+            icon: 'mail' as const,
+            title:
+              mails.stale === 1
+                ? t('mails.stale.one')
+                : t('mails.stale.many', { count: mails.stale }),
+            description: t('mails.stale.description'),
+            onClick: () =>
+              void navigate({
+                to: '/reglages/e-mails',
+                search: { filtre: 'toConfirm' },
+              }),
+          },
+        ]
+      : []),
+    ...(answers
+      ? [
+          {
+            id: 'replies',
+            tone: 'orange' as const,
+            icon: 'mail' as const,
+            title: `${t('colis.section.replies')} : ${answers}`,
+            description: t('departmentSpace.replies.description'),
+          },
+        ]
+      : []),
+  ];
+  const waiting = parcels === undefined || awaitsServer(sync);
+  const toast = handed ? (
+    <Toast message={handoverToastMessage(handed, t)} />
+  ) : update.offered ? (
+    <Toast
+      message={t('update.available')}
+      actionLabel={t('update.apply')}
+      onAction={() => void applyUpdate()}
+    />
+  ) : undefined;
+  const overlay = toast && (
+    <div className="absolute right-6 bottom-6 w-[360px]">{toast}</div>
+  );
   const pageShell = {
     ...shell,
     searchPlaceholder: t('departmentSpace.search'),
     search: {
       value: query,
-      onChange: (value: string) => {
-        setQuery(value);
-        setPage(0);
-      },
+      onChange: (value: string) => change({ query: value, page: 0 }),
     },
     subtitle: own.place ? `${own.name} · ${own.place}` : own.name,
     tabs: SPACE_TABS.map((id) => ({
@@ -191,12 +333,13 @@ export function DepartmentSpaceDesk() {
     onExport: () => void runExport(),
     exportNote,
     onHandover: () => void navigate({ to: '/remise' }),
+    notices,
+    overlay,
   };
 
   if (tab === 'history') {
     const rows = latestClosedFirst(inTab(found, 'history')).filter(
-      (row) =>
-        withinPeriod(closedAt(row), period, now) && provenBy(row, proof),
+      (row) => withinPeriod(closedAt(row), period, now) && provenBy(row, proof),
     );
     const shown = pageOf(rows, page);
     return (
@@ -219,10 +362,7 @@ export function DepartmentSpaceDesk() {
                     : t('departmentSpace.filter.last30'),
               })),
               selected: period,
-              onSelect: (value) => {
-                setPeriod(value as Period);
-                setPage(0);
-              },
+              onSelect: (value) => change({ period: value as Period, page: 0 }),
               className: 'w-[190px]',
             },
             period,
@@ -241,10 +381,8 @@ export function DepartmentSpaceDesk() {
                 })),
               ],
               selected: proof,
-              onSelect: (value) => {
-                setProof(value as HandoverMethod | 'all');
-                setPage(0);
-              },
+              onSelect: (value) =>
+                change({ proof: value as SpaceView['proof'], page: 0 }),
               className: 'w-[150px]',
             },
             proof,
@@ -264,9 +402,7 @@ export function DepartmentSpaceDesk() {
               icon: METHOD_ICON[handover.method],
               label: methodLabel(handover.method, t),
             },
-            by: handover
-              ? agentNameOf(handover, t, session.user.id)
-              : '—',
+            by: handover ? agentNameOf(handover, t, session.user.id) : '—',
             when: formatWhen(closedAt(row), now, t),
           };
         })}
@@ -281,7 +417,7 @@ export function DepartmentSpaceDesk() {
         }
         onRow={openParcel}
         empty={
-          rows.length
+          rows.length || waiting
             ? undefined
             : {
                 title: t('departmentSpace.empty.title'),
@@ -343,10 +479,7 @@ export function DepartmentSpaceDesk() {
                     { value: 'late', label: t('departmentSpace.status.late') },
                   ],
                   selected: status,
-                  onSelect: (value) => {
-                    setStatus(value);
-                    setPage(0);
-                  },
+                  onSelect: (value) => change({ status: value, page: 0 }),
                   className: 'w-[170px]',
                 },
                 status,
@@ -364,10 +497,7 @@ export function DepartmentSpaceDesk() {
                   : t(`departmentSpace.filter.${value}`),
             })),
             selected: arrival,
-            onSelect: (value) => {
-              setArrival(value as Arrival);
-              setPage(0);
-            },
+            onSelect: (value) => change({ arrival: value as Arrival, page: 0 }),
             className: 'w-[170px]',
           },
           arrival,
@@ -377,15 +507,11 @@ export function DepartmentSpaceDesk() {
       parcels={shown.rows.map((row) => parcelRow(row, now))}
       range={shown.range}
       onPrevious={
-        shown.previous === null
-          ? undefined
-          : () => setPage(shown.previous ?? 0)
+        shown.previous === null ? undefined : () => setPage(shown.previous ?? 0)
       }
-      onNext={
-        shown.next === null ? undefined : () => setPage(shown.next ?? 0)
-      }
+      onNext={shown.next === null ? undefined : () => setPage(shown.next ?? 0)}
       empty={
-        rows.length
+        rows.length || waiting
           ? undefined
           : {
               title: t('departmentSpace.empty.title'),

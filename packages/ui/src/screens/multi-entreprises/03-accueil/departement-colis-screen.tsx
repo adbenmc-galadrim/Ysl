@@ -25,7 +25,7 @@ import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
 import { StatusDot } from '#components/status-dot';
 import { StatusPill, SYNC_PILL } from '#components/status-pill';
-import { Icon } from '#icons';
+import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
 
 export type DepartementParcelRow = {
@@ -153,7 +153,7 @@ export type DepartementFilter = {
 
 export type DepartementDesktopProps = Pick<
   CompanyShellProps,
-  'company' | 'nav' | 'account' | 'onNavigate' | 'search' | 'searchPlaceholder'
+  'company' | 'nav' | 'account' | 'onNavigate' | 'search' | 'searchPlaceholder' | 'overlay'
 > & {
   breadcrumb: CompanyShellProps['breadcrumb'];
   subtitle: string;
@@ -172,6 +172,15 @@ export type DepartementDesktopProps = Pick<
     action: string;
     onAction?: () => void;
   };
+  /** Other things waiting: what the phone's Colis says above its list. */
+  notices?: {
+    id: string;
+    tone: 'orange' | 'red';
+    icon: IconName;
+    title: string;
+    description?: string;
+    onClick?: () => void;
+  }[];
   children: ReactNode;
 };
 
@@ -186,6 +195,7 @@ export function DepartementDesktop({
   exportNote,
   onHandover,
   deposit,
+  notices,
   children,
   ...shell
 }: DepartementDesktopProps) {
@@ -241,6 +251,14 @@ export function DepartementDesktop({
           }
         />
       )}
+      {notices?.map(({ id, ...notice }) => (
+        <Banner
+          key={id}
+          iconSize={18}
+          {...notice}
+          className="mt-2 shrink-0 gap-2.5 rounded-desk py-2 pr-4 pl-4"
+        />
+      ))}
       <DeskTabs
         label="Colis du département"
         active={activeTab}

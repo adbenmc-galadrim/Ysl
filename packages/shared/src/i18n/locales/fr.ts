@@ -948,6 +948,8 @@ export const fr = {
   'departmentSpace.panel.email': 'E-mail',
   'departmentSpace.panel.open': 'Ouvrir la fiche',
   'departmentSpace.panel.remind': 'Relancer',
+  'departmentSpace.replies.description':
+    'Ouvrez la fiche du colis pour traiter la réponse.',
   'departmentSpace.history.link': 'Voir l’historique',
   'departmentSpace.section.present': 'Présents',
   'departmentSpace.section.coming': 'À venir',

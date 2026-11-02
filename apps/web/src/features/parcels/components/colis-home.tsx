@@ -19,7 +19,7 @@ import { NO_DEPARTMENT } from '#/features/dashboard/figures';
 import { db } from '#/features/db/database';
 import { depositNotice } from '#/features/department-space/space';
 import {
-  type HandoverToast,
+  handoverToastMessage,
   useHandoverToast,
 } from '#/features/handover/done-toast';
 import {
@@ -64,16 +64,6 @@ import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell
 import { useOnDesk } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-function conflictMessage({
-  firstName,
-  byMe,
-}: Extract<HandoverToast, { kind: 'conflict' }>): string {
-  const by = byMe ? 'mine' : 'colleague';
-  return firstName
-    ? t(`handover.conflict.${by}`, { name: firstName })
-    : t(`handover.conflict.${by}.unnamed`);
-}
 
 const NOBODY: ReadonlyMap<string, string | null> = new Map();
 
@@ -275,27 +265,27 @@ export function ColisHome() {
     : handover;
   const searchParcels = () => void navigate({ to: '/recherche' });
 
-  const depositBanner =
-    !banner && deposit ? (
-      <Banner
-        tone="orange"
-        icon="truck"
-        title={deposit.title}
-        description={deposit.action}
-        onClick={() =>
-          void (deposit.depositId
-            ? navigate({
-                to: '/departement/depots/$depositId',
-                params: { depositId: deposit.depositId },
-              })
-            : navigate({ to: '/departement/depots' }))
-        }
-        classNames={{
-          root: 'h-16 py-[11px]',
-          description: 'mt-[3px] leading-4 font-semibold',
-        }}
-      />
-    ) : undefined;
+  // Whatever else is going on: from the phone, this is the way to the deposits.
+  const depositBanner = deposit ? (
+    <Banner
+      tone="orange"
+      icon="truck"
+      title={deposit.title}
+      description={deposit.action}
+      onClick={() =>
+        void (deposit.depositId
+          ? navigate({
+              to: '/departement/depots/$depositId',
+              params: { depositId: deposit.depositId },
+            })
+          : navigate({ to: '/departement/depots' }))
+      }
+      classNames={{
+        root: 'h-16 py-[11px]',
+        description: 'mt-[3px] leading-4 font-semibold',
+      }}
+    />
+  ) : undefined;
   const otherNotice =
     !banner && mails?.stale ? (
       <Banner
@@ -413,15 +403,7 @@ export function ColisHome() {
         loading={loading}
         toast={
           handed ? (
-            <Toast
-              message={
-                handed.kind === 'cancelled'
-                  ? handed.count > 1
-                    ? t('handover.cancel.done.many', { count: handed.count })
-                    : t('handover.cancel.done.one')
-                  : conflictMessage(handed)
-              }
-            />
+            <Toast message={handoverToastMessage(handed, t)} />
           ) : update.offered ? (
             <Toast
               message={t('update.available')}
