@@ -2,6 +2,7 @@ import {
   DEFAULT_TEMPLATES,
   renderMail,
   type MailMessage,
+  type PickupCopyStatus,
 } from '@repo/contract/mail';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { commitLocal } from '#/features/db/commit';
@@ -91,4 +92,47 @@ export async function recordPhoneCopy(
     },
     { now },
   );
+}
+
+type CopyRefusal =
+  | 'reply.copy.noCode'
+  | 'reply.copy.unsubscribed'
+  | 'reply.copy.notFound'
+  | 'reply.copy.failed';
+
+type SendCopy = (input: {
+  parcelIds: string[];
+  address: string;
+  name: string;
+}) => Promise<{ status: PickupCopyStatus }>;
+
+/** The server's copy: what to tell the agent if it did not go, nothing if it did. */
+export async function sendServerCopy(
+  send: SendCopy,
+  parcels: readonly LocalParcel[],
+  to: CopyTo,
+): Promise<CopyRefusal | null> {
+  try {
+    const { status } = await send({
+      parcelIds: parcels.map(({ id }) => id),
+      address: to.address,
+      name: to.name,
+    });
+    switch (status) {
+      case 'qr':
+      case 'pin':
+      case 'already':
+        return null;
+      case 'noCode':
+        return 'reply.copy.noCode';
+      case 'unsubscribed':
+        return 'reply.copy.unsubscribed';
+      case 'notFound':
+        return 'reply.copy.notFound';
+      case 'off':
+        return 'reply.copy.failed';
+    }
+  } catch {
+    return 'reply.copy.failed';
+  }
 }

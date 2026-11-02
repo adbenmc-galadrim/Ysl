@@ -1,9 +1,13 @@
 import 'fake-indexeddb/auto';
 import { pickupPinHash, pickupTokenHash } from '@repo/contract/pickup';
 import { newId } from '@repo/shared/id';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
-import { copyDraft, recordPhoneCopy } from '#/features/replies/copy';
+import {
+  copyDraft,
+  recordPhoneCopy,
+  sendServerCopy,
+} from '#/features/replies/copy';
 import {
   NOW,
   openTestDatabase,
@@ -69,5 +73,40 @@ describe('the copy by the mail app', () => {
       (row) => row.entityId === parcel.id,
     );
     expect(events.map((row) => row.type)).toEqual(['parcel.copied']);
+  });
+});
+
+describe('the copy by the server', () => {
+  it('asks for these parcels and this address, and has nothing to say once it left', async () => {
+    const parcel = told();
+    const send = vi.fn(() => Promise.resolve({ status: 'qr' as const }));
+
+    expect(await sendServerCopy(send, [parcel], to)).toBeNull();
+    expect(send).toHaveBeenCalledWith({
+      parcelIds: [parcel.id],
+      address: to.address,
+      name: to.name,
+    });
+  });
+
+  it.each([
+    ['noCode', 'reply.copy.noCode'],
+    ['unsubscribed', 'reply.copy.unsubscribed'],
+    ['notFound', 'reply.copy.notFound'],
+    ['off', 'reply.copy.failed'],
+  ] as const)('tells the agent when the answer is %s', async (status, key) => {
+    expect(
+      await sendServerCopy(() => Promise.resolve({ status }), [told()], to),
+    ).toBe(key);
+  });
+
+  it('tells the agent when the network fails', async () => {
+    expect(
+      await sendServerCopy(
+        () => Promise.reject(new Error('offline')),
+        [told()],
+        to,
+      ),
+    ).toBe('reply.copy.failed');
   });
 });

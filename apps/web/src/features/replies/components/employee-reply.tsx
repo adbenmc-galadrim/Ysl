@@ -1,6 +1,7 @@
 import { dayKey, fromDayKey } from '@repo/contract/parcel-reply';
 import { resumeOf } from '@repo/contract/reminders';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
+import { isEmail } from '@repo/shared/text';
 import {
   AbsenceJusquauSheet,
   ChoisirDestinataireScreen,
@@ -23,7 +24,11 @@ import { formatTime, shortDate } from '#/features/parcels/model';
 import { loadRecipientBook } from '#/features/parcels/recipients';
 import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 import { searchOptions } from '#/features/recipient/options';
-import { copyDraft, recordPhoneCopy } from '#/features/replies/copy';
+import {
+  copyDraft,
+  recordPhoneCopy,
+  sendServerCopy,
+} from '#/features/replies/copy';
 import {
   delegateName,
   replyAbsent,
@@ -260,8 +265,6 @@ function ColleagueChooser({
   );
 }
 
-const ADDRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /**
  * The copy: the server sends the recipient's own QR and code; with its sending
  * off, the agent's mail app sends the text and the code.
@@ -287,7 +290,7 @@ function CopySheet({
   const [sending, setSending] = useState(false);
   const [draftHref, setDraftHref] = useState<string>();
   const clean = address.trim();
-  const valid = ADDRESS.test(clean);
+  const valid = isEmail(clean);
   const { user } = session;
 
   useEffect(() => {
@@ -316,6 +319,7 @@ function CopySheet({
     if (serverMail === false) {
       if (draftHref) {
         void recordPhoneCopy(db, parcels, name, { agentId: user.id })
+          // The mail app has the draft: a missing history line is no reason to hold the sheet.
           .catch(() => {})
           .finally(onClose);
       }
@@ -323,32 +327,14 @@ function CopySheet({
     }
     setSending(true);
     setError(undefined);
-    try {
-      const { status } = await trpcClient.mail.sendCopy.mutate({
-        parcelIds: parcels.map(({ id }) => id),
-        address: clean,
-        name,
-      });
-      if (status === 'qr' || status === 'pin' || status === 'already') {
-        onClose();
-      } else {
-        setError(
-          t(
-            status === 'noCode'
-              ? 'reply.copy.noCode'
-              : status === 'unsubscribed'
-                ? 'reply.copy.unsubscribed'
-                : status === 'notFound'
-                  ? 'reply.copy.notFound'
-                  : 'reply.copy.failed',
-          ),
-        );
-      }
-    } catch {
-      setError(t('reply.copy.failed'));
-    } finally {
-      setSending(false);
-    }
+    const refused = await sendServerCopy(
+      (input) => trpcClient.mail.sendCopy.mutate(input),
+      parcels,
+      { name, address: clean },
+    );
+    setSending(false);
+    if (refused) setError(t(refused));
+    else onClose();
   };
 
   return (
@@ -368,7 +354,7 @@ function CopySheet({
         { recipient },
       )}
       error={error}
-      valid={valid && (serverMail !== false || !!draftHref)}
+      valid={valid && (serverMail === true || !!draftHref)}
       sending={sending}
       draftHref={draftHref}
       onSend={() => void send()}
