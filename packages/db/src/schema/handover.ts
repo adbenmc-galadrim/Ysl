@@ -8,6 +8,7 @@ import {
   check,
   foreignKey,
   index,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -138,6 +139,21 @@ export const pickupCode = pgTable(
     ),
   ],
 );
+
+export type PickupCopy = { address: string; name: string };
+
+/**
+ * What a copy of the mail needs (YSL-84): the PIN and token of a code the server
+ * drew, sealed (`sealed`, null on a code drawn by a phone), and who holds a copy.
+ * Not synced: the devices only ever get the hashes of `pickup_code`.
+ */
+export const pickupSecret = pgTable('pickup_secret', {
+  codeId: uuid('code_id')
+    .primaryKey()
+    .references(() => pickupCode.id, { onDelete: 'cascade' }),
+  sealed: text('sealed'),
+  copiedTo: jsonb('copied_to').$type<PickupCopy[]>().default([]).notNull(),
+});
 
 export const handoverRelations = relations(handover, ({ one }) => ({
   person: one(directoryPerson, {

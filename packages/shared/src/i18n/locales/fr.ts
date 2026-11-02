@@ -1303,6 +1303,7 @@ export const fr = {
   'record.told.voice': 'De vive voix, {{when}}',
   'history.informed': 'Prévenu de vive voix',
   'history.informed.reminder': 'Relancé de vive voix',
+  'history.copied': 'Copie du code pour {{name}}',
   'history.reply.not_mine': 'A répondu : ce n’est pas pour moi',
   'history.reply.colleague': 'A répondu : {{name}} passera le prendre',
   'history.reply.absent': 'A répondu : absence jusqu’au {{date}}',
@@ -1742,6 +1743,8 @@ export const fr = {
     'Lien « Ce n’est pas pour moi » vers votre adresse, ligne retirée sans adresse',
   'mail.variable.lien_collegue':
     'Lien « Un collègue viendra le chercher » vers votre adresse, ligne retirée sans adresse',
+  'mail.server.copy':
+    'Copie pour {{delegate}}, qui peut retirer à la place de {{recipient}}, avec ce code.',
   'mail.server.qr': 'Présentez ce QR code au comptoir :',
   'mail.server.reply': 'Répondre',
   'mail.server.superseded': 'Déjà prévenu autrement',

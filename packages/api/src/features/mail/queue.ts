@@ -1,6 +1,6 @@
 import { cutoff, RETENTION } from '@repo/contract/retention';
 import type { AnyDb } from '@repo/db';
-import { emailOutbox, notification } from '@repo/db/schema';
+import { emailOutbox, notification, pickupCode } from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { logger } from '@repo/shared/logger';
 import { and, eq, inArray, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
@@ -225,13 +225,33 @@ async function failAbandoned(db: AnyDb, now: Date): Promise<void> {
   });
 }
 
+/** A copy quotes a code: one used or withdrawn since would say nothing true. */
+async function codeClosed(
+  db: AnyDb,
+  row: OutboxRow,
+  now: Date,
+): Promise<typeof SUPERSEDED | null> {
+  if (!row.pickupCodeId) return null;
+  const [code] = await db
+    .select({
+      deletedAt: pickupCode.deletedAt,
+      usedAt: pickupCode.usedAt,
+      expiresAt: pickupCode.expiresAt,
+    })
+    .from(pickupCode)
+    .where(eq(pickupCode.id, row.pickupCodeId));
+  return code && !code.deletedAt && !code.usedAt && code.expiresAt > now
+    ? null
+    : SUPERSEDED;
+}
+
 /** The phone told these parcels while the mail waited: it does not leave as well. */
 async function superseded(
   db: AnyDb,
   row: OutboxRow,
   now: Date,
 ): Promise<typeof SUPERSEDED | typeof EXPIRED | null> {
-  if (!row.notificationId) return null;
+  if (!row.notificationId) return codeClosed(db, row, now);
   const [request] = await db
     .select()
     .from(notification)

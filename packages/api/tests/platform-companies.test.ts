@@ -460,6 +460,8 @@ describe('deleting a company', () => {
     expect(result.rows.map((row) => row.name)).toEqual([
       'account',
       'organization',
+      // Cascades from `pickup_code`, which the purge deletes.
+      'pickup_secret',
       // Outlives the company on purpose: `company_id`, a copied name, figures only.
       'platform_journal',
       'rate_limit',
