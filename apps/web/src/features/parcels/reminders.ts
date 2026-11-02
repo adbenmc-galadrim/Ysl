@@ -11,9 +11,8 @@ export async function remindersAfterNotice(
 ): Promise<Map<string, Date[]> & ReminderDates> {
   const dates: Map<string, Date[]> & ReminderDates = new Map<string, Date[]>();
   if (!notified.size) return dates;
-  const since = new Date(
-    Math.min(...[...notified.values()].map((at) => at.getTime())),
-  );
+  let since = new Date(8.64e15);
+  for (const at of notified.values()) if (at < since) since = at;
   const add = (parcelId: string, at: Date) => {
     const notice = notified.get(parcelId);
     if (!notice || at <= notice) return;

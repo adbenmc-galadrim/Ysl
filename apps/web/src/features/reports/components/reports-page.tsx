@@ -11,7 +11,11 @@ import {
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useRef, useState } from 'react';
-import { clockTime, formatDelay } from '#/features/dashboard/figures';
+import {
+  clockTime,
+  formatDelay,
+  syncedWhen,
+} from '#/features/dashboard/figures';
 import { db } from '#/features/db/database';
 import { csvFile } from '#/features/exports/csv-file';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
@@ -60,10 +64,11 @@ function periodLabel(period: ReportPeriod, now: Date): string {
     });
   }
   if (period === 'quarter') {
-    return t('reports.quarterOf', {
-      rank: from.getMonth() ? `${from.getMonth() / 3 + 1}e` : '1er',
-      year: from.getFullYear(),
-    });
+    const quarter = from.getMonth() / 3 + 1;
+    const year = from.getFullYear();
+    return quarter === 1
+      ? t('reports.quarterFirst', { year })
+      : t('reports.quarterOf', { quarter, year });
   }
   return capitalized(
     from.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
@@ -120,8 +125,12 @@ export function ReportsPage() {
   const [note, setNote] = useState<string>();
   const [kept, setKept] = useState<{ file: File; count: number }>();
 
-  const go = (next: { periode?: ReportPeriod; departement?: string }) =>
-    void navigate({ to: '/rapports', search: next, replace: true });
+  const exporting = useRef(false);
+
+  const go = (
+    next: { periode?: ReportPeriod; departement?: string },
+    replace = true,
+  ) => void navigate({ to: '/rapports', search: next, replace });
 
   const line = known?.lines.find((row) => row.id === search.departement);
   const lines = line ? [line] : (known?.lines ?? []);
@@ -144,7 +153,9 @@ export function ReportsPage() {
     ? {
         title: t('dashboard.stale.title'),
         description: sync.lastSyncAt
-          ? t('dashboard.stale.since', { time: clockTime(sync.lastSyncAt) })
+          ? t('dashboard.stale.since', {
+              time: syncedWhen(sync.lastSyncAt, now),
+            })
           : t('dashboard.stale.description'),
         onRetry: () => void syncNow({ force: true }),
       }
@@ -152,6 +163,7 @@ export function ReportsPage() {
 
   const share = async (file: File, count: number) => {
     const outcome = await shareFile(file, t('export.share.title'));
+    // Closed, or refused once the server took too long: the next touch only opens the sheet.
     if (outcome === 'cancelled' || outcome === 'blocked') {
       setKept({ file, count });
       setNote(t('export.ready'));
@@ -167,7 +179,8 @@ export function ReportsPage() {
   };
 
   const runExport = async () => {
-    if (!known) return;
+    if (!known || exporting.current) return;
+    exporting.current = true;
     try {
       if (kept) {
         await share(kept.file, kept.count);
@@ -187,11 +200,13 @@ export function ReportsPage() {
     } catch (error) {
       console.error('Report export failed', error);
       setNote(t('export.failed'));
+    } finally {
+      exporting.current = false;
     }
   };
 
   const runPrint = () => {
-    if (printed.current) {
+    if (known && printed.current) {
       printAlone(printed.current, t('reports.title'), PRINT_CSS);
     }
   };
@@ -279,7 +294,7 @@ export function ReportsPage() {
     <>
       <RapportsMobile
         {...common}
-        onOpenLine={(departement) => go({ ...search, departement })}
+        onOpenLine={(departement) => go({ ...search, departement }, false)}
         onBack={toSettings}
       />
       {print}

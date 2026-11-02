@@ -243,7 +243,12 @@ export async function loadReport(
     );
   const orphans = toLine(NO_DEPARTMENT, null);
   const lines =
-    orphans.received + orphans.handed + orphans.late + orphans.gaps > 0
+    orphans.received +
+      orphans.handed +
+      orphans.late +
+      orphans.gaps +
+      orphans.reminders >
+    0
       ? [...named, orphans]
       : named;
 

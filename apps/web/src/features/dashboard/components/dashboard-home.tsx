@@ -13,6 +13,8 @@ import {
   type DashboardFigures,
   type DashboardLine,
   formatDelay,
+  sameDay,
+  syncedWhen as when,
   loadDashboard,
   NO_DEPARTMENT,
 } from '#/features/dashboard/figures';
@@ -35,14 +37,6 @@ const longDay = (date: Date) =>
     day: 'numeric',
     month: 'long',
   });
-
-const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
-
-/** Figures kept from another day say which: « 9:12 » alone would read as this morning. */
-const when = (date: Date, now: Date) =>
-  sameDay(date, now)
-    ? clockTime(date)
-    : `${shortDate(date, now)}, ${clockTime(date)}`;
 
 function toLine(line: DashboardLine, now: Date): OverviewLine {
   const since = line.depositSince;

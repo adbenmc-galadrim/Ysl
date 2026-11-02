@@ -16,6 +16,7 @@ import {
   firstNotification,
   homeState,
   recipientOf,
+  shortDate,
 } from '#/features/parcels/model';
 import { formatWhen } from '#/features/parcels/record';
 import { loadReminderDates } from '#/features/parcels/reminders';
@@ -84,6 +85,15 @@ export const formatDelay = (days: number | null, t: TranslateFn) =>
           maximumFractionDigits: 1,
         }),
       });
+
+export const sameDay = (a: Date, b: Date) =>
+  a.toDateString() === b.toDateString();
+
+/** Figures kept from another day say which: « 9:12 » alone would read as this morning. */
+export const syncedWhen = (date: Date, now: Date) =>
+  sameDay(date, now)
+    ? clockTime(date)
+    : `${shortDate(date, now)}, ${clockTime(date)}`;
 
 /** `/colis?departement=`: the parcels of the line that has no department. */
 export const NO_DEPARTMENT = 'none';

@@ -52,7 +52,7 @@ type ReportCommon = {
   periodLabel: string;
   figures: ReportFigures;
   lines: ReportLine[];
-  /** What the last export or print came to, when there is something to say. */
+  /** What the last export came to, when there is something to say. */
   note?: string;
   exportDisabled?: boolean;
   stale?: OverviewProps['stale'];
@@ -178,7 +178,7 @@ function DeskFigures({ figures }: { figures: ReportFigures }) {
     { label: 'Remis', value: figures.handed },
     { label: 'Délai moyen de retrait', value: figures.delay },
     { label: 'En souffrance', value: figures.late, tone: 'text-orange' },
-    { label: 'Écarts au dépôt', value: figures.gaps, tone: 'text-red' },
+    { label: 'Écarts au dépôt', value: figures.gaps, tone: figures.gaps === '0' ? undefined : 'text-red' },
   ];
   return (
     <DeskCard className="mt-3.5 grid h-[76px] shrink-0 grid-cols-5">
@@ -414,7 +414,7 @@ export function RapportsDepartementMobile({
         <PhoneStat value={figures.received} label="reçus" className="bg-fill" />
         <PhoneStat value={figures.handed} label="remis" className="bg-fill" />
         <PhoneStat value={figures.delay} label="délai moyen" className="bg-fill" />
-        <PhoneStat value={figures.gaps} label="écarts au dépôt" tone="red" className="bg-fill" />
+        <PhoneStat value={figures.gaps} label="écarts au dépôt" tone={figures.gaps === '0' ? undefined : 'red'} className="bg-fill" />
       </PhoneFigures>
       <h2 className="mt-6 text-17 font-semibold">Colis reçus par jour</h2>
       <div role="img" aria-label="Colis reçus sur les dix derniers jours" className="mt-[15px] flex h-[140px] items-end gap-2">
