@@ -289,15 +289,37 @@ describe('a registered letter on the handovers pushed', () => {
   });
 
   it('refuses three parcels of which one is registered, unsigned', async () => {
+    await writeOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      SMALL_SITE_OPERATING_PROFILE,
+      AGENT_ID,
+    );
     const { ops, parcel } = await registered({ method: 'pin' });
-    const others = await handoverOps({ hasScan: false, method: 'pin' });
+    const other = await handoverOps({ hasScan: false, method: 'pin' });
     const [write] = ops;
     const grouped = {
       ...write!,
-      patch: { ...write!.patch, parcelIds: [others.parcel, parcel] },
+      patch: { ...write!.patch, parcelIds: [other.parcel, parcel] },
     };
-    expect((await statuses([grouped]))[0]).toBe(403);
-    expect(await statusOfParcel(others.parcel)).toBe('notifie');
+    const { results } = await push(sync, accessOf('shuttle'), {
+      ops: [grouped, ...other.ops.slice(1), ...ops.slice(1)].map((step) =>
+        step.entity === 'event'
+          ? {
+              ...step,
+              patch: {
+                ...step.patch,
+                detail: { handoverId: write!.entityId, method: 'pin' },
+              },
+            }
+          : step,
+      ),
+    });
+    expect(results.map((result) => result.status)).toEqual([
+      403, 403, 403, 403, 403,
+    ]);
+    expect(await statusOfParcel(other.parcel)).toBe('notifie');
+    expect(await statusOfParcel(parcel)).toBe('notifie');
   });
 
   it('a later change to one already kept is not checked again', async () => {

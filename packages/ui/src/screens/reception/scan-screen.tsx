@@ -1,4 +1,3 @@
-import { SegmentedControl } from '#components/segmented-control';
 import { Button } from '#components/button';
 import {
   CameraControls,
@@ -34,6 +33,7 @@ import {
   type ScanFieldStatus,
 } from '#components/scan-fields';
 import { Sheet } from '#components/sheet';
+import { SegmentedControl } from '#components/segmented-control';
 import { Icon, type IconName } from '#icons';
 import type { ReactNode } from 'react';
 
@@ -520,13 +520,6 @@ export type SaisieManuelleScreenProps = Omit<
   'fixed'
 > & {
   count: number;
-  /** What the camera is reading, when the company takes registered mail. */
-  kinds?: {
-    label: string;
-    options: readonly string[];
-    value: string;
-    onChange: (value: string) => void;
-  };
   label?: ParcelLabelProps;
   video?: ReactNode;
 };

@@ -146,7 +146,7 @@ export const holdsRegistered = (
 export type HandoverStep = 'proof' | 'signature' | 'photo' | 'scan';
 
 /**
- * The steps the profile requires that this handover lacks (ME16): the phone
+ * The steps the profile, or a registered letter (F56), requires that this handover lacks (ME16): the phone
  * holds « Remettre » on it, the server refuses by it. A signature stands in for
  * the QR or the code (D6): `manuel` is what is left without one.
  */

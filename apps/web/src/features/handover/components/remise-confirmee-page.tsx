@@ -1,3 +1,4 @@
+import { holdsRegistered } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { PhotoViewer, RemiseConfirmeeScreen, SignatureScreen } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -107,7 +108,9 @@ export function RemiseConfirmeePage({
           onSign: () => setDraft([]),
           onPhoto: () => input.current?.click(),
           failed,
-          noSignature: profile?.signature === 'disabled',
+          noSignature:
+            profile?.signature === 'disabled' &&
+            !holdsRegistered(entry.parcels),
           noPhoto: profile?.photo === 'disabled',
         })
       : null;

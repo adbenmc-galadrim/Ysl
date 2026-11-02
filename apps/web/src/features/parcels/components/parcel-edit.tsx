@@ -133,6 +133,7 @@ function EditForm({ record }: { record: ParcelRecord }) {
   const profile = useOperatingProfile();
   const [form, setForm] = useState<Form>(() => formOf(record));
   const [registered, setRegistered] = useState(parcel.type === 'recommande');
+  // Option off, a registered letter can still be corrected: its signature still holds.
   const kindOffered =
     parcel.type !== 'sans_suivi' &&
     (parcel.type === 'recommande' || !!profile?.registeredMail);

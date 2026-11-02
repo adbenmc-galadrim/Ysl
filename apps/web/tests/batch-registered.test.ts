@@ -21,6 +21,12 @@ describe('parcelTypeOf', () => {
     expect(parcelTypeOf({ annex: null }, true)).toBe('colis');
   });
 
+  it('keeps a label read as registered once its number is typed in the review', () => {
+    expect(parcelTypeOf({ ...read('Recommandé'), type: 'colis' }, true)).toBe(
+      'recommande',
+    );
+  });
+
   it('follows what the agent chose over what the label says', () => {
     expect(
       parcelTypeOf({ annex: null, type: 'recommande' }, false),

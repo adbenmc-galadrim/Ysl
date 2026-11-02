@@ -1,4 +1,3 @@
-import { PhoneSegments } from '#components/phone-parts';
 import type { ReactNode } from 'react';
 
 import {
@@ -10,6 +9,7 @@ import {
   FieldSelect,
 } from '#components/field';
 import { NavBar, NavBarAction } from '#components/nav-bar';
+import { PhoneSegments } from '#components/phone-parts';
 import { Screen } from '#components/screen';
 import { Stepper } from '#components/stepper';
 

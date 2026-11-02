@@ -167,8 +167,7 @@ export function RemiseColisScreen({
   collector,
   announced,
   onCollector,
-  // The mockup's wording, kept so its reference holds; the app says the
-  // signature is optional unless the profile requires it (D6).
+  // The mockup's wording, kept so its reference holds; the app says it is required.
   registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,

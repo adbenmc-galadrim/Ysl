@@ -163,15 +163,14 @@ async function checkRegisteredSigned(
 /**
  * The profile on what the phones send (ME16). A handover has already happened
  * at the counter: one made before the profile changed, or by a version without
- * this rule, which never sends `hasScan`, stays accepted. Its parcels and its
- * event follow the refusal, so no parcel is `remis` without a handover; for a
- * department, which came with the rule, whatever the profile requires; for a
- * registered letter, always.
+ * this rule, which never sends `hasScan`, stays accepted. Whatever the profile,
+ * its parcels and its event follow a refusal, those of a handover with a
+ * registered letter among them too: no parcel is `remis` without a handover.
  */
 async function checkHandoverSteps(
   tx: AnyDb,
   op: SyncOp,
-  { organizationId, role }: Access,
+  { organizationId }: Access,
 ): Promise<void> {
   if (op.type !== 'upsert') return;
   const { patch } = op;
@@ -185,20 +184,7 @@ async function checkHandoverSteps(
   }
   if (op.entity === 'handover') {
     await checkRegisteredSigned(tx, op, organizationId);
-  }
-  const required = await requiringProfile(tx, organizationId);
-  if (
-    !required &&
-    role !== 'department' &&
-    !(await registeredAmong(
-      tx,
-      organizationId,
-      idsOf(isDelivery ? [op.entityId] : [patch.entityId]),
-    ))
-  ) {
-    return;
-  }
-  if (op.entity === 'handover') {
+    const required = await requiringProfile(tx, organizationId);
     if (!required) return;
     if (
       (await handoverKnown(tx, organizationId, op.entityId)) ||

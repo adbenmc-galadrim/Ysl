@@ -258,12 +258,15 @@ export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
   return notifiable(draft) ? 'recu' : 'a_completer';
 }
 
-/** The agent's choice, or a label read as registered when the company takes them (F56). */
+/**
+ * The agent's choice, or a label read as registered when the company takes
+ * them (F56). `colis` is no choice: the review writes it on any number typed.
+ */
 export function parcelTypeOf(
   draft: Pick<DraftParcel, 'type' | 'annex'>,
   registeredMail: boolean,
 ): LocalParcel['type'] {
-  if (draft.type) return draft.type;
+  if (draft.type && draft.type !== 'colis') return draft.type;
   return registeredMail && draft.annex?.service?.label === REGISTERED
     ? 'recommande'
     : 'colis';

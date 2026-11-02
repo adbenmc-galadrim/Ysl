@@ -52,7 +52,7 @@ Le détail et le suivi sont au §12 du cahier des charges et dans le carnet de p
 | 3 | Base hors ligne | Dexie + file d'envoi |
 | 4 | Corpus de 100 à 200 photos d'étiquettes réelles | Oui, tout de suite (accord DPO) |
 | 5 | iPhone du service et version d'iOS | iOS 26 |
-| 6 | Preuve de remise | QR ou code, signature et photo facultatives ; le profil peut en décider autrement |
+| 6 | Preuve de remise | QR ou code, signature et photo facultatives ; le profil peut en décider autrement ; signature toujours exigée pour un recommandé |
 | 7 | Durées de conservation | Validées, réglables par entreprise. Révisée : le serveur garde aussi les colis |
 | 8 | Envoi des photos au serveur | Non : sur l'iPhone de la navette seulement |
 | 9 | OCR dans le cloud | Non au MVP |
