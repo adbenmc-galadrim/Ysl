@@ -6,7 +6,13 @@ import {
 } from '@repo/contract/exports';
 import { DAMAGE_LABEL, damageOf } from '@repo/contract/parcel-damage';
 import { STATUS_LABEL, type ParcelStatus } from '@repo/contract/parcel-status';
-import { contact, directoryPerson, handover, parcel } from '@repo/db/schema';
+import {
+  contact,
+  department,
+  directoryPerson,
+  handover,
+  parcel,
+} from '@repo/db/schema';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { parcelInScope, type ParcelScope } from '#lib/access';
@@ -96,6 +102,7 @@ async function readParcels(
         department: directoryPerson.department,
       },
       contact: { name: contact.name, email: contact.email },
+      departmentName: department.name,
     })
     .from(parcel)
     .leftJoin(
@@ -110,6 +117,13 @@ async function readParcels(
       and(
         eq(contact.organizationId, parcel.organizationId),
         eq(contact.id, parcel.contactId),
+      ),
+    )
+    .leftJoin(
+      department,
+      and(
+        eq(department.organizationId, parcel.organizationId),
+        eq(department.id, parcel.departmentId),
       ),
     )
     .where(
@@ -215,7 +229,7 @@ function handoverCells(row: ExportedHandover | undefined): CsvCell[] {
 }
 
 function toCells(
-  { parcel: p, person, contact: c }: ExportedParcel,
+  { parcel: p, person, contact: c, departmentName }: ExportedParcel,
   handed: ExportedHandover | undefined,
 ): CsvCell[] {
   const recipient = person
@@ -230,7 +244,8 @@ function toCells(
     textCell(p.tracking),
     recipient,
     p.notificationEmail ?? person?.email ?? c?.email,
-    p.department ?? person?.department,
+    // The department that holds it now: the text was written at reception.
+    departmentName ?? p.department ?? person?.department,
     p.senderName,
     // Pieces received here ("2 sur 3" counts 2), what v1 called nb_colis.
     String(p.pieceN ?? 1),

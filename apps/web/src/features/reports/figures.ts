@@ -100,6 +100,8 @@ export type Report = {
   lastDays: Map<string, ReportDay[]>;
   /** What the period's export holds, by line: the parcels received in it. */
   parcelIds: Map<string, string[]>;
+  /** Parcels received in the period, by line then by carrier. */
+  carriers: Map<string, Map<string, number>>;
 };
 
 const inRange = (date: Date | null | undefined, { from, to }: PeriodRange) =>
@@ -124,6 +126,7 @@ type Tally = {
   proofs: Map<HandoverMethod, number>;
   parcelIds: string[];
   byDay: Map<string, number>;
+  carriers: Map<string, number>;
 };
 
 const newTally = (): Tally => ({
@@ -135,6 +138,7 @@ const newTally = (): Tally => ({
   proofs: new Map(),
   parcelIds: [],
   byDay: new Map(),
+  carriers: new Map(),
 });
 
 /**
@@ -180,6 +184,8 @@ export async function loadReport(
     if (inRange(parcel.receivedAt, range)) {
       tally.received += 1;
       tally.parcelIds.push(parcel.id);
+      const carrier = parcel.carrier ?? '';
+      tally.carriers.set(carrier, (tally.carriers.get(carrier) ?? 0) + 1);
     }
     if (
       parcel.status === 'remis' &&
@@ -281,5 +287,25 @@ export async function loadReport(
       lines.map(({ id }) => [id, dayRows(lastDays(now, 10), [id])]),
     ),
     parcelIds: new Map(lines.map(({ id }) => [id, tallies.get(id)!.parcelIds])),
+    carriers: new Map(lines.map(({ id }) => [id, tallies.get(id)!.carriers])),
   };
+}
+
+/** The carriers of the lines shown, the busiest first; `''` for a parcel without one. */
+export function carrierVolumes(
+  report: Pick<Report, 'carriers'>,
+  lineIds: readonly string[],
+): { carrier: string; received: number }[] {
+  const totals = new Map<string, number>();
+  for (const id of lineIds) {
+    for (const [carrier, count] of report.carriers.get(id) ?? []) {
+      totals.set(carrier, (totals.get(carrier) ?? 0) + count);
+    }
+  }
+  return [...totals]
+    .map(([carrier, received]) => ({ carrier, received }))
+    .sort(
+      (a, b) =>
+        b.received - a.received || a.carrier.localeCompare(b.carrier, 'fr'),
+    );
 }

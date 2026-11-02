@@ -9,7 +9,11 @@ import type {
   LocalHandover,
   LocalNotification,
 } from '#/features/db/schema';
-import { loadReport, periodRange } from '#/features/reports/figures';
+import {
+  carrierVolumes,
+  loadReport,
+  periodRange,
+} from '#/features/reports/figures';
 import { NOW, openTestDatabase, parcelRow } from './helpers/local-rows';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -227,6 +231,40 @@ describe('loadReport', () => {
     expect(report.empty).toBe(true);
     expect(report.lines).toHaveLength(2);
     expect(report.totals.delayDays).toBeNull();
+  });
+
+  it('counts the first instant of a period, not that of the next', async () => {
+    await db.parcel.bulkPut([
+      parcelRow({ departmentId: STUDIO, receivedAt: at(1, 0) }),
+      parcelRow({
+        departmentId: STUDIO,
+        receivedAt: new Date(at(1, 0).getTime() - 1),
+      }),
+      parcelRow({ departmentId: STUDIO, receivedAt: at(1, 0, 10) }),
+    ]);
+    const report = await loadReport(db, 'month', NOW, t);
+    expect(report.totals.received).toBe(1);
+  });
+
+  it('adds up the carriers of the lines shown, the busiest first', async () => {
+    await db.parcel.bulkPut([
+      parcelRow({ departmentId: STUDIO, carrier: 'UPS', receivedAt: at(23) }),
+      parcelRow({ departmentId: STUDIO, carrier: 'DHL', receivedAt: at(23) }),
+      parcelRow({ departmentId: FINANCE, carrier: 'DHL', receivedAt: at(23) }),
+      parcelRow({
+        departmentId: FINANCE,
+        carrier: 'DHL',
+        receivedAt: at(2, 9, 8),
+      }),
+    ]);
+    const report = await loadReport(db, 'month', NOW, t);
+    expect(carrierVolumes(report, [STUDIO, FINANCE])).toEqual([
+      { carrier: 'DHL', received: 2 },
+      { carrier: 'UPS', received: 1 },
+    ]);
+    expect(carrierVolumes(report, [FINANCE])).toEqual([
+      { carrier: 'DHL', received: 1 },
+    ]);
   });
 
   it('counts the last ten days up to today', async () => {

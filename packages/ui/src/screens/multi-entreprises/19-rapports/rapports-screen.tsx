@@ -43,6 +43,8 @@ export type ReportDay = {
   values: number[];
 };
 
+export type ReportCarrier = { name: string; received: string };
+
 export type ReportPeriodOption = { id: string; label: string };
 
 type ReportCommon = {
@@ -52,6 +54,8 @@ type ReportCommon = {
   periodLabel: string;
   figures: ReportFigures;
   lines: ReportLine[];
+  /** Volumes by carrier: below the mockup, which has none. */
+  carriers?: ReportCarrier[];
   /** What the last export came to, when there is something to say. */
   note?: string;
   exportDisabled?: boolean;
@@ -84,6 +88,7 @@ export type RapportsDepartementMobileProps = {
   figures: ReportFigures;
   /** Parcels received over the last ten days, today last. */
   lastDays: number[];
+  stale?: OverviewProps['stale'];
   onBack: () => void;
 };
 
@@ -193,9 +198,24 @@ function DeskFigures({ figures }: { figures: ReportFigures }) {
   );
 }
 
-type ReportBodyProps = Pick<RapportsDesktopProps, 'figures' | 'lines' | 'days' | 'chartSubtitle'>;
+type ReportBodyProps = Pick<RapportsDesktopProps, 'figures' | 'lines' | 'carriers' | 'days' | 'chartSubtitle'>;
 
-function DeskReportBody({ figures, lines, days, chartSubtitle }: ReportBodyProps) {
+const CARRIER_COLUMNS: DeskTableColumn<ReportCarrier>[] = [
+  {
+    key: 'name',
+    header: 'Transporteur',
+    width: 220,
+    cell: (row) => <span className="font-semibold">{row.name}</span>,
+  },
+  {
+    key: 'received',
+    header: 'Reçus',
+    width: 140,
+    cell: (row) => <span className="w-full pr-6 text-right">{row.received}</span>,
+  },
+];
+
+function DeskReportBody({ figures, lines, carriers, days, chartSubtitle }: ReportBodyProps) {
   return (
     <>
       <DeskFigures figures={figures} />
@@ -233,6 +253,15 @@ function DeskReportBody({ figures, lines, days, chartSubtitle }: ReportBodyProps
         rows={lines}
         rowKey={(row) => row.id}
       />
+      {carriers?.length ? (
+        <DeskTable
+          label="Volumes par transporteur"
+          className="mt-4 shrink-0"
+          columns={CARRIER_COLUMNS}
+          rows={carriers}
+          rowKey={(row) => row.name}
+        />
+      ) : null}
     </>
   );
 }
@@ -245,6 +274,7 @@ export function RapportsDesktop({
   chartSubtitle,
   figures,
   lines,
+  carriers,
   days,
   departments,
   department,
@@ -294,7 +324,7 @@ export function RapportsDesktop({
           {note}
         </p>
       )}
-      <DeskReportBody figures={figures} lines={lines} days={days} chartSubtitle={chartSubtitle} />
+      <DeskReportBody figures={figures} lines={lines} carriers={carriers} days={days} chartSubtitle={chartSubtitle} />
     </>
   );
 }
@@ -324,6 +354,7 @@ export function RapportsMobile({
   periodLabel,
   figures,
   lines,
+  carriers,
   note,
   exportDisabled,
   stale,
@@ -386,6 +417,22 @@ export function RapportsMobile({
           </button>
         ))}
       </div>
+      {carriers?.length ? (
+        <>
+          <h2 className="mt-6 text-13 font-medium text-muted">Par transporteur</h2>
+          <div className="mt-1.5 rounded-[14px] bg-fill">
+            {carriers.map((row, i) => (
+              <div key={row.name} className="relative flex h-[52px] items-center px-4">
+                <span className="truncate text-16">{row.name}</span>
+                <span className="ml-auto pl-3 text-16 text-muted">{row.received}</span>
+                {i < carriers.length - 1 && (
+                  <span className="absolute right-0 bottom-0 left-4 h-px bg-separator" />
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
       {note && (
         <p role="status" className="mt-3 text-13 text-muted">
           {note}
@@ -403,12 +450,14 @@ export function RapportsDepartementMobile({
   periodLabel,
   figures,
   lastDays,
+  stale,
   onBack,
 }: RapportsDepartementMobileProps) {
   const most = Math.max(1, ...lastDays);
   return (
     <Screen>
       <NavBar title={name} onBack={onBack} />
+      {stale && <StaleBanner stale={stale} className="mt-3.5" />}
       <p className="mt-4 text-15 text-muted">{periodLabel}</p>
       <PhoneFigures className="mt-3.5">
         <PhoneStat value={figures.received} label="reçus" className="bg-fill" />

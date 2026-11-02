@@ -911,6 +911,7 @@ export const fr = {
   'reports.proof.pin': 'Code',
   'reports.proof.signature': 'Signature',
   'reports.proof.manuel': 'Sans vérification',
+  'reports.carrier.unknown': 'Non renseigné',
   'reports.export.empty': 'Aucun colis reçu sur cette période.',
   'dashboard.noDepartment': 'Sans département',
   'dashboard.depositSince': 'Depuis {{when}}',

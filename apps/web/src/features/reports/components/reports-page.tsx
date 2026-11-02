@@ -20,6 +20,7 @@ import { db } from '#/features/db/database';
 import { csvFile } from '#/features/exports/csv-file';
 import { useMinuteClock } from '#/features/parcels/api/use-parcels';
 import {
+  carrierVolumes,
   loadReport,
   periodRange,
   REPORT_PERIODS,
@@ -148,6 +149,15 @@ export function ReportsPage() {
     values: chartIndexes.map((i) => received[i] ?? 0),
   }));
   const chartSubtitle = lines.map(nameOf).join(', ');
+  const carriers = known
+    ? carrierVolumes(
+        known,
+        lines.map(({ id }) => id),
+      ).map(({ carrier, received }) => ({
+        name: carrier || t('reports.carrier.unknown'),
+        received: whole(received),
+      }))
+    : [];
   const stale = !sync.online || sync.status === 'error';
   const staleBanner = stale
     ? {
@@ -230,6 +240,7 @@ export function ReportsPage() {
     periodLabel: label,
     figures,
     lines: lines.map(toLine),
+    carriers,
     note: offline ? t('export.offline') : note,
     exportDisabled: offline || !known,
     stale: staleBanner,
@@ -245,6 +256,7 @@ export function ReportsPage() {
         subtitle={subtitle}
         figures={figures}
         lines={common.lines}
+        carriers={carriers}
         days={days}
         chartSubtitle={chartSubtitle}
       />
@@ -286,6 +298,7 @@ export function ReportsPage() {
         lastDays={(known?.lastDays.get(line.id) ?? []).map(
           ({ received }) => received[0] ?? 0,
         )}
+        stale={staleBanner}
         onBack={() => go({ periode: search.periode })}
       />
     );
