@@ -18,8 +18,8 @@ toujours l'heure et une capture.
   adresses. Un nom lu sur une étiquette réelle qui n'y figure pas : affecter le colis à un salarié de
   test. Relire l'adresse affichée avant chaque envoi.
 - **Ne pas se déconnecter d'un iPhone qui a reçu des colis** : la déconnexion efface sa base locale,
-  seule copie des photos et des preuves (D8). Un iPhone = un compte. Prendre un appareil libre pour
-  la navette de recette, ou jouer ses étapes sur un compte déjà connecté à une entreprise de test.
+  seule copie des photos et des preuves (D8). Un iPhone = un compte : chaque compte de recette joué
+  sur iPhone prend un appareil libre.
 - **La clé Brevo reste non posée** pendant les parties 1 à 8. La poser fait partir de vrais e-mails
   pour toutes les entreprises : c'est une décision à part, partie 9.
 
@@ -27,9 +27,10 @@ toujours l'heure et une capture.
 
 | Quoi | Pour quoi |
 |---|---|
-| Un ordinateur, deux profils de navigateur | admin de l'app ; admin entreprise |
+| Un ordinateur, un profil de navigateur par compte | admin de l'app ; admin entreprise de test ; département Finance ; plus un navigateur vierge pour H7 |
 | Un iPhone libre, app installée | navette |
-| Un second iPhone, ou un troisième profil de navigateur | département |
+| Un second iPhone libre, app installée | département Studio |
+| Un troisième iPhone libre, app installée | admin entreprise de test (G6, J4, J5, J21), puis admin de l'app (J15). Sans lui, ces étapes restent non jouées |
 | Un lot de 5 étiquettes réelles au moins | la tournée ; les nombres ci-dessous valent pour 5 colis, à adapter |
 | Une imprimante | l'affiche QR du point de réception |
 | Une boîte mail à alias (`vous+lea@…`) | adresses de tous les comptes et salariés de test |
@@ -44,7 +45,7 @@ connaît. Leurs adresses sont dans `kibo-notes/recette-rappels.md`, hors du dép
 | 0.1 | Terminal du conteneur de l'API | Poser le mot de passe de l'admin de l'app : `auth:reset-password`, procédure de `docs/comptes.md`, sans `--close-sessions` | Le script confirme le compte | ☐ OK ☐ KO | Sortie du script, sans le mot de passe |
 | 0.2 | Terminal du conteneur de l'API | Même geste pour l'admin entreprise | Le script confirme le compte | ☐ OK ☐ KO | Sortie du script, sans le mot de passe |
 | 0.3 | Sans compte | Ouvrir `https://ysl-api.shinseo.fr/ready` | 200 | ☐ OK ☐ KO | Code de réponse |
-| 0.4 | Admin entreprise, ordinateur | Se connecter, ouvrir Réglages, lire le bas de page | Version du jour, « À jour » | ☐ OK ☐ KO | Version affichée, version attendue |
+| 0.4 | Admin entreprise, ordinateur | Se connecter, ouvrir Réglages, lire le bas de page | Date du dernier déploiement, identique à `https://ysl.shinseo.fr/version.json` ; « À jour » | ☐ OK ☐ KO | Version affichée, version attendue |
 
 Fichier d'annuaire à préparer (`annuaire-recette.csv`), avec vos alias :
 
@@ -72,7 +73,7 @@ transmettre soi-même, puis l'ouvrir dans le navigateur ou l'iPhone du compte.
 | A7 | Admin entreprise de test, ordinateur | Se connecter | Vue d'ensemble à zéro ; menu Vue d'ensemble, Colis, À régulariser, Annuaire, Comptes, Rapports, Réglages | ☐ OK ☐ KO | Entrée manquante ou en trop |
 | A8 | Admin entreprise de test | Annuaire › « Importer un CSV », fichier ci-dessus, « Créer « Studio » », « Créer « Finance » », « Importer 4 salariés » | « 4 salariés dans 3 départements » (avec « Service courrier », présent d'office) | ☐ OK ☐ KO | Ligne en erreur, séparateur, accents |
 | A9 | Admin entreprise de test | Réglages › Lieu et horaires de retrait : lieu et horaires, « OK » | Valeurs relues après rechargement | ☐ OK ☐ KO | Champ perdu |
-| A10 | Admin entreprise de test | Comptes › « Inviter un compte » : Navette ; puis Département Studio ; puis Département Finance | Trois fois « Lien à transmettre à … » ; « 4 comptes · 1 invitation en attente » au dernier | ☐ OK ☐ KO | Rôle ou département faux dans la liste |
+| A10 | Admin entreprise de test | Comptes › « Inviter un compte » : Navette ; puis Département Studio ; puis Département Finance | Trois fois « Lien à transmettre à … » ; « 4 comptes · 3 invitations en attente » au dernier | ☐ OK ☐ KO | Rôle ou département faux dans la liste |
 | A11 | Les trois comptes | Ouvrir chaque lien sur son appareil, choisir un mot de passe. Sur iPhone : Safari, puis connexion **dans l'app installée** | « Votre mot de passe est enregistré » ; tous « Actif » dans Comptes | ☐ OK ☐ KO | Trousseau : mot de passe repris ou non dans l'app |
 | A12 | Admin entreprise de test | Réglages › Affiche QR du département : Studio et Finance, « Imprimer » ; poser les affiches | Une affiche par département, à son nom | ☐ OK ☐ KO | Page blanche, QR coupé |
 
@@ -113,9 +114,9 @@ du message envoyé.**
 | N° | Compte et rôle | Geste | Résultat attendu | OK / KO | Noter si écart |
 |---|---|---|---|---|---|
 | D1 | Département Finance | Colis › « À notifier » : aperçu | Objet, « Votre code de retrait », transporteur, lieu saisi en A9, adresse de test | ☐ OK ☐ KO | Texte faux, ligne manquante. **Adresse réelle : ne pas envoyer** |
-| D2 | Département Finance | « Envoyer à Marc », envoyer depuis la messagerie, revenir | Brouillon complet, Marc reçoit le message ; à l'écran, colis suivant | ☐ OK ☐ KO | Sans messagerie : « La messagerie ne s'est pas ouverte » doit proposer « Copier le texte », « Copier l'adresse », « Marquer comme envoyé quand même » |
+| D2 | Département Finance | « Envoyer à Marc », envoyer depuis la messagerie, revenir | Brouillon complet, Marc reçoit le message ; à l'écran, « L'e-mail est-il parti ? » : répondre oui, puis colis suivant | ☐ OK ☐ KO | « La messagerie ne s'est pas ouverte » propose « Copier le texte », « Copier l'adresse », « Marquer comme envoyé quand même ». Elle peut s'afficher sur ordinateur alors que le brouillon est ouvert (page restée visible 2 s) : envoyer, marquer, noter sans mettre KO |
 | D3 | Département Finance | Même geste pour Paul, puis Réglages › E-mails envoyés | Marc et Paul listés | ☐ OK ☐ KO | Ligne absente |
-| D4 | Département Studio, iPhone | « Notifier » : « Partager avec le QR » vers Mail, pour Léa | Un seul message pour ses 2 colis, QR inséré | ☐ OK ☐ KO | Objet vide (connu), QR illisible |
+| D4 | Département Studio, iPhone | « Notifier » : « Partager avec le QR » vers Mail, pour Léa ; **l'adresse n'est pas préremplie** : saisir son alias, le relire, envoyer ; revenir | Un seul message pour ses 2 colis, QR inséré ; « L'e-mail est-il parti ? » : répondre oui | ☐ OK ☐ KO | Objet vide (connu), QR illisible |
 
 ## 5. Remise au département
 
@@ -130,7 +131,7 @@ du message envoyé.**
 
 | N° | Compte et rôle | Geste | Résultat attendu | OK / KO | Noter si écart |
 |---|---|---|---|---|---|
-| F1 | Admin entreprise de test | Vue d'ensemble | En route 0, En attente de retrait 1, En souffrance 0, À régulariser 1, Remis aujourd'hui 3 ; Inès « Manquant au dépôt » | ☐ OK ☐ KO | Chiffre lu, chiffre attendu |
+| F1 | Admin entreprise de test | Vue d'ensemble, le jour des remises (sinon lire le total dans Rapports) | En route 0, En attente de retrait 1, En souffrance 0, À régulariser 1, Remis aujourd'hui 3 ; Inès « Manquant au dépôt » | ☐ OK ☐ KO | Chiffre lu, chiffre attendu |
 | F2 | Admin entreprise de test | Toucher la ligne Finance de « Par département » | Colis filtrés sur Finance, Paul présent | ☐ OK ☐ KO | Colis d'un autre département |
 | F3 | Admin entreprise de test | À régulariser › Inès : lire « Que faire ? », choisir « Retrouvé, le redéposer à Studio », « Valider » | « 1 colis bloqué », « 2 comptés sur 3 » ; le colis quitte la liste et revient dans la tournée | ☐ OK ☐ KO | Choix manquant |
 | F4 | Navette | Accueil | Studio de nouveau à déposer, 1 colis | ☐ OK ☐ KO | Délai d'apparition |
@@ -139,7 +140,7 @@ du message envoyé.**
 
 | N° | Compte et rôle | Geste | Résultat attendu | OK / KO | Noter si écart |
 |---|---|---|---|---|---|
-| G1 | Admin entreprise de test, ordinateur | Rapports | Mois en cours : Colis reçus 5, Remis 3, Écarts au dépôt 1 ; tableau par département, transporteurs | ☐ OK ☐ KO | Chiffre lu, chiffre attendu |
+| G1 | Admin entreprise de test, ordinateur | Rapports, dans le mois des réceptions | Mois en cours : Colis reçus 5, Remis 3, Écarts au dépôt 1 ; tableau par département, transporteurs | ☐ OK ☐ KO | Chiffre lu, chiffre attendu |
 | G2 | Admin entreprise de test | Département : Studio | Colis reçus 3, Remis 2 | ☐ OK ☐ KO | Chiffre lu |
 | G3 | Admin entreprise de test | Département : Studio, « Exporter en CSV » ; ouvrir dans Excel | Téléchargement (feuille de partage sous Safari) ; 3 lignes de colis, accents et colonnes justes | ☐ OK ☐ KO | Nombre de lignes, colonne fausse |
 | G4 | Admin entreprise de test | « Rapport PDF », enregistrer en PDF | Page sans ses commandes, A4 paysage, chiffres identiques | ☐ OK ☐ KO | PDF blanc ou coupé |
@@ -155,22 +156,23 @@ du message envoyé.**
 | H3 | D24 | Département | Déjà joué en C2 | Confirmation au nombre, sans détail exigé | ☐ OK ☐ KO | |
 | H4 | D25 | Navette, admin entreprise | Déjà joué en C5 et F1 | L'écart se voit des deux | ☐ OK ☐ KO | |
 | H5 | D26 | Admin de l'app | Ouvrir `/colis`, `/reglages/annuaire`, `/tableau-de-bord`, puis la fiche et le Journal | Renvoi à l'accueil. Fiche : chiffres seuls, aucune adresse ni nom de salarié. Journal : création et invitation | ☐ OK ☐ KO | Donnée nominative vue |
-| H6 | D27 | Admin entreprise de test | Comptes › Studio › « Changer le mot de passe » : provisoire, « Enregistrer » | Enregistré ; le téléphone déjà connecté n'est ni bloqué ni déconnecté | ☐ OK ☐ KO | Déconnexion |
+| H6 | D27 | Admin entreprise de test | Comptes › Studio › « Changer le mot de passe » : provisoire, **sans cocher la fermeture des sessions** (elle effacerait le téléphone), « Enregistrer » | Enregistré ; le téléphone déjà connecté n'est ni bloqué ni déconnecté | ☐ OK ☐ KO | Déconnexion |
 | H7 | D27 | Département Studio, **autre navigateur** | Se connecter avec le mot de passe provisoire | « Choisissez votre mot de passe », rien d'autre tant qu'il n'est pas changé | ☐ OK ☐ KO | Écran affiché |
 | H8 | D30 | Admin entreprise de test | Réglages › Fonctionnement : Signature « Obligatoire » | Pas de verrou ; « Modifié », « Enregistrer 1 changement » | ☐ OK ☐ KO | Réglage bloqué |
 | H9 | D31 | Admin entreprise de test | « Enregistrer 1 changement » | Avant d'enregistrer : « Appliquer à N colis ? » (ou « Appliquer ce changement ? ») ; « Revoir » possible ; après : « 1 étape changée » | ☐ OK ☐ KO | N annoncé, N réel |
-| H10 | D31 | Département Studio | Remettre un colis restant | « Faire signer » marqué « Obligatoire », « Remettre » grisé tant que la signature manque | ☐ OK ☐ KO | Colis où elle n'est pas demandée |
+| H10 | D31 | Département Finance | Remettre : taper le code reçu par Paul | « Faire signer » marqué « Obligatoire », « Remettre » grisé tant que la signature manque | ☐ OK ☐ KO | Colis où elle n'est pas demandée |
 
 ## 9. Ce qui attend l'activation de Brevo
 
 **Décision d'Adam, à part de la recette.** Tant qu'elle n'est pas prise, cette partie reste non jouée,
 sans que cela vaille KO. La clé vaut pour toutes les entreprises : poser `BREVO_API_KEY`,
-`MAIL_FROM_ADDRESS` et `BREVO_WEBHOOK_TOKEN` ensemble, prévenir les agents, choisir une entreprise
+`MAIL_FROM_ADDRESS` et `BREVO_WEBHOOK_TOKEN` ensemble, enregistrer le webhook chez Brevo
+(`docs/synchronisation.md`), prévenir les agents, choisir une entreprise
 pilote, et commencer par une boîte de test.
 
 | N° | Compte et rôle | Geste | Résultat attendu | OK / KO | Noter si écart |
 |---|---|---|---|---|---|
-| I1 | Admin de l'app | Inviter un administrateur | L'e-mail part ; HTML juste dans Mail, Gmail, Outlook ; lien cliquable avec son `#` | ☐ OK ☐ KO | Client mail, rendu |
+| I1 | Admin de l'app | Sur une entreprise neuve, sans admin actif : inviter un administrateur | L'e-mail part ; HTML juste dans Mail, Gmail, Outlook ; lien cliquable avec son `#` | ☐ OK ☐ KO | Client mail, rendu |
 | I2 | Admin de l'app | « Obtenir un lien à copier » après un envoi | Nouveau lien, qui remplace celui de l'e-mail | ☐ OK ☐ KO | Échec sans message (connu) |
 | I3 | Navette, département | Lot validé, dépôt confirmé (profil au dépôt) ; lot validé (profil au scan) | Un e-mail par destinataire, sans geste, au bon moment | ☐ OK ☐ KO | Colis sans e-mail ou reçu deux fois |
 | I4 | Salarié de test | Ouvrir l'e-mail dans Mail, Gmail, Outlook, puis présenter le QR | QR lisible (tableau HTML et PNG joint), remise acceptée | ☐ OK ☐ KO | Client mail qui le casse |
@@ -184,17 +186,18 @@ pilote, et commencer par une boîte de test.
 
 Rien de cette liste n'a été vu sur un appareil réel. Ce sont les « reste à voir » des tickets, à jouer
 app à jour et app installée. Un KO ici ne bloque pas forcément : le noter, avec le modèle et la
-version d'iOS.
+version d'iOS. **J2, J8 et J10 se jouent avant la mise à jour de l'appareil**, ou se marquent « sans
+appareil ancien ».
 
 | N° | Ticket | Compte et rôle | Geste | Résultat attendu | OK / KO | Noter si écart |
 |---|---|---|---|---|---|---|
 | J1 | YSL-118, YSL-119 | Les iPhone de la prod déjà connectés | Accepter la mise à jour, **sans se déconnecter** ; synchro, remise | Données gardées, rôle à jour | ☐ OK ☐ KO | Déconnexion, données perdues |
 | J2 | YSL-118 | Rôle ancien, mode avion | Relancer en mode avion | Pas d'écran de connexion, réglages réduits jusqu'à la relecture de session | ☐ OK ☐ KO | Écran affiché |
 | J3 | YSL-117 | Navette | Relance entre deux départements, remise en mode avion | Rien de perdu au retour du réseau | ☐ OK ☐ KO | File de synchro |
-| J4 | YSL-124 | Admin entreprise | Fonctionnement : feuille « Colis touchés », toast | Au-dessus de la barre d'accueil | ☐ OK ☐ KO | Capture |
+| J4 | YSL-124 | Admin entreprise | Fonctionnement : feuille « Appliquer à N colis ? », toast | Au-dessus de la barre d'accueil | ☐ OK ☐ KO | Capture |
 | J5 | YSL-128 | Admin entreprise | Annuaire : liste, formulaire, déplacement, filtres | Défilement juste, clavier sans recouvrement | ☐ OK ☐ KO | Capture |
 | J6 | YSL-129 | Département | Annuaire : liste, formulaire, demande de déplacement | Idem | ☐ OK ☐ KO | Capture |
-| J7 | YSL-130 | Navette | Vérification et feuille hors annuaire avec deux homonymes | Les deux proposés, département affiché | ☐ OK ☐ KO | Capture |
+| J7 | YSL-130 | Navette | Ajouter un homonyme à l'annuaire ; vérification et feuille hors annuaire | Les deux proposés, département affiché | ☐ OK ☐ KO | Capture |
 | J8 | YSL-131 | Navette | Version ancienne après un colis de tournée, mise à jour, relecture | Colis présents, statuts justes | ☐ OK ☐ KO | Statut lu |
 | J9 | YSL-119 | Département | Bouton Scanner | Absent ; « Remettre » présent | ☐ OK ☐ KO | Capture |
 | J10 | YSL-132 | Navette | Lot en profil à tournée, choix du département, ancien iPhone | Ancien iPhone : colis retirés, pas de déconnexion | ☐ OK ☐ KO | Déconnexion |
@@ -214,23 +217,25 @@ version d'iOS.
 
 ## Après la recette
 
-- [ ] Rendre ce document rempli, avec les captures des KO, et une ligne de conclusion : accepté, ou
+- [ ] Rendre ce document rempli **hors du dépôt, qui est public** (noms réels, adresses), avec les captures des KO, et une ligne de conclusion : accepté, ou
       accepté avec réserves, ou refusé.
-- [ ] Supprimer l'entreprise « Recette JJ/MM » (fiche › « Supprimer ») : elle part avec ses colis, son
-      annuaire et ses comptes. Le journal de la plateforme en garde la trace, c'est prévu. Les
+- [ ] Une fois le document rendu, supprimer l'entreprise « Recette JJ/MM » (fiche › « Supprimer ») :
+      **irréversible**, vérifier la fiche et saisir le nom exact. Elle part avec ses colis, son annuaire
+      et ses comptes. Le journal de la plateforme en garde la trace, c'est prévu. Les
       téléphones du test s'effacent à leur requête suivante.
-- [ ] Une fois **la conversion validée** (partie 10, J1 à J3) : supprimer la sauvegarde
-      `/root/ysl-backups/avant-conversion-20261031.dump` sur le serveur. C'est aussi ce qu'attend la
+- [ ] Une fois **la conversion validée** (partie 10, J1 à J3 OK, ou « sans appareil ancien » pour J2) :
+      Adam supprime la sauvegarde `/root/ysl-backups/avant-conversion-20261031.dump` sur le serveur. C'est aussi ce qu'attend la
       migration qui retire les anciennes colonnes.
 - [ ] Décider de l'activation de Brevo (partie 9).
 
 ## Ce que le rejeu a vérifié
 
 Le script a été déroulé par Playwright sur une base de démo locale, en Chromium et en WebKit, sans
-Brevo : parties 1 à 8, écrans et libellés, faits en base. Cela prouve que le script se déroule, **pas
+Brevo : l'essentiel des parties 1 à 8, écrans, libellés et faits en base. Cela prouve que le script se déroule, **pas
 que la recette est faite.**
 
 Pas joué, et donc à regarder d'abord sur le vrai appareil : vraie caméra et vraies étiquettes (numéro
 tapé, QR de dépôt montré par une caméra simulée), messagerie réelle (`mailto:` non ouvert), « Partager
 avec le QR » et remise par QR (D4, E4), dialogue d'impression (G4), impression sur papier, mode avion,
-signature tracée au doigt, export et PDF sur iPhone, parties 9 et 10.
+signature tracée au doigt, export et PDF sur iPhone, question « L'e-mail est-il parti ? » (le rejeu passe
+par le repli), impression des affiches (A12), recherche de H2 dans Colis et l'annuaire, parties 9 et 10.
