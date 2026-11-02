@@ -908,6 +908,7 @@ export const fr = {
   'home.department.notice.title': 'Les colis à venir arrivent avec la tournée',
   'home.department.notice.description':
     'Dès que la navette annoncera ses dépôts, leur détail s’affichera ici. Les colis reçus et notifiés sont déjà dans Colis.',
+  'dashboard.cause.missing': 'Manquant au dépôt de {{time}}',
   'home.dashboard.title': 'Tableau de bord',
   'home.dashboard.notice.title':
     'Le tableau de bord arrive dans une prochaine version',

@@ -40,7 +40,7 @@ export function startOfDay(now: Date): Date {
   return day;
 }
 
-function firstNotification(parcel: LocalParcel): Date {
+export function firstNotification(parcel: LocalParcel): Date {
   return parcel.notifiedAt ?? parcel.receivedAt;
 }
 

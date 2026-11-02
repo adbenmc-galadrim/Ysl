@@ -53,14 +53,11 @@ export async function loadRecipientContext(
   };
 }
 
-/**
- * The parcels the home list shows, oldest first within a status: still on
- * the desk, or handed over today. Reads only the local database.
- */
-export async function listHomeParcels(
+/** Still on the desk, or handed over today, oldest first within a status. */
+export async function loadOpenParcels(
   database: CourrierDatabase,
   now = new Date(),
-): Promise<HomeParcel[]> {
+): Promise<LocalParcel[]> {
   const [open, delivered] = await Promise.all([
     Promise.all(
       OPEN_STATUSES.map((status) =>
@@ -77,10 +74,15 @@ export async function listHomeParcels(
   ]);
   const byReception = (a: LocalParcel, b: LocalParcel) =>
     a.receivedAt.getTime() - b.receivedAt.getTime();
-  const parcels: LocalParcel[] = [
-    ...open.flat(),
-    ...delivered.sort(byReception),
-  ];
+  return [...open.flat(), ...delivered.sort(byReception)];
+}
+
+/** The parcels the home list shows. Reads only the local database. */
+export async function listHomeParcels(
+  database: CourrierDatabase,
+  now = new Date(),
+): Promise<HomeParcel[]> {
+  const parcels = await loadOpenParcels(database, now);
   const [context, dates] = await Promise.all([
     loadRecipientContext(database, parcels),
     loadReminderDates(database, parcels),
