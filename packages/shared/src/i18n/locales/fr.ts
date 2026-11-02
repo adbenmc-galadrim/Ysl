@@ -1303,7 +1303,7 @@ export const fr = {
   'record.told.voice': 'De vive voix, {{when}}',
   'history.informed': 'Prévenu de vive voix',
   'history.informed.reminder': 'Relancé de vive voix',
-  'history.copied': 'Copie du code pour {{name}}',
+  'history.copied': 'Copie du code demandée pour {{name}}',
   'history.reply.not_mine': 'A répondu : ce n’est pas pour moi',
   'history.reply.colleague': 'A répondu : {{name}} passera le prendre',
   'history.reply.absent': 'A répondu : absence jusqu’au {{date}}',

@@ -26,6 +26,7 @@ import { RecipientChooser } from '#/features/recipient/components/recipient-choo
 import { searchOptions } from '#/features/recipient/options';
 import {
   copyDraft,
+  parcelsOfOneCode,
   recordPhoneCopy,
   sendServerCopy,
 } from '#/features/replies/copy';
@@ -200,7 +201,7 @@ export function EmployeeReply({
     case 'copy':
       return (
         <CopySheet
-          parcels={parcels}
+          parcels={parcelsOfOneCode(parcels)}
           recipient={recipient}
           name={step.name}
           initialAddress={step.address}

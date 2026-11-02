@@ -15,6 +15,16 @@ import { readDepartmentPickups, readPickup } from '#/features/settings/pickup';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
+/** A code opens one department (§3.7.9): the copy speaks for the parcels of the first. */
+export function parcelsOfOneCode(
+  parcels: readonly LocalParcel[],
+): LocalParcel[] {
+  const first = parcels[0];
+  return parcels.filter(
+    (parcel) => parcel.departmentId === first?.departmentId,
+  );
+}
+
 export type CopyTo = { name: string; address: string };
 
 type Agent = { name: string; email: string };

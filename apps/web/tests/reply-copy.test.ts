@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import {
   copyDraft,
+  parcelsOfOneCode,
   recordPhoneCopy,
   sendServerCopy,
 } from '#/features/replies/copy';
@@ -73,6 +74,15 @@ describe('the copy by the mail app', () => {
       (row) => row.entityId === parcel.id,
     );
     expect(events.map((row) => row.type)).toEqual(['parcel.copied']);
+  });
+});
+
+describe('parcelsOfOneCode', () => {
+  it('leaves out the parcels of another department', () => {
+    const here = { ...told(), departmentId: 'finance' };
+    const also = { ...told(), departmentId: 'finance' };
+    const there = { ...told(), departmentId: 'studio' };
+    expect(parcelsOfOneCode([here, there, also])).toEqual([here, also]);
   });
 });
 
