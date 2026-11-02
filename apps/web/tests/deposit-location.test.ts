@@ -76,6 +76,18 @@ describe('a deposit the shuttle places', () => {
     ]);
   });
 
+  it('sends the parcels before the deposit, which may deposit them on the server', async () => {
+    const row = parcelRow({ status: 'en_route', departmentId: finance });
+    await db.parcel.put(row);
+    await post([row.id], 'Étagère A');
+    const queued = await db.outbox.orderBy(':id').toArray();
+    const entities = queued.map(({ entity }) => entity);
+    expect(entities.indexOf('parcel')).toBeLessThan(
+      entities.indexOf('deposit'),
+    );
+    expect(entities).toContain('deposit');
+  });
+
   it('touches no parcel when it says nothing', async () => {
     const row = parcelRow({ status: 'en_route', departmentId: finance });
     await db.parcel.put(row);

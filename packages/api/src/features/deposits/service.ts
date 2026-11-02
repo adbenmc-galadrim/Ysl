@@ -163,23 +163,21 @@ export async function confirmDeposit(
   ) {
     throw refused('BAD_REQUEST', 'deposit.error.count');
   }
-  const stored = input.location ? { location: input.location } : {};
   for (const one of live) {
-    if (!settled.has(one.id)) {
-      await moveParcel(tx, one, depositedStatus(one), actor, now, stored);
+    const held = settled.has(one.id);
+    // Missing, it is on no shelf: what the shuttle said no longer holds.
+    const location =
+      held && gap?.kind !== 'left' ? null : (input.location ?? one.location);
+    if (!held) {
+      await moveParcel(tx, one, depositedStatus(one), actor, now, { location });
     } else {
       // Gone, the employee: the parcel itself is there, in the department's hands.
-      await moveParcel(
-        tx,
-        one,
-        'a_regulariser',
-        actor,
-        now,
-        gap?.kind === 'left' ? { depositedAt: now, ...stored } : {},
-      );
+      await moveParcel(tx, one, 'a_regulariser', actor, now, {
+        location,
+        ...(gap?.kind === 'left' ? { depositedAt: now } : {}),
+      });
     }
-    const putAway = !settled.has(one.id) || gap?.kind === 'left';
-    if (input.location && putAway && input.location !== one.location) {
+    if (location !== one.location) {
       await tx.insert(event).values({
         id: newId(),
         organizationId: actor.organizationId,

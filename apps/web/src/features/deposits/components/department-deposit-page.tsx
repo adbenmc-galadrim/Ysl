@@ -54,7 +54,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
         rows.filter((row) =>
           isPending(deposit)
             ? row.status === 'en_route'
-            : !deposit.gapParcelIds?.includes(row.id),
+            : deposit.gap === 'left' || !deposit.gapParcelIds?.includes(row.id),
         ),
       ),
       mails: await loadDepositMails(db, deposit.parcelIds),

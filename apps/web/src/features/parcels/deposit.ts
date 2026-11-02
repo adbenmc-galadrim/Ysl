@@ -44,6 +44,22 @@ export async function postDeposit(
     db,
     {
       upserts: [
+        // Before the deposit: without a department to count, the server deposits them on reading it.
+        ...shelved.flatMap((row) =>
+          row
+            ? [
+                {
+                  entity: 'parcel' as const,
+                  row: { ...row, location, updatedAt: now },
+                },
+                parcelEvent(
+                  row.id,
+                  { type: 'parcel.edited', fields: ['location'] },
+                  { agentId: shuttleId, now },
+                ),
+              ]
+            : [],
+        ),
         {
           entity: 'deposit',
           row: {
@@ -65,21 +81,6 @@ export async function postDeposit(
             confirmedByName: null,
           },
         },
-        ...shelved.flatMap((row) =>
-          row
-            ? [
-                {
-                  entity: 'parcel' as const,
-                  row: { ...row, location, updatedAt: now },
-                },
-                parcelEvent(
-                  row.id,
-                  { type: 'parcel.edited', fields: ['location'] },
-                  { agentId: shuttleId, now },
-                ),
-              ]
-            : [],
-        ),
       ],
     },
     { now },

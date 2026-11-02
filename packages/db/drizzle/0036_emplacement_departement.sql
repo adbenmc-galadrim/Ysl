@@ -1,6 +1,8 @@
 -- The location is a shelf of the department's reception point: a parcel that
 -- changes department leaves it behind, whichever way it moved. Named to run after
 -- `parcel_department_of_*`, which may set the department in this same write.
+-- Kept when the parcel had no department yet (it was left nowhere), and when the
+-- write itself names a new location (it is already that of the new department).
 CREATE FUNCTION "public"."parcel_location_of_department"() RETURNS trigger
 LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
 BEGIN

@@ -57,6 +57,21 @@ describe('the location of a parcel', () => {
     expect(await locationOf(id)).toBeNull();
   });
 
+  it('stays behind when a new recipient takes the parcel elsewhere', async () => {
+    const person = newId();
+    await client.query(
+      `insert into directory_person (id, organization_id, last_name, first_name, name_norm, email, department_id)
+       values ($1, $2, 'Morel', 'Camille', 'camille morel', 'camille@example.test', $3)`,
+      [person, company, legal],
+    );
+    const id = await parcelAt(finance, 'Étagère A');
+    await client.query('update parcel set person_id = $1 where id = $2', [
+      person,
+      id,
+    ]);
+    expect(await locationOf(id)).toBeNull();
+  });
+
   it('survives any other write, and the first department given', async () => {
     const same = await parcelAt(finance, 'Étagère A');
     await client.query("update parcel set notes = 'x' where id = $1", [same]);
