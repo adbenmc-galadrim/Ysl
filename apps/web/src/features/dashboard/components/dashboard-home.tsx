@@ -12,6 +12,7 @@ import {
   clockTime,
   type DashboardFigures,
   type DashboardLine,
+  formatDelay,
   loadDashboard,
   NO_DEPARTMENT,
 } from '#/features/dashboard/figures';
@@ -57,15 +58,7 @@ function toLine(line: DashboardLine, now: Date): OverviewLine {
         when: sameDay(since, now) ? clockTime(since) : shortDate(since, now),
       }),
     }),
-    delay:
-      line.delayDays === null
-        ? '—'
-        : t('dashboard.delay', {
-            days: line.delayDays.toLocaleString('fr-FR', {
-              minimumFractionDigits: 1,
-              maximumFractionDigits: 1,
-            }),
-          }),
+    delay: formatDelay(line.delayDays, t),
   };
 }
 

@@ -64,6 +64,27 @@ const noCounts = (): DashboardCounts => ({
 export const clockTime = (date: Date) =>
   `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
 
+/** Days from the notice (else the reception) to the handover. */
+export const pickupDelayDays = (parcel: LocalParcel, deliveredAt: Date) =>
+  Math.max(
+    0,
+    (deliveredAt.getTime() - firstNotification(parcel).getTime()) / DAY_MS,
+  );
+
+export const meanDays = (days: readonly number[]): number | null =>
+  days.length ? days.reduce((sum, day) => sum + day, 0) / days.length : null;
+
+/** « 1,4 j », or a dash with no handover to measure. */
+export const formatDelay = (days: number | null, t: TranslateFn) =>
+  days === null
+    ? '—'
+    : t('dashboard.delay', {
+        days: days.toLocaleString('fr-FR', {
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        }),
+      });
+
 /** `/colis?departement=`: the parcels of the line that has no department. */
 export const NO_DEPARTMENT = 'none';
 
@@ -161,12 +182,9 @@ export async function loadDashboard(
     if (state === 'handedOver') {
       totals.handedToday += 1;
       if (known && parcel.deliveredAt) {
-        const days =
-          (parcel.deliveredAt.getTime() - firstNotification(parcel).getTime()) /
-          DAY_MS;
         delays.set(parcel.departmentId!, [
           ...(delays.get(parcel.departmentId!) ?? []),
-          Math.max(0, days),
+          pickupDelayDays(parcel, parcel.deliveredAt),
         ]);
       }
     }
@@ -180,8 +198,7 @@ export async function loadDashboard(
     }
   }
   for (const [id, days] of delays) {
-    lineOf.get(id)!.delayDays =
-      days.reduce((sum, day) => sum + day, 0) / days.length;
+    lineOf.get(id)!.delayDays = meanDays(days);
   }
 
   const held = orphans.coming + orphans.waiting + orphans.toSettle > 0;
