@@ -58,11 +58,15 @@ function op(
 }
 
 /** The ops a phone queues for one handover, in their order. */
-async function handoverOps(values: Record<string, unknown>) {
+async function handoverOps(
+  values: Record<string, unknown>,
+  type: 'colis' | 'recommande' = 'colis',
+) {
   const parcel = newId();
   const row = {
     ...parcelRow(),
     id: parcel,
+    type,
     personId,
     status: 'notifie' as const,
     statusSeq: 1,
@@ -246,5 +250,77 @@ describe('the profile on the handovers pushed', () => {
         op('parcel', imported.id, { ...imported, senderName: 'Fnac' }),
       ]),
     ).toEqual([200]);
+  });
+});
+
+describe('a registered letter on the handovers pushed', () => {
+  const registered = (values: Record<string, unknown>) =>
+    handoverOps({ hasScan: false, ...values }, 'recommande');
+
+  it.each(['optional', 'disabled'] as const)(
+    'refuses it unsigned with signature %s, its parcel and event with it, and says why',
+    async (signature) => {
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        { ...SMALL_SITE_OPERATING_PROFILE, signature },
+        AGENT_ID,
+      );
+      const { ops, parcel } = await registered({ method: 'qr' });
+      const { results } = await push(sync, accessOf('shuttle'), { ops });
+      expect(results.map((result) => result.status)).toEqual([403, 403, 403]);
+      expect(results[0]?.message).toContain('sans signature');
+      expect(await statusOfParcel(parcel)).toBe('notifie');
+    },
+  );
+
+  it('refuses it from a version without the rule too', async () => {
+    const { ops } = await handoverOps({ method: 'manuel' }, 'recommande');
+    expect((await statuses(ops))[0]).toBe(403);
+  });
+
+  it('accepts it signed', async () => {
+    const { ops, parcel } = await registered({
+      method: 'qr',
+      hasSignature: true,
+    });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    expect(await statusOfParcel(parcel)).toBe('remis');
+  });
+
+  it('refuses three parcels of which one is registered, unsigned', async () => {
+    const { ops, parcel } = await registered({ method: 'pin' });
+    const others = await handoverOps({ hasScan: false, method: 'pin' });
+    const [write] = ops;
+    const grouped = {
+      ...write!,
+      patch: { ...write!.patch, parcelIds: [others.parcel, parcel] },
+    };
+    expect((await statuses([grouped]))[0]).toBe(403);
+    expect(await statusOfParcel(others.parcel)).toBe('notifie');
+  });
+
+  it('a later change to one already kept is not checked again', async () => {
+    const { ops } = await registered({ method: 'qr', hasSignature: true });
+    await statuses(ops);
+    const [write] = ops;
+    expect(
+      await statuses([
+        {
+          ...write!,
+          opId: newId(),
+          patch: { ...write!.patch, hasPhoto: true },
+        },
+      ]),
+    ).toEqual([200]);
+  });
+
+  it('a parcel that is not registered goes unsigned, as before', async () => {
+    const { ops, parcel } = await handoverOps({
+      hasScan: false,
+      method: 'qr',
+    });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    expect(await statusOfParcel(parcel)).toBe('remis');
   });
 });
