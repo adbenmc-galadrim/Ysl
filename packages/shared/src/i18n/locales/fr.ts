@@ -2029,6 +2029,16 @@ export const fr = {
   'mails.status.settled': 'Colis déjà notifiés ou remis',
   'record.action.notify': 'Notifier maintenant',
   'record.action.reply': 'Le salarié a répondu',
+  'reply.copy.help.server':
+    'Le même QR et le même code de retrait que {{recipient}}.',
+  'reply.copy.help.phone':
+    'Le même code de retrait que {{recipient}}, sans le QR : votre messagerie envoie le texte.',
+  'reply.copy.noCode':
+    'Aucun code ouvert pour ce salarié : renvoyez d’abord l’e-mail.',
+  'reply.copy.unsubscribed': 'Cette adresse est désinscrite des e-mails.',
+  'reply.copy.notFound': 'Ces colis ne sont plus en attente de retrait.',
+  'reply.copy.failed': 'Copie non envoyée. Vérifiez le réseau et réessayez.',
+  'reply.copy.choose': 'À qui envoyer la copie ?',
   'reply.about.many': '{{count}} colis',
   'reply.parcel.received': 'Reçu le {{date}} à {{time}}',
   'reply.colleague.title': 'Qui passe le prendre ?',

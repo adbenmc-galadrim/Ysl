@@ -5,26 +5,32 @@ import {
   AbsenceJusquauSheet,
   ChoisirDestinataireScreen,
   ColisPasPourMoiSheet,
+  CopieCollegueSheet,
   ReponseSalarieSheet,
 } from '@repo/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import type { LocalParcel } from '#/features/db/schema';
+import { useMailTarget } from '#/features/mail/mail-target';
+import { MAILERS } from '#/features/mail/mailer';
 import { parcelName } from '#/features/mail/recipients';
+import { useServerMail } from '#/features/mail/server-mail';
 import { assignRecipient } from '#/features/parcels/complete';
 import { formatTime, shortDate } from '#/features/parcels/model';
 import { loadRecipientBook } from '#/features/parcels/recipients';
 import { RecipientChooser } from '#/features/recipient/components/recipient-chooser';
 import { searchOptions } from '#/features/recipient/options';
+import { copyDraft, recordPhoneCopy } from '#/features/replies/copy';
 import {
   delegateName,
   replyAbsent,
   replyColleague,
   replyNotMine,
 } from '#/features/replies/record';
+import { trpcClient } from '#/lib/trpc';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -34,6 +40,8 @@ type Step =
   | { kind: 'choose' }
   | { kind: 'which' }
   | { kind: 'colleague' }
+  | { kind: 'copyWho' }
+  | { kind: 'copy'; name: string; address: string }
   | { kind: 'absent' }
   | { kind: 'reassign'; parcel: LocalParcel };
 
@@ -114,6 +122,7 @@ export function EmployeeReply({
               : setStep({ kind: 'which' })
           }
           onColleague={() => setStep({ kind: 'colleague' })}
+          onCopy={() => setStep({ kind: 'copyWho' })}
           onAbsent={() => {
             setFailed(false);
             setStep({ kind: 'absent' });
@@ -167,9 +176,30 @@ export function EmployeeReply({
       return (
         <ColleagueChooser
           onClose={onClose}
-          onPick={(name) =>
-            void write(() => replyColleague(db, ids, name, options))
+          onPick={(name, address) =>
+            void write(
+              () => replyColleague(db, ids, name, options),
+              () => setStep({ kind: 'copy', name, address }),
+            )
           }
+        />
+      );
+    case 'copyWho':
+      return (
+        <ColleagueChooser
+          title={t('reply.copy.choose')}
+          onClose={onClose}
+          onPick={(name, address) => setStep({ kind: 'copy', name, address })}
+        />
+      );
+    case 'copy':
+      return (
+        <CopySheet
+          parcels={parcels}
+          recipient={recipient}
+          name={step.name}
+          initialAddress={step.address}
+          onClose={onClose}
         />
       );
     case 'absent':
@@ -187,10 +217,12 @@ export function EmployeeReply({
 
 /** Who comes instead: a card of the directory or a contact, else the name as typed. */
 function ColleagueChooser({
+  title = t('reply.colleague.title'),
   onPick,
   onClose,
 }: {
-  onPick: (name: string) => void;
+  title?: string;
+  onPick: (name: string, address: string) => void;
   onClose: () => void;
 }) {
   const book = useLiveQuery(() => loadRecipientBook(db), []);
@@ -202,7 +234,7 @@ function ColleagueChooser({
   return (
     <div className="fixed inset-0 z-50">
       <ChoisirDestinataireScreen
-        title={t('reply.colleague.title')}
+        title={title}
         query={query}
         onQueryChange={setQuery}
         results={results}
@@ -210,7 +242,7 @@ function ColleagueChooser({
         onClose={onClose}
         onPick={(id) => {
           const choice = results.find((option) => option.id === id);
-          if (choice) onPick(choice.name);
+          if (choice) onPick(choice.name, choice.email?.trim() ?? '');
         }}
         outsideTitle={
           typed
@@ -222,9 +254,127 @@ function ColleagueChooser({
             ? t('reply.colleague.typed.description')
             : t('reply.colleague.outside.description')
         }
-        onOutside={() => typed && onPick(typed)}
+        onOutside={() => typed && onPick(typed, '')}
       />
     </div>
+  );
+}
+
+const ADDRESS = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * The copy: the server sends the recipient's own QR and code; with its sending
+ * off, the agent's mail app sends the text and the code.
+ */
+function CopySheet({
+  parcels,
+  recipient,
+  name,
+  initialAddress,
+  onClose,
+}: {
+  parcels: readonly LocalParcel[];
+  recipient: string;
+  name: string;
+  initialAddress: string;
+  onClose: () => void;
+}) {
+  const session = useSession();
+  const serverMail = useServerMail();
+  const target = useMailTarget();
+  const [address, setAddress] = useState(initialAddress);
+  const [error, setError] = useState<string>();
+  const [sending, setSending] = useState(false);
+  const [draftHref, setDraftHref] = useState<string>();
+  const clean = address.trim();
+  const valid = ADDRESS.test(clean);
+  const { user } = session;
+
+  useEffect(() => {
+    if (serverMail !== false || !valid) {
+      setDraftHref(undefined);
+      return;
+    }
+    let live = true;
+    void copyDraft(
+      db,
+      parcels,
+      { name, address: clean },
+      { name: user.name, email: user.email },
+    ).then((message) => {
+      if (!live) return;
+      setError(message ? undefined : t('reply.copy.noCode'));
+      setDraftHref(message ? MAILERS[target].prepare(message).url : undefined);
+    });
+    return () => {
+      live = false;
+    };
+  }, [serverMail, valid, clean, name, parcels, target, user.name, user.email]);
+
+  const send = async () => {
+    if (sending) return;
+    if (serverMail === false) {
+      if (draftHref) {
+        void recordPhoneCopy(db, parcels, name, { agentId: user.id })
+          .catch(() => {})
+          .finally(onClose);
+      }
+      return;
+    }
+    setSending(true);
+    setError(undefined);
+    try {
+      const { status } = await trpcClient.mail.sendCopy.mutate({
+        parcelIds: parcels.map(({ id }) => id),
+        address: clean,
+        name,
+      });
+      if (status === 'qr' || status === 'pin' || status === 'already') {
+        onClose();
+      } else {
+        setError(
+          t(
+            status === 'noCode'
+              ? 'reply.copy.noCode'
+              : status === 'unsubscribed'
+                ? 'reply.copy.unsubscribed'
+                : status === 'notFound'
+                  ? 'reply.copy.notFound'
+                  : 'reply.copy.failed',
+          ),
+        );
+      }
+    } catch {
+      setError(t('reply.copy.failed'));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <CopieCollegueSheet
+      fixed
+      recipient={recipient}
+      name={name}
+      address={address}
+      onAddressChange={(value) => {
+        setAddress(value);
+        setError(undefined);
+      }}
+      help={t(
+        serverMail === false
+          ? 'reply.copy.help.phone'
+          : 'reply.copy.help.server',
+        { recipient },
+      )}
+      error={error}
+      valid={valid && (serverMail !== false || !!draftHref)}
+      sending={sending}
+      draftHref={draftHref}
+      onSend={() => void send()}
+      onSkip={onClose}
+      onDismiss={onClose}
+    />
   );
 }
 
