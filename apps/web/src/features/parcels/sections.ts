@@ -12,6 +12,8 @@ export const SECTION_IDS = [
   'onTour',
   'waiting',
   'handedOver',
+  'present',
+  'coming',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
@@ -56,15 +58,39 @@ const SECTIONS: {
   },
 ];
 
+/** The phone of a department (maquette 03): what is here, then what is coming. */
+const DEPARTMENT_SECTIONS: typeof SECTIONS = [
+  // « À compléter » stays apart: with a tour such a parcel is still to come.
+  ...SECTIONS.filter(({ id }) =>
+    ['replies', 'incomplete', 'toNotify'].includes(id),
+  ),
+  {
+    id: 'present',
+    title: t('departmentSpace.section.present'),
+    states: ['notified', 'late'],
+  },
+  ...SECTIONS.filter(({ id }) => id === 'toSettle'),
+  {
+    id: 'coming',
+    title: t('departmentSpace.section.coming'),
+    states: ['toDispatch', 'onTour'],
+  },
+];
+
+const ALL_SECTIONS = [
+  ...SECTIONS,
+  ...DEPARTMENT_SECTIONS.filter((section) => !SECTIONS.includes(section)),
+];
+
 /** The titles `ColisScreen` folds, from the ids kept on the iPhone. */
 export function sectionTitles(ids: readonly SectionId[]): string[] {
-  return SECTIONS.filter(({ id }) => ids.includes(id)).map(
+  return ALL_SECTIONS.filter(({ id }) => ids.includes(id)).map(
     ({ title }) => title,
   );
 }
 
 export function sectionId(title: string): SectionId | undefined {
-  return SECTIONS.find((section) => section.title === title)?.id;
+  return ALL_SECTIONS.find((section) => section.title === title)?.id;
 }
 
 const TODO_STATES: readonly ParcelState[] = [
@@ -79,8 +105,11 @@ const TODO_STATES: readonly ParcelState[] = [
  * the recipients' answers on top (maquette 09 « Réponses des salariés »),
  * each parcel listed once.
  */
-export function toSections(parcels: readonly Parcel[]): ColisSection[] {
-  return SECTIONS.flatMap(({ id, title, states }) => {
+export function toSections(
+  parcels: readonly Parcel[],
+  sections: typeof SECTIONS = SECTIONS,
+): ColisSection[] {
+  return sections.flatMap(({ id, title, states }) => {
     const rows = parcels.filter(
       (parcel) =>
         states.includes(parcel.state) &&
@@ -89,6 +118,25 @@ export function toSections(parcels: readonly Parcel[]): ColisSection[] {
     return rows.length ? [{ title, parcels: rows }] : [];
   });
 }
+
+export const toDepartmentSections = (parcels: readonly Parcel[]) =>
+  toSections(parcels, DEPARTMENT_SECTIONS);
+
+/** « Studio · 12 présents, 6 à venir ». */
+export const summarizeDepartment = (
+  { present, coming }: { present: number; coming: number },
+  name: string,
+) =>
+  t('departmentSpace.summary', {
+    name,
+    present: t(
+      present === 1
+        ? 'departmentSpace.summary.present.one'
+        : 'departmentSpace.summary.present',
+      { count: present },
+    ),
+    coming,
+  });
 
 export function summarize(parcels: readonly Parcel[]) {
   if (!parcels.length) return t('colis.summary.empty');

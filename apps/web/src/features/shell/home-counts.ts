@@ -23,17 +23,24 @@ const BUCKET: Record<ParcelStatus, keyof HomeCounts | null> = {
 
 const NOT_THERE_YET: readonly ParcelStatus[] = ['a_completer', 'recu'];
 
+/** Where one parcel stands; `null` for one that left, or a status this version does not know. */
+export function homeBucket(
+  status: string,
+  tour = false,
+): keyof HomeCounts | null {
+  if (!(PARCEL_STATUSES as readonly string[]).includes(status)) return null;
+  return tour && NOT_THERE_YET.includes(status as ParcelStatus)
+    ? 'coming'
+    : BUCKET[status as ParcelStatus];
+}
+
 export function homeCounts(
   rows: readonly { status: string }[],
   tour = false,
 ): HomeCounts {
   const counts: HomeCounts = { coming: 0, present: 0, toSettle: 0 };
   for (const { status } of rows) {
-    if (!(PARCEL_STATUSES as readonly string[]).includes(status)) continue;
-    const bucket =
-      tour && NOT_THERE_YET.includes(status as ParcelStatus)
-        ? 'coming'
-        : BUCKET[status as ParcelStatus];
+    const bucket = homeBucket(status, tour);
     if (bucket) counts[bucket] += 1;
   }
   return counts;
