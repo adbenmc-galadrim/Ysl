@@ -1,5 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { CompanyShell } from '#components/company-shell';
+import {
+  ACCOUNT,
+  COMPANY,
+  COMPANY_ADMIN_NAV,
+  crumbs,
+} from '#fixtures/multi-entreprises';
 import {
   EntreprisesDesktop,
   EntreprisesErreurDesktop,
@@ -12,6 +19,7 @@ import {
 import {
   VueDEnsembleDesktop,
   VueDEnsembleMobile,
+  type OverviewProps,
 } from '#screens/multi-entreprises/03-accueil/vue-d-ensemble-screen';
 
 const meta = {
@@ -26,6 +34,83 @@ type Story = StoryObj<typeof meta>;
 const desktop = { viewport: { value: 'landingDesktop', isRotated: false } };
 const mobile = { viewport: { value: 'iphone15', isRotated: false } };
 const page = 'multi-entreprises/03-accueil/accueil--';
+
+const OVERVIEW: OverviewProps = {
+  subtitle: 'Aujourd’hui, mercredi 29 octobre · mis à jour à 11:04',
+  stats: {
+    coming: '14',
+    waiting: '37',
+    late: '5',
+    blocked: '3',
+    handedToday: '22',
+  },
+  blockedCount: 3,
+  toResolve: [
+    {
+      id: 'lea',
+      name: 'Léa Fontaine',
+      department: 'Finance',
+      reason: 'Manquant au dépôt de 9:40',
+      since: 'Il y a 1 h',
+    },
+    {
+      id: 'ines',
+      name: 'Inès Garnier',
+      department: 'Studio',
+      reason: 'Manquant au dépôt de 10:56',
+      since: 'Il y a 20 min',
+    },
+    {
+      id: 'paul',
+      name: 'Paul Mercier',
+      department: 'Juridique',
+      reason: 'Salarié parti de l’entreprise',
+      since: 'Hier',
+    },
+  ],
+  lines: [
+    {
+      id: 'studio',
+      name: 'Studio',
+      coming: '6',
+      waiting: '12',
+      late: '2',
+      blocked: '1',
+      deposit: 'Depuis 10:56',
+      delay: '1,2 j',
+    },
+    {
+      id: 'finance',
+      name: 'Finance',
+      coming: '5',
+      waiting: '8',
+      late: '1',
+      blocked: '1',
+      delay: '1,6 j',
+    },
+    {
+      id: 'juridique',
+      name: 'Juridique',
+      coming: '3',
+      waiting: '17',
+      late: '2',
+      blocked: '1',
+      delay: '2,4 j',
+    },
+    {
+      id: 'courrier',
+      name: 'Service courrier',
+      coming: '—',
+      waiting: '—',
+      late: '—',
+      blocked: '—',
+      delay: '—',
+    },
+  ],
+  onResolve: () => undefined,
+  onResolveAll: () => undefined,
+  onOpenLine: () => undefined,
+};
 
 export const EntreprisesOrdinateur: Story = {
   name: 'Entreprises · ordinateur',
@@ -59,7 +144,17 @@ export const VueDEnsembleOrdinateur: Story = {
     reference: `${page}admin-entreprise-vue-d-ensemble-ordinateur`,
   },
   globals: desktop,
-  render: () => <VueDEnsembleDesktop />,
+  render: () => (
+    <CompanyShell
+      company={COMPANY.admin}
+      nav={COMPANY_ADMIN_NAV}
+      active="vue-d-ensemble"
+      account={ACCOUNT.companyAdmin}
+      breadcrumb={crumbs('Atelier Lumen', 'Vue d’ensemble')}
+    >
+      <VueDEnsembleDesktop {...OVERVIEW} />
+    </CompanyShell>
+  ),
 };
 
 export const VueDEnsembleTelephone: Story = {
@@ -69,7 +164,37 @@ export const VueDEnsembleTelephone: Story = {
     reference: `${page}admin-entreprise-vue-d-ensemble-mobile`,
   },
   globals: mobile,
-  render: () => <VueDEnsembleMobile />,
+  render: () => (
+    <VueDEnsembleMobile
+      {...OVERVIEW}
+      subtitle="Aujourd’hui, 11:04"
+      onMenu={() => undefined}
+    />
+  ),
+};
+
+export const VueDEnsembleAncienneOrdinateur: Story = {
+  name: 'Vue d’ensemble, chiffres anciens · ordinateur',
+  globals: desktop,
+  render: () => (
+    <CompanyShell
+      company={COMPANY.admin}
+      nav={COMPANY_ADMIN_NAV}
+      active="vue-d-ensemble"
+      account={ACCOUNT.companyAdmin}
+      breadcrumb={crumbs('Atelier Lumen', 'Vue d’ensemble')}
+    >
+      <VueDEnsembleDesktop
+        {...OVERVIEW}
+        toResolve={[]}
+        stale={{
+          title: 'Chiffres non mis à jour',
+          description: 'Le serveur ne répond pas. Ceux-ci datent de 9:12.',
+          onRetry: () => undefined,
+        }}
+      />
+    </CompanyShell>
+  ),
 };
 
 export const NavetteTourneeAPreparer: Story = {
