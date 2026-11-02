@@ -1,7 +1,7 @@
 import { type PointerEvent, useEffect, useRef } from 'react';
 
 /** How long a finger rests on a row before it counts as a long press (iOS: about half a second). */
-export const LONG_PRESS_MS = 500;
+const LONG_PRESS_MS = 500;
 
 /** A finger that slides further than this is scrolling, not pressing. */
 const SLOP_PX = 10;

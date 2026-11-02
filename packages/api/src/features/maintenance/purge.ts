@@ -223,7 +223,7 @@ function add(
  * under the purge flag its trigger asks for. Every step works by batches in
  * short transactions.
  */
-export async function purgeOrganization(
+async function purgeOrganization(
   db: AnyDb,
   organizationId: string,
   now: Date,

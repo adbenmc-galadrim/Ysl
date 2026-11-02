@@ -49,7 +49,7 @@ export function constraintOf(error: unknown): string | undefined {
  * a setting another device saved first under its key; a department that
  * was archived (drizzle/0023_departement_archive.sql).
  */
-export const GUARDS = {
+const GUARDS = {
   parcel_status_transition: {
     status: SYNC_STATUS.conflict,
     key: 'sync.op.transition',

@@ -2,7 +2,7 @@ import type { TranslateFn } from '@repo/shared/i18n';
 import { useEffect, useSyncExternalStore } from 'react';
 
 /** How long « Déjà remis à Nora par un collègue » stays over Colis. */
-export const HANDOVER_TOAST_MS = 5_000;
+const HANDOVER_TOAST_MS = 5_000;
 
 /**
  * What Colis says of a handover: another iPhone had recorded it first, found
@@ -50,7 +50,7 @@ export function announceHandover(toast: HandoverToast): void {
   publish(toast);
 }
 
-export function dismissHandoverToast(): void {
+function dismissHandoverToast(): void {
   publish(undefined);
 }
 

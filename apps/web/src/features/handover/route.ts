@@ -5,7 +5,7 @@ import type { PickupRefusal } from '#/features/handover/pickup-lookup';
 import { searchIds } from '#/lib/search-ids';
 
 /** How the person was identified: the `handover.method` the handover will record. */
-export type HandoverVia = Extract<HandoverMethod, 'qr' | 'pin' | 'manuel'>;
+type HandoverVia = Extract<HandoverMethod, 'qr' | 'pin' | 'manuel'>;
 
 /** What `/remise/colis` is opened with: who, how, when, and the code checked. */
 export type RemiseColisSearch = {

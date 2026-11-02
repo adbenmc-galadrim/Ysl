@@ -70,7 +70,7 @@ export const UNCERTAIN_LABEL = {
   tracking: '8J 02299 07975 0',
 };
 
-export const PAUL_DPD: Parcel = {
+const PAUL_DPD: Parcel = {
   id: 'p-9404',
   recipient: PEOPLE.paul.name,
   department: PEOPLE.paul.department,

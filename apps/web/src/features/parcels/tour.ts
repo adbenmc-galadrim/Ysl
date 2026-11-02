@@ -41,7 +41,7 @@ type DepartmentSources = {
 };
 
 /** Where a parcel goes: what the agent chose, the recipient's department, the one its word names. An archived one takes no parcel. */
-export function departmentOf(
+function departmentOf(
   { chosen, person, word }: DepartmentSources,
   departments: readonly LocalDepartment[],
 ): string | null {

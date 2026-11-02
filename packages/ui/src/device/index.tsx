@@ -10,7 +10,7 @@ import { cn } from '#lib/tv';
  */
 export type DeviceTone = 'light' | 'dark';
 
-export function StatusBar({ tone = 'light' }: { tone?: DeviceTone }) {
+function StatusBar({ tone = 'light' }: { tone?: DeviceTone }) {
   const ink = tone === 'dark' ? 'bg-white' : 'bg-ink';
   return (
     <div

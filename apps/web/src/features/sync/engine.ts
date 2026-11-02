@@ -40,10 +40,10 @@ export type SyncNowOptions = {
 };
 
 /** Back-off after a failed run: 2 s, 4 s, … up to 5 min, for the automatic triggers. */
-export const BACKOFF_FIRST_MS = 2_000;
-export const BACKOFF_MAX_MS = 5 * 60_000;
+const BACKOFF_FIRST_MS = 2_000;
+const BACKOFF_MAX_MS = 5 * 60_000;
 
-export function backoffAfter(failures: number): number {
+function backoffAfter(failures: number): number {
   return Math.min(BACKOFF_MAX_MS, BACKOFF_FIRST_MS * 2 ** (failures - 1));
 }
 
@@ -54,7 +54,7 @@ export type SyncRun = {
   pulled: number;
 };
 
-export const INITIAL_SYNC_SNAPSHOT: SyncSnapshot = {
+const INITIAL_SYNC_SNAPSHOT: SyncSnapshot = {
   status: 'idle',
   lastSyncAt: null,
   lastError: null,

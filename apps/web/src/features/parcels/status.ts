@@ -66,7 +66,7 @@ export async function stepBackParcel(
 }
 
 /** What « Supprimer » may take from a selection: a parcel nobody was told about yet. */
-export const DELETABLE_STATUSES: readonly ParcelStatus[] = [
+const DELETABLE_STATUSES: readonly ParcelStatus[] = [
   'a_completer',
   'recu',
 ];

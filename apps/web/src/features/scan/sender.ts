@@ -15,7 +15,7 @@ import type {
 } from '#/features/db/schema';
 
 /** The dictionary rows of the accounts the codes carry (§4.8, `sender_account`). */
-export async function knownAccounts(
+async function knownAccounts(
   db: CourrierDatabase,
   reads: readonly AccountRead[],
 ): Promise<KnownAccount[]> {
@@ -41,7 +41,7 @@ export async function knownAccounts(
 }
 
 /** Every sender already seen, for the OCR to be matched against (§4.8, `sender`). */
-export async function knownSenders(
+async function knownSenders(
   db: CourrierDatabase,
 ): Promise<KnownSender[]> {
   const rows = await db.sender
@@ -55,7 +55,7 @@ export async function knownSenders(
 }
 
 /** The senders the agent took this OCR text for before (§4.8, `sender_alias`). */
-export async function knownSenderAliases(
+async function knownSenderAliases(
   db: CourrierDatabase,
   ocrName: string,
 ): Promise<KnownSenderAlias[]> {

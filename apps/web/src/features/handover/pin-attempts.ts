@@ -1,11 +1,11 @@
 import type { PickupMatch } from '#/features/handover/pickup-lookup';
 
 /** Wrong PINs in a row before the pad waits: four digits are guessed fast (§8.7). */
-export const PIN_MAX_FAILURES = 5;
+const PIN_MAX_FAILURES = 5;
 
 export const PIN_LOCK_MS = 30 * 1000;
 
-export const PIN_ATTEMPTS_KEY = 'courrier.handover.pinAttempts';
+const PIN_ATTEMPTS_KEY = 'courrier.handover.pinAttempts';
 
 /** Wrong PINs since the last good one, and the end of the wait if any. */
 export type PinAttempts = { failures: number; lockedUntil: number | null };

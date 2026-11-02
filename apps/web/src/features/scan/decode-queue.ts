@@ -5,7 +5,7 @@ import type {
 } from '@repo/barcode/worker';
 
 /** A 12 Mpx bitmap weighs ~48 Mo: two in flight is what a burst may hold. */
-export const MAX_IN_FLIGHT = 2;
+const MAX_IN_FLIGHT = 2;
 
 type Decode = (
   bitmap: ImageBitmap,

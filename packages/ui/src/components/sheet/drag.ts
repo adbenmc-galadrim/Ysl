@@ -15,7 +15,7 @@ export function releasesSheet(
 }
 
 /** A finger held still before it lets go has stopped: no flick. */
-export const FLICK_WINDOW_MS = 100;
+const FLICK_WINDOW_MS = 100;
 
 /** The speed the sheet is let go at: the last move's, unless the finger rested since. */
 export function releaseVelocity(

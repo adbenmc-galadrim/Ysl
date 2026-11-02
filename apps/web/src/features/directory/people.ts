@@ -35,7 +35,7 @@ export const listed = (person: LocalDirectoryPerson) =>
   person.active && !person.deletedAt;
 
 /** "Prénom et nom" in one field: the first word, and all the rest. */
-export function splitName(name: string): {
+function splitName(name: string): {
   firstName: string;
   lastName: string;
 } {
@@ -43,7 +43,7 @@ export function splitName(name: string): {
   return { firstName, lastName: rest.join(' ') };
 }
 
-export function validatePerson(draft: PersonFormValue): PersonFormErrors {
+function validatePerson(draft: PersonFormValue): PersonFormErrors {
   const errors: PersonFormErrors = {};
   const { firstName, lastName } = splitName(draft.name);
   if (!firstName || !lastName) errors.name = t('directory.error.name');

@@ -10,7 +10,7 @@ import { platformJournal } from '@repo/db/schema';
 import { and, count, desc, eq, gte, ilike, lt, sql } from 'drizzle-orm';
 import { escapeLike } from '#features/accounts/service';
 
-export const JOURNAL_MONTHS = 12;
+const JOURNAL_MONTHS = 12;
 
 export type JournalActor = { id: string; name: string };
 

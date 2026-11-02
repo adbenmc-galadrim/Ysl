@@ -45,7 +45,7 @@ export type ParcelEdit = {
   location: string;
 };
 
-export type EditErrorKey =
+type EditErrorKey =
   'recipientRequired' | 'emailInvalid' | 'weightInvalid' | 'piecesInvalid';
 
 export type EditErrors = {

@@ -30,7 +30,7 @@ export function promotedSender(draft: DraftParcel): DraftSender | null {
  * sender owns moves to theirs (§4.8): one slip of the finger is not enough
  * to undo what earlier parcels taught.
  */
-export const ACCOUNT_REATTRIBUTION = 2;
+const ACCOUNT_REATTRIBUTION = 2;
 
 export type LearnedSenders = {
   /** The `sender` rows first, then the accounts and the aliases: they point at them. */
@@ -271,7 +271,7 @@ export function senderLessons(db: CourrierDatabase, now: Date) {
 }
 
 /** The lesson of a draft's sender, sure on its parcel; none for a sender still to verify. */
-export function lessonOf(sender: DraftSender | null): SenderLesson | null {
+function lessonOf(sender: DraftSender | null): SenderLesson | null {
   if (!sender || sender.level !== 'sure') return null;
   return {
     name: sender.name,

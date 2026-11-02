@@ -28,7 +28,7 @@ export type RgbaImage = {
  * Long side of the thumbnail the measures run on: a sixth of the stream,
  * where the blur that defeats the reader (σ ≈ 4 px on 4 032) still shows.
  */
-export const THUMBNAIL_SIDE = 640;
+const THUMBNAIL_SIDE = 640;
 /**
  * Below this, the edges carry too little of the contrast: the label is a
  * smear. Real labels of the corpus read 0.59 to 1.1 sharp, 0.17 to 0.31
@@ -38,7 +38,7 @@ export const BLUR_BELOW = 0.25;
 /** A white patch over this share of the middle hides what is under it. */
 export const GLARE_ABOVE = 0.12;
 /** A pixel this bright is burnt: paper under a lamp reads around 230. */
-export const SATURATED = 250;
+const SATURATED = 250;
 /** The middle of the frame, where the viewfinder puts the label. */
 const MIDDLE = 0.5;
 

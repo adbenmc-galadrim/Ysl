@@ -5,7 +5,7 @@ import type { TrackingContext } from '@repo/contract/tracking';
  * The symbols a carrier prints beside its 1D tracking code (S2). Once the
  * first pass names the carrier, the reader goes back for the ones it missed.
  */
-export const CARRIER_FORMATS: Partial<
+const CARRIER_FORMATS: Partial<
   Record<TrackingContext, readonly ReadableFormat[]>
 > = {
   ups: ['Code128', 'MaxiCode'],

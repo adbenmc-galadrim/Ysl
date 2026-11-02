@@ -149,14 +149,14 @@ const swapOne = (word: string, from: string, to: string) => {
 };
 
 /** How a label or the OCR spoils a printed name (v1 cases, §4.8). */
-export type Noise = {
+type Noise = {
   id: string;
   title: string;
   /** The name as read; null when this spoiling does not apply to that name. */
   apply: (person: RecipientEntry) => string | null;
 };
 
-export const NOISES: readonly Noise[] = [
+const NOISES: readonly Noise[] = [
   {
     id: 'exact',
     title: 'Nom complet',
@@ -241,7 +241,7 @@ export const NOISES: readonly Noise[] = [
   },
 ];
 
-export type NoiseOutcome = {
+type NoiseOutcome = {
   noise: string;
   size: number;
   cases: number;
@@ -255,7 +255,7 @@ export type NoiseOutcome = {
   wrongSilent: number;
 };
 
-export type SizeTiming = { size: number } & Timing;
+type SizeTiming = { size: number } & Timing;
 
 export type RecipientBench = {
   outcomes: NoiseOutcome[];

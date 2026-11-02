@@ -10,9 +10,9 @@ type TourParcel = Pick<
 /** When each parcel last went on its way, where it differs from its reception. */
 export type TourEntries = ReadonlyMap<string, Date>;
 
-export type TourStop<Row> = { departmentId: string; parcels: Row[] };
+type TourStop<Row> = { departmentId: string; parcels: Row[] };
 
-export type TourDone = {
+type TourDone = {
   departmentId: string;
   count: number;
   confirmedAt: Date;

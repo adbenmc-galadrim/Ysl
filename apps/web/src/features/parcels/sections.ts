@@ -150,7 +150,7 @@ export function summarize(parcels: readonly Parcel[]) {
  * The counters over the list (F32, F37), each a filter: what is left to
  * complete, to hand over, to remind, to chase.
  */
-export const COUNTER_IDS = ['incomplete', 'waiting', 'remind', 'late'] as const;
+const COUNTER_IDS = ['incomplete', 'waiting', 'remind', 'late'] as const;
 
 export type CounterId = (typeof COUNTER_IDS)[number];
 

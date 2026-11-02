@@ -70,7 +70,7 @@ async function dropParcelTraces(db: CourrierDatabase, ids: string[]) {
  * server marked deleted leaves the device: no tombstone is kept here, so a
  * purge on the server (§9.2) purges the phone too.
  */
-export async function applyChanges(
+async function applyChanges(
   db: CourrierDatabase,
   changes: PullChange[],
 ): Promise<number> {

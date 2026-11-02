@@ -1,6 +1,6 @@
 import { isRetryable } from '#features/sync/errors';
 
-export const RETRY_ATTEMPTS = 3;
+const RETRY_ATTEMPTS = 3;
 
 /**
  * Runs a transaction again when Postgres gave up on it for a reason that

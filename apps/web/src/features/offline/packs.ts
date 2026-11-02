@@ -4,9 +4,9 @@ import { formatBytes } from '#/features/db/storage';
 import type { DownloadProgress } from '#/features/offline/download';
 import type { SyncRunStatus } from '#/features/sync/engine';
 
-export type PackState = OfflineDownload['state'];
+type PackState = OfflineDownload['state'];
 
-export type DirectoryInput = {
+type DirectoryInput = {
   online: boolean;
   status: SyncRunStatus;
   /** The first pull went through: the directory is on the device. */

@@ -86,7 +86,7 @@ type ProofContext = {
  * deleted, goes once older than the orphan grace (it may belong to a
  * handover being written).
  */
-export function proofExpired(
+function proofExpired(
   proof: LocalHandoverProof,
   { handovers, pending, now, retention = RETENTION }: ProofContext,
 ): boolean {

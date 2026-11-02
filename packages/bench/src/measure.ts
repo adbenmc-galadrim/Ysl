@@ -15,7 +15,7 @@ export const FIELDS = [
 export type FieldName = (typeof FIELDS)[number];
 
 /** `-ok` / `-wrong` after the display level of §4.4; `empty` is nothing proposed. */
-export type OutcomeStatus =
+type OutcomeStatus =
   | 'sure-ok'
   | 'sure-wrong'
   | 'verify-ok'
@@ -43,7 +43,7 @@ const show = (value: Expected): string | null => {
 };
 
 /** The UPS MaxiCode carries whole pounds: a quarter of a kilogram covers the rounding. */
-export const WEIGHT_TOLERANCE_KG = 0.25;
+const WEIGHT_TOLERANCE_KG = 0.25;
 
 const tokens = (text: string) => canonical(text).split(' ').filter(Boolean);
 

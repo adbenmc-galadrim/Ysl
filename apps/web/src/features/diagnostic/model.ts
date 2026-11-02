@@ -168,7 +168,7 @@ export function othersOf(
     .filter((c) => c.value !== kept);
 }
 
-export function describeField(
+function describeField(
   name: ExtractionFieldName,
   field: ExtractionField,
   t: TranslateFn,
@@ -202,7 +202,7 @@ export function describeField(
 }
 
 /** Control characters (ISO 15434 separators) shown as « · », as on `/scan`. */
-export const printable = (text: string) => text.replace(/\p{Cc}/gu, '·');
+const printable = (text: string) => text.replace(/\p{Cc}/gu, '·');
 
 /** Which parser understood a code, or the carrier its number names. */
 export function codeParser(
@@ -238,7 +238,7 @@ const compact = (text: string) => text.replace(/\s+/g, '').toUpperCase();
  * The printed text line by line; a line that carries the value of an OCR
  * source (the anchored name, a printed number) names the field it fed.
  */
-export function linesOf(
+function linesOf(
   extraction: LocalExtraction,
   t: TranslateFn,
 ): LectureLine[] {
@@ -273,7 +273,7 @@ export const formatMs = (value: number | null | undefined, t: TranslateFn) =>
     ? t('reading.fact.unknown')
     : t('reading.fact.ms', { ms: value });
 
-export function factsOf(
+function factsOf(
   extraction: LocalExtraction,
   t: TranslateFn,
 ): LectureFact[] {
@@ -291,7 +291,7 @@ export const readAt = (date: Date, now: Date) =>
   `${shortDate(date, now)} à ${formatTime(date)}`;
 
 /** A reading with neither a code nor a line of text: the number was typed. */
-export const nothingRead = (extraction: LocalExtraction) =>
+const nothingRead = (extraction: LocalExtraction) =>
   extraction.codes.length === 0 && !extraction.ocrText;
 
 export type ReadingView =

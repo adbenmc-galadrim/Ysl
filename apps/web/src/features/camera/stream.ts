@@ -23,7 +23,7 @@ const CONSTRAINTS: MediaStreamConstraints = {
   },
 };
 
-export function hasCamera(): boolean {
+function hasCamera(): boolean {
   return (
     typeof navigator !== 'undefined' &&
     typeof navigator.mediaDevices?.getUserMedia === 'function'

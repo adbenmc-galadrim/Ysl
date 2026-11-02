@@ -28,7 +28,7 @@ export function createTRPCContext({
   return { headers, session };
 }
 
-export type Context = ReturnType<typeof createTRPCContext>;
+type Context = ReturnType<typeof createTRPCContext>;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,

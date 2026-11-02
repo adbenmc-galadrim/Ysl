@@ -19,7 +19,7 @@ export type PhotoInput = {
 /** A photo written before its row is tolerable; the sweep gives it this long. */
 export const ORPHAN_GRACE_MS = 60 * 60 * 1000;
 
-export function photoFileName(id: string): string {
+function photoFileName(id: string): string {
   return `${id}.jpg`;
 }
 
@@ -27,7 +27,7 @@ function pathOf(fileName: string): string {
   return `${PHOTOS_DIRECTORY}/${fileName}`;
 }
 
-export function photoPath(id: string): string {
+function photoPath(id: string): string {
   return pathOf(photoFileName(id));
 }
 
