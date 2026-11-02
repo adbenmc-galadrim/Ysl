@@ -1,3 +1,4 @@
+import { REGISTERED } from '@repo/contract/codes';
 import { damageColumns } from '@repo/contract/parcel-damage';
 import { newId } from '@repo/shared/id';
 import { extractionOf } from '#/features/batch/extraction';
@@ -20,6 +21,7 @@ import type {
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { parcelEvent } from '#/features/parcels/events';
 import { draftDepartment, goesOnTour } from '#/features/parcels/tour';
+import { readOperatingProfile } from '#/features/settings/operating-profile';
 import { deletePhoto, savePhoto } from '#/features/photos/store';
 import { serviceText } from '#/features/scan/annex';
 import { notifiable } from '#/features/scan/confidence';
@@ -256,9 +258,21 @@ export function promotedStatus(draft: DraftParcel): LocalParcel['status'] {
   return notifiable(draft) ? 'recu' : 'a_completer';
 }
 
+/** The agent's choice, or a label read as registered when the company takes them (F56). */
+export function parcelTypeOf(
+  draft: Pick<DraftParcel, 'type' | 'annex'>,
+  registeredMail: boolean,
+): LocalParcel['type'] {
+  if (draft.type) return draft.type;
+  return registeredMail && draft.annex?.service?.label === REGISTERED
+    ? 'recommande'
+    : 'colis';
+}
+
 function toParcel(
   draft: DraftParcel,
   { batchId, agentId, now }: Required<FinishOptions>,
+  registeredMail: boolean,
   learnedSenderId?: string | null,
   contactDepartment: string | null = null,
   /** Where it goes on a tour; undefined when the company has no tour. */
@@ -273,7 +287,7 @@ function toParcel(
     updatedAt: now,
     deletedAt: null,
     batchId,
-    type: draft.type ?? 'colis',
+    type: parcelTypeOf(draft, registeredMail),
     status:
       goesTo === undefined
         ? promotedStatus(draft)
@@ -428,10 +442,12 @@ export function finishBatch(
       const goesTo = (await goesOnTour(db))
         ? await draftDestinations(db, drafts, departments)
         : null;
+      const { registeredMail } = await readOperatingProfile(db);
       const parcels = drafts.map((draft) =>
         toParcel(
           draft,
           options,
+          registeredMail,
           learned.senderIds.get(draft.id),
           draft.recipient ? departments.get(draft.recipient.id) : null,
           goesTo ? (goesTo.get(draft.id) ?? null) : undefined,

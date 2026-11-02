@@ -1357,6 +1357,7 @@ export const fr = {
   'history.field.notes': 'note',
   'history.field.notificationEmail': 'e-mail',
   'history.field.carrierService': 'service',
+  'history.field.registered': 'type d’envoi',
   'history.field.reference': 'référence',
   'history.field.weightKg': 'poids',
   'history.field.location': 'emplacement',

@@ -1,3 +1,4 @@
+import { PhoneSegments } from '#components/phone-parts';
 import type { ReactNode } from 'react';
 
 import {
@@ -45,6 +46,13 @@ export type ModifierColisScreenProps = {
   trackingCheck?: { tone: 'green' | 'orange' | 'red'; text: string };
   /** Why the sender is pre-filled, under its field. */
   senderHelp?: string;
+  /** Registered or not, when the company takes registered mail. */
+  kinds?: {
+    label: string;
+    options: readonly string[];
+    value: string;
+    onChange: (value: string) => void;
+  };
   /** The fields the mockup leaves out (e-mail, service, weight…), below the note. */
   annex?: boolean;
   errors?: ModifierColisErrors;
@@ -68,6 +76,7 @@ export function ModifierColisScreen({
   carriers = [],
   trackingCheck,
   senderHelp,
+  kinds,
   annex = true,
   errors = {},
   failure,
@@ -240,6 +249,17 @@ export function ModifierColisScreen({
               />
             )}
           </Field>
+          {kinds && (
+            <Field label={kinds.label} className="mt-4">
+              {() => (
+                <PhoneSegments
+                  {...kinds}
+                  className="h-11 w-full rounded-full"
+                  optionClassName="h-10 rounded-full pb-[3px] text-14"
+                />
+              )}
+            </Field>
+          )}
           <Field label="Service" className="mt-4">
             {(id) => (
               <FieldInput

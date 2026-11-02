@@ -1,3 +1,4 @@
+import { SegmentedControl } from '#components/segmented-control';
 import { Button } from '#components/button';
 import {
   CameraControls,
@@ -85,6 +86,13 @@ export type ScanReading =
 export type ScanScreenProps = {
   /** Parcels in the batch so far. */
   count: number;
+  /** What the camera is reading, when the company takes registered mail. */
+  kinds?: {
+    label: string;
+    options: readonly string[];
+    value: string;
+    onChange: (value: string) => void;
+  };
   /** The label the camera is pointed at; none before the camera starts. */
   label?: ParcelLabelProps;
   reading: ScanReading;
@@ -148,6 +156,7 @@ export function missingPiecesLabel({
  */
 export function ScanScreen({
   count,
+  kinds,
   label,
   reading,
   video,
@@ -208,6 +217,14 @@ export function ScanScreen({
         onClose={onClose}
         onTorch={onTorch}
       />
+
+      {kinds && controls && (
+        <SegmentedControl
+          tone="night"
+          {...kinds}
+          className="mx-auto mt-3 h-10 w-[301px] shrink-0 rounded-[20px] [&>button]:pb-[3px]"
+        />
+      )}
 
       {reading.kind === 'read' && reading.last && (
         <LastScanPanel
@@ -503,6 +520,13 @@ export type SaisieManuelleScreenProps = Omit<
   'fixed'
 > & {
   count: number;
+  /** What the camera is reading, when the company takes registered mail. */
+  kinds?: {
+    label: string;
+    options: readonly string[];
+    value: string;
+    onChange: (value: string) => void;
+  };
   label?: ParcelLabelProps;
   video?: ReactNode;
 };

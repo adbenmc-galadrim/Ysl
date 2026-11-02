@@ -323,6 +323,15 @@ function details(
   const optional = (label: string, value: string | null): DetailsItem[] =>
     value ? [{ label, value }] : [];
   return [
+    ...(parcel.type === 'recommande'
+      ? [
+          { label: t('record.detail.type'), value: t('parcel.type.recommande') },
+          ...optional(
+            t('record.detail.ar'),
+            parcel.tracking && formatTracking(parcel.tracking),
+          ),
+        ]
+      : []),
     {
       label: t('record.detail.sender'),
       value: parcel.senderName ?? t('record.value.unknown'),
