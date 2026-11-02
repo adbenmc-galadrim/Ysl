@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LandingScreen } from '#screens/landing/landing-screen';
 
 /**
- * The page courrier.ysl.fr shows before the app is installed. One
+ * The page courrier.exemple.fr shows before the app is installed. One
  * component, two layouts: the phone below `xl` (1280 px), the desktop page above.
  */
 const meta = {

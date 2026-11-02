@@ -21,7 +21,7 @@ export const LANDING_FR: LandingCopy = {
     scanTitle: 'Scannez. Installez. C’est parti.',
     scanText: 'Avec l’appareil photo de l’iPhone.',
     scanLink: 'Comment ça marche ↓',
-    scanLinkLabel: 'Comment ça marche : installer depuis courrier.ysl.fr',
+    scanLinkLabel: 'Comment ça marche : installer depuis courrier.exemple.fr',
     perks: ['Sans App Store', 'Même hors ligne', 'Un geste par colis'],
   },
   journey: {

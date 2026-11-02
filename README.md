@@ -1,6 +1,7 @@
 # Courrier
 
-Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
+Suivi des colis d'une entreprise, de la réception à la remise, pour plusieurs entreprises
+clientes : une PWA, sur téléphone et sur ordinateur, et son API.
 
 ## Structure
 
@@ -10,8 +11,12 @@ Suivi des colis reçus à l'accueil : une PWA pour iPhone et son API.
 | `apps/server` | API Hono qui sert le routeur tRPC |
 | `packages/api` | Routeur tRPC ; l'app web n'en importe que le type |
 | `packages/auth` | Better Auth : comptes, rôles, client web |
+| `packages/barcode` | Lecture des codes 1D et 2D (`zxing-wasm`) |
+| `packages/bench` | Banc d'extraction sur le corpus d'étiquettes |
 | `packages/contract` | Schémas zod partagés entre l'app et l'API |
+| `packages/corpus` | Étiquettes de synthèse et corpus du banc |
 | `packages/db` | Client Drizzle et schéma Postgres 17 |
+| `packages/ocr` | Lecture du texte imprimé (PaddleOCR, Tesseract.js) |
 | `packages/shared` | Variables d'environnement, logs, traductions |
 | `packages/ui` | Design system et Storybook |
 | `docs/` | Cahier des charges, recherches, maquettes |
@@ -48,7 +53,7 @@ Un compte `platform_admin` n'appartient à aucune organisation
 (`auth:attach-organization` refuse) ; il atteint le routeur `platform`,
 qui ne rend que des chiffres, et aucune donnée d'une entreprise.
 
-Chaque agent a son compte, avec son rôle. Il n'y a pas d'inscription publique : les comptes
+Chacun a son compte, avec son rôle. Il n'y a pas d'inscription publique : les comptes
 arrivent par invitation (`docs/comptes.md`). `auth:create-user` crée le premier admin de
 l'app ; en local, `auth:dev-account` crée un compte d'entreprise pour une démo, et
 refuse en production.
@@ -146,9 +151,11 @@ dans l'artefact `planches-visuelles` du run (7 jours). En local : `pnpm storyboo
 
 ## Écrans de l'app
 
-Connecté, l'agent arrive sur **Colis** (`/`), la liste de ce qu'il reste à faire. De là :
-« Scanner » ouvre la réception (`/scan`), « Remettre » la remise (`/remise`), et le bouton
-« Menu » les **Réglages** (`/reglages`), avec le compte (`/reglages/compte`, déconnexion) et
+Connecté, chacun arrive sur l'accueil de son rôle (`/`) ; `features/auth/route-access.ts`
+dit qui ouvre quoi. La navette reçoit (`/scan`) et dépose (`/tournee`), le département
+remet (`/remise`) et suit ses dépôts (`/departement/depots`), l'admin entreprise suit
+`/tableau-de-bord`, l'admin de l'app ses entreprises, sur l'accueil. Hors admin de l'app,
+le bouton « Menu » ouvre les **Réglages** (`/reglages`), avec le compte (`/reglages/compte`, déconnexion) et
 l'apparence (`/reglages/apparence` : automatique, clair ou sombre) et le choix des arrondis
 (`/reglages/arrondis`). Le groupe « Service courrier » des réglages
 n'apparaît qu'aux administrateurs. Une adresse inconnue affiche « Page introuvable » et un
@@ -157,7 +164,7 @@ retour aux colis.
 Les écrans viennent de `@repo/ui` tels qu'ils sont dessinés dans Storybook ; l'app leur
 passe les données et les actions. La liste des colis se lit dans la base locale de
 l'appareil (Dexie, voir `docs/architecture/stockage-local.md`). L'écran Scan filme en
-rafale (voir `docs/architecture/capture-rafale.md`) ; l'écran Remise reste une coquille.
+rafale (voir `docs/architecture/capture-rafale.md`).
 
 Les arrondis (presets `Carrés` à `Pilules`, pastilles rondes ou non) sont un réglage de
 l'appareil, gardé dans `localStorage` (`courrier.corners`) et appliqué sur `<html>` avant le

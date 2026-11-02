@@ -25,7 +25,7 @@ export const ReglagesCamera: Story = {
       'Ouvrez Réglages sur l’iPhone',
       'Touchez Safari, puis Caméra',
       'Choisissez « Autoriser »',
-      'Revenez dans Courrier YSL',
+      'Revenez dans Courrier',
     ],
   },
 };

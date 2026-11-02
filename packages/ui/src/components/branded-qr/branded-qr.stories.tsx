@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { BrandedQr } from '#components/branded-qr';
 
-const APP_URL = 'https://ysl.shinseo.fr';
+const APP_URL = 'https://courrier.exemple.fr';
 
 /** A stand-in for the app mark: the kraft parcel and its label. */
 function Mark() {

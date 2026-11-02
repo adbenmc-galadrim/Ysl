@@ -72,7 +72,7 @@ export const CAMERA_SETTINGS_STEPS: ReactNode[] = [
   'Ouvrez Réglages sur l’iPhone',
   'Touchez Safari, puis Caméra',
   'Choisissez « Autoriser »',
-  'Revenez dans Courrier YSL',
+  'Revenez dans Courrier',
 ];
 
 export type CameraDeniedScreenProps = {
