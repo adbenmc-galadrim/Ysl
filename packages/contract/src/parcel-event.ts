@@ -89,7 +89,9 @@ export type ParcelReplyEvent =
       previous: { kind: RecipientKind; id: string; name: string } | null;
     }
   | { type: 'parcel.reply'; reply: 'colleague'; delegate: string }
-  | { type: 'parcel.reply'; reply: 'absent'; until: string };
+  | { type: 'parcel.reply'; reply: 'absent'; until: string }
+  /** A copy of the mail for this person, who may collect (YSL-84). */
+  | { type: 'parcel.copied'; to: string };
 
 const status = z.enum(PARCEL_STATUSES);
 const reason = z.enum(DAMAGE_REASONS);
@@ -139,6 +141,7 @@ const details = {
       .nullish()
       .transform((note) => note ?? null),
   }),
+  'parcel.copied': z.object({ to: z.string() }),
   'parcel.reply': z.discriminatedUnion('reply', [
     z.object({
       reply: z.literal(REPLY_KINDS[0]),
@@ -200,6 +203,7 @@ export function eventColumns(event: ParcelEvent): {
           note: event.note,
         },
       };
+    case 'parcel.copied':
     case 'parcel.reply': {
       const { type, ...detail } = event;
       return { type, detail };
@@ -254,6 +258,10 @@ export function readParcelEvent(
       return read.success ? { type, ...read.data } : undefined;
     }
     case 'parcel.handover_cancelled': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.copied': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
     }

@@ -535,6 +535,8 @@ function eventTitle(
       return deliveredTitle(event, record, t);
     case 'parcel.handover_cancelled':
       return cancelledTitle(event, record, t);
+    case 'parcel.copied':
+      return t('history.copied', { name: event.to });
     case 'parcel.reply':
       return event.reply === 'colleague'
         ? t('history.reply.colleague', { name: event.delegate })

@@ -57,10 +57,15 @@ export {
   reachedNobody,
   RELAY_NAME_MAX,
   noticeDue,
+  pickupCopyInput,
+  pickupCopyOutput,
+  PICKUP_COPY_STATUSES,
   noticeRuleOf,
   notifyParcel,
 } from './notification';
 export type {
+  PickupCopyInput,
+  PickupCopyStatus,
   NotifiableParcel,
   NotificationRow,
   NotificationStatus,

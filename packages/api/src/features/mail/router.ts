@@ -1,8 +1,14 @@
-import { saveSenderInput, senderSettings } from '@repo/contract/mail';
+import {
+  pickupCopyInput,
+  pickupCopyOutput,
+  saveSenderInput,
+  senderSettings,
+} from '@repo/contract/mail';
 import { db } from '@repo/db';
 import { env } from '@repo/shared/env/server';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { TRPCError } from '@trpc/server';
+import { sendPickupCopy } from '#features/mail/copy';
 import { mailDomainProvider } from '#features/mail/provider';
 import {
   checkSender,
@@ -10,7 +16,8 @@ import {
   saveSender,
   type SenderContext,
 } from '#features/mail/sender';
-import { adminMemberProcedure, router } from '#lib/trpc';
+import { parcelScope } from '#lib/access';
+import { adminMemberProcedure, router, scopedProcedure } from '#lib/trpc';
 
 const translate = createTranslator(DEFAULT_LOCALE);
 
@@ -58,5 +65,20 @@ export const mailSenderRouter = router({
     .output(senderSettings)
     .mutation(({ ctx }) =>
       checkSender(db, { organizationId: ctx.organizationId }, context()),
+    ),
+});
+
+export const mailRouter = router({
+  /** A copy of the mail for whoever collects instead: same QR, same code (YSL-84). */
+  sendCopy: scopedProcedure
+    .input(pickupCopyInput)
+    .output(pickupCopyOutput)
+    .mutation(({ ctx, input }) =>
+      sendPickupCopy(db, {
+        ...input,
+        organizationId: ctx.organizationId,
+        agentId: ctx.session.user.id,
+        scope: parcelScope(ctx.access),
+      }),
     ),
 });

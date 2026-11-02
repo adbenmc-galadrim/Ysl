@@ -66,6 +66,38 @@ export const notificationRow = z.object({
 
 export type NotificationRow = z.infer<typeof notificationRow>;
 
+export const COPY_NAME_MAX = 200;
+
+/** `mail.sendCopy`: who gets a copy of the mail about these parcels. */
+export const pickupCopyInput = z.object({
+  parcelIds: z.array(z.uuid()).min(1).max(200),
+  address: z.email().max(254),
+  name: z.string().trim().min(1).max(COPY_NAME_MAX),
+});
+
+export type PickupCopyInput = z.infer<typeof pickupCopyInput>;
+
+/**
+ * `qr`: on its way, the same QR and code. `pin`: the code alone, its QR drawn by
+ * a phone is nowhere here. `already`: this address has this code. The others
+ * sent nothing.
+ */
+export const PICKUP_COPY_STATUSES = [
+  'qr',
+  'pin',
+  'already',
+  'off',
+  'noCode',
+  'unsubscribed',
+  'notFound',
+] as const;
+
+export const pickupCopyOutput = z.object({
+  status: z.enum(PICKUP_COPY_STATUSES),
+});
+
+export type PickupCopyStatus = (typeof PICKUP_COPY_STATUSES)[number];
+
 /**
  * Why a parcel of a sent mail did not move: handed over or deleted, still to
  * complete, nobody on it, or not on this iPhone.
