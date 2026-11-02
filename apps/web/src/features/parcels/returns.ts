@@ -6,10 +6,12 @@ import {
 } from '@repo/contract/parcel-status';
 import { commitLocal, type Upsert } from '#/features/db/commit';
 import type { CourrierDatabase, LocalParcel } from '#/features/db/schema';
+import { codesOf } from '#/features/mail/pickup-code';
 import { parcelEvent } from '#/features/parcels/events';
-import { liveParcel } from '#/features/parcels/status';
-
-type ReturnContext = { agentId: string; now?: Date };
+import {
+  liveParcel,
+  type StatusChangeOptions,
+} from '#/features/parcels/status';
 
 const WAITING = ['recu', 'depose', 'notifie'];
 
@@ -34,16 +36,13 @@ async function closedCode(
     )
     .count();
   if (others > 0) return [];
-  const codes = await db.pickupCode
-    .filter(
-      (code) =>
-        !code.deletedAt &&
-        !code.usedAt &&
-        code.personId === parcel.personId &&
-        code.contactId === parcel.contactId &&
-        (!code.departmentId || code.departmentId === parcel.departmentId),
-    )
-    .toArray();
+  const codes = (
+    await codesOf(db, {
+      personId: parcel.personId,
+      contactId: parcel.contactId,
+      departmentId: parcel.departmentId ?? null,
+    })
+  ).filter((code) => !code.deletedAt && !code.usedAt);
   return codes.map((code) => ({
     entity: 'pickup_code',
     row: { ...code, deletedAt: now, updatedAt: now },
@@ -59,7 +58,7 @@ export async function returnParcel(
   parcelId: string,
   reason: ReturnReason,
   tour: boolean,
-  { agentId, now = new Date() }: ReturnContext,
+  { agentId, now = new Date() }: StatusChangeOptions,
 ): Promise<void> {
   const parcel = await liveParcel(db, parcelId);
   const to = returnStart(parcel, tour);
@@ -93,7 +92,7 @@ export async function moveReturns(
   db: CourrierDatabase,
   parcelIds: readonly string[],
   to: 'retour_en_route' | 'retourne',
-  { agentId, now = new Date() }: ReturnContext,
+  { agentId, now = new Date() }: StatusChangeOptions,
 ): Promise<void> {
   const parcels = await Promise.all(parcelIds.map((id) => liveParcel(db, id)));
   await commitLocal(

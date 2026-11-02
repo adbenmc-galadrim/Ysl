@@ -89,7 +89,7 @@ export type PickupRecipient = {
   departmentId?: string | null;
 };
 
-async function codesOf(
+export async function codesOf(
   db: CourrierDatabase,
   { personId, contactId, departmentId = null }: PickupRecipient,
 ): Promise<LocalPickupCode[]> {

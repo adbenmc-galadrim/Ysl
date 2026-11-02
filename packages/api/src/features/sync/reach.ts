@@ -582,7 +582,8 @@ async function checkTourStatus(
   }
   // The department or the admin sends it off; the shuttle comes for it (YSL-89).
   const prepares =
-    (from === 'depose' || from === 'notifie') && to === 'retour_prepare';
+    (from === 'depose' || from === 'notifie') &&
+    (to === 'retour_prepare' || to === 'retourne');
   const takes = from === 'retour_prepare' && to === 'retour_en_route';
   if (
     (prepares && role === 'shuttle' && onTour) ||

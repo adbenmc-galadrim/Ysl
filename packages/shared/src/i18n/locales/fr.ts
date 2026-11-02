@@ -1338,7 +1338,7 @@ export const fr = {
   'record.undo.description.retour_en_route':
     'Le colis redevient à reprendre au département.',
   'record.undo.description.retourne':
-    'Le colis revient au comptoir, comme avant son retour.',
+    'Le colis reprend l’étape d’avant son retour.',
   'record.error.write': 'Changement non enregistré sur l’iPhone, réessayez.',
   'history.received': 'Reçu',
   'history.edited': 'Modifié : {{fields}}',

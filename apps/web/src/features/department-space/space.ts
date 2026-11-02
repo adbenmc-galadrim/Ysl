@@ -65,7 +65,8 @@ export type Period = (typeof PERIODS)[number];
 
 export function withinPeriod(at: Date, period: Period, now: Date): boolean {
   return (
-    period === 'all' || at.getTime() >= startOfDay(now).getTime() - 30 * DAY_MS
+    period === 'all' ||
+    at.getTime() >= startOfDay(now).getTime() - 30 * DAY_MS
   );
 }
 

@@ -11,7 +11,7 @@ export type RetourExpediteurSheetProps = {
   reasons: { id: string; label: string }[];
   reason: string;
   sender: string;
-  /** What happens next: the carrier's label, the leg to the shuttle. */
+  /** What happens next: the leg to the shuttle, or the parcel gone at once. */
   next: { title: string; description: string };
   confirmLabel: string;
   error?: string;

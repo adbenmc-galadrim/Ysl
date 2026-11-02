@@ -150,7 +150,7 @@ BEGIN
      AND used_at IS NULL
      AND person_id IS NOT DISTINCT FROM NEW.person_id
      AND contact_id IS NOT DISTINCT FROM NEW.contact_id
-     AND (department_id IS NULL OR department_id = NEW.department_id);
+     AND department_id IS NOT DISTINCT FROM NEW.department_id;
   RETURN NULL;
 END;
 $$;--> statement-breakpoint

@@ -1,4 +1,3 @@
-export * from '#screens/colis/retour-expediteur-sheet';
 /**
  * The screens the app mounts as they are drawn: a route passes the data and
  * the callbacks, the screen draws. The other screens stay Storybook-only
@@ -6,6 +5,7 @@ export * from '#screens/colis/retour-expediteur-sheet';
  */
 export * from '#screens/colis/colis-screen';
 export * from '#screens/colis/fiche-colis-screen';
+export * from '#screens/colis/retour-expediteur-sheet';
 export * from '#screens/colis/lecture-screen';
 export * from '#screens/colis/modifier-colis-screen';
 export * from '#screens/colis/recherche-screen';

@@ -161,10 +161,7 @@ export const UNFINISHED_STATUSES = [
 ] as const satisfies readonly ParcelStatus[];
 
 /** Everything not yet out of the company's hands: a department holding one stays open. */
-export const HELD_STATUSES = [
-  ...UNFINISHED_STATUSES,
-  ...RETURN_STATUSES,
-] as const satisfies readonly ParcelStatus[];
+export const HELD_STATUSES = OPEN_STATUSES;
 
 /** The progress line of the parcel sheet: Reçu, Notifié, Remis. */
 export const PARCEL_STEPS = [

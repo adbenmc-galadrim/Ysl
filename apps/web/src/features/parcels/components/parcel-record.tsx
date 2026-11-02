@@ -195,7 +195,10 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       : returnStart(record.parcel, tour);
   // A shuttle on tour only returns what it still holds; a department's shelf goes through its own hands.
   const offersReturn =
-    start !== undefined && (!onShuttleTour || record.parcel.status === 'recu');
+    start !== undefined &&
+    (record.parcel.status === 'recu'
+      ? !tour || access.role !== 'department'
+      : !onShuttleTour);
   const viaShuttle = start === 'retour_prepare';
   const returnStep =
     record.parcel.status === 'retour_prepare'
@@ -443,11 +446,13 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       onPrimaryAction={
         returnStep
           ? () =>
-              void moveReturns(
-                db,
-                [parcelId],
-                returnStep === 'take' ? 'retour_en_route' : 'retourne',
-                { agentId: session.user.id },
+              void run(() =>
+                moveReturns(
+                  db,
+                  [parcelId],
+                  returnStep === 'take' ? 'retour_en_route' : 'retourne',
+                  options,
+                ),
               )
           : handOver
             ? () => void navigate({ to: '/remise' })
@@ -512,6 +517,7 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
                 id,
                 label: t(RETURN_REASON_LABEL[id]),
               }))}
+              // Told and not collected: unclaimed. Never told: only a refusal sends it back.
               reason={
                 record.parcel.status === 'notifie' ? 'unclaimed' : 'refused'
               }
