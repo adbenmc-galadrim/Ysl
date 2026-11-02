@@ -58,10 +58,11 @@ const BATCH = 20;
 
 type Request = typeof notification.$inferSelect;
 type Parcel = typeof parcel.$inferSelect;
-export type Placed = Parcel & { departmentId: string };
+type Placed = Parcel & { departmentId: string };
 
 /** A person may still be filed under no department: a code opens one, so none is drawn. */
-export const isPlaced = (item: Parcel): item is Placed => item.departmentId !== null;
+export const isPlaced = (item: Parcel): item is Placed =>
+  item.departmentId !== null;
 
 const DAY = new Intl.DateTimeFormat('fr-FR', {
   timeZone: ZONE,
@@ -124,7 +125,7 @@ async function brandOf(tx: AnyDb, organizationId: string): Promise<MailBrand> {
   };
 }
 
-/** The text as it reads in the phone's mail, the reply links shortened, the QR above it. */
+/** The text as it reads in the phone's mail, the reply links shortened, the QR above it when there is one. */
 export function mailHtml(
   text: string,
   token: string | null,
@@ -200,7 +201,8 @@ async function drawCode(
         isNull(pickupCode.deletedAt),
         isNull(pickupCode.usedAt),
       ),
-    );
+    )
+    .for('update');
   if (mine.length > 0) {
     await tx
       .update(pickupCode)

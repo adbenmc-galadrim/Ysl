@@ -57,6 +57,8 @@ export type ParcelEvent =
       notificationId: string;
       kind: NotificationType;
     }
+  /** A copy of the mail for this person, who may collect (YSL-84). */
+  | { type: 'parcel.copied'; to: string }
   | {
       /** Told in person or on the phone (YSL-72): no mail, a pickup code given. */
       type: 'parcel.informed';
@@ -89,9 +91,7 @@ export type ParcelReplyEvent =
       previous: { kind: RecipientKind; id: string; name: string } | null;
     }
   | { type: 'parcel.reply'; reply: 'colleague'; delegate: string }
-  | { type: 'parcel.reply'; reply: 'absent'; until: string }
-  /** A copy of the mail for this person, who may collect (YSL-84). */
-  | { type: 'parcel.copied'; to: string };
+  | { type: 'parcel.reply'; reply: 'absent'; until: string };
 
 const status = z.enum(PARCEL_STATUSES);
 const reason = z.enum(DAMAGE_REASONS);

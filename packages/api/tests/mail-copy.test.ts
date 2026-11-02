@@ -4,6 +4,7 @@ import {
   pickupPinHash,
   pickupTokenHash,
 } from '@repo/contract/pickup';
+import { SYNCED_ENTITIES } from '@repo/contract/sync';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -184,6 +185,10 @@ const openCodes = (person: string) =>
     .where(and(eq(pickupCode.personId, person), isNull(pickupCode.deletedAt)));
 
 describe('the sealed secret', () => {
+  it('stays off the sync', () => {
+    expect(SYNCED_ENTITIES).not.toContain('pickup_secret');
+  });
+
   it('opens for its own code only, and holds nothing in clear', () => {
     const clear = { pin: '4821', token: newPickupToken() };
     const sealed = sealPickupSecret('code-a', clear);
@@ -230,6 +235,32 @@ describe('a copy after the mail left', () => {
       .from(emailOutbox)
       .where(eq(emailOutbox.recipient, DELEGATE));
     expect(row).toMatchObject({ status: 'sent', textBody: '', htmlBody: null });
+  });
+
+  it('may be asked again after a copy that failed', async () => {
+    const { id } = await notified();
+    await copy([id]);
+    await db
+      .update(emailOutbox)
+      .set({ status: 'failed' })
+      .where(eq(emailOutbox.recipient, DELEGATE));
+
+    expect(await copy([id])).toEqual({ status: 'qr' });
+    expect(await drain()).toMatchObject({ sent: 1 });
+    expect(brevo.sent.map((mail) => mail.to[0]!.email)).toEqual([DELEGATE]);
+  });
+
+  it('falls back on the PIN when the secret does not open', async () => {
+    const { id, person } = await notified();
+    const [code] = await openCodes(person);
+    await db
+      .update(pickupSecret)
+      .set({
+        sealed: sealPickupSecret('another-code', { pin: '0000', token: 't' }),
+      })
+      .where(eq(pickupSecret.codeId, code!.id));
+
+    expect(await copy([id])).toEqual({ status: 'pin' });
   });
 
   it('goes once to an address for a code', async () => {

@@ -245,7 +245,7 @@ async function codeClosed(
     : SUPERSEDED;
 }
 
-/** The phone told these parcels while the mail waited: it does not leave as well. */
+/** The phone told these parcels while the mail waited, or a copy's code closed: it does not leave. */
 async function superseded(
   db: AnyDb,
   row: OutboxRow,

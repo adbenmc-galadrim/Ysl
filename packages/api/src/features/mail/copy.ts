@@ -3,6 +3,7 @@ import type { PickupCopyInput, PickupCopyStatus } from '@repo/contract/mail';
 import { PICKUP_PIN_LENGTH, pickupPinHash } from '@repo/contract/pickup';
 import type { AnyDb } from '@repo/db';
 import {
+  emailOutbox,
   event,
   parcel,
   pickupCode,
@@ -89,7 +90,6 @@ export async function sendPickupCopy(
         id: pickupCode.id,
         pinHash: pickupCode.pinHash,
         sealed: pickupSecret.sealed,
-        copiedTo: pickupSecret.copiedTo,
       })
       .from(pickupCode)
       .leftJoin(pickupSecret, eq(pickupSecret.codeId, pickupCode.id))
@@ -104,7 +104,9 @@ export async function sendPickupCopy(
           isNull(pickupCode.usedAt),
           gt(pickupCode.expiresAt, now),
         ),
-      );
+      )
+      // Holds `drawCode` and another copy off the list of holders until this one commits.
+      .for('update', { of: pickupCode });
     if (!code) return { status: 'noCode' as const };
     const clear = code.sealed ? openPickupSecret(code.id, code.sealed) : null;
     const pin = clear?.pin ?? (await pinOf(code.pinHash));
@@ -120,8 +122,18 @@ export async function sendPickupCopy(
       now,
       copyLead(name, who.name),
     );
+    // A copy that failed told nobody: it may be asked again.
+    const key = copyKey(code.id, address);
+    await tx
+      .delete(emailOutbox)
+      .where(
+        and(
+          eq(emailOutbox.idempotencyKey, key),
+          eq(emailOutbox.status, 'failed'),
+        ),
+      );
     const { created } = await enqueueEmail(tx, {
-      idempotencyKey: copyKey(code.id, address),
+      idempotencyKey: key,
       organizationId,
       to: address,
       toName: name,
@@ -129,8 +141,14 @@ export async function sendPickupCopy(
       pickupCodeId: code.id,
     });
     if (!created) return { status: 'already' as const };
+    const [held] = await tx
+      .select({ copiedTo: pickupSecret.copiedTo })
+      .from(pickupSecret)
+      .where(eq(pickupSecret.codeId, code.id));
     const copiedTo: PickupCopy[] = [
-      ...(code.copiedTo ?? []),
+      ...(held?.copiedTo ?? []).filter(
+        (copy) => copy.address.toLowerCase() !== address.toLowerCase(),
+      ),
       { address, name },
     ];
     await tx
