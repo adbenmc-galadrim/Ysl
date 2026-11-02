@@ -76,5 +76,5 @@ Le détail et le suivi sont au §12 du cahier des charges et dans le carnet de p
 ## Prochaines étapes
 
 1. Livrer les rapports (F42 du plan) ; le reste de F34 à F42 est livré.
-2. Recette par rôle sur un vrai lot et mise en production pilote (F28 du plan).
+2. Recette par rôle sur un vrai lot ([script](recette.md)) et mise en production pilote (F28 du plan).
 3. En parallèle, ouvrir la demande à la DSI du premier client pour Graph et Entra ID ; les autres entreprises la font si elles veulent cette cible.
