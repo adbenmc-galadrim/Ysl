@@ -199,6 +199,8 @@ export const fr = {
   'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
   'sync.op.handoverSteps':
     'Cette remise n’a pas une étape que votre entreprise exige désormais : preuve, signature, photo ou scan.',
+  'sync.op.registeredSignature':
+    'Un recommandé ne se remet pas sans signature : faites signer depuis cette remise.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
@@ -404,9 +406,7 @@ export const fr = {
   'handover.verified.qr': 'QR code vérifié à {{time}}',
   'handover.verified.pin': 'Code vérifié à {{time}}',
   'handover.verified.manuel': 'Sans vérification',
-  'handover.registered': 'Un recommandé : la signature est facultative.',
-  'handover.registered.required': 'Un recommandé : la signature est exigée.',
-  'handover.registered.none': 'Un recommandé parmi ces colis.',
+  'handover.registered': 'Un recommandé : la signature est exigée.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
   'handover.sign.titleFor':
     '{{name}} signe pour {{recipient}}, {{count}} colis',

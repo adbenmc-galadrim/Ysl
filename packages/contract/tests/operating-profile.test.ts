@@ -2,6 +2,7 @@ import { canHandOver, toUserRole } from '@repo/contract/auth';
 import {
   DEFAULT_OPERATING_PROFILE,
   mayHandOverByName,
+  holdsRegistered,
   missingHandoverSteps,
   MULTI_DEPARTMENTS_OPERATING_PROFILE,
   operatingImpact,
@@ -269,6 +270,34 @@ describe('étapes de remise', () => {
     expect(missingHandoverSteps(profile, { method: 'qr', ...done })).toEqual(
       [],
     );
+  });
+
+  it.each(['disabled', 'optional', 'required'] as const)(
+    'un recommandé exige la signature, signature %s',
+    (signature) => {
+      const profile = { ...DEFAULT_OPERATING_PROFILE, signature };
+      expect(
+        missingHandoverSteps(profile, { method: 'qr', registered: true }),
+      ).toEqual(['signature']);
+      expect(
+        missingHandoverSteps(profile, {
+          method: 'qr',
+          registered: true,
+          hasSignature: true,
+        }),
+      ).toEqual([]);
+    },
+  );
+
+  it('un seul recommandé suffit à exiger la signature de la remise', () => {
+    expect(
+      holdsRegistered([
+        { type: 'colis' },
+        { type: 'recommande' },
+        { type: 'sans_suivi' },
+      ]),
+    ).toBe(true);
+    expect(holdsRegistered([{ type: 'colis' }])).toBe(false);
   });
 
   it('une étape facultative ou désactivée ne manque jamais', () => {

@@ -1,4 +1,8 @@
 import 'fake-indexeddb/auto';
+import {
+  OPERATING_PROFILE_KEY,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import { readParcelEvent } from '@repo/contract/parcel-event';
 import { newId } from '@repo/shared/id';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -25,6 +29,7 @@ import {
   personRow,
   pickupCodeRow,
 } from './helpers/local-rows';
+import { MemoryFiles } from './helpers/memory-files';
 
 const LATER = new Date(NOW.getTime() + 5 * 60 * 1000);
 const AGENT = 'agent-1';
@@ -413,5 +418,98 @@ describe('a parcel handed over', () => {
       describeRecord(record!, { now: LATER, t, showUnsent: true }).state
         .description,
     ).toBe('À Nora Haddad, sans vérification');
+  });
+
+  describe('a registered letter among the parcels', () => {
+    const signature = () => ({
+      proof: {
+        kind: 'signature' as const,
+        blob: new Blob(['ink'], { type: 'image/png' }),
+        width: 2,
+        height: 2,
+      },
+      files: new MemoryFiles(),
+    });
+    let registered: LocalParcel;
+
+    beforeEach(async () => {
+      registered = parcelRow({ personId: nora.id, type: 'recommande' });
+      await db.parcel.put(registered);
+    });
+
+    const withIt = () => [...all(), registered.id];
+
+    it.each([
+      ['pin', () => byPin()],
+      ['qr', () => byPin({ via: 'qr' })],
+      ['manuel', () => byPin({ via: 'manuel', code: undefined })],
+    ] as const)(
+      'refuses three parcels and it, unsigned, by %s, and writes nothing',
+      async (_via, search) => {
+        await expect(
+          recordHandover(
+            db,
+            { ...search(), parcelIds: withIt() },
+            { agentId: AGENT, now: LATER },
+          ),
+        ).rejects.toThrow(new HandoverRefusedError('steps'));
+        expect(await db.handover.count()).toBe(0);
+        expect((await db.parcel.get(registered.id))?.status).toBe('recu');
+      },
+    );
+
+    it('refuses it when the profile turned signatures off', async () => {
+      await db.setting.put({
+        id: newId(),
+        createdAt: NOW,
+        updatedAt: NOW,
+        deletedAt: null,
+        key: OPERATING_PROFILE_KEY,
+        value: { ...SMALL_SITE_OPERATING_PROFILE, signature: 'disabled' },
+        updatedBy: 'admin-1',
+      });
+      await expect(
+        recordHandover(
+          db,
+          { ...byPin(), parcelIds: [registered.id] },
+          { agentId: AGENT, now: LATER },
+        ),
+      ).rejects.toThrow(new HandoverRefusedError('steps'));
+    });
+
+    it('refuses it when the signature cannot be kept', async () => {
+      const unkept = signature();
+      unkept.files.failNextSave = true;
+      await expect(
+        recordHandover(
+          db,
+          { ...byPin(), parcelIds: withIt() },
+          { agentId: AGENT, now: LATER, signature: unkept },
+        ),
+      ).rejects.toThrow(new HandoverRefusedError('steps'));
+    });
+
+    it('one signature hands all of them over', async () => {
+      const done = await recordHandover(
+        db,
+        { ...byPin(), parcelIds: withIt() },
+        { agentId: AGENT, now: LATER, signature: signature() },
+      );
+      expect(done.count).toBe(4);
+      expect(await db.handover.get(done.handoverId)).toMatchObject({
+        method: 'pin',
+        hasSignature: true,
+      });
+    });
+
+    it('left on the shelf, the others go unsigned', async () => {
+      const done = await recordHandover(
+        db,
+        { ...byPin(), parcelIds: all() },
+        { agentId: AGENT, now: LATER },
+      );
+      expect(done.count).toBe(3);
+      expect((await db.parcel.get(registered.id))?.status).toBe('recu');
+    });
   });
 });

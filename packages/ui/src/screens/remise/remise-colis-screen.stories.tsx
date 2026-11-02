@@ -74,7 +74,7 @@ export const ChoisiParLeNom: Story = {
     verified: 'Sans vérification',
     verifiedBy: 'name',
     parcels: NORA_HANDOVER,
-    registeredNote: 'Un recommandé : la signature est facultative.',
+    registeredNote: 'Un recommandé : la signature est exigée.',
     onSignature: () => {},
     onToggle: () => {},
     onToggleAll: () => {},

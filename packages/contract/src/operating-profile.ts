@@ -129,7 +129,14 @@ export type HandoverFacts = {
   hasSignature?: boolean | null;
   hasPhoto?: boolean | null;
   hasScan?: boolean | null;
+  /** A registered letter is among the parcels: it asks for a signature whatever the profile says (F56). */
+  registered?: boolean;
 };
+
+/** Whether what leaves holds a registered letter: one signature then covers the whole handover. */
+export const holdsRegistered = (
+  parcels: readonly { type: string }[],
+): boolean => parcels.some((parcel) => parcel.type === 'recommande');
 
 export type HandoverStep = 'proof' | 'signature' | 'photo' | 'scan';
 
@@ -140,13 +147,15 @@ export type HandoverStep = 'proof' | 'signature' | 'photo' | 'scan';
  */
 export function missingHandoverSteps(
   profile: OperatingProfile,
-  { method, hasSignature, hasPhoto, hasScan }: HandoverFacts,
+  { method, hasSignature, hasPhoto, hasScan, registered }: HandoverFacts,
 ): HandoverStep[] {
   return [
     profile.handoverProof === 'required' &&
       method === HANDOVER_METHOD_WITHOUT_PROOF &&
       ('proof' as const),
-    profile.signature === 'required' && !hasSignature && ('signature' as const),
+    (profile.signature === 'required' || registered === true) &&
+      !hasSignature &&
+      ('signature' as const),
     profile.photo === 'required' && !hasPhoto && ('photo' as const),
     profile.handoverScan === 'required' && !hasScan && ('scan' as const),
   ].filter((step) => step !== false);

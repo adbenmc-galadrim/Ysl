@@ -178,7 +178,9 @@ export function RemiseColisScreen({
   onBack,
 }: RemiseColisScreenProps) {
   const count = parcels.filter((p) => !excluded.includes(p.id)).length;
-  const registered = parcels.some((p) => p.registered);
+  const registered = parcels.some(
+    (p) => p.registered && !excluded.includes(p.id),
+  );
   const allTicked = count === parcels.length;
   const scanFirst = scan?.required && !scan.done && parcels.length > 0;
   const signatureLine =

@@ -1,4 +1,7 @@
-import { missingHandoverSteps } from '@repo/contract/operating-profile';
+import {
+  holdsRegistered,
+  missingHandoverSteps,
+} from '@repo/contract/operating-profile';
 import { statusPatch } from '@repo/contract/parcel-status';
 import { newId } from '@repo/shared/id';
 import { commitLocal, type Upsert } from '#/features/db/commit';
@@ -71,7 +74,8 @@ export type HandoverOptions = {
   /**
    * The signature drawn before « Remettre », kept on this iPhone only. A
    * signature that cannot be kept (no OPFS, a full disk) stops the handover
-   * only when the profile requires one; otherwise it goes without.
+   * when a registered letter leaves or the profile requires one; otherwise it
+   * goes without.
    */
   signature?: { proof: ProofInput; files: PhotoFiles };
   /** The photo a profile asks for before « Remettre », kept the same way. */
@@ -253,7 +257,11 @@ export async function recordHandover(
     hasScan: !!input.hasScan,
   };
   const profile = await readOperatingProfile(db);
-  if (missingHandoverSteps(profile, handover).length > 0) {
+  const missing = missingHandoverSteps(profile, {
+    ...handover,
+    registered: holdsRegistered(parcels),
+  });
+  if (missing.length > 0) {
     await dropProofs();
     throw new HandoverRefusedError('steps');
   }
