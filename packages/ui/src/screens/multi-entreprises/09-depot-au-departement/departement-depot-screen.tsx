@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Button } from '#components/button';
 import { CompanyShell, DeskPageHeader } from '#components/company-shell';
 import { DeskTable, type DeskTableColumn } from '#components/desk-table';
+import { Field, FieldInput } from '#components/field';
 import { IconButton } from '#components/icon-button';
 import { NavBar } from '#components/nav-bar';
 import {
@@ -176,49 +177,117 @@ export function DepartementColisParColisMobile() {
   );
 }
 
-/** Where the deposit is put away. */
-export function DepartementEmplacementMobile() {
+export type DepositLocationProps = {
+  navTitle: string;
+  title: string;
+  subtitle?: string;
+  locations: readonly { title: string; subtitle?: string }[];
+  /** The one chosen, drawn in black. */
+  selected?: string;
+  onSelect?: (location: string) => void;
+  addLabel: string;
+  onAdd?: () => void;
+  /** The new one being typed, in place of the button. */
+  adding?: {
+    label: string;
+    value: string;
+    maxLength: number;
+    onChange: (value: string) => void;
+  };
+  actionLabel: string;
+  actionDisabled?: boolean;
+  onAction?: () => void;
+  onBack?: () => void;
+};
+
+/** Where the deposit is put away: the places already used there, or a new one. */
+export function DepositLocationScreen({
+  navTitle,
+  title,
+  subtitle,
+  locations,
+  selected,
+  onSelect,
+  addLabel,
+  onAdd,
+  adding,
+  actionLabel,
+  actionDisabled,
+  onAction,
+  onBack,
+}: DepositLocationProps) {
   return (
     <Screen
       bottom={
         <DepositBottom>
-          <Button>Ranger les 6 colis</Button>
+          <Button disabled={actionDisabled} onClick={onAction}>
+            {actionLabel}
+          </Button>
         </DepositBottom>
       }
     >
-      <NavBar title="Dépôt · 6 colis" />
-      <h1 className="mt-3 text-22 font-bold">Où rangez-vous ce lot ?</h1>
-      <p className="mt-1.5 text-14 text-muted">
-        Choisi au dépôt, plus à la réception du service courrier
-      </p>
-      <DepositGroup
-        tone="surface"
-        className="mt-[29px]"
-        items={[
-          {
-            icon: 'pin',
-            iconColor: 'ink',
-            title: 'Étagère A',
-            subtitle: 'Studio · comptoir',
-          },
-          { icon: 'pin', title: 'Casier 3', subtitle: 'Studio · fermé à clé' },
-          {
-            icon: 'pin',
-            title: 'Armoire volumineux',
-            subtitle: 'Studio · sous-sol',
-          },
-        ]}
-      />
-      <Button
-        variant="secondary"
-        size="md"
-        icon="plusSquare"
-        iconSize={20}
-        className="mt-[18px] h-12 bg-transparent"
-      >
-        Ajouter un emplacement
-      </Button>
+      <NavBar title={navTitle} onBack={onBack} />
+      <h1 className="mt-3 text-22 font-bold">{title}</h1>
+      {subtitle && <p className="mt-1.5 text-14 text-muted">{subtitle}</p>}
+      {locations.length > 0 && (
+        <DepositGroup
+          tone="surface"
+          className="mt-[29px]"
+          items={locations.map((location) => ({
+            icon: 'pin' as const,
+            ...(location.title === selected
+              ? { iconColor: 'ink' as const }
+              : {}),
+            title: location.title,
+            subtitle: location.subtitle,
+            onClick: onSelect && (() => onSelect(location.title)),
+          }))}
+        />
+      )}
+      {adding ? (
+        <Field label={adding.label} className="mt-[18px]">
+          {(id) => (
+            <FieldInput
+              id={id}
+              autoFocus
+              value={adding.value}
+              maxLength={adding.maxLength}
+              onChange={(event) => adding.onChange(event.target.value)}
+            />
+          )}
+        </Field>
+      ) : (
+        <Button
+          variant="secondary"
+          size="md"
+          icon="plusSquare"
+          iconSize={20}
+          className="mt-[18px] h-12 bg-transparent"
+          onClick={onAdd}
+        >
+          {addLabel}
+        </Button>
+      )}
     </Screen>
+  );
+}
+
+/** Where the deposit is put away, as drawn. */
+export function DepartementEmplacementMobile() {
+  return (
+    <DepositLocationScreen
+      navTitle="Dépôt · 6 colis"
+      title="Où rangez-vous ce lot ?"
+      subtitle="Choisi au dépôt, plus à la réception du service courrier"
+      locations={[
+        { title: 'Étagère A', subtitle: 'Studio · comptoir' },
+        { title: 'Casier 3', subtitle: 'Studio · fermé à clé' },
+        { title: 'Armoire volumineux', subtitle: 'Studio · sous-sol' },
+      ]}
+      selected="Étagère A"
+      addLabel="Ajouter un emplacement"
+      actionLabel="Ranger les 6 colis"
+    />
   );
 }
 
@@ -490,6 +559,8 @@ export type DepartmentDepositProps = {
   notice?: { title: string; description: string };
   onClose?: () => void;
   gapAction?: { label: string; onClick: () => void };
+  /** « Rangés où ? »: the shelf they go to, whatever the count says. */
+  location?: { title: string; value: string; onClick: () => void };
   /** « Colis par colis »: the count is what is ticked. */
   each?: {
     hint: string;
@@ -522,6 +593,7 @@ export function DepartmentDepositMobile({
   notice,
   onClose,
   gapAction,
+  location,
   each,
   gap,
 }: DepartmentDepositProps) {
@@ -654,6 +726,21 @@ export function DepartmentDepositMobile({
         </>
       ) : (
         <p className="mt-2 text-center text-17 font-semibold">{countedLabel}</p>
+      )}
+      {location && (
+        <DepositGroup
+          className="mt-9"
+          items={[
+            {
+              icon: 'pin',
+              iconColor: 'red',
+              title: location.title,
+              value: location.value,
+              chevron: true,
+              onClick: location.onClick,
+            },
+          ]}
+        />
       )}
     </Screen>
   );

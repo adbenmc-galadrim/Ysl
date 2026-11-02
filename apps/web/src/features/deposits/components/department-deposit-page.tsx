@@ -12,7 +12,8 @@ import {
   loadDepositMails,
 } from '#/features/mail/deposit-mails';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
-import { gapLine, isPending } from '#/features/parcels/deposit';
+import { DepositLocationStep } from '#/features/parcels/components/deposit-location-step';
+import { commonLocation, gapLine, isPending } from '#/features/parcels/deposit';
 import {
   carrierLineOf,
   describeParcel,
@@ -38,7 +39,9 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
   const name = useOwnDepartmentName();
   const data = useLiveQuery(async () => {
     const deposit = await db.deposit.get(depositId);
-    if (!deposit) return { deposit: undefined, parcels: [], mails: undefined };
+    if (!deposit) {
+      return { deposit: undefined, parcels: [], mails: undefined, shelf: null };
+    }
     const rows = (await db.parcel.bulkGet(deposit.parcelIds)).filter(
       (row) => row !== undefined,
     );
@@ -46,6 +49,14 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
     const now = new Date();
     return {
       deposit,
+      // Before the count, what the shuttle said; after it, where those present went.
+      shelf: commonLocation(
+        rows.filter((row) =>
+          isPending(deposit)
+            ? row.status === 'en_route'
+            : !deposit.gapParcelIds?.includes(row.id),
+        ),
+      ),
       mails: await loadDepositMails(db, deposit.parcelIds),
       parcels: rows.flatMap((row) =>
         row.status === 'en_route' && row.departmentId === deposit.departmentId
@@ -69,6 +80,8 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
   const [kind, setKind] = useState<DepositGap | null>(null);
   const [picked, setPicked] = useState<readonly string[]>([]);
   const [unknown, setUnknown] = useState(false);
+  const [location, setLocation] = useState<string | null>(null);
+  const [placing, setPlacing] = useState(false);
   useEffect(
     () => setCounted((seen) => seen ?? (data ? live : null)),
     [data, live],
@@ -82,6 +95,7 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
         depositId,
         counted: count,
         received: each ? [...received] : null,
+        location,
         gap: gapOpen
           ? {
               kind: gapKind,
@@ -117,7 +131,11 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
             ? t('deposits.done.title.one')
             : t('deposits.done.title', { count: deposit.announced - held })
         }
-        line={t('deposit.done.lineNoName', { time })}
+        line={
+          data.shelf
+            ? t('deposits.done.stored', { location: data.shelf, time })
+            : t('deposit.done.lineNoName', { time })
+        }
         gap={
           deposit.gap
             ? {
@@ -130,6 +148,22 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
         actionLabel={t('deposits.done.action')}
         actionIcon={false}
         onAction={close}
+      />
+    );
+  }
+
+  const shelf = location ?? data.shelf;
+  if (placing) {
+    return (
+      <DepositLocationStep
+        departmentId={deposit.departmentId}
+        count={count}
+        current={shelf}
+        onDone={(chosen) => {
+          setLocation(chosen);
+          setPlacing(false);
+        }}
+        onBack={() => setPlacing(false)}
       />
     );
   }
@@ -175,6 +209,11 @@ export function DepartmentDepositPage({ depositId }: { depositId: string }) {
               }
             : undefined
       }
+      location={{
+        title: t('deposits.location.row'),
+        value: shelf ?? t('deposits.location.none'),
+        onClick: () => setPlacing(true),
+      }}
       onConfirm={() => confirm.mutate()}
       onClose={close}
       gapAction={

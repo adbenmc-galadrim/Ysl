@@ -23,12 +23,24 @@ export type DepositGroupItem = {
   trailing?: ReactNode;
   /** Where Penpot set the text in this row, in px from its top. */
   textTop?: number;
+  onClick?: () => void;
 };
 
 function DepositGroupRow({ item, first }: { item: DepositGroupItem; first: boolean }) {
   const top = item.textTop ?? (item.subtitle ? 12 : first ? 16 : 17);
+  const Row = item.onClick ? 'button' : 'div';
   return (
-    <div className={cn('relative flex items-start pr-3.5', item.subtitle ? 'h-16' : 'h-[52px]', item.icon ? 'pl-3.5' : 'pl-4')}>
+    <Row
+      {...(item.onClick
+        ? { type: 'button' as const, onClick: item.onClick }
+        : {})}
+      className={cn(
+        'relative flex items-start pr-3.5',
+        item.subtitle ? 'h-16' : 'h-[52px]',
+        item.icon ? 'pl-3.5' : 'pl-4',
+        item.onClick && 'w-full cursor-pointer text-left',
+      )}
+    >
       {item.icon && (
         <SettingsIcon
           icon={item.icon}
@@ -43,7 +55,10 @@ function DepositGroupRow({ item, first }: { item: DepositGroupItem; first: boole
         )}
       </span>
       {item.value !== undefined && (
-        <span className="text-16 text-muted" style={{ paddingTop: top }}>
+        <span
+          className="ml-2 max-w-[180px] truncate text-16 text-muted"
+          style={{ paddingTop: top }}
+        >
           {item.value}
         </span>
       )}
@@ -60,7 +75,7 @@ function DepositGroupRow({ item, first }: { item: DepositGroupItem; first: boole
           )}
         />
       )}
-    </div>
+    </Row>
   );
 }
 

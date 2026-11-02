@@ -31,6 +31,7 @@ import {
   readQrTexts,
 } from '#/features/handover/qr-scan';
 import { loadTour } from '#/features/parcels/api/use-tour';
+import { DepositLocationStep } from '#/features/parcels/components/deposit-location-step';
 import { pendingParcelIds, postDeposit } from '#/features/parcels/deposit';
 import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
 import { readOperatingProfile } from '#/features/settings/operating-profile';
@@ -41,7 +42,13 @@ const t = createTranslator(DEFAULT_LOCALE);
 type Step =
   | { kind: 'scan'; read?: string }
   | { kind: 'list' }
-  | { kind: 'count'; departmentId: string; read: boolean };
+  | {
+      kind: 'count';
+      departmentId: string;
+      read: boolean;
+      location?: string;
+      placing?: boolean;
+    };
 
 /** Reads the poster as soon as it is in view; a text it cannot place keeps looking. */
 function useQrReader(
@@ -177,6 +184,17 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
   if (step.kind === 'count') {
     const parcelIds = stopOf(step.departmentId)?.parcelIds ?? [];
     const name = nameOf(step.departmentId);
+    if (step.placing) {
+      return (
+        <DepositLocationStep
+          departmentId={step.departmentId}
+          count={parcelIds.length}
+          current={step.location ?? null}
+          onDone={(location) => setStep({ ...step, location, placing: false })}
+          onBack={() => setStep({ ...step, placing: false })}
+        />
+      );
+    }
     return (
       <DepositCountScreen
         read={
@@ -186,6 +204,11 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
         countLine={t('deposit.count.line', { department: name })}
         hint={t('deposit.count.hint')}
         listLabel={t('deposit.count.list')}
+        location={{
+          title: t('deposits.location.row'),
+          value: step.location ?? t('deposits.location.none'),
+          onClick: () => setStep({ ...step, placing: true }),
+        }}
         actionLabel={t('deposit.count.action', {
           parcels: parcelsLabel(parcelIds.length, t),
         })}
@@ -197,6 +220,7 @@ export function TourDepositPage({ departmentId }: { departmentId: string }) {
             parcelIds,
             shuttleId: session.user.id,
             shuttleName: session.user.name,
+            location: step.location ?? null,
           })
             .then(() =>
               data.confirms
