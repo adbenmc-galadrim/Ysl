@@ -90,8 +90,9 @@ export async function confirmDeposit(
   tx: AnyDb,
   actor: Actor,
   departmentId: string | null,
-  input: Omit<ConfirmDepositInput, 'received'> & {
+  input: Omit<ConfirmDepositInput, 'received' | 'location'> & {
     received?: ConfirmDepositInput['received'];
+    location?: ConfirmDepositInput['location'];
   },
   {
     now = new Date(),
@@ -163,18 +164,29 @@ export async function confirmDeposit(
     throw refused('BAD_REQUEST', 'deposit.error.count');
   }
   for (const one of live) {
-    if (!settled.has(one.id)) {
-      await moveParcel(tx, one, depositedStatus(one), actor, now);
+    const held = settled.has(one.id);
+    // Missing, it is on no shelf: what the shuttle said no longer holds.
+    const location =
+      held && gap?.kind !== 'left' ? null : (input.location ?? one.location);
+    if (!held) {
+      await moveParcel(tx, one, depositedStatus(one), actor, now, { location });
     } else {
       // Gone, the employee: the parcel itself is there, in the department's hands.
-      await moveParcel(
-        tx,
-        one,
-        'a_regulariser',
-        actor,
-        now,
-        gap?.kind === 'left' ? { depositedAt: now } : {},
-      );
+      await moveParcel(tx, one, 'a_regulariser', actor, now, {
+        location,
+        ...(gap?.kind === 'left' ? { depositedAt: now } : {}),
+      });
+    }
+    if (location !== one.location) {
+      await tx.insert(event).values({
+        id: newId(),
+        organizationId: actor.organizationId,
+        entity: PARCEL_EVENT_ENTITY,
+        entityId: one.id,
+        actorId: actor.userId,
+        at: now,
+        ...eventColumns({ type: 'parcel.edited', fields: ['location'] }),
+      });
     }
   }
   await tx

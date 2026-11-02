@@ -17,6 +17,9 @@ export function readDepartmentQr(text: string): string | null {
   return z.uuid().safeParse(id).success ? id : null;
 }
 
+/** A shelf of the department's reception point, as typed there. */
+export const LOCATION_MAX = 80;
+
 export const confirmDepositInput = z.object({
   depositId: z.uuid(),
   counted: z.number().int().min(0).max(10_000),
@@ -29,6 +32,8 @@ export const confirmDepositInput = z.object({
     .nullable(),
   /** « Colis par colis » (`confirmsEachParcel`): those it has in hand. */
   received: z.array(z.uuid()).max(10_000).nullable().default(null),
+  /** Where the department puts them away; null leaves what the shuttle said. */
+  location: z.string().trim().min(1).max(LOCATION_MAX).nullable().default(null),
 });
 
 export type ConfirmDepositInput = z.infer<typeof confirmDepositInput>;

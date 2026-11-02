@@ -26,6 +26,8 @@ export type HandoverParcel = {
   received: string;
   /** Who sent it, when the label told: « Zalando ». */
   sender?: string;
+  /** Where to fetch it: « Étagère A ». */
+  shelf?: string;
   /** Registered mail: the handover asks for a signature. */
   registered?: boolean;
   /** A reserve on its state: the agent shows the parcel before handing it. */

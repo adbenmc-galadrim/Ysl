@@ -534,6 +534,14 @@ export function DepartmentSpaceDesk() {
               label: t('departmentSpace.panel.arrived'),
               value: formatWhen(arrivedAt(opened), now, t),
             },
+            ...(opened.parcel.location
+              ? [
+                  {
+                    label: t('record.detail.location'),
+                    value: opened.parcel.location,
+                  },
+                ]
+              : []),
             ...(mail
               ? [
                   {

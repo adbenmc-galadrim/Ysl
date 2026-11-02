@@ -1,8 +1,15 @@
 import type { TranslateFn } from '@repo/shared/i18n';
 import { newId } from '@repo/shared/id';
 import { commitLocal } from '#/features/db/commit';
-import type { CourrierDatabase, LocalDeposit } from '#/features/db/schema';
+import type {
+  CourrierDatabase,
+  LocalDeposit,
+  LocalParcel,
+} from '#/features/db/schema';
+import { parcelEvent } from '#/features/parcels/events';
 import { formatTime } from '#/features/parcels/model';
+
+const LOCATIONS_SHOWN = 8;
 
 /**
  * « J'ai posé » (ME27): offline like every write. The parcels stay on their way
@@ -15,20 +22,44 @@ export async function postDeposit(
     parcelIds,
     shuttleId,
     shuttleName,
+    location = null,
     now = new Date(),
   }: {
     departmentId: string;
     parcelIds: readonly string[];
     shuttleId: string;
     shuttleName: string | null;
+    /** Where they were put, if the shuttle says. */
+    location?: string | null;
     now?: Date;
   },
 ): Promise<string> {
   const id = newId();
+  const shelved = location
+    ? (await db.parcel.bulkGet([...parcelIds])).filter(
+        (row) => row !== undefined && row.location !== location,
+      )
+    : [];
   await commitLocal(
     db,
     {
       upserts: [
+        // Before the deposit: without a department to count, the server deposits them on reading it.
+        ...shelved.flatMap((row) =>
+          row
+            ? [
+                {
+                  entity: 'parcel' as const,
+                  row: { ...row, location, updatedAt: now },
+                },
+                parcelEvent(
+                  row.id,
+                  { type: 'parcel.edited', fields: ['location'] },
+                  { agentId: shuttleId, now },
+                ),
+              ]
+            : [],
+        ),
         {
           entity: 'deposit',
           row: {
@@ -91,4 +122,40 @@ export function gapLine(
         announced: deposit.announced,
         time,
       });
+}
+
+/** The places in use at a department, the last one used first: the shelves are few, and keep their names. */
+export async function locationsOf(
+  db: CourrierDatabase,
+  departmentId: string,
+): Promise<string[]> {
+  const rows = await db.parcel
+    .filter(
+      (row) =>
+        row.departmentId === departmentId &&
+        !row.deletedAt &&
+        Boolean(row.location?.trim()),
+    )
+    .toArray();
+  const seen = new Map<string, string>();
+  for (const { location } of rows.sort(
+    (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+  )) {
+    const name = location!.trim();
+    if (!seen.has(name.toLocaleLowerCase('fr'))) {
+      seen.set(name.toLocaleLowerCase('fr'), name);
+    }
+  }
+  return [...seen.values()].slice(0, LOCATIONS_SHOWN);
+}
+
+/** Where a lot is, when all its parcels say the same. */
+export function commonLocation(
+  parcels: readonly Pick<LocalParcel, 'location'>[],
+): string | null {
+  const [first] = parcels;
+  return first?.location &&
+    parcels.every(({ location }) => location === first.location)
+    ? first.location
+    : null;
 }

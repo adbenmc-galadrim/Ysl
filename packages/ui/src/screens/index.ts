@@ -78,6 +78,8 @@ export {
   type DepartmentDepositParcel,
   type DepartmentDepositProps,
   type DepartmentDepositRow,
+  DepositLocationScreen,
+  type DepositLocationProps,
 } from '#screens/multi-entreprises/09-depot-au-departement/departement-depot-screen';
 export {
   SettlementContent,

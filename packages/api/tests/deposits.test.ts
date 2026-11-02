@@ -4,7 +4,7 @@ import type { AnyDb } from '@repo/db';
 import { DEFAULT_OPERATING_PROFILE } from '@repo/contract/operating-profile';
 import * as schema from '@repo/db/schema';
 import { newId } from '@repo/shared/id';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   confirmDeposit,
@@ -132,6 +132,94 @@ async function parcelOf(id: string) {
 
 const confirm = (depositId: string, counted: number) =>
   confirmDeposit(sync, actor, finance, { depositId, counted, gap: null });
+
+describe('where a deposit is put away', () => {
+  const editsOf = (id: string) =>
+    db
+      .select()
+      .from(schema.event)
+      .where(
+        and(eq(schema.event.entityId, id), eq(schema.event.type, 'parcel.edited')),
+      );
+
+  it('is written on the parcels present, not on those missing', async () => {
+    const here = await onRoute();
+    const missing = await onRoute();
+    await confirmDeposit(sync, actor, finance, {
+      depositId: await announced([here, missing]),
+      counted: 1,
+      gap: { kind: 'missing', parcelIds: [missing] },
+      location: 'Étagère A',
+    });
+    expect((await parcelOf(here)).location).toBe('Étagère A');
+    expect(await editsOf(here)).toHaveLength(1);
+    expect((await parcelOf(missing)).location).toBeNull();
+    expect(await editsOf(missing)).toHaveLength(0);
+  });
+
+  it('leaves a parcel declared missing, whatever the shuttle said', async () => {
+    const here = await onRoute({ location: 'Comptoir' });
+    const missing = await onRoute({ location: 'Comptoir' });
+    await confirmDeposit(sync, actor, finance, {
+      depositId: await announced([here, missing]),
+      counted: 1,
+      gap: { kind: 'missing', parcelIds: [missing] },
+    });
+    expect((await parcelOf(here)).location).toBe('Comptoir');
+    expect((await parcelOf(missing)).location).toBeNull();
+    expect(await editsOf(missing)).toHaveLength(1);
+  });
+
+  it('keeps what the shuttle pushed with a deposit no department counts', async () => {
+    await setProfile('disabled');
+    try {
+      const id = await onRoute();
+      const row = await parcelOf(id);
+      const { results } = await push(sync, shuttle, {
+        ops: [
+          op('parcel', id, {
+            status: row.status,
+            statusSeq: row.statusSeq,
+            departmentId: finance,
+            receivedAt: NOW,
+            receivedBy: row.receivedBy,
+            location: 'Comptoir',
+          }),
+          op('deposit', newId(), {
+            departmentId: finance,
+            parcelIds: [id],
+            announced: 1,
+            postedAt: NOW,
+          }),
+        ],
+      });
+      expect(results.map(({ status }) => status)).toEqual([200, 200]);
+      const after = await parcelOf(id);
+      expect(after.status).toBe('depose');
+      expect(after.location).toBe('Comptoir');
+    } finally {
+      await setProfile('count');
+    }
+  });
+
+  it('reaches the parcel of an employee gone: it is on the shelf', async () => {
+    const gone = await onRoute();
+    await confirmDeposit(sync, actor, finance, {
+      depositId: await announced([gone]),
+      counted: 1,
+      gap: { kind: 'left', parcelIds: [gone] },
+      location: 'Casier 3',
+    });
+    expect((await parcelOf(gone)).location).toBe('Casier 3');
+  });
+
+  it('leaves what the shuttle said when the department says nothing', async () => {
+    const id = await onRoute({ location: 'Comptoir' });
+    await confirm(await announced([id]), 1);
+    expect((await parcelOf(id)).location).toBe('Comptoir');
+    expect(await editsOf(id)).toHaveLength(0);
+  });
+});
 
 describe('a deposit', () => {
   it('leaves the parcels on their way until the department counts them, offline writes included', async () => {

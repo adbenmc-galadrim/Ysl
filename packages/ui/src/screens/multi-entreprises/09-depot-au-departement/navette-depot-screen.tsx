@@ -234,6 +234,8 @@ export type DepositCountScreenProps = {
   countLine: string;
   hint: ReactNode;
   listLabel: string;
+  /** Where the shuttle put them, if it says: « Rangés où ? ». */
+  location?: { title: string; value: string; onClick: () => void };
   actionLabel: string;
   onAction?: () => void;
   onClose?: () => void;
@@ -247,6 +249,7 @@ export function DepositCountScreen({
   countLine,
   hint,
   listLabel,
+  location,
   actionLabel,
   onAction,
   onClose,
@@ -287,15 +290,24 @@ export function DepositCountScreen({
       <p className="mx-auto mt-2.5 w-[300px] text-center text-15 text-muted">
         {hint}
       </p>
-      <button
-        type="button"
-        className="mt-[26px] block w-full cursor-pointer text-left"
-        onClick={onList}
-      >
-        <DepositGroup
-          items={[{ icon: 'list', title: listLabel, chevron: true }]}
-        />
-      </button>
+      <DepositGroup
+        className="mt-[26px]"
+        items={[
+          { icon: 'list', title: listLabel, chevron: true, onClick: onList },
+          ...(location
+            ? [
+                {
+                  icon: 'pin' as const,
+                  iconColor: 'red' as const,
+                  title: location.title,
+                  value: location.value,
+                  chevron: true,
+                  onClick: location.onClick,
+                },
+              ]
+            : []),
+        ]}
+      />
     </Screen>
   );
 }
