@@ -20,7 +20,11 @@ import {
   type HandoverToast,
   useHandoverToast,
 } from '#/features/handover/done-toast';
-import { dueCount, useReminderMails } from '#/features/mail/reminder-mails';
+import {
+  dueAmong,
+  dueCount,
+  useReminderMails,
+} from '#/features/mail/reminder-mails';
 import { useMailNotes } from '#/features/mail/use-sent-mails';
 import { usePendingParcels } from '#/features/parcels/api/pending-parcels';
 import {
@@ -112,11 +116,7 @@ export function ColisHome() {
   // agent sends (D2). Read again as the app comes back to the front.
   const reminders = useReminderMails();
   const toRemind = reminders
-    ? dueCount(
-        reminders.filter(({ parcels: theirs }) =>
-          theirs.some(({ id }) => rows.some((row) => row.id === id)),
-        ),
-      )
+    ? dueCount(dueAmong(reminders, new Set(rows.map(({ id }) => id))))
     : 0;
   // « Choisir » (maquette 05): the parcels « À compléter » nobody is set
   // for, with the name read on their label, open the picker in place.

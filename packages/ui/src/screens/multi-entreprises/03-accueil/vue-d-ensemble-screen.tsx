@@ -137,7 +137,7 @@ export function VueDEnsembleDesktop({
   return (
     <>
       <DeskPageHeader title="Vue d’ensemble" subtitle={subtitle} />
-      {stale && <StaleBanner stale={stale} className="mt-3" />}
+      {stale && <StaleBanner stale={stale} className="my-3" />}
       <DeskStats
         stats={[
           { label: 'En route', value: stats.coming },

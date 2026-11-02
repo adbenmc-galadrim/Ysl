@@ -911,7 +911,7 @@ export const fr = {
   'dashboard.delay': '{{days}} j',
   'dashboard.today': 'Aujourd’hui, {{day}}',
   'dashboard.todayShort': 'Aujourd’hui, {{time}}',
-  'dashboard.updated': 'mis à jour à {{time}}',
+  'dashboard.updated': 'mis à jour : {{time}}',
   'dashboard.stale.title': 'Chiffres non mis à jour',
   'dashboard.stale.since': 'Le serveur ne répond pas. Ceux-ci datent de {{time}}.',
   'dashboard.stale.description': 'Le serveur ne répond pas.',

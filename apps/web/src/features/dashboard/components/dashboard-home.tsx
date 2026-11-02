@@ -37,6 +37,12 @@ const longDay = (date: Date) =>
 
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
+/** Figures kept from another day say which: « 9:12 » alone would read as this morning. */
+const when = (date: Date, now: Date) =>
+  sameDay(date, now)
+    ? clockTime(date)
+    : `${shortDate(date, now)}, ${clockTime(date)}`;
+
 function toLine(line: DashboardLine, now: Date): OverviewLine {
   const since = line.depositSince;
   return {
@@ -85,10 +91,12 @@ export function DashboardHome() {
       ? [
           t('dashboard.today', { day: longDay(now) }),
           ...(updated
-            ? [t('dashboard.updated', { time: clockTime(updated) })]
+            ? [t('dashboard.updated', { time: when(updated, now) })]
             : []),
         ].join(' · ')
-      : t('dashboard.todayShort', { time: clockTime(updated ?? now) }),
+      : !updated || sameDay(updated, now)
+        ? t('dashboard.todayShort', { time: clockTime(updated ?? now) })
+        : when(updated, now),
     stats: {
       coming: value(known?.totals.coming),
       waiting: value(known?.totals.waiting),
@@ -112,7 +120,7 @@ export function DashboardHome() {
       stale: {
         title: t('dashboard.stale.title'),
         description: updated
-          ? t('dashboard.stale.since', { time: clockTime(updated) })
+          ? t('dashboard.stale.since', { time: when(updated, now) })
           : t('dashboard.stale.description'),
         onRetry: () => void syncNow({ force: true }),
       },

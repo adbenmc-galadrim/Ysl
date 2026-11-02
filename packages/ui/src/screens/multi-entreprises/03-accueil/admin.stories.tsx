@@ -36,7 +36,7 @@ const mobile = { viewport: { value: 'iphone15', isRotated: false } };
 const page = 'multi-entreprises/03-accueil/accueil--';
 
 const OVERVIEW: OverviewProps = {
-  subtitle: 'Aujourd’hui, mercredi 29 octobre · mis à jour à 11:04',
+  subtitle: 'Aujourd’hui, mercredi 29 octobre · mis à jour : 11:04',
   stats: {
     coming: '14',
     waiting: '37',
