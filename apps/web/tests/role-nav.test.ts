@@ -61,9 +61,29 @@ describe('activeDeskEntry', () => {
     ['/remise', 'colis'],
     ['/reglages/annuaire', 'annuaire'],
     ['/reglages/compte', 'reglages'],
+    ['/rapports', 'rapports'],
   ] as const)('marks %s under %s', (path, entry) => {
     expect(activeDeskEntry(path)).toBe(entry);
   });
+});
+
+describe('the reports', () => {
+  const ids = (role: 'company_admin' | 'department' | 'platform_admin') =>
+    deskNav(role, t)
+      .flatMap((section) => section.items)
+      .map((item) => item.id);
+
+  it('are in the sidebar of the company admin alone', () => {
+    expect(ids('company_admin')).toContain('rapports');
+    expect(ids('department')).not.toContain('rapports');
+  });
+
+  it.each(['platform_admin', 'department', 'shuttle', null] as const)(
+    'are closed to %s (D26)',
+    (role) => {
+      expect(mayReach('dashboard', role, null)).toBe(false);
+    },
+  );
 });
 
 describe('the department on its computer', () => {

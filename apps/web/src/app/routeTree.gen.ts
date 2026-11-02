@@ -18,6 +18,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedNotifierRouteImport } from './routes/_authenticated/notifier'
 import { Route as AuthenticatedPreparationRouteImport } from './routes/_authenticated/preparation'
+import { Route as AuthenticatedRapportsRouteImport } from './routes/_authenticated/rapports'
 import { Route as AuthenticatedRechercheRouteImport } from './routes/_authenticated/recherche'
 import { Route as AuthenticatedRelancesRouteImport } from './routes/_authenticated/relances'
 import { Route as AuthenticatedRevueRouteImport } from './routes/_authenticated/revue'
@@ -112,6 +113,11 @@ const AuthenticatedPreparationRoute =
     path: '/preparation',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRapportsRoute = AuthenticatedRapportsRouteImport.update({
+  id: '/rapports',
+  path: '/rapports',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedRechercheRoute = AuthenticatedRechercheRouteImport.update({
   id: '/recherche',
   path: '/recherche',
@@ -402,6 +408,7 @@ export interface FileRoutesByFullPath {
   '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
+  '/rapports': typeof AuthenticatedRapportsRoute
   '/recherche': typeof AuthenticatedRechercheRoute
   '/relances': typeof AuthenticatedRelancesRoute
   '/revue': typeof AuthenticatedRevueRoute
@@ -459,6 +466,7 @@ export interface FileRoutesByTo {
   '/journal': typeof AuthenticatedJournalRoute
   '/notifier': typeof AuthenticatedNotifierRoute
   '/preparation': typeof AuthenticatedPreparationRoute
+  '/rapports': typeof AuthenticatedRapportsRoute
   '/recherche': typeof AuthenticatedRechercheRoute
   '/relances': typeof AuthenticatedRelancesRoute
   '/revue': typeof AuthenticatedRevueRoute
@@ -519,6 +527,7 @@ export interface FileRoutesById {
   '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/notifier': typeof AuthenticatedNotifierRoute
   '/_authenticated/preparation': typeof AuthenticatedPreparationRoute
+  '/_authenticated/rapports': typeof AuthenticatedRapportsRoute
   '/_authenticated/recherche': typeof AuthenticatedRechercheRoute
   '/_authenticated/relances': typeof AuthenticatedRelancesRoute
   '/_authenticated/revue': typeof AuthenticatedRevueRoute
@@ -580,6 +589,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/notifier'
     | '/preparation'
+    | '/rapports'
     | '/recherche'
     | '/relances'
     | '/revue'
@@ -637,6 +647,7 @@ export interface FileRouteTypes {
     | '/journal'
     | '/notifier'
     | '/preparation'
+    | '/rapports'
     | '/recherche'
     | '/relances'
     | '/revue'
@@ -696,6 +707,7 @@ export interface FileRouteTypes {
     | '/_authenticated/journal'
     | '/_authenticated/notifier'
     | '/_authenticated/preparation'
+    | '/_authenticated/rapports'
     | '/_authenticated/recherche'
     | '/_authenticated/relances'
     | '/_authenticated/revue'
@@ -818,6 +830,13 @@ declare module '@tanstack/react-router' {
       path: '/preparation'
       fullPath: '/preparation'
       preLoaderRoute: typeof AuthenticatedPreparationRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/rapports': {
+      id: '/_authenticated/rapports'
+      path: '/rapports'
+      fullPath: '/rapports'
+      preLoaderRoute: typeof AuthenticatedRapportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/recherche': {
@@ -1163,6 +1182,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedNotifierRoute: typeof AuthenticatedNotifierRoute
   AuthenticatedPreparationRoute: typeof AuthenticatedPreparationRoute
+  AuthenticatedRapportsRoute: typeof AuthenticatedRapportsRoute
   AuthenticatedRechercheRoute: typeof AuthenticatedRechercheRoute
   AuthenticatedRelancesRoute: typeof AuthenticatedRelancesRoute
   AuthenticatedRevueRoute: typeof AuthenticatedRevueRoute
@@ -1218,6 +1238,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedNotifierRoute: AuthenticatedNotifierRoute,
   AuthenticatedPreparationRoute: AuthenticatedPreparationRoute,
+  AuthenticatedRapportsRoute: AuthenticatedRapportsRoute,
   AuthenticatedRechercheRoute: AuthenticatedRechercheRoute,
   AuthenticatedRelancesRoute: AuthenticatedRelancesRoute,
   AuthenticatedRevueRoute: AuthenticatedRevueRoute,
