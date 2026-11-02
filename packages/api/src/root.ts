@@ -8,7 +8,7 @@ import { exportsRouter } from '#features/exports/router';
 import { healthRouter } from '#features/health/router';
 import { importsRouter } from '#features/imports/router';
 import { invitationsRouter } from '#features/invitations/router';
-import { mailSenderRouter } from '#features/mail/router';
+import { mailRouter, mailSenderRouter } from '#features/mail/router';
 import { maintenanceRouter } from '#features/maintenance/router';
 import { operatingRouter } from '#features/operating/router';
 import { pickupRouter } from '#features/pickup/router';
@@ -30,6 +30,7 @@ export const appRouter = router({
   health: healthRouter,
   imports: importsRouter,
   invitations: invitationsRouter,
+  mail: mailRouter,
   mailSender: mailSenderRouter,
   maintenance: maintenanceRouter,
   operating: operatingRouter,

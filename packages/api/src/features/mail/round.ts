@@ -1,6 +1,7 @@
 import type { AnyDb } from '@repo/db';
 import { serverMailEnabled } from '#features/mail/config';
 import type { Mailer } from '#features/mail/mailer';
+import { forgetClosedSecrets } from '#features/mail/pickup-secret';
 import { drainEmailOutbox, type DrainCounts } from '#features/mail/queue';
 import { requestDueReminders } from '#features/mail/server-reminders';
 import { prepareServerMails } from '#features/mail/server-send';
@@ -23,6 +24,7 @@ export function mailRound(db: AnyDb, mailer: Mailer) {
       remindersAt = now.getTime();
       await requestDueReminders(db, now);
     }
+    await forgetClosedSecrets(db, now);
     await prepareServerMails(db, { now });
     return drainEmailOutbox(db, mailer, { signal });
   };

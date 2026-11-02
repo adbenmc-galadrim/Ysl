@@ -30,8 +30,10 @@ import {
   organization,
   parcel,
   pickupCode,
+  pickupSecret,
   setting,
   user,
+  type PickupCopy,
 } from '@repo/db/schema';
 import { env } from '@repo/shared/env/server';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -41,6 +43,7 @@ import { randomInt } from 'node:crypto';
 import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import { readCompanySettings } from '#features/company/settings';
 import { qrAttachment, qrModules, qrTable } from '#features/mail/qr';
+import { sealPickupSecret } from '#features/mail/pickup-secret';
 import { enqueueEmail } from '#features/mail/queue';
 import {
   parcelsToTell,
@@ -58,7 +61,8 @@ type Parcel = typeof parcel.$inferSelect;
 type Placed = Parcel & { departmentId: string };
 
 /** A person may still be filed under no department: a code opens one, so none is drawn. */
-const isPlaced = (item: Parcel): item is Placed => item.departmentId !== null;
+export const isPlaced = (item: Parcel): item is Placed =>
+  item.departmentId !== null;
 
 const DAY = new Intl.DateTimeFormat('fr-FR', {
   timeZone: ZONE,
@@ -121,10 +125,10 @@ async function brandOf(tx: AnyDb, organizationId: string): Promise<MailBrand> {
   };
 }
 
-/** The text as it reads in the phone's mail, the reply links shortened, the QR above it. */
+/** The text as it reads in the phone's mail, the reply links shortened, the QR above it when there is one. */
 export function mailHtml(
   text: string,
-  token: string,
+  token: string | null,
   brand: MailBrand = { name: '', logoUrl: null },
 ): string {
   const lines = text
@@ -138,8 +142,9 @@ export function mailHtml(
   return [
     '<div style="font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:15px;line-height:22px;color:#1c1c1e">',
     brandHtml(brand),
-    `<p>${escapeHtml(t('mail.server.qr'))}</p>`,
-    qrTable(qrModules(token)),
+    ...(token
+      ? [`<p>${escapeHtml(t('mail.server.qr'))}</p>`, qrTable(qrModules(token))]
+      : []),
     `<p>${lines.join('<br>')}</p>`,
     '</div>',
   ].join('');
@@ -173,8 +178,9 @@ async function drawPin(
 
 /**
  * Makes this code the recipient's in the parcels' department, the only one it
- * opens (§3.7.9). Each mail draws a new one and takes the former one out: the
- * server holds only hashes, so "the same code" belongs to the phone's mail.
+ * opens (§3.7.9). Each mail draws a new one and takes the former one out. The
+ * devices get the hashes only; the code stays sealed for a copy (`pickupSecret`),
+ * and whoever held a copy of the former one is handed on (`copies`).
  */
 async function drawCode(
   tx: AnyDb,
@@ -195,7 +201,8 @@ async function drawCode(
         isNull(pickupCode.deletedAt),
         isNull(pickupCode.usedAt),
       ),
-    );
+    )
+    .for('update');
   if (mine.length > 0) {
     await tx
       .update(pickupCode)
@@ -222,10 +229,34 @@ async function drawCode(
     pinHash: await pickupPinHash(pin),
     expiresAt: new Date(now.getTime() + PICKUP_CODE_TTL_MS),
   });
-  return { id, pin, token, replaced: mine[0]?.id ?? null };
+  const copies = mine.length
+    ? await tx
+        .select({ copiedTo: pickupSecret.copiedTo })
+        .from(pickupSecret)
+        .where(
+          inArray(
+            pickupSecret.codeId,
+            mine.map((code) => code.id),
+          ),
+        )
+    : [];
+  await tx
+    .insert(pickupSecret)
+    .values({ codeId: id, sealed: sealPickupSecret(id, { pin, token }) });
+  return {
+    id,
+    pin,
+    token,
+    replaced: mine[0]?.id ?? null,
+    copies: copies.flatMap((row) => row.copiedTo),
+  };
 }
 
-async function templateOf(tx: AnyDb, row: Request, type: 'avis' | 'relance') {
+async function templateOf(
+  tx: AnyDb,
+  row: Pick<Request, 'organizationId' | 'preparedBy' | 'templateId'>,
+  type: 'avis' | 'relance',
+) {
   const [stored] = await tx
     .select({ subject: emailTemplate.subject, body: emailTemplate.body })
     .from(emailTemplate)
@@ -291,7 +322,7 @@ async function replyToOf(
   return member?.email ?? agentEmail;
 }
 
-async function isSuppressed(
+export async function isSuppressed(
   tx: AnyDb,
   organizationId: string,
   address: string,
@@ -315,7 +346,11 @@ type Who = {
   addressOf: (item: Parcel) => string | null;
 };
 
-async function whoOf(tx: AnyDb, row: Request, parcels: Parcel[]): Promise<Who> {
+export async function whoOf(
+  tx: AnyDb,
+  row: Pick<Request, 'personId' | 'contactId'>,
+  parcels: Parcel[],
+): Promise<Who> {
   const personIds = [
     ...new Set(
       [row.personId, ...parcels.map((item) => item.personId)].filter(
@@ -355,22 +390,25 @@ async function whoOf(tx: AnyDb, row: Request, parcels: Parcel[]): Promise<Who> {
   };
 }
 
-async function queueMail(
+type Sender = Pick<Request, 'organizationId' | 'preparedBy' | 'templateId'>;
+
+/** The mail of these parcels with this code, the same for the recipient and a copy. */
+export async function composeMail(
   tx: AnyDb,
-  row: Request,
+  row: Sender,
   parcels: Placed[],
-  address: string,
   who: Who,
+  code: { pin: string; token: string | null },
   type: 'avis' | 'relance',
   now: Date,
-): Promise<void> {
+  lead?: string,
+) {
   const { departmentId } = parcels[0]!;
   const [agent] = await tx
     .select({ name: user.name, email: user.email })
     .from(user)
     .where(eq(user.id, row.preparedBy));
   const replyTo = await replyToOf(tx, departmentId, agent?.email ?? null);
-  const code = await drawCode(tx, row, departmentId, now);
   const values = mailValues({
     firstName: who.firstName ?? '',
     lastName: who.lastName,
@@ -395,6 +433,30 @@ async function queueMail(
   if (rendered.unknown.length > 0 || rendered.missing.length > 0) {
     rendered = renderMail(DEFAULT_TEMPLATES[type], values);
   }
+  const text = lead ? `${lead}\n\n${rendered.body}` : rendered.body;
+  return {
+    subject: rendered.subject,
+    text,
+    html: mailHtml(text, code.token, await brandOf(tx, row.organizationId)),
+    replyTo,
+    attachments: code.token ? [qrAttachment(code.token)] : [],
+  };
+}
+
+export const copyLead = (delegate: string, recipient: string) =>
+  t('mail.server.copy', { delegate, recipient });
+
+async function queueMail(
+  tx: AnyDb,
+  row: Request,
+  parcels: Placed[],
+  address: string,
+  who: Who,
+  type: 'avis' | 'relance',
+  now: Date,
+): Promise<void> {
+  const code = await drawCode(tx, row, parcels[0]!.departmentId, now);
+  const mail = await composeMail(tx, row, parcels, who, code, type, now);
   await tx
     .update(notification)
     .set({ recipients: [address], type, updatedAt: now })
@@ -405,19 +467,49 @@ async function queueMail(
     notificationId: row.id,
     to: address,
     toName: who.name || null,
-    subject: rendered.subject,
-    text: rendered.body,
-    html: mailHtml(
-      rendered.body,
-      code.token,
-      await brandOf(tx, row.organizationId),
-    ),
-    replyTo,
-    attachments: [qrAttachment(code.token)],
+    ...mail,
     pickupCodeId: code.id,
     replacedCodeId: code.replaced,
   });
+  // The new code withdraws the one they hold: they get it too, or their QR says « replaced ».
+  const kept: PickupCopy[] = [];
+  for (const copy of code.copies) {
+    const seen = kept.some(
+      (one) => one.address.toLowerCase() === copy.address.toLowerCase(),
+    );
+    if (seen || (await isSuppressed(tx, row.organizationId, copy.address))) {
+      continue;
+    }
+    kept.push(copy);
+    await enqueueEmail(tx, {
+      idempotencyKey: copyKey(code.id, copy.address),
+      organizationId: row.organizationId,
+      to: copy.address,
+      toName: copy.name,
+      ...(await composeMail(
+        tx,
+        row,
+        parcels,
+        who,
+        code,
+        type,
+        now,
+        copyLead(copy.name, who.name),
+      )),
+      pickupCodeId: code.id,
+    });
+  }
+  if (kept.length > 0) {
+    await tx
+      .update(pickupSecret)
+      .set({ copiedTo: kept })
+      .where(eq(pickupSecret.codeId, code.id));
+  }
 }
+
+/** One copy of a code per address: a second tap queues nothing. */
+export const copyKey = (codeId: string, address: string) =>
+  `copy:${codeId}:${address.toLowerCase()}`;
 
 async function prepareOne(tx: AnyDb, id: string, now: Date): Promise<void> {
   const [row] = await tx

@@ -246,6 +246,13 @@
       "when": 1793474720864,
       "tag": "0034_depot_departement",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793648980679,
+      "tag": "0035_copie_delegue",
+      "breakpoints": true
     }
   ]
 }

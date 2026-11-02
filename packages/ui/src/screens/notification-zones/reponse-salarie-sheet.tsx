@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Button } from '#components/button';
+import { Button, buttonVariants } from '#components/button';
 import { Field, FieldInput } from '#components/field';
 import { IconTile } from '#components/icon-tile';
 import { ListRow } from '#components/list-row';
@@ -26,6 +26,8 @@ export type ReponseSalarieSheetProps = SheetFrame & {
   onNotMine?: () => void;
   onColleague?: () => void;
   onAbsent?: () => void;
+  /** A copy of the mail for someone who may collect (YSL-84); no row without it. */
+  onCopy?: () => void;
 };
 
 /**
@@ -40,6 +42,7 @@ export function ReponseSalarieSheet({
   onNotMine,
   onColleague,
   onAbsent,
+  onCopy,
   onDismiss,
   fixed,
   behind,
@@ -66,6 +69,17 @@ export function ReponseSalarieSheet({
       line: 'Pas de relance avant son retour',
       onClick: onAbsent,
     },
+    ...(onCopy
+      ? [
+          {
+            icon: 'mail' as const,
+            tone: 'blue' as const,
+            title: 'Envoyer une copie à un collègue',
+            line: 'Même QR et même code de retrait',
+            onClick: onCopy,
+          },
+        ]
+      : []),
   ];
   return (
     <Sheet
@@ -210,6 +224,92 @@ export function AbsenceJusquauSheet({
       </Button>
       <Button variant="secondary" block className="mt-3" onClick={onDismiss}>
         Annuler
+      </Button>
+    </Sheet>
+  );
+}
+
+export type CopieCollegueSheetProps = SheetFrame & {
+  /** Whose parcels: « Nora Haddad ». */
+  recipient: string;
+  /** Who gets the copy: « Paul Mercier ». */
+  name: string;
+  address: string;
+  onAddressChange?: (value: string) => void;
+  /** Under the field: what the copy carries, or why it did not leave. */
+  help: string;
+  error?: string;
+  valid: boolean;
+  sending?: boolean;
+  /** The mail app's link, with the server's sending off: a real `<a href>`. */
+  draftHref?: string;
+  onSend?: () => void;
+  onSkip?: () => void;
+};
+
+/** « Envoyer une copie »: the mail the recipient got, to whoever collects instead. */
+export function CopieCollegueSheet({
+  recipient,
+  name,
+  address,
+  onAddressChange,
+  help,
+  error,
+  valid,
+  sending,
+  draftHref,
+  onSend,
+  onSkip,
+  onDismiss,
+  fixed,
+  behind,
+}: CopieCollegueSheetProps) {
+  return (
+    <Sheet
+      fixed={fixed}
+      behind={behind}
+      title={`Envoyer une copie à ${name}`}
+      description={`${name} pourra retirer les colis de ${recipient}.`}
+      className={FRAME}
+      onDismiss={onDismiss}
+    >
+      <Field
+        label="Adresse e-mail"
+        help={error ?? help}
+        helpTone={error ? 'red' : 'muted'}
+        className="mt-5"
+      >
+        {(id) => (
+          <FieldInput
+            id={id}
+            type="email"
+            inputMode="email"
+            autoCapitalize="none"
+            value={address}
+            onChange={(event) => onAddressChange?.(event.target.value)}
+          />
+        )}
+      </Field>
+      {draftHref && valid ? (
+        <a
+          href={draftHref}
+          onClick={onSend}
+          className={buttonVariants({ block: true, class: 'mt-6' })}
+        >
+          Ouvrir dans ma messagerie
+        </a>
+      ) : (
+        <Button
+          block
+          className="mt-6"
+          disabled={!valid || sending}
+          onClick={onSend}
+        >
+          Envoyer la copie
+        </Button>
+      )}
+      <Button variant="secondary" block className="mt-3" onClick={onSkip}>
+        Pas de copie
       </Button>
     </Sheet>
   );

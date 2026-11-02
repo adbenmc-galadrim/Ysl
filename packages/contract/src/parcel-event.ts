@@ -57,6 +57,8 @@ export type ParcelEvent =
       notificationId: string;
       kind: NotificationType;
     }
+  /** A copy of the mail for this person, who may collect (YSL-84). */
+  | { type: 'parcel.copied'; to: string }
   | {
       /** Told in person or on the phone (YSL-72): no mail, a pickup code given. */
       type: 'parcel.informed';
@@ -139,6 +141,7 @@ const details = {
       .nullish()
       .transform((note) => note ?? null),
   }),
+  'parcel.copied': z.object({ to: z.string() }),
   'parcel.reply': z.discriminatedUnion('reply', [
     z.object({
       reply: z.literal(REPLY_KINDS[0]),
@@ -200,6 +203,7 @@ export function eventColumns(event: ParcelEvent): {
           note: event.note,
         },
       };
+    case 'parcel.copied':
     case 'parcel.reply': {
       const { type, ...detail } = event;
       return { type, detail };
@@ -254,6 +258,10 @@ export function readParcelEvent(
       return read.success ? { type, ...read.data } : undefined;
     }
     case 'parcel.handover_cancelled': {
+      const read = details[type].safeParse(detail);
+      return read.success ? { type, ...read.data } : undefined;
+    }
+    case 'parcel.copied': {
       const read = details[type].safeParse(detail);
       return read.success ? { type, ...read.data } : undefined;
     }

@@ -13,6 +13,7 @@ import { NotifyWaySheet } from '#screens/notification-zones/notify-way-sheet';
 import {
   AbsenceJusquauSheet,
   ColisPasPourMoiSheet,
+  CopieCollegueSheet,
   ReponseSalarieSheet,
 } from '#screens/notification-zones/reponse-salarie-sheet';
 import { ChoisirDestinataireScreen } from '#screens/reception/choisir-destinataire-screen';
@@ -250,6 +251,20 @@ export const AbsenceJusquau: Story = {
       min="2026-10-28"
       help="Relances reprises le mercredi 4 nov."
       behind={NOTIFIED_RECORD}
+    />
+  ),
+};
+
+/** No mockup: the copy of YSL-84, after « Un collègue passe le prendre ». */
+export const CopieAUnCollegue: Story = {
+  name: 'Copie à un collègue',
+  render: () => (
+    <CopieCollegueSheet
+      recipient="Nora Haddad"
+      name="Paul Mercier"
+      address="paul.mercier@example.test"
+      help="Le même QR et le même code de retrait que Nora Haddad."
+      valid
     />
   ),
 };
