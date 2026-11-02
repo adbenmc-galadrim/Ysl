@@ -9,7 +9,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
-import { SMALL_SITE_OPERATING_PROFILE } from '@repo/contract/operating-profile';
+import {
+  parseOperatingProfile,
+  SMALL_SITE_OPERATING_PROFILE,
+} from '@repo/contract/operating-profile';
 import { newId } from '@repo/shared/id';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
@@ -373,7 +376,9 @@ describe(TAG, () => {
           [orgId],
         )
       )[0]?.value;
-    expect(await value(org)).toEqual(SMALL_SITE_OPERATING_PROFILE);
+    expect(parseOperatingProfile(await value(org))).toEqual(
+      SMALL_SITE_OPERATING_PROFILE,
+    );
     expect(await value(other)).toEqual({ shuttleActsAsDepartment: false });
   });
 

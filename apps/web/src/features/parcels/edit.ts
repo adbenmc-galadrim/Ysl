@@ -43,6 +43,8 @@ export type ParcelEdit = {
   /** In kilograms, a comma or a point: "2,4". */
   weightKg: string;
   location: string;
+  /** Said by the agent; absent when not offered, the type stays as it is. */
+  registered?: boolean;
 };
 
 type EditErrorKey =
@@ -238,7 +240,10 @@ function pieces(parcel: LocalParcel, edit: ParcelEdit) {
   };
 }
 
-const COMPARED: Record<ParcelEditField, (keyof LocalParcel)[]> = {
+const COMPARED: Record<
+  Exclude<ParcelEditField, 'registered'>,
+  (keyof LocalParcel)[]
+> = {
   recipient: ['personId', 'contactId'],
   tracking: ['tracking'],
   carrier: ['carrier'],
@@ -256,9 +261,15 @@ function changedFields(
   before: LocalParcel,
   after: LocalParcel,
 ): ParcelEditField[] {
-  return (Object.keys(COMPARED) as ParcelEditField[]).filter((field) =>
+  const fields: ParcelEditField[] = (
+    Object.keys(COMPARED) as (keyof typeof COMPARED)[]
+  ).filter((field) =>
     COMPARED[field].some((column) => before[column] !== after[column]),
   );
+  // « Sans suivi » becoming a parcel is the number typed, not a choice of kind.
+  return (before.type === 'recommande') !== (after.type === 'recommande')
+    ? [...fields, 'registered']
+    : fields;
 }
 
 /**
@@ -372,7 +383,14 @@ export async function saveParcelEdit(
   const edited: LocalParcel = {
     ...parcel,
     ...recipient,
-    type: parcel.type === 'sans_suivi' && !untracked ? 'colis' : parcel.type,
+    type:
+      edit.registered !== undefined && parcel.type !== 'sans_suivi'
+        ? edit.registered
+          ? 'recommande'
+          : 'colis'
+        : parcel.type === 'sans_suivi' && !untracked
+          ? 'colis'
+          : parcel.type,
     tracking,
     trackingNorm: tracking,
     carrier: text(edit.carrier),

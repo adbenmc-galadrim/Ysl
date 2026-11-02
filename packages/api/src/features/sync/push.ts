@@ -48,6 +48,7 @@ import {
   checkReach,
   departmentWrite,
   noticeOnTourWrite,
+  refusedWith,
 } from '#features/sync/reach';
 import { tableOf, type SyncTable } from '#features/sync/tables';
 import type { Access } from '#lib/access';
@@ -526,6 +527,7 @@ async function applyOne(
   db: AnyDb,
   op: SyncOp,
   writer: Writer,
+  refused: Set<string>,
 ): Promise<PushResult> {
   try {
     const earlier = await withRetry(() =>
@@ -533,7 +535,7 @@ async function applyOne(
         await tx.execute(sql.raw(`set local lock_timeout = '${LOCK_TIMEOUT}'`));
         const seen = await claim(tx, op, writer, SYNC_STATUS.applied);
         if (seen !== null) return seen;
-        await checkReach(tx, op, writer);
+        await checkReach(tx, op, writer, refused);
         if (await isServerMail(tx, op, writer.organizationId)) return null;
         if (op.entity === 'setting') await checkSetting(tx, op, writer);
         if (op.entity === 'email_template') await checkTemplate(tx, op, writer);
@@ -549,6 +551,7 @@ async function applyOne(
   } catch (error) {
     const fields = { opId: op.opId, entity: op.entity, entityId: op.entityId };
     if (error instanceof SyncRejected) {
+      for (const id of refusedWith(op, error)) refused.add(id);
       logger.warn(
         { ...fields, status: error.status, reason: error.reason },
         'sync op rejected',
@@ -582,8 +585,9 @@ export async function push(
   input: PushInput,
 ): Promise<PushOutput> {
   const results: PushResult[] = [];
+  const refused = new Set<string>();
   for (const op of input.ops) {
-    const result = await applyOne(db, op, writer);
+    const result = await applyOne(db, op, writer, refused);
     results.push(result);
     if (result.status === SYNC_STATUS.retry) break;
   }

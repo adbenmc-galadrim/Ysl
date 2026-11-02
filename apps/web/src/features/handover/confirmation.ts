@@ -33,11 +33,17 @@ function syncProof(
     return { icon: 'cloud', label: t('handover.confirm.synced'), done: true };
   }
   if (sync === 'rejected') {
-    // Refused for a step the profile now requires: what the agent can act on.
-    const steps = t('sync.op.handoverSteps');
+    // Refused for a step that is missing: what the agent can act on.
+    const actionable = [
+      t('sync.op.handoverSteps'),
+      t('sync.op.registeredSignature'),
+    ];
     return {
       icon: 'alert',
-      label: refusal === steps ? steps : t('handover.confirm.rejected'),
+      label:
+        refusal && actionable.includes(refusal)
+          ? refusal
+          : t('handover.confirm.rejected'),
     };
   }
   return {

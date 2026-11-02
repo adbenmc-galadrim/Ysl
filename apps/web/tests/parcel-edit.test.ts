@@ -137,6 +137,31 @@ describe('saveParcelEdit', () => {
     });
   });
 
+  it('marks a parcel registered and back, and leaves it alone when not offered', async () => {
+    const row = parcelRow({ personId: 'p-1' });
+    await db.parcel.put(row);
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(row), registered: true },
+      options,
+    );
+    const marked = await db.parcel.get(row.id);
+    expect(marked?.type).toBe('recommande');
+
+    await saveParcelEdit(db, row.id, { ...editOf(marked!) }, options);
+    expect((await db.parcel.get(row.id))?.type).toBe('recommande');
+
+    await saveParcelEdit(
+      db,
+      row.id,
+      { ...editOf(marked!), registered: false },
+      options,
+    );
+    expect((await db.parcel.get(row.id))?.type).toBe('colis');
+  });
+
   it('keeps the app’s number of a parcel « Sans suivi » out of the form', async () => {
     const row = parcelRow({
       type: 'sans_suivi',

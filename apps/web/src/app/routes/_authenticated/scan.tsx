@@ -11,6 +11,7 @@ import {
 } from '@repo/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { modelsReady, subscribeModels } from '#/features/offline/models-state';
 import {
   dropHeld,
@@ -171,6 +172,11 @@ function ScanPage() {
   const [reading, setReading] = useState<ScanReading>({ kind: 'idle' });
   /** When the last label was read, for the green corners and the flash; 0 once they are gone. */
   const [flashedAt, setFlashedAt] = useState(0);
+  const profile = useOperatingProfile();
+  const [registered, setRegistered] = useState(false);
+  /** Read at the shutter: the agent may switch while a shot is being read. */
+  const registeredNow = useRef(false);
+  registeredNow.current = registered && !!profile?.registeredMail;
   const [typing, setTyping] = useState<Typing | null>(null);
   const unread = useRef<string | null>(null);
   /** The draft the fields on screen belong to: a later text must not overwrite another's. */
@@ -350,6 +356,9 @@ function ScanPage() {
       const batch = await openBatch(db);
       const photo = await encodePhoto(clone);
       const draft = await addDraft(db, photoFiles, batch.id, photo);
+      if (registeredNow.current) {
+        await updateDraft(db, draft.id, { type: 'recommande' });
+      }
       handed = true;
       const wasHeld = held.current !== null;
       if (wasHeld) dropHeldDraft();
@@ -637,7 +646,10 @@ function ScanPage() {
       }
     }
     const batch = await openBatch(db);
-    const draft = typedDraft(batch.id, typed);
+    const draft = {
+      ...typedDraft(batch.id, typed),
+      ...(registeredNow.current ? { type: 'recommande' as const } : {}),
+    };
     if (
       await holdDuplicate(draft, trackingNorm, null, () =>
         Promise.resolve(draft),
@@ -795,6 +807,24 @@ function ScanPage() {
           >
             <ScanScreen
               count={view?.count ?? 0}
+              kinds={
+                profile?.registeredMail
+                  ? {
+                      label: t('scan.kind.label'),
+                      options: [
+                        t('parcel.type.colis'),
+                        t('parcel.type.recommande'),
+                      ],
+                      value: t(
+                        registered
+                          ? 'parcel.type.recommande'
+                          : 'parcel.type.colis',
+                      ),
+                      onChange: (kind) =>
+                        setRegistered(kind === t('parcel.type.recommande')),
+                    }
+                  : undefined
+              }
               reading={shown}
               controls={!typing}
               dim={typing ? 0.4 : undefined}

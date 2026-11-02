@@ -13,6 +13,7 @@ import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
 import { fullName } from '#/features/directory/people';
 import { useParcelRecord } from '#/features/parcels/api/parcel-record';
+import { useOperatingProfile } from '#/features/settings/operating-profile';
 import {
   editOf,
   type EditErrors,
@@ -34,6 +35,8 @@ import {
 const t = createTranslator(DEFAULT_LOCALE);
 
 const CARRIERS = carrierOptions(t);
+
+const KINDS = [t('parcel.type.colis'), t('parcel.type.recommande')];
 
 type PickedRecipient = {
   choice: RecipientChoice;
@@ -127,7 +130,13 @@ function EditForm({ record }: { record: ParcelRecord }) {
   const session = useSession();
   const { receives } = useAccess();
   const { parcel } = record;
+  const profile = useOperatingProfile();
   const [form, setForm] = useState<Form>(() => formOf(record));
+  const [registered, setRegistered] = useState(parcel.type === 'recommande');
+  // Option off, a registered letter can still be corrected: its signature still holds.
+  const kindOffered =
+    parcel.type !== 'sans_suivi' &&
+    (parcel.type === 'recommande' || !!profile?.registeredMail);
   const [picking, setPicking] = useState(false);
   const [errors, setErrors] = useState<EditErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
@@ -166,7 +175,11 @@ function EditForm({ record }: { record: ParcelRecord }) {
     setSaving(true);
     setFailure(null);
     try {
-      const result = await saveParcelEdit(db, parcel.id, editFrom(form), {
+      const edit = {
+        ...editFrom(form),
+        ...(kindOffered ? { registered } : {}),
+      };
+      const result = await saveParcelEdit(db, parcel.id, edit, {
         agentId: session.user.id,
         learns: receives,
       });
@@ -193,6 +206,16 @@ function EditForm({ record }: { record: ParcelRecord }) {
         values={form.values}
         onChange={onChange}
         carriers={CARRIERS}
+        kinds={
+          kindOffered
+            ? {
+                label: t('scan.kind.label'),
+                options: KINDS,
+                value: KINDS[registered ? 1 : 0]!,
+                onChange: (kind) => setRegistered(kind === KINDS[1]),
+              }
+            : undefined
+        }
         trackingCheck={check.check}
         errors={errorsOf(errors)}
         failure={failure}

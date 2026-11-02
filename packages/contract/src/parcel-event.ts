@@ -25,6 +25,7 @@ export const PARCEL_EDIT_FIELDS = [
   'notes',
   'notificationEmail',
   'carrierService',
+  'registered',
   'reference',
   'weightKg',
   'location',

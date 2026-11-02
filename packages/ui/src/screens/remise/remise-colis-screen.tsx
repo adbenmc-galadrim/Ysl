@@ -167,8 +167,7 @@ export function RemiseColisScreen({
   collector,
   announced,
   onCollector,
-  // The mockup's wording, kept so its reference holds; the app says the
-  // signature is optional unless the profile requires it (D6).
+  // The mockup's wording, kept so its reference holds; the app says it is required.
   registeredNote = 'Un recommandé : la signature sera demandée.',
   busy = false,
   onToggle,
@@ -178,7 +177,9 @@ export function RemiseColisScreen({
   onBack,
 }: RemiseColisScreenProps) {
   const count = parcels.filter((p) => !excluded.includes(p.id)).length;
-  const registered = parcels.some((p) => p.registered);
+  const registered = parcels.some(
+    (p) => p.registered && !excluded.includes(p.id),
+  );
   const allTicked = count === parcels.length;
   const scanFirst = scan?.required && !scan.done && parcels.length > 0;
   const signatureLine =

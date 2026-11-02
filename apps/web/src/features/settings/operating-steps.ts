@@ -26,6 +26,10 @@ export const OPTIONS: {
     { value: 'no', label: t('operating.no') },
     { value: 'yes', label: t('operating.yes') },
   ],
+  registeredMail: [
+    { value: 'no', label: t('operating.no') },
+    { value: 'yes', label: t('operating.yes') },
+  ],
   batchReview: stepOptions,
   depositConfirmation: DEPOSIT_CONFIRMATIONS.map((value) => ({
     value,
@@ -46,7 +50,7 @@ export const OPTIONS: {
 };
 
 export const SECTIONS = [
-  { id: 'reception', params: ['batchReview'] },
+  { id: 'reception', params: ['batchReview', 'registeredMail'] },
   { id: 'deposit', params: ['shuttleActsAsDepartment', 'depositConfirmation'] },
   {
     id: 'handover',
@@ -72,5 +76,5 @@ export const withChoice = (
   choice: Choice,
 ): OperatingProfile => ({
   ...profile,
-  [param]: param === 'shuttleActsAsDepartment' ? choice === 'yes' : choice,
+  [param]: typeof profile[param] === 'boolean' ? choice === 'yes' : choice,
 });

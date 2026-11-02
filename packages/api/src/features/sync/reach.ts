@@ -106,17 +106,88 @@ async function requiringProfile(tx: AnyDb, organizationId: string) {
 const noStep = (op: SyncOp): never =>
   refuse(op, 'misses a step the profile requires', 'sync.op.handoverSteps');
 
+class UnsignedRegistered extends SyncRejected {}
+
+/** What a refusal for a registered letter takes with it in the batch: the handover, the parcels it lists. */
+export function refusedWith(op: SyncOp, error: unknown): string[] {
+  return op.type === 'upsert' && error instanceof UnsignedRegistered
+    ? [op.entityId, ...idsOf(op.patch.parcelIds)]
+    : [];
+}
+
+const handoverKnown = async (
+  tx: AnyDb,
+  organizationId: string,
+  id: string,
+): Promise<boolean> => {
+  const [known] = await tx
+    .select({ id: handover.id })
+    .from(handover)
+    .where(
+      and(eq(handover.organizationId, organizationId), eq(handover.id, id)),
+    );
+  return !!known;
+};
+
+const registeredAmong = async (
+  tx: AnyDb,
+  organizationId: string,
+  ids: string[],
+): Promise<boolean> => {
+  if (ids.length === 0) return false;
+  const [row] = await tx
+    .select({ id: parcel.id })
+    .from(parcel)
+    .where(
+      and(
+        eq(parcel.organizationId, organizationId),
+        inArray(parcel.id, ids),
+        eq(parcel.type, 'recommande'),
+      ),
+    )
+    .limit(1);
+  return !!row;
+};
+
+/**
+ * A registered letter never leaves unsigned (F56), whatever the profile and
+ * whenever the handover was made. The signature stays on the phone: its flag
+ * is all the server can check. A handover already kept is not checked again.
+ */
+async function checkRegisteredSigned(
+  tx: AnyDb,
+  op: SyncOp,
+  organizationId: string,
+): Promise<void> {
+  if (op.type !== 'upsert') return;
+  const { patch } = op;
+  if (patch.hasSignature || patch.cancelledAt) return;
+  if (!(await registeredAmong(tx, organizationId, idsOf(patch.parcelIds)))) {
+    return;
+  }
+  if (await handoverKnown(tx, organizationId, op.entityId)) return;
+  throw new UnsignedRegistered(
+    SYNC_STATUS.forbidden,
+    `${op.entity} ${op.entityId} leaves a registered letter unsigned`,
+    'sync.op.registeredSignature',
+  );
+}
+
 /**
  * The profile on what the phones send (ME16). A handover has already happened
  * at the counter: one made before the profile changed, or by a version without
  * this rule, which never sends `hasScan`, stays accepted. Its parcels and its
  * event follow the refusal, so no parcel is `remis` without a handover; for a
- * department, which came with the rule, whatever the profile requires.
+ * department, which came with the rule, whatever the profile requires; for a
+ * registered letter, always. The other parcels of a handover refused for its
+ * registered letter follow it within the batch (`refused`). Elsewhere a phone
+ * may push its parcel before its handover: nothing is lost by accepting both.
  */
 async function checkHandoverSteps(
   tx: AnyDb,
   op: SyncOp,
   { organizationId, role }: Access,
+  refused: ReadonlySet<string>,
 ): Promise<void> {
   if (op.type !== 'upsert') return;
   const { patch } = op;
@@ -128,20 +199,32 @@ async function checkHandoverSteps(
   if (op.entity !== 'handover' && !isDelivery && delivered === undefined) {
     return;
   }
+  if (op.entity === 'handover') {
+    await checkRegisteredSigned(tx, op, organizationId);
+  } else if (refused.has(isDelivery ? op.entityId : String(delivered))) {
+    refuse(op, 'follows a refused handover', 'sync.op.registeredSignature');
+  }
   const required = await requiringProfile(tx, organizationId);
-  if (!required && role !== 'department') return;
+  if (
+    !required &&
+    role !== 'department' &&
+    !(await registeredAmong(
+      tx,
+      organizationId,
+      idsOf([isDelivery ? op.entityId : patch.entityId]),
+    ))
+  ) {
+    return;
+  }
   if (op.entity === 'handover') {
     if (!required) return;
-    const [known] = await tx
-      .select({ id: handover.id })
-      .from(handover)
-      .where(
-        and(
-          eq(handover.organizationId, organizationId),
-          eq(handover.id, op.entityId),
-        ),
-      );
-    if (known || !('hasScan' in patch) || patch.cancelledAt) return;
+    if (
+      (await handoverKnown(tx, organizationId, op.entityId)) ||
+      !('hasScan' in patch) ||
+      patch.cancelledAt
+    ) {
+      return;
+    }
     if (new Date(patch.at as string | Date) < required.updatedAt) return;
     const missing = missingHandoverSteps(required.profile, {
       method: patch.method as HandoverMethod,
@@ -508,12 +591,13 @@ export async function checkReach(
   tx: AnyDb,
   op: SyncOp,
   access: Access,
+  refused: ReadonlySet<string> = new Set(),
 ): Promise<void> {
   if (op.entity === 'department') {
     refuse(op, 'is not written by a device', 'sync.op.readOnly');
   }
   if (!(await mayHandOver(tx, access))) await checkHandOver(tx, op, access);
-  await checkHandoverSteps(tx, op, access);
+  await checkHandoverSteps(tx, op, access, refused);
   if (op.entity === 'directory_person' && !canWriteDirectory(access.role)) {
     refuse(op, 'is read-only for this account', 'sync.op.directoryReadOnly');
   }

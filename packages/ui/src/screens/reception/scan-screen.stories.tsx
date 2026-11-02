@@ -42,6 +42,23 @@ export const Lecture: Story = {
 };
 
 /** A code or the account dictionary named the sender (F19): one more line, no mock-up. */
+/** The company takes registered mail: the agent says what the camera is reading. */
+export const TypeRecommande: Story = {
+  name: 'Lecture, recommandé',
+  args: {
+    kinds: {
+      label: 'Type d’envoi',
+      options: ['Colis', 'Recommandé'],
+      value: 'Recommandé',
+      onChange: () => {},
+    },
+    reading: {
+      kind: 'read',
+      fields: [{ label: 'N° d’AR', value: '1A 123 456 7890 1' }],
+    },
+  },
+};
+
 export const LectureExpediteur: Story = {
   name: 'Lecture, avec expéditeur',
   args: {

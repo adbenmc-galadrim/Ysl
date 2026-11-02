@@ -22,6 +22,8 @@ const shape = {
   photo: stepState,
   emailMoment: z.enum(EMAIL_MOMENTS),
   reminders: stepState,
+  /** Off in a profile saved before it: reading it that way keeps the rest of that profile. */
+  registeredMail: z.boolean().default(false),
 };
 
 /** What a company turned on (§3.7.4, D30): read each time, so a change holds for every parcel (D31). */
@@ -47,6 +49,7 @@ export const DEFAULT_OPERATING_PROFILE: OperatingProfile = {
   photo: 'optional',
   emailMoment: 'scan',
   reminders: 'optional',
+  registeredMail: false,
 };
 
 /** « Petit site, la navette remet » (ME18): the converted agent keeps the handover (§3.7.9). */
@@ -66,6 +69,7 @@ export const MULTI_DEPARTMENTS_OPERATING_PROFILE: OperatingProfile = {
   photo: 'disabled',
   emailMoment: 'deposit',
   reminders: 'required',
+  registeredMail: false,
 };
 
 /** « Traçabilité stricte » (ME18): on tour too, every gesture proved from the deposit on. */
@@ -79,6 +83,7 @@ export const STRICT_TRACEABILITY_OPERATING_PROFILE: OperatingProfile = {
   photo: 'optional',
   emailMoment: 'deposit',
   reminders: 'required',
+  registeredMail: false,
 };
 
 /** The models offered when a company is created (D30). */
@@ -129,24 +134,33 @@ export type HandoverFacts = {
   hasSignature?: boolean | null;
   hasPhoto?: boolean | null;
   hasScan?: boolean | null;
+  /** A registered letter is among the parcels: it asks for a signature whatever the profile says (F56). */
+  registered?: boolean;
 };
+
+/** Whether what leaves holds a registered letter: one signature then covers the whole handover. */
+export const holdsRegistered = (
+  parcels: readonly { type: string }[],
+): boolean => parcels.some((parcel) => parcel.type === 'recommande');
 
 export type HandoverStep = 'proof' | 'signature' | 'photo' | 'scan';
 
 /**
- * The steps the profile requires that this handover lacks (ME16): the phone
+ * The steps the profile, or a registered letter (F56), requires that this handover lacks (ME16): the phone
  * holds « Remettre » on it, the server refuses by it. A signature stands in for
  * the QR or the code (D6): `manuel` is what is left without one.
  */
 export function missingHandoverSteps(
   profile: OperatingProfile,
-  { method, hasSignature, hasPhoto, hasScan }: HandoverFacts,
+  { method, hasSignature, hasPhoto, hasScan, registered }: HandoverFacts,
 ): HandoverStep[] {
   return [
     profile.handoverProof === 'required' &&
       method === HANDOVER_METHOD_WITHOUT_PROOF &&
       ('proof' as const),
-    profile.signature === 'required' && !hasSignature && ('signature' as const),
+    (profile.signature === 'required' || registered === true) &&
+      !hasSignature &&
+      ('signature' as const),
     profile.photo === 'required' && !hasPhoto && ('photo' as const),
     profile.handoverScan === 'required' && !hasScan && ('scan' as const),
   ].filter((step) => step !== false);
@@ -199,6 +213,8 @@ const TOUCHED_STATUSES: Record<OperatingParam, readonly ParcelStatus[]> = {
   photo: ['recu', 'en_route', 'depose', 'notifie'],
   emailMoment: ['en_route', 'depose'],
   reminders: ['notifie'],
+  // Only what is received from now on: one already registered keeps its signature.
+  registeredMail: [],
 };
 
 const countOf = (statuses: Iterable<ParcelStatus>, counts: ParcelCounts) =>

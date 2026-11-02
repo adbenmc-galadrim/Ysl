@@ -321,8 +321,8 @@ export type DraftParcel = {
   department?: string | null;
   /** The department the agent sent it to at the review (ME25); absent before YSL-132. */
   departmentId?: string | null;
-  /** « Sans suivi » chosen in the review: an internal number, no carrier; absent before YSL-64. */
-  type?: 'colis' | 'sans_suivi';
+  /** « Sans suivi » chosen in the review, « Recommandé » on the viewfinder; absent, what the label says. */
+  type?: 'colis' | 'recommande' | 'sans_suivi';
 };
 
 type DraftDurations = { codesMs?: number; ocrMs?: number };

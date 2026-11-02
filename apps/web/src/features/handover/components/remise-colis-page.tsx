@@ -1,5 +1,6 @@
 import {
   type HandoverStep,
+  holdsRegistered,
   missingHandoverSteps,
 } from '@repo/contract/operating-profile';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
@@ -132,7 +133,10 @@ export function RemiseColisPage({
   const leaving = parcels.filter((parcel) => ticked.includes(parcel.id));
   const scanOffered = profile.handoverScan !== 'disabled';
   const hasScan = scanOffered && scanComplete(leaving, scanned);
+  const registered = holdsRegistered(leaving);
+  const mustSign = registered || profile.signature === 'required';
   const missing = missingHandoverSteps(profile, {
+    registered,
     method: signed.length > 0 ? signedMethod(via) : via,
     hasSignature: signed.length > 0,
     hasPhoto: photo !== null,
@@ -268,10 +272,10 @@ export function RemiseColisPage({
   const collectorNote =
     via !== 'manuel'
       ? t('handover.collector.proofNote', { name: person.name })
-      : profile.signature === 'disabled'
-        ? t('handover.collector.nameNote')
-        : profile.signature === 'required'
-          ? t('handover.collector.mustSign')
+      : mustSign
+        ? t('handover.collector.mustSign')
+        : profile.signature === 'disabled'
+          ? t('handover.collector.nameNote')
           : t('handover.collector.signNote');
 
   if (scanning) {
@@ -366,7 +370,7 @@ export function RemiseColisPage({
     );
   }
 
-  const signatureOffered = profile.signature !== 'disabled';
+  const signatureOffered = mustSign || profile.signature !== 'disabled';
   return (
     <>
       <RemiseColisScreen
@@ -387,14 +391,8 @@ export function RemiseColisPage({
         }
         onCollector={openCollector}
         signed={signed.length > 0}
-        registeredNote={
-          profile.signature === 'optional'
-            ? t('handover.registered')
-            : profile.signature === 'required'
-              ? t('handover.registered.required')
-              : t('handover.registered.none')
-        }
-        signatureRequired={profile.signature === 'required'}
+        registeredNote={t('handover.registered')}
+        signatureRequired={mustSign}
         onSignature={signatureOffered ? () => setDraft(signed) : undefined}
         photo={
           profile.photo === 'required'

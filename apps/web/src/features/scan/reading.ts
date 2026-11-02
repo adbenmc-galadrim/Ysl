@@ -344,7 +344,9 @@ export function checkFields(
 ): ScanField[] {
   const { tracking, extraction } = draftFields(draft);
   const carrierLabel = t('scan.field.carrier');
-  const trackingLabel = t('scan.field.tracking');
+  const trackingLabel = t(
+    draft.type === 'recommande' ? 'scan.field.ar' : 'scan.field.tracking',
+  );
   if (draft.type === 'sans_suivi') {
     // The app's own number says nothing to the agent: the kind is enough.
     return [{ label: carrierLabel, value: t('parcel.carrier.none') }];

@@ -163,18 +163,19 @@ export function skipDraft(
  * A number typed in the review, with the carrier its format names or the
  * agent chose (§4.4): the agent's own, sure, so F26 can notify.
  */
-export function typeDraftTracking(
+export async function typeDraftTracking(
   db: CourrierDatabase,
   draftId: string,
   { tracking, carrier }: { tracking: string; carrier: string },
 ): Promise<boolean> {
   const value = normalizeTracking(tracking);
+  const draft = await db.draftParcel.get(draftId);
   return updateDraft(db, draftId, {
     tracking: value,
     trackingNorm: value,
     carrier,
     trackingConfirmed: true,
-    type: 'colis',
+    type: draft?.type === 'recommande' ? 'recommande' : 'colis',
   });
 }
 

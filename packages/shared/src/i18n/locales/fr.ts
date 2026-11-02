@@ -199,6 +199,8 @@ export const fr = {
   'sync.op.noHandover': 'Ce compte ne remet pas de colis.',
   'sync.op.handoverSteps':
     'Cette remise n’a pas une étape que votre entreprise exige désormais : preuve, signature, photo ou scan.',
+  'sync.op.registeredSignature':
+    'Remise refusée : un recommandé ne se remet pas sans signature.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
@@ -404,9 +406,7 @@ export const fr = {
   'handover.verified.qr': 'QR code vérifié à {{time}}',
   'handover.verified.pin': 'Code vérifié à {{time}}',
   'handover.verified.manuel': 'Sans vérification',
-  'handover.registered': 'Un recommandé : la signature est facultative.',
-  'handover.registered.required': 'Un recommandé : la signature est exigée.',
-  'handover.registered.none': 'Un recommandé parmi ces colis.',
+  'handover.registered': 'Un recommandé : la signature est exigée.',
   'handover.sign.title': '{{name}} signe pour {{count}} colis',
   'handover.sign.titleFor':
     '{{name}} signe pour {{recipient}}, {{count}} colis',
@@ -1177,6 +1177,8 @@ export const fr = {
   'record.lift.description':
     'Le colis ne sera plus signalé abîmé. L’historique garde la réserve.',
   'record.lift.confirm': 'Lever la réserve',
+  'record.detail.type': 'Type',
+  'record.detail.ar': 'N° d’AR',
   'record.detail.sender': 'Expéditeur',
   'record.detail.pieces': 'Nombre de colis',
   'record.detail.weight': 'Poids',
@@ -1355,6 +1357,7 @@ export const fr = {
   'history.field.notes': 'note',
   'history.field.notificationEmail': 'e-mail',
   'history.field.carrierService': 'service',
+  'history.field.registered': 'type d’envoi',
   'history.field.reference': 'référence',
   'history.field.weightKg': 'poids',
   'history.field.location': 'emplacement',
@@ -1953,6 +1956,9 @@ export const fr = {
   'operating.state.required': 'Obligatoire',
   'operating.yes': 'Oui',
   'operating.no': 'Non',
+  'operating.param.registeredMail': 'Lettres recommandées',
+  'operating.help.registeredMail':
+    'Proposer le type Recommandé à la réception ; il se remet toujours signé',
   'operating.param.shuttleActsAsDepartment': 'Navette = département',
   'operating.help.shuttleActsAsDepartment':
     'Elle remet elle-même les colis aux salariés',
@@ -2261,6 +2267,8 @@ export const fr = {
   'scan.storageFailed.hint':
     'Cet iPhone ne peut pas stocker la photo : quittez la navigation privée.',
   'scan.field.carrier': 'Transporteur',
+  'scan.kind.label': 'Type d’envoi',
+  'scan.field.ar': 'N° d’AR',
   'scan.field.tracking': 'Suivi',
   'scan.field.recipient': 'Destinataire',
   'scan.field.sender': 'Expéditeur',

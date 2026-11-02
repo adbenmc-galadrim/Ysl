@@ -58,11 +58,15 @@ function op(
 }
 
 /** The ops a phone queues for one handover, in their order. */
-async function handoverOps(values: Record<string, unknown>) {
+async function handoverOps(
+  values: Record<string, unknown>,
+  type: 'colis' | 'recommande' = 'colis',
+) {
   const parcel = newId();
   const row = {
     ...parcelRow(),
     id: parcel,
+    type,
     personId,
     status: 'notifie' as const,
     statusSeq: 1,
@@ -246,5 +250,141 @@ describe('the profile on the handovers pushed', () => {
         op('parcel', imported.id, { ...imported, senderName: 'Fnac' }),
       ]),
     ).toEqual([200]);
+  });
+});
+
+describe('a registered letter on the handovers pushed', () => {
+  const registered = (values: Record<string, unknown>) =>
+    handoverOps({ hasScan: false, ...values }, 'recommande');
+
+  it.each(['optional', 'disabled'] as const)(
+    'refuses it unsigned with signature %s, its parcel and event with it, and says why',
+    async (signature) => {
+      await writeOperatingProfile(
+        sync,
+        ORGANIZATION_ID,
+        { ...SMALL_SITE_OPERATING_PROFILE, signature },
+        AGENT_ID,
+      );
+      const { ops, parcel } = await registered({ method: 'qr' });
+      const { results } = await push(sync, accessOf('shuttle'), { ops });
+      expect(results.map((result) => result.status)).toEqual([403, 403, 403]);
+      expect(results[0]?.message).toContain('sans signature');
+      expect(await statusOfParcel(parcel)).toBe('notifie');
+    },
+  );
+
+  it('refuses it from a version without the rule too', async () => {
+    const { ops } = await handoverOps({ method: 'manuel' }, 'recommande');
+    expect((await statuses(ops))[0]).toBe(403);
+  });
+
+  it('accepts it signed', async () => {
+    const { ops, parcel } = await registered({
+      method: 'qr',
+      hasSignature: true,
+    });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    expect(await statusOfParcel(parcel)).toBe('remis');
+  });
+
+  it('refuses three parcels of which one is registered, unsigned', async () => {
+    await writeOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      SMALL_SITE_OPERATING_PROFILE,
+      AGENT_ID,
+    );
+    const { ops, parcel } = await registered({ method: 'pin' });
+    const other = await handoverOps({ hasScan: false, method: 'pin' });
+    const [write] = ops;
+    const grouped = {
+      ...write!,
+      patch: { ...write!.patch, parcelIds: [other.parcel, parcel] },
+    };
+    const { results } = await push(sync, accessOf('shuttle'), {
+      ops: [grouped, ...other.ops.slice(1), ...ops.slice(1)].map((step) =>
+        step.entity === 'event'
+          ? {
+              ...step,
+              patch: {
+                ...step.patch,
+                detail: { handoverId: write!.entityId, method: 'pin' },
+              },
+            }
+          : step,
+      ),
+    });
+    expect(results.map((result) => result.status)).toEqual([
+      403, 403, 403, 403, 403,
+    ]);
+    expect(await statusOfParcel(other.parcel)).toBe('notifie');
+    expect(await statusOfParcel(parcel)).toBe('notifie');
+  });
+
+  it('a later change to one already kept is not checked again', async () => {
+    const { ops } = await registered({ method: 'qr', hasSignature: true });
+    await statuses(ops);
+    const [write] = ops;
+    expect(
+      await statuses([
+        {
+          ...write!,
+          opId: newId(),
+          patch: { ...write!.patch, hasPhoto: true },
+        },
+      ]),
+    ).toEqual([200]);
+  });
+
+  it('a parcel that is not registered goes unsigned, as before', async () => {
+    const { ops, parcel } = await handoverOps({
+      hasScan: false,
+      method: 'qr',
+    });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    expect(await statusOfParcel(parcel)).toBe('remis');
+  });
+});
+
+describe('a phone on an older version, Petit site', () => {
+  const smallSite = () =>
+    writeOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      SMALL_SITE_OPERATING_PROFILE,
+      AGENT_ID,
+    );
+  const handedOver = async (parcel: string, id: string) => {
+    expect(await statusOfParcel(parcel)).toBe('remis');
+    expect(
+      await db.select().from(schema.handover).where(eq(schema.handover.id, id)),
+    ).toHaveLength(1);
+  };
+
+  it('keeps the handover pushed before its parcel, in one batch', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    await handedOver(parcel, id);
+  });
+
+  it('keeps the parcel pushed before its handover, in one batch', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    const [write, delivered, event] = ops;
+    expect(await statuses([delivered!, event!, write!])).toEqual([
+      200, 200, 200,
+    ]);
+    await handedOver(parcel, id);
+  });
+
+  it('keeps the parcel pushed in an earlier batch than its handover', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    const [write, delivered, event] = ops;
+    expect(await statuses([delivered!, event!])).toEqual([200, 200]);
+    expect(await statuses([write!])).toEqual([200]);
+    await handedOver(parcel, id);
   });
 });

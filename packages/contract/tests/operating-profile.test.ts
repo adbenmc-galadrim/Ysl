@@ -2,6 +2,7 @@ import { canHandOver, toUserRole } from '@repo/contract/auth';
 import {
   DEFAULT_OPERATING_PROFILE,
   mayHandOverByName,
+  holdsRegistered,
   missingHandoverSteps,
   MULTI_DEPARTMENTS_OPERATING_PROFILE,
   operatingImpact,
@@ -50,6 +51,7 @@ describe('profile models', () => {
         photo: 'optional',
         emailMoment: 'scan',
         reminders: 'optional',
+        registeredMail: false,
       },
       multi_departments: {
         shuttleActsAsDepartment: false,
@@ -61,6 +63,7 @@ describe('profile models', () => {
         photo: 'disabled',
         emailMoment: 'deposit',
         reminders: 'required',
+        registeredMail: false,
       },
       strict_traceability: {
         shuttleActsAsDepartment: false,
@@ -72,6 +75,7 @@ describe('profile models', () => {
         photo: 'optional',
         emailMoment: 'deposit',
         reminders: 'required',
+        registeredMail: false,
       },
     });
   });
@@ -236,6 +240,7 @@ describe('étapes de remise', () => {
       photo: 'optional',
       emailMoment: 'scan',
       reminders: 'optional',
+      registeredMail: false,
     });
   });
 
@@ -269,6 +274,45 @@ describe('étapes de remise', () => {
     expect(missingHandoverSteps(profile, { method: 'qr', ...done })).toEqual(
       [],
     );
+  });
+
+  it.each(['disabled', 'optional', 'required'] as const)(
+    'un recommandé exige la signature, signature %s',
+    (signature) => {
+      const profile = { ...DEFAULT_OPERATING_PROFILE, signature };
+      expect(
+        missingHandoverSteps(profile, { method: 'qr', registered: true }),
+      ).toEqual(['signature']);
+      expect(
+        missingHandoverSteps(profile, {
+          method: 'qr',
+          registered: true,
+          hasSignature: true,
+        }),
+      ).toEqual([]);
+    },
+  );
+
+  it('un seul recommandé suffit à exiger la signature de la remise', () => {
+    expect(
+      holdsRegistered([
+        { type: 'colis' },
+        { type: 'recommande' },
+        { type: 'sans_suivi' },
+      ]),
+    ).toBe(true);
+    expect(holdsRegistered([{ type: 'colis' }])).toBe(false);
+  });
+
+  it('un profil enregistré avant les recommandés garde ses réglages, option éteinte', () => {
+    const saved: Partial<OperatingProfile> = {
+      ...STRICT_TRACEABILITY_OPERATING_PROFILE,
+    };
+    delete saved.registeredMail;
+    expect(parseOperatingProfile(saved)).toEqual({
+      ...STRICT_TRACEABILITY_OPERATING_PROFILE,
+      registeredMail: false,
+    });
   });
 
   it('une étape facultative ou désactivée ne manque jamais', () => {
