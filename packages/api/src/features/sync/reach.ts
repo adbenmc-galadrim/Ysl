@@ -202,7 +202,7 @@ async function checkHandoverSteps(
   if (op.entity === 'handover') {
     await checkRegisteredSigned(tx, op, organizationId);
   } else if (refused.has(isDelivery ? op.entityId : String(delivered))) {
-    noStep(op);
+    refuse(op, 'follows a refused handover', 'sync.op.registeredSignature');
   }
   const required = await requiringProfile(tx, organizationId);
   if (

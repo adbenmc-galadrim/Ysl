@@ -388,4 +388,3 @@ describe('a phone on an older version, Petit site', () => {
     await handedOver(parcel, id);
   });
 });
-
