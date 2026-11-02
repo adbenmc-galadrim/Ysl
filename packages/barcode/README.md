@@ -63,5 +63,5 @@ const symbols = await readSymbols({ data, width, height });
 
 - Une image à la fois dans le Worker (mémoire de Safari sur iPhone).
 - Un canvas ne dépasse pas 16,7 Mpx : au-delà, l'image est réduite avant lecture.
-- Le MaxiCode doit être net ; la perspective (photo de biais) n'est pas corrigée.
+- MaxiCode : la perspective est corrigée jusqu'à une vingtaine de degrés (ellipse de la cible, homographie, déformation locale) ; au-delà, ou sur un fort flou, il reste illisible. La passe s'arrête après 2 s de recherche.
 - `BarcodeDetector` n'est jamais utilisé (absent d'iOS).

@@ -6,7 +6,10 @@ export type Bullseye = {
   y: number;
   unit: number;
   score: number;
+  shape?: Shape;
 };
+
+export type Shape = [number, number, number, number];
 
 export type Straightened = {
   raster: Raster;
@@ -27,7 +30,7 @@ const SPAN_UNITS = { left: 19.94, right: 21.31, top: 19.06, bottom: 18.44 };
 const SPAN_WIDTH = SPAN_UNITS.left + SPAN_UNITS.right;
 const SPAN_HEIGHT = SPAN_UNITS.top + SPAN_UNITS.bottom;
 const LATTICE_PHASE = 0;
-const RING_PATTERN = [1.6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const RING_PATTERN = [1, 1, 1, 1, 1, 1.6, 1, 1, 1, 1, 1];
 const RING_SAMPLES = [
   { radius: 0.4, dark: false },
   { radius: 1.3, dark: true },
@@ -44,6 +47,7 @@ const BAND_SAMPLES = [-0.32, 0, 0.32].flatMap((offset) =>
 );
 const SCORE_THRESHOLD = 0.9;
 const QUICK_THRESHOLD = 0.6;
+const SKEW_THRESHOLD = 0.88;
 const MAX_WORK_SIDE = 2400;
 const SIXTY_DEGREES = Math.PI / 3;
 
@@ -200,6 +204,168 @@ const refine = (
   return best;
 };
 
+const RING_FIT_RADIUS = 3.8;
+const MIN_ELONGATION = 1.08;
+const RING_RAYS = 72;
+const RING_MIN_POINTS = 24;
+const MAX_ELONGATION = 2.6;
+
+const ringEdge = (
+  dark: Uint8Array,
+  gray: Gray,
+  seed: { x: number; y: number; unit: number },
+  angle: number,
+) => {
+  const step = 0.25;
+  const limit = seed.unit * 8;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const minRun = seed.unit * 0.3;
+  let rings = 0;
+  let wasDark = false;
+  let runStart = 0;
+  for (let r = 0; r <= limit; r += step) {
+    const value = sampleDark(dark, gray, seed.x + cos * r, seed.y + sin * r);
+    if (value === null) return null;
+    if (value === wasDark) continue;
+    if (wasDark && r - runStart >= minRun) {
+      rings++;
+      if (rings === 2) return { x: cos * r, y: sin * r };
+    }
+    wasDark = value;
+    runStart = r;
+  }
+  return null;
+};
+
+const solve = (matrix: number[][], rhs: number[]): number[] | null => {
+  const n = rhs.length;
+  const m = matrix.map((row, i) => [...row, rhs[i]!]);
+  for (let c = 0; c < n; c++) {
+    let pivot = c;
+    for (let r = c + 1; r < n; r++) {
+      if (Math.abs(m[r]![c]!) > Math.abs(m[pivot]![c]!)) pivot = r;
+    }
+    if (Math.abs(m[pivot]![c]!) < 1e-12) return null;
+    [m[c], m[pivot]] = [m[pivot]!, m[c]!];
+    for (let r = 0; r < n; r++) {
+      if (r === c) continue;
+      const factor = m[r]![c]! / m[c]![c]!;
+      for (let k = c; k <= n; k++) m[r]![k]! -= factor * m[c]![k]!;
+    }
+  }
+  return m.map((row, i) => row[n]! / row[i]!);
+};
+
+const fitConic = (points: { x: number; y: number }[]) => {
+  const scale = Math.max(...points.map((p) => Math.hypot(p.x, p.y)));
+  const terms = points.map(({ x, y }) => {
+    const u = x / scale;
+    const v = y / scale;
+    return [u * u, u * v, v * v, u, v];
+  });
+  const normal = Array.from({ length: 5 }, (_, i) =>
+    Array.from({ length: 5 }, (_, j) =>
+      terms.reduce((sum, t) => sum + t[i]! * t[j]!, 0),
+    ),
+  );
+  const rhs = Array.from({ length: 5 }, (_, i) =>
+    terms.reduce((sum, t) => sum + t[i]!, 0),
+  );
+  const fit = solve(normal, rhs);
+  if (!fit) return null;
+  const [a, b, c, d, e] = fit as [number, number, number, number, number];
+  const det = 4 * a * c - b * b;
+  if (a <= 0 || det <= 0) return null;
+  const cx = (b * e - 2 * c * d) / det;
+  const cy = (b * d - 2 * a * e) / det;
+  const k = 1 - (a * cx * cx + b * cx * cy + c * cy * cy + d * cx + e * cy);
+  const off = b / 2;
+  const mid = (a + c) / 2;
+  const spread = Math.hypot((a - c) / 2, off);
+  const low = mid - spread;
+  const high = mid + spread;
+  if (low <= 0 || k <= 0) return null;
+  const theta = 0.5 * Math.atan2(b, a - c);
+  return {
+    x: cx * scale,
+    y: cy * scale,
+    long: Math.sqrt(k / low) * scale,
+    short: Math.sqrt(k / high) * scale,
+    theta: theta + Math.PI / 2,
+  };
+};
+
+export const fitRing = (
+  dark: Uint8Array,
+  gray: Gray,
+  seed: { x: number; y: number; unit: number },
+): { x: number; y: number; unit: number; shape: Shape } | null => {
+  let points = Array.from({ length: RING_RAYS }, (_, i) =>
+    ringEdge(dark, gray, seed, (i * 2 * Math.PI) / RING_RAYS),
+  ).filter((p) => p !== null);
+  for (let round = 0; round < 3; round++) {
+    if (points.length < RING_MIN_POINTS) return null;
+    const conic = fitConic(points);
+    if (!conic) return null;
+    const cos = Math.cos(conic.theta);
+    const sin = Math.sin(conic.theta);
+    const residual = (p: { x: number; y: number }) => {
+      const dx = p.x - conic.x;
+      const dy = p.y - conic.y;
+      const along = (dx * cos + dy * sin) / conic.long;
+      const across = (dy * cos - dx * sin) / conic.short;
+      return Math.abs(Math.hypot(along, across) - 1);
+    };
+    const kept = points.filter((p) => residual(p) < 0.1);
+    if (kept.length === points.length || round === 2) {
+      if (conic.long / conic.short > MAX_ELONGATION) return null;
+      const long = conic.long / RING_FIT_RADIUS;
+      const short = conic.short / RING_FIT_RADIUS;
+      return {
+        x: seed.x + conic.x,
+        y: seed.y + conic.y,
+        unit: Math.sqrt(long * short),
+        shape: [
+          long * cos * cos + short * sin * sin,
+          (long - short) * cos * sin,
+          (long - short) * cos * sin,
+          long * sin * sin + short * cos * cos,
+        ],
+      };
+    }
+    points = kept;
+  }
+  return null;
+};
+
+const ellipseScore = (
+  dark: Uint8Array,
+  gray: Gray,
+  ring: { x: number; y: number; shape: Shape },
+) => {
+  const [a, b, c, d] = ring.shape;
+  let good = 0;
+  let count = 0;
+  for (let i = 0; i < 24; i++) {
+    const angle = (i * 2 * Math.PI) / 24;
+    for (const sample of RING_SAMPLES) {
+      const u = Math.cos(angle) * sample.radius;
+      const v = Math.sin(angle) * sample.radius;
+      const value = sampleDark(
+        dark,
+        gray,
+        ring.x + a * u + b * v,
+        ring.y + c * u + d * v,
+      );
+      if (value === null) return 0;
+      count++;
+      if (value === sample.dark) good++;
+    }
+  }
+  return good / count;
+};
+
 const fine = (dark: Uint8Array, gray: Gray, start: Bullseye): Bullseye => {
   const tried: Bullseye[] = [];
   const reach = start.unit * 0.5;
@@ -277,8 +443,22 @@ const findAt = (gray: Gray, maxCandidates: number): Bullseye[] => {
   const found: Bullseye[] = [];
   for (const seed of seeds) {
     const coarse = refine(dark, gray, seed);
-    if (coarse.score < SCORE_THRESHOLD) continue;
-    const b = fine(dark, gray, coarse);
+    const ring = fitRing(dark, gray, coarse.score > 0 ? coarse : seed);
+    const skew = ring ? ellipseScore(dark, gray, ring) : 0;
+    if (coarse.score < SCORE_THRESHOLD && skew < SKEW_THRESHOLD) continue;
+    const b: Bullseye =
+      ring && skew > coarse.score
+        ? {
+            x: ring.x,
+            y: ring.y,
+            unit: ring.unit,
+            score: skew,
+            shape: ring.shape,
+          }
+        : {
+            ...fine(dark, gray, coarse),
+            ...(ring ? { shape: ring.shape } : {}),
+          };
     if (found.some((o) => Math.hypot(o.x - b.x, o.y - b.y) < b.unit * 3)) {
       continue;
     }
@@ -306,6 +486,7 @@ export const locateBullseyes = (
       y: (b.y + 0.5) * f - 0.5,
       unit: b.unit * f,
       score: b.score,
+      ...(b.shape ? { shape: b.shape.map((v) => v * f) as Shape } : {}),
     }));
     if (found.length > 0) return { gray: full, factor: f, bullseyes: found };
   }
@@ -379,7 +560,86 @@ const bilinear = (gray: Gray, x: number, y: number) => {
   return top * (1 - fy) + bottom * fy;
 };
 
-type Alignment = { scale: number; angle: number; sx: number; sy: number };
+type Alignment = {
+  scale: number;
+  angle: number;
+  sx: number;
+  sy: number;
+  stretch: number;
+  shear: number;
+  px: number;
+  py: number;
+};
+
+const PATCH_UNIT = 8;
+const PATCH_RADIUS_UNITS = 27;
+
+const isSkewed = ({ shape }: Bullseye) => {
+  if (!shape) return false;
+  const [a, b, , d] = shape;
+  const mid = (a + d) / 2;
+  const spread = Math.hypot((a - d) / 2, b);
+  return (mid + spread) / (mid - spread) >= MIN_ELONGATION;
+};
+
+const viewsOf = (b: Bullseye): Bullseye[] => {
+  const round = { x: b.x, y: b.y, unit: b.unit, score: b.score };
+  return isSkewed(b) ? [b, round] : [round];
+};
+
+export const rectify = (gray: Gray, b: Bullseye) => {
+  const shape = b.shape ?? [b.unit, 0, 0, b.unit];
+  const side = 2 * PATCH_RADIUS_UNITS * PATCH_UNIT;
+  const data = new Uint8Array(side * side);
+  const center = side / 2;
+  for (let y = 0; y < side; y++) {
+    const v = (y - center) / PATCH_UNIT;
+    for (let x = 0; x < side; x++) {
+      const u = (x - center) / PATCH_UNIT;
+      data[y * side + x] = bilinear(
+        gray,
+        b.x + shape[0] * u + shape[1] * v,
+        b.y + shape[2] * u + shape[3] * v,
+      );
+    }
+  }
+  return {
+    gray: { data, width: side, height: side },
+    bullseye: { x: center, y: center, unit: PATCH_UNIT, score: b.score },
+  };
+};
+
+type Warp = { dx: Float32Array; dy: Float32Array };
+
+const WARP_NODES = 5;
+const WARP_SPAN = 21;
+const WARP_STEPS = [-0.5, -0.25, 0.25, 0.5];
+
+const emptyWarp = (): Warp => ({
+  dx: new Float32Array(WARP_NODES * WARP_NODES),
+  dy: new Float32Array(WARP_NODES * WARP_NODES),
+});
+
+const warpAt = (field: Float32Array, u: number, v: number) => {
+  const last = WARP_NODES - 1;
+  const gx = Math.min(
+    last,
+    Math.max(0, ((u + WARP_SPAN) / (2 * WARP_SPAN)) * last),
+  );
+  const gy = Math.min(
+    last,
+    Math.max(0, ((v + WARP_SPAN) / (2 * WARP_SPAN)) * last),
+  );
+  const x0 = Math.min(last - 1, Math.floor(gx));
+  const y0 = Math.min(last - 1, Math.floor(gy));
+  const fx = gx - x0;
+  const fy = gy - y0;
+  const at = (x: number, y: number) => field[y * WARP_NODES + x]!;
+  return (
+    (at(x0, y0) * (1 - fx) + at(x0 + 1, y0) * fx) * (1 - fy) +
+    (at(x0, y0 + 1) * (1 - fx) + at(x0 + 1, y0 + 1) * fx) * fy
+  );
+};
 
 type Module = { col: number; row: number; dx: number; dy: number };
 
@@ -403,6 +663,7 @@ export const sampleModules = (
   b: Bullseye,
   rotation: number,
   a: Alignment,
+  warp?: Warp,
 ): Float32Array => {
   const out = new Float32Array(MODULES.length);
   const cos = Math.cos(rotation + a.angle);
@@ -410,10 +671,17 @@ export const sampleModules = (
   const tapX = [0, TAP, -TAP, 0, 0];
   const tapY = [0, 0, 0, TAP, -TAP];
   MODULES.forEach((m, i) => {
+    const wx = warp ? warpAt(warp.dx, m.dx, m.dy) : 0;
+    const wy = warp ? warpAt(warp.dy, m.dx, m.dy) : 0;
     let sum = 0;
     for (let t = 0; t < 5; t++) {
-      const dx = (m.dx + a.sx + tapX[t]!) * a.scale;
-      const dy = (m.dy + a.sy + tapY[t]!) * a.scale;
+      const v0 = ((m.dy + wy + a.sy + tapY[t]!) * a.scale) / (1 + a.stretch);
+      const u0 =
+        (m.dx + wx + a.sx + tapX[t]!) * a.scale * (1 + a.stretch) +
+        a.shear * v0;
+      const w = 1 + a.px * u0 + a.py * v0;
+      const dx = u0 / w;
+      const dy = v0 / w;
       sum += bilinear(
         gray,
         b.x + (dx * cos - dy * sin) * b.unit,
@@ -434,6 +702,31 @@ export const variance = (values: Float32Array) => {
   }
   const m = sum / values.length;
   return squares / values.length - m * m;
+};
+
+const NEIGHBOR_RADIUS = 3.2;
+
+let neighbors: number[][] | null = null;
+
+const moduleNeighbors = () =>
+  (neighbors ??= MODULES.map((m) =>
+    MODULES.flatMap((o, j) =>
+      Math.hypot(o.dx - m.dx, o.dy - m.dy) <= NEIGHBOR_RADIUS ? [j] : [],
+    ),
+  ));
+
+const localThresholds = (values: Float32Array) => {
+  const around = moduleNeighbors();
+  return Float32Array.from(values, (_, i) => {
+    const near = around[i]!;
+    let low = Infinity;
+    let high = -Infinity;
+    for (const j of near) {
+      low = Math.min(low, values[j]!);
+      high = Math.max(high, values[j]!);
+    }
+    return (low + high) / 2;
+  });
 };
 
 const otsu = (values: Float32Array) => {
@@ -463,16 +756,69 @@ const otsu = (values: Float32Array) => {
   return threshold;
 };
 
-const PARAMETERS = ['scale', 'sx', 'sy', 'angle'] as const;
+const PARAMETERS = [
+  'scale',
+  'sx',
+  'sy',
+  'angle',
+  'stretch',
+  'shear',
+  'px',
+  'py',
+] as const;
 
 const ROUNDS = [
-  { scale: 0.14, sx: 0.5, sy: 0.5, angle: (3 * Math.PI) / 180, count: 15 },
-  { scale: 0.03, sx: 0.12, sy: 0.12, angle: (0.8 * Math.PI) / 180, count: 9 },
-  { scale: 0.008, sx: 0.04, sy: 0.04, angle: (0.25 * Math.PI) / 180, count: 7 },
+  {
+    scale: 0.14,
+    sx: 0.5,
+    sy: 0.5,
+    angle: (3 * Math.PI) / 180,
+    stretch: 0.05,
+    shear: 0.06,
+    px: 0.005,
+    py: 0.005,
+    count: 15,
+  },
+  {
+    scale: 0.03,
+    sx: 0.12,
+    sy: 0.12,
+    angle: (0.8 * Math.PI) / 180,
+    stretch: 0.015,
+    shear: 0.015,
+    px: 0.0015,
+    py: 0.0015,
+    count: 9,
+  },
+  {
+    scale: 0.008,
+    sx: 0.04,
+    sy: 0.04,
+    angle: (0.25 * Math.PI) / 180,
+    stretch: 0.004,
+    shear: 0.004,
+    px: 0.0004,
+    py: 0.0004,
+    count: 7,
+  },
 ];
 
-export const alignModules = (gray: Gray, b: Bullseye, rotation: number) => {
-  let alignment: Alignment = { scale: 1.03, angle: 0, sx: 0, sy: 0 };
+export const alignModules = (
+  gray: Gray,
+  b: Bullseye,
+  rotation: number,
+  startScale = 1.03,
+) => {
+  let alignment: Alignment = {
+    scale: startScale,
+    angle: 0,
+    sx: 0,
+    sy: 0,
+    stretch: 0,
+    shear: 0,
+    px: 0,
+    py: 0,
+  };
   let score = variance(sampleModules(gray, b, rotation, alignment));
   for (const round of ROUNDS) {
     for (const key of PARAMETERS) {
@@ -492,14 +838,17 @@ export const alignModules = (gray: Gray, b: Bullseye, rotation: number) => {
   return { alignment, score };
 };
 
-export const render = (
-  gray: Gray,
-  b: Bullseye,
-  rotation: number,
-  alignment: Alignment,
+const SCALE_STARTS = [1.03, 0.92, 1.15];
+
+const bestAlignment = (gray: Gray, b: Bullseye, rotation: number) =>
+  SCALE_STARTS.map((start) => alignModules(gray, b, rotation, start)).reduce(
+    (best, next) => (next.score > best.score ? next : best),
+  ).alignment;
+
+const renderModules = (
+  values: Float32Array,
+  isLight: (value: number, index: number) => boolean,
 ): Raster => {
-  const values = sampleModules(gray, b, rotation, alignment);
-  const threshold = otsu(values);
   const { width, height } = CANVAS;
   const data = new Uint8ClampedArray(width * height * 4).fill(255);
   const paint = (x0: number, y0: number, x1: number, y1: number) => {
@@ -510,7 +859,7 @@ export const render = (
     }
   };
   MODULES.forEach((m, i) => {
-    if (values[i]! > threshold) return;
+    if (isLight(values[i]!, i)) return;
     const x = Math.floor(
       (m.col * width + width / 2 + (m.row & 1) * (width / 2)) / GRID.cols,
     );
@@ -520,30 +869,142 @@ export const render = (
   return { data, width, height };
 };
 
+const fitWarp = (
+  gray: Gray,
+  b: Bullseye,
+  rotation: number,
+  alignment: Alignment,
+): Warp => {
+  const warp = emptyWarp();
+  let score = variance(sampleModules(gray, b, rotation, alignment, warp));
+  for (let pass = 0; pass < 2; pass++) {
+    for (const field of [warp.dx, warp.dy]) {
+      for (let node = 0; node < field.length; node++) {
+        const start = field[node]!;
+        let best = start;
+        for (const step of WARP_STEPS) {
+          field[node] = start + step;
+          const trial = variance(
+            sampleModules(gray, b, rotation, alignment, warp),
+          );
+          if (trial > score) {
+            score = trial;
+            best = start + step;
+          }
+        }
+        field[node] = best;
+      }
+    }
+  }
+  return warp;
+};
+
+const SHARPEN = 0.9;
+const NEAREST_RADIUS = 1.25;
+
+let nearest: number[][] | null = null;
+
+const sharpened = (values: Float32Array) => {
+  nearest ??= MODULES.map((m, i) =>
+    MODULES.flatMap((o, j) =>
+      j !== i && Math.hypot(o.dx - m.dx, o.dy - m.dy) <= NEAREST_RADIUS
+        ? [j]
+        : [],
+    ),
+  );
+  const around = nearest;
+  return Float32Array.from(values, (v, i) => {
+    const near = around[i]!;
+    if (near.length === 0) return v;
+    let sum = 0;
+    for (const j of near) sum += values[j]!;
+    return v + SHARPEN * (v - sum / near.length);
+  });
+};
+
+const paintOtsu = (values: Float32Array) => {
+  const threshold = otsu(values);
+  return renderModules(values, (value) => value > threshold);
+};
+
+const paintLocal = (values: Float32Array) => {
+  const thresholds = localThresholds(values);
+  return renderModules(values, (value, i) => value > thresholds[i]!);
+};
+
+const paintings = (values: Float32Array) => {
+  const sharp = sharpened(values);
+  return [paintOtsu(values), paintLocal(values), paintLocal(sharp)];
+};
+
+export const render = (
+  gray: Gray,
+  b: Bullseye,
+  rotation: number,
+  alignment: Alignment,
+): Raster => paintOtsu(sampleModules(gray, b, rotation, alignment));
+
 export const straighten = (gray: Gray, b: Bullseye, rotation: number) =>
-  render(gray, b, rotation, alignModules(gray, b, rotation).alignment);
+  render(gray, b, rotation, bestAlignment(gray, b, rotation));
 
 export const straightenAll = (located: Located): Straightened[] =>
   located.bullseyes.flatMap((bullseye) => {
-    return rotationCandidates(located.gray, bullseye).map((rotation) => ({
-      raster: straighten(located.gray, bullseye, rotation),
+    const view = rectify(located.gray, viewsOf(bullseye)[0]!);
+    return rotationCandidates(view.gray, view.bullseye).map((rotation) => ({
+      raster: straighten(view.gray, view.bullseye, rotation),
       bullseye,
       rotation,
     }));
   });
 
+const MAXICODE_BUDGET_MS = 2000;
+
 export const readMaxiCode = async (
   raster: Raster,
   read: RasterReader,
+  { budgetMs = MAXICODE_BUDGET_MS }: { budgetMs?: number } = {},
 ): Promise<MaxiCodeRead | null> => {
+  const deadline = performance.now() + budgetMs;
   const located = locateBullseyes(raster);
   let candidates = 0;
   for (const bullseye of located.bullseyes) {
-    for (const rotation of rotationCandidates(located.gray, bullseye)) {
-      candidates++;
-      const symbols = await read(straighten(located.gray, bullseye, rotation));
-      if (symbols.length > 0) {
-        return { symbols, bullseye, rotation, candidates };
+    for (const shaped of viewsOf(bullseye)) {
+      if (performance.now() > deadline) return null;
+      const view = rectify(located.gray, shaped);
+      const fits = rotationCandidates(view.gray, view.bullseye).map(
+        (rotation) => ({
+          rotation,
+          alignment: bestAlignment(view.gray, view.bullseye, rotation),
+        }),
+      );
+      const attempt = async (
+        rotation: number,
+        values: Float32Array,
+      ): Promise<MaxiCodeRead | null> => {
+        for (const raster of paintings(values)) {
+          candidates++;
+          const symbols = await read(raster);
+          if (symbols.length > 0) {
+            return { symbols, bullseye, rotation, candidates };
+          }
+        }
+        return null;
+      };
+      for (const { rotation, alignment } of fits) {
+        const hit = await attempt(
+          rotation,
+          sampleModules(view.gray, view.bullseye, rotation, alignment),
+        );
+        if (hit) return hit;
+      }
+      for (const { rotation, alignment } of fits) {
+        if (performance.now() > deadline) return null;
+        const warp = fitWarp(view.gray, view.bullseye, rotation, alignment);
+        const hit = await attempt(
+          rotation,
+          sampleModules(view.gray, view.bullseye, rotation, alignment, warp),
+        );
+        if (hit) return hit;
       }
     }
   }
