@@ -310,7 +310,10 @@ export async function settleParcel(
         actor,
         now,
         input.action === 'lost'
-          ? { notes: row.notes ? `${row.notes}\n${note}` : note }
+          ? {
+              notes: row.notes ? `${row.notes}\n${note}` : note,
+              returnReason: 'lost',
+            }
           : {},
       );
       return;

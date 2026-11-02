@@ -233,7 +233,11 @@ const STATUS_GROUPS = [
     key: 'search.section.handedOver',
     states: ['handedOver'],
   },
-  { id: 'returned', key: 'search.section.returned', states: ['returned'] },
+  {
+    id: 'returned',
+    key: 'search.section.returned',
+    states: ['returning', 'returned'],
+  },
 ] as const satisfies readonly {
   id: string;
   key: string;

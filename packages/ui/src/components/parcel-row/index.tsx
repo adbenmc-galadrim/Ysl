@@ -21,6 +21,7 @@ const LOOK: Record<ParcelState, Look> = {
   notified: { tile: { icon: 'mail', tone: 'blue' }, line: 'muted' },
   late: { tile: { icon: 'clock', tone: 'orange' }, line: 'orange' },
   handedOver: { tile: { icon: 'check', tone: 'green' }, line: 'muted' },
+  returning: { tile: { icon: 'undo', tone: 'orange' }, line: 'muted' },
   returned: { tile: { icon: 'undo', tone: 'grey' }, line: 'muted' },
 };
 

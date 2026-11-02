@@ -3,6 +3,7 @@ import { knownReminders } from '@repo/contract/reminders';
 import {
   BACKWARD_TRANSITIONS,
   canTransition,
+  returnStart,
   depositedStatus,
   FORWARD_TRANSITIONS,
   isStepBack,
@@ -223,5 +224,38 @@ describe('statusPatch', () => {
     expect(() => statusPatch(fields(), 'recu', context)).toThrow(
       StatusTransitionError,
     );
+  });
+});
+
+describe('where a return starts', () => {
+  it('goes through the shuttle only from the shelf of a company with tours', () => {
+    const at = new Date();
+    expect(returnStart({ status: 'notifie', depositedAt: at }, true)).toBe(
+      'retour_prepare',
+    );
+    expect(returnStart({ status: 'depose', depositedAt: at }, true)).toBe(
+      'retour_prepare',
+    );
+    expect(returnStart({ status: 'notifie', depositedAt: at }, false)).toBe(
+      'retourne',
+    );
+    expect(returnStart({ status: 'notifie', depositedAt: null }, true)).toBe(
+      'retourne',
+    );
+    expect(returnStart({ status: 'recu' }, true)).toBe('retourne');
+  });
+
+  it('is not offered to a parcel that left, or is not ready', () => {
+    for (const status of [
+      'a_completer',
+      'en_route',
+      'a_regulariser',
+      'remis',
+      'retour_prepare',
+      'retour_en_route',
+      'retourne',
+    ] as const) {
+      expect(returnStart({ status }, true)).toBeUndefined();
+    }
   });
 });

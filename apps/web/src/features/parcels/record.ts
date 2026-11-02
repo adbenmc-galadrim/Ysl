@@ -9,6 +9,7 @@ import {
   isStepBack,
   PARCEL_STEPS,
   type ParcelStatus,
+  RETURN_REASON_LABEL,
   STATUS_TODO,
   STEP_BACK_LABEL,
   stepBackOf,
@@ -95,7 +96,12 @@ export type RecordAction =
   | { kind: 'dispatch' }
   | {
       kind: 'stepBack';
-      from: 'en_route' | 'notifie' | 'retourne';
+      from:
+        | 'en_route'
+        | 'notifie'
+        | 'retour_prepare'
+        | 'retour_en_route'
+        | 'retourne';
       to: ParcelStatus;
     };
 
@@ -273,12 +279,25 @@ function stateCard(
             )
           : description,
       };
-    case 'retourne':
+    case 'retour_prepare':
+    case 'retour_en_route':
       return {
         icon: 'undo',
-        title: t('parcel.status.returned'),
-        description,
+        title: t(`parcel.state.${parcel.status}`),
+        description: reasonLine(parcel, t) ?? description,
       };
+    case 'retourne':
+      return parcel.returnReason === 'lost'
+        ? {
+            icon: 'alert',
+            title: t('parcel.status.lost'),
+            description,
+          }
+        : {
+            icon: 'undo',
+            title: t('parcel.status.returned'),
+            description: reasonLine(parcel, t) ?? description,
+          };
     case 'en_route':
     case 'depose':
       return {
@@ -293,6 +312,12 @@ function stateCard(
         description,
       };
   }
+}
+
+function reasonLine(parcel: LocalParcel, t: TranslateFn): string | undefined {
+  return parcel.returnReason
+    ? t(RETURN_REASON_LABEL[parcel.returnReason])
+    : undefined;
 }
 
 function steps(status: ParcelStatus, t: TranslateFn): TimelineStep[] {
@@ -765,8 +790,8 @@ export function handoverItems(
   ];
 }
 
-/** A return decided on a blocked parcel: undoing it blocks it again. */
-function returnedWhileBlocked(events: readonly LocalEvent[]): boolean {
+/** Where a return came from: undoing it takes it back there, on the road to the sender or to « À régulariser ». */
+function returnedFrom(events: readonly LocalEvent[]): ParcelStatus | undefined {
   const last = events
     .flatMap((row) => {
       const event = readParcelEvent(row.type, row.detail);
@@ -775,7 +800,36 @@ function returnedWhileBlocked(events: readonly LocalEvent[]): boolean {
         : [];
     })
     .sort((a, b) => b.at.getTime() - a.at.getTime())[0];
-  return last?.from === 'a_regulariser';
+  return last?.from;
+}
+
+const RETURN_UNDO_KEEPS: readonly ParcelStatus[] = [
+  'a_regulariser',
+  'retour_en_route',
+  'retour_prepare',
+];
+
+/** What « Retour à l'expéditeur » shows of the wait, for a parcel its recipient was told about. */
+export function returnWaiting(
+  record: ParcelRecord,
+  now: Date,
+  t: TranslateFn,
+): { title: string; description?: string } | undefined {
+  const { parcel } = record;
+  if (parcel.status !== 'notifie' || !parcel.notifiedAt) return undefined;
+  const days = Math.floor((now.getTime() - parcel.notifiedAt.getTime()) / DAY_MS);
+  const sent = reminderOf(parcel, now, reminderDates(record))?.sent ?? 0;
+  return {
+    title: t('return.sheet.waiting', { days }),
+    ...(sent
+      ? {
+          description:
+            sent === 1
+              ? t('return.sheet.reminders.one')
+              : t('return.sheet.reminders.many', { count: sent }),
+        }
+      : {}),
+  };
 }
 
 function action(
@@ -796,14 +850,15 @@ function action(
   if (
     parcel.status !== 'en_route' &&
     parcel.status !== 'notifie' &&
+    parcel.status !== 'retour_prepare' &&
+    parcel.status !== 'retour_en_route' &&
     parcel.status !== 'retourne'
   ) {
     return;
   }
+  const from = parcel.status === 'retourne' ? returnedFrom(events) : undefined;
   const to =
-    parcel.status === 'retourne' && returnedWhileBlocked(events)
-      ? 'a_regulariser'
-      : stepBackOf(parcel);
+    from && RETURN_UNDO_KEEPS.includes(from) ? from : stepBackOf(parcel);
   return to && { kind: 'stepBack', from: parcel.status, to };
 }
 

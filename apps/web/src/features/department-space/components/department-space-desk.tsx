@@ -129,6 +129,8 @@ function parcelRow(row: SpaceParcel, now: Date): DepartementParcelRow {
 const HISTORY_TONE = {
   remis: 'green',
   a_regulariser: 'red',
+  retour_prepare: 'orange',
+  retour_en_route: 'orange',
   retourne: 'grey',
 } as const;
 

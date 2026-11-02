@@ -6,7 +6,7 @@ import {
   type PullOutput,
   type PullPage,
 } from '@repo/contract/sync';
-import { TOUR_STATUSES } from '@repo/contract/parcel-status';
+import { RETURN_STATUSES, TOUR_STATUSES } from '@repo/contract/parcel-status';
 import {
   department,
   emailTemplate,
@@ -124,10 +124,11 @@ function forReader(
   ) {
     return { ...row, deletedAt: now };
   }
-  if (input.tourStatuses) return row;
-  return (TOUR_STATUSES as readonly unknown[]).includes(row.status)
-    ? { ...row, deletedAt: now }
-    : row;
+  const unknown = [
+    ...(input.tourStatuses ? [] : TOUR_STATUSES),
+    ...(input.returnStatuses ? [] : RETURN_STATUSES),
+  ] as readonly unknown[];
+  return unknown.includes(row.status) ? { ...row, deletedAt: now } : row;
 }
 
 /**

@@ -270,7 +270,7 @@ describe('parcel status transitions', () => {
     }
 
     expect(outcome).toEqual(expected);
-    expect(Object.values(expected).filter(Boolean)).toHaveLength(40);
+    expect(Object.values(expected).filter(Boolean)).toHaveLength(52);
   }, 30_000);
 
   it('refuse a parcel born on tour with no department', async () => {

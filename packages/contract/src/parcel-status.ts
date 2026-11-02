@@ -8,6 +8,8 @@ export const PARCEL_STATUSES = [
   'a_regulariser',
   'notifie',
   'remis',
+  'retour_prepare',
+  'retour_en_route',
   'retourne',
 ] as const;
 
@@ -21,10 +23,12 @@ export const FORWARD_TRANSITIONS: Record<
   a_completer: ['recu'],
   recu: ['en_route', 'notifie', 'remis', 'retourne'],
   en_route: ['depose', 'a_regulariser', 'notifie'],
-  depose: ['a_regulariser', 'notifie', 'remis', 'retourne'],
+  depose: ['a_regulariser', 'notifie', 'remis', 'retour_prepare', 'retourne'],
   a_regulariser: ['en_route', 'retourne'],
-  notifie: ['a_regulariser', 'remis', 'retourne'],
+  notifie: ['a_regulariser', 'remis', 'retour_prepare', 'retourne'],
   remis: [],
+  retour_prepare: ['retour_en_route', 'retourne'],
+  retour_en_route: ['retourne'],
   retourne: [],
 };
 
@@ -43,8 +47,66 @@ export const BACKWARD_TRANSITIONS: Record<
   a_regulariser: ['en_route', 'depose', 'notifie'],
   notifie: ['recu', 'en_route', 'depose'],
   remis: ['notifie', 'depose', 'recu'],
-  retourne: ['notifie', 'depose', 'a_regulariser', 'recu'],
+  retour_prepare: ['notifie', 'depose'],
+  retour_en_route: ['retour_prepare'],
+  retourne: [
+    'retour_en_route',
+    'retour_prepare',
+    'notifie',
+    'depose',
+    'a_regulariser',
+    'recu',
+  ],
 };
+
+/** Why a parcel goes back; `lost` closes a gap (YSL-134) and never left for the sender. */
+export const RETURN_REASONS = [
+  'unclaimed',
+  'refused',
+  'left',
+  'address',
+  'lost',
+] as const;
+
+export type ReturnReason = (typeof RETURN_REASONS)[number];
+
+/** The reasons offered when preparing a return: `lost` comes from settling a gap only. */
+export const CHOSEN_RETURN_REASONS = [
+  'unclaimed',
+  'refused',
+  'left',
+  'address',
+] as const satisfies readonly ReturnReason[];
+
+export const RETURN_REASON_LABEL = {
+  unclaimed: 'parcel.return.reason.unclaimed',
+  refused: 'parcel.return.reason.refused',
+  left: 'parcel.return.reason.left',
+  address: 'parcel.return.reason.address',
+  lost: 'parcel.return.reason.lost',
+} as const satisfies Record<ReturnReason, TranslationKey>;
+
+export const leavesForSender = (status: ParcelStatus): boolean =>
+  status === 'retourne' ||
+  (RETURN_STATUSES as readonly ParcelStatus[]).includes(status);
+
+/** A return starts from the shelf: only a deposited parcel has a leg back to the shuttle (révision YSL-89). */
+export function returnStart(
+  parcel: Pick<StatusFields, 'status'> &
+    Partial<Pick<StatusFields, 'depositedAt'>>,
+  tour: boolean,
+): 'retour_prepare' | 'retourne' | undefined {
+  if (
+    parcel.status !== 'recu' &&
+    parcel.status !== 'depose' &&
+    parcel.status !== 'notifie'
+  ) {
+    return undefined;
+  }
+  return tour && parcel.status !== 'recu' && parcel.depositedAt
+    ? 'retour_prepare'
+    : 'retourne';
+}
 
 /** Staying put is always allowed. */
 export function canTransition(from: ParcelStatus, to: ParcelStatus): boolean {
@@ -71,6 +133,8 @@ export const OPEN_STATUSES = [
   'depose',
   'a_regulariser',
   'notifie',
+  'retour_prepare',
+  'retour_en_route',
 ] as const satisfies readonly ParcelStatus[];
 
 /** Statuses of the tour (§3.7.6): a PWA of before knows none of them, `sync.pull` holds them back. */
@@ -80,8 +144,27 @@ export const TOUR_STATUSES = [
   'a_regulariser',
 ] as const satisfies readonly ParcelStatus[];
 
+/** On their way back to the sender: a PWA of before knows neither, `sync.pull` holds them back. */
+export const RETURN_STATUSES = [
+  'retour_prepare',
+  'retour_en_route',
+] as const satisfies readonly ParcelStatus[];
+
+/** What the counters follow: a return is awaited by nobody, so none counts it. */
+export const UNFINISHED_STATUSES = [
+  'a_completer',
+  'recu',
+  'en_route',
+  'depose',
+  'a_regulariser',
+  'notifie',
+] as const satisfies readonly ParcelStatus[];
+
 /** Everything not yet out of the company's hands: a department holding one stays open. */
-export const UNFINISHED_STATUSES = OPEN_STATUSES;
+export const HELD_STATUSES = [
+  ...UNFINISHED_STATUSES,
+  ...RETURN_STATUSES,
+] as const satisfies readonly ParcelStatus[];
 
 /** The progress line of the parcel sheet: Reçu, Notifié, Remis. */
 export const PARCEL_STEPS = [
@@ -105,6 +188,8 @@ export const STATUS_LABEL = {
   a_regulariser: 'parcel.state.a_regulariser',
   notifie: 'parcel.state.notifie',
   remis: 'parcel.state.remis',
+  retour_prepare: 'parcel.state.retour_prepare',
+  retour_en_route: 'parcel.state.retour_en_route',
   retourne: 'parcel.state.retourne',
 } as const satisfies Record<ParcelStatus, TranslationKey>;
 
@@ -117,6 +202,8 @@ export const STATUS_TODO = {
   a_regulariser: 'parcel.todo.a_regulariser',
   notifie: 'parcel.todo.notifie',
   remis: 'parcel.todo.remis',
+  retour_prepare: 'parcel.todo.retour_prepare',
+  retour_en_route: 'parcel.todo.retour_en_route',
   retourne: 'parcel.todo.retourne',
 } as const satisfies Record<ParcelStatus, TranslationKey>;
 
@@ -126,6 +213,8 @@ export const STEP_BACK_LABEL = {
   en_route: 'parcel.undo.en_route',
   notifie: 'parcel.undo.notifie',
   remis: 'parcel.undo.remis',
+  retour_prepare: 'parcel.undo.retour_prepare',
+  retour_en_route: 'parcel.undo.retour_en_route',
   retourne: 'parcel.undo.retourne',
 } as const satisfies Partial<Record<ParcelStatus, TranslationKey>>;
 
@@ -141,6 +230,8 @@ export type StatusFields = {
   /** Missing on a row pulled before the column existed: read as not deposited. */
   depositedAt?: Date | null;
   departmentId?: string | null;
+  /** Missing on a row pulled before the column existed: read as none. */
+  returnReason?: ReturnReason | null;
 };
 
 /** Where undoing the last step leads: a parcel never notified goes back to its deposit, else to `recu`; one whose e-mail left on tour goes back on tour. */
@@ -170,7 +261,10 @@ export function stepBackOf(
         parcel.lastNotifiedAt < parcel.notifiedAt
         ? 'en_route'
         : 'depose';
+    case 'retour_en_route':
+      return 'retour_prepare';
     case 'remis':
+    case 'retour_prepare':
     case 'retourne':
       return parcel.notifiedAt
         ? 'notifie'
@@ -267,6 +361,7 @@ export function statusPatch(
     deliveredAt: to === 'remis' ? now : null,
     deliveredBy: to === 'remis' ? agentId : null,
     depositedAt: depositAfter(parcel, to, now),
+    returnReason: leavesForSender(to) ? (parcel.returnReason ?? null) : null,
   };
 }
 

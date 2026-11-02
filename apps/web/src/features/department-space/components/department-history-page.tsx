@@ -1,3 +1,4 @@
+import { leavesForSender } from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { type HistoriqueDay, HistoriqueMobile } from '@repo/ui';
 import { useNavigate } from '@tanstack/react-router';
@@ -34,7 +35,7 @@ export function DepartmentHistoryPage() {
       closed:
         row.parcel.status === 'a_regulariser'
           ? ('toSettle' as const)
-          : row.parcel.status === 'retourne'
+          : leavesForSender(row.parcel.status)
             ? ('returned' as const)
             : undefined,
     };

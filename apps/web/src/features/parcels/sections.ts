@@ -14,6 +14,7 @@ export const SECTION_IDS = [
   'handedOver',
   'present',
   'coming',
+  'returning',
 ] as const;
 
 export type SectionId = (typeof SECTION_IDS)[number];
@@ -35,6 +36,11 @@ const SECTIONS: {
     states: ['incomplete'],
   },
   { id: 'toSettle', title: t('colis.section.toSettle'), states: ['toSettle'] },
+  {
+    id: 'returning',
+    title: t('colis.section.returning'),
+    states: ['returning'],
+  },
   {
     id: 'toNotify',
     title: t('colis.section.toNotify'),
@@ -75,6 +81,7 @@ const DEPARTMENT_SECTIONS: typeof SECTIONS = [
     title: t('departmentSpace.section.coming'),
     states: ['toDispatch', 'onTour'],
   },
+  ...SECTIONS.filter(({ id }) => id === 'returning'),
 ];
 
 const ALL_SECTIONS = [

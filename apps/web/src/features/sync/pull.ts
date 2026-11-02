@@ -161,6 +161,7 @@ async function readFrom(
     limit,
     departments: true,
     tourStatuses: true,
+    returnStatuses: true,
     deposits: true,
   });
   await db.syncState.put({
@@ -186,6 +187,7 @@ async function readFrom(
       limit,
       departments: true,
       tourStatuses: true,
+      returnStatuses: true,
       deposits: true,
     });
   }

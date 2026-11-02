@@ -4,6 +4,7 @@ import {
   statusPatch,
   type StatusFields,
   type StatusWrite,
+  leavesForSender,
 } from '../parcel-status';
 import { MAIL_CHANNELS, type DeliveryStatus } from './outbox';
 import { MAIL_TARGETS } from './urls';
@@ -207,7 +208,7 @@ export function notifyParcel(
   if (
     parcel.deletedAt ||
     parcel.status === 'remis' ||
-    parcel.status === 'retourne' ||
+    leavesForSender(parcel.status) ||
     parcel.status === 'a_regulariser'
   ) {
     return { parcelId, skip: 'closed' };

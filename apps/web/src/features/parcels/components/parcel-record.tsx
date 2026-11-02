@@ -89,9 +89,14 @@ function damageCardOf(
   };
 }
 
-const UNDO_DESCRIPTION: Record<'en_route' | 'notifie' | 'retourne', string> = {
+const UNDO_DESCRIPTION: Record<
+  'en_route' | 'notifie' | 'retour_prepare' | 'retour_en_route' | 'retourne',
+  string
+> = {
   en_route: t('record.undo.description.en_route'),
   notifie: t('record.undo.description.notifie'),
+  retour_prepare: t('record.undo.description.retour_prepare'),
+  retour_en_route: t('record.undo.description.retour_en_route'),
   retourne: t('record.undo.description.retourne'),
 };
 

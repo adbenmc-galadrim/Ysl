@@ -3,8 +3,8 @@ import type { AnyDb } from '@repo/db';
 import { and, count, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { parcelCarrier } from '#lib/access';
 
-/** Still to reach its department: what a tour carries or could carry. */
-const CARRIED = ['a_completer', 'recu', 'en_route'] as const;
+/** Still to reach its department, or waiting to leave one: what a tour carries or could carry. */
+const CARRIED = ['a_completer', 'recu', 'en_route', 'retour_prepare'] as const;
 
 /**
  * On no shuttle's tour: validated by another role, or by an account no longer

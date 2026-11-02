@@ -62,6 +62,8 @@ const V1_STATUS: Record<ParcelStatus, string> = {
   a_regulariser: 'En attente',
   notifie: 'Notifie',
   remis: 'Remis',
+  retour_prepare: 'Retourne',
+  retour_en_route: 'Retourne',
   retourne: 'Retourne',
 };
 

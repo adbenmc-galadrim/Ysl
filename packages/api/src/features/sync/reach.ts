@@ -553,7 +553,7 @@ async function checkDeposit(
 async function checkTourStatus(
   tx: AnyDb,
   op: SyncOp,
-  { organizationId, role }: Access,
+  { organizationId, role, onTour }: Access,
 ): Promise<void> {
   if (op.entity !== 'parcel' || op.type !== 'upsert') return;
   const to = op.patch.status;
@@ -579,6 +579,16 @@ async function checkTourStatus(
     (!isCompanyAdmin(role) || to === 'en_route' || to === 'retourne');
   if (deposits || settles) {
     refuse(op, 'moves through a deposit', 'sync.op.depositOnly');
+  }
+  // The department or the admin sends it off; the shuttle comes for it (YSL-89).
+  const prepares =
+    (from === 'depose' || from === 'notifie') && to === 'retour_prepare';
+  const takes = from === 'retour_prepare' && to === 'retour_en_route';
+  if (
+    (prepares && role === 'shuttle' && onTour) ||
+    (takes && role === 'department')
+  ) {
+    refuse(op, 'is not this role\'s step of a return', 'sync.op.returnStep');
   }
 }
 
