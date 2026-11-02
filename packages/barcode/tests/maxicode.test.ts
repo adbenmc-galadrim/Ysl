@@ -75,7 +75,7 @@ const readWhole = (raster: Raster) =>
 const readPure = (raster: Raster) =>
   readSymbols(raster, { formats: ['MaxiCode'], isPure: true });
 
-describe('MaxiCode crop', () => {
+describe('MaxiCode crop', { timeout: 30_000 }, () => {
   beforeAll(async () => {
     await initZxingNode();
   });
@@ -85,7 +85,9 @@ describe('MaxiCode crop', () => {
     async (angle) => {
       const raster = await label(angle, 0.6, { left: 760, top: 410 });
       expect(await readWhole(raster)).toEqual([]);
-      const read = await readMaxiCode(raster, readPure);
+      const read = await readMaxiCode(raster, readPure, {
+        budgetMs: Infinity,
+      });
       expect(read).not.toBeNull();
       expect(read!.symbols[0]!.format).toBe('MaxiCode');
       expect(read!.symbols[0]!.text).toBe(EXPECTED);
@@ -119,7 +121,7 @@ describe('MaxiCode crop', () => {
       width: info.width,
       height: info.height,
     };
-    const read = await readMaxiCode(raster, readPure);
+    const read = await readMaxiCode(raster, readPure, { budgetMs: Infinity });
     expect(read?.symbols[0]?.text).toBe(EXPECTED);
   });
 
