@@ -75,6 +75,8 @@ export const ChoisiParLeNom: Story = {
     verifiedBy: 'name',
     parcels: NORA_HANDOVER,
     registeredNote: 'Un recommandé : la signature est exigée.',
+    signatureRequired: true,
+    confirmNote: 'Faites signer avant de remettre.',
     onSignature: () => {},
     onToggle: () => {},
     onToggleAll: () => {},
