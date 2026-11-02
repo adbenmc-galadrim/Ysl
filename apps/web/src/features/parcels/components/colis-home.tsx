@@ -14,6 +14,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
+import { NO_DEPARTMENT } from '#/features/dashboard/figures';
 import { db } from '#/features/db/database';
 import {
   type HandoverToast,
@@ -83,19 +84,19 @@ export function ColisHome() {
   );
   const parcels = useMemo(
     () =>
-      departement && departments
-        ? everyParcel?.filter((row) =>
-            departement === 'none'
+      departement
+        ? departments && everyParcel?.filter((row) =>
+            departement === NO_DEPARTMENT
               ? !departments.some(({ id }) => id === row.departmentId)
               : row.departmentId === departement,
           )
         : everyParcel,
     [everyParcel, departement, departments],
   );
-  const departmentName = departement
-    ? (departments?.find(({ id }) => id === departement)?.name ??
-      t('dashboard.noDepartment'))
-    : null;
+  const departmentName =
+    departement === NO_DEPARTMENT
+      ? t('dashboard.noDepartment')
+      : departments?.find(({ id }) => id === departement)?.name;
   const [folded, toggleFolded] = useFoldedSections();
   // The rows already on the iPhone show at once; only what the server may
   // still send is drawn as a skeleton, and "nothing waits" only once it spoke.

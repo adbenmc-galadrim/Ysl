@@ -1,4 +1,5 @@
 import type { TranslateFn } from '@repo/shared/i18n';
+import { fullName } from '#/features/directory/people';
 import { isPending } from '#/features/parcels/deposit';
 import type {
   CourrierDatabase,
@@ -59,8 +60,12 @@ const noCounts = (): DashboardCounts => ({
   toSettle: 0,
 });
 
-const time = (date: Date) =>
-  date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+/** The overview's mockup writes « 9:40 », where the lists of the phone say « 9 h 40 ». */
+export const clockTime = (date: Date) =>
+  `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+
+/** `/colis?departement=`: the parcels of the line that has no department. */
+export const NO_DEPARTMENT = 'none';
 
 /** Why it waits, in the order of the page that settles it. */
 function causeOf(
@@ -78,7 +83,7 @@ function causeOf(
   if (!gap) return t('settlement.cause.moved');
   return gap.gap === 'left'
     ? t('settlement.cause.left')
-    : t('dashboard.cause.missing', { time: time(gap.postedAt) });
+    : t('dashboard.cause.missing', { time: clockTime(gap.postedAt) });
 }
 
 /**
@@ -145,7 +150,7 @@ export async function loadDashboard(
         row: {
           id: parcel.id,
           name: person
-            ? `${person.firstName} ${person.lastName}`
+            ? fullName(person)
             : (contact?.name ?? parcel.readName ?? t('settlement.unknown')),
           department: name ?? null,
           cause: causeOf(parcel, deposits, t),

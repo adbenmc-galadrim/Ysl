@@ -184,7 +184,7 @@ describe('loadDashboard', () => {
         id: 'settle-1',
         name: 'Léa Fontaine',
         department: 'Finance',
-        cause: 'Manquant au dépôt de 09:40',
+        cause: 'Manquant au dépôt de 9:40',
       },
     ]);
   });
