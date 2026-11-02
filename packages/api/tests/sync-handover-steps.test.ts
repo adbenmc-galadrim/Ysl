@@ -346,3 +346,46 @@ describe('a registered letter on the handovers pushed', () => {
     expect(await statusOfParcel(parcel)).toBe('remis');
   });
 });
+
+describe('a phone on an older version, Petit site', () => {
+  const smallSite = () =>
+    writeOperatingProfile(
+      sync,
+      ORGANIZATION_ID,
+      SMALL_SITE_OPERATING_PROFILE,
+      AGENT_ID,
+    );
+  const handedOver = async (parcel: string, id: string) => {
+    expect(await statusOfParcel(parcel)).toBe('remis');
+    expect(
+      await db.select().from(schema.handover).where(eq(schema.handover.id, id)),
+    ).toHaveLength(1);
+  };
+
+  it('keeps the handover pushed before its parcel, in one batch', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    expect(await statuses(ops)).toEqual([200, 200, 200]);
+    await handedOver(parcel, id);
+  });
+
+  it('keeps the parcel pushed before its handover, in one batch', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    const [write, delivered, event] = ops;
+    expect(await statuses([delivered!, event!, write!])).toEqual([
+      200, 200, 200,
+    ]);
+    await handedOver(parcel, id);
+  });
+
+  it('keeps the parcel pushed in an earlier batch than its handover', async () => {
+    await smallSite();
+    const { ops, parcel, id } = await handoverOps({ method: 'qr' });
+    const [write, delivered, event] = ops;
+    expect(await statuses([delivered!, event!])).toEqual([200, 200]);
+    expect(await statuses([write!])).toEqual([200]);
+    await handedOver(parcel, id);
+  });
+});
+

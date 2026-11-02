@@ -200,7 +200,7 @@ export const fr = {
   'sync.op.handoverSteps':
     'Cette remise n’a pas une étape que votre entreprise exige désormais : preuve, signature, photo ou scan.',
   'sync.op.registeredSignature':
-    'Un recommandé ne se remet pas sans signature : faites signer depuis cette remise.',
+    'Remise refusée : un recommandé ne se remet pas sans signature.',
   'sync.op.adminOnly':
     'Seul un administrateur du service courrier peut modifier ce réglage.',
   'sync.op.settingKey':
