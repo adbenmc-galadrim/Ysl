@@ -1,3 +1,9 @@
+import {
+  CHOSEN_RETURN_REASONS,
+  RETURN_REASON_LABEL,
+  type ReturnReason,
+  returnStart,
+} from '@repo/contract/parcel-status';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Button,
@@ -8,6 +14,7 @@ import {
   PhotoViewer,
   Screen,
   Sheet,
+  RetourExpediteurSheet,
 } from '@repo/ui';
 import { useNavigate, useRouter } from '@tanstack/react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -38,8 +45,11 @@ import {
   describeRecord,
   type RecordAction,
   type RecordDamage,
+  returnWaiting,
   stepBackLabel,
 } from '#/features/parcels/record';
+import { moveReturns, returnParcel } from '#/features/parcels/returns';
+import { useGoesOnTour } from '#/features/parcels/api/use-tour';
 import { changeParcelStatus, deleteParcel } from '#/features/parcels/status';
 import { putOnTour } from '#/features/parcels/tour';
 import { answeredWith } from '#/features/replies/record';
@@ -124,6 +134,8 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
   );
   const [viewingProof, setViewingProof] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const tour = useGoesOnTour();
   const lastMail = useLatestMail(parcelId);
   const [confirm, setConfirm] = useState<Confirm | null>(null);
   const [completing, setCompleting] = useState(false);
@@ -176,6 +188,24 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     });
   const photo = photoOf(photoUrl, () => setViewing(true));
   const options = { agentId: session.user.id };
+  const onShuttleTour = access.role === 'shuttle' && tour === true;
+  const start =
+    tour === undefined || record.parcel.deletedAt
+      ? undefined
+      : returnStart(record.parcel, tour);
+  // A shuttle on tour only returns what it still holds; a department's shelf goes through its own hands.
+  const offersReturn =
+    start !== undefined && (!onShuttleTour || record.parcel.status === 'recu');
+  const viaShuttle = start === 'retour_prepare';
+  const returnStep =
+    record.parcel.status === 'retour_prepare'
+      ? onShuttleTour
+        ? 'take'
+        : 'give'
+      : record.parcel.status === 'retour_en_route' &&
+          access.role !== 'department'
+        ? 'give'
+        : undefined;
 
   const run = async (change: () => Promise<unknown>, after?: () => void) => {
     if (busy) return;
@@ -382,39 +412,61 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       onReportDamage={() =>
         void navigate({ to: '/colis/$parcelId/dommage', params: { parcelId } })
       }
+      onReturn={
+        offersReturn
+          ? () => {
+              setFailed(false);
+              setReturning(true);
+            }
+          : undefined
+      }
       onShowReading={() =>
         void navigate({ to: '/colis/$parcelId/lecture', params: { parcelId } })
       }
       primaryAction={
-        action?.kind === 'complete'
-          ? t('record.action.complete')
-          : action?.kind === 'notify'
-            ? t('record.action.notify')
-            : action?.kind === 'dispatch' && access.receives
-              ? t('record.action.dispatch')
-              : handOver
-                ? t('colis.handover')
-                : undefined
+        returnStep
+          ? t(
+              returnStep === 'take'
+                ? 'return.action.take'
+                : 'return.action.give',
+            )
+          : action?.kind === 'complete'
+            ? t('record.action.complete')
+            : action?.kind === 'notify'
+              ? t('record.action.notify')
+              : action?.kind === 'dispatch' && access.receives
+                ? t('record.action.dispatch')
+                : handOver
+                  ? t('colis.handover')
+                  : undefined
       }
       onPrimaryAction={
-        handOver
-          ? () => void navigate({ to: '/remise' })
-          : action?.kind === 'notify'
+        returnStep
           ? () =>
-              void navigate({
-                to: '/notifier',
-                search: addressMissing(record)
-                  ? { colis: parcelId, prevenir: true }
-                  : { colis: parcelId },
-              })
-          : action?.kind === 'complete'
-            ? () => setCompleting(true)
-            : action?.kind === 'dispatch'
+              void moveReturns(
+                db,
+                [parcelId],
+                returnStep === 'take' ? 'retour_en_route' : 'retourne',
+                { agentId: session.user.id },
+              )
+          : handOver
+            ? () => void navigate({ to: '/remise' })
+            : action?.kind === 'notify'
               ? () =>
-                  void putOnTour(db, [parcelId], {
-                    agentId: session.user.id,
+                  void navigate({
+                    to: '/notifier',
+                    search: addressMissing(record)
+                      ? { colis: parcelId, prevenir: true }
+                      : { colis: parcelId },
                   })
-              : edit
+              : action?.kind === 'complete'
+                ? () => setCompleting(true)
+                : action?.kind === 'dispatch'
+                  ? () =>
+                      void putOnTour(db, [parcelId], {
+                        agentId: session.user.id,
+                      })
+                  : edit
       }
       secondaryAction={
         record.handover && cancellable && access.handsOver
@@ -423,7 +475,10 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
               onClick: () => setCancelling(true),
             }
           : action?.kind === 'stepBack' &&
-              (action.from !== 'en_route' || access.receives)
+              (action.from !== 'en_route' || access.receives) &&
+              (action.from !== 'retour_prepare' || !onShuttleTour) &&
+              (action.from !== 'retour_en_route' ||
+                access.role !== 'department')
             ? {
                 label: stepBackLabel(action.from, t),
                 onClick: () => {
@@ -450,6 +505,51 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
       overlay={
         <>
           {sheet}
+          {returning && (
+            <RetourExpediteurSheet
+              waiting={returnWaiting(record, now, t)}
+              reasons={CHOSEN_RETURN_REASONS.map((id) => ({
+                id,
+                label: t(RETURN_REASON_LABEL[id]),
+              }))}
+              reason={
+                record.parcel.status === 'notifie' ? 'unclaimed' : 'refused'
+              }
+              sender={record.parcel.senderName ?? t('record.value.unknown')}
+              next={
+                viaShuttle
+                  ? {
+                      title: t('return.sheet.next.shuttle.title'),
+                      description: t('return.sheet.next.shuttle.description'),
+                    }
+                  : {
+                      title: t('return.sheet.next.direct.title'),
+                      description: t('return.sheet.next.direct.description'),
+                    }
+              }
+              confirmLabel={t(
+                viaShuttle
+                  ? 'return.sheet.confirm.shuttle'
+                  : 'return.sheet.confirm.direct',
+              )}
+              error={failed ? t('record.error.write') : undefined}
+              busy={busy}
+              onDismiss={() => setReturning(false)}
+              onConfirm={(reason) =>
+                void run(
+                  () =>
+                    returnParcel(
+                      db,
+                      parcelId,
+                      reason as ReturnReason,
+                      tour === true,
+                      { agentId: session.user.id },
+                    ),
+                  () => setReturning(false),
+                )
+              }
+            />
+          )}
           {cancelling && record.handover && (
             <AnnulerRemiseSheet
               handoverId={record.handover.id}

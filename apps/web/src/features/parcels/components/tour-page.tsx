@@ -15,6 +15,7 @@ import { db } from '#/features/db/database';
 import { useTour } from '#/features/parcels/api/use-tour';
 import { gapLine, pendingParcelIds } from '#/features/parcels/deposit';
 import { formatTime } from '#/features/parcels/model';
+import { moveReturns } from '#/features/parcels/returns';
 import { putOnTour } from '#/features/parcels/tour';
 import { departmentName, parcelsLabel } from '#/features/parcels/tour-view';
 import { useSync } from '#/features/sync/use-sync';
@@ -101,7 +102,40 @@ export function TourPage() {
 
   const incomplete = data?.incomplete.length ?? 0;
   const toDispatch = data?.toDispatch ?? [];
+  const toTake = new Map<string, string[]>();
+  for (const { id, departmentId } of data?.returnsToTake ?? []) {
+    const key = departmentId ?? '';
+    toTake.set(key, [...(toTake.get(key) ?? []), id]);
+  }
+  const carriedBack = (data?.returnsCarried ?? []).map(({ id }) => id);
+  const moveBack = (ids: string[], to: 'retour_en_route' | 'retourne') =>
+    void moveReturns(db, ids, to, { agentId: session.user.id });
   const tasks: TourTask[] = [
+    ...[...toTake].map(([departmentId, ids]): TourTask => ({
+      id: `return-${departmentId}`,
+      icon: 'undo',
+      title: t('tour.task.returnTake'),
+      // The action button sits over the end of the line: a long name would run under it.
+      line: `${parcelsLabel(ids.length, t)} · ${departmentName(data?.departments.get(departmentId), t).slice(0, 22)}`,
+      action: {
+        label: t('tour.task.returnTake.action'),
+        onClick: () => moveBack(ids, 'retour_en_route'),
+      },
+    })),
+    ...(carriedBack.length
+      ? [
+          {
+            id: 'return-give',
+            icon: 'undo',
+            title: parcelsLabel(carriedBack.length, t),
+            line: t('tour.task.returnGive'),
+            action: {
+              label: t('tour.task.returnGive.action'),
+              onClick: () => moveBack(carriedBack, 'retourne'),
+            },
+          } as const,
+        ]
+      : []),
     ...(incomplete
       ? [
           {

@@ -80,6 +80,8 @@ export type FicheColisScreenProps = {
   handover?: FicheColisHandover;
   /** Offered while the parcel carries no reserve. */
   onReportDamage?: () => void;
+  /** « Retourner à l'expéditeur », offered while the parcel can still leave. */
+  onReturn?: () => void;
   /** Opens what the reader made of the label (F22), under the photo. */
   onShowReading?: () => void;
   details: DetailsItem[];
@@ -200,6 +202,7 @@ export function FicheColisScreen({
   damage,
   handover,
   onReportDamage,
+  onReturn,
   onShowReading,
   details,
   history,
@@ -347,6 +350,18 @@ export function FicheColisScreen({
             className="mt-5 text-16"
           >
             Signaler un dommage
+          </Button>
+        )}
+        {onReturn && (
+          <Button
+            variant="secondary"
+            icon="undo"
+            iconSize={20}
+            block
+            onClick={onReturn}
+            className="mt-3 text-16"
+          >
+            Retourner à l’expéditeur
           </Button>
         )}
         {history && history.length > 0 && (
