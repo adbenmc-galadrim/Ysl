@@ -39,7 +39,7 @@ const sum = (sizes: (number | null)[]): number | null =>
   );
 
 /** Drops the files of an older build so the cache holds one set of models. */
-export async function dropStale(
+async function dropStale(
   urls: string[],
   cache: CacheLike,
 ): Promise<number> {

@@ -30,7 +30,7 @@ export const trackingContexts = [
 
 export type TrackingContext = (typeof trackingContexts)[number];
 
-export type TrackingPolicy =
+type TrackingPolicy =
   'key' | 'key-and-context' | 'key-bonus' | 'format-and-context';
 
 export type TrackingRule = {

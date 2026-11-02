@@ -4,7 +4,7 @@ import sharp, { type Sharp } from 'sharp';
 export type BenchImage = { source: RasterSource; bytes: number };
 
 /** What the viewfinder hands over on the iPhone (spike S1): 12 Mpx, JPEG 80. */
-export const VIEWFINDER = { width: 3024, height: 4032, quality: 80 };
+const VIEWFINDER = { width: 3024, height: 4032, quality: 80 };
 
 /** The sides `decodeSource` asks for, besides the full raster. */
 const SIDES = [1600, 2400];
@@ -65,7 +65,7 @@ const resized = (full: Raster, side: number) =>
   );
 
 /** `decodeSource` reads rasters synchronously: every size is prepared first. */
-export const toSource = async (full: Raster): Promise<RasterSource> => {
+const toSource = async (full: Raster): Promise<RasterSource> => {
   const scaled = new Map<number, Raster>();
   for (const side of SIDES) {
     if (longSide(full) > side) scaled.set(side, await resized(full, side));

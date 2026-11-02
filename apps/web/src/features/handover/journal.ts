@@ -70,7 +70,7 @@ export async function loadJournal(
 }
 
 /** Found by the employee who collected, the colleague who did for them, or the agent. */
-export function matchesQuery(handover: LocalHandover, query: string): boolean {
+function matchesQuery(handover: LocalHandover, query: string): boolean {
   const wanted = normalizeName(query);
   if (!wanted) return true;
   return [handover.recipientName, handover.delegateName, handover.agentName]
@@ -113,7 +113,7 @@ function stateOf({ handover, sync }: JournalItem, now: Date, t: TranslateFn) {
   return { state: 'done' as const };
 }
 
-export function journalRow(
+function journalRow(
   item: JournalItem,
   now: Date,
   t: TranslateFn,

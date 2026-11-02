@@ -10,7 +10,7 @@ import { ocrText } from '#/features/scan/annex';
 import { draftFields } from '#/features/scan/confidence';
 
 /** Moves up whenever the rules that score the fields change (§8.2 `version`). */
-export const EXTRACTION_VERSION = 1;
+const EXTRACTION_VERSION = 1;
 
 const candidatesOf = <T>(field: Field<T>): ExtractionCandidate[] =>
   field.candidates.map(({ value, confidence, sources }) => ({

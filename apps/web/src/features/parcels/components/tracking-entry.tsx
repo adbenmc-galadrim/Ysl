@@ -13,7 +13,7 @@ const CARRIERS = carrierOptions(t)
   .map(({ value }) => value)
   .filter((name) => name !== OTHER);
 
-export type TrackingEntered = { tracking: string; carrier: string };
+type TrackingEntered = { tracking: string; carrier: string };
 
 export type TrackingEntryProps = {
   /** The number so far, typed again from it. */

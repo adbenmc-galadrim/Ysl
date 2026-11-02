@@ -7,7 +7,7 @@ import type { SyncView } from '#/features/sync/use-sync';
  * evict the storage, the phone may break. Past this, the screens turn red
  * and ask for the backup export, online or not.
  */
-export const STALE_AFTER_MS = DAY_MS;
+const STALE_AFTER_MS = DAY_MS;
 
 export function syncAlert(
   sync: Pick<SyncView, 'pending' | 'rejected' | 'oldestAt'>,

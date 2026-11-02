@@ -186,7 +186,7 @@ export function countDrafts(
 }
 
 /** The photos a draft holds: its own, then those of the pieces that joined it. */
-export function photoIdsOf(draft: DraftParcel): string[] {
+function photoIdsOf(draft: DraftParcel): string[] {
   const ids = [
     ...(draft.pieces?.photoIds ?? []),
     ...(draft.damage?.photoIds ?? []),

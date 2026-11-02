@@ -14,7 +14,7 @@ import { useSession } from '#/features/auth/api/use-session';
 const t = createTranslator(DEFAULT_LOCALE);
 
 /** Only refused changes hold the sign-out: a second tap gives them up. */
-export function canDiscard(error: unknown): boolean {
+function canDiscard(error: unknown): boolean {
   return (
     error instanceof SignOutBlockedError &&
     error.pending === 0 &&
@@ -23,7 +23,7 @@ export function canDiscard(error: unknown): boolean {
 }
 
 /** What stopped the sign-out: changes still on the phone, or the server. */
-export function signOutMessage(error: unknown): string {
+function signOutMessage(error: unknown): string {
   if (error instanceof SignOutBlockedError) {
     if (error.pending === 0) {
       return error.rejected === 1

@@ -5,7 +5,7 @@ import type { DraftAnnex } from '#/features/scan/annex';
 import { draftFields } from '#/features/scan/confidence';
 
 /** The annex fields the review proposes one by one when « à vérifier » (§4.4). */
-export const ANNEX_FIELDS = [
+const ANNEX_FIELDS = [
   'weightKg',
   'pieces',
   'service',
@@ -30,7 +30,7 @@ export type ReviewStep =
  * Where a parcel sits on « Vérifier le lot »: still doubtful, passed by the
  * agent (saved « À compléter »), or ready to be saved with the batch.
  */
-export type ReviewGroup = 'toCheck' | 'toComplete' | 'ready';
+type ReviewGroup = 'toCheck' | 'toComplete' | 'ready';
 
 export type ReviewItem = {
   draft: DraftParcel;
@@ -51,7 +51,7 @@ export type Review = {
  * so is one an alias proposes below « sûr »: confirming it is how what the
  * agent taught gains confidence (§4.8). A bare OCR guess is not asked.
  */
-export const asksSender = (sender: DraftSender | null) =>
+const asksSender = (sender: DraftSender | null) =>
   sender !== null &&
   sender.level !== 'sure' &&
   (sender.level === 'to-verify' || sender.alias === true);

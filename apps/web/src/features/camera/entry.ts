@@ -1,6 +1,6 @@
 import type { CameraPermission } from '#/features/camera/stream';
 
-export const CAMERA_EXPLAINED_KEY = 'courrier.camera.explained';
+const CAMERA_EXPLAINED_KEY = 'courrier.camera.explained';
 
 type ExplainedStorage = Pick<Storage, 'getItem' | 'setItem'>;
 

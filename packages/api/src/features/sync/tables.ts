@@ -19,7 +19,7 @@ import {
 } from '@repo/db/schema';
 
 /** The drizzle table of each synced entity. */
-export const SYNC_TABLES = {
+const SYNC_TABLES = {
   directory_person: directoryPerson,
   contact,
   sender,

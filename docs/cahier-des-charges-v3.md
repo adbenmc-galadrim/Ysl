@@ -6,7 +6,7 @@ Ce document décrit Courrier, l'app de réception et de remise des colis d'une e
 
 **Comment lire la v3.**
 
-- **Ce qui est livré.** Le document décrit le produit visé. Tant que les fonctionnalités F35 à F42 du plan ne sont pas livrées, l'app fonctionne comme en v2 : un agent, un service, des e-mails envoyés depuis la messagerie du téléphone.
+- **Ce qui est livré.** Le document décrit le produit visé. Les fonctionnalités F35 à F41 du plan et la vue d'ensemble de F42 sont livrées ; les rapports restent à livrer. L'envoi serveur attend son activation : d'ici là, les e-mails partent depuis la messagerie du téléphone.
 - **Deux séries de F.** Les exigences F01 à F63 (§3) ne sont pas les fonctionnalités F1 à F42 du plan de projet (hors dépôt). Pour éviter la collision, les exigences du modèle multi-entreprises s'appellent ME01, ME02… et le §3.7 les range par fonctionnalité du plan.
 - **« L'agent ».** Partout où il reste, le mot désigne le compte qui fait le geste : la navette à la réception, le département à la remise.
 - **« Le service ».** De même, il se lit « l'entreprise », sauf quand le §2.1 distingue les départements.

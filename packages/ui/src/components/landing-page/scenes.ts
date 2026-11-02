@@ -401,7 +401,7 @@ const closing: Scene = (root) => {
   return tl;
 };
 
-export const SCENES: Record<string, Scene> = {
+const SCENES: Record<string, Scene> = {
   batch,
   notif,
   handover,

@@ -15,7 +15,7 @@ import { normalizeName } from '@repo/shared/text';
 import type { TranslateFn } from '@repo/shared/i18n';
 
 /** The columns of the v1 export (§3.2 of the v1 review); only two are required. */
-export const V1_COLUMNS = [
+const V1_COLUMNS = [
   'id',
   'date_reception',
   'date_remise',
@@ -76,7 +76,7 @@ export type V1Row = {
   unknownStatus?: string;
 };
 
-export type V1Skip = {
+type V1Skip = {
   line: number;
   tracking: string;
   recipient: string | null;

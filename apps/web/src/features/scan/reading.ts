@@ -75,7 +75,7 @@ const SUGGESTIONS = 3;
  * alert to verify; below that, the field stays empty and the values the
  * reader half saw come as chips.
  */
-export function levelField(
+function levelField(
   label: string,
   value: string,
   level: ConfidenceLevel,
@@ -162,7 +162,7 @@ function annexField(
  * names it, a bare code says nothing to the agent. The reference waits for
  * the parcel's page.
  */
-export function annexFields(annex: DraftAnnex, t: TranslateFn): ScanField[] {
+function annexFields(annex: DraftAnnex, t: TranslateFn): ScanField[] {
   const fields: ScanField[] = [];
   if (annex.pieces && annex.pieces.total > 1) {
     fields.push(

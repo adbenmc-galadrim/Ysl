@@ -16,7 +16,7 @@ export const PARTICLES = new Set([
 ]);
 
 /** Words of a label that are never a name (v1 `NOT_NAME`, carriers, civilities). */
-export const NOT_NAME = new Set([
+const NOT_NAME = new Set([
   'rue',
   'avenue',
   'av',
@@ -131,7 +131,7 @@ export type HostMarks = {
   words: readonly string[];
 };
 
-export const NO_HOST: HostMarks = { phrases: [], words: [] };
+const NO_HOST: HostMarks = { phrases: [], words: [] };
 
 /**
  * The longest anchor first: « Saint Laurent » must not leave « Yves » behind.
@@ -190,11 +190,11 @@ export function withinOneEdit(a: string, b: string): boolean {
   return edits + (long.length - j) + (short.length - i) <= 1;
 }
 
-export const isHostWord = (word: string, host: HostMarks = NO_HOST) =>
+const isHostWord = (word: string, host: HostMarks = NO_HOST) =>
   host.words.some((own) => withinOneEdit(word, own));
 
 /** The text without the host company's name, which says nothing of the person. */
-export const withoutHost = (text: string, host: HostMarks = NO_HOST) =>
+const withoutHost = (text: string, host: HostMarks = NO_HOST) =>
   host.phrases.reduce((rest, phrase) => rest.replace(phrase, ' '), text);
 
 /**

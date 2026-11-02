@@ -1,5 +1,5 @@
 {
-  "name": "courrier-ysl",
+  "name": "courrier",
   "private": true,
   "scripts": {
     "build": "turbo run build",

@@ -21,7 +21,7 @@ import { recipientInCodes } from '#/features/scan/extract';
  * gave, then the OCR's. Not a name the agent copied (« Même destinataire »):
  * the label never said it.
  */
-export function printedNames(
+function printedNames(
   draft: Pick<DraftParcel, 'symbols' | 'ocrName'>,
 ): string[] {
   const names = [recipientInCodes(draft.symbols), draft.ocrName];

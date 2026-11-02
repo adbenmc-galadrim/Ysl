@@ -31,7 +31,7 @@ import type {
 import type { RecipientKind } from '@repo/contract/recipient';
 import { Dexie, type EntityTable, type Table } from 'dexie';
 
-export const DATABASE_NAME = 'courrier';
+const DATABASE_NAME = 'courrier';
 
 export type SyncedEntity = (typeof SYNCED_ENTITIES)[number];
 
@@ -40,7 +40,7 @@ export type SyncedEntity = (typeof SYNCED_ENTITIES)[number];
  * organization (one device serves one mailroom; the server stamps it on push)
  * and with the transaction id only once the row came back through a pull.
  */
-export type LocalRow<Row> = Omit<Row, 'organizationId' | 'serverXid'> & {
+type LocalRow<Row> = Omit<Row, 'organizationId' | 'serverXid'> & {
   serverXid?: number;
 };
 
@@ -141,10 +141,10 @@ export type SyncedRows = {
   department: LocalDepartment;
 };
 
-export type OutboxOpType = 'upsert' | 'delete';
+type OutboxOpType = 'upsert' | 'delete';
 
 /** `queued` waits for `sync.push`; `rejected` was refused for good (4xx) and waits for a correction. */
-export type OutboxOpState = 'queued' | 'rejected';
+type OutboxOpState = 'queued' | 'rejected';
 
 /** One change waiting for `sync.push`, in the order it was made. */
 export type OutboxOp = {
@@ -208,7 +208,7 @@ export const SYNC_STATE_KEYS = {
 } as const;
 
 /** What the reader made of a draft's photo so far; `typed` came by hand. */
-export type DraftReading =
+type DraftReading =
   'pending' | 'read' | 'unreadable' | 'failed' | 'typed';
 
 export type DraftSymbol = { format: string; text: string };
@@ -217,7 +217,7 @@ export type DraftSymbol = { format: string; text: string };
  * The printed text: still to read, read, failed, or never read (no photo,
  * or a photo the reader could not open). A failure never fails the draft.
  */
-export type DraftOcrState = 'pending' | 'done' | 'failed' | 'skipped';
+type DraftOcrState = 'pending' | 'done' | 'failed' | 'skipped';
 
 /** A line as `@repo/ocr` read it, kept as is for the diagnostic and the bench. */
 export type DraftOcrLine = OcrLine;
@@ -276,7 +276,7 @@ export type DraftRecipient = {
  * parcel's columns and event at « Terminer »; its photos wait meanwhile
  * with `parcelId: null`, like the label's.
  */
-export type DraftDamage = DamageInput & { at: Date; photoIds: string[] };
+type DraftDamage = DamageInput & { at: Date; photoIds: string[] };
 
 /**
  * A parcel of the batch in progress: one tap, one photo, the reading when
@@ -325,7 +325,7 @@ export type DraftParcel = {
   type?: 'colis' | 'sans_suivi';
 };
 
-export type DraftDurations = { codesMs?: number; ocrMs?: number };
+type DraftDurations = { codesMs?: number; ocrMs?: number };
 
 /** A value the reader weighed for a field, with the sources behind it. */
 export type ExtractionCandidate = {

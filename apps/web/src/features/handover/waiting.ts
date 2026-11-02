@@ -17,7 +17,7 @@ import {
 export type HandoverRecipient = { kind: RecipientKind; id: string };
 
 /** What waits at the desk for someone: received or deposited, notified or not (P4). */
-export const WAITING_STATUSES = ['recu', 'depose', 'notifie'] as const;
+const WAITING_STATUSES = ['recu', 'depose', 'notifie'] as const;
 
 /** With tours, a parcel « Reçu » is still with the shuttle: nothing to hand over (§8.3). */
 export const isWaiting = (parcel: LocalParcel, tour: boolean) =>
@@ -85,7 +85,7 @@ export function receivedLine(date: Date, now: Date, t: TranslateFn): string {
 }
 
 /** « Retrait prévu par Paul Mercier »: the recipient said who comes (YSL-70); the handover offers them first. */
-export function delegateLine(
+function delegateLine(
   parcel: LocalParcel,
   t: TranslateFn,
 ): string | undefined {

@@ -10,7 +10,7 @@ export type Upsert = {
   [Entity in SyncedEntity]: { entity: Entity; row: SyncedRows[Entity] };
 }[SyncedEntity];
 
-export type Deletion = { entity: SyncedEntity; id: string };
+type Deletion = { entity: SyncedEntity; id: string };
 
 export type LocalWrite = {
   upserts?: readonly Upsert[];

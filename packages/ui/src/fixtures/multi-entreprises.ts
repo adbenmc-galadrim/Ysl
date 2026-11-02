@@ -137,7 +137,7 @@ export function crumbs(...labels: string[]): CompanyShellCrumb[] {
   return labels.map((label) => ({ label, width: CRUMB_WIDTH[label] }));
 }
 
-export type CompanyStatus = 'active' | 'invited' | 'suspended';
+type CompanyStatus = 'active' | 'invited' | 'suspended';
 
 export type Company = {
   id: string;

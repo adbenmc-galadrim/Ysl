@@ -43,7 +43,7 @@ const STEPS = [
   'Ouvrez Réglages sur l’iPhone',
   'Touchez Safari, puis Caméra',
   'Choisissez « Autoriser »',
-  'Revenez dans Courrier YSL',
+  'Revenez dans Courrier',
 ];
 
 /** The camera refused: how to allow it again, and what works meanwhile. */
@@ -99,7 +99,7 @@ const INSTALL_STEPS: { icon: IconName; title: string; hint: string }[] = [
   },
   {
     icon: 'package',
-    title: '3. Ouvrez Courrier YSL',
+    title: '3. Ouvrez Courrier',
     hint: 'depuis la nouvelle icône',
   },
 ];
@@ -128,7 +128,7 @@ export function InstallerAppMobile() {
     <Screen className="pt-11" bottom={<SafariBar />}>
       <div className="-mx-5 h-[52px] bg-fill pt-2.5">
         <p className="mx-auto h-8 w-[273px] rounded-[10px] bg-surface pt-1.5 text-center text-14 text-ink-2">
-          courrier.saintlaurent.fr
+          courrier.exemple.fr
         </p>
       </div>
       <h1 className="mt-7 text-32 font-bold">Installez l’app</h1>

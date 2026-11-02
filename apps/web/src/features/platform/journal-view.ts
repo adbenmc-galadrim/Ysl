@@ -35,7 +35,7 @@ export function journalWhen(at: Date, now: Date, t: TranslateFn): string {
   return t('platform.journal.when.other', { date: shortDate(at), time });
 }
 
-export function journalDetailText(entry: JournalEntry, t: TranslateFn): string {
+function journalDetailText(entry: JournalEntry, t: TranslateFn): string {
   const { detail } = entry;
   switch (entry.action) {
     case 'company_created':

@@ -16,7 +16,7 @@ export type PieceRead = { index: number; total: number; key: string };
  * carries one (UPS, GS1 401/402), else the tracking number itself, printed
  * on every box of some carriers.
  */
-export function pieceKey(
+function pieceKey(
   parsed: ParsedCode,
   trackingNorm: string | null,
 ): string | null {

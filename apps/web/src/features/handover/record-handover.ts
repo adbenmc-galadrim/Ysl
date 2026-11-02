@@ -94,7 +94,7 @@ const holds = (code: LocalPickupCode, { kind, id }: HandoverRecipient) =>
  * before the write: `via` and `code` are only what the URL says, and the
  * code may have expired or been replaced since the screen opened.
  */
-export async function recheckCode(
+async function recheckCode(
   db: CourrierDatabase,
   search: RemiseColisSearch,
   now: Date,

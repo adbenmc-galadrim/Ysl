@@ -10,7 +10,7 @@ import type { ModelsSnapshot, ShellSnapshot } from '#/features/offline/packs';
 import { appScope } from '#/features/update/updater';
 import { isAppCache } from '#/features/update/version';
 
-export type PrepSnapshot = { models: ModelsSnapshot; shell: ShellSnapshot };
+type PrepSnapshot = { models: ModelsSnapshot; shell: ShellSnapshot };
 
 /** How long the service worker may take to install before the screen offers to start anyway. */
 const SHELL_TIMEOUT_MS = 90_000;

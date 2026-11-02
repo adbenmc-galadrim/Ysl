@@ -10,7 +10,7 @@ import { commitLocal } from '#/features/db/commit';
 import type { CourrierDatabase, LocalSetting } from '#/features/db/schema';
 import { goesOnTour } from '#/features/parcels/tour';
 
-export const PICKUP_KEY = 'pickup' satisfies SettingKey;
+const PICKUP_KEY = 'pickup' satisfies SettingKey;
 
 const fromServer = (row: LocalSetting) => row.serverXid !== undefined;
 
@@ -56,7 +56,7 @@ export async function readDepartmentPickups(
 }
 
 /** What the e-mails will quote: no stray spaces around a line. */
-export function tidyPickup(value: PickupSetting): PickupSetting {
+function tidyPickup(value: PickupSetting): PickupSetting {
   return {
     place: value.place.trim(),
     hours: Object.fromEntries(

@@ -52,7 +52,7 @@ import {
 import { tableOf, type SyncTable } from '#features/sync/tables';
 import type { Access } from '#lib/access';
 
-export const LOCK_TIMEOUT = '3s';
+const LOCK_TIMEOUT = '3s';
 
 /** Columns the server owns: a device cannot set or move them. */
 const SERVER_COLUMNS = new Set([

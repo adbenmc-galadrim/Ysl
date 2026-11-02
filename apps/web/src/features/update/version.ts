@@ -24,7 +24,7 @@ export function isAppCache(key: string, scope: string): boolean {
   return !key.slice(at + scope.length).startsWith('spike-');
 }
 
-export type ForceState = 'idle' | 'forcing' | 'failed';
+type ForceState = 'idle' | 'forcing' | 'failed';
 
 export type UpdateState = {
   available: boolean;

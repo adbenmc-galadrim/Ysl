@@ -10,5 +10,3 @@ export const STORAGE_LOCATIONS = [
   'Armoire fermée',
   'Réfrigérateur',
 ] as const;
-
-export type StorageLocation = (typeof STORAGE_LOCATIONS)[number];

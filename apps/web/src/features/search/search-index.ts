@@ -46,7 +46,7 @@ export type SearchEntry = {
 };
 
 /** Where the parcel stands in the search, which keeps every parcel. */
-export function searchState(
+function searchState(
   parcel: LocalParcel,
   now: Date,
   dates?: ReminderDates,
@@ -166,7 +166,7 @@ const WAITING: readonly ParcelState[] = [
   'late',
 ];
 
-export function matchesFilter(
+function matchesFilter(
   entry: SearchEntry,
   filter: SearchFilter,
   now: Date,
@@ -205,7 +205,7 @@ export function searchEntries(
 }
 
 /** Latest first: the last parcel in or out is the one asked about. */
-export function byLatest(a: SearchEntry, b: SearchEntry): number {
+function byLatest(a: SearchEntry, b: SearchEntry): number {
   return b.at.getTime() - a.at.getTime();
 }
 

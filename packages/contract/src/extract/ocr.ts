@@ -17,11 +17,11 @@ export type OcrObservations = {
   references: Observation<string>[];
 };
 
-export const OCR_FORMAT = 'text';
+const OCR_FORMAT = 'text';
 
 /** The plausible weight of a parcel (§4.3, « cohérence métier »). */
-export const MIN_WEIGHT_KG = 0.01;
-export const MAX_WEIGHT_KG = 70;
+const MIN_WEIGHT_KG = 0.01;
+const MAX_WEIGHT_KG = 70;
 
 export const plausibleWeight = (kg: number) =>
   kg >= MIN_WEIGHT_KG && kg <= MAX_WEIGHT_KG;
@@ -213,7 +213,7 @@ const piecesOf = (index: number, total: number): Pieces | null =>
   index >= 1 && total >= 1 && index <= total ? { index, total } : null;
 
 /** §4.5 « Colis n/N » : the worded forms at rank 6, a bare « n/N » at rank 7. */
-export const ocrPieces = (text: string): Observation<Pieces>[] => {
+const ocrPieces = (text: string): Observation<Pieces>[] => {
   const found: Observation<Pieces>[] = [];
   const seen = new Set<string>();
   const add = (index: number, total: number, confidence: number) => {
@@ -234,7 +234,7 @@ export const ocrPieces = (text: string): Observation<Pieces>[] => {
 };
 
 /** §4.5 « Poids » : « KG » or « LBS » printed next to the number, kept if plausible. */
-export const ocrWeights = (text: string): Observation<number>[] => {
+const ocrWeights = (text: string): Observation<number>[] => {
   const found = new Map<string, Observation<number>>();
   for (const m of text.matchAll(WEIGHT)) {
     const kg = weightKg(m[1]);
@@ -256,7 +256,7 @@ export const ocrWeights = (text: string): Observation<number>[] => {
  * label. The carrier the codes voted for rules out the names of the others:
  * « EXPRESS SAVER » is one service at UPS, another at FedEx.
  */
-export const ocrServices = (
+const ocrServices = (
   text: string,
   carrier: TrackingContext | null = null,
 ): Observation<CarrierService>[] => {
@@ -278,7 +278,7 @@ export const ocrServices = (
 };
 
 /** §4.5 « Référence » : what follows « REF », without a shape to check (rank 7). */
-export const ocrReferences = (text: string): Observation<string>[] => {
+const ocrReferences = (text: string): Observation<string>[] => {
   const found = new Map<string, Observation<string>>();
   for (const m of text.matchAll(REFERENCE)) {
     const value = m[1]!;

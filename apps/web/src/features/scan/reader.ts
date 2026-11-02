@@ -21,7 +21,7 @@ import {
 } from '#/features/scan/extract';
 import { resolveSender } from '#/features/scan/sender';
 
-export type Symbols = DecodeResult['symbols'];
+type Symbols = DecodeResult['symbols'];
 
 export type Reading = {
   draftId: string;
@@ -42,7 +42,7 @@ const bare = (symbols: Symbols): DraftSymbol[] =>
   symbols.map(({ format, text }) => ({ format, text }));
 
 /** The second pass may read a symbol the first already had. */
-export const merge = (first: Symbols, second: Symbols): Symbols => {
+const merge = (first: Symbols, second: Symbols): Symbols => {
   const seen = new Set(first.map((s) => `${s.format}\u0000${s.text}`));
   return [
     ...first,

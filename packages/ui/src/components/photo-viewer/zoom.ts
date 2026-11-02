@@ -12,9 +12,9 @@ export const RESTING: View = { scale: 1, x: 0, y: 0 };
 /** Past four times, a phone photo of a label is only bigger noise. */
 export const MAX_SCALE = 4;
 /** A double tap brings the tapped corner close enough to read a line. */
-export const DOUBLE_TAP_SCALE = 2.5;
+const DOUBLE_TAP_SCALE = 2.5;
 
-export function clampScale(scale: number): number {
+function clampScale(scale: number): number {
   return Math.min(MAX_SCALE, Math.max(1, scale));
 }
 
@@ -57,11 +57,11 @@ export function zoomAt(view: View, scale: number, point: Point): View {
   };
 }
 
-export function distance(a: Point, b: Point): number {
+function distance(a: Point, b: Point): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-export function midpoint(a: Point, b: Point): Point {
+function midpoint(a: Point, b: Point): Point {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 

@@ -21,7 +21,7 @@ import { formatWhen } from '#/features/parcels/record';
 import { loadReminderDates } from '#/features/parcels/reminders';
 import { awaitsPickup } from '#/features/parcels/sections';
 
-export type DashboardCounts = {
+type DashboardCounts = {
   coming: number;
   /** « En souffrance » included, as in the « À retirer » counter of Colis. */
   waiting: number;
@@ -39,7 +39,7 @@ export type DashboardLine = DashboardCounts & {
   delayDays: number | null;
 };
 
-export type DashboardToSettle = {
+type DashboardToSettle = {
   id: string;
   name: string;
   department: string | null;

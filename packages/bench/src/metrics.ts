@@ -36,7 +36,7 @@ export type Timing = { n: number; p50: number | null; p95: number | null };
 
 export type FormatStats = { seen: number; carriedTracking: number };
 
-export type ScopeName =
+type ScopeName =
   'reader' | 'web-real' | 'real' | 'pdf-specimens' | 'synthetic';
 
 export type Scope = { name: ScopeName; title: string; results: LabelResult[] };

@@ -330,7 +330,7 @@ export function recipientOf(
 }
 
 /** "Réserve · Carton abîmé": the parcel came damaged and the reserve stands. */
-export function damageLine(
+function damageLine(
   parcel: LocalParcel,
   t: TranslateFn,
 ): string | undefined {
@@ -377,7 +377,7 @@ const REPLY_ROW = {
  * The recipient's answer while it holds (YSL-70): « Ce n'est pas pour moi »
  * and when, the colleague who comes, the last day away.
  */
-export function replyLine(
+function replyLine(
   parcel: LocalParcel,
   now: Date,
   t: TranslateFn,

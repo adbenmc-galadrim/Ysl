@@ -18,7 +18,7 @@ export type ProofInput = {
   height: number;
 };
 
-export function proofFileName(
+function proofFileName(
   proof: Pick<LocalHandoverProof, 'id' | 'kind'>,
 ): string {
   return `${proof.id}.${proof.kind === 'signature' ? 'png' : 'jpg'}`;
@@ -33,7 +33,7 @@ export function signedMethod(method: HandoverMethod): HandoverMethod {
 }
 
 /** The handover as it reads once it carries this proof. */
-export function withProof(
+function withProof(
   handover: LocalHandover,
   kind: HandoverProofKind,
 ): LocalHandover {

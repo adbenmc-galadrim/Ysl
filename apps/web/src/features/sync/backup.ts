@@ -1,10 +1,10 @@
 import type { CourrierDatabase, OutboxOp } from '#/features/db/schema';
 import { listWaitingChanges } from '#/features/sync/changes';
 
-export const BACKUP_FORMAT = 'courrier-secours';
-export const BACKUP_VERSION = 1;
+const BACKUP_FORMAT = 'courrier-secours';
+const BACKUP_VERSION = 1;
 
-export type BackupChange = Omit<OutboxOp, 'seq'> & {
+type BackupChange = Omit<OutboxOp, 'seq'> & {
   /** The row as this device holds it now; `null` when it is gone. */
   row: Record<string, unknown> | null;
 };

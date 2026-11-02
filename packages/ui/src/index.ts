@@ -4,7 +4,6 @@
  * Storybook composition only; the app assembles its own from the same parts.
  */
 export * from '#components/action-card';
-export * from '#components/alphabet-index';
 export * from '#components/app-mark';
 export * from '#components/avatar';
 export * from '#components/banner';
@@ -54,7 +53,6 @@ export * from '#components/nav-bar';
 export * from '#components/numbered-steps';
 export * from '#components/option-card';
 export * from '#components/page-intro';
-export * from '#components/parcel-check-row';
 export * from '#components/parcel-label';
 export * from '#components/parcel-list';
 export * from '#components/parcel-row';
@@ -72,7 +70,6 @@ export * from '#components/progress-bar';
 export * from '#components/progress-row';
 export * from '#components/proof-media';
 export * from '#components/qr-code';
-export * from '#components/result-hero';
 export * from '#components/scan-fields';
 export * from '#components/scan-scene';
 export * from '#components/screen';

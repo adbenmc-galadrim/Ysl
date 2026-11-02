@@ -5,7 +5,7 @@ import type { DecodeQueue } from '#/features/scan/decode-queue';
 export const QR_SCAN_INTERVAL_MS = 400;
 
 /** Long side of the frame handed to the Worker: a QR at arm's length stays sharp. */
-export const QR_FRAME_SIDE = 1280;
+const QR_FRAME_SIDE = 1280;
 
 /**
  * The frame on screen, shrunk: the stream films at 12 Mpx for the labels,

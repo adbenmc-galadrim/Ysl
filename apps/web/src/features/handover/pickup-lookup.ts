@@ -107,10 +107,10 @@ export type OnlineCheck = {
 };
 
 /** The longest wait for the server's verdict: past it, this iPhone decides. */
-export const SERVER_CHECK_MS = 1_500;
+const SERVER_CHECK_MS = 1_500;
 
 /** The longest wait for the rows of a code the server knows and this iPhone not. */
-export const SERVER_SYNC_MS = 5_000;
+const SERVER_SYNC_MS = 5_000;
 
 function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -132,7 +132,7 @@ function within<T>(promise: Promise<T>, ms: number): Promise<T | null> {
  * asked or not waited for: the hashes of this iPhone decide (F41). Any
  * other refusal is final here, the server is not asked.
  */
-export async function checkPickupCode(
+async function checkPickupCode(
   db: CourrierDatabase,
   kind: PickupHashKind,
   hash: string,

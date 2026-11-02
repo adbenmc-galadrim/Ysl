@@ -15,8 +15,8 @@ const meta = {
   args: {
     copy: LANDING_FR,
     appName: 'Courrier',
-    url: 'https://courrier.ysl.fr',
-    host: 'courrier.ysl.fr',
+    url: 'https://courrier.exemple.fr',
+    host: 'courrier.exemple.fr',
     version: '1.0',
     signInHref: '/connexion',
   },

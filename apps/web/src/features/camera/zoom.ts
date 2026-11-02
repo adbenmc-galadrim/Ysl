@@ -192,7 +192,7 @@ export async function cropToZoom(
 }
 
 /** How far apart two fingers are, in CSS pixels. */
-export function spread(
+function spread(
   a: Pick<Touch, 'clientX' | 'clientY'>,
   b: Pick<Touch, 'clientX' | 'clientY'>,
 ): number {

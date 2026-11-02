@@ -33,7 +33,7 @@ import { trpcClient } from '#/lib/trpc';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
-export const COMPANIES_KEY = ['platform', 'companies'];
+const COMPANIES_KEY = ['platform', 'companies'];
 
 /** The home of the app's admin: its clients, by name and figures only (D26). */
 export function CompaniesPage() {

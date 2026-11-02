@@ -26,7 +26,7 @@ type Recipient = { personId: string } | { contactId: string };
  * the mailroom and the row, so importing again finds it even when the
  * tracking has been corrected since.
  */
-export function importedParcelId(organizationId: string, row: V1Row): string {
+function importedParcelId(organizationId: string, row: V1Row): string {
   const digest = createHash('sha256')
     .update(
       [
