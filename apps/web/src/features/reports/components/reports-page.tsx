@@ -61,7 +61,7 @@ function periodLabel(period: ReportPeriod, now: Date): string {
   }
   if (period === 'quarter') {
     return t('reports.quarterOf', {
-      quarter: from.getMonth() / 3 + 1,
+      rank: from.getMonth() ? `${from.getMonth() / 3 + 1}e` : '1er',
       year: from.getFullYear(),
     });
   }

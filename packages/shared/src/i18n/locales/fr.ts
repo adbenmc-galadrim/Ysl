@@ -905,7 +905,7 @@ export const fr = {
   'reports.period.month': 'Mois',
   'reports.period.quarter': 'Trimestre',
   'reports.weekOf': 'Semaine du {{day}}',
-  'reports.quarterOf': 'Trimestre {{quarter}} de {{year}}',
+  'reports.quarterOf': '{{rank}} trimestre {{year}}',
   'reports.proof.qr': 'QR code',
   'reports.proof.pin': 'Code',
   'reports.proof.signature': 'Signature',
