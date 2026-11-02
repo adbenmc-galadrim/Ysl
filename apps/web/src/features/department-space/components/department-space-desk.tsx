@@ -32,6 +32,7 @@ import {
   takenBy,
   withinPeriod,
 } from '#/features/department-space/space';
+import { SPACE_VIEW_KEY } from '#/features/department-space/view-key';
 import { csvFile } from '#/features/exports/csv-file';
 import {
   agentNameOf,
@@ -64,8 +65,6 @@ import { useOnline } from '#/lib/use-online';
 const t = createTranslator(DEFAULT_LOCALE);
 
 const PAGE = 10;
-const VIEW_KEY = 'courrier.departement.vue';
-
 type SpaceView = {
   tab: SpaceTab;
   query: string;
@@ -89,7 +88,7 @@ const FIRST_VIEW: SpaceView = {
 function readView(): SpaceView {
   try {
     const stored = JSON.parse(
-      sessionStorage.getItem(VIEW_KEY) ?? '{}',
+      sessionStorage.getItem(SPACE_VIEW_KEY) ?? '{}',
     ) as SpaceView;
     return {
       ...FIRST_VIEW,
@@ -181,7 +180,7 @@ export function DepartmentSpaceDesk() {
   const { tab, query, page, status, arrival, period, proof } = view;
   const change = (next: Partial<SpaceView>) => {
     const merged = { ...view, ...next };
-    sessionStorage.setItem(VIEW_KEY, JSON.stringify(merged));
+    sessionStorage.setItem(SPACE_VIEW_KEY, JSON.stringify(merged));
     setView(merged);
   };
   const setPage = (next: number) => change({ page: next });
@@ -223,7 +222,7 @@ export function DepartmentSpaceDesk() {
 
   const notice = deposits && depositNotice(deposits, t);
   const banner = showsPendingBanner(sync) ? pendingBanner(sync, t) : null;
-  const toNotify = found.filter(
+  const toNotify = all.filter(
     ({ entry }) =>
       entry.row.state === 'toNotify' || entry.row.state === 'deposited',
   ).length;
