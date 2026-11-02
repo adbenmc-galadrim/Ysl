@@ -111,6 +111,9 @@ export function homeState(
       return parcel.deliveredAt && parcel.deliveredAt >= startOfDay(now)
         ? 'handedOver'
         : undefined;
+    case 'retour_prepare':
+    case 'retour_en_route':
+      return 'returning';
     case 'retourne':
       return undefined;
   }
@@ -267,8 +270,18 @@ function statusLine(
           })
         : t('parcel.status.deliveredHow', { time, how });
     }
+    case 'returning':
+      return t(
+        parcel.status === 'retour_en_route'
+          ? 'parcel.state.retour_en_route'
+          : 'parcel.state.retour_prepare',
+      );
     case 'returned':
-      return t('parcel.status.returned');
+      return t(
+        parcel.returnReason === 'lost'
+          ? 'parcel.status.lost'
+          : 'parcel.status.returned',
+      );
   }
 }
 

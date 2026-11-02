@@ -21,6 +21,8 @@ export type TourData = {
   incomplete: LocalParcel[];
   toDispatch: LocalParcel[];
   toSettle: number;
+  returnsToTake: LocalParcel[];
+  returnsCarried: LocalParcel[];
   /** The last deposit whose count left a parcel « À régulariser ». */
   lastGap?: LocalDeposit;
   deposits: LocalDeposit[];
@@ -86,6 +88,10 @@ export async function loadTour(
     incomplete: parcels.filter(({ status }) => status === 'a_completer'),
     toDispatch: parcels.filter(({ status }) => status === 'recu'),
     toSettle: parcels.filter(({ status }) => status === 'a_regulariser').length,
+    returnsToTake: parcels.filter(({ status }) => status === 'retour_prepare'),
+    returnsCarried: parcels.filter(
+      ({ status }) => status === 'retour_en_route',
+    ),
   };
 }
 

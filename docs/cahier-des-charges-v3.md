@@ -1005,9 +1005,14 @@ stateDiagram-v2
     Remis --> Depose: remise annulée, déposé, jamais notifié
     Recu --> Retourne: retour à l'expéditeur
     Notifie --> Retourne: retour à l'expéditeur
+    Depose --> Retour_prepare: retour préparé au département
+    Notifie --> Retour_prepare: retour préparé au département
+    Retour_prepare --> Retour_en_route: repris par la navette
+    Retour_en_route --> Retourne: rendu à l'expéditeur
+    Retour_prepare --> Retourne: enlevé au département
 ```
 
-« En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3).
+« En souffrance » n'est pas un statut : c'est un filtre sur les colis Notifié, calculé par une seule règle (`@repo/contract/reminders`) : deux jours ouvrés après la seconde relance, ou dès J+5 ouvré si les relances ne sont pas parties. Une relance garde le statut Notifié et ajoute « Relance envoyée » à l'historique. « Retourné » est un statut Could (L3), livré par YSL-89 : avec des tournées, un colis déposé repart par « Retour en cours » (au département) et « Retour avec la navette » ; sans navette, ou tant que le colis n'a pas été déposé, il passe directement à « Retourné ». Le motif est gardé sur le colis ; « Perdu » est un motif de `retourne` et ne se dit jamais « retourné à l'expéditeur ». Un retour ne compte plus dans les présents, ne se relance plus et ferme le code de retrait dès que plus rien n'attend cette personne dans ce département.
 
 La navette faisant office de département saute En route et Déposé. Pour le profil « e-mail au scan », voir le §3.7.9. Les relances et « En souffrance » se comptent à partir du dépôt, ou du premier avis si la navette fait office de département (§3.7.9).
 

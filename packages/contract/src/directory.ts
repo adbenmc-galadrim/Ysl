@@ -17,6 +17,8 @@ export const PARCEL_ON_MOVE: Record<ParcelStatus, MoveOutcome> = {
   a_regulariser: 'stays',
   notifie: 'follows',
   remis: 'stays',
+  retour_prepare: 'stays',
+  retour_en_route: 'stays',
   retourne: 'stays',
 };
 

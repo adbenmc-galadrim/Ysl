@@ -559,6 +559,7 @@ describe('settling a parcel', () => {
     const row = await parcelOf(id);
     expect(row.status).toBe('retourne');
     expect(row.notes).toContain('perdu');
+    expect(row.returnReason).toBe('lost');
   });
 
   it('refuses a parcel that no longer waits', async () => {

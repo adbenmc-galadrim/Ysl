@@ -21,6 +21,8 @@ export type ParcelState =
   /** Notified long enough ago that it needs chasing. */
   | 'late'
   | 'handedOver'
+  /** On its way back to the sender: at the department, or with the shuttle. */
+  | 'returning'
   /** Sent back to the sender: nothing left to do, found by the search. */
   | 'returned';
 

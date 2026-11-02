@@ -204,7 +204,14 @@ export type ParcelCounts = Partial<Record<ParcelStatus, number>>;
 
 /** The parcels under way each parameter applies to. */
 const TOUCHED_STATUSES: Record<OperatingParam, readonly ParcelStatus[]> = {
-  shuttleActsAsDepartment: ['recu', 'en_route', 'depose', 'notifie'],
+  shuttleActsAsDepartment: [
+    'recu',
+    'en_route',
+    'depose',
+    'notifie',
+    'retour_prepare',
+    'retour_en_route',
+  ],
   batchReview: ['a_completer'],
   depositConfirmation: ['en_route'],
   handoverProof: ['recu', 'en_route', 'depose', 'notifie'],

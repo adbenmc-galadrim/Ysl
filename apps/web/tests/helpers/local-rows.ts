@@ -33,6 +33,7 @@ export function parcelRow(overrides: Partial<LocalParcel> = {}): LocalParcel {
     updatedAt: NOW,
     deletedAt: null,
     batchId: null,
+    returnReason: null,
     type: 'colis',
     status: 'recu',
     statusSeq: 0,

@@ -303,6 +303,7 @@ function toParcel(
     reply: null,
     repliedAt: null,
     expectedDelegate: null,
+    returnReason: null,
     remindersPausedUntil: null,
     carrier: draft.carrier,
     tracking: draft.tracking,

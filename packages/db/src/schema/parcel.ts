@@ -1,6 +1,6 @@
 import { DAMAGE_REASONS } from '@repo/contract/parcel-damage';
 import { REPLY_KINDS } from '@repo/contract/parcel-reply';
-import { PARCEL_STATUSES } from '@repo/contract/parcel-status';
+import { PARCEL_STATUSES, RETURN_REASONS } from '@repo/contract/parcel-status';
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
@@ -95,6 +95,8 @@ export const parcel = pgTable(
     remindersPausedUntil: timestamp('reminders_paused_until', {
       withTimezone: true,
     }),
+    /** Why it goes back to its sender, or that it was lost (YSL-89); kept while it is on that road. */
+    returnReason: text('return_reason', { enum: RETURN_REASONS }),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
     receivedBy: text('received_by').notNull(),
     /** The shuttle that took this parcel over; without one, its tour is that of whoever validated it (§3.7.9). Never sent to a device. */
@@ -119,6 +121,7 @@ export const parcel = pgTable(
       .where(sql`${table.departmentId} is not null`),
     oneOf('parcel_type_check', table.type, PARCEL_TYPES),
     oneOf('parcel_status_check', table.status, PARCEL_STATUSES),
+    oneOf('parcel_return_reason_check', table.returnReason, RETURN_REASONS),
     check(
       'parcel_single_recipient',
       sql`${table.personId} is null or ${table.contactId} is null`,

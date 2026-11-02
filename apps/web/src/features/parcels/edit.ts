@@ -1,6 +1,6 @@
 import { extractFields } from '@repo/contract/extract';
 import type { ParcelEditField } from '@repo/contract/parcel-event';
-import { statusPatch } from '@repo/contract/parcel-status';
+import { leavesForSender, statusPatch } from '@repo/contract/parcel-status';
 import { normalizeTracking } from '@repo/contract/tracking';
 import { normalizeName } from '@repo/shared/text';
 import { senderReadOf } from '#/features/batch/extraction';
@@ -285,7 +285,7 @@ function keepsRecipient(
   return (
     parcel.status === 'notifie' ||
     parcel.status === 'remis' ||
-    (parcel.status === 'retourne' && parcel.notifiedAt !== null) ||
+    (leavesForSender(parcel.status) && parcel.notifiedAt !== null) ||
     ((parcel.status === 'en_route' || parcel.status === 'a_regulariser') &&
       (parcel.notifiedAt != null || parcel.lastNotifiedAt != null))
   );

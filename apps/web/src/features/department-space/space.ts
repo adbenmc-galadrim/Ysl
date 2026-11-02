@@ -78,7 +78,16 @@ export function takenBy(
   { parcel, handover }: SpaceParcel,
   t: TranslateFn,
 ): string {
-  if (parcel.status === 'retourne') return t('departmentSpace.toCarrier');
+  if (parcel.status === 'retourne') {
+    return parcel.returnReason === 'lost'
+      ? '—'
+      : t('departmentSpace.toCarrier');
+  }
+  if (parcel.status === 'retour_en_route')
+    return t('departmentSpace.toShuttle');
+  if (parcel.status === 'retour_prepare') {
+    return t('departmentSpace.waitsShuttle');
+  }
   if (!handover) return '—';
   return handover.delegateName
     ? t('departmentSpace.colleague', { name: handover.delegateName })
@@ -92,7 +101,11 @@ export function historyLine(
   me?: string,
 ): string {
   const { handover, parcel } = row;
-  if (!handover) return t(`parcel.state.${parcel.status}`);
+  if (!handover) {
+    return parcel.returnReason === 'lost'
+      ? t('parcel.state.lost')
+      : t(`parcel.state.${parcel.status}`);
+  }
   const how = methodLabel(handover.method, t);
   return handover.delegateName
     ? t('departmentSpace.line.delegate', {

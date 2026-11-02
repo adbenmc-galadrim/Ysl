@@ -8,7 +8,8 @@ export type HomeCounts = { coming: number; present: number; toSettle: number };
 /**
  * Where a parcel stands for the role homes. A status added to the contract
  * must be placed here. `recu` counts as present where the shuttle acts as
- * department. With a tour, a parcel not yet deposited is still to come.
+ * department. With a tour, a parcel not yet deposited is still to come. A
+ * return is counted nowhere: nobody collects it any more.
  */
 const BUCKET: Record<ParcelStatus, keyof HomeCounts | null> = {
   en_route: 'coming',
@@ -18,6 +19,8 @@ const BUCKET: Record<ParcelStatus, keyof HomeCounts | null> = {
   notifie: 'present',
   a_regulariser: 'toSettle',
   remis: null,
+  retour_prepare: null,
+  retour_en_route: null,
   retourne: null,
 };
 

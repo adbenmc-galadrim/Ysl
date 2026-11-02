@@ -64,6 +64,7 @@ describe('pullChanges', () => {
       limit: 200,
       departments: true,
       tourStatuses: true,
+      returnStatuses: true,
       deposits: true,
     });
     expect(await db.parcel.get(parcel.id)).toMatchObject({
@@ -110,6 +111,7 @@ describe('pullChanges', () => {
         limit: 1,
         departments: true,
         tourStatuses: true,
+        returnStatuses: true,
       deposits: true,
       },
       {
@@ -118,6 +120,7 @@ describe('pullChanges', () => {
         limit: 1,
         departments: true,
         tourStatuses: true,
+        returnStatuses: true,
       deposits: true,
       },
     ]);
@@ -264,6 +267,7 @@ describe('pullChanges', () => {
       limit: 200,
       departments: true,
       tourStatuses: true,
+      returnStatuses: true,
       deposits: true,
     });
     expect(outcome.cursor).toEqual({ generation: GENERATION, xid: 25 });
