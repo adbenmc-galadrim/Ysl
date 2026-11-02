@@ -75,7 +75,7 @@ const readWhole = (raster: Raster) =>
 const readPure = (raster: Raster) =>
   readSymbols(raster, { formats: ['MaxiCode'], isPure: true });
 
-describe('MaxiCode crop', () => {
+describe('MaxiCode crop', { timeout: 30_000 }, () => {
   beforeAll(async () => {
     await initZxingNode();
   });
@@ -85,12 +85,60 @@ describe('MaxiCode crop', () => {
     async (angle) => {
       const raster = await label(angle, 0.6, { left: 760, top: 410 });
       expect(await readWhole(raster)).toEqual([]);
-      const read = await readMaxiCode(raster, readPure);
+      const read = await readMaxiCode(raster, readPure, {
+        budgetMs: Infinity,
+      });
       expect(read).not.toBeNull();
       expect(read!.symbols[0]!.format).toBe('MaxiCode');
       expect(read!.symbols[0]!.text).toBe(EXPECTED);
     },
   );
+
+  it.each([
+    ['sheared', [1, 0.22, 0, 1]],
+    ['foreshortened', [1, 0, 0, 0.72]],
+  ] as const)('reads a %s MaxiCode, seen at an angle', async (_, matrix) => {
+    const symbol = await bwipjs.toBuffer(RENDER);
+    const { data, info } = await sharp(symbol)
+      .flatten({ background: '#ffffff' })
+      .extend({
+        top: 40,
+        bottom: 40,
+        left: 40,
+        right: 40,
+        background: '#ffffff',
+      })
+      .resize({ width: 520 })
+      .affine([...matrix] as [number, number, number, number], {
+        background: '#ffffff',
+        interpolator: 'bicubic',
+      })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const raster = {
+      data: new Uint8ClampedArray(data),
+      width: info.width,
+      height: info.height,
+    };
+    const read = await readMaxiCode(raster, readPure, { budgetMs: Infinity });
+    expect(read?.symbols[0]?.text).toBe(EXPECTED);
+  });
+
+  it('gives up once the budget is spent on an unreadable symbol', async () => {
+    const raster = await label(15, 0.6, { left: 300, top: 300 });
+    let reads = 0;
+    const read = await readMaxiCode(
+      raster,
+      () => {
+        reads++;
+        return Promise.resolve([]);
+      },
+      { budgetMs: 0 },
+    );
+    expect(read).toBeNull();
+    expect(reads).toBe(0);
+  });
 
   it('locates the bullseye where the symbol was placed', async () => {
     const raster = await label(45, 0.6, { left: 200, top: 150 });

@@ -252,6 +252,47 @@ depuis les annotations d'une moitié du corpus, relire l'autre, compter O4 et O3
 après. La courbe (0,30 + 0,20 par confirmation, plafond 0,90, 0,89 pour un destinataire)
 est un point de départ à recaler sur ce chiffre.
 
+## MaxiCode : comparaison des détecteurs (YSL-85, 02/11/2026)
+
+20 étiquettes UPS du corpus (12 synthèse, 4 web, 4 réelles, viseur simulé). Une lecture compte si le code lu donne le bon numéro de suivi. La synthèse est régénérée avant les deux mesures, pour que ses poids suivent la règle en kilos.
+
+| Détecteur                      | Licence    |         Poids ajouté | Synthèse |   Web | Réelles |       Total |
+| ------------------------------ | ---------- | -------------------: | -------: | ----: | ------: | ----------: |
+| zxing-wasm, image entière      | MIT        |              déjà là |   0 / 12 | 0 / 4 |   0 / 4 |      0 / 20 |
+| rxing-wasm 0.5.8               | Apache 2.0 |       2,4 Mo de wasm |   0 / 12 | 0 / 4 |   0 / 4 |      0 / 20 |
+| @zxing/library 0.23            | Apache 2.0 | 11,9 Mo décompressés |   0 / 12 | 0 / 4 |   0 / 4 |      0 / 20 |
+| Maison + zxing-wasm, **avant** | MIT        |              déjà là |   9 / 12 | 1 / 4 |   2 / 4 |     12 / 20 |
+| Maison + zxing-wasm, **après** | MIT        |    aucune dépendance |  10 / 12 | 1 / 4 |   3 / 4 | **14 / 20** |
+
+- Retenu : le détecteur maison, avec zxing-wasm pour décoder le symbole redressé. Aucun mix : les autres options gratuites n'ajoutent aucune lecture, et rien n'est envoyé hors de l'appareil.
+- rxing-wasm échoue aussi sur un symbole bwip-js propre (témoin) : le paquet publié ne lit pas le MaxiCode, ou nos réglages ne le permettent pas. @zxing/library rend 5 textes faux sur 20 images, aucun bon suivi.
+- Ajouts : ellipse de la cible, redressement, perspective, déformation locale, trois seuillages, plusieurs départs d'échelle. Après 2 s de recherche, aucun nouvel essai n'est lancé ; l'essai en cours se termine, la localisation n'est pas comptée.
+- Comparatif rxing-wasm et @zxing/library et grille d'inclinaison joués par des scripts jetables, non conservés ; `pnpm --filter @repo/bench maxicode` rejoue les lignes zxing et maison.
+- Échecs restants : 2 synthèses à fort flou, 1 photo réelle avec reflet, 3 images web (cible non trouvée sur 2 : miniature trop petite, et une étiquette sans MaxiCode annoté ; code net mais non décodé sur la 3e, cause non établie).
+
+Grille de synthèse hors corpus (un symbole, 9 vues par inclinaison, net) :
+
+| Inclinaison |    0° |   10° |   20° |   30° |   40° |   50° |
+| ----------- | ----: | ----: | ----: | ----: | ----: | ----: |
+| Avant       | 6 / 9 | 1 / 9 | 0 / 9 | 0 / 9 | 0 / 9 | 0 / 9 |
+| Après       | 9 / 9 | 8 / 9 | 3 / 9 | 3 / 9 | 3 / 9 | 0 / 9 |
+
+Banc complet, 252 étiquettes, avant → après :
+
+| Mesure                                                                              | `first`              | `thorough`              |
+| ----------------------------------------------------------------------------------- | -------------------- | ----------------------- |
+| Tracking juste                                                                      | 157 → 157            | 159 → 159               |
+| Transporteur juste                                                                  | 124 → 124            | 124 → 124               |
+| n/N juste                                                                           | 39 → 39              | 50 → 52                 |
+| Poids juste                                                                         | 41 → 41              | 52 → 54                 |
+| Faux sûrs, tous champs                                                              | 6 → 6                | 6 → 6                   |
+| MaxiCode lu                                                                         | 2 → 2                | 12 → 14                 |
+| Autres symbologies (Code 128, Code 39, ITF, EAN-13, Data Matrix, Aztec, PDF417, QR) | identiques           | identiques              |
+| Décodage p50 / p95                                                                  | 20 / 79 → 19 / 92 ms | 99 / 548 → 108 / 612 ms |
+| Décodage maximum                                                                    | 839 → 913 ms         | 980 → 1 446 ms          |
+
+`first` s'arrête au premier code lu, avant la passe MaxiCode : le gain vient de la seconde passe de l'app, limitée aux formats attendus d'UPS, que le banc ne reproduit pas. Corpus petit : 2 lectures de plus sur 20, à confirmer sur de vraies photos du service.
+
 ## Relancer
 
 ```sh
