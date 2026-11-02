@@ -18,6 +18,7 @@ import { useDamagePhotoUrls } from '#/features/damage/api/damage-photos';
 import { AnnulerRemiseSheet } from '#/features/handover/components/annuler-remise-sheet';
 import { proofLabels } from '#/features/handover/confirmation';
 import { handoverSyncOf } from '#/features/handover/entry';
+import { isWaiting } from '#/features/handover/waiting';
 import { proofMediaItems, useProofUrls } from '#/features/handover/proof-urls';
 import { liftDamage } from '#/features/damage/report';
 import { db } from '#/features/db/database';
@@ -279,6 +280,12 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
     ));
 
   const { action, damage, ...shown } = view;
+  // The shuttle hands over from its home; the department, from the record too.
+  const handOver =
+    access.handsOver &&
+    !access.receives &&
+    action?.kind !== 'notify' &&
+    isWaiting(record.parcel, record.tour === true);
   const handoverId = (record.handover ?? record.cancelledHandover)?.id;
   const cancellable =
     handoverSyncOf(
@@ -380,10 +387,14 @@ export function ParcelRecordView({ parcelId }: { parcelId: string }) {
             ? t('record.action.notify')
             : action?.kind === 'dispatch' && access.receives
               ? t('record.action.dispatch')
-              : undefined
+              : handOver
+                ? t('colis.handover')
+                : undefined
       }
       onPrimaryAction={
-        action?.kind === 'notify'
+        handOver
+          ? () => void navigate({ to: '/remise' })
+          : action?.kind === 'notify'
           ? () =>
               void navigate({
                 to: '/notifier',

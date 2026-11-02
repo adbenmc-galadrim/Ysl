@@ -2,6 +2,7 @@ import { toUserRole } from '@repo/contract/auth';
 import { useSession } from '#/features/auth/api/use-session';
 import { receives } from '#/features/auth/route-access';
 import { ReprendreLot } from '#/features/batch/components/reprendre-lot';
+import { DepartmentSpaceDesk } from '#/features/department-space/components/department-space-desk';
 import { ColisHome } from '#/features/parcels/components/colis-home';
 import { useOnDesk } from '#/features/shell/components/use-work-path';
 
@@ -12,6 +13,7 @@ export function ColisPage() {
   const onDesk = useOnDesk();
   // The scan is on the phone (D23): nothing to resume from a computer role's desk.
   const scansHere = receives(role) && !onDesk;
+  if (onDesk && role === 'department') return <DepartmentSpaceDesk />;
   return (
     <>
       <ColisHome />

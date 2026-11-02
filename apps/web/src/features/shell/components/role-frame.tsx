@@ -4,7 +4,7 @@ import { CompanyShell } from '@repo/ui';
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
-import { hasDesk } from '#/features/auth/route-access';
+import { type AccountRole, hasDesk } from '#/features/auth/route-access';
 import { useDeskShell } from '#/features/shell/components/use-desk-shell';
 import {
   activeDeskEntry,
@@ -17,14 +17,16 @@ const t = createTranslator(DEFAULT_LOCALE);
 
 function DeskFrame({
   pathname,
+  role,
   children,
 }: {
   pathname: string;
+  role: AccountRole;
   children: ReactNode;
 }) {
   const navigate = useNavigate();
   const { companyCrumb, ...shell } = useDeskShell();
-  const active = activeDeskEntry(pathname);
+  const active = activeDeskEntry(pathname, role);
   const entry = shell.nav
     .flatMap((section) => section.items)
     .find((item) => item.id === active);
@@ -57,9 +59,12 @@ export function RoleFrame({ children }: { children: ReactNode }) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
+  const role = toUserRole(session.user.role);
   if (
     !desk ||
-    !hasDesk(toUserRole(session.user.role)) ||
+    !hasDesk(role) ||
+    // The department's Colis draws the shell around its own search.
+    (role === 'department' && (pathname === '/' || pathname === '/colis')) ||
     pathname.startsWith(DESK_PATH.annuaire) ||
     pathname.startsWith(DESK_PATH.comptes) ||
     pathname === '/reglages/identite' ||
@@ -67,5 +72,9 @@ export function RoleFrame({ children }: { children: ReactNode }) {
   ) {
     return <>{children}</>;
   }
-  return <DeskFrame pathname={pathname}>{children}</DeskFrame>;
+  return (
+    <DeskFrame pathname={pathname} role={role}>
+      {children}
+    </DeskFrame>
+  );
 }

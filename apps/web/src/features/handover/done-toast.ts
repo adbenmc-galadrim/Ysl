@@ -1,3 +1,4 @@
+import type { TranslateFn } from '@repo/shared/i18n';
 import { useEffect, useSyncExternalStore } from 'react';
 
 /** How long « Déjà remis à Nora par un collègue » stays over Colis. */
@@ -19,6 +20,22 @@ export type HandoverToast =
       kind: 'cancelled';
       count: number;
     };
+
+/** The words of the toast, on Colis of every role and on the department's computer. */
+export function handoverToastMessage(
+  toast: HandoverToast,
+  t: TranslateFn,
+): string {
+  if (toast.kind === 'cancelled') {
+    return toast.count > 1
+      ? t('handover.cancel.done.many', { count: toast.count })
+      : t('handover.cancel.done.one');
+  }
+  const by = toast.byMe ? 'mine' : 'colleague';
+  return toast.firstName
+    ? t(`handover.conflict.${by}`, { name: toast.firstName })
+    : t(`handover.conflict.${by}.unnamed`);
+}
 
 let current: HandoverToast | undefined;
 const listeners = new Set<() => void>();

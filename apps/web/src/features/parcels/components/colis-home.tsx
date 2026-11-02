@@ -1,3 +1,4 @@
+import { toUserRole } from '@repo/contract/auth';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import {
   Banner,
@@ -16,8 +17,9 @@ import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
 import { NO_DEPARTMENT } from '#/features/dashboard/figures';
 import { db } from '#/features/db/database';
+import { depositNotice } from '#/features/department-space/space';
 import {
-  type HandoverToast,
+  handoverToastMessage,
   useHandoverToast,
 } from '#/features/handover/done-toast';
 import {
@@ -33,6 +35,7 @@ import {
 } from '#/features/parcels/api/use-parcels';
 import { ColisSelection } from '#/features/parcels/components/colis-selection';
 import { assignRecipient } from '#/features/parcels/complete';
+import { goesOnTour } from '#/features/parcels/tour';
 import { useFoldedSections } from '#/features/parcels/folded-sections';
 import {
   type CounterId,
@@ -41,6 +44,8 @@ import {
   sectionId,
   sectionTitles,
   summarize,
+  summarizeDepartment,
+  toDepartmentSections,
   toSections,
 } from '#/features/parcels/sections';
 import type { Selection } from '#/features/parcels/selection';
@@ -54,19 +59,11 @@ import {
 import { useSync } from '#/features/sync/use-sync';
 import { applyUpdate, useUpdate } from '#/features/update/updater';
 import { useDelayedPending } from '#/lib/use-delayed-pending';
+import { homeCounts } from '#/features/shell/home-counts';
+import { useOwnDepartmentName } from '#/features/shell/components/use-desk-shell';
 import { useOnDesk } from '#/features/shell/components/use-work-path';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-function conflictMessage({
-  firstName,
-  byMe,
-}: Extract<HandoverToast, { kind: 'conflict' }>): string {
-  const by = byMe ? 'mine' : 'colleague';
-  return firstName
-    ? t(`handover.conflict.${by}`, { name: firstName })
-    : t(`handover.conflict.${by}.unnamed`);
-}
 
 const NOBODY: ReadonlyMap<string, string | null> = new Map();
 
@@ -76,6 +73,23 @@ export function ColisHome() {
   const access = useAccess();
   // The scan is on the phone (D23): the computer roles do not get it here.
   const onDesk = useOnDesk();
+  const isDepartment = toUserRole(session.user.role) === 'department';
+  const ownDepartment = useOwnDepartmentName();
+  const deposits = useLiveQuery(
+    () => (isDepartment ? db.deposit.toArray() : []),
+    [isDepartment],
+  );
+  const deposit = deposits && depositNotice(deposits, t);
+  const spaceCounts = useLiveQuery(
+    async () =>
+      isDepartment
+        ? homeCounts(
+            await db.parcel.filter((row) => !row.deletedAt).toArray(),
+            await goesOnTour(db),
+          )
+        : undefined,
+    [isDepartment],
+  );
   const sync = useSync();
   const update = useUpdate();
   const handed = useHandoverToast();
@@ -139,7 +153,9 @@ export function ColisHome() {
   const labelled = banner !== null;
   const sections = useMemo(
     () =>
-      toSections(filterRows(parcels ?? [], counter)).map((section) => ({
+      (isDepartment ? toDepartmentSections : toSections)(
+        filterRows(parcels ?? [], counter),
+      ).map((section) => ({
         ...section,
         ...(sectionId(section.title) === 'toNotify' && {
           action: (
@@ -229,6 +245,7 @@ export function ColisHome() {
           ),
       })),
     [
+      isDepartment,
       parcels,
       counter,
       labelled,
@@ -248,6 +265,81 @@ export function ColisHome() {
     : handover;
   const searchParcels = () => void navigate({ to: '/recherche' });
 
+  // Whatever else is going on: from the phone, this is the way to the deposits.
+  const depositBanner = deposit ? (
+    <Banner
+      tone="orange"
+      icon="truck"
+      title={deposit.title}
+      description={deposit.action}
+      onClick={() =>
+        void (deposit.depositId
+          ? navigate({
+              to: '/departement/depots/$depositId',
+              params: { depositId: deposit.depositId },
+            })
+          : navigate({ to: '/departement/depots' }))
+      }
+      classNames={{
+        root: 'h-16 py-[11px]',
+        description: 'mt-[3px] leading-4 font-semibold',
+      }}
+    />
+  ) : undefined;
+  const otherNotice =
+    !banner && mails?.stale ? (
+      <Banner
+        tone="orange"
+        icon="mail"
+        title={
+          mails.stale === 1
+            ? t('mails.stale.one')
+            : t('mails.stale.many', { count: mails.stale })
+        }
+        description={t('mails.stale.description')}
+        onClick={() =>
+          void navigate({
+            to: '/reglages/e-mails',
+            search: { filtre: 'toConfirm' },
+          })
+        }
+        classNames={{
+          root: 'h-16 py-[11px]',
+          description: 'mt-[3px] leading-4',
+        }}
+      />
+    ) : !banner && toRemind > 0 ? (
+      <Banner
+        tone="orange"
+        icon="clock"
+        title={
+          toRemind === 1
+            ? t('colis.remind.one')
+            : t('colis.remind.many', { count: toRemind })
+        }
+        description={t('colis.remind.description')}
+        onClick={() => void navigate({ to: '/relances' })}
+        classNames={{
+          root: 'h-16 py-[11px]',
+          description: 'mt-[3px] leading-4',
+        }}
+      />
+    ) : banner ? (
+      <Banner
+        tone={banner.tone}
+        icon={banner.icon}
+        title={banner.title}
+        description={banner.description}
+        onClick={() => void navigate({ to: '/reglages/synchronisation' })}
+        // Penpot fixes the orange card at 64 px; the red title runs on
+        // two lines and needs the card to grow.
+        classNames={{
+          root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
+          description: 'mt-[3px] leading-4',
+        }}
+      />
+    ) : undefined;
+
   if (selecting) {
     return (
       <ColisSelection
@@ -265,13 +357,15 @@ export function ColisHome() {
       <ColisScreen
         sync={syncPill(sync)}
         summary={
-          counted
-            ? [departmentName, summarize(rows)].filter(Boolean).join(' · ')
-            : t('colis.summary.loading')
+          !counted
+            ? t('colis.summary.loading')
+            : spaceCounts
+              ? summarizeDepartment(spaceCounts, ownDepartment)
+              : [departmentName, summarize(rows)].filter(Boolean).join(' · ')
         }
         sections={sections}
         counters={
-          empty
+          empty || isDepartment
             ? undefined
             : counters(rows, counter).map(({ id, label, count }) => ({
                 label,
@@ -285,72 +379,31 @@ export function ColisHome() {
           const id = sectionId(title);
           if (id) toggleFolded(id);
         }}
-        notice={
-          !banner && mails?.stale ? (
-            <Banner
-              tone="orange"
-              icon="mail"
-              title={
-                mails.stale === 1
-                  ? t('mails.stale.one')
-                  : t('mails.stale.many', { count: mails.stale })
-              }
-              description={t('mails.stale.description')}
-              onClick={() =>
-                void navigate({
-                  to: '/reglages/e-mails',
-                  search: { filtre: 'toConfirm' },
-                })
-              }
-              classNames={{
-                root: 'h-16 py-[11px]',
-                description: 'mt-[3px] leading-4',
-              }}
-            />
-          ) : !banner && toRemind > 0 ? (
-            <Banner
-              tone="orange"
-              icon="clock"
-              title={
-                toRemind === 1
-                  ? t('colis.remind.one')
-                  : t('colis.remind.many', { count: toRemind })
-              }
-              description={t('colis.remind.description')}
-              onClick={() => void navigate({ to: '/relances' })}
-              classNames={{
-                root: 'h-16 py-[11px]',
-                description: 'mt-[3px] leading-4',
-              }}
-            />
-          ) : banner ? (
-            <Banner
-              tone={banner.tone}
-              icon={banner.icon}
-              title={banner.title}
-              description={banner.description}
-              onClick={() => void navigate({ to: '/reglages/synchronisation' })}
-              // Penpot fixes the orange card at 64 px; the red title runs on
-              // two lines and needs the card to grow.
-              classNames={{
-                root: banner.tone === 'orange' ? 'h-16 py-[11px]' : undefined,
-                description: 'mt-[3px] leading-4',
-              }}
-            />
+        footer={
+          isDepartment && !empty ? (
+            <Button
+              variant="link"
+              className="mx-auto mt-6 mb-4 block text-15 font-semibold"
+              onClick={() => void navigate({ to: '/departement/historique' })}
+            >
+              {t('departmentSpace.history.link')}
+            </Button>
           ) : undefined
+        }
+        notice={
+          depositBanner && otherNotice ? (
+            <div className="flex flex-col gap-3">
+              {depositBanner}
+              {otherNotice}
+            </div>
+          ) : (
+            (depositBanner ?? otherNotice)
+          )
         }
         loading={loading}
         toast={
           handed ? (
-            <Toast
-              message={
-                handed.kind === 'cancelled'
-                  ? handed.count > 1
-                    ? t('handover.cancel.done.many', { count: handed.count })
-                    : t('handover.cancel.done.one')
-                  : conflictMessage(handed)
-              }
-            />
+            <Toast message={handoverToastMessage(handed, t)} />
           ) : update.offered ? (
             <Toast
               message={t('update.available')}
@@ -421,6 +474,15 @@ export function ColisHome() {
                 }
               >
                 {t('colis.empty.handover')}
+              </Button>
+            )}
+            {isDepartment && (
+              <Button
+                variant="link"
+                className="text-16 font-semibold"
+                onClick={() => void navigate({ to: '/departement/historique' })}
+              >
+                {t('departmentSpace.history.link')}
               </Button>
             )}
           </EmptyState>

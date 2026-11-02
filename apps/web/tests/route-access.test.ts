@@ -106,6 +106,8 @@ describe('areaOf', () => {
     ['/reglages/annuaire', 'directory'],
     ['/reglages/affiche-qr', 'directory'],
     ['/departement/depots', 'departmentSpace'],
+    ['/departement/historique', 'departmentSpace'],
+    ['/departement/lieu', 'departmentSpace'],
     ['/tableau-de-bord/regulariser', 'dashboard'],
     ['/tournee/abc/depot', 'tour'],
     ['/reglages/fonctionnement', 'companySettings'],

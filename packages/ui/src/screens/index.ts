@@ -51,9 +51,24 @@ export * from '#screens/remise/signature-screen';
 export * from '#screens/multi-entreprises/01-premier-lancement-et-connexion/connexion-screen';
 export type { Company } from '#fixtures/multi-entreprises';
 export * from '#screens/multi-entreprises/03-accueil/company-suspended-screen';
+export * from '#screens/multi-entreprises/20-reglages-du-compte/lieu-lecture-screen';
+export {
+  DepartementColisDesktop,
+  type DepartementColisDesktopProps,
+  DepartementDesktop,
+  type DepartementFilter,
+  type DepartementParcelPanelProps,
+  type DepartementParcelRow,
+} from '#screens/multi-entreprises/03-accueil/departement-colis-screen';
+export {
+  type DepartementHistoryRow,
+  HistoriqueDesktop,
+  type HistoriqueDesktopProps,
+  type HistoriqueDay,
+  HistoriqueMobile,
+} from '#screens/multi-entreprises/10-colis/departement-colis-screen';
 export * from '#screens/multi-entreprises/03-accueil/entreprises-screen';
 export * from '#screens/multi-entreprises/03-accueil/navette-tournee-screen';
-export * from '#screens/multi-entreprises/03-accueil/role-home-screen';
 export * from '#screens/multi-entreprises/03-accueil/vue-d-ensemble-screen';
 export {
   DepartmentDepositMobile,

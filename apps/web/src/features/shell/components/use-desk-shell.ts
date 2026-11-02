@@ -11,6 +11,9 @@ import {
   logoUrl,
   useCompanySettings,
 } from '#/features/settings/use-company-settings';
+import { isPending } from '#/features/parcels/deposit';
+import { goesOnTour } from '#/features/parcels/tour';
+import { homeCounts } from '#/features/shell/home-counts';
 import { DESK_PATH, deskNav, type DeskEntry } from '#/features/shell/role-nav';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -37,6 +40,22 @@ export function useDeskShell(): Pick<
   const { logoId } = useCompanySettings();
   const role = toUserRole(session.user.role);
   const own = useOwnDepartmentName();
+  const counts = useLiveQuery(
+    async () =>
+      role === 'department'
+        ? {
+            present: homeCounts(
+              await db.parcel.filter((row) => !row.deletedAt).toArray(),
+              await goesOnTour(db),
+            ).present,
+            toConfirm: await db.deposit.filter(isPending).count(),
+            people: await db.directoryPerson
+              .filter((row) => !row.deletedAt)
+              .count(),
+          }
+        : undefined,
+    [role],
+  );
   const department = role === 'department' ? own : '';
   const roleName = role ? t(`auth.role.${role}`) : '';
   return {
@@ -46,7 +65,7 @@ export function useDeskShell(): Pick<
       initials: initialsOf(company),
       logoUrl: logoUrl(logoId),
     },
-    nav: deskNav(role, t),
+    nav: deskNav(role, t, { name: own, ...counts }),
     account: {
       initials: initialsOf(session.user.name),
       name: session.user.name,

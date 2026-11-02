@@ -3,14 +3,11 @@ import type { ReactNode } from 'react';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
 import { Chip } from '#components/chip';
-import { CompanyShell, DeskPageHeader } from '#components/company-shell';
-import { DeskFilterButton } from '#components/desk-filter';
 import {
   DeskTable,
   type DeskTableColumn,
   DeskTablePagination,
 } from '#components/desk-table';
-import { DeskTabs } from '#components/desk-tabs';
 import { IconButton } from '#components/icon-button';
 import { IconTile, type IconTileProps } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
@@ -25,83 +22,26 @@ import {
 import { Screen } from '#components/screen';
 import { SearchField } from '#components/search-field';
 import { StatusDot, type StatusDotProps } from '#components/status-dot';
-import { ACCOUNT, COMPANY, crumbs, DEPARTMENT_NAV } from '#fixtures/multi-entreprises';
 import { Icon, type IconName } from '#icons';
 import { cn } from '#lib/tv';
+import {
+  DepartementDesktop,
+  type DepartementDesktopProps,
+  DeskEmpty,
+} from '#screens/multi-entreprises/03-accueil/departement-colis-screen';
 
-type Handover = {
+export type DepartementHistoryRow = {
   id: string;
   recipient: string;
   tone: StatusDotProps['tone'];
   status: string;
   to: string;
-  proof?: { icon: IconName; label: string; width: number };
+  proof?: { icon: IconName; label: string };
   by: string;
   when: string;
 };
 
-const HANDOVERS: Handover[] = [
-  {
-    id: 'malik',
-    recipient: 'Malik Benali',
-    tone: 'green',
-    status: 'Remis',
-    to: 'Malik Benali',
-    proof: { icon: 'qr', label: 'QR code', width: 76.2 },
-    by: 'Julie Perrin',
-    when: 'Aujourd’hui, 11:05',
-  },
-  {
-    id: 'axelle',
-    recipient: 'Axelle Bernard',
-    tone: 'green',
-    status: 'Remis',
-    to: 'Axelle Bernard',
-    proof: { icon: 'hash', label: 'Code', width: 56.4 },
-    by: 'Thomas Moreau',
-    when: 'Aujourd’hui, 9:58',
-  },
-  {
-    id: 'romain',
-    recipient: 'Romain Garnier',
-    tone: 'green',
-    status: 'Remis',
-    to: 'Lucie Hamel (collègue)',
-    proof: { icon: 'sign', label: 'Signature', width: 89.4 },
-    by: 'Julie Perrin',
-    when: 'Hier, 17:12',
-  },
-  {
-    id: 'paul',
-    recipient: 'Paul Roy',
-    tone: 'green',
-    status: 'Remis',
-    to: 'Paul Roy',
-    proof: { icon: 'qr', label: 'QR code', width: 76.2 },
-    by: 'Julie Perrin',
-    when: 'Hier, 16:40',
-  },
-  {
-    id: 'clara',
-    recipient: 'Clara Sennet',
-    tone: 'red',
-    status: 'À régulariser',
-    to: '—',
-    by: 'Karim Daoud',
-    when: 'Lun., 10:58',
-  },
-  {
-    id: 'yves',
-    recipient: 'Yves Morin',
-    tone: 'grey',
-    status: 'Retourné',
-    to: 'Transporteur',
-    by: 'Julie Perrin',
-    when: 'Ven., 15:00',
-  },
-];
-
-const HISTORY_COLUMNS: DeskTableColumn<Handover>[] = [
+const HISTORY_COLUMNS: DeskTableColumn<DepartementHistoryRow>[] = [
   {
     key: 'recipient',
     header: 'Destinataire',
@@ -129,8 +69,7 @@ const HISTORY_COLUMNS: DeskTableColumn<Handover>[] = [
     cell: (h) =>
       h.proof ? (
         <span
-          className="mt-[2.5px] flex h-[22px] items-center gap-1 rounded-[4px] bg-fill pl-1.5 text-12 font-medium text-ink-2"
-          style={{ width: h.proof.width }}
+          className="mt-[2.5px] inline-flex h-[22px] items-center gap-1 rounded-[4px] bg-fill px-1.5 text-12 font-medium text-ink-2"
         >
           <Icon name={h.proof.icon} size={14} />
           {h.proof.label}
@@ -147,57 +86,47 @@ const HISTORY_COLUMNS: DeskTableColumn<Handover>[] = [
   },
 ];
 
+export type HistoriqueDesktopProps = Omit<DepartementDesktopProps, 'children'> & {
+  rows: DepartementHistoryRow[];
+  range: string;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  onRow?: (id: string) => void;
+  empty?: { title: string; description: string };
+};
+
 /** The department's past handovers: who took what, with which proof. */
-export function HistoriqueDesktop() {
+export function HistoriqueDesktop({
+  rows,
+  range,
+  onPrevious,
+  onNext,
+  onRow,
+  empty,
+  ...page
+}: HistoriqueDesktopProps) {
   return (
-    <CompanyShell
-      company={COMPANY.studio}
-      nav={DEPARTMENT_NAV}
-      active="colis"
-      account={ACCOUNT.department}
-      breadcrumb={crumbs('Studio', 'Colis', 'Historique')}
-    >
-      <DeskPageHeader
-        title="Colis"
-        subtitle="Studio · Bât. A, 2e étage, accueil"
-        actions={
-          <Button
-            variant="outline"
-            size="desk"
-            icon="download"
-            className="w-[104px] justify-start"
-          >
-            Exporter
-          </Button>
-        }
-      />
-      <DeskTabs
-        label="Colis du département"
-        active="historique"
-        className="mt-2"
-        tabs={[
-          { id: 'a-venir', label: 'À venir 6', width: 53 },
-          { id: 'presents', label: 'Présents 12', width: 69 },
-          { id: 'historique', label: 'Historique' },
-        ]}
-      />
-      <div className="mt-[15px] flex gap-2">
-        <DeskFilterButton
-          label="Période"
-          value="30 derniers jours"
-          className="w-[190px]"
+    <DepartementDesktop {...page}>
+      {empty ? (
+        <DeskEmpty {...empty} />
+      ) : (
+        <DeskTable
+          label="Historique des remises"
+          className="mt-3"
+          columns={HISTORY_COLUMNS}
+          rows={rows}
+          rowKey={(h) => h.id}
+          onRowClick={(h) => onRow?.(h.id)}
+          footer={
+            <DeskTablePagination
+              range={range}
+              onPrevious={onPrevious}
+              onNext={onNext}
+            />
+          }
         />
-        <DeskFilterButton label="Preuve" value="Toutes" className="w-[120px]" />
-      </div>
-      <DeskTable
-        label="Historique des remises"
-        className="mt-3"
-        columns={HISTORY_COLUMNS}
-        rows={HANDOVERS}
-        rowKey={(h) => h.id}
-        footer={<DeskTablePagination range="1–6 sur 214" />}
-      />
-    </CompanyShell>
+      )}
+    </DepartementDesktop>
   );
 }
 
@@ -213,41 +142,69 @@ function DayLabel({ children, className }: { children: ReactNode; className?: st
   );
 }
 
+export type HistoriqueDay = {
+  title: string;
+  rows: {
+    id: string;
+    title: string;
+    line: string;
+    /** Left out of the handed over: held back, or back with the carrier. */
+    closed?: 'toSettle' | 'returned';
+  }[];
+};
+
+export type HistoriqueMobileProps = {
+  title: string;
+  days: HistoriqueDay[];
+  empty?: string;
+  onBack?: () => void;
+  onRow?: (id: string) => void;
+};
+
 /** The same record on the phone, by day. */
-export function HistoriqueMobile() {
+export function HistoriqueMobile({
+  title,
+  days,
+  empty,
+  onBack,
+  onRow,
+}: HistoriqueMobileProps) {
   return (
     <Screen>
-      <NavBar title="Historique" />
-      <DayLabel className="mt-4">Aujourd’hui</DayLabel>
-      <div className="mt-2">
-        <PhoneRow
-          leading={<DoneTile />}
-          title="Malik Benali"
-          lines={['QR code · par Julie']}
-          separator
-        />
-        <PhoneRow
-          leading={<DoneTile />}
-          title="Axelle Bernard"
-          lines={['Code · par Thomas']}
-          separator
-        />
-      </div>
-      <DayLabel className="mt-3">Hier</DayLabel>
-      <div className="mt-2">
-        <PhoneRow
-          leading={<DoneTile />}
-          title="Romain Garnier"
-          lines={['Retiré par Lucie Hamel · signature']}
-          separator
-        />
-        <PhoneRow
-          leading={<DoneTile />}
-          title="Paul Roy"
-          lines={['QR code · par Julie']}
-          separator
-        />
-      </div>
+      <NavBar title={title} onBack={onBack} />
+      {days.length === 0 && (
+        <p className="mt-10 text-center text-15 text-muted">{empty}</p>
+      )}
+      {days.map((day, index) => (
+        <div key={day.title}>
+          <DayLabel className={index === 0 ? 'mt-4' : 'mt-3'}>{day.title}</DayLabel>
+          <div className="mt-2">
+            {day.rows.map((row, rowIndex) => (
+              <button
+                key={row.id}
+                type="button"
+                className="block w-full cursor-pointer text-left"
+                onClick={() => onRow?.(row.id)}
+              >
+                <PhoneRow
+                  leading={
+                    row.closed === 'toSettle' ? (
+                      <IconTile icon="alert" tone="fill" className="bg-red/12 text-red" />
+                    ) : row.closed === 'returned' ? (
+                      <IconTile icon="undo" tone="fill" />
+                    ) : (
+                      <DoneTile />
+                    )
+                  }
+                  title={row.title}
+                  lines={[row.line]}
+                  separator={rowIndex < day.rows.length - 1 || index < days.length - 1}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </Screen>
   );
 }
