@@ -272,7 +272,7 @@ Lots : voir §10. Le MVP correspond aux lots L0 à L2.
 | F51 | Export CSV lisible dans Excel (`;`, BOM, cellules neutralisées contre les formules) | Repris (F20) | M | L1 |
 | F52 | Import de l'historique v1 (format CSV v1), avec revalidation des trackings par les clés de contrôle | Nouveau | M | L1 |
 | F53 | Purge automatique selon les durées de conservation | Nouveau (point ouvert v1) | M | L2 |
-| F54 | Emplacement de stockage du colis (étagère, casier) | Nouveau | S | L3 |
+| F54 | Emplacement de stockage du colis (étagère, casier) au point de réception du département : saisi au dépôt ou par le département, montré à la remise, effacé si le colis change de département | Nouveau | S | L3 |
 | F55 | Étiquette interne imprimable (nom, service, emplacement, code-barres) | Nouveau | C | L3 |
 | F56 | Lettres recommandées : type dédié, n° d'AR, signature facultative (D6) | Nouveau | S | L3 |
 | F57 | Vues ordinateur : tableau des colis, revue, annuaire, rapports (délai de retrait, volumes par transporteur et par jour) ; en L2 pour le département et l'admin entreprise (§3.7.7, §3.7.8) | Nouveau | S | L2 |
