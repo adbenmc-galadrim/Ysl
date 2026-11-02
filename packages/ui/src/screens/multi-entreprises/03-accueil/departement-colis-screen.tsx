@@ -1,17 +1,21 @@
-
+import type { ReactNode } from 'react';
 
 import { Banner } from '#components/banner';
 import { BottomBar } from '#components/bottom-bar';
 import { Button } from '#components/button';
-import { CompanyShell, DeskPageHeader } from '#components/company-shell';
+import {
+  CompanyShell,
+  type CompanyShellProps,
+  DeskPageHeader,
+} from '#components/company-shell';
 import { DeskFilterButton } from '#components/desk-filter';
 import {
   DeskTable,
   type DeskTableColumn,
   DeskTablePagination,
 } from '#components/desk-table';
-import { DeskTabs } from '#components/desk-tabs';
-import { DetailsList } from '#components/details-list';
+import { type DeskTab, DeskTabs } from '#components/desk-tabs';
+import { DetailsList, type DetailsItem } from '#components/details-list';
 import { IconButton } from '#components/icon-button';
 import { IconTile } from '#components/icon-tile';
 import { LargeTitle } from '#components/large-title';
@@ -21,16 +25,23 @@ import { SearchTrigger } from '#components/search-field';
 import { SectionHeader } from '#components/section-header';
 import { StatusDot } from '#components/status-dot';
 import { StatusPill, SYNC_PILL } from '#components/status-pill';
-import {
-  ACCOUNT,
-  COMPANY,
-  crumbs,
-  DEPARTMENT_NAV,
-  type StudioParcel,
-} from '#fixtures/multi-entreprises';
 import { Icon } from '#icons';
+import { cn } from '#lib/tv';
 
-const COLUMNS: DeskTableColumn<StudioParcel>[] = [
+export type DepartementParcelRow = {
+  id: string;
+  recipient: string;
+  /** `late` draws the orange dot, `present` the blue one, `coming` the grey one. */
+  state: 'present' | 'late' | 'coming';
+  status: string;
+  carrier: string;
+  tracking: string;
+  arrived: string;
+};
+
+const DOT_TONE = { present: 'blue', late: 'orange', coming: 'grey' } as const;
+
+const COLUMNS: DeskTableColumn<DepartementParcelRow>[] = [
   {
     key: 'recipient',
     header: 'Destinataire',
@@ -44,8 +55,9 @@ const COLUMNS: DeskTableColumn<StudioParcel>[] = [
     cell: (p) => (
       <StatusDot
         size="sm"
-        tone={p.state === 'late' ? 'orange' : 'blue'}
+        tone={DOT_TONE[p.state]}
         label={p.status}
+        className={p.state === 'coming' ? '[&>span:first-child]:bg-muted' : undefined}
       />
     ),
   },
@@ -65,148 +77,263 @@ const COLUMNS: DeskTableColumn<StudioParcel>[] = [
   },
 ];
 
-function ParcelPanelLabel() {
-  return (
-    <div className="relative mt-5 h-[170px] rounded-[16px] bg-kraft px-5 pt-3.5">
-      <div className="h-[142px] rounded-[4px] bg-paper pt-2.5 pl-3">
-        <p className="text-[10px] leading-3 font-semibold text-label-ink-3">
-          Destinataire :
-        </p>
-        <p className="mt-1 font-label text-24 font-bold text-label-ink">
-          C. MOREL
-        </p>
-        <p className="mt-1 text-[9px] leading-3 text-label-line">
-          12 RUE DES ATELIERS
-          <br />
-          75011 PARIS FR
-        </p>
-      </div>
-      <span className="absolute top-[130px] left-[288px] flex size-7 items-center justify-center rounded-full bg-white text-black">
-        <Icon name="zoom" size={14} />
-      </span>
-    </div>
-  );
-}
+export type DepartementParcelPanelProps = {
+  recipient: string;
+  place: string;
+  details: DetailsItem[];
+  onClose?: () => void;
+  /** The whole record, with its actions. */
+  onOpen?: () => void;
+  openLabel: string;
+  /** Offered while the recipient has not collected. */
+  onRemind?: () => void;
+  remindLabel?: string;
+};
 
-function ParcelPanel() {
+/** No label photo: it stays on the shuttle's iPhone (D8, §3.7.9). */
+function ParcelPanel({
+  recipient,
+  place,
+  details,
+  onClose,
+  onOpen,
+  openLabel,
+  onRemind,
+  remindLabel,
+}: DepartementParcelPanelProps) {
   return (
-    <aside className="relative flex h-[560px] w-[360px] shrink-0 flex-col rounded-desk border border-separator p-[15px]">
+    <aside className="relative flex w-[360px] shrink-0 flex-col rounded-desk border border-separator p-[15px]">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-16 font-bold">Camille Morel</h2>
-          <p className="mt-[3px] text-12 text-muted">Studio · poste 214</p>
+          <h2 className="text-16 font-bold">{recipient}</h2>
+          <p className="mt-[3px] text-12 text-muted">{place}</p>
         </div>
-        <Icon name="x" size={16} className="text-muted" />
+        <button
+          type="button"
+          aria-label="Fermer"
+          onClick={onClose}
+          className="cursor-pointer text-muted"
+        >
+          <Icon name="x" size={16} />
+        </button>
       </div>
-      <ParcelPanelLabel />
       <div className="-mx-[15px] mt-4 h-px bg-separator" />
-      <DetailsList
-        variant="desk"
-        className="mt-3.5"
-        items={[
-          { label: 'Suivi', value: '1Z E63 44W 04 9923 0622' },
-          { label: 'Arrivé', value: '10:56, dépôt de Karim' },
-          { label: 'E-mail', value: 'Délivré à 10:58' },
-          { label: 'Code de retrait', value: '4821' },
-        ]}
-      />
+      <DetailsList variant="desk" className="mt-3.5" items={details} />
+      {onRemind && remindLabel && (
+        <Button
+          variant="outline"
+          size="desk"
+          icon="bell"
+          className="mt-[33px] w-full justify-start"
+          onClick={onRemind}
+        >
+          {remindLabel}
+        </Button>
+      )}
       <Button
         variant="outline"
         size="desk"
-        icon="bell"
-        className="mt-[33px] w-full justify-start"
+        className={cn('w-full', onRemind ? 'mt-2' : 'mt-[33px]')}
+        onClick={onOpen}
       >
-        Relancer
+        {openLabel}
       </Button>
     </aside>
   );
 }
 
-export type DepartementColisDesktopProps = {
-  parcels: StudioParcel[];
-  activeParcel: string;
+export type DepartementFilter = {
+  label: string;
+  value: string;
+  choices: readonly { value: string; label: string }[];
+  selected: string;
+  onSelect: (value: string) => void;
+  className?: string;
+};
+
+export type DepartementDesktopProps = Pick<
+  CompanyShellProps,
+  'company' | 'nav' | 'account' | 'onNavigate' | 'search' | 'searchPlaceholder'
+> & {
+  breadcrumb: CompanyShellProps['breadcrumb'];
+  subtitle: string;
+  tabs: DeskTab[];
+  activeTab: string;
+  onTab?: (id: string) => void;
+  filters: DepartementFilter[];
+  onExport?: () => void;
+  exportNote?: string;
+  /** On a computer the employee's QR is out of reach: code or name only (D23). */
+  onHandover?: () => void;
+  /** The deposit waiting to be counted. */
+  deposit?: {
+    title: string;
+    description: string;
+    action: string;
+    onAction?: () => void;
+  };
+  children: ReactNode;
+};
+
+/** What every tab of the department's computer page shares. */
+export function DepartementDesktop({
+  subtitle,
+  tabs,
+  activeTab,
+  onTab,
+  filters,
+  onExport,
+  exportNote,
+  onHandover,
+  deposit,
+  children,
+  ...shell
+}: DepartementDesktopProps) {
+  return (
+    <CompanyShell {...shell} active="colis">
+      <DeskPageHeader
+        title="Colis"
+        subtitle={subtitle}
+        actions={
+          <div className="flex items-center gap-2">
+            {exportNote && (
+              <span className="text-13 text-muted">{exportNote}</span>
+            )}
+            {onHandover && (
+              <Button
+                variant="outline"
+                size="desk"
+                icon="qr"
+                className="justify-start"
+                onClick={onHandover}
+              >
+                Remettre
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="desk"
+              icon="download"
+              className="w-[104px] justify-start"
+              onClick={onExport}
+            >
+              Exporter
+            </Button>
+          </div>
+        }
+      />
+      {deposit && (
+        <Banner
+          tone="orange"
+          icon="truck"
+          iconSize={18}
+          title={deposit.title}
+          description={deposit.description}
+          className="h-14 shrink-0 gap-2.5 rounded-desk py-0 pr-4 pl-4"
+          classNames={{
+            title: 'mt-[9px] text-14',
+            description: 'mt-[3px] text-13 leading-4',
+          }}
+          action={
+            <Button size="desk" className="w-[136px]" onClick={deposit.onAction}>
+              {deposit.action}
+            </Button>
+          }
+        />
+      )}
+      <DeskTabs
+        label="Colis du département"
+        active={activeTab}
+        onChange={onTab}
+        className={deposit ? 'mt-4' : 'mt-2'}
+        tabs={tabs}
+      />
+      <div className="mt-[15px] flex gap-2">
+        {filters.map((filter) => (
+          <DeskFilterButton key={filter.label} {...filter} />
+        ))}
+      </div>
+      {children}
+    </CompanyShell>
+  );
+}
+
+export type DepartementColisDesktopProps = Omit<
+  DepartementDesktopProps,
+  'children'
+> & {
+  label: string;
+  parcels: DepartementParcelRow[];
+  range: string;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  empty?: { title: string; description: string };
+  activeParcel?: string;
+  onParcel?: (id: string) => void;
+  panel?: DepartementParcelPanelProps;
 };
 
 /**
  * The department's home on the computer: the deposit waiting for its count,
- * the parcels present, and the record of the row that is open.
+ * the parcels of the tab, and the record of the row that is open.
  */
 export function DepartementColisDesktop({
+  label,
   parcels,
+  range,
+  onPrevious,
+  onNext,
+  empty,
   activeParcel,
+  onParcel,
+  panel,
+  ...page
 }: DepartementColisDesktopProps) {
   return (
-    <CompanyShell
-      company={COMPANY.studio}
-      nav={DEPARTMENT_NAV}
-      active="colis"
-      account={ACCOUNT.department}
-      breadcrumb={crumbs('Studio', 'Colis')}
-      searchPlaceholder="Nom, suivi, transporteur"
-    >
-      <DeskPageHeader
-        title="Colis"
-        subtitle="Studio · Bât. A, 2e étage, accueil"
-        actions={
-          <Button
-            variant="outline"
-            size="desk"
-            icon="download"
-            className="w-[104px] justify-start"
-          >
-            Exporter
-          </Button>
-        }
-      />
-      <Banner
-        tone="orange"
-        icon="truck"
-        iconSize={18}
-        title="Karim a posé 6 colis à 10:56"
-        description="Comptez-les puis confirmez : les salariés seront prévenus."
-        className="h-14 shrink-0 gap-2.5 rounded-desk py-0 pr-4 pl-4"
-        classNames={{
-          title: 'mt-[9px] text-14',
-          description: 'mt-[3px] text-13 leading-4',
-        }}
-        action={
-          <Button size="desk" className="w-[136px]">
-            Confirmer le dépôt
-          </Button>
-        }
-      />
-      <DeskTabs
-        label="Colis du département"
-        active="presents"
-        className="mt-4"
-        tabs={[
-          { id: 'a-venir', label: 'À venir 6', width: 53 },
-          { id: 'presents', label: 'Présents 12', width: 73 },
-          { id: 'historique', label: 'Historique' },
-        ]}
-      />
-      <div className="mt-[15px] flex gap-2">
-        <DeskFilterButton label="Statut" value="Tous" className="w-[110px]" />
-        <DeskFilterButton
-          label="Arrivé"
-          value="Cette semaine"
-          className="w-[170px]"
-        />
-      </div>
-      <div className="mt-3 flex items-start gap-4">
-        <DeskTable
-          label="Colis présents"
-          className="w-[776px] shrink-0"
-          columns={COLUMNS}
-          rows={parcels}
-          rowKey={(p) => p.id}
-          selectable
-          activeRow={activeParcel}
-          footer={<DeskTablePagination range="1–5 sur 12" />}
-        />
-        <ParcelPanel />
-      </div>
-    </CompanyShell>
+    <DepartementDesktop {...page}>
+      {empty ? (
+        <DeskEmpty {...empty} />
+      ) : (
+        <div className="mt-3 flex items-start gap-4">
+          <DeskTable
+            label={label}
+            className="min-w-0 flex-1"
+            shrink
+            columns={COLUMNS}
+            rows={parcels}
+            rowKey={(p) => p.id}
+            activeRow={activeParcel}
+            onRowClick={(p) => onParcel?.(p.id)}
+            footer={
+              <DeskTablePagination
+                range={range}
+                onPrevious={onPrevious}
+                onNext={onNext}
+              />
+            }
+          />
+          {panel && <ParcelPanel {...panel} />}
+        </div>
+      )}
+    </DepartementDesktop>
+  );
+}
+
+export function DeskEmpty({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mt-24 flex flex-col items-center text-center">
+      <span className="flex size-[72px] items-center justify-center rounded-full bg-fill">
+        <Icon name="inbox" size={32} />
+      </span>
+      <h2 className="mt-5 text-18 font-bold">{title}</h2>
+      <p className="relative -top-px mt-2 text-13 text-muted">{description}</p>
+    </div>
   );
 }
 

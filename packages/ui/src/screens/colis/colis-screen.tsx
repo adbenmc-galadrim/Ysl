@@ -52,6 +52,8 @@ export type ColisScreenProps = {
   onToggleSection?: (title: string) => void;
   /** Replaces the sections, e.g. with an empty state. */
   children?: ReactNode;
+  /** Under the list, e.g. the way to what left it. */
+  footer?: ReactNode;
   onMenu?: () => void;
   /** Shows « Sélectionner » beside the menu: the list turns into checkboxes. */
   onSelect?: () => void;
@@ -77,6 +79,7 @@ export function ColisScreen({
   folded,
   onToggleSection,
   children,
+  footer,
   onMenu,
   onSelect,
   onSearch,
@@ -145,6 +148,7 @@ export function ColisScreen({
           scroller={scroller}
         />
       )}
+      {footer}
     </Screen>
   );
 }
