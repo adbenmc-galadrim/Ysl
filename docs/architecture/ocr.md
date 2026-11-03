@@ -29,11 +29,14 @@ gardé en plan B derrière la même interface.
   qui suit une ancre (`DESTINATAIRE`, `SHIP TO`, `DELIVER TO`, `CONSIGNEE`, `À :`…) ou le
   reste de cette ligne, si elle ressemble à un nom de personne (2 à 4 mots en lettres, sans
   chiffre, sans forme juridique ni mot de voie, civilités retirées) ; jamais au-delà d'une
-  ancre d'expéditeur ; `null` plutôt qu'une supposition sans ancre.
+  ancre d'expéditeur ; `null` plutôt qu'une supposition sans ancre. En dernier recours, un
+  seul mot d'au moins 8 lettres sur la ligne de l'ancre : l'OCR a perdu les espaces
+  (`SHIPTO: TEAMLAVERGNE`).
 - `sender.ts` : `senderFromLines`, le nom de l'expéditeur (société ou personne, 1 à 6 mots,
   au moins trois lettres, sans ligne d'adresse, de téléphone ni de référence) sous une
   ancre d'expéditeur (`EXPÉDITEUR`, `EXP`, `FROM`, `SHIPPER`, `SENDER`, `SHIP FROM`,
-  `ABSENDER`, `RETURN ADDRESS`, `RETOUR`), jamais au-delà d'une ancre de destinataire.
+  `ABSENDER`, `RETURN ADDRESS`, `RETOUR`, mais pas la mention UPS `RETURN SERVICE`), jamais
+  au-delà d'une ancre de destinataire.
 - `blocks.ts` : ce que les deux lecteurs partagent (repli des accents, ancres, listes de
   mots de voie et de formes juridiques, découpe des lignes).
 - `vite.ts` : `ocrVite()`, tout ce que la config Vite de l'app doit savoir (voir plus bas).
