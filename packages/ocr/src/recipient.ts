@@ -14,6 +14,7 @@ import {
 } from '#blocks';
 
 const WORD = /^[A-Z][A-Z'.-]*$/;
+const GLUED_NAME = /^[A-Z][A-Z'-]{7,}$/;
 
 /**
  * A person's name as a label prints it: two to four words made of letters,
@@ -123,14 +124,37 @@ function aroundLandmarks(lines: readonly { text: string }[]): string | null {
 }
 
 /**
+ * A name whose spaces the OCR lost (`SHIPTO: TEAMLAVERGNE`): one long word
+ * right after a recipient anchor, never on the lines below it, where a lone
+ * word is as likely a city. Long enough to leave out most single words.
+ */
+function gluedAfterAnchor(lines: readonly { text: string }[]): string | null {
+  for (const { text } of lines) {
+    const words = wordsOf(text);
+    const anchor = RECIPIENT_ANCHORS.exec(words.map(fold).join(' '));
+    if (!anchor) continue;
+    const rest = afterAnchor(words, anchor[0]).trim();
+    const folded = fold(rest);
+    if (!GLUED_NAME.test(folded) || HOST_COMPANY.test(folded)) continue;
+    if (COMPANY_WORDS.has(folded) || STREET_WORDS.has(folded)) continue;
+    return rest;
+  }
+  return null;
+}
+
+/**
  * The recipient's name read by OCR alone, before the directory: the rest
  * of a recipient anchor's line or one of the lines after it; without an
- * anchor, the v1 landmarks (`CONTACT`, the host company, its street).
- * `null` rather than a guess when none shows, so a wrong name is never
- * presented.
+ * anchor, the v1 landmarks (`CONTACT`, the host company, its street); last,
+ * a glued name on an anchor's line. `null` rather than a guess when none
+ * shows, so a wrong name is never presented.
  */
 export function recipientFromLines(
   lines: readonly { text: string }[],
 ): string | null {
-  return afterRecipientAnchor(lines) ?? aroundLandmarks(lines);
+  return (
+    afterRecipientAnchor(lines) ??
+    aroundLandmarks(lines) ??
+    gluedAfterAnchor(lines)
+  );
 }
