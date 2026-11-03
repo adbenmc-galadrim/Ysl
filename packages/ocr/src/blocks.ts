@@ -12,9 +12,12 @@ export const fold = (text: string) =>
 export const RECIPIENT_ANCHORS =
   /^(?:(?:DESTINATAIRE|DELIVER(?:Y)? (?:TO|ADDRESS)|SHIP(?:PING)? ?(?:TO|ADDRESS)|CONSIGNEE|RECIPIENT|LIVRER A|ADRESSE DE LIVRAISON|A L'ATTENTION DE|ATTN)\b\s*:?|(?:A|TO)\s*:)\s*/;
 
-/** Labels that announce the sender block (§4.5: `FROM`, `SHIPPER`, `EXPÉDITEUR`). */
+/**
+ * Labels that announce the sender block (§4.5: `FROM`, `SHIPPER`, `EXPÉDITEUR`).
+ * UPS prints « RETURN SERVICE », a service, never a sender.
+ */
 export const SENDER_ANCHORS =
-  /^(?:EXPEDITEUR|EXP|ABSENDER|MITTENTE|REMITENTE|SHIPPER|SENDER|SHIP(?:PED)? FROM|FROM|RETURN(?: TO| ADDRESS)?|RETOUR)\b\s*:?\s*/;
+  /^(?:EXPEDITEUR|EXP|ABSENDER|MITTENTE|REMITENTE|SHIPPER|SENDER|SHIP(?:PED)? FROM|FROM|RETURN(?: TO| ADDRESS)?(?! SERVICE)|RETOUR)\b\s*:?\s*/;
 
 /**
  * The host company and its street as the OCR reads them (v1 `RE_CO`,
