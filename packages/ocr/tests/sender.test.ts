@@ -73,4 +73,19 @@ describe('senderFromLines', () => {
       ),
     ).toBe('Frölich & Kaufmann');
   });
+
+  it('takes no UPS « RETURN SERVICE » mention for a sender anchor', () => {
+    expect(
+      senderFromLines(
+        lines(
+          'BILLING: F/C RECETVER F4154A RS',
+          'RETURN SERVICE- PAYMENT GUARANTEED DESC: Sample',
+          'Reference No.1: F4154A',
+        ),
+      ),
+    ).toBeNull();
+    expect(senderFromLines(lines('RETURN TO: Metalworks SpA'))).toBe(
+      'Metalworks SpA',
+    );
+  });
 });

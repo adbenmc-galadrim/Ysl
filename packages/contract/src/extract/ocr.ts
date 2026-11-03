@@ -46,7 +46,8 @@ const WORDED_PIECES =
 /** « 1/3 » on its own, as long as nothing makes it a date or a fraction of more. */
 const BARE_PIECES = /(?<![\d/.,:-])(\d{1,2})\/(\d{1,2})(?![\d/.,:-])/g;
 
-const WEIGHT = /(?<![\d.,])(\d{1,3}(?:[.,]\d{1,3})?\s*(?:KGS?|LBS?))\b/g;
+/** Glued to a letter (`DAVNI20 KG`), a number belongs to a word, not a weight. */
+const WEIGHT = /(?<![\dA-Z.,])(\d{1,3}(?:[.,]\d{1,3})?\s*(?:KGS?|LBS?))\b/g;
 
 const REFERENCE =
   /\bREF(?:ERENCE)?(?![A-Z])\.?\s*(?:N[O°]\.?\s*|#\s*|:\s*)?[:#]?\s*([A-Z0-9][A-Z0-9/-]{2,})\b/g;

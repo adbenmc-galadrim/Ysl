@@ -57,6 +57,14 @@ describe('observeOcr — weight', () => {
     expect(ocr('WT KG').weightKg).toBeNull();
   });
 
+  it('ignores a number glued to a word, as in a street name', () => {
+    const { weightKg } = ocr(
+      '3KG 10F1\nACOTCNOL VIALEONARDODAVNI20 KG SH P::4154AS OPN SHPW:3KG',
+    );
+    expect(weightKg).toMatchObject({ value: 3, flags: [] });
+    expect(weightKg?.candidates).toHaveLength(1);
+  });
+
   it('takes the kilograms and the pounds of one label as one weight', () => {
     const { weightKg } = ocr('WT 1.2 KG (2.6 LBS)');
     expect(weightKg).toMatchObject({ value: 1.2, flags: [] });

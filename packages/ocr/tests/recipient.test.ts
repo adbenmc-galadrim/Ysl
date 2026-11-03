@@ -64,6 +64,44 @@ describe('recipientFromLines', () => {
     ).toBeNull();
   });
 
+  it('keeps the glued name of an anchor line when nothing better shows', () => {
+    expect(
+      recipientFromLines(
+        lines(
+          'DAT:280CT2026',
+          'SHIPTO: TEAMLAVERGNE',
+          '0033170706949',
+          'YSL',
+          'STRCELRAE',
+          '50 PAR',
+          'FRANCE',
+        ),
+      ),
+    ).toBe('TEAMLAVERGNE');
+    expect(
+      recipientFromLines(
+        lines('SHIP TO: TEAMLAVERGNE', 'Camille MOREL', '75007 PARIS'),
+      ),
+    ).toBe('Camille MOREL');
+    expect(
+      recipientFromLines(
+        lines('SHIP TO: TEAMLAVERGNE', 'CONTACT : Hugo Lefèvre'),
+      ),
+    ).toBe('Hugo Lefèvre');
+  });
+
+  it('refuses a short, company or address word on the anchor line', () => {
+    for (const rest of [
+      'ACME',
+      'WAREHOUSE',
+      'SAINTLAURENT',
+      'FRANCE',
+      '75007',
+    ]) {
+      expect(recipientFromLines(lines(`SHIP TO: ${rest}`))).toBeNull();
+    }
+  });
+
   it('never takes the host company for the person', () => {
     expect(
       recipientFromLines(
