@@ -77,6 +77,16 @@ async function rowsLeft(
 
 /** A row in every table a company can fill, so an empty purge would not pass. */
 async function seedEverything(organizationId: string, userId: string) {
+  await db.insert(schema.scanReport).values({
+    id: newId(),
+    organizationId,
+    userId,
+    report: {},
+    imageType: 'image/jpeg',
+    image: Buffer.from([0xff, 0xd8, 0xff]),
+    imageBytes: 3,
+    imageSha256: 'x',
+  });
   const departmentId = newId();
   await db.insert(schema.department).values({
     id: departmentId,
