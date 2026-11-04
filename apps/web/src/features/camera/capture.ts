@@ -4,8 +4,8 @@ type ImageCaptureConstructor = new (
 ) => ImageCaptureLike;
 
 /** Stored labels: JPEG on the long side of 1 600 px, quality 0.8 (§6.6). */
-const PHOTO_MAX_SIDE = 1600;
-const PHOTO_QUALITY = 0.8;
+export const PHOTO_MAX_SIDE = 1600;
+export const PHOTO_QUALITY = 0.8;
 
 const imageCaptures = new WeakMap<MediaStreamTrack, ImageCaptureLike>();
 

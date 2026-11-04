@@ -46,6 +46,8 @@ export type ReadText = {
   kept: boolean;
   /** True when the OCR failed; the draft keeps what the codes gave. */
   failed: boolean;
+  /** The engine's whole output, for a scan report (test phase, D32); null when skipped or failed. */
+  ocr: OcrResult | null;
 };
 
 /** One reading per draft at a time: a screen remounted mid-OCR joins it. */
@@ -99,6 +101,7 @@ async function skip(db: CourrierDatabase, draftId: string): Promise<ReadText> {
     ocrLines: [],
     kept,
     failed: false,
+    ocr: null,
   };
 }
 
@@ -163,6 +166,7 @@ async function read(
       ocrLines: result.lines,
       kept,
       failed: false,
+      ocr: result,
     };
   } catch {
     const kept = await updateDraft(db, draftId, { ocrState: 'failed' }).catch(
@@ -177,6 +181,7 @@ async function read(
       ocrLines: [],
       kept,
       failed: true,
+      ocr: null,
     };
   }
 }

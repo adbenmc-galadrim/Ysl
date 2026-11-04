@@ -134,6 +134,11 @@ describe('readDraft', () => {
     const reading = await readDraft(db, queue, draft.id, first, clone);
 
     expect(calls).toEqual([undefined, { expect: ['MaxiCode'] }]);
+    expect(reading.passes.map((pass) => pass.expect)).toEqual([
+      null,
+      ['MaxiCode'],
+    ]);
+    expect(reading.passes[1]!.symbols[0]!.format).toBe('MaxiCode');
     expect(reading.kept).toBe(true);
     expect(reading.trackingNorm).toBe('1ZE6344W0499230622');
     expect(reading.symbols.map((s) => s.format)).toEqual([
