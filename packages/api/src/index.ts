@@ -2,6 +2,14 @@ export { appRouter, type AppRouter } from '#root';
 export { createTRPCContext } from '#lib/trpc';
 export { logoFile } from '#features/company/logo';
 export { runPurge } from '#features/maintenance/purge';
+export {
+  acknowledgeScanReport,
+  listScanReports,
+  saveScanReport,
+  scanReportDetail,
+  scanReportImage,
+} from '#features/scan-reports/service';
+export type { SaveOutcome } from '#features/scan-reports/service';
 export { brevoMailer } from '#features/mail/brevo';
 export { drainEmailOutbox, enqueueEmail } from '#features/mail/queue';
 export { mailRound } from '#features/mail/round';
