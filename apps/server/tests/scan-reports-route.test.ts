@@ -191,6 +191,11 @@ describe('sending a report', () => {
     ['with readings that are not an object', form({ report: '[1]' })],
     ['without an image', form({ image: null })],
     ['with a comment too long', form({ comment: 'a'.repeat(2001) })],
+    [
+      'with a NUL Postgres refuses, in the readings',
+      form({ report: '{"raw":"a\\u0000b"}' }),
+    ],
+    ['with a NUL Postgres refuses, in the comment', form({ comment: 'a\0b' })],
   ])('refuses a report %s', async (_, body) => {
     const { route, save } = app();
 
@@ -226,6 +231,31 @@ describe('sending a report', () => {
 
     now = SCAN_REPORT_RATE.windowMs;
     expect((await from('agent-1', 102)).status).toBe(201);
+  });
+
+  it('reads two uploads at a time, all accounts together', async () => {
+    const { route, save } = app();
+    let release = () => undefined as void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    save.mockImplementation(async () => {
+      await held;
+      return 'created';
+    });
+    const id = (n: number) => `0195f3a2-7b1c-7d4e-8f00-00000000010${n}`;
+
+    const first = send(route, form({ id: id(1) }));
+    const second = send(route, form({ id: id(2) }));
+    await vi.waitFor(() => expect(save).toHaveBeenCalledTimes(2));
+    const third = await send(route, form({ id: id(3) }));
+    expect(third.status).toBe(503);
+    expect(third.headers.get('retry-after')).toBe('30');
+
+    release();
+    expect((await first).status).toBe(201);
+    expect((await second).status).toBe(201);
+    expect((await send(route, form({ id: id(4) }))).status).toBe(201);
   });
 
   it('is off without the key, like everything here', async () => {

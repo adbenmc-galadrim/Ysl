@@ -31,6 +31,9 @@ export const SCAN_REPORT_PENDING_MAX_BYTES = 1024 * 1024 * 1024;
 /** Uploads per account in a sliding window. */
 export const SCAN_REPORT_RATE = { max: 20, windowMs: 10 * 60_000 } as const;
 
+/** Uploads read at once, all accounts together: each holds its image in memory. */
+export const SCAN_REPORT_UPLOADS_AT_ONCE = 2;
+
 /** The parts of the `multipart/form-data` upload. */
 export const SCAN_REPORT_FIELDS = {
   /** A UUID chosen by the phone: a resent upload is the same report. */

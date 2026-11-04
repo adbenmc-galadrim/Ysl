@@ -6,6 +6,7 @@ import {
   SCAN_REPORT_IMAGE_MAX_BYTES,
   SCAN_REPORT_JSON_MAX_BYTES,
   SCAN_REPORT_RATE,
+  SCAN_REPORT_UPLOADS_AT_ONCE,
   scanReportBody,
   scanReportId,
   type ScanReportBody,
@@ -101,6 +102,59 @@ export function scanReportsRoute({
     await next();
   });
 
+  const receive = async (c: Context, from: ReportSender) => {
+    const form = await c.req.parseBody().catch(() => null);
+    if (!form) return refuse(c, 400, 'invalid');
+    const id = scanReportId.safeParse(form[SCAN_REPORT_FIELDS.id]);
+    const text = form[SCAN_REPORT_FIELDS.report];
+    const comment = form[SCAN_REPORT_FIELDS.comment] ?? '';
+    const image = form[SCAN_REPORT_FIELDS.image];
+    if (
+      !id.success ||
+      typeof text !== 'string' ||
+      typeof comment !== 'string' ||
+      !(image instanceof File)
+    ) {
+      return refuse(c, 400, 'invalid');
+    }
+    if (
+      Buffer.byteLength(text) > SCAN_REPORT_JSON_MAX_BYTES ||
+      image.size > SCAN_REPORT_IMAGE_MAX_BYTES
+    ) {
+      return refuse(c, 413, 'too_large');
+    }
+    // Postgres refuses the NUL character in `text` and `jsonb`: a 400, not a 500.
+    if (
+      comment.length > SCAN_REPORT_COMMENT_MAX_LENGTH ||
+      comment.includes('\0') ||
+      /\\u0000/i.test(text)
+    ) {
+      return refuse(c, 400, 'invalid');
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return refuse(c, 400, 'invalid');
+    }
+    const report = scanReportBody.safeParse(parsed);
+    if (!report.success) return refuse(c, 400, 'invalid');
+
+    const outcome = await store.save({
+      id: id.data,
+      userId: from.userId,
+      organizationId: from.organizationId,
+      report: report.data,
+      comment: comment.trim() || null,
+      image: Buffer.from(await image.arrayBuffer()),
+    });
+    const status = SAVED[outcome];
+    return status < 300
+      ? c.json({ id: id.data }, status, NO_STORE)
+      : c.json({ error: outcome }, status, NO_STORE);
+  };
+
+  let reading = 0;
   route.post(
     '/',
     bodyLimit({
@@ -119,56 +173,25 @@ export function scanReportsRoute({
           'Retry-After': String(SCAN_REPORT_RATE.windowMs / 1000),
         });
       }
-
-      const form = await c.req.parseBody().catch(() => null);
-      if (!form) return refuse(c, 400, 'invalid');
-      const id = scanReportId.safeParse(form[SCAN_REPORT_FIELDS.id]);
-      const text = form[SCAN_REPORT_FIELDS.report];
-      const comment = form[SCAN_REPORT_FIELDS.comment] ?? '';
-      const image = form[SCAN_REPORT_FIELDS.image];
-      if (
-        !id.success ||
-        typeof text !== 'string' ||
-        typeof comment !== 'string' ||
-        !(image instanceof File)
-      ) {
-        return refuse(c, 400, 'invalid');
+      // The VPS has no swap: a few images in memory at a time, whoever sends them.
+      if (reading >= SCAN_REPORT_UPLOADS_AT_ONCE) {
+        return c.json({ error: 'busy' }, 503, {
+          ...NO_STORE,
+          'Retry-After': '30',
+        });
       }
-      if (
-        Buffer.byteLength(text) > SCAN_REPORT_JSON_MAX_BYTES ||
-        image.size > SCAN_REPORT_IMAGE_MAX_BYTES
-      ) {
-        return refuse(c, 413, 'too_large');
-      }
-      if (comment.length > SCAN_REPORT_COMMENT_MAX_LENGTH) {
-        return refuse(c, 400, 'invalid');
-      }
-      let parsed: unknown;
+      reading += 1;
       try {
-        parsed = JSON.parse(text);
-      } catch {
-        return refuse(c, 400, 'invalid');
+        return await receive(c, from);
+      } finally {
+        reading -= 1;
       }
-      const report = scanReportBody.safeParse(parsed);
-      if (!report.success) return refuse(c, 400, 'invalid');
-
-      const outcome = await store.save({
-        id: id.data,
-        userId: from.userId,
-        organizationId: from.organizationId,
-        report: report.data,
-        comment: comment.trim() || null,
-        image: Buffer.from(await image.arrayBuffer()),
-      });
-      const status = SAVED[outcome];
-      return status < 300
-        ? c.json({ id: id.data }, status, NO_STORE)
-        : c.json({ error: outcome }, status, NO_STORE);
     },
   );
 
   const pc = new Hono();
   pc.use('*', async (c, next) => {
+    // `key` is set: the 404 above answered otherwise.
     if (!isWebhookAuthorized(c.req.header('authorization'), key!)) {
       return c.body(null, 401);
     }

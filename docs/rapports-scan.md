@@ -38,8 +38,8 @@ de l'app (D26) ; un test vérifie qu'aucun routeur tRPC ne lit la table.
 
 ## Routes
 
-Toutes sous `https://ysl-api.shinseo.fr/api/scan-reports`, toutes en `Cache-Control:
-no-store`.
+Toutes sous `https://ysl-api.shinseo.fr/api/scan-reports` ; les rapports, les images et
+les réponses de l'envoi partent en `Cache-Control: no-store`.
 
 ### Envoi, depuis l'iPhone
 
@@ -63,6 +63,7 @@ no-store`.
 | 404 | fonction éteinte (pas de clé) | abandonne |
 | 413 `too_large`, 415 `type` | image trop lourde, pas une image | abandonne |
 | 429 `rate_limited` | 20 envois par compte et par 10 minutes ; `Retry-After` | réessaie plus tard |
+| 503 `busy` | deux envois déjà en lecture sur le serveur ; `Retry-After` | réessaie plus tard |
 | 507 `full` | plafond du serveur atteint | réessaie plus tard |
 
 ### Récupération, depuis le PC
