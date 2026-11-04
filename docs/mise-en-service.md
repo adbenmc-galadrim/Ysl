@@ -132,6 +132,10 @@ reprendre avant de retirer la v1, sinon ils sont perdus.
 2. Dans l'app, avec le compte admin entreprise : Réglages › Importer l'historique v1,
    choisir le fichier.
 3. Lire le rapport : colis importés, ignorés, trackings signalés. Un rejeu n'ajoute rien.
+   La colonne `departement` de la v1 donne au colis d'un contact le département de ce nom ;
+   un colis de l'annuaire suit la fiche. Un mot qui ne nomme pas le département retenu
+   reste dans les notes (« Département dans la v1 : … »). Créer les départements avant
+   l'import pour en profiter.
 4. Vérifier dans Colis quelques colis connus, et la ligne « Importé de la v1 » dans leur
    historique.
 

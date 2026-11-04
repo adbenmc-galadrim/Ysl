@@ -46,6 +46,14 @@ Un statut par opération, dans l'ordre envoyé :
 | 409    | doublon sur une clé naturelle (`23505`) : deux appareils hors ligne ont créé le même e-mail, la même clé de réglage… ; transition de statut hors du graphe, remise écrasée, annulation défaite (voir plus bas), colis ou salarié vers un département archivé | `rejected`, le second part en « Corriger » ; une remise doublée se range seule (voir plus bas) |
 | 503    | le serveur n'a pas pu la prendre (verrou, rejeu épuisé, erreur inattendue)                                                                                                                                     | tentative comptée, le paquet s'arrête là, renvoyé plus tard                                    |
 
+Colonnes retirées (YSL-140, `0039`) : `department` sur `parcel` et `directory_person`. Une
+PWA d'avant qui l'envoie encore n'est pas refusée : la clé est ignorée, le reste de
+l'opération s'applique. Le département d'un colis ou d'une fiche n'est plus que
+`department_id` ; le texte d'un contact (« Service ») reste un mot, rapproché d'un
+département par son nom. Un code de retrait ouvert sans département reçoit celui de sa
+personne, sinon du dernier colis en attente du contact, sinon « Service courrier » (trigger
+`pickup_code_department`) ; au comptoir, un code n'ouvre que les colis de son département.
+
 Ces statuts valent par opération. Un compte `platform_admin`, de rôle inconnu, ou `department` rattaché à aucun département, est refusé avant : `sync.push` et `sync.pull` entiers répondent 403.
 
 ## Ce que chaque rôle atteint (§2.1 du cahier)

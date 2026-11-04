@@ -55,6 +55,11 @@ rejoigne un département archivé.
 
 ## Retour arrière
 
+**Depuis `0039_retrait_ancien_modele` (YSL-140), le texte `department` des fiches et des
+colis n'existe plus** : le retour arrière par SQL ci-dessous ne vaut que sur une base d'avant
+`0039`. Après, seule la restauration d'une sauvegarde prise avant le déploiement de `0039`
+ramène l'ancien modèle. Le « Service (facultatif) » des contacts (`contact.department`) reste.
+
 **Avant le push sur `prod`**, qui déploie : sauvegarde de la base (`pg_dump -Fc`), hors du dépôt.
 
 ### Aucune écriture à garder
