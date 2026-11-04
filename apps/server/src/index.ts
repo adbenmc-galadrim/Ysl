@@ -127,7 +127,15 @@ app.route(
   scanReportsRoute({
     key: env.SCAN_REPORTS_KEY,
     sender: async (headers) => {
-      const session = await auth.api.getSession({ headers }).catch(() => null);
+      const session = await auth.api
+        .getSession({ headers })
+        .catch((error: unknown) => {
+          logger.warn(
+            { reason: error instanceof Error ? error.message : String(error) },
+            'session lookup failed',
+          );
+          return null;
+        });
       if (!session) return null;
       if (session.user.banned) return 'suspended';
       const membership = await membershipOf(db, session.user.id);
