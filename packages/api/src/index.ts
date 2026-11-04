@@ -1,5 +1,6 @@
 export { appRouter, type AppRouter } from '#root';
 export { createTRPCContext } from '#lib/trpc';
+export { membershipOf } from '#lib/organization';
 export { logoFile } from '#features/company/logo';
 export { runPurge } from '#features/maintenance/purge';
 export {

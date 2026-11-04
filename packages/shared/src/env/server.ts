@@ -27,6 +27,8 @@ export const env = createEnv({
     BREVO_API_KEY: z.string().optional(),
     /** Sent back by Brevo with each event; without it, the webhook stays off. */
     BREVO_WEBHOOK_TOKEN: z.string().min(32).optional(),
+    /** Adam's PC fetches the scan reports with it (D32); without it, they are off. */
+    SCAN_REPORTS_KEY: z.string().min(32).optional(),
     MAIL_FROM_ADDRESS: z.email().optional(),
     MAIL_FROM_NAME: z.string().default('Courrier'),
     /** Seconds between two drains of the e-mail queue; 0 turns the job off. */
