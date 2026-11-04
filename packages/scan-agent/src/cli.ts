@@ -181,6 +181,14 @@ async function main(): Promise<number> {
     values.corpus ?? join(dirname(REPO), 'tmp', 'corpus'),
   );
 
+  const identity = await Promise.all([
+    git(REPO, ['config', 'user.name']),
+    git(REPO, ['config', 'user.email']),
+  ]).then(
+    ([name, email]) => ({ name: name.trim(), email: email.trim() }),
+    () => null,
+  );
+
   const outcome = await handleReport(
     {
       repo: REPO,
@@ -199,9 +207,9 @@ async function main(): Promise<number> {
     },
     {
       git,
-      exec: exec((workDir) => agentEnv(process.env, workDir)),
+      exec: exec((workDir) => agentEnv(process.env, workDir, identity)),
       runAgent,
-      agentEnv: (workDir) => agentEnv(process.env, workDir),
+      agentEnv: (workDir) => agentEnv(process.env, workDir, identity),
       forge,
       log: (line) => console.log(line),
       now: () => new Date(),

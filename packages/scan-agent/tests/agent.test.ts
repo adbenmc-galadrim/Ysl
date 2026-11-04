@@ -78,6 +78,18 @@ describe('agentEnv', () => {
     expect(env.PATH).toBe('/usr/bin');
   });
 
+  it('commits as Adam without reading the global git config', () => {
+    const own = agentEnv({}, '/travail', {
+      name: 'Adam',
+      email: 'adam@example.invalid',
+    });
+    expect(own).toMatchObject({
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_AUTHOR_NAME: 'Adam',
+      GIT_COMMITTER_EMAIL: 'adam@example.invalid',
+    });
+  });
+
   it('leaves git and gh unable to publish', () => {
     expect(env).toMatchObject({
       GH_CONFIG_DIR: '/travail/.gh-vide',

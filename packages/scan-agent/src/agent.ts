@@ -129,9 +129,16 @@ const SECRET = /KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|AUTH_SOCK/i;
  * No key of any kind but the agent's own, and no way to publish: the push URL
  * of `origin` is unusable, `gh` has no account, ssh has no agent.
  */
+export type Identity = { name: string; email: string };
+
+/**
+ * The sandboxes refuse `~/.gitconfig`: git reads no global config, and the
+ * commits carry Adam's name as the hook read it.
+ */
 export function agentEnv(
   env: NodeJS.ProcessEnv,
   workDir: string,
+  identity: Identity | null = null,
 ): NodeJS.ProcessEnv {
   const clean: NodeJS.ProcessEnv = {};
   for (const [name, value] of Object.entries(env)) {
@@ -143,6 +150,15 @@ export function agentEnv(
     ...clean,
     GH_CONFIG_DIR: join(workDir, '.gh-vide'),
     GIT_TERMINAL_PROMPT: '0',
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    ...(identity
+      ? {
+          GIT_AUTHOR_NAME: identity.name,
+          GIT_AUTHOR_EMAIL: identity.email,
+          GIT_COMMITTER_NAME: identity.name,
+          GIT_COMMITTER_EMAIL: identity.email,
+        }
+      : {}),
     GIT_CONFIG_COUNT: '2',
     GIT_CONFIG_KEY_0: 'remote.origin.pushurl',
     GIT_CONFIG_VALUE_0: 'interdit://agent-sans-push',
