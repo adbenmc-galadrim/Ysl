@@ -12,3 +12,4 @@ dist
 coverage
 packages/corpus/out
 packages/bench/out
+/tmp/
