@@ -2364,6 +2364,15 @@ export const fr = {
   'scan.damage.report': 'Signaler un dommage',
   'damage.error.photo': 'Photo illisible, choisissez-en une autre.',
   'scan.damage.set': 'Réserve : {{reason}}',
+  /** Scan report, test phase only (D32): withdrawn with the feature (YSL-148). */
+  'scan.report.queued': 'Rapport enregistré, envoi en cours',
+  'scan.report.offline': 'Rapport enregistré, il partira au retour du réseau',
+  'scan.report.sent': 'Rapport envoyé, merci',
+  'scan.report.unavailable':
+    'Signalement indisponible : le rapport n’est pas parti',
+  'scan.report.refused': 'Rapport refusé par le serveur',
+  'scan.report.signedOut': 'Rapport en attente : reconnectez-vous',
+  'scan.report.failed': 'Rapport non enregistré',
   'shell.loading': 'Chargement',
   'shell.notFound.title': 'Page introuvable',
   'shell.notFound.description': 'Cette adresse ne mène à aucun écran.',

@@ -1,6 +1,7 @@
 import type { DeliveryStatus, MailChannel } from '@repo/contract/mail';
 import type { DamageInput } from '#/features/damage/report';
 import type { DraftAnnex } from '#/features/scan/annex';
+import type { LocalScanReport } from '#/features/scan-report/outbox';
 import type { OcrLine } from '@repo/ocr/worker';
 import type {
   batch,
@@ -449,6 +450,9 @@ const OUTBOX_V3 = {
   outbox: '++seq, &opId, [entity+entityId], clientTs, state',
 };
 
+/** Version 13 (YSL-143): scan reports waiting to leave, test phase only (D32, withdrawn by YSL-148). */
+const SCAN_REPORT_STORES = { scan_report_outbox: 'id, createdAt' };
+
 export const SYNCED_TABLE_NAMES = Object.keys(SYNCED_STORES) as SyncedEntity[];
 
 export class CourrierDatabase extends Dexie {
@@ -475,6 +479,7 @@ export class CourrierDatabase extends Dexie {
   draftParcel!: Table<DraftParcel, string>;
   extraction!: Table<LocalExtraction, string>;
   handoverProof!: Table<LocalHandoverProof, string>;
+  scanReport!: Table<LocalScanReport, string>;
 
   constructor(name = DATABASE_NAME) {
     super(name);
@@ -529,6 +534,7 @@ export class CourrierDatabase extends Dexie {
             delete op.patch.department;
           });
       });
+    this.version(13).stores(SCAN_REPORT_STORES);
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');
@@ -552,6 +558,7 @@ export class CourrierDatabase extends Dexie {
     this.draftParcel = this.table('draft_parcel');
     this.extraction = this.table('extraction');
     this.handoverProof = this.table('handover_proof');
+    this.scanReport = this.table('scan_report_outbox');
   }
 
   /** The Dexie table of a synced entity, by its server name. */

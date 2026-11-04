@@ -36,7 +36,11 @@ export type Reading = {
   piece: PieceRead | null;
   /** The sender the codes or the dictionary propose, written on the draft. */
   sender: DraftSender | null;
+  /** Each pass of the cascade as returned, for a scan report (test phase, D32). */
+  passes: DecodePass[];
 };
+
+export type DecodePass = DecodeResult & { expect: string[] | null };
 
 const bare = (symbols: Symbols): DraftSymbol[] =>
   symbols.map(({ format, text }) => ({ format, text }));
@@ -82,8 +86,11 @@ export async function readDraft(
   inFlight.add(draftId);
   let spare: ImageBitmap | undefined = clone;
   const started = performance.now();
+  const passes: DecodePass[] = [];
   try {
-    let { symbols } = await queue.decode(bitmap);
+    const first = await queue.decode(bitmap);
+    passes.push({ ...first, expect: null });
+    let { symbols } = first;
     const missing = missingFormats(
       extractTracking(symbols)?.context ?? null,
       symbols,
@@ -91,6 +98,7 @@ export async function readDraft(
     if (missing.length) {
       const again = await queue.decode(spare, { expect: missing });
       spare = undefined;
+      passes.push({ ...again, expect: [...missing] });
       symbols = merge(symbols, again.symbols);
     }
     const selected = selectTracking(symbols);
@@ -123,6 +131,7 @@ export async function readDraft(
       trackingNorm,
       piece,
       sender,
+      passes,
     };
   } catch {
     const kept = await updateDraft(db, draftId, { reading: 'failed' }).catch(
@@ -136,6 +145,7 @@ export async function readDraft(
       trackingNorm: null,
       piece: null,
       sender: null,
+      passes,
     };
   } finally {
     spare?.close();

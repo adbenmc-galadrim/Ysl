@@ -29,6 +29,7 @@ import { startOfflinePrep } from '#/features/offline/prep';
 import { isPrepared } from '#/features/offline/prepared';
 import { RoleFrame } from '#/features/shell/components/role-frame';
 import { readKeptProfile } from '#/features/settings/operating-profile';
+import { startReportSender } from '#/features/scan-report/sender';
 import { startSync } from '#/features/sync/sync';
 import { DESK_WIDTH } from '#/lib/use-media-query';
 
@@ -92,7 +93,10 @@ export const Route = createFileRoute('/_authenticated')({
       throw redirect({ to: '/' });
     }
     // The app's admin has nothing to pull and no label to read (D26).
-    if (role !== 'platform_admin') startSync();
+    if (role !== 'platform_admin') {
+      startSync();
+      startReportSender();
+    }
     if (needsPreparation(role, matchMedia(DESK_WIDTH).matches)) {
       startOfflinePrep();
       if (!isPrepared(localStorage) && location.pathname !== PREP_PATH) {

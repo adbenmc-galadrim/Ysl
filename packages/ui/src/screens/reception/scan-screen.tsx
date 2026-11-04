@@ -131,6 +131,8 @@ export type ScanScreenProps = {
   onAddAnyway?: () => void;
   /** Keeps the parcel with the pieces read so far, the missing one left out. */
   onSavePartial?: () => void;
+  /** Test phase (D32): « Signaler ce scan », or the word after it, above the bottom row. */
+  report?: ReactNode;
 };
 
 /** "La 3e pièce manque" for one gap, "2 pièces manquent" for more. */
@@ -180,6 +182,7 @@ export function ScanScreen({
   onView,
   onAddAnyway,
   onSavePartial,
+  report,
 }: ScanScreenProps) {
   const unreadable = reading.kind === 'unreadable';
   const blocked = reading.kind === 'blocked';
@@ -345,6 +348,8 @@ export function ScanScreen({
           {reading.hint}
         </CameraNotice>
       )}
+
+      {report && <div className="mx-4 mt-2.5 flex">{report}</div>}
 
       {controls && (
         <CameraControls

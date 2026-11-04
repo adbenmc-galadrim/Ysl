@@ -97,6 +97,7 @@ import {
 } from '#/features/scan/feedback';
 import { appendTyped, typedEntry } from '#/features/scan/typed';
 import { ocrReader, readText } from '#/features/scan/text';
+import { useScanReport } from '#/features/scan-report/use-scan-report';
 import { holdUpdates } from '#/features/update/updater';
 
 const t = createTranslator(DEFAULT_LOCALE);
@@ -184,6 +185,12 @@ function ScanPage() {
   /** How that draft's shot looked, for the advice when nothing was read. */
   const shownShot = useRef<ShotHint | undefined>(undefined);
   const held = useRef<Held | null>(null);
+  /* Test phase only (D32): « Signaler ce scan », withdrawn by YSL-148. */
+  const report = useScanReport(async (id) => {
+    const stored = await db.draftParcel.get(id);
+    const taken = held.current?.draft;
+    return stored ?? (taken?.id === id ? taken : undefined);
+  });
   const [sameAs, setSameAs] = useState<SameRecipient | null>(null);
   /** The draft « Signaler un dommage » was opened on, over the viewfinder. */
   const [damaging, setDamaging] = useState<DraftParcel | null>(null);
@@ -356,6 +363,17 @@ function ScanPage() {
       const batch = await openBatch(db);
       const photo = await encodePhoto(clone);
       const draft = await addDraft(db, photoFiles, batch.id, photo);
+      await report.keep(
+        {
+          draftId: draft.id,
+          shotAt: new Date(),
+          source: live ? 'camera' : 'import',
+          zoom: live ? cameraZoom.level : 1,
+          torch: shot.torchOn,
+          quality: shot.quality,
+        },
+        bitmap,
+      );
       if (registeredNow.current) {
         await updateDraft(db, draft.id, { type: 'recommande' });
       }
@@ -366,8 +384,9 @@ function ScanPage() {
       setReading((shown) =>
         wasHeld || shown.kind === 'piece' ? { kind: 'idle' } : shown,
       );
-      const { symbols, kept, failed, trackingNorm, piece, sender } =
-        await readDraft(db, queue, draft.id, bitmap, clone);
+      const read = await readDraft(db, queue, draft.id, bitmap, clone);
+      report.codes(read);
+      const { symbols, kept, failed, trackingNorm, piece, sender } = read;
       if (kept && piece && (await joinPieces(draft, piece))) return;
       if (
         kept &&
@@ -498,7 +517,9 @@ function ScanPage() {
     blob: Blob,
     symbols: readonly ShownSymbol[],
   ) => {
-    const text = await readText(db, draftId, blob);
+    const reading = readText(db, draftId, blob);
+    report.text(draftId, reading);
+    const text = await reading;
     const worth = symbols.length > 0 || text.ocrName !== null;
     if (text.kept && !text.failed && worth && shownDraft.current === draftId) {
       const draft = await db.draftParcel.get(draftId);
@@ -528,14 +549,9 @@ function ScanPage() {
    * landing meanwhile cannot drop the photo the parcel now owns.
    */
   const readHeldPiece = async (draft: DraftParcel, blob: Blob) => {
-    const text = await readText(
-      db,
-      draft.id,
-      blob,
-      undefined,
-      undefined,
-      draft,
-    );
+    const reading = readText(db, draft.id, blob, undefined, undefined, draft);
+    report.text(draft.id, reading);
+    const text = await reading;
     const taken = held.current;
     if (taken?.draft.id !== draft.id || text.failed || !text.piece) return;
     const group = await findPieceGroup(db, draft, text.piece.key);
@@ -826,7 +842,7 @@ function ScanPage() {
                   : undefined
               }
               reading={shown}
-              controls={!typing}
+              controls={!typing && !report.open}
               dim={typing ? 0.4 : undefined}
               flash={flashedAt !== 0}
               video={
@@ -867,8 +883,10 @@ function ScanPage() {
               onView={onView}
               onAddAnyway={onAddAnyway}
               onSavePartial={onSavePartial}
+              report={!typing && !report.open ? report.slot(shown) : undefined}
             />
           </div>
+          {report.sheet(shown)}
           {typing && entry && (
             <SaisieManuelleSheet
               fixed

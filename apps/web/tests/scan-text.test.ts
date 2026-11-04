@@ -59,6 +59,11 @@ describe('readText', () => {
       kept: true,
       failed: false,
     });
+    expect(text.ocr?.lines.map((l) => l.text)).toEqual([
+      'DESTINATAIRE',
+      'Camille MOREL',
+      '12 RUE DES LILAS',
+    ]);
     expect(await db.draftParcel.get(draft.id)).toMatchObject({
       reading: 'pending',
       ocrState: 'done',
@@ -252,6 +257,7 @@ describe('readText', () => {
       ocrLines: [],
       kept: true,
       failed: false,
+      ocr: null,
     });
     expect(called).toBe(0);
     expect((await db.draftParcel.get(draft.id))?.ocrState).toBe('skipped');

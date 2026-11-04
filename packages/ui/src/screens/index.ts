@@ -26,6 +26,7 @@ export * from '#screens/reception/hors-annuaire-sheet';
 export * from '#screens/reception/lot-enregistre-screen';
 export * from '#screens/reception/revue-lot-screen';
 export * from '#screens/reception/scan-screen';
+export * from '#screens/reception/signaler-scan';
 export * from '#screens/reception/transporteur-sheet';
 export * from '#screens/reception/verifier-colis-screen';
 export * from '#screens/reception-zones/colis-abime-screen';

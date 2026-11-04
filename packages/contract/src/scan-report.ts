@@ -84,3 +84,160 @@ export type ScanReportDetail = ScanReportSummary & {
   imageSha256: string;
   report: ScanReportBody;
 };
+
+/**
+ * The shape of `report` the phone sends (YSL-143). The server only checks
+ * it is an object; the PC writes it as received and the agent replays the
+ * image in the bench with it (YSL-147). A change of shape bumps the version.
+ */
+export const SCAN_REPORT_VERSION = 1;
+
+const size = { width: z.number(), height: z.number() };
+
+const point = z.object({ x: z.number(), y: z.number() });
+
+/** A symbol as zxing read it, its corners in the pixels of its pass (`width` × `height`). */
+export const scanReportSymbol = z.object({
+  format: z.string(),
+  text: z.string(),
+  isValid: z.boolean(),
+  position: z.object({
+    topLeft: point,
+    topRight: point,
+    bottomRight: point,
+    bottomLeft: point,
+  }),
+  orientation: z.number(),
+});
+
+/** One pass of the cascade: the first on the whole frame, a second for the formats the carrier still owes. */
+export const scanReportDecodePass = z.object({
+  /** The formats the second pass looked for; null on the first. */
+  expect: z.array(z.string()).nullable(),
+  symbols: z.array(scanReportSymbol),
+  steps: z.array(
+    z.object({
+      name: z.string(),
+      ms: z.number(),
+      symbols: z.number(),
+      ...size,
+    }),
+  ),
+  ...size,
+  totalMs: z.number(),
+});
+
+export const scanReportOcrLine = z.object({
+  text: z.string(),
+  box: z.object({ x: z.number(), y: z.number(), ...size }),
+  score: z.number(),
+});
+
+/**
+ * The text, read on the stored photo (the image sent, shrunk to `maxSide`
+ * and saved as JPEG at `quality`): its boxes are in the frame of the
+ * engine's image (`width` × `height`), itself from `sourceWidth` × `sourceHeight`.
+ */
+export const scanReportOcr = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('done'),
+    engine: z.string(),
+    ...size,
+    sourceWidth: z.number(),
+    sourceHeight: z.number(),
+    input: z.object({ maxSide: z.number(), quality: z.number() }),
+    timings: z.record(z.string(), z.number()),
+    lines: z.array(scanReportOcrLine),
+  }),
+  /**
+   * `skipped`: models not on the device yet; `failed`: the engine failed;
+   * `pending`: still reading 15 s after « Envoyer »; `none`: no text read
+   * for this shot (a piece joined to its parcel, a duplicate outside the batch).
+   */
+  z.object({ state: z.enum(['skipped', 'failed', 'pending', 'none']) }),
+]);
+
+const fieldSource = z.object({
+  kind: z.string(),
+  format: z.string(),
+  confidence: z.number(),
+  value: z.string(),
+});
+
+/** A field as the reader scored it (`@repo/contract/extract`). */
+export const scanReportField = z.object({
+  value: z.unknown(),
+  confidence: z.number(),
+  level: z.enum(['sure', 'to-verify', 'none']),
+  flags: z.array(z.string()),
+  sources: z.array(fieldSource),
+  candidates: z.array(z.unknown()).optional(),
+});
+
+/** What the user set by hand before the report left. */
+export const scanReportCorrection = z.object({
+  field: z.enum(['tracking', 'recipient', 'sender', 'type', 'department']),
+  value: z.string().nullable(),
+  how: z.enum(['typed', 'chosen', 'confirmed']),
+});
+
+export const scanReportV1 = z.object({
+  version: z.literal(SCAN_REPORT_VERSION),
+  /** When the label was shot, ISO. */
+  shotAt: z.iso.datetime(),
+  /** When the user pressed « Envoyer », ISO. */
+  createdAt: z.iso.datetime(),
+  /** `displayVersion` (YYYY.MM.DD) and the build's own timestamp. */
+  app: z.object({ version: z.string(), build: z.string() }),
+  device: z.object({
+    kind: z.string(),
+    userAgent: z.string(),
+    platform: z.string().nullable(),
+    language: z.string().nullable(),
+    screen: z.object({ ...size, pixelRatio: z.number() }),
+    standalone: z.boolean(),
+  }),
+  /** The frame the code readers had, as sent in `image`. */
+  shot: z.object({
+    source: z.enum(['camera', 'import']),
+    /** The zoom of the viewfinder (1 = none). */
+    zoom: z.number(),
+    torch: z.boolean(),
+    /** The sharpness check before reading, behind the « illisible » advice. */
+    quality: z.enum(['ok', 'blurry', 'glare']),
+  }),
+  /** The company's address the fusion weighed (« elsewhere » labels), when set. */
+  reception: z.record(z.string(), z.unknown()).nullable(),
+  image: z.object({
+    type: z.enum(SCAN_REPORT_IMAGE_TYPES),
+    ...size,
+    bytes: z.number(),
+    /** JPEG quality it was encoded at; null for PNG. */
+    quality: z.number().nullable(),
+  }),
+  codes: z.object({
+    state: z.enum(['done', 'failed']),
+    passes: z.array(scanReportDecodePass),
+  }),
+  ocr: scanReportOcr,
+  /** Every field as the parcel would keep it, the user's corrections weighed in. */
+  fields: z.record(z.string(), scanReportField),
+  /** The reader's fusion before any correction: fields, candidates, parsed codes, accounts. */
+  extraction: z.record(z.string(), z.unknown()),
+  corrections: z.array(scanReportCorrection),
+  /** The draft as it stood: reading state, carrier, tracking, recipient, sender, annex, pieces. */
+  draft: z.looseObject({ id: z.string(), reading: z.string() }),
+  /** What the scan screen showed when the user reported. */
+  screen: z.object({
+    kind: z.string(),
+    fields: z.array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+        status: z.string().optional(),
+      }),
+    ),
+  }),
+});
+
+export type ScanReportV1 = z.infer<typeof scanReportV1>;
