@@ -34,7 +34,7 @@ beforeEach(async () => {
   await git(['config', 'user.name', 'Test']);
   await commit('chore: base', {
     'packages/contract/src/sender.ts':
-      "export const KEYWORDS = ['EXPEDITEUR', 'Paris'];\n",
+      "export const KEYWORDS = ['EXPEDITEUR', 'Paris'];\nconst sleep = 1;\n",
   });
   await git(['checkout', '-q', '-b', 'fix/scan-etiquette-0b5e1c3a']);
 });
@@ -78,6 +78,21 @@ describe('checkBeforePush', () => {
       expect(details).toContain(`packages/contract/tests/${file}.test.ts`);
     }
     expect(details).not.toMatch(/camille|1Z999|inventions/i);
+  });
+
+  it('counts a word as public only when main has it whole', async () => {
+    await commit('test: noms', {
+      'packages/contract/tests/d.test.ts': "const name = 'Lee';\n",
+    });
+    const problems = await checkBeforePush({
+      git,
+      base: 'main',
+      branch: 'fix/scan-etiquette-0b5e1c3a',
+      title: 'fix: x',
+      body: '',
+      sensitive: { personal: ['Lee'], other: [] },
+    });
+    expect(problems.map((p) => p.kind)).toEqual(['leak']);
   });
 
   it('blocks a report value in the title, the body or a commit message', async () => {

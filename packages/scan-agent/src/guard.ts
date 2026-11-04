@@ -101,7 +101,7 @@ async function inBase(git: Git, base: string, needle: Needle) {
   const forms = [...new Set([needle.value, needle.raw.trim()])];
   for (const form of forms) {
     try {
-      await git(['grep', '-q', '-i', '-F', '-e', form, base, '--']);
+      await git(['grep', '-q', '-i', '-F', '-w', '-e', form, base, '--']);
       return true;
     } catch {
       continue;
@@ -113,7 +113,8 @@ async function inBase(git: Git, base: string, needle: Needle) {
 /**
  * Run by the hook before `git push`, on what would become public: the diff
  * against the base, the commit messages, the branch, the PR title and body.
- * Any problem blocks the push. A text already public on the base is not a leak.
+ * Any problem blocks the push. A text already public on the base, as a whole
+ * word (« Lee » in « sleep » does not count), is not a leak.
  */
 export async function checkBeforePush(check: PushCheck): Promise<Problem[]> {
   const { git, base } = check;
