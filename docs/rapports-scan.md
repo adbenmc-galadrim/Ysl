@@ -247,6 +247,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
 
 ### Ce que fait la commande
 
+0. **Un rapport qu'elle sait lire.** `report` doit être un `scanReportV1` (« Contenu du
+   rapport ») : une autre version, ou un rapport v1 qui ne suit pas le contrat, est ignoré
+   sans agent, avec sa raison dans le journal (la commande finit en code 0).
 1. **Un agent à la fois.** Verrou `tmp/rapports-scan/.agent/verrou` : un rapport arrivé
    pendant qu'un agent travaille attend son tour (`reports:pull` attend déjà l'accroche
    avant le rapport suivant ; le verrou couvre deux commandes lancées en parallèle). Le
@@ -277,7 +280,8 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    lus par la commande. Son environnement ne porte aucune clé
    (`SCAN_REPORTS_KEY`, jetons GitHub, Coolify…, agent ssh), seulement la sienne ; l'URL de
    push d'`origin` y est inutilisable et `gh` sans compte. Son prompt est versionné :
-   `packages/scan-agent/prompt.md`. Il écrit la lecture attendue de l'étiquette dans la
+   `packages/scan-agent/prompt.md` ; il renvoie l'agent à « Contenu du rapport », « Rejouer »
+   et « Ce que le rapport ne dit pas ». Il écrit la lecture attendue de l'étiquette dans la
    copie du corpus, mesure le banc avant et après, corrige `packages/barcode`,
    `packages/contract` ou `packages/ocr` avec un test synthétique, commite, et rend
    `resultat.json` (statut, nature de la correction, titre et résumé de la PR).

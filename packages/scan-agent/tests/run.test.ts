@@ -8,6 +8,7 @@ import { type BenchResults } from '#compare';
 import { neutralId, saveRegistry } from '#groups';
 import { sha256 } from '#report';
 import { type Config, type Deps, handleReport } from '#run';
+import { v1Report } from './fixture';
 
 const ID = '0b5e1c3a-7d2f-4e8b-9a61-2f4c8d0e6b17';
 const LABEL = `rapport-${neutralId(ID)}`;
@@ -61,6 +62,7 @@ type World = {
   result: Record<string, unknown>;
   openPr: number | null;
   duringAgent: () => Promise<void>;
+  gitConfig: string;
 };
 
 let world: World;
@@ -78,12 +80,7 @@ beforeEach(async () => {
       imageType: 'image/jpeg',
       imageSha256: sha256(IMAGE),
       comment: 'poids faux',
-      report: {
-        fields: {
-          recipient: { value: NAME },
-          tracking: { value: 'XY111222333FR' },
-        },
-      },
+      report: v1Report({ recipient: NAME, tracking: 'XY111222333FR' }),
     }),
   );
   await writeFile(join(reportDir, 'image.jpg'), IMAGE);
@@ -115,6 +112,8 @@ beforeEach(async () => {
     },
     openPr: null,
     duringAgent: () => Promise.resolve(),
+    gitConfig:
+      'file:.git/config\tremote.origin.url=git@github.com:adbenmc-galadrim/Ysl.git\n',
     config: {
       repo: join(root, 'ysl'),
       reportId: ID,
@@ -133,6 +132,7 @@ beforeEach(async () => {
         calls.push(`git ${args.join(' ')}`);
         const [command, sub] = args;
         if (args.includes('--git-common-dir')) return `${join(root, 'git')}\n`;
+        if (command === 'config') return world.gitConfig;
         if (args.includes('--git-dir'))
           return `${join(root, 'git', 'worktrees', 'x')}\n`;
         if (command === 'rev-parse') return `${BASE}\n`;
@@ -382,6 +382,48 @@ describe('handleReport', () => {
     );
     expect(world.calls.some((c) => c.startsWith('git worktree remove'))).toBe(
       false,
+    );
+  });
+
+  it('pushes nothing when the push URL changed during the agent', async () => {
+    world.duringAgent = () => {
+      world.gitConfig +=
+        'file:.git/config\turl.https://ailleurs.invalid/.insteadof=git@github.com:\n';
+      return Promise.resolve();
+    };
+    expect(await handle()).toMatchObject({ kind: 'failed' });
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
+  });
+
+  it('lets another session track its branch meanwhile', async () => {
+    world.duringAgent = () => {
+      world.gitConfig += 'file:.git/config\tbranch.feat/autre.remote=origin\n';
+      return Promise.resolve();
+    };
+    expect(await handle()).toMatchObject({ kind: 'pr', pr: 42 });
+  });
+
+  it('ignores a report of an unknown version, with its reason, without an agent', async () => {
+    const file = join(world.config.reportDir, 'rapport.json');
+    const detail = JSON.parse(await readFile(file, 'utf8')) as Record<
+      string,
+      unknown
+    >;
+    await writeFile(
+      file,
+      JSON.stringify({ ...detail, report: { version: 2 } }),
+    );
+    expect(await handle()).toEqual({
+      kind: 'ignored',
+      reason: 'version du rapport inconnue (2, attendue 1)',
+    });
+    expect(world.calls).toEqual([]);
+    const journal = await readFile(
+      join(world.config.reportDir, '..', '.agent', 'journal.log'),
+      'utf8',
+    );
+    expect(journal).toContain(
+      `rapport=${ID} ignoré : version du rapport inconnue`,
     );
   });
 

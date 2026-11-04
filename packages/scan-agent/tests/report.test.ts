@@ -9,6 +9,7 @@ import {
   sha256,
   trackingOf,
 } from '#report';
+import { v1Report } from './fixture';
 
 const ID = '0b5e1c3a-7d2f-4e8b-9a61-2f4c8d0e6b17';
 const IMAGE = Buffer.from('fausse image jpeg');
@@ -59,13 +60,31 @@ describe('trackingOf', () => {
 });
 
 describe('readReport', () => {
-  it('reads a minimal report: image, comment, every text', async () => {
+  it('reads a v1 report: image, comment, every text', async () => {
     const dir = await pulled(
       detail(
-        {
-          fields: { recipient: { value: 'Nom Fictif' } },
-          ocr: { lines: [{ text: '12 rue Inventée' }] },
-        },
+        v1Report(
+          { recipient: 'Nom Fictif' },
+          {
+            ocr: {
+              state: 'done',
+              engine: 'paddle',
+              width: 1200,
+              height: 1600,
+              sourceWidth: 1200,
+              sourceHeight: 1600,
+              input: { maxSide: 1600, quality: 0.8 },
+              timings: {},
+              lines: [
+                {
+                  text: '12 rue Inventée',
+                  box: { x: 0, y: 0, width: 10, height: 10 },
+                  score: 0.9,
+                },
+              ],
+            },
+          },
+        ),
         { comment: 'mauvais destinataire' },
       ),
     );
@@ -83,9 +102,7 @@ describe('readReport', () => {
   });
 
   it('keys a report by its tracking, hashed, and by its image', async () => {
-    const dir = await pulled(
-      detail({ fields: { tracking: { value: 'XY111222333FR' } } }),
-    );
+    const dir = await pulled(detail(v1Report({ tracking: 'XY111222333FR' })));
     const keys = labelKeys(await readReport(ID, dir));
     expect(keys).toEqual([
       `tracking:${sha256('XY111222333FR')}`,
@@ -95,9 +112,28 @@ describe('readReport', () => {
   });
 
   it('refuses another id or an image that does not match its hash', async () => {
-    const other = await pulled(detail({}, { id: 'autre' }));
+    const other = await pulled(detail(v1Report(), { id: 'autre' }));
     await expect(readReport(ID, other)).rejects.toThrow(ReportError);
-    const tampered = await pulled(detail({}), Buffer.from('autre image'));
+    const tampered = await pulled(
+      detail(v1Report()),
+      Buffer.from('autre image'),
+    );
     await expect(readReport(ID, tampered)).rejects.toThrow(/empreinte/);
+  });
+
+  it('refuses a version it does not know, or a v1 that breaks the contract', async () => {
+    const v2 = await pulled(detail({ ...v1Report(), version: 2 }));
+    await expect(readReport(ID, v2)).rejects.toThrow(
+      'version du rapport inconnue (2, attendue 1)',
+    );
+    const none = await pulled(detail({ fields: {} }));
+    await expect(readReport(ID, none)).rejects.toThrow(
+      'version du rapport inconnue (absente, attendue 1)',
+    );
+    const broken = { ...v1Report() } as Record<string, unknown>;
+    delete broken.codes;
+    await expect(readReport(ID, await pulled(detail(broken)))).rejects.toThrow(
+      /rapport v1 non conforme \(codes/,
+    );
   });
 });

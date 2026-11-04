@@ -34,12 +34,14 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
 
 ## Ce que tu as
 
-- `{{REPORT_DIR}}/rapport.json` : la réponse du serveur ; `report` contient les lectures
-  du téléphone. Sa forme est versionnée (`report.version`) mais peut être minimale : lis ce
-  qui est là. Version 1 : `codes.passes[].symbols` (sorties brutes de zxing, MaxiCode
-  compris), `ocr.lines` (texte, boîte, confiance), `fields` (champs extraits, niveau,
-  sources, candidats), `extraction` (fusion avant correction), `corrections` (ce que
-  l'utilisateur a corrigé à la main : c'est la vérité la plus sûre), `draft`, `screen`.
+- `{{REPORT_DIR}}/rapport.json` : la réponse du serveur ; `report` est un `scanReportV1`
+  (`packages/contract/src/scan-report.ts`, version {{REPORT_VERSION}}). Lis d'abord, dans
+  `docs/rapports-scan.md`, « Contenu du rapport » (chaque clé : passes zxing brutes avec
+  positions et étapes, OCR avec boîtes et scores, `fields`, `extraction` avant correction,
+  `corrections`, `draft`, `shot.quality`, `reception`, `app.version`), « Rejouer » et « Ce
+  que le rapport ne dit pas » : seules `corrections` et le commentaire disent la bonne
+  réponse, le reste de `fields` est la lecture, non vérifiée ; `app.version` (date) et
+  l'historique de `prod` disent quel code a lu l'étiquette.
 - `{{REPORT_DIR}}/commentaire.txt` s'il existe : ce que l'utilisateur dit du raté.
 - L'image : `{{PRIVATE_DIR}}/{{IMAGE_FILE}}` (lis-la avec l'outil Read pour la voir).
 - `{{PRIVATE_DIR}}` : une copie de travail du corpus privé (`annotations.json` et les
@@ -56,6 +58,10 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
 2. **Mesure avant**, avant de toucher au code :
    `pnpm --filter @repo/bench measure --corpus {{CORPUS_DIR}} --private {{PRIVATE_DIR}} --out {{WORK_DIR}}/agent-avant`
    (environ 70 s). Lis la ligne de `{{LABEL_ID}}` dans `mismatches.md` et `results.json`.
+   Pour rejouer l'image comme l'app, suis « Rejouer » : `openImage(<image>, { viewfinder:
+false })`, une première passe `decodeSource`, puis pour chaque passe du rapport dont
+   `expect` n'est pas nul `decodeSource(source, { enough: enoughFormats(expect) })` (la
+   MaxiCode d'UPS), et compare aux `symbols` du rapport.
    Le banc ne lit que les codes (zxing, MaxiCode, parseurs, fusion) ; pour un champ venu de
    l'OCR, rejoue `report.ocr.lines` dans les parseurs de `packages/ocr` (`recipient.ts`,
    `sender.ts`) par un script `.mts` écrit dans `{{WORK_DIR}}`, qui importe les sources du

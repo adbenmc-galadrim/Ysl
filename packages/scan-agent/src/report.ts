@@ -2,14 +2,14 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { SCAN_REPORT_VERSION, scanReportV1 } from '@repo/contract/scan-report';
 import { normalizeTracking } from '@repo/contract/tracking';
 
 export const REPORT_FILE = 'rapport.json';
 
 /**
- * What the hook needs from a pulled report. The readings' shape is fixed by
- * the phone (YSL-143): only the image and a few fields are relied on, the
- * rest is read when it is there.
+ * What the hook needs from a pulled report, read as `scanReportV1` (YSL-143,
+ * `docs/rapports-scan.md` › « Contenu du rapport »).
  */
 export type PulledReport = {
   id: string;
@@ -104,7 +104,20 @@ export async function readReport(
   if (typeof expected === 'string' && expected !== imageSha256) {
     throw new ReportError('Image différente de son empreinte.');
   }
-  const report = at(detail, 'report');
+  const version = at(detail, 'report', 'version');
+  if (version !== SCAN_REPORT_VERSION) {
+    throw new ReportError(
+      `version du rapport inconnue (${JSON.stringify(version) ?? 'absente'}, attendue ${SCAN_REPORT_VERSION})`,
+    );
+  }
+  const parsed = scanReportV1.safeParse(at(detail, 'report'));
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    throw new ReportError(
+      `rapport v${SCAN_REPORT_VERSION} non conforme (${issue?.path.join('.') || 'racine'} : ${issue?.message ?? '?'})`,
+    );
+  }
+  const report = parsed.data;
   const comment = text(at(detail, 'comment'));
   return {
     id,
@@ -115,9 +128,12 @@ export async function readReport(
     comment,
     tracking: trackingOf(report),
     personal: [
-      ...textsOf(at(report, 'fields')),
-      ...textsOf(at(report, 'corrections')),
-      ...textsOf(at(report, 'draft')),
+      ...textsOf(report.fields),
+      ...textsOf(report.extraction),
+      ...textsOf(report.corrections),
+      ...textsOf(report.draft),
+      ...report.screen.fields.map((f) => f.value),
+      ...report.codes.passes.flatMap((p) => p.symbols.map((s) => s.text)),
     ],
     texts: [...textsOf(report), ...(comment ? [comment] : [])],
   };

@@ -12,6 +12,7 @@ import {
 } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { SCAN_REPORT_VERSION } from '@repo/contract/scan-report';
 import { manifestSchema, type Label } from '@repo/corpus/schema';
 import {
   type AgentOutcome,
@@ -38,7 +39,13 @@ import {
 } from '#groups';
 import { checkBeforePush, type Problem } from '#guard';
 import { acquireLock } from '#lock';
-import { labelKeys, readReport, sha256, type PulledReport } from '#report';
+import {
+  labelKeys,
+  readReport,
+  ReportError,
+  sha256,
+  type PulledReport,
+} from '#report';
 
 export type Exec = (
   command: string,
@@ -91,6 +98,8 @@ export type Outcome =
   | { kind: 'pr'; pr: number; branch: string }
   | { kind: 'ready'; branch: string; worktree: string }
   | { kind: 'attached'; pr: number }
+  /** Not a report this hook reads (another version, a broken file): no agent. */
+  | { kind: 'ignored'; reason: string }
   | { kind: 'failed'; reason: string; worktree: string | null };
 
 class Failure extends Error {
@@ -178,20 +187,31 @@ async function addedLabel(
 
 /**
  * What would let code run at `git push` or send it elsewhere: the hooks, the
- * shared and per-worktree config, the worktree's `.git` pointer. The agent's
- * sandbox can write to the git folder (it commits): nothing there may change.
+ * config as git reads it (includes too), the worktree's `.git` pointer. The
+ * agent's sandbox can write to the git folder (it commits): nothing there may
+ * change. `branch.*` is left out: `git push -u` and tracking write it.
  */
 async function gitState(deps: Deps, worktree: string): Promise<string> {
-  const path = async (flag: string) =>
-    (
-      await deps.git(worktree, ['rev-parse', '--path-format=absolute', flag])
-    ).trim();
-  const common = await path('--git-common-dir');
-  const own = await path('--git-dir');
+  const common = (
+    await deps.git(worktree, [
+      'rev-parse',
+      '--path-format=absolute',
+      '--git-common-dir',
+    ])
+  ).trim();
+  const config = (
+    await deps.git(worktree, [
+      'config',
+      '--list',
+      '--show-origin',
+      '--includes',
+    ])
+  )
+    .split('\n')
+    .filter((line) => !/^\S+\tbranch\./.test(line))
+    .join('\n');
   const hooks = join(common, 'hooks');
   const files = [
-    join(common, 'config'),
-    join(own, 'config.worktree'),
     join(worktree, '.git'),
     ...(existsSync(hooks)
       ? (await readdir(hooks)).map((name) => join(hooks, name))
@@ -203,7 +223,7 @@ async function gitState(deps: Deps, worktree: string): Promise<string> {
       return `${file}\u0000${content ? sha256(content) : '-'}`;
     }),
   );
-  return parts.join('\n');
+  return [sha256(config), ...parts].join('\n');
 }
 
 async function readAgentResult(file: string): Promise<AgentResult> {
@@ -270,11 +290,13 @@ export async function handleReport(
   try {
     report = await readReport(config.reportId, config.reportDir);
   } catch (error) {
+    if (!(error instanceof ReportError)) throw error;
     await appendFile(
       join(state, 'journal.log'),
-      `${deps.now().toISOString()} rapport=${config.reportId} illisible : ${error instanceof Error ? error.message : String(error)}\n`,
+      `${deps.now().toISOString()} rapport=${config.reportId} ignoré : ${oneLine(error.message)}\n`,
     );
-    throw error;
+    deps.log(`Rapport ${config.reportId} ignoré : ${error.message}.`);
+    return { kind: 'ignored', reason: error.message };
   }
   const release = await acquireLock(join(state, 'verrou'), {
     log: deps.log,
@@ -410,6 +432,7 @@ async function underLock(
       IMAGE_FILE: imageFile,
       BRANCH: branch,
       RESULT_FILE: join(work, 'resultat.json'),
+      REPORT_VERSION: String(SCAN_REPORT_VERSION),
     });
     log(
       `Agent ${MODEL} lancé (${config.maxTurns} tours, ${config.timeoutMs / 60_000} min au plus).`,
