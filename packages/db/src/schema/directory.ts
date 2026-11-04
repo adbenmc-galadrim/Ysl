@@ -24,8 +24,7 @@ export const directoryPerson = pgTable(
     firstName: text('first_name').notNull(),
     nameNorm: text('name_norm').notNull(),
     email: text('email').notNull(),
-    department: text('department'),
-    /** The department that holds this person; the text above stays until a later migration, for the way back. */
+    /** The department that holds this person. */
     departmentId: uuid('department_id'),
     site: text('site'),
     source: text('source', { enum: DIRECTORY_SOURCES })

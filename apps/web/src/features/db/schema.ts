@@ -47,7 +47,7 @@ type LocalRow<Row> = Omit<Row, 'organizationId' | 'serverXid'> & {
 /** `departmentId` is missing on a row pulled before YSL-117: read it as none. */
 export type LocalDirectoryPerson = Omit<
   LocalRow<typeof directoryPerson.$inferSelect>,
-  'departmentId' | 'department'
+  'departmentId'
 > & {
   departmentId?: string | null;
 };
@@ -77,11 +77,7 @@ export type LocalBatch = LocalRow<typeof batch.$inferSelect>;
  */
 export type LocalParcel = Omit<
   LocalRow<typeof parcel.$inferSelect>,
-  | 'statusSeq'
-  | 'department'
-  | 'departmentId'
-  | 'tourShuttleId'
-  | 'formerShuttleIds'
+  'statusSeq' | 'departmentId' | 'tourShuttleId' | 'formerShuttleIds'
 > & {
   statusSeq?: number;
   departmentId?: string | null;
