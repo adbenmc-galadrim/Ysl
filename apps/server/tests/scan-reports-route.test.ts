@@ -4,13 +4,16 @@ import {
   SCAN_REPORT_RATE,
   type ScanReportDetail,
 } from '@repo/contract/scan-report';
-import { describe, expect, it, vi } from 'vitest';
+import { logger } from '@repo/shared/logger';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   scanReportsRoute,
   type ReportSender,
   type ScanReportsRouteOptions,
   type ScanReportStore,
 } from '#scan-reports-route';
+
+vi.mock('@repo/shared/logger', () => ({ logger: { warn: vi.fn() } }));
 
 const KEY = 'k'.repeat(32);
 const ID = '0195f3a2-7b1c-7d4e-8f00-000000000001';
@@ -264,6 +267,86 @@ describe('sending a report', () => {
     expect((await send(route)).status).toBe(404);
     expect((await pc(route, '/')).status).toBe(404);
     expect(sender).not.toHaveBeenCalled();
+  });
+});
+
+describe('a refusal', () => {
+  beforeEach(() => vi.mocked(logger.warn).mockClear());
+
+  const logged = () =>
+    vi.mocked(logger.warn).mock.calls.map(([fields]) => fields);
+
+  it('is logged with its sizes and type, nothing of what was sent', async () => {
+    const { route } = app();
+    const image = Buffer.alloc(SCAN_REPORT_IMAGE_MAX_BYTES + 1, 0xff);
+    await send(
+      route,
+      form({
+        image,
+        report: '{"raw":"TEST-LECTURE-0001"}',
+        comment: 'Nom mal lu',
+      }),
+    );
+
+    expect(logged()).toEqual([
+      {
+        status: 413,
+        error: 'too_large',
+        id: ID,
+        bodyBytes: null,
+        jsonBytes: 27,
+        imageBytes: image.length,
+        imageType: 'application/octet-stream',
+      },
+    ]);
+    const line = JSON.stringify(vi.mocked(logger.warn).mock.calls);
+    expect(line).not.toContain('TEST-LECTURE-0001');
+    expect(line).not.toContain('Nom mal lu');
+  });
+
+  it('says which check an invalid upload failed', async () => {
+    const { route } = app();
+    await send(route, form({ id: 'abc' }));
+    await send(route, form({ report: '{"raw":"a\\u0000b"}' }));
+
+    expect(logged()).toMatchObject([
+      { status: 400, error: 'invalid', reason: 'id', id: null },
+      { status: 400, error: 'invalid', reason: 'nul', id: ID },
+    ]);
+  });
+
+  it('is logged when the body came empty, as WebKit sends an OPFS file', async () => {
+    const { route } = app();
+    const response = await route.request('/', {
+      method: 'POST',
+      headers: {
+        'content-type': 'multipart/form-data; boundary=x',
+        'content-length': '0',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    expect(logged()).toEqual([
+      {
+        status: 400,
+        error: 'invalid',
+        reason: 'form',
+        id: null,
+        bodyBytes: 0,
+        jsonBytes: null,
+        imageBytes: null,
+        imageType: null,
+      },
+    ]);
+  });
+
+  it('is logged for an account not signed in', async () => {
+    const { route } = app({
+      sender: vi.fn<Sender>(() => Promise.resolve(null)),
+    });
+    await send(route);
+
+    expect(logged()).toMatchObject([{ status: 401, error: 'unauthorized' }]);
   });
 });
 
