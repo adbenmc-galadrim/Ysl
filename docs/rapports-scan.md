@@ -16,7 +16,8 @@ Une seule variable sur l'API (`ysl-api` dans Coolify) : `SCAN_REPORTS_KEY`, 32 c
 au moins, tirée au hasard (`openssl rand -base64 48`). Sans elle, toutes les routes
 répondent 404 et l'iPhone ne peut rien envoyer : c'est aussi l'interrupteur.
 
-La même valeur sert au PC (variable d'environnement locale, jamais dans le dépôt). Le
+La même valeur sert au PC (`SCAN_REPORTS_KEY` dans le terminal, ou le fichier
+`~/.config/ysl/scan-reports-key`, jamais dans le dépôt). Le
 dépôt est public : aucun rapport, aucune image, aucune clé n'y entre, ni dans les tests
 (fixtures fabriquées seulement).
 
@@ -122,8 +123,9 @@ une empreinte fausse : le rapport reste sur le serveur, la commande finit en cod
 rapport déjà présent et intact (coupure avant l'acquittement) n'est pas réécrit : il est
 seulement acquitté.
 
-`--watch` n'interroge jamais plus d'une fois toutes les 10 s (`--interval <secondes>`).
-Après un échec (réseau, 5xx, 503 `busy`, 404 si la clé n'est plus posée), l'attente double
+`--watch` laisse au moins 10 s entre deux passes (`--interval <secondes>`) ; une passe
+redemande la liste sans attendre tant qu'elle revient pleine (100 rapports).
+Après un échec (réseau, 5xx, 429, 503 `busy`, 404 si la clé n'est plus posée), l'attente double
 jusqu'à 15 min, et dure au moins le `Retry-After` du serveur. Une clé refusée (401) arrête
 la commande. Ctrl-C arrête proprement : le rapport en cours n'est pas acquitté et repart à
 la passe suivante.
@@ -156,3 +158,5 @@ Avant les premiers vrais utilisateurs (YSL-148) :
    du schéma, `SCAN_REPORTS_KEY` (`packages/shared/src/env/server.ts`, `turbo.json`,
    `.env.example`), la ligne du README et cette page.
 3. Migration de retrait : `DROP TABLE "scan_report";`. Aucune autre table n'en dépend.
+4. Sur le PC : supprimer `tmp/rapports-scan/` (images complètes de la phase de test) et
+   `~/.config/ysl/scan-reports-key`.
