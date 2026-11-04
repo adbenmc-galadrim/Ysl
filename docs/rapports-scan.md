@@ -269,7 +269,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    dossiers : le worktree et le dossier de travail ; tours et durée bornés. `pnpm` lance
    n'importe quel code : ses commandes passent par le bac à sable de Claude Code (aucun
    réseau, écriture seulement dans le worktree, le dossier de travail et le dossier git
-   pour commiter, sockets Unix seulement dans le dossier temporaire du bac à sable). Son environnement ne porte aucune clé
+   pour commiter, sockets Unix seulement dans le dossier temporaire du bac à sable). Ni
+   lecture ni écriture de `~/.ssh`, `~/.config`, `~/.gnupg`, `~/.aws`, `~/.claude`,
+   `~/.netrc`, `~/.gitconfig`, par aucun outil. Son environnement ne porte aucune clé
    (`SCAN_REPORTS_KEY`, jetons GitHub, Coolify…, agent ssh), seulement la sienne ; l'URL de
    push d'`origin` y est inutilisable et `gh` sans compte. Son prompt est versionné :
    `packages/scan-agent/prompt.md`. Il écrit la lecture attendue de l'étiquette dans la
@@ -289,10 +291,13 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
      des chiffres (adresse, téléphone, e-mail), cherchés dans les lignes ajoutées, les
      chemins, les messages de commit, la branche, le titre et la description de la PR ; un
      texte déjà présent sur `main` en mot entier n'est pas une fuite ;
-   - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ;
+   - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ; aucun jeton
+     GitHub ou Anthropic, clé privée ni en-tête `Bearer` ;
    - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
      comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
-     (aucun réseau, écriture seulement dans le worktree et le dossier de travail) ;
+     (`packages/scan-agent/src/sandbox.ts` : aucun réseau ni DNS, sockets Unix seulement
+     dans un dossier temporaire à eux, ni `open`, `osascript` ou `ssh`, aucune lecture des
+     clés du PC, écriture seulement dans le worktree, le dossier de travail et ce dossier) ;
    - le banc sur `main` puis sur la branche, sur le même corpus : aucun champ ne perd une
      lecture juste ni ne gagne un faux « sûr », sur l'ensemble comme sur chaque étiquette,
      et au moins un champ de l'étiquette signalée est mieux lu (une correction OCR, que le
