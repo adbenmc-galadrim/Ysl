@@ -6,6 +6,7 @@ import type {
 import type { PhotoFiles } from '#/features/photos/opfs';
 import { PHOTOS_DIRECTORY } from '#/features/photos/protocol';
 import { sha256Hex } from '#/features/photos/sha256';
+import { reportImagePaths } from '#/features/scan-report/outbox';
 
 export type PhotoInput = {
   id: string;
@@ -86,11 +87,15 @@ export async function sweepOrphanPhotos(
 ): Promise<string[]> {
   const stored = await files.list();
   if (!stored.length) return [];
-  const [photos, proofs] = await Promise.all([
+  const [photos, proofs, reports] = await Promise.all([
     db.photo.toArray(),
     db.handoverProof.toArray(),
+    reportImagePaths(db),
   ]);
-  const known = new Set([...photos, ...proofs].map((row) => row.path));
+  const known = new Set([
+    ...[...photos, ...proofs].map((row) => row.path),
+    ...reports,
+  ]);
   const removed: string[] = [];
   for (const file of stored) {
     if (known.has(pathOf(file.name))) continue;
