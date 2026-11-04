@@ -29,8 +29,8 @@ BEGIN
      AND deleted_at IS NULL
      AND trim(coalesce(department, '')) <> '';
   IF left_over > 0 THEN
-    RAISE EXCEPTION 'YSL-140: % fiche(s) de l''annuaire n''ont que le texte de leur département, qu''aucun département ouvert ne porte. Les rattacher (directory.move) avant de déployer.', left_over
-      USING HINT = 'SELECT id, department FROM directory_person WHERE department_id IS NULL AND deleted_at IS NULL AND trim(coalesce(department, '''')) <> ''''';
+    RAISE EXCEPTION 'YSL-140: % fiche(s) de l''annuaire n''ont que le texte de leur département : aucun département ouvert ne porte ce nom, ou il tient déjà une fiche à la même adresse. Les rattacher (directory.move) ou fusionner les doublons avant de déployer.', left_over
+      USING HINT = 'SELECT id, email, department FROM directory_person WHERE department_id IS NULL AND deleted_at IS NULL AND trim(coalesce(department, '''')) <> ''''';
   END IF;
 END;
 $$;--> statement-breakpoint
