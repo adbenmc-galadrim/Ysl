@@ -52,10 +52,26 @@ const DENIED = [
   'WebSearch',
 ];
 
-const SETTINGS = {
-  includeCoAuthoredBy: false,
-  attribution: { commit: '', pr: '' },
-};
+/**
+ * `pnpm` runs any code: its commands go through Claude Code's sandbox, no
+ * network and no write outside the worktree and the work folder. Only the
+ * sandbox's own temporary folder takes sockets (tsx's IPC), not Docker's.
+ */
+export function agentSettings(uid = process.getuid?.() ?? 0) {
+  return {
+    includeCoAuthoredBy: false,
+    attribution: { commit: '', pr: '' },
+    sandbox: {
+      enabled: true,
+      allowUnsandboxedCommands: false,
+      autoAllowBashIfSandboxed: false,
+      network: {
+        allowLocalBinding: true,
+        allowUnixSockets: [`/tmp/claude-${uid}`, `/private/tmp/claude-${uid}`],
+      },
+    },
+  };
+}
 
 export function agentArgs({
   workDir,
@@ -88,7 +104,7 @@ export function agentArgs({
     '',
     '--no-session-persistence',
     '--settings',
-    JSON.stringify(SETTINGS),
+    JSON.stringify(agentSettings()),
   ];
 }
 

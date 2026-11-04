@@ -1,6 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs, promisify } from 'node:util';
 import { agentEnv, MAX_TURNS, MODEL, runAgent, TIMEOUT_MIN } from '#agent';
@@ -38,25 +39,48 @@ const git: Deps['git'] = async (cwd, args) =>
     })
   ).stdout;
 
+const quote = (path: string) =>
+  `"${path.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+
+/** macOS sandbox for the agent's code run by the hook (gates, bench). */
+const profile = (writable: string[]) =>
+  [
+    '(version 1)',
+    '(allow default)',
+    '(deny network-outbound (remote ip))',
+    `(deny file-write* (subpath ${quote(homedir())}))`,
+    `(allow file-write* ${writable.map((dir) => `(subpath ${quote(dir)})`).join(' ')})`,
+  ].join('\n');
+
 const exec =
   (env: (workDir: string) => NodeJS.ProcessEnv): Exec =>
-  (command, args, { cwd, log, timeoutMs }) =>
-    new Promise((done, fail) => {
+  async (command, args, { cwd, log, timeoutMs, sandbox }) => {
+    let spawned: [string, string[]] = [command, args];
+    if (sandbox) {
+      const file = `${log}.sb`;
+      await writeFile(file, `${profile(sandbox)}\n`);
+      spawned = ['sandbox-exec', ['-f', file, command, ...args]];
+    }
+    return new Promise((done, fail) => {
       const out = createWriteStream(log);
-      const child = spawn(command, args, {
+      const child = spawn(...spawned, {
         cwd,
         env: env(dirname(log)),
         stdio: ['ignore', 'pipe', 'pipe'],
       });
       child.stdout.pipe(out);
       child.stderr.pipe(out);
-      const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMs);
+      const timer = setTimeout(() => {
+        child.kill('SIGTERM');
+        setTimeout(() => child.kill('SIGKILL'), 10_000).unref();
+      }, timeoutMs);
       child.once('error', fail);
       child.once('close', (code) => {
         clearTimeout(timer);
         done(code ?? 1);
       });
     });
+  };
 
 const forge: Deps['forge'] = {
   openPullRequest: async (branch) => {

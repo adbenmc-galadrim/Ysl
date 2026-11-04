@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { normalizeTracking } from '@repo/contract/tracking';
 
 export const REPORT_FILE = 'rapport.json';
-export const COMMENT_FILE = 'commentaire.txt';
 
 /**
  * What the hook needs from a pulled report. The readings' shape is fixed by

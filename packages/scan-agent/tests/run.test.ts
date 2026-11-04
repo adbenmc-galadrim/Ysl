@@ -60,6 +60,7 @@ type World = {
   agent: Partial<AgentOutcome>;
   result: Record<string, unknown>;
   openPr: number | null;
+  duringAgent: () => Promise<void>;
 };
 
 let world: World;
@@ -91,6 +92,8 @@ beforeEach(async () => {
     JSON.stringify([existing]),
   );
   await writeFile(join(privateCorpus, 'IMG_0001.jpg'), 'photo');
+  await mkdir(join(root, 'git', 'hooks'), { recursive: true });
+  await writeFile(join(root, 'git', 'config'), '[core]\n');
 
   const calls: string[] = [];
   const lines: string[] = [];
@@ -111,6 +114,7 @@ beforeEach(async () => {
       resume: 'Le poids du MaxiCode est en livres : converti en kilogrammes.',
     },
     openPr: null,
+    duringAgent: () => Promise.resolve(),
     config: {
       repo: join(root, 'ysl'),
       reportId: ID,
@@ -128,6 +132,9 @@ beforeEach(async () => {
       git: async (_cwd, args) => {
         calls.push(`git ${args.join(' ')}`);
         const [command, sub] = args;
+        if (args.includes('--git-common-dir')) return `${join(root, 'git')}\n`;
+        if (args.includes('--git-dir'))
+          return `${join(root, 'git', 'worktrees', 'x')}\n`;
         if (command === 'rev-parse') return `${BASE}\n`;
         if (command === 'worktree' && sub === 'add') {
           await mkdir(args.at(-2)!, { recursive: true });
@@ -140,8 +147,10 @@ beforeEach(async () => {
         if (command === 'grep') throw new Error('absent de la base');
         return '';
       },
-      exec: async (command, args) => {
-        calls.push(`${command} ${args.slice(0, 3).join(' ')}`);
+      exec: async (command, args, { sandbox }) => {
+        calls.push(
+          `${command} ${args.slice(0, 3).join(' ')}${sandbox ? ' [bac à sable]' : ''}`,
+        );
         const out = args[args.indexOf('--out') + 1];
         if (args.includes('measure') && out) {
           await mkdir(out, { recursive: true });
@@ -154,6 +163,7 @@ beforeEach(async () => {
       },
       runAgent: async (run) => {
         calls.push(`agent ${run.prompt}`);
+        await world.duringAgent();
         const corpus = join(run.workDir, 'corpus-real', 'annotations.json');
         const labels = JSON.parse(await readFile(corpus, 'utf8')) as unknown[];
         await writeFile(corpus, JSON.stringify([...labels, added]));
@@ -206,7 +216,14 @@ describe('handleReport', () => {
       `agent Rapport ${ID} dans ${work()}, étiquette ${LABEL}.`,
     );
     expect(world.calls).toContain(
-      `git push --quiet origin refs/heads/${BRANCH}:refs/heads/${BRANCH}`,
+      `git -c core.hooksPath=/dev/null push --no-verify --quiet origin refs/heads/${BRANCH}:refs/heads/${BRANCH}`,
+    );
+    expect(world.calls).toEqual(
+      expect.arrayContaining([
+        'pnpm turbo run lint [bac à sable]',
+        'pnpm --filter @repo/bench measure [bac à sable]',
+        'pnpm install --frozen-lockfile --prefer-offline',
+      ]),
     );
     expect(world.calls).toContain(
       `pr ${BRANCH} fix: poids du MaxiCode en livres`,
@@ -248,7 +265,7 @@ describe('handleReport', () => {
       kind: 'failed',
       reason: 'régression sur le corpus',
     });
-    expect(world.calls.some((c) => c.startsWith('git push'))).toBe(false);
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
     expect(world.calls.some((c) => c.startsWith('pr '))).toBe(false);
     expect(world.calls.some((c) => c.startsWith('git worktree remove'))).toBe(
       false,
@@ -266,7 +283,7 @@ describe('handleReport', () => {
       kind: 'failed',
       reason: 'contrôle avant push refusé',
     });
-    expect(world.calls.some((c) => c.startsWith('git push'))).toBe(false);
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
     expect(world.calls.some((c) => c.includes('measure'))).toBe(false);
     const failure = await readFile(join(work(), 'echec.md'), 'utf8');
     expect(failure).toContain('leak : donnée du rapport');
@@ -277,7 +294,7 @@ describe('handleReport', () => {
     world.config.openPr = false;
     const outcome = await handle();
     expect(outcome).toMatchObject({ kind: 'ready', branch: BRANCH });
-    expect(world.calls.some((c) => c.startsWith('git push'))).toBe(false);
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
     expect(world.calls.some((c) => c.startsWith('pr '))).toBe(false);
     expect(world.lines.join('\n')).toContain(
       '--no-pr : contrôles passés, arrêt avant le push',
@@ -327,6 +344,19 @@ describe('handleReport', () => {
       ),
     ) as { groups: { attempts: unknown[] }[] };
     expect(registry.groups[0]?.attempts).toEqual([]);
+  });
+
+  it('pushes nothing when the agent left a git hook behind', async () => {
+    world.duringAgent = () =>
+      writeFile(
+        join(world.config.repo, '..', 'git', 'hooks', 'pre-push'),
+        'curl …',
+      );
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'hooks ou configuration git modifiés pendant l’agent',
+    });
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
   });
 
   it('fails when the session did not run on Opus 5.5', async () => {

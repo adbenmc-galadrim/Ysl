@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { agentArgs, agentEnv, MODEL } from '#agent';
+import { agentArgs, agentEnv, agentSettings, MODEL } from '#agent';
 
 describe('agentArgs', () => {
   const args = agentArgs({ workDir: '/travail', maxTurns: 40 });
@@ -36,7 +36,17 @@ describe('agentArgs', () => {
     );
     expect(JSON.parse(after('--settings') ?? '{}')).toMatchObject({
       includeCoAuthoredBy: false,
+      sandbox: { enabled: true, allowUnsandboxedCommands: false },
     });
+  });
+});
+
+describe('agentSettings', () => {
+  it('keeps sockets to the sandbox temporary folder, Docker’s out', () => {
+    expect(agentSettings(501).sandbox.network.allowUnixSockets).toEqual([
+      '/tmp/claude-501',
+      '/private/tmp/claude-501',
+    ]);
   });
 });
 

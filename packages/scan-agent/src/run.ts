@@ -38,12 +38,18 @@ import {
 } from '#groups';
 import { checkBeforePush, type Problem } from '#guard';
 import { acquireLock } from '#lock';
-import { labelKeys, readReport, type PulledReport } from '#report';
+import { labelKeys, readReport, sha256, type PulledReport } from '#report';
 
 export type Exec = (
   command: string,
   args: string[],
-  options: { cwd: string; log: string; timeoutMs: number },
+  options: {
+    cwd: string;
+    log: string;
+    timeoutMs: number;
+    /** Runs the agent's code: no network, writes only under these folders. */
+    sandbox?: string[];
+  },
 ) => Promise<number>;
 
 export type Deps = {
@@ -170,6 +176,36 @@ async function addedLabel(
   return label;
 }
 
+/**
+ * What would let code run at `git push` or send it elsewhere: the hooks, the
+ * shared and per-worktree config, the worktree's `.git` pointer. The agent's
+ * sandbox can write to the git folder (it commits): nothing there may change.
+ */
+async function gitState(deps: Deps, worktree: string): Promise<string> {
+  const path = async (flag: string) =>
+    (
+      await deps.git(worktree, ['rev-parse', '--path-format=absolute', flag])
+    ).trim();
+  const common = await path('--git-common-dir');
+  const own = await path('--git-dir');
+  const hooks = join(common, 'hooks');
+  const files = [
+    join(common, 'config'),
+    join(own, 'config.worktree'),
+    join(worktree, '.git'),
+    ...(existsSync(hooks)
+      ? (await readdir(hooks)).map((name) => join(hooks, name))
+      : []),
+  ];
+  const parts = await Promise.all(
+    files.map(async (file) => {
+      const content = await readFile(file).catch(() => null);
+      return `${file}\u0000${content ? sha256(content) : '-'}`;
+    }),
+  );
+  return parts.join('\n');
+}
+
 async function readAgentResult(file: string): Promise<AgentResult> {
   try {
     return agentResultSchema.parse(JSON.parse(await readFile(file, 'utf8')));
@@ -179,6 +215,11 @@ async function readAgentResult(file: string): Promise<AgentResult> {
     ]);
   }
 }
+
+const oneLine = (text: string) => {
+  const flat = text.replaceAll(/\s+/g, ' ');
+  return flat.length > 200 ? `${flat.slice(0, 200)}…` : flat;
+};
 
 const problemLines = (problems: Problem[]) =>
   problems.map((p) => `${p.kind} : ${p.detail}`);
@@ -225,7 +266,16 @@ export async function handleReport(
   const state = join(dirname(config.reportDir), '.agent');
   const work = join(config.reportDir, 'agent');
   await mkdir(state, { recursive: true });
-  const report = await readReport(config.reportId, config.reportDir);
+  let report: PulledReport;
+  try {
+    report = await readReport(config.reportId, config.reportDir);
+  } catch (error) {
+    await appendFile(
+      join(state, 'journal.log'),
+      `${deps.now().toISOString()} rapport=${config.reportId} illisible : ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    throw error;
+  }
   const release = await acquireLock(join(state, 'verrou'), {
     log: deps.log,
     sleep: deps.lockSleep,
@@ -279,7 +329,7 @@ async function underLock(
     }
     await appendFile(
       join(state, 'journal.log'),
-      `${deps.now().toISOString()} rapport=${report.id} etiquette=${group.id} ${what}\n`,
+      `${deps.now().toISOString()} rapport=${report.id} etiquette=${group.id} ${oneLine(what)}\n`,
     );
     log(`Rapport ${report.id} : ${what}.`);
     return outcome;
@@ -344,9 +394,11 @@ async function underLock(
           cwd: worktree!,
           log: join(work, `${out}.log`),
           timeoutMs: BENCH_TIMEOUT_MS,
+          sandbox: [worktree!, work],
         },
       );
 
+    const gitBefore = await gitState(deps, worktree);
     const prompt = fill(config.prompt, {
       REPORT_ID: report.id,
       LABEL_ID: labelId,
@@ -380,6 +432,14 @@ async function underLock(
       `Agent terminé (code ${agent.code}, ${agent.result ?? 'sans résultat'}).`,
     );
 
+    const untouched = async () => {
+      if ((await gitState(deps, worktree!)) !== gitBefore) {
+        throw new Failure(
+          'hooks ou configuration git modifiés pendant l’agent',
+        );
+      }
+    };
+    await untouched();
     const result = await readAgentResult(join(work, 'resultat.json'));
     if (result.statut === 'echec') {
       throw new Failure(
@@ -433,6 +493,7 @@ async function underLock(
         cwd: worktree,
         log: join(work, 'gates.log'),
         timeoutMs: GATES_TIMEOUT_MS,
+        sandbox: [worktree, work],
       },
     );
     if (gates !== 0) throw new Failure('gates en échec (gates.log)');
@@ -489,8 +550,12 @@ async function underLock(
 
     if (!branch.startsWith(BRANCH_PREFIX))
       throw new Failure(`branche ${branch} refusée`);
+    await untouched();
     await deps.git(worktree, [
+      '-c',
+      'core.hooksPath=/dev/null',
       'push',
+      '--no-verify',
       '--quiet',
       'origin',
       `refs/heads/${branch}:refs/heads/${branch}`,

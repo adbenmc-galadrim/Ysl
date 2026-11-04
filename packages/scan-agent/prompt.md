@@ -20,7 +20,9 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
    compare tes commits au rapport et refuse le moindre emprunt.
 2. **Tu ne publies rien.** Ni `git push`, ni `gh`, ni réseau : tu commites seulement. La
    commande pousse la branche et ouvre la PR en draft après ses propres contrôles. Personne
-   d'autre qu'Adam ne fusionne.
+   d'autre qu'Adam ne fusionne. Tes commandes tournent dans un bac à sable (pas de réseau,
+   écriture limitée au worktree et à `{{WORK_DIR}}`) ; ne touche ni aux hooks ni à la
+   configuration git : la commande le vérifie et abandonne sinon.
 3. **Aucune régression.** Aucun champ du banc ne doit reculer, ni sur l'ensemble du corpus
    ni sur une seule étiquette. La commande refait la mesure avant et après, et n'ouvre la
    PR que si rien ne recule et que l'étiquette signalée est mieux lue.
@@ -56,7 +58,9 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
    (environ 70 s). Lis la ligne de `{{LABEL_ID}}` dans `mismatches.md` et `results.json`.
    Le banc ne lit que les codes (zxing, MaxiCode, parseurs, fusion) ; pour un champ venu de
    l'OCR, rejoue `report.ocr.lines` dans les parseurs de `packages/ocr` (`recipient.ts`,
-   `sender.ts`) par un script `*.local.ts` posé dans le paquet et supprimé avant le commit.
+   `sender.ts`) par un script `.mts` écrit dans `{{WORK_DIR}}`, qui importe les sources du
+   worktree par leur chemin absolu, lancé par `pnpm --filter @repo/ocr exec tsx <script>`.
+   Aucun script de rejeu dans le dépôt.
 3. **Diagnostic.** Nomme la cause : code non lu, parseur qui se trompe, fusion qui garde
    la mauvaise source, OCR qui découpe mal. Si l'étiquette est en réalité bien lue, ou si
    la cause n'est pas corrigeable sans casser autre chose, arrête-toi et écris un échec.
@@ -70,7 +74,7 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
    seul recul, et tu reprends ou abandonnes.
 6. **Commits** : `git add <fichiers>` un par un, `git commit -m "fix: …"`, en français,
    moins de 50 caractères, une seule ligne, sans corps. Arbre propre à la fin (`git status`
-   vide : supprime tes scripts `*.local.ts`).
+   vide).
 7. **Résultat** : écris `{{RESULT_FILE}}` :
 
    ```json
