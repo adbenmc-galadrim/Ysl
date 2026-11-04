@@ -9,7 +9,8 @@ import { type Deps, type Exec, handleReport } from '#run';
 const REPO = resolve(import.meta.dirname, '../../..');
 const GITHUB = 'adbenmc-galadrim/Ysl';
 
-const USAGE = `Usage : pnpm reports:agent [--no-pr] [--max-turns <n>] [--timeout-min <n>]
+const USAGE = `Usage : pnpm reports:pull --watch --on-report 'pnpm -w reports:agent [options]'
+        pnpm reports:agent [--no-pr] [--max-turns <n>] [--timeout-min <n>]
                           [--corpus <dossier>] [--private <dossier>] [--id <id>] [--dir <dossier>]
 Accroche de pnpm reports:pull --on-report : un agent ${MODEL} par rapport, dans un
 worktree depuis origin/main, puis une PR draft si rien ne fuit et rien ne recule.
