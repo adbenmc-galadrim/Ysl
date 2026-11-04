@@ -3,6 +3,8 @@
 Suivi des colis d'une entreprise, de la réception à la remise, pour plusieurs entreprises
 clientes : une PWA, sur téléphone et sur ordinateur, et son API.
 
+Guides d'utilisation par rôle (navette, département, admin entreprise, admin de l'app) : [docs/guides/](docs/guides/README.md).
+
 ## Structure
 
 | Dossier | Rôle |
