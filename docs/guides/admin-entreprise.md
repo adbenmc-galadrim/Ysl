@@ -153,7 +153,8 @@ Réglages › Identité et e-mails › **Expéditeur des e-mails** dit où en es
 Tant qu'il affiche « Envoi par le serveur pas encore activé », seule la messagerie marche :
 l'expéditeur saisi est gardé pour plus tard. L'activation se décide avec l'équipe qui
 exploite l'app ; une fois faite, déclarez le domaine d'envoi, posez les enregistrements DNS
-indiqués et « Vérifier maintenant ».
+indiqués et « Vérifier maintenant » (déroulé dans [Mise en service du
+pilote](../mise-en-service.md#3-domaine-denvoi-de-lentreprise-pilote)).
 
 Sous **Réponses aux e-mails**, chaque département peut avoir une adresse partagée qui reçoit
 les réponses des salariés ; vide, c'est le compte le plus ancien du département.

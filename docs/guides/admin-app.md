@@ -69,5 +69,8 @@ d'admin actif.
 L'envoi par le serveur vaut pour toutes les entreprises à la fois. Tant qu'il n'est pas
 activé, invitations et e-mails aux salariés passent par un lien à copier et par la
 messagerie des agents. Son activation, avec la clé du fournisseur d'envoi et le webhook,
-est une décision à part, décrite dans [Synchronisation](../synchronisation.md) et dans la
-partie 9 de la [recette](../recette.md#9-ce-qui-attend-lactivation-de-brevo).
+est une décision à part. La procédure est dans [Mise en service du
+pilote](../mise-en-service.md#2-activer-lenvoi-par-le-serveur-brevo), puis le domaine
+d'envoi de chaque entreprise ([section 3](../mise-en-service.md#3-domaine-denvoi-de-lentreprise-pilote)) ;
+les vérifications après activation, dans la partie 9 de la
+[recette](../recette.md#9-ce-qui-attend-lactivation-de-brevo).
