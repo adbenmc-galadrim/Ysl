@@ -65,6 +65,8 @@ app.use(
     origin: env.CORS_ORIGIN,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
+    // The outbox reads when to retry a scan report (429, 503).
+    exposeHeaders: ['Retry-After'],
     credentials: true,
     maxAge: 86400,
   }),

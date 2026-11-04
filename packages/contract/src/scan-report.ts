@@ -44,6 +44,23 @@ export const SCAN_REPORT_FIELDS = {
   image: 'image',
 } as const;
 
+/** The `error` of a refused upload; `docs/rapports-scan.md` says what the outbox does with each. */
+export const SCAN_REPORT_ERRORS = [
+  'invalid',
+  'too_large',
+  'type',
+  'unauthorized',
+  'suspended',
+  'rate_limited',
+  'busy',
+  'full',
+] as const;
+
+export type ScanReportError = (typeof SCAN_REPORT_ERRORS)[number];
+
+/** The body of a kept upload (201, or 200 when it was already there). */
+export type ScanReportUploaded = { id: string };
+
 export const scanReportId = z.uuid();
 
 export const scanReportBody = z.record(z.string(), z.unknown());

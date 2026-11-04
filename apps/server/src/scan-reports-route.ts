@@ -11,7 +11,9 @@ import {
   scanReportId,
   type ScanReportBody,
   type ScanReportDetail,
+  type ScanReportError,
   type ScanReportImageType,
+  type ScanReportUploaded,
   type ScanReportSummary,
 } from '@repo/contract/scan-report';
 import { Hono, type Context } from 'hono';
@@ -72,8 +74,13 @@ export function slidingWindow({
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
-function refuse(c: Context, status: 400 | 413 | 415, error: string) {
-  return c.json({ error }, status, NO_STORE);
+function refuse(
+  c: Context,
+  status: 400 | 401 | 403 | 413 | 415 | 429 | 503 | 507,
+  error: ScanReportError,
+  headers: Record<string, string> = {},
+) {
+  return c.json({ error }, status, { ...NO_STORE, ...headers });
 }
 
 const SAVED = {
@@ -148,10 +155,11 @@ export function scanReportsRoute({
       comment: comment.trim() || null,
       image: Buffer.from(await image.arrayBuffer()),
     });
-    const status = SAVED[outcome];
-    return status < 300
-      ? c.json({ id: id.data }, status, NO_STORE)
-      : c.json({ error: outcome }, status, NO_STORE);
+    if (outcome === 'type' || outcome === 'full') {
+      return refuse(c, SAVED[outcome], outcome);
+    }
+    const uploaded: ScanReportUploaded = { id: id.data };
+    return c.json(uploaded, SAVED[outcome], NO_STORE);
   };
 
   let reading = 0;
@@ -163,22 +171,18 @@ export function scanReportsRoute({
     }),
     async (c) => {
       const from = await sender(c.req.raw.headers);
-      if (!from) return c.json({ error: 'unauthorized' }, 401, NO_STORE);
+      if (!from) return refuse(c, 401, 'unauthorized');
       if (from === 'suspended') {
-        return c.json({ error: 'suspended' }, 403, NO_STORE);
+        return refuse(c, 403, 'suspended');
       }
       if (!allow(from.userId)) {
-        return c.json({ error: 'rate_limited' }, 429, {
-          ...NO_STORE,
+        return refuse(c, 429, 'rate_limited', {
           'Retry-After': String(SCAN_REPORT_RATE.windowMs / 1000),
         });
       }
       // The VPS has no swap: a few images in memory at a time, whoever sends them.
       if (reading >= SCAN_REPORT_UPLOADS_AT_ONCE) {
-        return c.json({ error: 'busy' }, 503, {
-          ...NO_STORE,
-          'Retry-After': '30',
-        });
+        return refuse(c, 503, 'busy', { 'Retry-After': '30' });
       }
       reading += 1;
       try {
