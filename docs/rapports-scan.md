@@ -60,7 +60,7 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | 201 `{ id }` | gardé | retire le rapport |
 | 200 `{ id }` | déjà reçu (renvoi) | retire le rapport |
 | 400 `invalid` | champ manquant ou mal formé | abandonne |
-| 401 | pas de session | attend une reconnexion |
+| 401 `unauthorized` | pas de session | attend une reconnexion |
 | 403 `suspended` | compte ou entreprise suspendus | abandonne |
 | 404 | fonction éteinte (pas de clé) | abandonne, et le dit à l'utilisateur : le rapport n'est pas parti |
 | 413 `too_large`, 415 `type` | image trop lourde, pas une image | abandonne |
