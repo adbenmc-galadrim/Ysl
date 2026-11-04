@@ -385,7 +385,8 @@ la clé.
 Mise en service : poser `BREVO_WEBHOOK_TOKEN` sur l'API,
 puis `POST https://api.brevo.com/v3/webhooks` avec `type: "transactional"`, l'URL de la
 route, `events: ["delivered", "hardBounce", "invalid", "blocked", "spam", "unsubscribed"]`
-et `auth: { type: "bearer", token }`.
+et `auth: { type: "bearer", token }`. `pnpm ops:brevo-webhook` le fait, une seule fois, et
+`pnpm ops:check` contrôle le résultat (`docs/mise-en-service.md`).
 
 **iPhone** (`apps/web/src/features/retention`), à l'ouverture puis après une
 synchronisation (au plus tous les quarts d'heure), au repos du fil principal :
