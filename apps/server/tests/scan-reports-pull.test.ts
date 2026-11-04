@@ -1,5 +1,13 @@
 import { createHash } from 'node:crypto';
-import { chmod, mkdir, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type {
@@ -242,6 +250,36 @@ describe('pulling the reports', () => {
     expect(error.message).toMatch(/401/);
     expect(error.fatal).toBe(true);
     expect(`${error.message}${lines.join('')}`).not.toContain(KEY);
+  });
+
+  it('rewrites a report a previous run left damaged', async () => {
+    const remote = server([stored(FIRST)]);
+    await pullReports(options(remote.fetch));
+    await writeFile(join(dir, FIRST, 'image.jpg'), PNG);
+    remote.waiting.set(FIRST, stored(FIRST));
+
+    const result = await pullReports(options(remote.fetch));
+
+    expect(result.pulled).toEqual([
+      { id: FIRST, dir: join(dir, FIRST), written: true },
+    ]);
+    expect(
+      Buffer.compare(await readFile(join(dir, FIRST, 'image.jpg')), JPEG),
+    ).toBe(0);
+  });
+
+  it('keeps the key out of a network failure that quotes it', async () => {
+    const fetchImpl = vi.fn<Fetch>(() =>
+      Promise.reject(new TypeError(`invalid header value: Bearer ${KEY}`)),
+    );
+
+    const error = (await pullReports(options(fetchImpl)).then(
+      () => null,
+      (caught: unknown) => caught,
+    )) as PullError;
+
+    expect(error.message).toMatch(/^Serveur injoignable/);
+    expect(error.message).not.toContain(KEY);
   });
 
   it('says when the server has the reports switched off', async () => {
