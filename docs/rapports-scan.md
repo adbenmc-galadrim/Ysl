@@ -31,7 +31,9 @@ compression) et son empreinte SHA-256.
 - Plafond du serveur : 1 Gio d'images en attente ; au-delà, l'envoi est refusé (507).
 - Conservation : supprimé à l'acquittement du PC, sinon par la purge planifiée au bout de
   14 jours (`runPurge`, le passage sur toutes les entreprises, comme le journal de
-  l'admin de l'app). La suppression d'une entreprise emporte ses rapports.
+  l'admin de l'app). La suppression d'une entreprise emporte ses rapports ; ceux d'un
+  compte rattaché à aucune entreprise (`organization_id` vide) ne partent qu'à
+  l'acquittement ou à la purge.
 
 Aucune vue de l'app n'affiche ces rapports, ni chez l'admin d'entreprise ni chez l'admin
 de l'app (D26) ; un test vérifie qu'aucun routeur tRPC ne lit la table.
@@ -49,7 +51,7 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | Champ | Contenu |
 | --- | --- |
 | `id` | UUID choisi par le téléphone : un renvoi après une réponse perdue est le même rapport |
-| `report` | les lectures, un objet JSON en texte |
+| `report` | les lectures, un objet JSON en texte ; leur forme est fixée par le bouton de l'iPhone (YSL-143), le serveur ne vérifie que l'objet et sa taille |
 | `comment` | facultatif |
 | `image` | le fichier de l'image |
 
@@ -60,7 +62,7 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | 400 `invalid` | champ manquant ou mal formé | abandonne |
 | 401 | pas de session | attend une reconnexion |
 | 403 `suspended` | compte ou entreprise suspendus | abandonne |
-| 404 | fonction éteinte (pas de clé) | abandonne |
+| 404 | fonction éteinte (pas de clé) | abandonne, et le dit à l'utilisateur : le rapport n'est pas parti |
 | 413 `too_large`, 415 `type` | image trop lourde, pas une image | abandonne |
 | 429 `rate_limited` | 20 envois par compte et par 10 minutes ; `Retry-After` | réessaie plus tard |
 | 503 `busy` | deux envois déjà en lecture sur le serveur ; `Retry-After` | réessaie plus tard |
@@ -78,7 +80,12 @@ d'entreprise n'y accède ; sans la clé, ou avec une autre, 401.
 | `GET /api/scan-reports/:id/image` | l'image, en pièce jointe |
 | `POST /api/scan-reports/:id/ack` | 204, le rapport et l'image sont supprimés ; 404 s'il n'existe plus |
 
-Le PC n'acquitte qu'après avoir écrit le rapport et vérifié l'empreinte de l'image.
+Le PC n'acquitte qu'après avoir écrit le rapport et vérifié l'empreinte de l'image. La
+liste s'arrête à 100 rapports : après ses acquittements, le PC la redemande jusqu'à ce
+qu'elle revienne vide.
+
+Les codes d'erreur (`SCAN_REPORT_ERRORS`), les limites et les types des réponses sont dans
+`@repo/contract/scan-report`. `Retry-After` est exposé par le CORS : l'outbox peut le lire.
 
 ```bash
 curl -s -H "Authorization: Bearer $SCAN_REPORTS_KEY" https://ysl-api.shinseo.fr/api/scan-reports
@@ -89,7 +96,11 @@ curl -s -H "Authorization: Bearer $SCAN_REPORTS_KEY" https://ysl-api.shinseo.fr/
 Avant les premiers vrais utilisateurs (YSL-148) :
 
 1. Retirer `SCAN_REPORTS_KEY` de l'API et redéployer : plus rien n'entre ni ne sort.
-2. Retirer le bouton de l'iPhone, les routes (`apps/server/src/scan-reports-route.ts`),
-   le service (`packages/api/src/features/scan-reports/`), son appel dans `runPurge`, le
-   contrat (`packages/contract/src/scan-report.ts`) et la table du schéma.
+2. Retirer le bouton de l'iPhone, les routes (`apps/server/src/scan-reports-route.ts`,
+   leur montage dans `apps/server/src/index.ts`), le service
+   (`packages/api/src/features/scan-reports/`, ses exports dans
+   `packages/api/src/index.ts`), son appel dans `runPurge`, le contrat
+   (`packages/contract/src/scan-report.ts` et son export dans `package.json`), la table
+   du schéma, `SCAN_REPORTS_KEY` (`packages/shared/src/env/server.ts`, `turbo.json`,
+   `.env.example`), la ligne du README et cette page.
 3. Migration de retrait : `DROP TABLE "scan_report";`. Aucune autre table n'en dépend.
