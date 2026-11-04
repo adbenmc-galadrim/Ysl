@@ -238,7 +238,8 @@ pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
 ```
 
 `-w` est nécessaire : `reports:pull` lance l'accroche depuis `apps/server`. Options :
-`--no-pr` (tout sauf le push, la PR et le versement au corpus privé : démo, essai),
+`--no-pr` (tout sauf le push, la PR et le versement au corpus privé : démo, essai ; le
+worktree et sa branche restent sur le PC),
 `--max-turns <n>` (150 par défaut), `--timeout-min <n>` (60 par défaut), `--corpus` (sortie
 du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé, défaut
 `<corpus>/real`). Le corpus de synthèse doit être généré avant
@@ -271,7 +272,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    réseau, écriture seulement dans le worktree, le dossier de travail et le dossier git
    pour commiter, sockets Unix seulement dans le dossier temporaire du bac à sable). Ni
    lecture ni écriture de `~/.ssh`, `~/.config`, `~/.gnupg`, `~/.aws`, `~/.claude`,
-   `~/.netrc`, `~/.gitconfig`, par aucun outil. Son environnement ne porte aucune clé
+   `~/.netrc`, `~/.gitconfig`, par aucun outil : git y lit sans config globale
+   (`GIT_CONFIG_GLOBAL=/dev/null`) et les commits portent le nom et l'e-mail git d'Adam,
+   lus par la commande. Son environnement ne porte aucune clé
    (`SCAN_REPORTS_KEY`, jetons GitHub, Coolify…, agent ssh), seulement la sienne ; l'URL de
    push d'`origin` y est inutilisable et `gh` sans compte. Son prompt est versionné :
    `packages/scan-agent/prompt.md`. Il écrit la lecture attendue de l'étiquette dans la
@@ -285,7 +288,8 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    - arbre propre, au moins un commit, la seule étiquette ajoutée au corpus de travail
      valide (schéma du corpus) et les autres intactes ;
    - aucun fichier image ni binaire, rien sous `tmp/`, ni `annotations.json`, ni lockfile,
-     ni `packages/bench/` (la notation), ni `packages/scan-agent/`, ni `.github/` ;
+     ni `package.json`, ni `packages/corpus/data/`, ni `packages/bench/` (la notation), ni
+     `packages/scan-agent/`, ni `.github/` ;
    - **aucune fuite** : les noms, numéros et valeurs lus ou corrigés du rapport et de la
      lecture attendue, mot à mot, en entier ou sans espaces, et les lignes OCR qui portent
      des chiffres (adresse, téléphone, e-mail), cherchés dans les lignes ajoutées, les
@@ -296,8 +300,10 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
      comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
      (`packages/scan-agent/src/sandbox.ts` : aucun réseau ni DNS, sockets Unix seulement
-     dans un dossier temporaire à eux, ni `open`, `osascript` ou `ssh`, aucune lecture des
-     clés du PC, écriture seulement dans le worktree, le dossier de travail et ce dossier) ;
+     dans un dossier temporaire à eux, aucune app lancée hors du bac à sable (LaunchServices,
+     Apple Events, `open`, `osascript`, `shortcuts`, `automator`), ni `ssh` ni `scp`, aucune
+     lecture des clés du PC, écriture seulement dans le worktree, le dossier de travail et ce
+     dossier) ;
    - le banc sur `main` puis sur la branche, sur le même corpus : aucun champ ne perd une
      lecture juste ni ne gagne un faux « sûr », sur l'ensemble comme sur chaque étiquette,
      et au moins un champ de l'étiquette signalée est mieux lu (une correction OCR, que le
@@ -306,10 +312,12 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    description de la commande : résumé, tableau agrégé avant/après par champ et par
    politique, nombre d'étiquettes) ; l'image et sa lecture attendue sont versées au corpus
    privé `~/goinfre/ysl/tmp/corpus/real` ; le worktree et la branche locale sont supprimés.
-   Personne ne fusionne à part Adam ; rien ne part jamais sur `main` ni `prod`.
+   Si ce rangement échoue, la PR reste ouverte et le journal dit ce qui est à finir à la
+   main. Personne ne fusionne à part Adam ; rien ne part jamais sur `main` ni `prod`.
 8. **Échec** (rien à corriger, régression, fuite, gates rouges, délai) : ni push ni PR ;
    `echec.md` dans le dossier de travail donne la raison et le détail ; le worktree reste
-   pour qu'on le reprenne. Le corpus privé n'est pas touché.
+   pour qu'on le reprenne. Le corpus privé n'est pas touché. Seule exception : `gh pr create`
+   qui échoue après le push ; `echec.md` le dit (« Publié : branche … poussée, sans PR »).
 
 Journal : une ligne par rapport dans `tmp/rapports-scan/.agent/journal.log`, le détail dans
 `tmp/rapports-scan/<id>/agent/` (`journal.log`, `claude.jsonl` le flux complet de l'agent,
@@ -334,7 +342,7 @@ Avant les premiers vrais utilisateurs (YSL-148) :
 4. Sur le PC : supprimer `tmp/rapports-scan/` (images complètes de la phase de test) et
    `~/.config/ysl/scan-reports-key`.
 5. L'agent : le paquet `packages/scan-agent` et `reports:agent` dans le `package.json` de la
-   racine ; sur le PC, les worktrees `ysl-scan-etiquette-*` restés après un échec et les
+   racine ; sur le PC, les worktrees `ysl-scan-etiquette-*` restés après un échec ou un `--no-pr` et les
    branches `fix/scan-etiquette-*` (`git worktree remove`, `git branch -D`). Les étiquettes
    versées au corpus privé (`rapport-*`, images complètes) : les garder pour le banc ou
    les supprimer avec le reste, au choix d'Adam.
