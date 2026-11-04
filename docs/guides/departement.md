@@ -54,7 +54,8 @@ Le salarié n'a ni compte ni app. Il reçoit un e-mail qui lui donne son code de
 chiffres, un QR, le lieu et les horaires. Il vient au point de retrait de son département,
 montre le QR sur son téléphone ou donne le code, et signe sur l'écran si c'est demandé. Un
 collègue peut venir à sa place : le salarié le dit en répondant à l'e-mail, et le
-département peut envoyer au collègue une copie avec le même QR. Sans nouvelles, il reçoit des relances.
+département peut envoyer au collègue une copie de son code. Sans nouvelles, il reçoit des
+relances, sauf s'il a signalé une absence.
 
 ## Les écrans
 
@@ -193,7 +194,7 @@ Sur la fiche du colis, « Le salarié a répondu » propose :
 | Ce n'est pas pour moi | le colis repasse à compléter |
 | Un collègue passe le prendre | son nom sera proposé à la remise |
 | Absence jusqu'au … | pas de relance avant son retour |
-| Envoyer une copie à un collègue | même QR et même code de retrait, pour un délégué |
+| Envoyer une copie à un collègue | le même code de retrait, pour un délégué ; le même QR aussi si l'envoi par le serveur est activé |
 
 ## Remettre un colis
 

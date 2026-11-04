@@ -147,7 +147,9 @@ Pour prévenir et remettre, suivez le [guide du département](departement.md) : 
 [Prévenir les salariés](departement.md#prévenir-les-salariés) et
 [Remettre un colis](departement.md#remettre-un-colis), ainsi que
 [Relancer](departement.md#relancer) et
-[Quand le salarié répond](departement.md#quand-le-salarié-répond). Le salarié est prévenu
+[Quand le salarié répond](departement.md#quand-le-salarié-répond) et
+[Annuler une remise, retourner un colis](departement.md#annuler-une-remise-retourner-un-colis).
+Les modèles d'e-mail et la messagerie se règlent dans Réglages › E-mails. Le salarié est prévenu
 dès la réception. Deux points à connaître avant le premier envoi :
 
 - le modèle d'e-mail livré parle du service courrier : adaptez-le
