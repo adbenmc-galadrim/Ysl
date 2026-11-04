@@ -53,7 +53,7 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | Champ | Contenu |
 | --- | --- |
 | `id` | UUID choisi par le téléphone : un renvoi après une réponse perdue est le même rapport |
-| `report` | les lectures, un objet JSON en texte ; leur forme est fixée par le bouton de l'iPhone (YSL-143), le serveur ne vérifie que l'objet et sa taille |
+| `report` | les lectures, un objet JSON en texte ; leur forme est fixée par le bouton de l'iPhone (voir « Contenu du rapport »), le serveur ne vérifie que l'objet et sa taille |
 | `comment` | facultatif |
 | `image` | le fichier de l'image |
 
@@ -69,6 +69,90 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | 429 `rate_limited` | 20 envois par compte et par 10 minutes ; `Retry-After` | réessaie plus tard |
 | 503 `busy` | deux envois déjà en lecture sur le serveur ; `Retry-After` | réessaie plus tard |
 | 507 `full` | plafond du serveur atteint | réessaie plus tard |
+
+### Contenu du rapport
+
+Fixé par `scanReportV1` (`@repo/contract/scan-report`), version `SCAN_REPORT_VERSION` = 1 :
+toute forme nouvelle monte la version. Le serveur ne le vérifie pas, le PC l'écrit tel quel
+dans `rapport.json` ; c'est ce que l'agent lit pour rejouer l'image dans le banc
+(`packages/bench`, voir « Rejouer » plus bas).
+
+| Clé | Contenu |
+| --- | --- |
+| `version` | 1 |
+| `shotAt`, `createdAt` | prise de la photo, appui sur « Envoyer le rapport » (ISO) |
+| `app` | `version` : `displayVersion` (AAAA.MM.JJ, celle des Réglages) ; `build` : l'horodatage du build (`__APP_VERSION__`) |
+| `device` | `kind` (`iphone`…), `userAgent`, `platform`, `language`, `screen` (`width`, `height`, `pixelRatio`), `standalone` (app installée) |
+| `shot` | `source` : `camera` (viseur) ou `import` (photothèque, appareil photo natif) ; `zoom` du viseur ; `torch` allumée ; `quality` : la mesure de netteté avant lecture (`ok`, `blurry`, `glare`), qui choisit le conseil sous « illisible » |
+| `reception` | l'adresse de l'entreprise que la fusion a prise en compte (étiquettes « ailleurs »), ou `null` |
+| `image` | l'image envoyée : `type`, `width`, `height`, `bytes`, `quality` JPEG |
+| `codes` | `state` (`done`, `failed` si le Worker a échoué) et `passes` : chaque passe de la cascade zxing, la première puis celle qui cherche les formats manquants (`expect`, ex. `["MaxiCode"]`), avec ses `symbols` (`format`, `text` brut séparateurs compris, `isValid`, `position` en pixels du cadre de la passe (`width` × `height` de la passe), `orientation`), ses `steps` (`whole-1600`, `whole-2400`, `tiles`, `maxicode` : durée, nombre de symboles, taille lue) et sa durée |
+| `ocr` | `state` : `done`, `skipped` (modèles pas encore sur l'iPhone), `failed`, `pending` (pas fini 15 s après l'envoi), `none` (pas de lecture du texte pour cette prise : pièce rattachée à son colis, doublon hors du lot) ; si `done` : `engine` (`paddle`, `tesseract`), `lines` (`text`, `box` dans l'image du moteur `width` × `height`, `score`), `sourceWidth` × `sourceHeight` (l'image reçue par le moteur), `timings`, et `input` : l'OCR lit la photo stockée, soit l'image envoyée réduite à `maxSide` (1 600 px) et réenregistrée en JPEG `quality` 0,8 |
+| `fields` | chaque champ tel que le colis le garderait, corrections comprises : `value`, `confidence`, `level`, `flags`, `sources`, `candidates` |
+| `extraction` | la fusion des lectures avant toute correction (`extractFields`) : mêmes champs, plus `codes` (codes analysés), `accounts`, `recipientCard`, `senderId` |
+| `corrections` | ce que l'utilisateur a posé à la main avant l'envoi : `field` (`tracking`, `recipient`, `sender`, `type`, `department`), `value`, `how` (`typed`, `chosen`, `confirmed`) |
+| `draft` | le brouillon du colis tel quel au moment de l'envoi ; `{ id, reading: "gone" }` s'il a été annulé entre-temps |
+| `screen` | ce que l'écran de scan affichait : `kind` (`read`, `unreadable`, `duplicate`, `piece`) et, pour `read` seulement, ses lignes (`label`, `value`, `status`) ; vide pour les autres états |
+
+**L'image** est le cadre complet que les lecteurs de codes ont lu (après le zoom du viseur,
+jusqu'à 12 Mpx), encodé en JPEG 0,92, ou moins (0,85, 0,75, 0,6) s'il dépasse 8 Mio ; encore
+trop lourd, il est réduit, et `image.width` diffère alors de celui des passes (les positions
+restent dans la taille des passes). Pour
+rejouer l'OCR au plus près, la réduire à 1 600 px de grand côté et l'encoder en JPEG 0,8.
+La photo stockée de l'étiquette n'est pas touchée : le cadre est une copie gardée en mémoire
+pour la dernière prise seulement (la précédente est libérée), et n'est encodé qu'à l'envoi.
+
+**Rejouer.** Ouvrir l'image sans la repasser au format du viseur
+(`openImage(chemin, { viewfinder: false })`, ou `--raw` du banc), lire une première passe
+avec `decodeSource`, puis, pour chaque passe dont `expect` n'est pas nul, une seconde passe
+`decodeSource(source, { enough: enoughFormats(expect) })` : c'est là que l'app lit la
+MaxiCode d'UPS. Le rejeu reste une approximation : l'image a été recompressée (JPEG 0,92),
+et le banc réduit en lanczos3 là où le Worker de l'app réduit par un canvas.
+
+**Ce que le rapport ne dit pas.** La bonne réponse n'y est que pour ce que l'utilisateur a
+corrigé (`corrections`) et ce qu'il écrit dans le commentaire : le reste de `fields` est la
+lecture, non vérifiée. `app.build` est l'horodatage du build, pas un commit : retrouver le
+code lu par `app.version` (date) et l'historique de `prod`. L'annuaire n'y est pas
+(`extraction` est recalculée sans lui).
+
+### Côté iPhone
+
+Le bouton « Signaler ce scan » apparaît au-dessus des commandes du viseur, sur le résultat du
+dernier scan (lu, illisible, doublon, pièce). Il ouvre une feuille avec un commentaire
+facultatif (2 000 caractères) ; « Envoyer le rapport » la ferme aussitôt, le rapport
+s'enregistre et l'écran le dit, sans bloquer le scan suivant. Rien ne part sans ce geste.
+
+Le rapport attend dans la table Dexie `scan_report_outbox` (version 13), son image en OPFS à
+côté des photos (`photos/report-<id>.jpg`, épargnée par le balayage des photos orphelines),
+ou dans la ligne quand l'OPFS manque. Il part à l'appui, à l'ouverture de l'app, au retour du
+réseau et toutes les minutes, un à la fois, du plus ancien au plus récent, selon le
+tableau de l'envoi ; sans `Retry-After`, l'attente double à partir de 5 s jusqu'à 30 min.
+Une déconnexion efface les rapports en attente avec le reste des données locales.
+
+Au retrait (YSL-148), côté iPhone :
+
+- le dossier `apps/web/src/features/scan-report/` (rapport, dernier cadre, file, envoi, hook
+  de l'écran) et ses tests `apps/web/tests/scan-report-*.test.ts` ;
+- `apps/web/src/app/routes/_authenticated/scan.tsx` : `useScanReport`, ses appels
+  (`report.keep`, `report.codes`, `report.text`, `report.slot`, `report.sheet`) et la
+  condition `!report.open` sur les commandes ;
+- `apps/web/src/features/scan/reader.ts` (`passes`, `DecodePass`) et
+  `apps/web/src/features/scan/text.ts` (`ocr`), avec leurs assertions dans
+  `scan-reader.test.ts` et `scan-text.test.ts` ;
+- `apps/web/src/features/camera/capture.ts` : `PHOTO_MAX_SIDE` et `PHOTO_QUALITY`
+  redeviennent privés ;
+- `apps/web/src/features/db/schema.ts` : l'import `LocalScanReport`, la table `scanReport`,
+  `SCAN_REPORT_STORES`, et une nouvelle version Dexie qui la supprime
+  (`scan_report_outbox: null`), avec `db.verno` et la liste des tables dans
+  `local-schema.test.ts` ; les fichiers `report-*` restants partent alors au balayage ;
+- `apps/web/src/features/photos/store.ts` : `reportImagePaths` dans `sweepOrphanPhotos` ;
+- `apps/web/src/app/routes/_authenticated.tsx` (`startReportSender`) et
+  `apps/web/src/features/auth/wipe.ts` (`stopReportSender`) ;
+- les libellés `scan.report.*` de `packages/shared/src/i18n/locales/fr.ts` ;
+- `packages/ui/src/screens/reception/signaler-scan.tsx`, ses stories, son export dans
+  `packages/ui/src/screens/index.ts`, et la prop `report` de `ScanScreen` ;
+- dans le contrat, `scanReportV1` et ce qui l'accompagne, avec
+  `packages/contract/tests/scan-report.test.ts`.
 
 ### Récupération, depuis le PC
 
