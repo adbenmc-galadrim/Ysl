@@ -63,7 +63,9 @@ async function main(): Promise<void> {
 
   const seconds =
     values.interval === undefined ? undefined : Number(values.interval);
-  if (seconds !== undefined && !(seconds > 0)) throw new Error(USAGE);
+  if (seconds !== undefined && !(seconds > 0)) {
+    throw new Error(`--interval invalide : ${values.interval}\n\n${USAGE}`);
+  }
   const command = values['on-report'];
 
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {

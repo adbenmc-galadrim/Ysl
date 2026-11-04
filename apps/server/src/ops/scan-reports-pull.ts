@@ -16,8 +16,7 @@ import {
   type ScanReportDetail,
   type ScanReportSummary,
 } from '@repo/contract/scan-report';
-
-export type Fetch = typeof fetch;
+import { trimUrl, type Fetch } from '#ops/brevo';
 
 export const DEFAULT_SERVER = 'https://ysl-api.shinseo.fr';
 
@@ -97,7 +96,7 @@ export function serverBase(server: string): string {
       fatal: true,
     });
   }
-  return `${url.origin}${url.pathname.replace(/\/+$/, '')}`;
+  return trimUrl(`${url.origin}${url.pathname}`);
 }
 
 export function retryAfterMs(
@@ -137,7 +136,8 @@ async function call(
     });
   } catch (error) {
     if (options.signal?.aborted || error instanceof PullError) throw error;
-    throw new PullError(`Serveur injoignable (${reason(error)}).`);
+    const why = reason(error).replaceAll(options.key, '…');
+    throw new PullError(`Serveur injoignable (${why}).`);
   }
   if (response.status === 401) {
     throw new PullError(

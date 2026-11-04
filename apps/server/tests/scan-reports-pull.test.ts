@@ -16,9 +16,9 @@ import {
   runHook,
   serverBase,
   watchReports,
-  type Fetch,
   type WatchOptions,
 } from '#ops/scan-reports-pull';
+import { type Fetch } from '#ops/brevo';
 import { scanReportsRoute } from '#scan-reports-route';
 
 const KEY = 'k'.repeat(32);
