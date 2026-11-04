@@ -261,12 +261,15 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    `pnpm install --frozen-lockfile --prefer-offline`.
 4. **Un dossier de travail hors dépôt**, `tmp/rapports-scan/<id>/agent/` : une copie du
    corpus privé (`annotations.json` et des liens vers les photos) où l'image du rapport
-   entre sous le nom `rapport-<id>.jpg`.
+   entre sous le nom `rapport-<id>.jpg` (ou `.png`).
 5. **L'agent** : `claude -p --model claude-opus-5-5` (le modèle annoncé par la session est
    vérifié, un autre l'arrête), `--permission-mode dontAsk`, outils `Read`, `Edit`, `Write`,
-   `Glob`, `Grep` et `Bash` limité à `pnpm` et à `git` en lecture, `add`, `commit` ; ni
-   `git push`, ni `gh`, ni web ; aucun serveur MCP ni réglage du PC ; dossiers : le worktree
-   et le dossier de travail ; tours et durée bornés. Son environnement ne porte aucune clé
+   `Glob`, `Grep` et `Bash` limité à `pnpm`, `ls` et à `git` en lecture, `add`, `commit`,
+   `restore` ; ni `git push`, ni `gh`, ni web ; aucun serveur MCP ni réglage du PC ;
+   dossiers : le worktree et le dossier de travail ; tours et durée bornés. `pnpm` lance
+   n'importe quel code : ses commandes passent par le bac à sable de Claude Code (aucun
+   réseau, écriture seulement dans le worktree, le dossier de travail et le dossier git
+   pour commiter, sockets Unix seulement dans le dossier temporaire du bac à sable). Son environnement ne porte aucune clé
    (`SCAN_REPORTS_KEY`, jetons GitHub, Coolify…, agent ssh), seulement la sienne ; l'URL de
    push d'`origin` y est inutilisable et `gh` sans compte. Son prompt est versionné :
    `packages/scan-agent/prompt.md`. Il écrit la lecture attendue de l'étiquette dans la
@@ -274,6 +277,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    `packages/contract` ou `packages/ocr` avec un test synthétique, commite, et rend
    `resultat.json` (statut, nature de la correction, titre et résumé de la PR).
 6. **Les contrôles, faits par la commande et non par l'agent**, avant tout push :
+   - hooks git, configuration (`config`, `config.worktree`) et fichier `.git` du worktree
+     identiques à ce qu'ils étaient avant l'agent ; le push part avec
+     `core.hooksPath=/dev/null` et `--no-verify` ;
    - arbre propre, au moins un commit, la seule étiquette ajoutée au corpus de travail
      valide (schéma du corpus) et les autres intactes ;
    - aucun fichier image ni binaire, rien sous `tmp/`, ni `annotations.json`, ni lockfile,
@@ -282,9 +288,11 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
      lecture attendue, mot à mot, en entier ou sans espaces, et les lignes OCR qui portent
      des chiffres (adresse, téléphone, e-mail), cherchés dans les lignes ajoutées, les
      chemins, les messages de commit, la branche, le titre et la description de la PR ; un
-     texte déjà présent sur `main` n'est pas une fuite ;
+     texte déjà présent sur `main` en mot entier n'est pas une fuite ;
    - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ;
    - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
+     comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
+     (aucun réseau, écriture seulement dans le worktree et le dossier de travail) ;
    - le banc sur `main` puis sur la branche, sur le même corpus : aucun champ ne perd une
      lecture juste ni ne gagne un faux « sûr », sur l'ensemble comme sur chaque étiquette,
      et au moins un champ de l'étiquette signalée est mieux lu (une correction OCR, que le
