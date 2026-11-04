@@ -30,8 +30,22 @@ const ALLOWED = [
   'Bash(ls*)',
 ];
 
+/** Where the PC keeps its keys: never read, never written. */
+export const SECRET_PATHS = [
+  '~/.ssh',
+  '~/.config',
+  '~/.gnupg',
+  '~/.aws',
+  '~/.claude',
+  '~/.netrc',
+  '~/.gitconfig',
+];
+
 /** It commits; the hook alone pushes, after its checks. */
 const DENIED = [
+  ...['Read', 'Edit', 'Write'].flatMap((tool) =>
+    SECRET_PATHS.flatMap((path) => [`${tool}(${path})`, `${tool}(${path}/**)`]),
+  ),
   'Bash(git push*)',
   'Bash(git remote*)',
   'Bash(git config*)',
@@ -65,6 +79,7 @@ export function agentSettings(uid = process.getuid?.() ?? 0) {
       enabled: true,
       allowUnsandboxedCommands: false,
       autoAllowBashIfSandboxed: false,
+      filesystem: { denyRead: SECRET_PATHS },
       network: {
         allowLocalBinding: true,
         allowUnixSockets: [`/tmp/claude-${uid}`, `/private/tmp/claude-${uid}`],

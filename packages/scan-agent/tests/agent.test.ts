@@ -32,6 +32,9 @@ describe('agentArgs', () => {
         'Bash(gh *)',
         'WebFetch',
         'WebSearch',
+        'Read(~/.ssh/**)',
+        'Read(~/.config/**)',
+        'Write(~/.gitconfig)',
       ]),
     );
     expect(JSON.parse(after('--settings') ?? '{}')).toMatchObject({

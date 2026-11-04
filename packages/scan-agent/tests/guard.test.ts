@@ -127,6 +127,19 @@ describe('checkBeforePush', () => {
     );
   });
 
+  it('blocks a token or a private key copied from the PC', async () => {
+    await commit('test: x', {
+      'packages/contract/tests/e.test.ts': `const t = 'ghp_${'a'.repeat(36)}';\n`,
+    });
+    const problems = await check({
+      body: '-----BEGIN OPENSSH PRIVATE KEY-----',
+    });
+    expect(problems.map((p) => p.detail)).toEqual([
+      'jeton ou clé dans : packages/contract/tests/e.test.ts',
+      'jeton ou clé dans : description de la PR',
+    ]);
+  });
+
   it('blocks any AI attribution and uncommitted changes', async () => {
     await commit('fix: x\n\nCo-Authored-By: Claude <noreply@anthropic.com>', {
       'packages/contract/src/x.ts': 'export const x = 1;\n',

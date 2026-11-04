@@ -29,6 +29,10 @@ const FORBIDDEN: [RegExp, string][] = [
   [/^\.github\//, 'CI'],
 ];
 
+/** Tokens copied from the PC: GitHub, Anthropic, a private key, a bearer. */
+const SECRET =
+  /\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_\w{20,}|sk-ant-[\w-]{20,})|-----BEGIN [A-Z ]*PRIVATE KEY-----|\bBearer [A-Za-z0-9._~+/=-]{20,}/;
+
 const ATTRIBUTION =
   /co-authored-by|generated with|claude\.(ai|com)|anthropic|\bclaude\b|🤖/i;
 
@@ -187,6 +191,11 @@ export async function checkBeforePush(check: PushCheck): Promise<Problem[]> {
     ['titre de la PR', check.title],
     ['description de la PR', check.body],
   ];
+  for (const [where, text] of places) {
+    if (SECRET.test(text)) {
+      problems.push({ kind: 'leak', detail: `jeton ou clé dans : ${where}` });
+    }
+  }
   for (const needle of needlesOf(check.sensitive)) {
     const where = places
       .filter(([, text]) => found(needle, text))
