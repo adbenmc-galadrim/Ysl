@@ -146,6 +146,9 @@ importers:
       '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@repo/contract':
+        specifier: workspace:*
+        version: link:../../packages/contract
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db

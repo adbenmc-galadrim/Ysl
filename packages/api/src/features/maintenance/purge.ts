@@ -19,6 +19,7 @@ import {
   eraseCompanyEmails,
   eraseUnownedEmails,
 } from '#features/mail/queue';
+import { eraseOldScanReports } from '#features/scan-reports/service';
 
 /** Rows per transaction: short enough never to hold back a pull (YSL-28). */
 export const PURGE_BATCH = 500;
@@ -474,6 +475,7 @@ export async function runPurge(
     if (!organizationId) {
       await eraseUnownedEmails(db, now);
       await eraseOldJournal(db, now);
+      await eraseOldScanReports(db, now);
     }
     if (failure) throw failure;
     return { status: 'done', runs };

@@ -95,7 +95,7 @@ Un seul environnement, avec son app, son API et sa base Postgres 17 gérée par 
 
 | Ressource | Build | Variables |
 | --- | --- | --- |
-| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` ; pour l'envoi d'e-mails : `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` (facultatif), `BREVO_WEBHOOK_TOKEN` pour recevoir les statuts réels |
+| API | `apps/server/Dockerfile`, port 3101 | `DATABASE_URL`, `CORS_ORIGIN`, `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET`, `TRUST_PROXY=true` ; pour l'envoi d'e-mails : `BREVO_API_KEY`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` (facultatif), `BREVO_WEBHOOK_TOKEN` pour recevoir les statuts réels ; `SCAN_REPORTS_KEY` pour les rapports de scan de la phase de test |
 | App | `apps/web/Dockerfile`, port 80 | `PUBLIC_SERVER_URL` (adresse de l'API) et `PUBLIC_APP_URL` (adresse publique de l'app, celle du QR d'installation : `https://ysl.shinseo.fr`) au build |
 
 `TRUST_PROXY=true` fait lire l'IP du client dans la dernière entrée de `X-Forwarded-For`,
@@ -104,7 +104,8 @@ les clients sous l'IP du proxy. En local, sans proxy, la laisser absente.
 
 Il n'y a pas de stockage objet : le serveur garde les comptes, les annuaires et les
 données synchronisées (`docs/synchronisation.md`), et les photos ne quittent jamais
-l'iPhone (D8).
+l'iPhone (D8). Seule exception, en phase de test : un scan signalé par l'utilisateur
+attend sur le serveur que le PC le récupère (D32, `docs/rapports-scan.md`).
 
 nginx pose `Cross-Origin-Opener-Policy: same-origin` et
 `Cross-Origin-Embedder-Policy: require-corp` sur toute l'app

@@ -2,13 +2,19 @@ import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import { trpcServer } from '@hono/trpc-server';
 import {
+  acknowledgeScanReport,
   appRouter,
   brevoMailer,
   createTRPCContext,
+  listScanReports,
   logoFile,
   mailRound,
+  membershipOf,
   receiveMailEvent,
   runPurge,
+  saveScanReport,
+  scanReportDetail,
+  scanReportImage,
 } from '@repo/api';
 import { auth, CLIENT_IP_HEADER } from '@repo/auth';
 import {
@@ -29,6 +35,7 @@ import { startMailJob } from '#mail-job';
 import { mailWebhook } from '#mail-webhook';
 import { startPurgeJob } from '#purge-job';
 import { requestLog } from '#request-log';
+import { scanReportsRoute } from '#scan-reports-route';
 
 const app = new Hono();
 
@@ -58,6 +65,8 @@ app.use(
     origin: env.CORS_ORIGIN,
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type'],
+    // The outbox reads when to retry a scan report (429, 503).
+    exposeHeaders: ['Retry-After'],
     credentials: true,
     maxAge: 86400,
   }),
@@ -112,6 +121,39 @@ app.route(
   mailWebhook({
     token: env.BREVO_WEBHOOK_TOKEN,
     receive: (body) => receiveMailEvent(db, body),
+  }),
+);
+
+app.route(
+  '/api/scan-reports',
+  scanReportsRoute({
+    key: env.SCAN_REPORTS_KEY,
+    sender: async (headers) => {
+      const session = await auth.api
+        .getSession({ headers })
+        .catch((error: unknown) => {
+          logger.warn(
+            { reason: error instanceof Error ? error.message : String(error) },
+            'session lookup failed',
+          );
+          return null;
+        });
+      if (!session) return null;
+      if (session.user.banned) return 'suspended';
+      const membership = await membershipOf(db, session.user.id);
+      if (membership?.suspended) return 'suspended';
+      return {
+        userId: session.user.id,
+        organizationId: membership?.organizationId ?? null,
+      };
+    },
+    store: {
+      save: (report) => saveScanReport(db, report),
+      list: () => listScanReports(db),
+      detail: (id) => scanReportDetail(db, id),
+      image: (id) => scanReportImage(db, id),
+      acknowledge: (id) => acknowledgeScanReport(db, id),
+    },
   }),
 );
 
