@@ -13,9 +13,11 @@ import {
   PullError,
   pullReports,
   REPORT_FILE,
+  runHook,
   serverBase,
+  watchReports,
   type Fetch,
-  type PullOptions,
+  type WatchOptions,
 } from '#ops/scan-reports-pull';
 import { scanReportsRoute } from '#scan-reports-route';
 
@@ -120,7 +122,7 @@ afterEach(async () => {
   await rm(join(dir, '..'), { recursive: true, force: true });
 });
 
-function options(fetchImpl: Fetch, overrides: Partial<PullOptions> = {}) {
+function options(fetchImpl: Fetch, overrides: Partial<WatchOptions> = {}) {
   return {
     server: SERVER,
     key: KEY,
@@ -256,5 +258,124 @@ describe('the server address', () => {
     );
     expect(serverBase('http://127.0.0.1:3101')).toBe('http://127.0.0.1:3101');
     expect(() => serverBase('http://ysl-api.shinseo.fr')).toThrow(/HTTPS/);
+  });
+});
+
+describe('the hook for the next reader', () => {
+  it('runs once per acknowledged report, and its failure stops nothing', async () => {
+    const remote = server([stored(FIRST), stored(SECOND)]);
+    const onReport = vi.fn(() => Promise.reject(new Error('agent absent')));
+
+    const result = await pullReports(options(remote.fetch, { onReport }));
+
+    expect(onReport.mock.calls).toEqual([
+      [{ id: FIRST, dir: join(dir, FIRST), written: true }],
+      [{ id: SECOND, dir: join(dir, SECOND), written: true }],
+    ]);
+    expect(remote.acknowledged).toEqual([FIRST, SECOND]);
+    expect(result.pulled).toHaveLength(2);
+    expect(lines.filter((line) => line.includes('agent absent'))).toHaveLength(
+      2,
+    );
+  });
+
+  it('gives the command the report, never the key', async () => {
+    vi.stubEnv('SCAN_REPORTS_KEY', KEY);
+    const target = join(dir, FIRST);
+    await mkdir(target, { recursive: true });
+
+    await runHook(
+      'printf "%s|%s|%s" "$SCAN_REPORT_ID" "$SCAN_REPORT_DIR" "${SCAN_REPORTS_KEY:-}" > "$SCAN_REPORT_DIR/accroche.txt"',
+      { id: FIRST, dir: target, written: true },
+    );
+    vi.unstubAllEnvs();
+
+    expect(await readFile(join(target, 'accroche.txt'), 'utf8')).toBe(
+      `${FIRST}|${target}|`,
+    );
+    await expect(
+      runHook('exit 3', { id: FIRST, dir: target, written: true }),
+    ).rejects.toThrow(/code 3/);
+  });
+});
+
+describe('watching', () => {
+  /** Stops after `rounds` waits, and keeps them. */
+  function sleeper(rounds: number, controller: AbortController) {
+    const waits: number[] = [];
+    const sleep = (ms: number) => {
+      waits.push(ms);
+      if (waits.length >= rounds) controller.abort();
+      return Promise.resolve();
+    };
+    return { waits, sleep };
+  }
+
+  it('waits longer after each failure, at least what the server asks', async () => {
+    const remote = server([stored(FIRST)]);
+    const failures = [
+      () =>
+        Promise.resolve(
+          new Response(JSON.stringify({ error: 'busy' }), {
+            status: 503,
+            headers: { 'Retry-After': '300' },
+          }),
+        ),
+      () => Promise.reject(new TypeError('fetch failed')),
+    ];
+    const fetchImpl = vi.fn<Fetch>((input, init) =>
+      (failures.shift() ?? (() => remote.fetch(input, init)))(),
+    );
+    const controller = new AbortController();
+    const { waits, sleep } = sleeper(4, controller);
+
+    await watchReports(
+      options(fetchImpl, {
+        signal: controller.signal,
+        intervalMs: 60_000,
+        sleep,
+      }),
+    );
+
+    expect(waits).toEqual([300_000, 240_000, 60_000, 60_000]);
+    expect(remote.acknowledged).toEqual([FIRST]);
+    expect(lines.join('\n')).toMatch(/HTTP 503/);
+  });
+
+  it('never polls faster than every ten seconds', async () => {
+    const remote = server([]);
+    const controller = new AbortController();
+    const { waits, sleep } = sleeper(1, controller);
+
+    await watchReports(
+      options(remote.fetch, {
+        signal: controller.signal,
+        intervalMs: 1,
+        sleep,
+      }),
+    );
+
+    expect(waits).toEqual([10_000]);
+  });
+
+  it('stops for good on a refused key', async () => {
+    const remote = server([], 'z'.repeat(32));
+    const controller = new AbortController();
+    const { waits, sleep } = sleeper(5, controller);
+
+    await expect(
+      watchReports(options(remote.fetch, { signal: controller.signal, sleep })),
+    ).rejects.toThrow(/401/);
+    expect(waits).toEqual([]);
+  });
+
+  it('stops cleanly when interrupted while waiting', async () => {
+    const remote = server([]);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 20);
+
+    await expect(
+      watchReports(options(remote.fetch, { signal: controller.signal })),
+    ).resolves.toBeUndefined();
   });
 });

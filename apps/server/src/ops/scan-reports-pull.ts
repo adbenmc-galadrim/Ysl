@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   mkdir,
@@ -8,6 +9,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   SCAN_REPORT_IMAGE_TYPES,
   scanReportId,
@@ -26,6 +28,12 @@ const IMAGE_TIMEOUT_MS = 120_000;
 const MAX_ROUNDS = 50;
 const PARTIAL = '.partiel-';
 
+export const WATCH_INTERVAL_MS = 60_000;
+export const MIN_INTERVAL_MS = 10_000;
+/** After failures in a row, the wait doubles up to this. */
+export const MAX_BACKOFF_MS = 15 * 60_000;
+const MAX_RETRY_AFTER_MS = 60 * 60_000;
+
 export const REPORT_FILE = 'rapport.json';
 export const COMMENT_FILE = 'commentaire.txt';
 
@@ -37,6 +45,8 @@ export type PullOptions = {
   fetch?: Fetch;
   signal?: AbortSignal;
   log?: (line: string) => void;
+  /** Called once a report is acknowledged; its failure is logged, nothing stops. */
+  onReport?: (report: PulledReport) => Promise<void>;
 };
 
 export type PulledReport = {
@@ -313,6 +323,9 @@ export async function pullReports(options: PullOptions): Promise<PullResult> {
             ? `Rapport ${summary.id} écrit et acquitté : ${outcome.pulled.dir}`
             : `Rapport ${summary.id} déjà présent, acquitté : ${outcome.pulled.dir}`,
         );
+        await options.onReport?.(outcome.pulled).catch((error: unknown) => {
+          log(`Accroche en échec pour ${summary.id} : ${reason(error)}.`);
+        });
       } else if ('failed' in outcome) {
         result.failed.push({ id: String(summary.id), reason: outcome.failed });
         log(`Rapport ${String(summary.id)} non acquitté : ${outcome.failed}.`);
@@ -320,4 +333,77 @@ export async function pullReports(options: PullOptions): Promise<PullResult> {
     }
   }
   return result;
+}
+
+/**
+ * The hook for whatever reads the reports next (YSL-147): a shell command run
+ * after each acknowledged report, with `SCAN_REPORT_ID` and `SCAN_REPORT_DIR`.
+ * It never receives the key.
+ */
+export function runHook(command: string, report: PulledReport): Promise<void> {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    SCAN_REPORT_ID: report.id,
+    SCAN_REPORT_DIR: report.dir,
+  };
+  delete env.SCAN_REPORTS_KEY;
+  return new Promise((resolve, reject) => {
+    const child = spawn('sh', ['-c', command], { stdio: 'inherit', env });
+    child.once('error', reject);
+    child.once('exit', (code, signal) => {
+      if (code === 0) resolve();
+      else reject(new Error(signal ? `arrêtée (${signal})` : `code ${code}`));
+    });
+  });
+}
+
+export type WatchOptions = PullOptions & {
+  intervalMs?: number;
+  sleep?: (ms: number, signal?: AbortSignal) => Promise<unknown>;
+};
+
+/**
+ * Pulls, then waits, until `signal` aborts. A failure waits longer each time
+ * (and at least the server's `Retry-After`): the VPS must not be hammered
+ * while it is down or busy. Only a refused key stops it.
+ */
+export async function watchReports(options: WatchOptions): Promise<void> {
+  const log = options.log ?? console.log;
+  const interval = Math.max(
+    MIN_INTERVAL_MS,
+    options.intervalMs ?? WATCH_INTERVAL_MS,
+  );
+  const sleep =
+    options.sleep ??
+    ((ms: number, signal?: AbortSignal) => delay(ms, undefined, { signal }));
+  let failures = 0;
+  while (!options.signal?.aborted) {
+    let retryAfter = 0;
+    try {
+      const result = await pullReports(options);
+      failures = result.failed.length > 0 ? failures + 1 : 0;
+    } catch (error) {
+      if (options.signal?.aborted) return;
+      if (error instanceof PullError && error.fatal) throw error;
+      failures += 1;
+      retryAfter = Math.min(
+        error instanceof PullError ? (error.retryAfterMs ?? 0) : 0,
+        MAX_RETRY_AFTER_MS,
+      );
+      log(reason(error));
+    }
+    const wait = Math.max(
+      failures === 0
+        ? interval
+        : Math.min(interval * 2 ** failures, MAX_BACKOFF_MS),
+      retryAfter,
+    );
+    if (failures > 0) log(`Nouvel essai dans ${Math.round(wait / 1000)} s.`);
+    try {
+      await sleep(wait, options.signal);
+    } catch (error) {
+      if (options.signal?.aborted) return;
+      throw error;
+    }
+  }
 }
