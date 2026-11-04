@@ -81,7 +81,7 @@ const fullName = (row: Pick<Row, 'firstName' | 'lastName'>) =>
 type Existing = typeof directoryPerson.$inferSelect;
 
 type Change =
-  | { kind: 'add'; row: Row; departmentId: string | null; name: string | null }
+  | { kind: 'add'; row: Row; departmentId: string | null }
   | {
       kind: 'update';
       row: Row;
@@ -89,7 +89,6 @@ type Change =
       lastName: string;
       person: Existing;
       departmentId: string | null;
-      name: string | null;
     }
   | { kind: 'unchanged' };
 
@@ -202,7 +201,6 @@ async function plan(
         kind: 'add',
         row,
         departmentId: target?.id ?? null,
-        name: target?.name ?? null,
       });
       continue;
     }
@@ -235,7 +233,6 @@ async function plan(
       lastName,
       person,
       departmentId: target?.id ?? person.departmentId,
-      name: target?.name ?? person.department,
     });
   }
   return {
@@ -309,7 +306,6 @@ export async function applyDirectoryImport(
               lastName: change.row.lastName,
               nameNorm: normalizeName(fullName(change.row)),
               email: change.row.email,
-              department: change.name,
               departmentId: change.departmentId,
               site: change.row.site || null,
             },
@@ -328,7 +324,6 @@ export async function applyDirectoryImport(
           firstName,
           lastName,
           nameNorm: normalizeName(`${firstName} ${lastName}`),
-          department: change.name,
           departmentId: change.departmentId,
           site: row.site || person.site,
           active: true,

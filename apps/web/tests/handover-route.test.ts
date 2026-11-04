@@ -4,16 +4,16 @@ import { parseRemiseColisSearch } from '#/features/handover/route';
 import { contactRow, personRow } from './helpers/local-rows';
 
 describe('describeRecipient with departments', () => {
-  it('names the department by its id, and keeps the word without one', () => {
-    const person = personRow({ departmentId: 'x', department: 'Ancien nom' });
+  it('names the department by its id, and none without its name', () => {
+    const person = personRow({ departmentId: 'x' });
 
     expect(
       describeRecipient({ kind: 'person', person }, new Map([['x', 'Presse']]))
         .department,
     ).toBe('Presse');
-    expect(describeRecipient({ kind: 'person', person }).department).toBe(
-      'Ancien nom',
-    );
+    expect(
+      describeRecipient({ kind: 'person', person }).department,
+    ).toBeUndefined();
   });
 });
 
@@ -51,10 +51,17 @@ describe('the search of /remise/colis', () => {
 describe('describeRecipient', () => {
   it('names a card by its first and last name', () => {
     expect(
-      describeRecipient({
-        kind: 'person',
-        person: personRow({ firstName: 'Nora', lastName: 'Haddad' }),
-      }),
+      describeRecipient(
+        {
+          kind: 'person',
+          person: personRow({
+            firstName: 'Nora',
+            lastName: 'Haddad',
+            departmentId: 'studio',
+          }),
+        },
+        new Map([['studio', 'Studio']]),
+      ),
     ).toEqual({
       name: 'Nora Haddad',
       firstName: 'Nora',

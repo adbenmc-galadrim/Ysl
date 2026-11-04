@@ -39,7 +39,6 @@ describe('savePerson', () => {
       lastName: 'Garnier',
       nameNorm: 'ines garnier',
       email: 'ines.garnier@example.com',
-      department: null,
       departmentId: null,
       site: '2e étage',
       source: 'manuel',
@@ -119,7 +118,7 @@ describe('savePerson', () => {
 });
 
 describe('a department on the card', () => {
-  it('takes the one chosen on a new card, with its name', async () => {
+  it('takes the one chosen on a new card', async () => {
     const id = newId();
     await db.department.put({
       id,
@@ -135,7 +134,8 @@ describe('a department on the card', () => {
     await savePerson(db, { ...draft, departmentId: id }, { now: NOW });
 
     const [stored] = await db.directoryPerson.toArray();
-    expect(stored).toMatchObject({ departmentId: id, department: 'Finance' });
+    expect(stored).toMatchObject({ departmentId: id });
+    expect(stored).not.toHaveProperty('department');
   });
 
   it('never moves an existing card: only the server does', async () => {
@@ -169,16 +169,8 @@ describe('a department on the card', () => {
 describe('directoryPeople', () => {
   it('narrows by tab and finds a department by its name', () => {
     const names = new Map([['f', 'Finance']]);
-    const nora = personRow({
-      departmentId: 'f',
-      department: null,
-      nameNorm: 'nora',
-    });
-    const ines = personRow({
-      departmentId: null,
-      department: null,
-      nameNorm: 'ines',
-    });
+    const nora = personRow({ departmentId: 'f', nameNorm: 'nora' });
+    const ines = personRow({ departmentId: null, nameNorm: 'ines' });
 
     expect(directoryPeople([nora, ines], names, '', 'f')).toEqual([nora]);
     expect(directoryPeople([nora, ines], names, '', 'sans')).toEqual([ines]);
@@ -243,24 +235,28 @@ describe('directoryEntries', () => {
       firstName: 'Hélène',
       nameNorm: 'helene dubois',
       lastName: 'Dubois',
-      department: 'Finance',
+      departmentId: 'finance',
     }),
     personRow({
       firstName: 'Axelle',
       nameNorm: 'axelle bernard',
       lastName: 'Bernard',
-      department: null,
       email: 'axelle@atelier.test',
     }),
     personRow({
       firstName: 'Hugo',
       nameNorm: 'hugo lefevre',
       lastName: 'Lefèvre',
-      department: 'Studio',
+      departmentId: 'studio',
     }),
     personRow({ firstName: 'Paul', lastName: 'Parti', active: false }),
     personRow({ firstName: 'Zoé', lastName: 'Effacée', deletedAt: NOW }),
   ];
+
+  const names = new Map([
+    ['finance', 'Finance'],
+    ['studio', 'Studio'],
+  ]);
 
   it('lists active people in alphabetical order, accents aside', () => {
     expect(directoryEntries(people).map((entry) => entry.name)).toEqual([
@@ -271,12 +267,12 @@ describe('directoryEntries', () => {
   });
 
   it('searches the name, the department and the e-mail without accents or case', () => {
-    const names = (query: string) =>
-      directoryEntries(people, query).map((entry) => entry.name);
+    const found = (query: string) =>
+      directoryEntries(people, query, names).map((entry) => entry.name);
 
-    expect(names('helene')).toEqual(['Hélène Dubois']);
-    expect(names('STUDIO')).toEqual(['Hugo Lefèvre']);
-    expect(names('atelier.test')).toEqual(['Axelle Bernard']);
+    expect(found('helene')).toEqual(['Hélène Dubois']);
+    expect(found('STUDIO')).toEqual(['Hugo Lefèvre']);
+    expect(found('atelier.test')).toEqual(['Axelle Bernard']);
   });
 
   it('falls back on the e-mail when the department is unknown', () => {

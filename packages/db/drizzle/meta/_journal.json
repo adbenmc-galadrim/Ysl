@@ -274,6 +274,13 @@
       "when": 1793802321843,
       "tag": "0038_rapports_scan",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793805815026,
+      "tag": "0039_retrait_ancien_modele",
+      "breakpoints": true
     }
   ]
 }

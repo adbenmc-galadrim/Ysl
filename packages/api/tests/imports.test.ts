@@ -34,8 +34,14 @@ const admin = () => callerFor(sessionOf(AGENT_ID, 'company_admin'));
 
 const HELENE_ID = newId();
 const SCANNED_ID = newId();
+const FINANCE_ID = newId();
+const LOGISTICS_ID = newId();
 
 beforeAll(async () => {
+  await db.insert(schema.department).values([
+    { id: FINANCE_ID, organizationId: ORGANIZATION_ID, name: 'Finance' },
+    { id: LOGISTICS_ID, organizationId: ORGANIZATION_ID, name: 'Logistique' },
+  ]);
   await db.insert(schema.directoryPerson).values({
     id: HELENE_ID,
     organizationId: ORGANIZATION_ID,
@@ -43,6 +49,7 @@ beforeAll(async () => {
     firstName: 'Hélène',
     nameNorm: 'helene dupre',
     email: 'Helene.Dupre@example.com',
+    departmentId: FINANCE_ID,
   });
   await db.insert(schema.parcel).values({
     id: SCANNED_ID,
@@ -129,7 +136,8 @@ describe('imports.v1Csv', () => {
       .where(eq(schema.parcel.tracking, '7185713569'));
     expect(doubtful).toMatchObject({
       status: 'a_completer',
-      notes: 'Tracking douteux à l’import de la v1',
+      notes:
+        'Tracking douteux à l’import de la v1\nDépartement dans la v1 : RH',
     });
     const [imported] = await db
       .select()
@@ -149,6 +157,7 @@ describe('imports.v1Csv', () => {
     expect(byTracking.get('1ZE6344W0499230622')).toMatchObject({
       personId: HELENE_ID,
       contactId: null,
+      departmentId: FINANCE_ID,
       notificationEmail: null,
       status: 'recu',
       carrier: 'UPS',
@@ -166,6 +175,7 @@ describe('imports.v1Csv', () => {
     });
     expect(byTracking.get('5413337112')).toMatchObject({
       status: 'a_completer',
+      departmentId: LOGISTICS_ID,
       notes: '=HYPERLINK("x")',
     });
     expect(byTracking.get('10464000209404')!.contactId).toBe(
@@ -240,7 +250,7 @@ describe('imports.v1Csv', () => {
   });
 
   it('attaches no parcel to either card of an address two departments hold', async () => {
-    const twins = ['Finance', 'Studio'];
+    const twins = ['Juridique', 'Studio'];
     for (const name of twins) {
       const departmentId = newId();
       await db.insert(schema.department).values({

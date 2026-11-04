@@ -710,10 +710,7 @@ export async function departmentWrite(
         ),
       );
     if (!row) return values;
-    const kept = withoutDepartment(values);
-    // The word goes with the department: a stale one would name the old one on every parcel.
-    if (row.departmentId) delete kept.department;
-    return kept;
+    return withoutDepartment(values);
   }
   if (op.entity !== 'parcel') return values;
   const [row] = await tx

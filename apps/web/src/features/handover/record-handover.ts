@@ -116,7 +116,8 @@ async function recheckCode(
 
 /**
  * What this QR or code opens at the counter: the recipient's waiting parcels
- * in its department only (§3.7.9). A code of before has none and opens all.
+ * in its department only (§3.7.9). The server gives an open code one when
+ * it can tell which (drizzle/0039); a code without opens no department's parcels.
  */
 export async function listParcelsOfCode(
   db: CourrierDatabase,
@@ -125,14 +126,15 @@ export async function listParcelsOfCode(
 ): Promise<LocalParcel[]> {
   const parcels = await listWaitingParcels(db, recipient);
   const code = codeId ? await db.pickupCode.get(codeId) : undefined;
-  if (!code?.departmentId) return parcels;
+  if (!code) return parcels;
+  const own = code.departmentId ?? null;
   const home =
     recipient.kind === 'person'
       ? await db.directoryPerson.get(recipient.id)
       : undefined;
   return parcels.filter((parcel) => {
     const department = departmentOfParcel(parcel, home);
-    return !department || department === code.departmentId;
+    return !department || department === own;
   });
 }
 
@@ -195,7 +197,7 @@ export async function recordHandover(
   const ticked = new Set(input.parcelIds);
   const parcels = waiting.filter((parcel) => ticked.has(parcel.id));
   if (parcels.length !== ticked.size) throw new HandoverRefusedError('stale');
-  // A code opens its department only (§3.7.9); one of before has none.
+  // A code opens its department only (§3.7.9), and one without none.
   const home =
     recipient.kind === 'person'
       ? await db.directoryPerson.get(recipient.id)
@@ -203,9 +205,9 @@ export async function recordHandover(
   const departmentOf = (parcel: LocalParcel) =>
     departmentOfParcel(parcel, home);
   const ofCode = (parcel: LocalParcel) =>
-    !checked?.departmentId ||
+    !checked ||
     !departmentOf(parcel) ||
-    departmentOf(parcel) === checked.departmentId;
+    departmentOf(parcel) === (checked.departmentId ?? null);
   if (!parcels.every(ofCode)) throw new HandoverRefusedError('mismatch');
 
   const handoverId = newId();

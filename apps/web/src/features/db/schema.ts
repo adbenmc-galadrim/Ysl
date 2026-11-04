@@ -510,6 +510,25 @@ export class CourrierDatabase extends Dexie {
     this.version(11)
       .stores({})
       .upgrade((tx) => tx.table('sync_state').delete(SYNC_STATE_KEYS.cursor));
+    // The department of a parcel or a person is its id alone: the word they kept goes.
+    this.version(12)
+      .stores({})
+      .upgrade(async (tx) => {
+        const drop = (row: { department?: unknown }) => {
+          delete row.department;
+        };
+        await tx.table('parcel').toCollection().modify(drop);
+        await tx.table('directory_person').toCollection().modify(drop);
+        await tx
+          .table('outbox')
+          .filter(
+            (op: OutboxOp) =>
+              op.entity === 'parcel' || op.entity === 'directory_person',
+          )
+          .modify((op: OutboxOp) => {
+            delete op.patch.department;
+          });
+      });
     this.directoryPerson = this.table('directory_person');
     this.contact = this.table('contact');
     this.sender = this.table('sender');

@@ -237,17 +237,15 @@ describe('a handover on a code', () => {
     ).toBe('active');
   });
 
-  it('lists only what the code opens, and all for a code of before', async () => {
-    const { here, elsewhere, code } = await seed();
+  it('lists only what the code opens, and no department’s for a code without', async () => {
+    const { here, code } = await seed();
     const person = { kind: 'person' as const, id: nora.id };
 
     expect(
       (await listParcelsOfCode(db, person, code.id)).map((p) => p.id),
     ).toEqual([here.id]);
     await db.pickupCode.update(code.id, { departmentId: null });
-    expect(
-      (await listParcelsOfCode(db, person, code.id)).map((p) => p.id).sort(),
-    ).toEqual([here.id, elsewhere.id].sort());
+    expect(await listParcelsOfCode(db, person, code.id)).toEqual([]);
   });
 
   it('closes the code once its own department has nothing left, whatever waits elsewhere', async () => {

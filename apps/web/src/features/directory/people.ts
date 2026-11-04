@@ -140,17 +140,12 @@ export async function savePerson(
   const { firstName, lastName } =
     existing && typed === fullName(existing) ? existing : splitName(typed);
   const departmentId = draft.departmentId || null;
-  const chosen =
-    !existing && departmentId
-      ? await db.department.get(departmentId)
-      : undefined;
   const person: LocalDirectoryPerson = {
     ...(existing ?? {
       id: id ?? newId(),
       createdAt: now,
       deletedAt: null,
       source: 'manuel',
-      department: chosen?.name ?? null,
       departmentId,
     }),
     updatedAt: now,
@@ -218,13 +213,13 @@ export function toEntry(
   };
 }
 
-/** Where a person belongs: their department, or the word they came with until that column goes. */
+/** Where a person belongs: the name of their department. */
 export function departmentLabel(
-  person: Pick<LocalDirectoryPerson, 'department' | 'departmentId'>,
+  person: Pick<LocalDirectoryPerson, 'departmentId'>,
   names: DepartmentNames,
 ): string {
   const id = person.departmentId;
-  return (id ? names.get(id) : undefined) ?? person.department ?? '';
+  return (id ? names.get(id) : undefined) ?? '';
 }
 
 export const NO_DEPARTMENT = 'sans';

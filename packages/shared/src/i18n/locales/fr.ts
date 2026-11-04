@@ -2120,6 +2120,7 @@ export const fr = {
   'import.v1.error.notV1':
     'Ce fichier n’est pas un export de la v1 : il lui manque les colonnes « tracking » et « destinataire ».',
   'import.v1.note.tracking': 'Tracking douteux à l’import de la v1',
+  'import.v1.note.department': 'Département dans la v1 : {{department}}',
   'import.v1.ready.title': 'Importer l’historique de la v1',
   'import.v1.ready.detail':
     'Le fichier CSV exporté par l’ancienne app. Chaque tracking est vérifié par la clé de son transporteur ; un import répété n’ajoute rien.',

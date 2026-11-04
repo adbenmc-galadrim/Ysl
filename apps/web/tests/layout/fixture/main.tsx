@@ -49,7 +49,13 @@ const STATUSES: LocalParcel['status'][] = ['recu', 'notifie', 'remis'];
 /** Parcels of a busy desk over a few weeks, for the search. */
 function journal() {
   const t = createTranslator(DEFAULT_LOCALE);
-  const contacts = NAMES.map((name, i) => contactRow({ id: `c${i}`, name }));
+  const contacts = NAMES.map((name, i) =>
+    contactRow({
+      id: `c${i}`,
+      name,
+      department: i % 2 ? 'Comptabilité' : 'Studio',
+    }),
+  );
   const context = {
     people: new Map(),
     contacts: new Map(contacts.map((contact) => [contact.id, contact])),
@@ -62,7 +68,6 @@ function journal() {
       status,
       contactId: `c${i % NAMES.length}`,
       tracking: `1Z${String(i + 1).padStart(8, '0')}`,
-      department: i % 2 ? 'Comptabilité' : 'Studio',
       receivedAt: day,
       notifiedAt: status === 'recu' ? null : day,
       deliveredAt: status === 'remis' ? day : null,

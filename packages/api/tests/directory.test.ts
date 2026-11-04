@@ -314,7 +314,6 @@ describe('a person who changes department', () => {
     expect(row).toMatchObject({
       firstName: 'Noor',
       departmentId: studio,
-      department: 'Studio',
     });
   });
 
@@ -428,7 +427,7 @@ describe('the CSV import', () => {
       .select()
       .from(schema.directoryPerson)
       .where(eq(schema.directoryPerson.email, 'lea@example.test'));
-    expect(lea).toMatchObject({ departmentId: studio, department: 'Studio' });
+    expect(lea).toMatchObject({ departmentId: studio });
     const [kept] = await db
       .select()
       .from(schema.directoryPerson)

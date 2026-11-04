@@ -10,8 +10,7 @@ import {
  * Who a parcel may be for: the active cards of the directory, then the
  * contacts outside it (§4.5, « Annuaire, puis contacts hors annuaire »).
  * A contact has one name: its last word is taken for the last name. A card
- * carries its department; a row this device pulled before the conversion
- * has only the word it came with, or nothing.
+ * carries its department, by id, and by name when this device knows it.
  */
 export function recipientEntries(
   people: readonly LocalDirectoryPerson[],

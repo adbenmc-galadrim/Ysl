@@ -141,7 +141,6 @@ describe('mergeContact', () => {
     const parcel = parcelRow({
       personId: null,
       contactId: temp.id,
-      department: 'Prestataire',
       status: 'notifie',
     });
     const alias = {
@@ -165,7 +164,6 @@ describe('mergeContact', () => {
     expect(await db.parcel.get(parcel.id)).toMatchObject({
       personId: card.id,
       contactId: null,
-      department: 'Prestataire',
       status: 'notifie',
     });
     expect(await db.recipientAlias.get(alias.id)).toMatchObject({

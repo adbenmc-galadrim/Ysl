@@ -11,7 +11,11 @@ import { useMemo, useRef, useState } from 'react';
 import { useSession } from '#/features/auth/api/use-session';
 import { useAccess } from '#/features/auth/use-access';
 import { db } from '#/features/db/database';
-import { fullName } from '#/features/directory/people';
+import {
+  departmentLabel,
+  fullName,
+  NO_DEPARTMENT_NAMES,
+} from '#/features/directory/people';
 import { useParcelRecord } from '#/features/parcels/api/parcel-record';
 import { useOperatingProfile } from '#/features/settings/operating-profile';
 import {
@@ -74,7 +78,12 @@ function pickedOf(pick: RecipientPick): PickedRecipient {
   };
 }
 
-function formOf({ parcel, person, contact }: ParcelRecord): Form {
+function formOf({
+  parcel,
+  person,
+  contact,
+  departments = NO_DEPARTMENT_NAMES,
+}: ParcelRecord): Form {
   const edit = editOf(parcel);
   return {
     values: {
@@ -93,7 +102,9 @@ function formOf({ parcel, person, contact }: ParcelRecord): Form {
     recipient: {
       choice: edit.recipient,
       label: person
-        ? [fullName(person), person.department].filter(Boolean).join(', ')
+        ? [fullName(person), departmentLabel(person, departments)]
+            .filter(Boolean)
+            .join(', ')
         : (contact?.name ?? ''),
     },
   };

@@ -8,6 +8,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { db } from '#/features/db/database';
 import { goesOnTour } from '#/features/parcels/tour';
+import { departmentNames } from '#/features/directory/people';
 import type { CourrierDatabase, LocalPhoto } from '#/features/db/schema';
 import { photoFiles } from '#/features/photos/opfs';
 import { readPhoto } from '#/features/photos/store';
@@ -29,13 +30,14 @@ export async function loadParcelRecord(
 ): Promise<ParcelRecord | null> {
   const parcel = await database.parcel.get(parcelId);
   if (!parcel || parcel.deletedAt) return null;
-  const [person, contact, events] = await Promise.all([
+  const [person, contact, events, departments] = await Promise.all([
     parcel.personId ? database.directoryPerson.get(parcel.personId) : undefined,
     parcel.contactId ? database.contact.get(parcel.contactId) : undefined,
     database.event
       .where('[entity+entityId]')
       .equals([PARCEL_EVENT_ENTITY, parcelId])
       .toArray(),
+    departmentNames(database),
   ]);
   const [handovers, lostHandovers] = await Promise.all([
     handoversOf(database, [parcel]),
@@ -79,6 +81,7 @@ export async function loadParcelRecord(
       parcel.status === 'en_route' && parcel.departmentId
         ? (await database.department.get(parcel.departmentId))?.name
         : undefined,
+    departments,
     contact,
     events,
     ops,

@@ -260,12 +260,11 @@ async function mergedCodes(
 
 /**
  * « Rattacher à … »: a contact who joined the directory becomes that card
- * everywhere. Its parcels name the person (the department typed on each
- * stays), the names learned for it point to the person, its pickup code
- * too (`mergedCodes`), and the contact leaves the lists; each parcel's
- * history says its recipient changed. All in one local write, queued for
- * `sync.push`. A contact already merged or deleted writes nothing: the
- * merge is safe to run twice.
+ * everywhere. Its parcels name the person, the names learned for it point
+ * to the person, its pickup code too (`mergedCodes`), and the contact
+ * leaves the lists; each parcel's history says its recipient changed. All
+ * in one local write, queued for `sync.push`. A contact already merged or
+ * deleted writes nothing: the merge is safe to run twice.
  */
 export async function mergeContact(
   db: CourrierDatabase,

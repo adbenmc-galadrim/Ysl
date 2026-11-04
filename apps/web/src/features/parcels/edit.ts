@@ -409,15 +409,6 @@ export async function saveParcelEdit(
     weightKg: parseWeight(edit.weightKg) ?? null,
     location: text(edit.location),
   };
-  // A contact brings its department to the parcel; another recipient
-  // chosen takes it away.
-  edited.department =
-    edit.recipient.kind === 'typed'
-      ? (contact?.department ?? null)
-      : edited.personId !== parcel.personId ||
-          edited.contactId !== parcel.contactId
-        ? (contact?.department ?? null)
-        : parcel.department;
   const fields = changedFields(parcel, edited);
   if (fields.length === 0) return { kind: 'unchanged' };
   // What the recipient answered was theirs (YSL-70): someone else set,

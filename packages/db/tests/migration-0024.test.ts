@@ -36,6 +36,8 @@ function folderBefore(tag: string): string {
 }
 
 const conversion = readFileSync(join(migrationsFolder, `${TAG}.sql`), 'utf8');
+/** Up to the drop of the words it reads (0039): the conversion runs again only on a base that has them. */
+const withWords = folderBefore('0039_retrait_ancien_modele');
 
 /** One connection, as the migrator: the helper in `pg_temp` is there on a second run too. */
 async function convertAgain(client: PGlite) {
@@ -253,7 +255,7 @@ describe(TAG, () => {
     );
     await parcel(ids.parcelOfDuplicate, 'recu', { person: ids.duplicate });
     parcelsBefore = await rows(`select id, status from parcel order by id`);
-    await migrate(db, { migrationsFolder });
+    await migrate(db, { migrationsFolder: withWords });
   }, 60_000);
 
   afterAll(async () => {
@@ -432,7 +434,9 @@ describe(TAG, () => {
 describe(`${TAG}, on an empty database`, () => {
   it('does nothing, twice over', async () => {
     const client = new PGlite();
-    await migrate(drizzle({ client, schema }), { migrationsFolder });
+    await migrate(drizzle({ client, schema }), {
+      migrationsFolder: withWords,
+    });
     await convertAgain(client);
     const { rows } = await client.query(`select id from department`);
     expect(rows).toEqual([]);

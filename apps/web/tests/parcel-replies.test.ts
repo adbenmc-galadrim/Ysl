@@ -31,7 +31,6 @@ const hugo = personRow({
   lastName: 'Lefèvre',
   nameNorm: 'hugo lefevre',
   email: 'hugo@example.com',
-  department: 'Accessoires',
 });
 
 let db: CourrierDatabase;
@@ -46,7 +45,6 @@ const notified = (overrides = {}) =>
     status: 'notifie',
     statusSeq: 1,
     personId: hugo.id,
-    department: 'Accessoires',
     notificationEmail: 'h.lefevre@example.com',
     readName: 'H. LEFEVRE',
     notifiedAt: NOTIFIED,
@@ -72,7 +70,6 @@ describe('« Ce n’est pas pour moi »', () => {
       statusSeq: 3,
       personId: null,
       contactId: null,
-      department: null,
       notificationEmail: null,
       notifiedAt: null,
       readName: 'H. LEFEVRE',

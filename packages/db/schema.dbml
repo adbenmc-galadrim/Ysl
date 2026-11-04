@@ -139,7 +139,6 @@ Table "directory_person" {
   "first_name" text [not null]
   "name_norm" text [not null]
   "email" text [not null]
-  "department" text
   "site" text
   "source" text [not null, default: 'manuel']
   "active" boolean [not null, default: true]
@@ -415,7 +414,6 @@ Table "parcel" {
   "contact_id" uuid
   "read_name" text
   "notification_email" text
-  "department" text
   "sender_id" uuid
   "sender_name" text
   "piece_n" integer

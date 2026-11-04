@@ -102,7 +102,7 @@ export async function tourDepartment(
     {
       chosen: sameRecipient ? edited.departmentId : null,
       person,
-      word: edited.department ?? contact?.department,
+      word: contact?.department,
     },
     await db.department.toArray(),
   );

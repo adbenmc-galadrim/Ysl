@@ -81,6 +81,13 @@ const IMMUTABLE_COLUMNS = new Set([
   'receivedBy',
 ]);
 
+/** Columns dropped from the base (YSL-140) that a PWA of before still sends: left out, never refused. */
+const RETIRED_COLUMNS: Partial<Record<SyncOp['entity'], ReadonlySet<string>>> =
+  {
+    parcel: new Set(['department']),
+    directory_person: new Set(['department']),
+  };
+
 type Writer = Access;
 
 type Values = Record<string, unknown>;
@@ -88,8 +95,9 @@ type Values = Record<string, unknown>;
 function valuesOf(table: SyncTable, op: SyncOp): Values {
   const columns = getTableColumns(table);
   const values: Values = {};
+  const retired = RETIRED_COLUMNS[op.entity];
   for (const [key, value] of Object.entries(op.patch)) {
-    if (SERVER_COLUMNS.has(key)) continue;
+    if (SERVER_COLUMNS.has(key) || retired?.has(key)) continue;
     if (!(key in columns)) {
       throw new SyncRejected(
         SYNC_STATUS.badRequest,

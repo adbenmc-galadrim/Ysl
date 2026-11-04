@@ -41,7 +41,7 @@ import {
   methodLabel,
 } from '#/features/handover/entry';
 import { firstNameOf } from '#/features/handover/recipient';
-import { fullName } from '#/features/directory/people';
+import { type DepartmentNames, fullName } from '#/features/directory/people';
 import { formatWeight } from '#/features/parcels/edit';
 import {
   addressMissing,
@@ -67,6 +67,8 @@ export type ParcelRecord = {
   contact?: LocalContact;
   /** On tour, the department it goes to. */
   goesTo?: string;
+  /** The names of the departments, by id: where the parcel or its recipient belongs. */
+  departments?: DepartmentNames;
   /** The company runs tours, read for a parcel not on its way yet: where it goes, or that it should leave. */
   tour?: boolean;
   /** The `event` rows of this parcel, from every iPhone. */
@@ -919,15 +921,15 @@ export function describeRecord(
   const recipient = person
     ? fullName(person)
     : (contact?.name ?? t('parcel.recipient.unknown'));
+  const nameOf = (id: string | null | undefined) =>
+    id ? record.departments?.get(id) : undefined;
   const place = record.goesTo
     ? record.goesTo
     : person
-      ? (person.department ?? parcel.department ?? '')
+      ? (nameOf(person.departmentId) ?? nameOf(parcel.departmentId) ?? '')
       : contact
-        ? outsideDetail({
-            department: parcel.department ?? contact.department ?? null,
-          })
-        : (parcel.department ??
+        ? outsideDetail({ department: contact.department ?? null })
+        : (nameOf(parcel.departmentId) ??
           (parcel.readName
             ? t('parcel.readName', { name: parcel.readName })
             : ''));

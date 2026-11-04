@@ -14,12 +14,13 @@ const hoursAgo = (hours: number) => new Date(NOW.getTime() - hours * 3600_000);
 /** A day of October 2026, at 10 a.m.: NOW is Saturday the 24th. */
 const day = (date: number) => new Date(2026, 9, date, 10);
 const parcel = parcelRow;
-const camille = personRow();
+const camille = personRow({ departmentId: 'studio' });
 const livreur = contactRow();
 
 const context: RecipientContext = {
   people: new Map([[camille.id, camille]]),
   contacts: new Map([[livreur.id, livreur]]),
+  departments: new Map([['studio', 'Studio']]),
 };
 
 describe('homeState', () => {

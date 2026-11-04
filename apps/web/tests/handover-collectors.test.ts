@@ -6,7 +6,7 @@ const hugo = personRow({
   firstName: 'Hugo',
   lastName: 'Lefèvre',
   nameNorm: 'hugo lefevre',
-  department: 'Finance',
+  departmentId: 'finance',
 });
 const helene = personRow({
   firstName: 'Hélène',
@@ -26,6 +26,7 @@ describe('« Qui retire ses colis ? »', () => {
       [atelier],
       counts,
       'lefe',
+      new Map([['finance', 'Finance']]),
     );
 
     expect(waiting).toEqual([

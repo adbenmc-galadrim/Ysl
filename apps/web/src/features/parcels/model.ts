@@ -451,7 +451,13 @@ export function describeParcel(
     parcel.departmentId && GOES_SOMEWHERE.includes(state)
       ? context.departments?.get(parcel.departmentId)
       : undefined;
-  const department = goesTo ?? person?.department ?? parcel.department ?? '';
+  const department =
+    goesTo ??
+    (person?.departmentId
+      ? context.departments?.get(person.departmentId)
+      : undefined) ??
+    contact?.department ??
+    '';
   const last4 = last4Of(parcel);
   const carrier = carrierLabel(parcel, t);
   const carrierLine = carrierLineOf(parcel, t);
