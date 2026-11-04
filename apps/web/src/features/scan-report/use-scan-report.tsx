@@ -20,10 +20,8 @@ import { hasPhotoStorage, photoFiles } from '#/features/photos/opfs';
 import type { Reading } from '#/features/scan/reader';
 import type { ReadText } from '#/features/scan/text';
 import { encodeFrame, ShotKeeper } from '#/features/scan-report/keeper';
-import {
-  enqueueReport,
-  type ReportOutcome,
-} from '#/features/scan-report/outbox';
+import { reportMessage } from '#/features/scan-report/message';
+import { enqueueReport } from '#/features/scan-report/outbox';
 import {
   buildReport,
   deviceOf,
@@ -35,13 +33,6 @@ import { kickReports, onReportOutcome } from '#/features/scan-report/sender';
 const t = createTranslator(DEFAULT_LOCALE);
 
 const TOAST_MS = 4_000;
-
-const OUTCOME_MESSAGE: Partial<Record<ReportOutcome, string>> = {
-  sent: t('scan.report.sent'),
-  unavailable: t('scan.report.unavailable'),
-  refused: t('scan.report.refused'),
-  'signed-out': t('scan.report.signedOut'),
-};
 
 /** The states the button follows: a label shot, read or not. */
 const REPORTABLE = new Set<ScanReading['kind']>([
@@ -100,10 +91,11 @@ export function useScanReport(
 
   useEffect(
     () =>
-      onReportOutcome((outcome) => {
-        const message = OUTCOME_MESSAGE[outcome];
+      onReportOutcome((settled) => {
+        const message = reportMessage(settled);
         if (!message || awaiting.current === 0) return;
-        awaiting.current = outcome === 'signed-out' ? 0 : awaiting.current - 1;
+        awaiting.current =
+          settled.outcome === 'signed-out' ? 0 : awaiting.current - 1;
         say(message);
       }),
     [],

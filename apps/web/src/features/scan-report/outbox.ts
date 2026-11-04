@@ -1,5 +1,7 @@
 import {
+  SCAN_REPORT_ERRORS,
   SCAN_REPORT_FIELDS,
+  type ScanReportError,
   type ScanReportImageType,
   type ScanReportV1,
 } from '@repo/contract/scan-report';
@@ -23,24 +25,43 @@ export type LocalScanReport = {
   imagePath: string | null;
   image: Blob | null;
   attempts: number;
-  /** Epoch ms: not before. */
+  /** Epoch ms: not before; `ABANDONED` once refused for good. */
   nextAttemptAt: number;
   lastError: string | null;
 };
+
+/**
+ * A report refused for good stays, image freed, with the reason in
+ * `lastError`; the next one refused replaces it. For a diagnosis only.
+ */
+export const ABANDONED = Number.POSITIVE_INFINITY;
 
 /** What became of one report on the way out. */
 export type ReportOutcome =
   | 'sent'
   /** The server has no `SCAN_REPORTS_KEY` (404): the feature is off, the report dropped. */
   | 'unavailable'
-  /** The server refused it for good (400, 403, 413, 415), or its image is gone. */
+  /** The server refused it for good (400, 403, 413, 415). */
   | 'refused'
+  /** Its image is gone from the phone: nothing was sent. */
+  | 'lost'
   /** No session (401): it waits for the next sign-in, no attempt counted. */
   | 'signed-out'
   /** Busy, full, rate limited or offline: it waits for its next attempt. */
   | 'later';
 
-export type ReportResponse = { status: number; retryAfter: string | null };
+/** An outcome, and the server's `error` when it gave one. */
+export type ReportSettled = {
+  outcome: ReportOutcome;
+  error: ScanReportError | null;
+};
+
+export type ReportResponse = {
+  status: number;
+  retryAfter: string | null;
+  /** The `error` of the answer's JSON, when there is one. */
+  error?: string | null;
+};
 
 /** Posts one upload; throws when the network does. */
 export type ReportPost = (body: FormData) => Promise<ReportResponse>;
@@ -120,15 +141,56 @@ async function drop(
   row: LocalScanReport,
 ) {
   await db.scanReport.delete(row.id);
+  await removeImage(files, row);
+}
+
+async function removeImage(files: PhotoFiles | null, row: LocalScanReport) {
   if (row.imagePath && files) {
     await files.remove(fileOf(row.imagePath)).catch(() => undefined);
   }
 }
 
+/** Keeps the row and its reason, image freed, in place of the former one. */
+async function abandon(
+  db: CourrierDatabase,
+  files: PhotoFiles | null,
+  row: LocalScanReport,
+  reason: string,
+) {
+  await db.transaction('rw', db.scanReport, async () => {
+    const former = await db.scanReport
+      .filter(
+        (other) => other.nextAttemptAt === ABANDONED && other.id !== row.id,
+      )
+      .primaryKeys();
+    await db.scanReport.bulkDelete(former);
+    await db.scanReport.update(row.id, {
+      image: null,
+      imagePath: null,
+      attempts: row.attempts + 1,
+      nextAttemptAt: ABANDONED,
+      lastError: reason,
+    });
+  });
+  await removeImage(files, row);
+}
+
+const errorOf = (error: string | null | undefined): ScanReportError | null =>
+  SCAN_REPORT_ERRORS.find((known) => known === error) ?? null;
+
+/**
+ * The image's bytes, in memory: WebKit sends a file read from OPFS as an
+ * empty body (Safari on iOS, the server answers 400), so it never goes as is.
+ */
 async function imageOf(files: PhotoFiles | null, row: LocalScanReport) {
   if (row.image) return row.image;
   if (!row.imagePath || !files) return null;
-  return files.read(fileOf(row.imagePath)).catch(() => null);
+  const bytes = await files
+    .read(fileOf(row.imagePath))
+    .then((file) => file.arrayBuffer())
+    .catch(() => null);
+  if (!bytes?.byteLength) return null;
+  return new Blob([bytes], { type: row.imageType });
 }
 
 function formOf(row: LocalScanReport, image: Blob): FormData {
@@ -165,11 +227,11 @@ export async function sendReport(
   row: LocalScanReport,
   post: ReportPost,
   now = Date.now(),
-): Promise<ReportOutcome> {
+): Promise<ReportSettled> {
   const image = await imageOf(files, row);
   if (!image) {
-    await drop(db, files, row);
-    return 'refused';
+    await abandon(db, files, row, 'image missing on the phone');
+    return { outcome: 'lost', error: null };
   }
   let response: ReportResponse;
   try {
@@ -182,21 +244,22 @@ export async function sendReport(
       now,
       error instanceof Error ? error.message : String(error),
     );
-    return 'later';
+    return { outcome: 'later', error: null };
   }
   const { status } = response;
+  const error = errorOf(response.error);
   if (status === 200 || status === 201) {
     await drop(db, files, row);
-    return 'sent';
+    return { outcome: 'sent', error: null };
   }
   if (status === 404) {
     await drop(db, files, row);
-    return 'unavailable';
+    return { outcome: 'unavailable', error: null };
   }
-  if (status === 401) return 'signed-out';
+  if (status === 401) return { outcome: 'signed-out', error };
   if ([400, 403, 413, 415].includes(status)) {
-    await drop(db, files, row);
-    return 'refused';
+    await abandon(db, files, row, `HTTP ${status}${error ? ` ${error}` : ''}`);
+    return { outcome: 'refused', error };
   }
   const asked =
     status === 429 || status === 503
@@ -209,7 +272,7 @@ export async function sendReport(
     now,
     `HTTP ${status}`,
   );
-  return 'later';
+  return { outcome: 'later', error };
 }
 
 /**
@@ -221,17 +284,17 @@ export async function sendDueReports(
   files: PhotoFiles | null,
   post: ReportPost,
   now = Date.now(),
-): Promise<ReportOutcome[]> {
+): Promise<ReportSettled[]> {
   const due = (await db.scanReport.orderBy('createdAt').toArray()).filter(
     (row) => row.nextAttemptAt <= now,
   );
-  const outcomes: ReportOutcome[] = [];
+  const settled: ReportSettled[] = [];
   for (const row of due) {
-    const outcome = await sendReport(db, files, row, post, now);
-    outcomes.push(outcome);
-    if (outcome === 'later' || outcome === 'signed-out') break;
+    const one = await sendReport(db, files, row, post, now);
+    settled.push(one);
+    if (one.outcome === 'later' || one.outcome === 'signed-out') break;
   }
-  return outcomes;
+  return settled;
 }
 
 /** The OPFS files the reports still need: not orphans. */

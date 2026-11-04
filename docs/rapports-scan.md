@@ -61,14 +61,34 @@ les réponses de l'envoi partent en `Cache-Control: no-store`.
 | --- | --- | --- |
 | 201 `{ id }` | gardé | retire le rapport |
 | 200 `{ id }` | déjà reçu (renvoi) | retire le rapport |
-| 400 `invalid` | champ manquant ou mal formé | abandonne |
+| 400 `invalid` | champ manquant ou mal formé | abandonne (voir plus bas) |
 | 401 `unauthorized` | pas de session | attend une reconnexion |
-| 403 `suspended` | compte ou entreprise suspendus | abandonne |
+| 403 `suspended` | compte ou entreprise suspendus | abandonne (voir plus bas) |
 | 404 | fonction éteinte (pas de clé) | abandonne, et le dit à l'utilisateur : le rapport n'est pas parti |
-| 413 `too_large`, 415 `type` | image trop lourde, pas une image | abandonne |
+| 413 `too_large`, 415 `type` | image trop lourde, pas une image | abandonne (voir plus bas) |
 | 429 `rate_limited` | 20 envois par compte et par 10 minutes ; `Retry-After` | réessaie plus tard |
 | 503 `busy` | deux envois déjà en lecture sur le serveur ; `Retry-After` | réessaie plus tard |
 | 507 `full` | plafond du serveur atteint | réessaie plus tard |
+
+Un rapport abandonné reste dans la file sans son image, avec la raison dans `lastError`
+(`HTTP 413 too_large`, `image missing on the phone`) et sans nouvel essai ; le rapport
+abandonné suivant le remplace. L'écran dit « Rapport refusé par le serveur (trop
+volumineux) » avec la raison reçue, et « Rapport perdu : image introuvable sur le
+téléphone » quand l'image manque en OPFS : rien n'est alors parti.
+
+Le serveur journalise chaque refus (`warn`, « scan report refused ») : statut, `error`, pour
+un 400 le contrôle en cause (`reason` : `form`, `id`, `nul`, `json`…), `id` du rapport,
+`Content-Length` annoncé, tailles du JSON et de l'image, type déclaré de l'image. Jamais les
+lectures, le commentaire ni l'image.
+
+L'image gardée en OPFS est relue en mémoire avant l'envoi : WebKit envoie un fichier lu en
+OPFS (`getFile()`) dans un `FormData` comme un corps vide, et le serveur répond 400
+(constaté le 05/11/2026 sur iPhone). Pour le rejouer : API locale avec une
+`SCAN_REPORTS_KEY` de test, `vite dev`, un compte de démo, puis Playwright en WebKit par
+`webkit.launchPersistentContext(<dossier neuf>)` : un contexte éphémère n'a pas d'OPFS et
+garde l'image dans la ligne Dexie, ce qui masque le défaut. Importer une photo d'étiquette
+au scan, « Signaler ce scan », « Envoyer le rapport » ; le journal du serveur dit le refus
+(`reason: "form"`, `bodyBytes: 0`) sans le correctif.
 
 ### Contenu du rapport
 
@@ -131,8 +151,8 @@ Une déconnexion efface les rapports en attente avec le reste des données local
 
 Au retrait (YSL-148), côté iPhone :
 
-- le dossier `apps/web/src/features/scan-report/` (rapport, dernier cadre, file, envoi, hook
-  de l'écran) et ses tests `apps/web/tests/scan-report-*.test.ts` ;
+- le dossier `apps/web/src/features/scan-report/` (rapport, dernier cadre, file, envoi,
+  message, hook de l'écran) et ses tests `apps/web/tests/scan-report-*.test.ts` ;
 - `apps/web/src/app/routes/_authenticated/scan.tsx` : `useScanReport`, ses appels
   (`report.keep`, `report.codes`, `report.text`, `report.slot`, `report.sheet`) et la
   condition `!report.open` sur les commandes ;
