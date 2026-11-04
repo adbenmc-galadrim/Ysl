@@ -151,7 +151,6 @@ describe('sync.push', () => {
     expect(await parcel(row.id)).toMatchObject({
       personId: card.id,
       contactId: null,
-      department: 'Prestataire',
     });
     const [kept] = await db
       .select()
@@ -163,6 +162,17 @@ describe('sync.push', () => {
       .from(schema.recipientAlias)
       .where(eq(schema.recipientAlias.id, alias.id));
     expect(moved).toMatchObject({ personId: card.id, contactId: null });
+  });
+
+  it('takes the department word of a PWA of before, without keeping it', async () => {
+    const row = localParcel({ department: 'Studio' });
+
+    const { results } = await push(sync, admin, {
+      ops: [op('parcel', row)],
+    });
+
+    expect(results.map((r) => r.status)).toEqual([200]);
+    expect(await parcel(row.id)).toMatchObject({ id: row.id });
   });
 
   it('applies an upsert and keeps its op_id', async () => {

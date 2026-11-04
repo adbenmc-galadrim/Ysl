@@ -1,6 +1,12 @@
 import { createHash } from 'node:crypto';
 import type { AnyDb } from '@repo/db';
-import { contact, directoryPerson, event, parcel } from '@repo/db/schema';
+import {
+  contact,
+  department,
+  directoryPerson,
+  event,
+  parcel,
+} from '@repo/db/schema';
 import { isTrackingFlag, type V1ImportReport } from '@repo/contract/imports';
 import { eventColumns, PARCEL_EVENT_ENTITY } from '@repo/contract/parcel-event';
 import { newId } from '@repo/shared/id';
@@ -65,7 +71,11 @@ async function recipients(
 ) {
   const org = importer.organizationId;
   const people = await tx
-    .select({ id: directoryPerson.id, email: directoryPerson.email })
+    .select({
+      id: directoryPerson.id,
+      email: directoryPerson.email,
+      departmentId: directoryPerson.departmentId,
+    })
     .from(directoryPerson)
     .where(
       and(
@@ -85,6 +95,9 @@ async function recipients(
 
   const personByEmail = new Map(
     people.map((person) => [person.email.toLowerCase(), person.id]),
+  );
+  const homeOf = new Map(
+    people.map((person) => [person.id, person.departmentId]),
   );
   // An address two departments hold says nobody: a contact keeps it, unattributed.
   const held = new Set<string>();
@@ -147,7 +160,38 @@ async function recipients(
     uses.delete(row.id);
   }
 
-  return { byLine, created, uses };
+  return { byLine, created, uses, homeOf };
+}
+
+/**
+ * Where a v1 row goes now that a department is an id (YSL-140): a person's
+ * parcel follows the card, a contact's takes the department its word names.
+ * A word that names no department it ends up in stays in the notes.
+ */
+function placesOf(
+  departments: { id: string; name: string }[],
+  homeOf: ReadonlyMap<string, string | null>,
+) {
+  const byName = new Map(
+    departments.map((row) => [normalizeName(row.name), row.id]),
+  );
+  const names = new Map(departments.map((row) => [row.id, row.name]));
+  return (row: V1Row, recipient: Recipient | undefined) => {
+    const word = row.department?.trim() || null;
+    const named = word ? byName.get(normalizeName(word)) : undefined;
+    const departmentId =
+      recipient && 'personId' in recipient ? undefined : named;
+    const lands =
+      recipient && 'personId' in recipient
+        ? homeOf.get(recipient.personId)
+        : named;
+    const held = lands ? names.get(lands) : undefined;
+    const unmatched =
+      word && (!held || normalizeName(held) !== normalizeName(word))
+        ? word
+        : null;
+    return { departmentId, unmatched };
+  };
 }
 
 /**
@@ -231,10 +275,19 @@ export async function importV1Csv(
       await tx.insert(contact).values(part);
     }
 
+    const departments = await tx
+      .select({ id: department.id, name: department.name })
+      .from(department)
+      .where(
+        and(eq(department.organizationId, org), isNull(department.deletedAt)),
+      );
+    const placeOf = placesOf(departments, found.homeOf);
+
     const doubtful = t('import.v1.note.tracking');
     const values = fresh.map((row): typeof parcel.$inferInsert => {
       const recipient = found.byLine.get(row.line);
       const flagged = row.flags.some(isTrackingFlag);
+      const place = placeOf(row, recipient);
       return {
         id: ids.get(row.line)!,
         organizationId: org,
@@ -244,13 +297,20 @@ export async function importV1Csv(
         trackingNorm: row.trackingNorm,
         ...recipient,
         readName: row.recipient,
-        department: row.department,
+        ...(place.departmentId ? { departmentId: place.departmentId } : {}),
         senderName: row.sender,
         pieceN: row.pieces,
         pieceTotal: row.pieces,
-        notes: flagged
-          ? [doubtful, row.notes].filter(Boolean).join('\n')
-          : row.notes,
+        notes:
+          [
+            flagged ? doubtful : null,
+            place.unmatched
+              ? t('import.v1.note.department', { department: place.unmatched })
+              : null,
+            row.notes,
+          ]
+            .filter(Boolean)
+            .join('\n') || null,
         receivedAt: row.receivedAt,
         receivedBy: importer.userId,
         deliveredAt: row.deliveredAt,

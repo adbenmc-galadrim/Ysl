@@ -124,7 +124,7 @@ export async function movePerson(
     const effects = await moveEffectsOf(tx, organizationId, personId);
     await tx
       .update(directoryPerson)
-      .set({ departmentId, department: target.name, updatedAt: new Date() })
+      .set({ departmentId, updatedAt: new Date() })
       .where(
         and(
           eq(directoryPerson.organizationId, organizationId),

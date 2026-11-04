@@ -101,7 +101,6 @@ async function readParcels(
         firstName: directoryPerson.firstName,
         lastName: directoryPerson.lastName,
         email: directoryPerson.email,
-        department: directoryPerson.department,
       },
       contact: { name: contact.name, email: contact.email },
       departmentName: department.name,
@@ -246,8 +245,7 @@ function toCells(
     textCell(p.tracking),
     recipient,
     p.notificationEmail ?? person?.email ?? c?.email,
-    // The department that holds it now: the text was written at reception.
-    departmentName ?? p.department ?? person?.department,
+    departmentName,
     p.senderName,
     // Pieces received here ("2 sur 3" counts 2), what v1 called nb_colis.
     String(p.pieceN ?? 1),

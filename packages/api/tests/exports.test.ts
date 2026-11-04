@@ -38,6 +38,8 @@ function memberSession(userId: string): Session {
 
 const personId = newId();
 const contactId = newId();
+const accounting = newId();
+const purchasing = newId();
 const ids = {
   person: newId(),
   contact: newId(),
@@ -47,6 +49,10 @@ const ids = {
 };
 
 beforeAll(async () => {
+  await db.insert(department).values([
+    { id: accounting, organizationId: ORGANIZATION_ID, name: 'Comptabilité' },
+    { id: purchasing, organizationId: ORGANIZATION_ID, name: 'Achats' },
+  ]);
   await db.insert(directoryPerson).values({
     id: personId,
     organizationId: ORGANIZATION_ID,
@@ -54,7 +60,7 @@ beforeAll(async () => {
     lastName: 'Durand',
     nameNorm: 'helene durand',
     email: 'helene.durand@example.test',
-    department: 'Finance',
+    departmentId: accounting,
   });
   await db.insert(contact).values({
     id: contactId,
@@ -95,7 +101,7 @@ beforeAll(async () => {
       type: 'recommande',
       contactId,
       notificationEmail: 'courrier@example.test',
-      department: 'Achats',
+      departmentId: purchasing,
       receivedAt: new Date('2026-10-24T09:00:00Z'),
       notifiedAt: new Date('2026-10-24T09:10:00Z'),
     },
@@ -236,7 +242,7 @@ describe('exportParcelsCsv', () => {
       tracking: '1Z999AA10123456784',
       destinataire: 'Hélène Durand',
       email: 'helene.durand@example.test',
-      departement: 'Finance',
+      departement: 'Comptabilité',
       expediteur: `'=HYPERLINK("http://x";"Fournisseur")`,
       nb_colis: '2',
       notes: 'Laissé à l’accueil\npar le livreur; fragile',
@@ -361,7 +367,7 @@ describe('exports by department', () => {
       receivedBy: AGENT_ID,
       departmentId,
     });
-    const mine = { ...row(finance), department: 'Achats' };
+    const mine = row(finance);
     const theirs = row(legal);
     const loose = row(null);
     await db.insert(parcel).values([mine, theirs, loose]);
