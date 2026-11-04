@@ -225,6 +225,25 @@ export async function handleReport(
   const state = join(dirname(config.reportDir), '.agent');
   const work = join(config.reportDir, 'agent');
   await mkdir(state, { recursive: true });
+  const report = await readReport(config.reportId, config.reportDir);
+  const release = await acquireLock(join(state, 'verrou'), {
+    log: deps.log,
+    sleep: deps.lockSleep,
+  });
+  try {
+    return await underLock(config, deps, report, state, work);
+  } finally {
+    await release();
+  }
+}
+
+async function underLock(
+  config: Config,
+  deps: Deps,
+  report: PulledReport,
+  state: string,
+  work: string,
+): Promise<Outcome> {
   await rm(work, { recursive: true, force: true });
   await mkdir(work, { recursive: true });
   const journal = join(work, 'journal.log');
@@ -232,12 +251,6 @@ export async function handleReport(
     deps.log(line);
     void appendFile(journal, `${deps.now().toISOString()} ${line}\n`);
   };
-
-  const report = await readReport(config.reportId, config.reportDir);
-  const release = await acquireLock(join(state, 'verrou'), {
-    log,
-    sleep: deps.lockSleep,
-  });
   const registryFile = join(state, 'etiquettes.json');
   const registry = await loadRegistry(registryFile);
   const { group } = attachReport(registry, report.id, labelKeys(report));
@@ -254,7 +267,7 @@ export async function handleReport(
           : outcome.kind === 'attached'
             ? `rattaché à la PR #${outcome.pr}`
             : `échec : ${outcome.reason}`;
-    if (outcome.kind !== 'attached') {
+    if (outcome.kind !== 'attached' && branch) {
       group.attempts.push({
         report: report.id,
         branch,
@@ -526,7 +539,5 @@ export async function handleReport(
       ].join('\n'),
     );
     return await finish({ kind: 'failed', reason, worktree });
-  } finally {
-    await release();
   }
 }

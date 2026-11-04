@@ -86,7 +86,9 @@ export async function openPullRequestOf(
   group: Group,
   forge: Forge,
 ): Promise<{ branch: string; pr: number } | null> {
-  const branches = [...new Set(group.attempts.map((a) => a.branch))];
+  const branches = [
+    ...new Set(group.attempts.map((a) => a.branch).filter(Boolean)),
+  ];
   for (const branch of branches) {
     const pr = await forge.openPullRequest(branch);
     if (pr !== null) return { branch, pr };

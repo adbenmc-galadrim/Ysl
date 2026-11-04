@@ -305,6 +305,30 @@ describe('handleReport', () => {
     expect(world.calls.some((c) => c.startsWith('agent'))).toBe(false);
   });
 
+  it('releases the lock when the registry is unreadable', async () => {
+    const state = join(world.config.reportDir, '..', '.agent');
+    await mkdir(state, { recursive: true });
+    await writeFile(join(state, 'etiquettes.json'), '{ pas du json');
+    await expect(handle()).rejects.toThrow();
+    expect(existsSync(join(state, 'verrou'))).toBe(false);
+  });
+
+  it('records no attempt for a failure before the branch is chosen', async () => {
+    world.deps.forge.branchExists = () =>
+      Promise.reject(new Error('gh hors ligne'));
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'gh hors ligne',
+    });
+    const registry = JSON.parse(
+      await readFile(
+        join(world.config.reportDir, '..', '.agent', 'etiquettes.json'),
+        'utf8',
+      ),
+    ) as { groups: { attempts: unknown[] }[] };
+    expect(registry.groups[0]?.attempts).toEqual([]);
+  });
+
   it('fails when the session did not run on Opus 5.5', async () => {
     world.agent = { wrongModel: true, model: 'claude-fable-5-1' };
     expect(await handle()).toMatchObject({
