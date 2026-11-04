@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "agent": {
+      "cache": false,
+      "env": ["SCAN_REPORT_ID", "SCAN_REPORT_DIR", "INIT_CWD"]
+    }
+  }
+}

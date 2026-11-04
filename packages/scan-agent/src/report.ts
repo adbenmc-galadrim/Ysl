@@ -21,6 +21,8 @@ export type PulledReport = {
   comment: string | null;
   /** Normalised, as the user corrected it or as the reader proposed it. */
   tracking: string | null;
+  /** What was read or typed for the parcel: names, numbers. */
+  personal: string[];
   /** Every text the report carries: none may reach the public repository. */
   texts: string[];
 };
@@ -113,6 +115,11 @@ export async function readReport(
     imageSha256,
     comment,
     tracking: trackingOf(report),
+    personal: [
+      ...textsOf(at(report, 'fields')),
+      ...textsOf(at(report, 'corrections')),
+      ...textsOf(at(report, 'draft')),
+    ],
     texts: [...textsOf(report), ...(comment ? [comment] : [])],
   };
 }
