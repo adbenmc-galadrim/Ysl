@@ -10,6 +10,9 @@ travaille sur **ordinateur** (dans le navigateur) ou sur **iPhone** (app install
 deux montrent les mêmes données. Il ne scanne pas les colis à l'arrivée : c'est le rôle de
 la navette.
 
+Sur un petit site, où la navette remet elle-même, la navette suit aussi ce guide pour
+prévenir les salariés et leur remettre leurs colis.
+
 Ce qui est demandé à chaque étape (confirmer le dépôt, prouver la remise, faire signer…)
 dépend du **fonctionnement** réglé par l'admin de l'entreprise. Ce guide décrit tous les
 cas ; l'écran n'affiche que ce qui s'applique chez vous.
@@ -17,6 +20,7 @@ cas ; l'écran n'affiche que ce qui s'applique chez vous.
 ## Sommaire
 
 - [Le premier jour](#le-premier-jour)
+- [Ce que fait le salarié](#ce-que-fait-le-salarié)
 - [Les écrans](#les-écrans)
 - [Confirmer un dépôt](#confirmer-un-dépôt)
 - [Prévenir les salariés](#prévenir-les-salariés)
@@ -43,6 +47,14 @@ cas ; l'écran n'affiche que ce qui s'applique chez vous.
 
 Un compte qui n'est rattaché à aucun département ne voit rien et affiche « Ce compte n'est
 rattaché à aucun département » : l'admin de l'entreprise doit le rattacher.
+
+## Ce que fait le salarié
+
+Le salarié n'a ni compte ni app. Il reçoit un e-mail qui lui donne son code de retrait à 4
+chiffres, un QR, le lieu et les horaires. Il vient au point de retrait de son département,
+montre le QR sur son téléphone ou donne le code, et signe sur l'écran si c'est demandé. Un
+collègue peut venir à sa place : le salarié le dit en répondant à l'e-mail, et le
+département peut envoyer au collègue une copie avec le même QR. Sans nouvelles, il reçoit des relances.
 
 ## Les écrans
 
@@ -86,7 +98,8 @@ colis à 14 h 50 ».
 ![Un écart au dépôt, sur iPhone](../images/guides/departement-02-ecart.png)
 
 Les colis désignés passent **À régulariser** : l'admin de l'entreprise et la navette le
-voient, et c'est l'admin qui décide de la suite. Vous n'avez rien d'autre à faire.
+voient, et c'est l'admin qui décide de la suite
+([Régulariser un colis](admin-entreprise.md#régulariser-un-colis)). Vous n'avez rien d'autre à faire.
 
 Selon le fonctionnement, la confirmation peut se faire **colis par colis** (« Touchez
 chaque colis reçu »), ou être désactivée : les colis arrivent alors directement dans

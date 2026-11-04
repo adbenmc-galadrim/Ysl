@@ -119,7 +119,8 @@ régulariser · Studio a compté 2 colis sur 3 »).
 
 ![Un écart signalé par le département](../images/guides/navette-04-a-regulariser.png)
 
-Vous n'avez rien à décider : c'est l'admin de l'entreprise qui tranche. S'il retrouve le
+Vous n'avez rien à décider : c'est l'admin de l'entreprise qui tranche
+([Régulariser un colis](admin-entreprise.md#régulariser-un-colis)). S'il retrouve le
 colis et choisit de le redéposer, celui-ci revient dans votre tournée, à déposer de nouveau.
 S'il est avec vous, dites-le-lui.
 
@@ -144,8 +145,15 @@ que celle du département sur iPhone.
 
 Pour prévenir et remettre, suivez le [guide du département](departement.md) : sections
 [Prévenir les salariés](departement.md#prévenir-les-salariés) et
-[Remettre un colis](departement.md#remettre-un-colis). Le salarié est prévenu dès la
-réception.
+[Remettre un colis](departement.md#remettre-un-colis), ainsi que
+[Relancer](departement.md#relancer) et
+[Quand le salarié répond](departement.md#quand-le-salarié-répond). Le salarié est prévenu
+dès la réception. Deux points à connaître avant le premier envoi :
+
+- le modèle d'e-mail livré parle du service courrier : adaptez-le
+  ([détail](departement.md#le-modèle-de-mail-par-défaut)) ;
+- chaque ouverture de l'aperçu tire un nouveau code de retrait : le bon est celui du
+  message envoyé.
 
 ## Sans réseau
 

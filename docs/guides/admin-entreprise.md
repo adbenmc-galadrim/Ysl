@@ -28,7 +28,8 @@ suspensions sont détaillés dans [Comptes de l'entreprise](../comptes.md).
 ## Le premier jour, dans l'ordre
 
 1. **Choisir son mot de passe** par le lien d'invitation (12 caractères au moins), puis se
-   connecter.
+   connecter : dans le navigateur sur ordinateur ; sur iPhone, ouvrir le lien dans Safari
+   puis se connecter dans l'app installée ([installation](../installation-iphone.md)).
 2. **Identité** : Réglages › Identité et e-mails : nom et logo de l'entreprise, affichés
    dans l'app et en tête des e-mails ; adresse de réception et noms sur les étiquettes, qui
    signalent un colis adressé ailleurs.
@@ -46,6 +47,13 @@ suspensions sont détaillés dans [Comptes de l'entreprise](../comptes.md).
 8. **Faire installer l'app** sur les iPhone : [Installer l'app sur
    l'iPhone](../installation-iphone.md). Puis remettre à chacun son guide : [navette](navette.md),
    [département](departement.md).
+9. **Faire adapter les modèles d'e-mail** avant les premiers envois : le modèle livré parle
+   du service courrier ([détail](departement.md#le-modèle-de-mail-par-défaut)).
+10. **Prévenir les salariés** de ce qui change pour eux
+    ([Ce que fait le salarié](departement.md#ce-que-fait-le-salarié)).
+11. **Faire passer un premier colis de bout en bout** (scan, dépôt, e-mail, remise) avec
+    un salarié de test : les parties 2 à 5 de la [recette](../recette.md#2-tournée-et-dépôt-de-la-navette)
+    donnent le déroulé.
 
 ## Départements et annuaire
 
@@ -118,6 +126,9 @@ choisi à la création (Petit site, Multi-départements ou Traçabilité stricte
 | Remise | Photo du colis remis | Désactivée, Facultative, Obligatoire |
 | E-mails | Moment de l'e-mail | Au scan, Au dépôt |
 | E-mails | Relances | Désactivées, À la main, Automatiques |
+
+Sans envoi par le serveur, des relances « Automatiques » ne partent pas seules : elles sont
+proposées aux agents à J+2 et J+5 jours ouvrés, qui les envoient par leur messagerie.
 
 Changer une étape : « Modifié » s'affiche, puis « Enregistrer 1 changement ». Avant
 d'enregistrer, l'app dit ce que le changement touche (« Appliquer à 2 colis ? », « 2 colis
@@ -211,6 +222,10 @@ Dans **Comptes**, ouvrir un compte :
 En changeant un mot de passe, **ne cochez pas la fermeture des sessions** sauf mot de passe
 compromis : elle efface les téléphones du compte. Le dernier admin actif ne peut être ni
 suspendu ni révoqué. Le détail : [Comptes de l'entreprise](../comptes.md).
+
+Mot de passe perdu par un admin : un autre admin de l'entreprise lui renvoie un lien. S'il
+est le seul admin, l'équipe qui exploite l'app pose un mot de passe depuis le serveur
+([procédure](../comptes.md#mot-de-passe-perdu-sans-admin-disponible)).
 
 ## Téléphone perdu ou volé
 
