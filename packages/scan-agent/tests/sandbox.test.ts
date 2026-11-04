@@ -12,7 +12,7 @@ const run = promisify(execFile);
 describe.runIf(process.platform === 'darwin')(
   'profile under sandbox-exec',
   () => {
-    it('lets the agent’s code write its folders, nothing else, and reach no network', async () => {
+    it('lets the agent’s code write its folders, nothing else, start no app, reach no network', async () => {
       const root = await mkdtemp(join(tmpdir(), 'scan-agent-sbx-'));
       const home = join(root, 'home');
       const inside = join(home, 'worktree');
@@ -29,6 +29,12 @@ describe.runIf(process.platform === 'darwin')(
         inside: tryIt(() => fs.writeFileSync(${JSON.stringify(join(inside, 'a'))}, 'x')),
         outside: tryIt(() => fs.writeFileSync(${JSON.stringify(join(home, 'b'))}, 'x')),
         secret: tryIt(() => fs.readFileSync(${JSON.stringify(join(home, '.ssh', 'id'))})),
+        launch: tryIt(() =>
+          require('node:child_process').execFileSync('/usr/bin/open', ['-g', '-a', 'TextEdit'], { stdio: 'ignore' }),
+        ),
+        shortcuts: tryIt(() =>
+          require('node:child_process').execFileSync('/usr/bin/shortcuts', ['list'], { stdio: 'ignore' }),
+        ),
       };
       fetch('https://example.com').then(() => 'ok', () => 'refusé').then((net) =>
         console.log(JSON.stringify({ ...out, net })));
@@ -44,6 +50,8 @@ describe.runIf(process.platform === 'darwin')(
         inside: 'ok',
         outside: 'refusé',
         secret: 'refusé',
+        launch: 'refusé',
+        shortcuts: 'refusé',
         net: 'refusé',
       });
       expect(existsSync(join(home, 'b'))).toBe(false);
