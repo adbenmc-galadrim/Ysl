@@ -202,9 +202,11 @@ Dans **Comptes**, ouvrir un compte :
 |---|---|
 | Renvoyer un lien de mot de passe | il choisit un nouveau mot de passe ; l'ancien lien ne marche plus |
 | Changer le mot de passe | mot de passe provisoire à lui transmettre, à changer à sa prochaine connexion ; son téléphone continue de marcher |
-| Suspendre le compte | plus de connexion ; ses données restent sur son téléphone, tout reprend à la réactivation |
+| Suspendre le compte | plus de connexion ; ses données restent sur son téléphone |
+| Réactiver le compte | lève la suspension : son téléphone reprend là où il en était, avec ses données |
 | Révoquer le compte | plus de connexion ; **son téléphone est effacé**, photos et preuves comprises |
-| Changer le rôle | navette, département ou admin |
+| Rétablir l'accès | rouvre un compte révoqué, avec un mot de passe provisoire ; les données effacées ne reviennent pas, un compte département est à rattacher de nouveau |
+| Changer le rôle | entre navette et département seulement ; le rôle d'un admin ne se change pas |
 
 En changeant un mot de passe, **ne cochez pas la fermeture des sessions** sauf mot de passe
 compromis : elle efface les téléphones du compte. Le dernier admin actif ne peut être ni
