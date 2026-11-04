@@ -21,6 +21,7 @@
     "auth:attach-organization": "pnpm --filter @repo/auth auth:attach-organization",
     "auth:reset-password": "pnpm --filter @repo/auth auth:reset-password",
     "mail:send-test": "pnpm --filter @repo/server mail:send-test",
+    "ops:brevo-webhook": "pnpm --filter @repo/server ops:brevo-webhook",
     "ops:check": "pnpm --filter @repo/server ops:check"
   },
   "devDependencies": {

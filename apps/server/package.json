@@ -19,6 +19,7 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "mail:send-test": "tsx src/scripts/mail-send-test.ts",
+    "ops:brevo-webhook": "tsx src/scripts/brevo-webhook.ts",
     "ops:check": "tsx src/scripts/go-live-check.ts"
   },
   "dependencies": {
