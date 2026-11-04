@@ -197,7 +197,8 @@ Sur la fiche du colis, « Le salarié a répondu » propose :
 
 Un code d'un autre département est refusé : « Ce code est pour Studio… Rien n'a été
 remis ». Un code expiré ou déjà servi : chercher le nom. Si la preuve par QR ou code est
-obligatoire et que le salarié n'a ni l'un ni l'autre, faites signer.
+obligatoire et que le salarié n'a ni l'un ni l'autre, faites signer ; si la signature est
+aussi désactivée, la remise attend son code.
 
 La signature et la photo restent sur l'appareil qui a remis.
 

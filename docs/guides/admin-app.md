@@ -3,7 +3,7 @@
 L'admin de l'app gère la plateforme : il crée les entreprises clientes, invite leur premier
 admin, et les suspend ou les supprime. Il travaille sur ordinateur.
 
-**Il ne voit que des chiffres** : ni colis, ni annuaire, ni nom de salarié (D26). Tout le
+**Il ne voit que des chiffres** : ni colis, ni annuaire, ni nom de salarié. Tout le
 reste appartient à l'entreprise et se règle par son admin
 ([guide de l'admin entreprise](admin-entreprise.md)).
 
