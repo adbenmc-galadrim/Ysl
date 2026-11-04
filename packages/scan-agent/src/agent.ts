@@ -249,7 +249,8 @@ export function runAgent(run: AgentRun): Promise<AgentOutcome> {
 
 export const agentResultSchema = z.object({
   statut: z.enum(['corrige', 'echec']),
-  nature: z.enum(['code-barres', 'ocr', 'autre']),
+  /** Left out on a failure, as the prompt allows. */
+  nature: z.enum(['code-barres', 'ocr', 'autre']).default('autre'),
   titre: z.string().min(1).max(72),
   resume: z.string().min(1).max(4000),
   raison: z.string().max(4000).optional(),

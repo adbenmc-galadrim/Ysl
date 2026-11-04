@@ -438,7 +438,6 @@ describe('handleReport', () => {
   it('fails without a PR when the agent found nothing to fix', async () => {
     world.result = {
       statut: 'echec',
-      nature: 'autre',
       titre: 'échec',
       resume: 'lue juste',
       raison: 'bien lue',
