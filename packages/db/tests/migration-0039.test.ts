@@ -172,3 +172,62 @@ describe('the drop of the department words', () => {
     expect(rows.map((r) => r.table_name)).toEqual(['contact']);
   }, 30_000);
 });
+
+describe('a pickup code', () => {
+  async function code(personId: string | null, contactId: string | null) {
+    const id = newId();
+    await client.query(
+      `insert into pickup_code (id, organization_id, person_id, contact_id, token_hash, pin_hash, expires_at)
+       values ($1, $2, $3, $4, $5, $6, now() + interval '7 days')`,
+      [id, org, personId, contactId, `t-${id}`, `p-${id}`],
+    );
+    return id;
+  }
+  const departmentOf = async (id: string) =>
+    (
+      await row<{ department_id: string | null }>(
+        'select department_id from pickup_code where id = $1',
+        id,
+      )
+    )?.department_id;
+
+  it('opened without department before takes its person’s', async () => {
+    await before();
+    const card = await person(null, ids.finance);
+    const open = await code(card, null);
+    await after();
+
+    expect(await departmentOf(open)).toBe(ids.finance);
+  }, 30_000);
+
+  it('written without department takes its person’s, else the mail department', async () => {
+    await before();
+    await after();
+    const card = await person(null, ids.finance);
+    const contact = newId();
+    await client.query(
+      `insert into contact (id, organization_id, name, name_norm) values ($1, $2, 'Atelier', 'atelier')`,
+      [contact, org],
+    );
+
+    expect(await departmentOf(await code(card, null))).toBe(ids.finance);
+    expect(await departmentOf(await code(null, contact))).toBe(ids.mail);
+  }, 30_000);
+
+  it('of a contact follows its parcel waiting at a department, deposited too', async () => {
+    await before();
+    await after();
+    const contact = newId();
+    await client.query(
+      `insert into contact (id, organization_id, name, name_norm) values ($1, $2, 'Atelier', 'atelier')`,
+      [contact, org],
+    );
+    await client.query(
+      `insert into parcel (id, organization_id, status, received_at, received_by, contact_id, department_id, deposited_at)
+       values ($1, $2, 'depose', now(), 'agent', $3, $4, now())`,
+      [newId(), org, contact, ids.finance],
+    );
+
+    expect(await departmentOf(await code(null, contact))).toBe(ids.finance);
+  }, 30_000);
+});

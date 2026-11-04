@@ -93,7 +93,7 @@ export const pickupCode = pgTable(
     ...syncColumns(),
     personId: uuid('person_id'),
     contactId: uuid('contact_id'),
-    /** The only department it opens (§3.7.9); null on a code of before, or of a parcel without one. */
+    /** The only department it opens (§3.7.9); an open code takes one from the server (drizzle/0039), when one can be told. */
     departmentId: uuid('department_id'),
     tokenHash: text('token_hash').notNull(),
     pinHash: text('pin_hash').notNull(),

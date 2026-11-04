@@ -89,5 +89,58 @@ BEGIN
   RETURN NEW;
 END;
 $$;--> statement-breakpoint
+-- An open code always opens one department (§3.7.9): one written without, by a
+-- PWA of before or for a parcel without one, takes its person's, else that of
+-- the contact's latest waiting parcel, else the mail department, the rule of
+-- the conversion. One already open there wins. A code a move empties (0021)
+-- is left alone: only one that had none takes one.
+CREATE FUNCTION "public"."pickup_code_department"() RETURNS trigger
+LANGUAGE plpgsql SET search_path = pg_catalog, public AS $$
+DECLARE
+  chosen uuid;
+BEGIN
+  IF NEW.department_id IS NULL AND NEW.used_at IS NULL AND NEW.deleted_at IS NULL
+     AND (TG_OP = 'INSERT' OR OLD.department_id IS NULL) THEN
+    chosen := coalesce(
+      (SELECT p.department_id FROM "public"."directory_person" AS p
+        WHERE p.organization_id = NEW.organization_id
+          AND p.id = NEW.person_id
+          AND p.deleted_at IS NULL),
+      (SELECT w.department_id FROM "public"."parcel" AS w
+        WHERE w.organization_id = NEW.organization_id
+          AND w.contact_id = NEW.contact_id
+          AND w.deleted_at IS NULL
+          AND w.department_id IS NOT NULL
+          AND w.status IN ('a_completer', 'recu', 'depose', 'notifie')
+        ORDER BY w.id DESC LIMIT 1),
+      (SELECT d.id FROM "public"."department" AS d
+        WHERE d.organization_id = NEW.organization_id
+          AND d.deleted_at IS NULL
+          AND lower(d.name) = 'service courrier'
+          AND NOT EXISTS (
+            SELECT 1 FROM "public"."setting" AS s
+             WHERE s.organization_id = NEW.organization_id
+               AND s.key = 'operatingProfile'
+               AND s.deleted_at IS NULL
+               AND s.value->>'shuttleActsAsDepartment' = 'false'
+          ))
+    );
+    IF chosen IS NOT NULL AND NOT EXISTS (
+      SELECT 1 FROM "public"."pickup_code" AS there
+       WHERE there.id <> NEW.id
+         AND there.used_at IS NULL
+         AND there.deleted_at IS NULL
+         AND there.department_id = chosen
+         AND (there.person_id = NEW.person_id OR there.contact_id = NEW.contact_id)
+    ) THEN
+      NEW.department_id := chosen;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;--> statement-breakpoint
+CREATE TRIGGER "pickup_code_department" BEFORE INSERT OR UPDATE ON "pickup_code" FOR EACH ROW EXECUTE FUNCTION "public"."pickup_code_department"();--> statement-breakpoint
+UPDATE "pickup_code" SET updated_at = updated_at
+ WHERE department_id IS NULL AND used_at IS NULL AND deleted_at IS NULL;--> statement-breakpoint
 ALTER TABLE "directory_person" DROP COLUMN "department";--> statement-breakpoint
 ALTER TABLE "parcel" DROP COLUMN "department";
