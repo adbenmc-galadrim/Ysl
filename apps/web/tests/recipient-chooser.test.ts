@@ -62,7 +62,7 @@ describe('searchOptions', () => {
     expect(found.map((o) => [o.name, o.detail])).toEqual([
       ['Zoé Petit', 'Hors annuaire, Studio'],
       ['Anne Petit', 'Hors annuaire'],
-      ['Louis Petit', louis.department ?? louis.email],
+      ['Louis Petit', louis.email],
     ]);
   });
 
@@ -151,7 +151,6 @@ describe('Personne hors annuaire', () => {
         id,
         email: 'anne@example.com',
         departmentId,
-        department: null,
       });
 
     expect(
@@ -271,7 +270,7 @@ describe('assignRecipient', () => {
     expect(await db.parcel.get(read.id)).toMatchObject({ status: 'recu' });
   });
 
-  it('takes the typed department away with the recipient it came with', async () => {
+  it('leaves the typed department with the contact, not on the parcel', async () => {
     const camille = personRow();
     const parcel = parcelRow({ status: 'a_completer' });
     await db.directoryPerson.put(camille);
@@ -291,10 +290,12 @@ describe('assignRecipient', () => {
       options,
     );
 
-    expect(await db.parcel.get(parcel.id)).toMatchObject({
-      personId: camille.id,
-      department: null,
-    });
+    const saved = await db.parcel.get(parcel.id);
+    expect(saved).toMatchObject({ personId: camille.id, contactId: null });
+    expect(saved).not.toHaveProperty('department');
+    expect(await db.contact.toArray()).toMatchObject([
+      { name: 'Marc Petit', department: 'Intérim' },
+    ]);
   });
 
   it('keeps the department typed with someone outside the directory', async () => {
@@ -314,8 +315,9 @@ describe('assignRecipient', () => {
     );
 
     const saved = await db.parcel.get(parcel.id);
-    expect(saved).toMatchObject({ status: 'recu', department: 'Intérim' });
-    expect(saved?.contactId).toBe((await db.contact.toArray())[0]?.id);
+    const [contact] = await db.contact.toArray();
+    expect(saved).toMatchObject({ status: 'recu', contactId: contact?.id });
+    expect(contact).toMatchObject({ department: 'Intérim' });
   });
 });
 
@@ -327,7 +329,6 @@ describe('searchOptions with departments (ME23)', () => {
       lastName: 'Martin',
       nameNorm: 'anne martin',
       email: 'anne@example.com',
-      department: null,
       departmentId,
     });
   const names = new Map([
@@ -343,14 +344,6 @@ describe('searchOptions with departments (ME23)', () => {
     ).toEqual(['Finance', 'Presse']);
     expect(searchOptions(people, [], 'presse', names).map((o) => o.id)).toEqual(
       ['b'],
-    );
-  });
-
-  it('falls back on the word a card came with, on a row pulled before the conversion', () => {
-    const before = { ...twin('a', null), department: 'Studio' };
-
-    expect(searchOptions([before], [], 'studio', names)[0]?.detail).toBe(
-      'Studio',
     );
   });
 

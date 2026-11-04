@@ -14,6 +14,7 @@ import { listSearchEntries } from '#/features/search/api/search-entries';
 import { putOnTour } from '#/features/parcels/tour';
 import { groupResults } from '#/features/search/search-index';
 import {
+  departmentRow,
   NOW,
   openTestDatabase,
   parcelRow,
@@ -44,8 +45,9 @@ beforeEach(async () => {
     updatedAt: NOW,
     deletedAt: null,
   });
+  await db.department.put(departmentRow({ id: 'presse', name: 'Presse' }));
   await db.directoryPerson.put(
-    personRow({ id: 'p-1', department: 'Presse', email: 'p@ysl.test' }),
+    personRow({ id: 'p-1', departmentId: 'presse', email: 'p@ysl.test' }),
   );
   await db.parcel.put(onTour);
 });

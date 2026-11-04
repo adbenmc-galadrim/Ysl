@@ -10,6 +10,7 @@ import {
 } from '#/features/search/search-index';
 import {
   contactRow,
+  departmentRow,
   NOW,
   openTestDatabase,
   parcelRow,
@@ -50,8 +51,16 @@ describe('search', () => {
   it('looks into the service, carrier, sender, label name and tracking', async () => {
     const contact = contactRow({ name: 'Hugo Lambert' });
     await db.contact.put(contact);
+    const rh = departmentRow({ name: 'Ressources humaines' });
+    await db.department.put(rh);
+    const ines = personRow({
+      firstName: 'Inès',
+      lastName: 'Garnier',
+      departmentId: rh.id,
+    });
+    await db.directoryPerson.put(ines);
     await db.parcel.bulkPut([
-      parcelRow({ tracking: 'SERVICE', department: 'Ressources humaines' }),
+      parcelRow({ tracking: 'SERVICE', personId: ines.id }),
       parcelRow({ tracking: 'CARRIER', carrier: 'Chronopost' }),
       parcelRow({ tracking: 'SENDER', senderName: 'Hermès Paris' }),
       parcelRow({ tracking: 'LABEL', readName: 'Mme Léa Roussel' }),
@@ -72,9 +81,13 @@ describe('search', () => {
   });
 
   it('keeps only the parcels that hold every word', async () => {
+    const studio = departmentRow({ name: 'Studio' });
+    await db.department.put(studio);
+    const camille = personRow({ departmentId: studio.id });
+    await db.directoryPerson.put(camille);
     await db.parcel.bulkPut([
-      parcelRow({ tracking: 'UPS', carrier: 'UPS', department: 'Studio' }),
-      parcelRow({ tracking: 'DHL', carrier: 'DHL', department: 'Studio' }),
+      parcelRow({ tracking: 'UPS', carrier: 'UPS', personId: camille.id }),
+      parcelRow({ tracking: 'DHL', carrier: 'DHL', personId: camille.id }),
     ]);
     const entries = await listSearchEntries(db, NOW);
 

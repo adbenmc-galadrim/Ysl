@@ -21,6 +21,7 @@ import { groupByRecipient } from '#/features/mail/recipients';
 import { loadRecipientContext } from '#/features/parcels/api/use-parcels';
 import {
   contactRow,
+  departmentRow,
   handoverRow,
   NOW,
   openTestDatabase,
@@ -49,7 +50,9 @@ const at = (hours: number, minutes = 0) =>
 
 describe('describeRecord', () => {
   it('names the recipient, the place and the tracking number, and offers to notify', async () => {
-    const person = personRow();
+    const studio = departmentRow({ name: 'Studio' });
+    await db.department.put(studio);
+    const person = personRow({ departmentId: studio.id });
     await db.directoryPerson.put(person);
     const row = parcelRow({ personId: person.id });
     await db.parcel.put(row);

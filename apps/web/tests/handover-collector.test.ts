@@ -13,8 +13,9 @@ const paul = personRow({
   firstName: 'Paul',
   lastName: 'Mercier',
   nameNorm: 'paul mercier',
-  department: 'Juridique',
+  departmentId: 'juridique',
 });
+const names = new Map([['juridique', 'Juridique']]);
 const marc = contactRow({
   name: 'Marc Petit',
   nameNorm: 'marc petit',
@@ -63,7 +64,7 @@ describe('announcedCollector', () => {
 
 describe('collectorCard', () => {
   it('finds the department of the card or contact that bears the name', () => {
-    expect(collectorCard('paul MERCIER', [paul], [marc])).toEqual({
+    expect(collectorCard('paul MERCIER', [paul], [marc], names)).toEqual({
       name: 'Paul Mercier',
       initials: 'PM',
       department: 'Juridique',

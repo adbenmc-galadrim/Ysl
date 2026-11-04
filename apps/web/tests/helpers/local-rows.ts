@@ -9,6 +9,7 @@ import { newId } from '@repo/shared/id';
 import {
   CourrierDatabase,
   type LocalContact,
+  type LocalDepartment,
   type LocalDirectoryPerson,
   type LocalHandover,
   type LocalParcel,
@@ -49,7 +50,6 @@ export function parcelRow(overrides: Partial<LocalParcel> = {}): LocalParcel {
     contactId: null,
     readName: null,
     notificationEmail: null,
-    department: null,
     senderId: null,
     senderName: null,
     pieceN: null,
@@ -83,10 +83,25 @@ export function personRow(
     firstName: 'Camille',
     nameNorm: 'camille morel',
     email: 'camille@example.com',
-    department: 'Studio',
     site: null,
     source: 'manuel',
     active: true,
+    ...overrides,
+  };
+}
+
+export function departmentRow(
+  overrides: Partial<LocalDepartment> = {},
+): LocalDepartment {
+  return {
+    id: newId(),
+    createdAt: NOW,
+    updatedAt: NOW,
+    deletedAt: null,
+    name: 'Studio',
+    receptionPoint: null,
+    replyEmail: null,
+    pickup: null,
     ...overrides,
   };
 }

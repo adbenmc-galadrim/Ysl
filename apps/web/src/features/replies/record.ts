@@ -100,7 +100,6 @@ export async function replyNotMine(
     ...received,
     personId: null,
     contactId: null,
-    department: null,
     notificationEmail: null,
     reply: 'not_mine',
     repliedAt: now,

@@ -178,7 +178,7 @@ describe('a recipient nobody corrected', () => {
 });
 
 describe('a contact addressed', () => {
-  it('counts as used, which keeps it from the purge, and brings its department', async () => {
+  it('counts as used, which keeps it from the purge, its department its own', async () => {
     const temp = contactRow({
       usageCount: 2,
       lastUsedAt: null,
@@ -194,11 +194,11 @@ describe('a contact addressed', () => {
     expect(await db.contact.get(temp.id)).toMatchObject({
       usageCount: 3,
       lastUsedAt: NOW,
-    });
-    expect(await db.parcel.get(parcelId)).toMatchObject({
-      contactId: temp.id,
       department: 'Intérim',
     });
+    const parcel = await db.parcel.get(parcelId);
+    expect(parcel).toMatchObject({ contactId: temp.id });
+    expect(parcel).not.toHaveProperty('department');
   });
 });
 
@@ -288,7 +288,7 @@ describe('one name learned apart on two iPhones', () => {
 });
 
 describe('a contact chosen on the parcel’s sheet', () => {
-  it('counts as used and brings its department', async () => {
+  it('counts as used, its department its own', async () => {
     const temp = contactRow({
       usageCount: 1,
       lastUsedAt: null,
@@ -308,7 +308,10 @@ describe('a contact chosen on the parcel’s sheet', () => {
     expect(await db.contact.get(temp.id)).toMatchObject({
       usageCount: 2,
       lastUsedAt: NOW,
+      department: 'Intérim',
     });
-    expect((await db.parcel.get(parcel.id))?.department).toBe('Intérim');
+    const saved = await db.parcel.get(parcel.id);
+    expect(saved).toMatchObject({ contactId: temp.id });
+    expect(saved).not.toHaveProperty('department');
   });
 });

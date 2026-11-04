@@ -10,7 +10,6 @@ describe('recipientEntries', () => {
           id: 'lea',
           firstName: 'Léa',
           lastName: 'Fontaine',
-          department: null,
         }),
         personRow({ id: 'gone', active: false }),
         personRow({ id: 'deleted', deletedAt: NOW }),
@@ -37,9 +36,9 @@ describe('recipientEntries', () => {
     const names = new Map([['finance', 'Finance']]);
     const entries = recipientEntries(
       [
-        personRow({ id: 'a', departmentId: 'finance', department: null }),
-        personRow({ id: 'b', departmentId: null, department: 'Presse' }),
-        personRow({ id: 'c', departmentId: null, department: null }),
+        personRow({ id: 'a', departmentId: 'finance' }),
+        personRow({ id: 'b', departmentId: 'presse' }),
+        personRow({ id: 'c', departmentId: null }),
       ],
       [],
       names,
@@ -49,8 +48,8 @@ describe('recipientEntries', () => {
       departmentId: 'finance',
       department: 'Finance',
     });
-    expect(entries[1]).toMatchObject({ department: 'Presse' });
-    expect(entries[1]?.departmentId).toBeUndefined();
+    expect(entries[1]?.department).toBeUndefined();
     expect(entries[2]?.department).toBeUndefined();
+    expect(entries[2]?.departmentId).toBeUndefined();
   });
 });
