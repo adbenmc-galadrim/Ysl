@@ -40,6 +40,16 @@ function linksOf(text: string) {
 }
 
 describe('the role guides', () => {
+  it('cover the four roles and an index', () => {
+    expect(guides.map((g) => g.name).sort()).toEqual([
+      'README.md',
+      'admin-app.md',
+      'admin-entreprise.md',
+      'departement.md',
+      'navette.md',
+    ]);
+  });
+
   it('show images that are all in the repository, and store only those', () => {
     const shown = new Set<string>();
     for (const guide of guides) {
