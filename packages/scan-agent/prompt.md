@@ -21,7 +21,7 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
 2. **Tu ne publies rien.** Ni `git push`, ni `gh`, ni réseau : tu commites seulement. La
    commande pousse la branche et ouvre la PR en draft après ses propres contrôles. Personne
    d'autre qu'Adam ne fusionne. Tes commandes tournent dans un bac à sable (pas de réseau,
-   écriture limitée au worktree et à `{{WORK_DIR}}`) ; ne touche ni aux hooks ni à la
+   écriture limitée au worktree, à `{{WORK_DIR}}` et au dossier git pour commiter) ; ne touche ni aux hooks ni à la
    configuration git : la commande le vérifie et abandonne sinon.
 3. **Aucune régression.** Aucun champ du banc ne doit reculer, ni sur l'ensemble du corpus
    ni sur une seule étiquette. La commande refait la mesure avant et après, et n'ouvre la
@@ -29,7 +29,7 @@ dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
 4. **Aucune attribution** : pas de `Co-Authored-By`, de signature, de lien ni de mention
    d'un outil ou d'un modèle dans les commits, le code ou `resultat.json`.
 5. Hors limites : `packages/bench/` (la notation du banc), `packages/scan-agent/`,
-   `.github/`, `pnpm-lock.yaml` et les dépendances, `packages/corpus/data/`. Pas de fichier
+   `.github/`, `pnpm-lock.yaml`, tout `package.json`, `packages/corpus/data/`. Pas de fichier
    image ni binaire dans le dépôt.
 
 ## Ce que tu as

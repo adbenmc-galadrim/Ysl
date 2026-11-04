@@ -359,6 +359,32 @@ describe('handleReport', () => {
     expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
   });
 
+  it('says the branch is public when the PR fails after the push', async () => {
+    world.deps.forge.createDraft = () =>
+      Promise.reject(new Error('gh en panne'));
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'gh en panne',
+    });
+    const failure = await readFile(join(work(), 'echec.md'), 'utf8');
+    expect(failure).toContain(`- Publié : branche ${BRANCH} poussée, sans PR`);
+  });
+
+  it('keeps the PR when filing the label fails afterwards', async () => {
+    world.config.privateCorpus = join(
+      world.config.reportDir,
+      'image.jpg',
+      'sous',
+    );
+    expect(await handle()).toEqual({ kind: 'pr', pr: 42, branch: BRANCH });
+    expect(world.lines.join('\n')).toContain(
+      'PR #42 ouverte, mais la suite a échoué',
+    );
+    expect(world.calls.some((c) => c.startsWith('git worktree remove'))).toBe(
+      false,
+    );
+  });
+
   it('fails when the session did not run on Opus 5.5', async () => {
     world.agent = { wrongModel: true, model: 'claude-fable-5-1' };
     expect(await handle()).toMatchObject({

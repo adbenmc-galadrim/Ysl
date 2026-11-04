@@ -24,6 +24,8 @@ const FORBIDDEN: [RegExp, string][] = [
   [/^tmp\//, 'dossier tmp/'],
   [/(^|\/)annotations\.json$/, 'annotations du corpus'],
   [/(^|\/)pnpm-lock\.yaml$/, 'lockfile'],
+  [/(^|\/)package\.json$/, 'package.json (dépendances, scripts)'],
+  [/^packages\/corpus\/data\//, 'données du corpus'],
   [/^packages\/bench\//, 'banc de mesure'],
   [/^packages\/scan-agent\//, 'outillage de l’agent'],
   [/^\.github\//, 'CI'],

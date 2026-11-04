@@ -112,6 +112,8 @@ describe('checkBeforePush', () => {
       'corpus/annotations.json': '[]\n',
       'packages/bench/src/measure.ts': 'export {};\n',
       'packages/scan-agent/src/guard.ts': 'export {};\n',
+      'packages/contract/package.json': '{}\n',
+      'packages/corpus/data/x.json': '{}\n',
     });
     const details = (await check()).map((p) => p.detail);
     expect(details).toEqual(
@@ -123,6 +125,8 @@ describe('checkBeforePush', () => {
         expect.stringContaining('annotations du corpus'),
         expect.stringContaining('banc de mesure'),
         expect.stringContaining('outillage de l’agent'),
+        expect.stringContaining('package.json (dépendances, scripts)'),
+        expect.stringContaining('données du corpus'),
       ]),
     );
   });

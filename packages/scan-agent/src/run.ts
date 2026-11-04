@@ -308,6 +308,7 @@ async function underLock(
 
   let worktree: string | null = null;
   let branch = '';
+  let published = '';
   const finish = async (outcome: Outcome) => {
     const what =
       outcome.kind === 'pr'
@@ -560,29 +561,36 @@ async function underLock(
       'origin',
       `refs/heads/${branch}:refs/heads/${branch}`,
     ]);
+    published = `branche ${branch} poussée, sans PR`;
     const pr = await deps.forge.createDraft({
       cwd: worktree,
       branch,
       title: result.titre,
       bodyFile,
     });
+    published = `PR draft #${pr}`;
 
-    const annotations = join(config.privateCorpus, 'annotations.json');
-    await mkdir(config.privateCorpus, { recursive: true });
-    await copyFile(report.imagePath, join(config.privateCorpus, imageFile));
-    const labels = [...(await readManifest(annotations)), label];
-    await writeFile(
-      `${annotations}.partiel`,
-      `${JSON.stringify(labels, null, 2)}\n`,
-    );
-    await rename(`${annotations}.partiel`, annotations);
-    log(
-      `Étiquette ${labelId} versée au corpus privé (${basename(config.privateCorpus)}).`,
-    );
-
-    await deps.git(config.repo, ['worktree', 'remove', '--force', worktree]);
-    await deps.git(config.repo, ['branch', '-D', branch]);
-    worktree = null;
+    try {
+      const annotations = join(config.privateCorpus, 'annotations.json');
+      await mkdir(config.privateCorpus, { recursive: true });
+      await copyFile(report.imagePath, join(config.privateCorpus, imageFile));
+      const labels = [...(await readManifest(annotations)), label];
+      await writeFile(
+        `${annotations}.partiel`,
+        `${JSON.stringify(labels, null, 2)}\n`,
+      );
+      await rename(`${annotations}.partiel`, annotations);
+      log(
+        `Étiquette ${labelId} versée au corpus privé (${basename(config.privateCorpus)}).`,
+      );
+      await deps.git(config.repo, ['worktree', 'remove', '--force', worktree]);
+      await deps.git(config.repo, ['branch', '-D', branch]);
+      worktree = null;
+    } catch (error) {
+      log(
+        `PR #${pr} ouverte, mais la suite a échoué (${error instanceof Error ? error.message : String(error)}) : worktree gardé (${worktree}), étiquette à verser à la main.`,
+      );
+    }
     return await finish({ kind: 'pr', pr, branch });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
@@ -596,6 +604,7 @@ async function underLock(
         `- Étiquette : ${group.id}`,
         `- Branche : ${branch || '—'}`,
         `- Worktree gardé : ${worktree ?? '—'}`,
+        `- Publié : ${published || 'rien'}`,
         `- Dossier de travail : ${work}`,
         ...(details.length > 0
           ? ['', '## Détail', '', ...details.map((d) => `- ${d}`)]
