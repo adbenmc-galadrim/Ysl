@@ -23,7 +23,8 @@
     "mail:send-test": "pnpm --filter @repo/server mail:send-test",
     "ops:brevo-webhook": "pnpm --filter @repo/server ops:brevo-webhook",
     "ops:check": "pnpm --filter @repo/server ops:check",
-    "reports:pull": "pnpm --filter @repo/server reports:pull"
+    "reports:pull": "pnpm --filter @repo/server reports:pull",
+    "reports:agent": "pnpm --filter @repo/scan-agent agent"
   },
   "devDependencies": {
     "prettier": "^3.7.4",

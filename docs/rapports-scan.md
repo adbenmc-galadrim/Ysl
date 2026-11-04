@@ -227,6 +227,107 @@ rapports.
 pnpm reports:pull --watch --on-report 'echo "nouveau rapport : $SCAN_REPORT_DIR"'
 ```
 
+## Agent sur chaque rapport : `pnpm reports:agent`
+
+L'accroche de `--on-report` (paquet `packages/scan-agent`). Pour chaque rapport, un agent
+cherche ce qui a été mal lu, corrige la chaîne d'extraction et ouvre une PR **en draft**
+qu'Adam relit et fusionne. Depuis la racine du dépôt :
+
+```bash
+pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
+```
+
+`-w` est nécessaire : `reports:pull` lance l'accroche depuis `apps/server`. Options :
+`--no-pr` (tout sauf le push, la PR et le versement au corpus privé : démo, essai ; le
+worktree et sa branche restent sur le PC),
+`--max-turns <n>` (150 par défaut), `--timeout-min <n>` (60 par défaut), `--corpus` (sortie
+du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé, défaut
+`<corpus>/real`). Le corpus de synthèse doit être généré avant
+(`pnpm --filter @repo/corpus generate --out ~/goinfre/ysl/tmp/corpus`).
+
+### Ce que fait la commande
+
+0. **Un rapport qu'elle sait lire.** `report` doit être un `scanReportV1` (« Contenu du
+   rapport ») : une autre version, ou un rapport v1 qui ne suit pas le contrat, est ignoré
+   sans agent, avec sa raison dans le journal (la commande finit en code 0).
+1. **Un agent à la fois.** Verrou `tmp/rapports-scan/.agent/verrou` : un rapport arrivé
+   pendant qu'un agent travaille attend son tour (`reports:pull` attend déjà l'accroche
+   avant le rapport suivant ; le verrou couvre deux commandes lancées en parallèle). Le
+   verrou d'un processus mort est repris.
+2. **Une PR ouverte par étiquette.** Deux rapports sur la même étiquette (même tracking,
+   celui corrigé par l'utilisateur d'abord, ou même empreinte SHA-256 de l'image) vont dans
+   le même groupe de `tmp/rapports-scan/.agent/etiquettes.json` (le tracking y est haché).
+   Si une branche du groupe a une PR ouverte (`gh pr list --head`), aucun agent ne part :
+   le rapport est rattaché. La branche porte un identifiant neutre,
+   `fix/scan-etiquette-<8 premiers caractères de l'id du premier rapport>`, suffixée
+   (`-2`…) quand une tentative précédente l'a déjà prise.
+3. **Un worktree dédié** `../ysl-scan-etiquette-<id>` depuis `origin/main`,
+   `pnpm install --frozen-lockfile --prefer-offline`.
+4. **Un dossier de travail hors dépôt**, `tmp/rapports-scan/<id>/agent/` : une copie du
+   corpus privé (`annotations.json` et des liens vers les photos) où l'image du rapport
+   entre sous le nom `rapport-<id>.jpg` (ou `.png`).
+5. **L'agent** : `claude -p --model claude-opus-5-5` (le modèle annoncé par la session est
+   vérifié, un autre l'arrête), `--permission-mode dontAsk`, outils `Read`, `Edit`, `Write`,
+   `Glob`, `Grep` et `Bash` limité à `pnpm`, `ls` et à `git` en lecture, `add`, `commit`,
+   `restore` ; ni `git push`, ni `gh`, ni web ; aucun serveur MCP ni réglage du PC ;
+   dossiers : le worktree et le dossier de travail ; tours et durée bornés. `pnpm` lance
+   n'importe quel code : ses commandes passent par le bac à sable de Claude Code (aucun
+   réseau, écriture seulement dans le worktree, le dossier de travail et le dossier git
+   pour commiter, sockets Unix seulement dans le dossier temporaire du bac à sable). Ni
+   lecture ni écriture de `~/.ssh`, `~/.config`, `~/.gnupg`, `~/.aws`, `~/.claude`,
+   `~/.netrc`, `~/.gitconfig`, par aucun outil : git y lit sans config globale
+   (`GIT_CONFIG_GLOBAL=/dev/null`) et les commits portent le nom et l'e-mail git d'Adam,
+   lus par la commande. Son environnement ne porte aucune clé
+   (`SCAN_REPORTS_KEY`, jetons GitHub, Coolify…, agent ssh), seulement la sienne ; l'URL de
+   push d'`origin` y est inutilisable et `gh` sans compte. Son prompt est versionné :
+   `packages/scan-agent/prompt.md` ; il renvoie l'agent à « Contenu du rapport », « Rejouer »
+   et « Ce que le rapport ne dit pas ». Il écrit la lecture attendue de l'étiquette dans la
+   copie du corpus, mesure le banc avant et après, corrige `packages/barcode`,
+   `packages/contract` ou `packages/ocr` avec un test synthétique, commite, et rend
+   `resultat.json` (statut, nature de la correction, titre et résumé de la PR).
+6. **Les contrôles, faits par la commande et non par l'agent**, avant tout push :
+   - hooks git, configuration (`config`, `config.worktree`) et fichier `.git` du worktree
+     identiques à ce qu'ils étaient avant l'agent ; le push part avec
+     `core.hooksPath=/dev/null` et `--no-verify` ;
+   - arbre propre, au moins un commit, la seule étiquette ajoutée au corpus de travail
+     valide (schéma du corpus) et les autres intactes ;
+   - aucun fichier image ni binaire, rien sous `tmp/`, ni `annotations.json`, ni lockfile,
+     ni `package.json`, ni `packages/corpus/data/`, ni `packages/bench/` (la notation), ni
+     `packages/scan-agent/`, ni `.github/` ;
+   - **aucune fuite** : les noms, numéros et valeurs lus ou corrigés du rapport et de la
+     lecture attendue, mot à mot, en entier ou sans espaces, et les lignes OCR qui portent
+     des chiffres (adresse, téléphone, e-mail), cherchés dans les lignes ajoutées, les
+     chemins, les messages de commit, la branche, le titre et la description de la PR ; un
+     texte déjà présent sur `main` en mot entier n'est pas une fuite ;
+   - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ; aucun jeton
+     GitHub ou Anthropic, clé privée ni en-tête `Bearer` ;
+   - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
+     comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
+     (`packages/scan-agent/src/sandbox.ts` : aucun réseau ni DNS, sockets Unix seulement
+     dans un dossier temporaire à eux, aucune app lancée hors du bac à sable (LaunchServices,
+     Apple Events, `open`, `osascript`, `shortcuts`, `automator`), ni `ssh` ni `scp`, aucune
+     lecture des clés du PC, écriture seulement dans le worktree, le dossier de travail et ce
+     dossier) ;
+   - le banc sur `main` puis sur la branche, sur le même corpus : aucun champ ne perd une
+     lecture juste ni ne gagne un faux « sûr », sur l'ensemble comme sur chaque étiquette,
+     et au moins un champ de l'étiquette signalée est mieux lu (une correction OCR, que le
+     banc image ne mesure pas, passe sur ses tests synthétiques).
+7. **Succès** : push de la branche seule, `gh pr create --draft` (titre de l'agent,
+   description de la commande : résumé, tableau agrégé avant/après par champ et par
+   politique, nombre d'étiquettes) ; l'image et sa lecture attendue sont versées au corpus
+   privé `~/goinfre/ysl/tmp/corpus/real` ; le worktree et la branche locale sont supprimés.
+   Si ce rangement échoue, la PR reste ouverte et le journal dit ce qui est à finir à la
+   main. Personne ne fusionne à part Adam ; rien ne part jamais sur `main` ni `prod`.
+8. **Échec** (rien à corriger, régression, fuite, gates rouges, délai) : ni push ni PR ;
+   `echec.md` dans le dossier de travail donne la raison et le détail ; le worktree reste
+   pour qu'on le reprenne. Le corpus privé n'est pas touché. Seule exception : `gh pr create`
+   qui échoue après le push ; `echec.md` le dit (« Publié : branche … poussée, sans PR »).
+
+Journal : une ligne par rapport dans `tmp/rapports-scan/.agent/journal.log`, le détail dans
+`tmp/rapports-scan/<id>/agent/` (`journal.log`, `claude.jsonl` le flux complet de l'agent,
+`install.log`, `gates.log`, `banc-avant/`, `banc-apres/`, `comparaison.md`, `pr.md`). Ces
+fichiers portent des données réelles : ils ne quittent pas le PC.
+
 ## Retrait
 
 Avant les premiers vrais utilisateurs (YSL-148) :
@@ -244,3 +345,8 @@ Avant les premiers vrais utilisateurs (YSL-148) :
 3. Migration de retrait : `DROP TABLE "scan_report";`. Aucune autre table n'en dépend.
 4. Sur le PC : supprimer `tmp/rapports-scan/` (images complètes de la phase de test) et
    `~/.config/ysl/scan-reports-key`.
+5. L'agent : le paquet `packages/scan-agent` et `reports:agent` dans le `package.json` de la
+   racine ; sur le PC, les worktrees `ysl-scan-etiquette-*` restés après un échec ou un `--no-pr` et les
+   branches `fix/scan-etiquette-*` (`git worktree remove`, `git branch -D`). Les étiquettes
+   versées au corpus privé (`rapport-*`, images complètes) : les garder pour le banc ou
+   les supprimer avec le reste, au choix d'Adam.
