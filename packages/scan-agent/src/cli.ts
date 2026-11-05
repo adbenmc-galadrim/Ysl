@@ -1,23 +1,28 @@
 import { execFile, spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs, promisify } from 'node:util';
 import { agentEnv, MAX_TURNS, MODEL, runAgent, TIMEOUT_MIN } from '#agent';
 import { profile } from '#sandbox';
 import { type Deps, type Exec, handleReport } from '#run';
+import { runThread, t3Deps } from '#thread';
 
 const REPO = resolve(import.meta.dirname, '../../..');
 const GITHUB = 'adbenmc-galadrim/Ysl';
 
 const USAGE = `Usage : pnpm reports:pull --watch --on-report 'pnpm -w reports:agent [options]'
-        pnpm reports:agent [--no-pr] [--max-turns <n>] [--timeout-min <n>]
-                          [--corpus <dossier>] [--private <dossier>] [--id <id>] [--dir <dossier>]
-Accroche de pnpm reports:pull --on-report : un agent ${MODEL} par rapport, dans un
-worktree depuis origin/main, puis une PR draft si rien ne fuit et rien ne recule.
-Le rapport vient de SCAN_REPORT_ID et SCAN_REPORT_DIR (ou --id, --dir).
---no-pr      s'arrête avant le push : ni PR ni versement au corpus privé (démo)
---max-turns  tours de l'agent (défaut ${MAX_TURNS}) ; --timeout-min durée (défaut ${TIMEOUT_MIN} min)
+        pnpm reports:agent [--no-pr] [--headless] [--max-turns <n>] [--timeout-min <n>]
+                          [--threads-dir <dossier>] [--corpus <dossier>] [--private <dossier>]
+                          [--id <id>] [--dir <dossier>]
+Accroche de pnpm reports:pull --on-report : un agent ${MODEL} par rapport, dans un fil
+T3 visible, sur un worktree depuis origin/main, puis une PR draft si rien ne fuit et
+rien ne recule. Le rapport vient de SCAN_REPORT_ID et SCAN_REPORT_DIR (ou --id, --dir).
+--no-pr        s'arrête avant le push : ni PR ni versement au corpus privé (démo)
+--headless     claude -p invisible au lieu d'un fil T3 (le mode de YSL-147)
+--threads-dir  dossier du projet T3 des fils (défaut ../fils-rapports-scan à côté du dépôt)
+--max-turns    tours de l'agent en --headless (défaut ${MAX_TURNS}) ; --timeout-min durée (défaut ${TIMEOUT_MIN} min)
 --corpus     sortie du générateur (défaut ../tmp/corpus à côté du dépôt)
 --private    corpus privé des vraies photos (défaut <corpus>/real)`;
 
@@ -143,6 +148,8 @@ async function main(): Promise<number> {
   const { values } = parseArgs({
     options: {
       'no-pr': { type: 'boolean', default: false },
+      headless: { type: 'boolean', default: false },
+      'threads-dir': { type: 'string' },
       'max-turns': { type: 'string' },
       'timeout-min': { type: 'string' },
       corpus: { type: 'string' },
@@ -189,9 +196,37 @@ async function main(): Promise<number> {
     () => null,
   );
 
+  const threadsDir = resolve(
+    from,
+    values['threads-dir'] ?? join(dirname(REPO), 'fils-rapports-scan'),
+  );
+  const plugins = await readFile(
+    join(homedir(), '.claude', 'settings.json'),
+    'utf8',
+  ).then(
+    (text) =>
+      Object.keys(
+        (JSON.parse(text) as { enabledPlugins?: Record<string, unknown> })
+          .enabledPlugins ?? {},
+      ),
+    () => [],
+  );
+  const thread: Deps['runAgent'] = (agent) =>
+    runThread(
+      {
+        ...agent,
+        root: threadsDir,
+        identity,
+        plugins,
+        guard: [process.execPath, join(import.meta.dirname, 'write-guard.ts')],
+      },
+      t3Deps(hookEnv()),
+    );
+
   const outcome = await handleReport(
     {
       repo: REPO,
+      worktrees: values.headless ? dirname(REPO) : threadsDir,
       reportId: id,
       reportDir: resolve(from, dir),
       corpus,
@@ -208,7 +243,7 @@ async function main(): Promise<number> {
     {
       git,
       exec: exec((workDir) => agentEnv(process.env, workDir, identity)),
-      runAgent,
+      runAgent: values.headless ? runAgent : thread,
       agentEnv: (workDir) => agentEnv(process.env, workDir, identity),
       forge,
       log: (line) => console.log(line),

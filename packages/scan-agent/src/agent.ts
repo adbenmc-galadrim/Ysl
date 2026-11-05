@@ -176,12 +176,20 @@ export function gitEnv(
 
 export type AgentRun = {
   prompt: string;
+  /** The thread's title in T3. */
+  title: string;
   cwd: string;
+  /** The checkout's git folder, where the agent's commits write. */
+  gitDir: string;
   workDir: string;
   env: NodeJS.ProcessEnv;
   maxTurns: number;
   timeoutMs: number;
+  /** Told as soon as a T3 thread is known, its link once T3 gives it. */
+  onThread?: (thread: ThreadRef) => void;
 };
+
+export type ThreadRef = { id: string; link: string | null };
 
 export type AgentOutcome = {
   code: number | null;
@@ -191,6 +199,10 @@ export type AgentOutcome = {
   timedOut: boolean;
   /** Killed because the session did not run on `MODEL`. */
   wrongModel: boolean;
+  /** The T3 thread the agent ran in; none with `claude -p`. */
+  thread?: ThreadRef;
+  /** Stopped by the command for this reason: a question, unread settings… */
+  stopped?: string;
 };
 
 const streamLine = z.looseObject({

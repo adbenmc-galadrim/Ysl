@@ -20,6 +20,7 @@ import {
   agentResultSchema,
   type AgentRun,
   MODEL,
+  type ThreadRef,
 } from '#agent';
 import {
   compareResults,
@@ -46,6 +47,7 @@ import {
   sha256,
   type PulledReport,
 } from '#report';
+import { threadTitle } from '#thread';
 
 export type Exec = (
   command: string,
@@ -78,8 +80,10 @@ export type Deps = {
 };
 
 export type Config = {
-  /** The checkout the hook runs from; worktrees go next to it. */
+  /** The checkout the hook runs from. */
   repo: string;
+  /** Where the worktrees go: the T3 project's folder, or next to the checkout. */
+  worktrees: string;
   reportId: string;
   reportDir: string;
   /** Generator output: `synthetic/labels.json`, `web/labels.json`. */
@@ -191,14 +195,17 @@ async function addedLabel(
  * agent's sandbox can write to the git folder (it commits): nothing there may
  * change. `branch.*` is left out: `git push -u` and tracking write it.
  */
-async function gitState(deps: Deps, worktree: string): Promise<string> {
-  const common = (
+const commonDir = async (deps: Deps, worktree: string) =>
+  (
     await deps.git(worktree, [
       'rev-parse',
       '--path-format=absolute',
       '--git-common-dir',
     ])
   ).trim();
+
+async function gitState(deps: Deps, worktree: string): Promise<string> {
+  const common = await commonDir(deps, worktree);
   const config = (
     await deps.git(worktree, [
       'config',
@@ -244,10 +251,14 @@ const oneLine = (text: string) => {
 const problemLines = (problems: Problem[]) =>
   problems.map((p) => `${p.kind} : ${p.detail}`);
 
+const threadLine = (thread: ThreadRef | null) =>
+  thread ? `${thread.id}${thread.link ? ` (${thread.link})` : ''}` : '—';
+
 function prBody(
   report: PulledReport,
   result: AgentResult,
   comparison: Comparison,
+  thread: ThreadRef | null,
 ): string {
   const gains =
     comparison.gains.length > 0
@@ -269,6 +280,10 @@ function prBody(
     gains,
     '',
     'Gates : `turbo run lint check-types test` sur les paquets touchés, verts.',
+    '',
+    thread
+      ? `Agent : fil T3 \`${thread.id}\`, local au PC qui a reçu le rapport.`
+      : 'Agent : session `claude -p`, sans fil T3.',
     '',
     'PR ouverte en draft par l’agent des rapports de scan : à relire et fusionner à la main.',
   ].join('\n');
@@ -331,6 +346,7 @@ async function underLock(
   let worktree: string | null = null;
   let branch = '';
   let published = '';
+  let thread: ThreadRef | null = null;
   const finish = async (outcome: Outcome) => {
     const what =
       outcome.kind === 'pr'
@@ -352,7 +368,7 @@ async function underLock(
     }
     await appendFile(
       join(state, 'journal.log'),
-      `${deps.now().toISOString()} rapport=${report.id} etiquette=${group.id} ${oneLine(what)}\n`,
+      `${deps.now().toISOString()} rapport=${report.id} etiquette=${group.id}${thread ? ` fil=${thread.id}` : ''} ${oneLine(what)}\n`,
     );
     log(`Rapport ${report.id} : ${what}.`);
     return outcome;
@@ -376,7 +392,7 @@ async function underLock(
     const baseSha = (
       await deps.git(config.repo, ['rev-parse', config.base])
     ).trim();
-    worktree = join(dirname(config.repo), `ysl-${branch.slice('fix/'.length)}`);
+    worktree = join(config.worktrees, `ysl-${branch.slice('fix/'.length)}`);
     await deps.git(config.repo, [
       'worktree',
       'add',
@@ -426,6 +442,7 @@ async function underLock(
       REPORT_ID: report.id,
       LABEL_ID: labelId,
       REPORT_DIR: config.reportDir,
+      WORKTREE: worktree,
       WORK_DIR: work,
       CORPUS_DIR: config.corpus,
       PRIVATE_DIR: corpusDir,
@@ -439,17 +456,25 @@ async function underLock(
     );
     const agent = await deps.runAgent({
       prompt,
+      title: threadTitle(report.id),
       cwd: worktree,
+      gitDir: await commonDir(deps, worktree),
       workDir: work,
       env: deps.agentEnv(work),
       maxTurns: config.maxTurns,
       timeoutMs: config.timeoutMs,
+      onThread: (ref) => {
+        thread = ref;
+        log(`Fil T3 ${threadLine(ref)}.`);
+      },
     });
+    thread = agent.thread ?? thread;
     if (agent.wrongModel) {
       throw new Failure(
         `agent sur ${agent.model ?? 'un modèle inconnu'} au lieu de ${MODEL}, arrêté`,
       );
     }
+    if (agent.stopped) throw new Failure(agent.stopped);
     if (agent.timedOut)
       throw new Failure('agent arrêté au bout du temps imparti');
     log(
@@ -464,6 +489,27 @@ async function underLock(
       }
     };
     await untouched();
+    const commits = (await deps.git(worktree, ['rev-list', `${baseSha}..HEAD`]))
+      .split('\n')
+      .filter(Boolean);
+    const remote = (
+      await deps.git(config.repo, ['ls-remote', '--heads', 'origin'])
+    )
+      .split('\n')
+      .map((line) => line.split('\t'))
+      .filter(
+        ([sha, ref]) =>
+          ref === `refs/heads/${branch}` || (sha && commits.includes(sha)),
+      )
+      .map(([, ref]) => ref ?? '');
+    const agentPr = await deps.forge.openPullRequest(branch);
+    if (remote.length > 0 || agentPr !== null) {
+      published = `par l’agent : ${[...remote, ...(agentPr ? [`PR #${agentPr}`] : [])].join(', ')}`;
+      throw new Failure('l’agent a publié pendant son travail', [
+        ...remote.map((ref) => `branche distante ${ref}`),
+        ...(agentPr ? [`PR #${agentPr} ouverte sur ${branch}`] : []),
+      ]);
+    }
     const result = await readAgentResult(join(work, 'resultat.json'));
     if (result.statut === 'echec') {
       throw new Failure(
@@ -471,9 +517,6 @@ async function underLock(
       );
     }
     const label = await addedLabel(config, corpusDir, labelId, imageFile);
-    const commits = (await deps.git(worktree, ['rev-list', `${baseSha}..HEAD`]))
-      .split('\n')
-      .filter(Boolean);
     if (commits.length === 0) throw new Failure('aucun commit sur la branche');
 
     const sensitive = {
@@ -555,7 +598,7 @@ async function underLock(
       throw new Failure('aucun champ de l’étiquette signalée n’est mieux lu');
     }
 
-    const body = prBody(report, result, comparison);
+    const body = prBody(report, result, comparison, thread);
     const final = await guard(body);
     if (final.length > 0) {
       throw new Failure('contrôle avant push refusé', problemLines(final));
@@ -628,6 +671,7 @@ async function underLock(
         `- Branche : ${branch || '—'}`,
         `- Worktree gardé : ${worktree ?? '—'}`,
         `- Publié : ${published || 'rien'}`,
+        `- Fil T3 : ${threadLine(thread)}`,
         `- Dossier de travail : ${work}`,
         ...(details.length > 0
           ? ['', '## Détail', '', ...details.map((d) => `- ${d}`)]
