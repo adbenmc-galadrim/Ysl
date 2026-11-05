@@ -101,6 +101,42 @@ describe('readReport', () => {
     expect(labelKeys(report)).toEqual([`image:${sha256(IMAGE)}`]);
   });
 
+  it('reads a report sent from the review, the codes it kept as personal', async () => {
+    const report = await readReport(
+      ID,
+      await pulled(
+        detail(
+          v1Report(
+            {},
+            {
+              origin: 'revue',
+              shot: null,
+              ocr: { state: 'kept' },
+              missing: ['frame', 'shot', 'decodePasses'],
+              kept: {
+                from: 'draft',
+                readAt: '2026-11-04T09:12:03.000Z',
+                rules: null,
+                codes: [{ format: 'Code128', text: 'CODE-FICTIF-0042' }],
+                ocrLines: [
+                  {
+                    text: '12 RUE DE L EXEMPLE',
+                    box: { x: 10, y: 20, width: 300, height: 18 },
+                    score: 0.93,
+                  },
+                ],
+                ocrText: '12 RUE DE L EXEMPLE',
+                durations: { codesMs: 95, ocrMs: 900, fusionMs: null },
+              },
+            },
+          ),
+        ),
+      ),
+    );
+    expect(report.personal).toContain('CODE-FICTIF-0042');
+    expect(report.texts).toContain('12 RUE DE L EXEMPLE');
+  });
+
   it('keys a report by its tracking, hashed, and by its image', async () => {
     const dir = await pulled(detail(v1Report({ tracking: 'XY111222333FR' })));
     const keys = labelKeys(await readReport(ID, dir));

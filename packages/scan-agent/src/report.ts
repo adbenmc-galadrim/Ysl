@@ -134,6 +134,7 @@ export async function readReport(
       ...textsOf(report.draft),
       ...report.screen.fields.map((f) => f.value),
       ...report.codes.passes.flatMap((p) => p.symbols.map((s) => s.text)),
+      ...(report.kept?.codes ?? []).map((c) => c.text),
     ],
     texts: [...textsOf(report), ...(comment ? [comment] : [])],
   };
