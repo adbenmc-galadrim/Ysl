@@ -152,6 +152,8 @@ beforeEach(async () => {
         return '';
       },
       exec: async (command, args, { sandbox }) => {
+        if (args.includes('turbo'))
+          calls.push(`turbo ${args.slice(5).join(' ')}`);
         calls.push(
           `${command} ${args.slice(0, 3).join(' ')}${sandbox ? ' [bac à sable]' : ''}`,
         );
@@ -227,6 +229,7 @@ describe('handleReport', () => {
     expect(world.calls).toEqual(
       expect.arrayContaining([
         'pnpm turbo run lint [bac à sable]',
+        `turbo --filter=...[${BASE}] --filter=!@repo/scan-agent`,
         'pnpm --filter @repo/bench measure [bac à sable]',
         'pnpm install --frozen-lockfile --prefer-offline',
       ]),

@@ -393,7 +393,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
      texte déjà présent sur `main` en mot entier n'est pas une fuite ;
    - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ; aucun jeton
      GitHub ou Anthropic, clé privée ni en-tête `Bearer` ;
-   - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
+   - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants, sauf
+     `@repo/scan-agent` (hors limites pour l'agent, ses tests ne tournent pas sous ce bac à
+     sable) ;
      comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
      (`packages/scan-agent/src/sandbox.ts` : aucun réseau ni DNS, sockets Unix seulement
      dans un dossier temporaire à eux, aucune app lancée hors du bac à sable (LaunchServices,

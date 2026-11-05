@@ -555,6 +555,9 @@ async function underLock(
         'check-types',
         'test',
         `--filter=...[${baseSha}]`,
+        // A dependent of `@repo/contract` the agent may not touch, whose own
+        // tests need git's global config and a sandbox of their own.
+        '--filter=!@repo/scan-agent',
       ],
       {
         cwd: worktree,
