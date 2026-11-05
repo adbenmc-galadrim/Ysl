@@ -42,7 +42,7 @@ export const SECRET_PATHS = [
 ];
 
 /** It commits; the hook alone pushes, after its checks. */
-const DENIED = [
+export const DENIED = [
   ...['Read', 'Edit', 'Write'].flatMap((tool) =>
     SECRET_PATHS.flatMap((path) => [`${tool}(${path})`, `${tool}(${path}/**)`]),
   ),
@@ -146,8 +146,15 @@ export function agentEnv(
     clean[name] = value;
   }
   delete clean.SCAN_REPORTS_KEY;
+  return { ...clean, ...gitEnv(workDir, identity) };
+}
+
+/** What the agent's git and gh run with: no global config, no push, no account. */
+export function gitEnv(
+  workDir: string,
+  identity: Identity | null,
+): Record<string, string> {
   return {
-    ...clean,
     GH_CONFIG_DIR: join(workDir, '.gh-vide'),
     GIT_TERMINAL_PROMPT: '0',
     GIT_CONFIG_GLOBAL: '/dev/null',
