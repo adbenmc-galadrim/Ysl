@@ -63,6 +63,7 @@ type World = {
   openPr: number | null;
   duringAgent: () => Promise<void>;
   gitConfig: string;
+  remoteHeads: string;
 };
 
 let world: World;
@@ -112,10 +113,12 @@ beforeEach(async () => {
     },
     openPr: null,
     duringAgent: () => Promise.resolve(),
+    remoteHeads: '',
     gitConfig:
       'file:.git/config\tremote.origin.url=git@github.com:adbenmc-galadrim/Ysl.git\n',
     config: {
       repo: join(root, 'ysl'),
+      worktrees: join(root, 'fils'),
       reportId: ID,
       reportDir,
       corpus: join(root, 'corpus'),
@@ -140,6 +143,7 @@ beforeEach(async () => {
           await mkdir(args.at(-2)!, { recursive: true });
         }
         if (command === 'rev-list') return 'c0ffee\n';
+        if (command === 'ls-remote') return world.remoteHeads;
         if (command === 'diff' && sub === '--numstat')
           return world.diff.numstat;
         if (command === 'diff') return world.diff.patch;
@@ -148,6 +152,8 @@ beforeEach(async () => {
         return '';
       },
       exec: async (command, args, { sandbox }) => {
+        if (args.includes('turbo'))
+          calls.push(`turbo ${args.slice(5).join(' ')}`);
         calls.push(
           `${command} ${args.slice(0, 3).join(' ')}${sandbox ? ' [bac à sable]' : ''}`,
         );
@@ -163,6 +169,7 @@ beforeEach(async () => {
       },
       runAgent: async (run) => {
         calls.push(`agent ${run.prompt}`);
+        run.onThread?.({ id: 'mcp:fil-1', link: null });
         await world.duringAgent();
         const corpus = join(run.workDir, 'corpus-real', 'annotations.json');
         const labels = JSON.parse(await readFile(corpus, 'utf8')) as unknown[];
@@ -177,6 +184,7 @@ beforeEach(async () => {
           result: 'success',
           timedOut: false,
           wrongModel: false,
+          thread: { id: 'mcp:fil-1', link: '<t3-thread://v2/env/mcp:fil-1>' },
           ...world.agent,
         };
       },
@@ -221,6 +229,7 @@ describe('handleReport', () => {
     expect(world.calls).toEqual(
       expect.arrayContaining([
         'pnpm turbo run lint [bac à sable]',
+        `turbo --filter=...[${BASE}] --filter=!@repo/scan-agent`,
         'pnpm --filter @repo/bench measure [bac à sable]',
         'pnpm install --frozen-lockfile --prefer-offline',
       ]),
@@ -243,12 +252,16 @@ describe('handleReport', () => {
       '| weightKg | first | 0.0 % (0/1) | 100.0 % (1/1) | 1 → 0 |',
     );
     expect(body).not.toMatch(/camille|XY111/i);
+    expect(body).toContain('Agent : fil T3 `mcp:fil-1`');
     const journal = await readFile(
       join(world.config.reportDir, '..', '.agent', 'journal.log'),
       'utf8',
     );
     expect(journal).toContain(
-      `rapport=${ID} etiquette=${neutralId(ID)} PR draft #42`,
+      `rapport=${ID} etiquette=${neutralId(ID)} fil=mcp:fil-1 PR draft #42`,
+    );
+    expect(world.calls).toContain(
+      `git worktree add --quiet --no-track -b ${BRANCH} ${join(world.config.worktrees, `ysl-scan-etiquette-${neutralId(ID)}`)} ${BASE}`,
     );
   });
 
@@ -273,6 +286,9 @@ describe('handleReport', () => {
     const failure = await readFile(join(work(), 'echec.md'), 'utf8');
     expect(failure).toContain('recul : tracking (first) sur real-img-0001');
     expect(failure).toContain('Worktree gardé : ');
+    expect(failure).toContain(
+      '- Fil T3 : mcp:fil-1 (<t3-thread://v2/env/mcp:fil-1>)',
+    );
     expect((await privateLabels()).map((l) => l.id)).toEqual(['real-img-0001']);
   });
 
@@ -433,6 +449,47 @@ describe('handleReport', () => {
       kind: 'failed',
       reason: 'agent sur claude-fable-5-1 au lieu de claude-opus-5-5, arrêté',
     });
+  });
+
+  it('publishes nothing when the agent pushed a branch itself', async () => {
+    world.remoteHeads = `c0ffee\trefs/heads/essai\n${'a'.repeat(40)}\trefs/heads/main\n`;
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'l’agent a publié pendant son travail',
+    });
+    expect(world.calls.some((c) => c.includes(' push '))).toBe(false);
+    expect(world.calls.some((c) => c.includes('measure'))).toBe(false);
+    const failure = await readFile(join(work(), 'echec.md'), 'utf8');
+    expect(failure).toContain('- Publié : par l’agent : refs/heads/essai');
+  });
+
+  it('publishes nothing when the agent opened a PR on its branch', async () => {
+    world.deps.forge.openPullRequest = (branch) =>
+      Promise.resolve(
+        branch === BRANCH && world.calls.some((c) => c.startsWith('agent'))
+          ? 9
+          : null,
+      );
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'l’agent a publié pendant son travail',
+    });
+    expect(world.calls.some((c) => c.startsWith('pr '))).toBe(false);
+  });
+
+  it('fails with the reason the thread was stopped for', async () => {
+    world.agent = { stopped: 'le fil attend une réponse (fil arrêté)' };
+    expect(await handle()).toMatchObject({
+      kind: 'failed',
+      reason: 'le fil attend une réponse (fil arrêté)',
+    });
+    const journal = await readFile(
+      join(world.config.reportDir, '..', '.agent', 'journal.log'),
+      'utf8',
+    );
+    expect(journal).toContain(
+      'fil=mcp:fil-1 échec : le fil attend une réponse',
+    );
   });
 
   it('fails without a PR when the agent found nothing to fix', async () => {

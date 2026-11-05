@@ -4,8 +4,11 @@ Un utilisateur de la phase de test a signalé un scan raté. Ta tâche : compren
 été mal lu sur cette étiquette, corriger la chaîne d'extraction et le prouver sur le
 corpus, sans que rien de l'étiquette n'entre dans le dépôt.
 
-Tu travailles dans ce worktree (branche `{{BRANCH}}`, depuis `origin/main`) et dans le
-dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre.
+Tu travailles dans le worktree `{{WORKTREE}}` (branche `{{BRANCH}}`, depuis `origin/main`)
+et dans le dossier de travail `{{WORK_DIR}}`, hors dépôt. Rien d'autre. Commence chaque
+commande Bash par `cd {{WORKTREE}} &&` : ta session ne démarre pas forcément dans le
+worktree. Personne ne répond aux questions : ne demande rien, et dans le doute écris
+l'échec.
 
 ## Règles absolues
 

@@ -313,8 +313,9 @@ pnpm reports:pull --watch --on-report 'echo "nouveau rapport : $SCAN_REPORT_DIR"
 ## Agent sur chaque rapport : `pnpm reports:agent`
 
 L'accroche de `--on-report` (paquet `packages/scan-agent`). Pour chaque rapport, un agent
-cherche ce qui a été mal lu, corrige la chaîne d'extraction et ouvre une PR **en draft**
-qu'Adam relit et fusionne. Depuis la racine du dépôt :
+cherche ce qui a été mal lu et corrige la chaîne d'extraction, dans un **fil T3 visible**
+(YSL-150) ; la commande ouvre ensuite une PR **en draft** qu'Adam relit et fusionne.
+Depuis la racine du dépôt :
 
 ```bash
 pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
@@ -323,7 +324,10 @@ pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
 `-w` est nécessaire : `reports:pull` lance l'accroche depuis `apps/server`. Options :
 `--no-pr` (tout sauf le push, la PR et le versement au corpus privé : démo, essai ; le
 worktree et sa branche restent sur le PC),
-`--max-turns <n>` (150 par défaut), `--timeout-min <n>` (60 par défaut), `--corpus` (sortie
+`--headless` (l'agent en `claude -p` invisible, sans fil T3), `--threads-dir`
+(dossier du projet T3 des fils, défaut `~/goinfre/ysl/fils-rapports-scan`),
+`--max-turns <n>` (150 par défaut, `--headless` seulement), `--timeout-min <n>` (60 par
+défaut), `--corpus` (sortie
 du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé, défaut
 `<corpus>/real`). Le corpus de synthèse doit être généré avant
 (`pnpm --filter @repo/corpus generate --out ~/goinfre/ysl/tmp/corpus`).
@@ -344,12 +348,14 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    le rapport est rattaché. La branche porte un identifiant neutre,
    `fix/scan-etiquette-<8 premiers caractères de l'id du premier rapport>`, suffixée
    (`-2`…) quand une tentative précédente l'a déjà prise.
-3. **Un worktree dédié** `../ysl-scan-etiquette-<id>` depuis `origin/main`,
+3. **Un worktree dédié** `fils-rapports-scan/ysl-scan-etiquette-<id>` (avec `--headless` :
+   `../ysl-scan-etiquette-<id>`) depuis `origin/main`,
    `pnpm install --frozen-lockfile --prefer-offline`.
 4. **Un dossier de travail hors dépôt**, `tmp/rapports-scan/<id>/agent/` : une copie du
    corpus privé (`annotations.json` et des liens vers les photos) où l'image du rapport
    entre sous le nom `rapport-<id>.jpg` (ou `.png`).
-5. **L'agent** : `claude -p --model claude-opus-5-5` (le modèle annoncé par la session est
+5. **L'agent**, dans un fil T3 (voir « Le fil T3 » plus bas) ou, avec `--headless` :
+   `claude -p --model claude-opus-5-5` (le modèle annoncé par la session est
    vérifié, un autre l'arrête), `--permission-mode dontAsk`, outils `Read`, `Edit`, `Write`,
    `Glob`, `Grep` et `Bash` limité à `pnpm`, `ls` et à `git` en lecture, `add`, `commit`,
    `restore` ; ni `git push`, ni `gh`, ni web ; aucun serveur MCP ni réglage du PC ;
@@ -369,6 +375,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    `packages/contract` ou `packages/ocr` avec un test synthétique, commite, et rend
    `resultat.json` (statut, nature de la correction, titre et résumé de la PR).
 6. **Les contrôles, faits par la commande et non par l'agent**, avant tout push :
+   - rien de publié par l'agent : aucune branche distante à son nom ni sur l'un de ses
+     commits (`git ls-remote --heads origin`), aucune PR ouverte sur sa branche ; sinon
+     échec, et `echec.md` dit ce qui est parti (« Publié : par l'agent : … ») ;
    - hooks git, configuration (`config`, `config.worktree`) et fichier `.git` du worktree
      identiques à ce qu'ils étaient avant l'agent ; le push part avec
      `core.hooksPath=/dev/null` et `--no-verify` ;
@@ -384,7 +393,9 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
      texte déjà présent sur `main` en mot entier n'est pas une fuite ;
    - aucune attribution (`Co-Authored-By`, signature, mention d'un outil) ; aucun jeton
      GitHub ou Anthropic, clé privée ni en-tête `Bearer` ;
-   - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants ;
+   - gates `turbo run lint check-types test` des paquets touchés et de leurs dépendants, sauf
+     `@repo/scan-agent` (hors limites pour l'agent, ses tests ne tournent pas sous ce bac à
+     sable) ;
      comme le banc, ils exécutent le code de l'agent : ils tournent sous `sandbox-exec`
      (`packages/scan-agent/src/sandbox.ts` : aucun réseau ni DNS, sockets Unix seulement
      dans un dossier temporaire à eux, aucune app lancée hors du bac à sable (LaunchServices,
@@ -406,10 +417,55 @@ du générateur, défaut `~/goinfre/ysl/tmp/corpus`), `--private` (corpus privé
    pour qu'on le reprenne. Le corpus privé n'est pas touché. Seule exception : `gh pr create`
    qui échoue après le push ; `echec.md` le dit (« Publié : branche … poussée, sans PR »).
 
-Journal : une ligne par rapport dans `tmp/rapports-scan/.agent/journal.log`, le détail dans
-`tmp/rapports-scan/<id>/agent/` (`journal.log`, `claude.jsonl` le flux complet de l'agent,
+Journal : une ligne par rapport dans `tmp/rapports-scan/.agent/journal.log` (avec
+`fil=<id du fil T3>`), le détail dans `tmp/rapports-scan/<id>/agent/` (`journal.log`, qui
+donne aussi le lien du fil, `claude.jsonl` le flux complet de l'agent en `--headless`,
 `install.log`, `gates.log`, `banc-avant/`, `banc-apres/`, `comparaison.md`, `pr.md`). Ces
 fichiers portent des données réelles : ils ne quittent pas le PC.
+
+### Le fil T3
+
+Adam suit l'agent dans T3, projet **« ysl · rapports de scan »**, un fil par rapport
+intitulé « Rapport de scan <8 premiers caractères de l'id> ». La commande :
+
+1. crée le projet T3 du dossier `fils-rapports-scan` s'il manque (`t3 project add`) et
+   y écrit `.claude/settings.json` (`src/thread-settings.ts`) ;
+2. lance le fil : `t3 thread start --provider claudeAgent --model claude-opus-5-5 --title …
+   --json <dossier> -`, le prompt versionné sur l'entrée standard ;
+3. le suit par `t3 thread show --json` toutes les 15 s : le fil doit être sur
+   `claudeAgent`/`claude-opus-5-5`, sinon il est arrêté ;
+4. arrête le fil et consigne l'échec s'il attend une réponse (question, approbation), si
+   le délai (`--timeout-min`) passe, si ses réglages ont bougé, ou si le marqueur que pose
+   le hook `SessionStart` des réglages manque (preuve que le fil a lu ses réglages). La CLI
+   T3 n'a pas d'arrêt de fil : la commande termine le processus `claude` dont le dossier
+   courant est `fils-rapports-scan` (un seul agent à la fois, par le verrou) ; le fil
+   apparaît alors en échec dans T3 ;
+5. lit `resultat.json` et fait les contrôles ci-dessus, inchangés.
+
+Le projet a son propre dossier parce qu'un fil T3 tourne **à la racine de son projet**, en
+`full-access` (Claude Code en `bypassPermissions`) : lancé dans le projet `ysl`
+(`~/goinfre/ysl`), il lit `~/.ssh`, a le réseau et `gh` connecté au compte d'Adam, et
+`--worktree` y échoue (la racine n'est pas un dépôt git). T3 ne règle pas le mode d'un fil
+lancé par la CLI ; Claude Code lit en revanche les réglages du projet. Ce qu'ils imposent,
+vérifié par des fils d'essai le 05/11/2026 :
+
+| Garantie | Par |
+| --- | --- |
+| ni lecture ni écriture de `~/.ssh`, `~/.config`, `~/.gnupg`, `~/.aws`, `~/.claude`, `~/.netrc`, `~/.gitconfig` | règles `deny` (Read, Edit, Write) et bac à sable (`denyRead`) |
+| aucun réseau, y compris par le proxy du bac à sable (qui accepterait tout domaine en bypass) | bac à sable, `network.deniedDomains: ["*"]`, `allowUnsandboxedCommands: false` |
+| ni `git push`, ni `gh`, ni `curl`, ni web, ni question | règles `deny` ; URL de push d'`origin` inutilisable, `gh` sans compte, agent ssh vidé |
+| aucune clé : `SCAN_REPORTS_KEY`, `GH_TOKEN`, `GITHUB_TOKEN`, `SSH_AUTH_SOCK` vides | `env` des réglages |
+| aucun serveur MCP (T3, Penpot, claude.ai), aucun plugin | règles `deny`, `disabledMcpServers`, `ENABLE_CLAUDEAI_MCP_SERVERS=false`, `enabledPlugins` |
+| écriture seulement dans le worktree, le dossier de travail et le dossier git | bac à sable pour Bash ; hook `PreToolUse` `src/write-guard.ts` pour Edit et Write (qui ne passent pas par le bac à sable), chemin réel, liens résolus. Réserve : le Bash du fil écrit aussi dans tout `fils-rapports-scan` (son dossier courant), donc dans les worktrees gardés d'autres rapports |
+| réglages hors d'atteinte | `denyWrite` et `deny` sur `.claude`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md` du dossier ; empreinte vérifiée pendant le fil |
+
+Écarts avec `--headless` : Bash n'est plus limité à `pnpm`, `ls` et `git` (le bac à sable
+reste la barrière), la session ne compte pas ses tours (seulement le délai), le modèle est
+vérifié sur la sélection du fil et non sur la session, les consignes globales d'Adam
+(`~/.claude/CLAUDE.md`) sont lues, et la conversation reste dans T3 et dans
+`~/.claude/projects/` (sur le PC : T3 Connect est désactivé). Ce que T3 ne garantit pas,
+la commande le vérifie après le fil : rien publié, hooks et config git intacts, réglages
+intacts.
 
 ## Retrait
 
@@ -430,6 +486,7 @@ Avant les premiers vrais utilisateurs (YSL-148) :
    `~/.config/ysl/scan-reports-key`.
 5. L'agent : le paquet `packages/scan-agent` et `reports:agent` dans le `package.json` de la
    racine ; sur le PC, les worktrees `ysl-scan-etiquette-*` restés après un échec ou un `--no-pr` et les
-   branches `fix/scan-etiquette-*` (`git worktree remove`, `git branch -D`). Les étiquettes
+   branches `fix/scan-etiquette-*` (`git worktree remove`, `git branch -D`), le dossier
+   `fils-rapports-scan` et son projet T3 (`t3 project remove`). Les étiquettes
    versées au corpus privé (`rapport-*`, images complètes) : les garder pour le banc ou
    les supprimer avec le reste, au choix d'Adam.

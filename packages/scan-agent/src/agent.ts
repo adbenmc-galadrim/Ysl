@@ -42,7 +42,7 @@ export const SECRET_PATHS = [
 ];
 
 /** It commits; the hook alone pushes, after its checks. */
-const DENIED = [
+export const DENIED = [
   ...['Read', 'Edit', 'Write'].flatMap((tool) =>
     SECRET_PATHS.flatMap((path) => [`${tool}(${path})`, `${tool}(${path}/**)`]),
   ),
@@ -146,8 +146,15 @@ export function agentEnv(
     clean[name] = value;
   }
   delete clean.SCAN_REPORTS_KEY;
+  return { ...clean, ...gitEnv(workDir, identity) };
+}
+
+/** What the agent's git and gh run with: no global config, no push, no account. */
+export function gitEnv(
+  workDir: string,
+  identity: Identity | null,
+): Record<string, string> {
   return {
-    ...clean,
     GH_CONFIG_DIR: join(workDir, '.gh-vide'),
     GIT_TERMINAL_PROMPT: '0',
     GIT_CONFIG_GLOBAL: '/dev/null',
@@ -169,12 +176,20 @@ export function agentEnv(
 
 export type AgentRun = {
   prompt: string;
+  /** The thread's title in T3. */
+  title: string;
   cwd: string;
+  /** The checkout's git folder, where the agent's commits write. */
+  gitDir: string;
   workDir: string;
   env: NodeJS.ProcessEnv;
   maxTurns: number;
   timeoutMs: number;
+  /** Told as soon as a T3 thread is known, its link once T3 gives it. */
+  onThread?: (thread: ThreadRef) => void;
 };
+
+export type ThreadRef = { id: string; link: string | null };
 
 export type AgentOutcome = {
   code: number | null;
@@ -184,6 +199,10 @@ export type AgentOutcome = {
   timedOut: boolean;
   /** Killed because the session did not run on `MODEL`. */
   wrongModel: boolean;
+  /** The T3 thread the agent ran in; none with `claude -p`. */
+  thread?: ThreadRef;
+  /** Stopped by the command for this reason: a question, unread settings… */
+  stopped?: string;
 };
 
 const streamLine = z.looseObject({
