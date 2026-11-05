@@ -27,8 +27,6 @@ export type ThreadDeps = {
 
 export type ThreadRun = AgentRun & {
   root: string;
-  title: string;
-  gitDir: string;
   identity: Identity | null;
   plugins: string[];
   guard: string[];
@@ -151,6 +149,7 @@ export async function runThread(
     return outcome;
   };
   let checked = false;
+  let first = true;
   for (;;) {
     const shownRaw = await deps.t3([
       'thread',
@@ -174,8 +173,15 @@ export async function runThread(
       outcome.thread!.link = thread.link;
       run.onThread?.(outcome.thread!);
     }
-    if (!checked) {
-      outcome.model = thread.model ?? null;
+    const running = thread.status === 'running' || Boolean(thread.activeRunId);
+    if (first && !running) {
+      first = false;
+      await deps.sleep(POLL_MS);
+      continue;
+    }
+    first = false;
+    if (!checked && thread.providerInstanceId && thread.model) {
+      outcome.model = thread.model;
       if (thread.providerInstanceId !== PROVIDER || thread.model !== MODEL) {
         outcome.wrongModel = true;
         await stop(
@@ -185,7 +191,6 @@ export async function runThread(
       }
       checked = true;
     }
-    const running = thread.status === 'running' || Boolean(thread.activeRunId);
     const elapsed = deps.now() - begin;
     if (!existsSync(marker) && (!running || elapsed > MARKER_GRACE_MS)) {
       return stop('réglages d’isolement du projet T3 non lus par le fil');

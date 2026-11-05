@@ -145,6 +145,22 @@ describe('runThread', () => {
     expect(stops).toBe(0);
   });
 
+  it('waits for a thread not yet running nor told its model', async () => {
+    states = [
+      { ...ok, status: 'idle', marker: false },
+      { ...ok, provider: '', model: '' },
+      ok,
+      { ...ok, status: 'completed' },
+    ];
+    const outcome = await runThread(run, deps());
+    expect(outcome).toMatchObject({
+      result: 'completed',
+      wrongModel: false,
+      model: MODEL,
+    });
+    expect(outcome.stopped).toBeUndefined();
+  });
+
   it('stops a thread that is not on Opus 5.5', async () => {
     states = [{ ...ok, model: 'claude-fable-5-1' }];
     const outcome = await runThread(run, deps());
