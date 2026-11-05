@@ -14,7 +14,7 @@ pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
 | `prompt.md`                                     | le prompt de l'agent, versionné                                   |
 | `src/cli.ts`                                    | la commande, ses options, git et `gh` avec les droits d'Adam      |
 | `src/run.ts`                                    | le déroulé d'un rapport, du verrou à la PR ou à `echec.md`        |
-| `src/agent.ts`                                  | arguments et environnement de `claude -p`                         |
+| `src/agent.ts`                                  | `claude -p`, règles et environnement git partagés                 |
 | `src/thread.ts`                                 | le fil T3 : lancer, suivre, arrêter                               |
 | `src/thread-settings.ts`                        | réglages Claude Code du projet T3 des fils                        |
 | `src/write-guard.ts`                            | hook : Edit et Write seulement dans le worktree et le travail     |

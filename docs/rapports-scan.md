@@ -456,7 +456,7 @@ vérifié par des fils d'essai le 05/11/2026 :
 | ni `git push`, ni `gh`, ni `curl`, ni web, ni question | règles `deny` ; URL de push d'`origin` inutilisable, `gh` sans compte, agent ssh vidé |
 | aucune clé : `SCAN_REPORTS_KEY`, `GH_TOKEN`, `GITHUB_TOKEN`, `SSH_AUTH_SOCK` vides | `env` des réglages |
 | aucun serveur MCP (T3, Penpot, claude.ai), aucun plugin | règles `deny`, `disabledMcpServers`, `ENABLE_CLAUDEAI_MCP_SERVERS=false`, `enabledPlugins` |
-| écriture seulement dans le worktree, le dossier de travail et le dossier git | bac à sable pour Bash ; hook `PreToolUse` `src/write-guard.ts` pour Edit et Write (qui ne passent pas par le bac à sable), chemin réel, liens résolus |
+| écriture seulement dans le worktree, le dossier de travail et le dossier git | bac à sable pour Bash ; hook `PreToolUse` `src/write-guard.ts` pour Edit et Write (qui ne passent pas par le bac à sable), chemin réel, liens résolus. Réserve : le Bash du fil écrit aussi dans tout `fils-rapports-scan` (son dossier courant), donc dans les worktrees gardés d'autres rapports |
 | réglages hors d'atteinte | `denyWrite` et `deny` sur `.claude`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md` du dossier ; empreinte vérifiée pendant le fil |
 
 Écarts avec `--headless` : Bash n'est plus limité à `pnpm`, `ls` et `git` (le bac à sable
