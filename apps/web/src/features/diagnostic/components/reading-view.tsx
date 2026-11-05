@@ -17,6 +17,7 @@ import {
   type PhotoUrl,
   usePhotoUrl,
 } from '#/features/parcels/api/parcel-record';
+import { useKeptReport } from '#/features/scan-report/use-kept-report';
 
 const t = createTranslator(DEFAULT_LOCALE);
 
@@ -76,6 +77,7 @@ export function ReadingView({
   const photoUrl = usePhotoUrl(photoId);
   const [viewing, setViewing] = useState(false);
   const [copy, setCopy] = useState<Copy>('idle');
+  const reporting = useKeptReport(id, 'lecture', 'lecture');
 
   useEffect(() => {
     if (copy !== 'done') return;
@@ -92,6 +94,8 @@ export function ReadingView({
         title={t('reading.title')}
         empty={EMPTY[view.reason]}
         onBack={onBack}
+        report={reporting.slot}
+        overlay={reporting.sheet}
       />
     );
   }
@@ -134,16 +138,19 @@ export function ReadingView({
         failed: copy === 'failed' ? t('reading.copy.failed') : undefined,
       }}
       onBack={onBack}
+      report={reporting.slot}
       overlay={
-        viewing &&
-        photoUrl.state === 'ready' && (
-          <PhotoViewer
-            src={photoUrl.url}
-            alt={t('record.photo.alt')}
-            closeLabel={t('record.photo.close')}
-            onClose={() => setViewing(false)}
-          />
-        )
+        <>
+          {viewing && photoUrl.state === 'ready' && (
+            <PhotoViewer
+              src={photoUrl.url}
+              alt={t('record.photo.alt')}
+              closeLabel={t('record.photo.close')}
+              onClose={() => setViewing(false)}
+            />
+          )}
+          {reporting.sheet}
+        </>
       }
     />
   );

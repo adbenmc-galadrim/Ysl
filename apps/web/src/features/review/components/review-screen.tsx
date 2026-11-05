@@ -47,6 +47,7 @@ import {
   reviewSummary,
 } from '#/features/review/model';
 import { usePhoto } from '#/features/review/photo';
+import { useKeptReport } from '#/features/scan-report/use-kept-report';
 import { readCompanySettings } from '#/features/settings/company-settings';
 import { useOperatingProfile } from '#/features/settings/operating-profile';
 import { useCompanySettings } from '#/features/settings/use-company-settings';
@@ -195,6 +196,11 @@ export function ReviewScreen() {
     ? drafts?.find((draft) => draft.id === changing)
     : undefined;
   const shown = usePhoto((current ?? moving)?.photoId);
+  const reporting = useKeptReport(
+    step ? current?.id : undefined,
+    'revue',
+    `revue:${step?.field ?? 'lot'}`,
+  );
 
   /* A parcel settled or passed hands over to the next one still doubtful. */
   useEffect(() => {
@@ -327,6 +333,7 @@ export function ReviewScreen() {
         step.field === 'department' ? undefined : (
           <VerifierSourceLink onClick={() => setExplaining(step.field)} />
         ),
+      report: reporting.slot,
       onBack: () => {
         setZoomed(false);
         setExplaining(null);
@@ -363,6 +370,7 @@ export function ReviewScreen() {
         ) : (
           <AnnexStep key={key} {...frame} field={step.field} />
         )}
+        {reporting.sheet}
         {explaining && (
           // Over the step, which stays mounted: the parcel and the choice in
           // progress are still there when the agent comes back.

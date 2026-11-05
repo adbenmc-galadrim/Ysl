@@ -2379,6 +2379,15 @@ export const fr = {
   'scan.report.lost': 'Rapport perdu : image introuvable sur le téléphone',
   'scan.report.signedOut': 'Rapport en attente : reconnectez-vous',
   'scan.report.failed': 'Rapport non enregistré',
+  'scan.report.kept':
+    'La photo enregistrée de l’étiquette (1 600 px) et ce que l’iPhone a gardé de sa lecture partent avec le rapport, pour améliorer la lecture. Phase de test.',
+  'scan.report.none.purged': 'Lecture effacée de l’iPhone : rien à envoyer',
+  'scan.report.none.never':
+    'Aucune lecture gardée pour ce colis : rien à envoyer',
+  'scan.report.none.elsewhere':
+    'Lu sur un autre iPhone : la lecture y est restée',
+  'scan.report.none.missing': 'Colis introuvable sur cet iPhone',
+  'scan.report.none.photo': 'Photo de l’étiquette absente : rien à envoyer',
   'shell.loading': 'Chargement',
   'shell.notFound.title': 'Page introuvable',
   'shell.notFound.description': 'Cette adresse ne mène à aucun écran.',
