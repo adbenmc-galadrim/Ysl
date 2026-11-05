@@ -1,10 +1,12 @@
 import 'fake-indexeddb/auto';
 import { newId } from '@repo/shared/id';
 import type { ScanReportV1 } from '@repo/contract/scan-report';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CourrierDatabase } from '#/features/db/schema';
 import { ORPHAN_GRACE_MS, sweepOrphanPhotos } from '#/features/photos/store';
+import { reportMessage } from '#/features/scan-report/message';
 import {
+  ABANDONED,
   backoffAfter,
   enqueueReport,
   retryAfterMs,
@@ -15,6 +17,9 @@ import { NOW, openTestDatabase } from './helpers/local-rows';
 import { MemoryFiles } from './helpers/memory-files';
 
 const T = NOW.getTime();
+
+const outcomesDue = async (...args: Parameters<typeof sendDueReports>) =>
+  (await sendDueReports(...args)).map(({ outcome }) => outcome);
 
 const REPORT = { version: 1, shotAt: NOW.toISOString() } as ScanReportV1;
 
@@ -41,15 +46,17 @@ const queue = (comment = '') =>
   );
 
 /** A server that answers each upload in turn, and keeps what it got. */
-const server = (...answers: (number | [number, string] | Error)[]) => {
+const server = (
+  ...answers: (number | [number, string | null, string?] | Error)[]
+) => {
   const got: FormData[] = [];
   const post: ReportPost = (body) => {
     got.push(body);
     const answer = answers.shift() ?? 201;
     if (answer instanceof Error) return Promise.reject(answer);
-    const [status, retryAfter] =
+    const [status, retryAfter, error = null] =
       typeof answer === 'number' ? [answer, null] : answer;
-    return Promise.resolve({ status, retryAfter });
+    return Promise.resolve({ status, retryAfter, error });
   };
   return { post, got };
 };
@@ -81,7 +88,7 @@ describe('sendDueReports', () => {
     const row = await queue('Destinataire manquant');
     const { post, got } = server(201);
 
-    expect(await sendDueReports(db, files, post, T)).toEqual(['sent']);
+    expect(await outcomesDue(db, files, post, T)).toEqual(['sent']);
 
     const body = got[0]!;
     expect(body.get('id')).toBe(row.id);
@@ -94,34 +101,74 @@ describe('sendDueReports', () => {
 
   it('takes a resend answered 200 as sent', async () => {
     await queue();
-    expect(await sendDueReports(db, files, server(200).post, T)).toEqual([
-      'sent',
-    ]);
+    expect(await outcomesDue(db, files, server(200).post, T)).toEqual(['sent']);
     expect(await db.scanReport.count()).toBe(0);
   });
 
   it('drops the report when the feature is off, and says so', async () => {
     await queue();
-    expect(await sendDueReports(db, files, server(404).post, T)).toEqual([
+    expect(await outcomesDue(db, files, server(404).post, T)).toEqual([
       'unavailable',
     ]);
     expect(await db.scanReport.count()).toBe(0);
     expect(files.files.size).toBe(0);
   });
 
-  it.each([400, 403, 413, 415])('gives up on %i', async (status) => {
+  it.each([
+    [400, 'invalid', 'Rapport refusé par le serveur (rapport illisible)'],
+    [403, 'suspended', 'Rapport refusé par le serveur (compte suspendu)'],
+    [413, 'too_large', 'Rapport refusé par le serveur (trop volumineux)'],
+    [415, 'type', 'Rapport refusé par le serveur (image non reconnue)'],
+  ])(
+    'gives up on %i %s, says why and keeps the reason',
+    async (status, error, said) => {
+      const row = await queue();
+      const settled = await sendDueReports(
+        db,
+        files,
+        server([status, null, error]).post,
+        T,
+      );
+
+      expect(settled).toEqual([{ outcome: 'refused', error }]);
+      expect(reportMessage(settled[0]!)).toBe(said);
+      expect(await db.scanReport.get(row.id)).toMatchObject({
+        image: null,
+        imagePath: null,
+        nextAttemptAt: ABANDONED,
+        lastError: `HTTP ${status} ${error}`,
+      });
+      expect(files.files.size).toBe(0);
+      expect(
+        await outcomesDue(db, files, server().post, T + 3_600_000),
+      ).toEqual([]);
+    },
+  );
+
+  it('says a refusal without a known reason as such', async () => {
     await queue();
-    expect(await sendDueReports(db, files, server(status).post, T)).toEqual([
-      'refused',
-    ]);
-    expect(await db.scanReport.count()).toBe(0);
+    const [settled] = await sendDueReports(db, files, server(400).post, T);
+    expect(settled).toEqual({ outcome: 'refused', error: null });
+    expect(reportMessage(settled!)).toBe('Rapport refusé par le serveur');
+  });
+
+  it('keeps only the last report refused', async () => {
+    const first = await queue();
+    await sendDueReports(db, files, server(400).post, T);
+    const second = await queue();
+    await sendDueReports(db, files, server([413, null, 'too_large']).post, T);
+
+    expect(await db.scanReport.get(first.id)).toBeUndefined();
+    expect(await db.scanReport.get(second.id)).toMatchObject({
+      lastError: 'HTTP 413 too_large',
+    });
   });
 
   it('waits for a sign-in on 401, without counting an attempt', async () => {
     const row = await queue();
     await queue();
     const { post, got } = server(401);
-    expect(await sendDueReports(db, files, post, T)).toEqual(['signed-out']);
+    expect(await outcomesDue(db, files, post, T)).toEqual(['signed-out']);
     expect(got).toHaveLength(1);
     expect(await db.scanReport.get(row.id)).toMatchObject({
       attempts: 0,
@@ -132,32 +179,30 @@ describe('sendDueReports', () => {
   it.each([429, 503])('waits as long as %i asks', async (status) => {
     const row = await queue();
     expect(
-      await sendDueReports(db, files, server([status, '120']).post, T),
+      await outcomesDue(db, files, server([status, '120']).post, T),
     ).toEqual(['later']);
     expect(await db.scanReport.get(row.id)).toMatchObject({
       attempts: 1,
       nextAttemptAt: T + 120_000,
       lastError: `HTTP ${status}`,
     });
-    expect(await sendDueReports(db, files, server().post, T + 60_000)).toEqual(
-      [],
-    );
-    expect(await sendDueReports(db, files, server().post, T + 120_000)).toEqual(
-      ['sent'],
-    );
+    expect(await outcomesDue(db, files, server().post, T + 60_000)).toEqual([]);
+    expect(await outcomesDue(db, files, server().post, T + 120_000)).toEqual([
+      'sent',
+    ]);
   });
 
   it('keeps the report offline or when the server is full, and backs off', async () => {
     const row = await queue();
     expect(
-      await sendDueReports(db, files, server(new Error('offline')).post, T),
+      await outcomesDue(db, files, server(new Error('offline')).post, T),
     ).toEqual(['later']);
     expect(await db.scanReport.get(row.id)).toMatchObject({
       attempts: 1,
       nextAttemptAt: T + backoffAfter(1),
     });
     const later = T + backoffAfter(1);
-    expect(await sendDueReports(db, files, server(507).post, later)).toEqual([
+    expect(await outcomesDue(db, files, server(507).post, later)).toEqual([
       'later',
     ]);
     expect(await db.scanReport.get(row.id)).toMatchObject({
@@ -171,17 +216,49 @@ describe('sendDueReports', () => {
     files.failNextSave = true;
     await queue();
     const { post, got } = server(201);
-    expect(await sendDueReports(db, files, post, T)).toEqual(['sent']);
+    expect(await outcomesDue(db, files, post, T)).toEqual(['sent']);
     expect(await (got[0]!.get('image') as File).text()).toBe('jpeg');
   });
 
-  it('drops a report whose image is gone', async () => {
+  /* The WebKit fault itself (an OPFS file sent as an empty body) needs a browser: replayed in WebKit Playwright, see docs/rapports-scan.md. */
+  it('posts the bytes of the OPFS image, read before the upload', async () => {
     const row = await queue();
-    files.files.delete(`report-${row.id}.jpg`);
-    const { post, got } = server();
-    expect(await sendDueReports(db, files, post, T)).toEqual(['refused']);
-    expect(got).toHaveLength(0);
+    const stored = files.files.get(`report-${row.id}.jpg`)!.blob;
+    const read = vi.spyOn(stored, 'arrayBuffer');
+    const { post, got } = server(201);
+
+    await outcomesDue(db, files, post, T);
+    const sent = got[0]!.get('image') as File;
+    expect(read).toHaveBeenCalledOnce();
+    expect(sent.type).toBe('image/jpeg');
+    expect(await sent.text()).toBe('jpeg');
   });
+
+  it.each([
+    ['gone', () => undefined],
+    ['read back empty', () => new Blob([])],
+  ])(
+    'says a report whose image is %s lost, without sending it',
+    async (_, replace) => {
+      const row = await queue();
+      const name = `report-${row.id}.jpg`;
+      const blob = replace();
+      if (blob) files.files.set(name, { blob, lastModified: T });
+      else files.files.delete(name);
+      const { post, got } = server();
+
+      const settled = await sendDueReports(db, files, post, T);
+      expect(settled).toEqual([{ outcome: 'lost', error: null }]);
+      expect(reportMessage(settled[0]!)).toBe(
+        'Rapport perdu : image introuvable sur le téléphone',
+      );
+      expect(got).toHaveLength(0);
+      expect(await db.scanReport.get(row.id)).toMatchObject({
+        nextAttemptAt: ABANDONED,
+        lastError: 'image missing on the phone',
+      });
+    },
+  );
 });
 
 describe('retryAfterMs', () => {

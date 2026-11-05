@@ -2371,6 +2371,12 @@ export const fr = {
   'scan.report.unavailable':
     'Signalement indisponible : le rapport n’est pas parti',
   'scan.report.refused': 'Rapport refusé par le serveur',
+  'scan.report.refusedBecause': 'Rapport refusé par le serveur ({{reason}})',
+  'scan.report.reason.invalid': 'rapport illisible',
+  'scan.report.reason.tooLarge': 'trop volumineux',
+  'scan.report.reason.type': 'image non reconnue',
+  'scan.report.reason.suspended': 'compte suspendu',
+  'scan.report.lost': 'Rapport perdu : image introuvable sur le téléphone',
   'scan.report.signedOut': 'Rapport en attente : reconnectez-vous',
   'scan.report.failed': 'Rapport non enregistré',
   'shell.loading': 'Chargement',

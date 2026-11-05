@@ -16,6 +16,7 @@ import {
   type ScanReportUploaded,
   type ScanReportSummary,
 } from '@repo/contract/scan-report';
+import { logger } from '@repo/shared/logger';
 import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 
@@ -74,13 +75,49 @@ export function slidingWindow({
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
+type RefusedStatus = 400 | 401 | 403 | 413 | 415 | 429 | 503 | 507;
+
+/**
+ * What a refusal says of the upload, for the log: sizes and the type the
+ * phone declared, never the readings, the comment or the image.
+ */
+type ScanReportRefusal = {
+  status: RefusedStatus;
+  error: ScanReportError;
+  /** Which check of an `invalid` upload failed. */
+  reason?: string;
+  id: string | null;
+  /** The `Content-Length` announced, before anything is read. */
+  bodyBytes: number | null;
+  jsonBytes: number | null;
+  imageBytes: number | null;
+  imageType: string | null;
+};
+
+const UNREAD = {
+  id: null,
+  jsonBytes: null,
+  imageBytes: null,
+  imageType: null,
+} as const;
+
 function refuse(
   c: Context,
-  status: 400 | 401 | 403 | 413 | 415 | 429 | 503 | 507,
-  error: ScanReportError,
+  refusal: Omit<ScanReportRefusal, 'bodyBytes'>,
   headers: Record<string, string> = {},
 ) {
-  return c.json({ error }, status, { ...NO_STORE, ...headers });
+  const announced = Number(c.req.header('content-length'));
+  logger.warn(
+    {
+      ...refusal,
+      bodyBytes: Number.isFinite(announced) ? announced : null,
+    } satisfies ScanReportRefusal,
+    'scan report refused',
+  );
+  return c.json({ error: refusal.error }, refusal.status, {
+    ...NO_STORE,
+    ...headers,
+  });
 }
 
 const SAVED = {
@@ -111,41 +148,51 @@ export function scanReportsRoute({
 
   const receive = async (c: Context, from: ReportSender) => {
     const form = await c.req.parseBody().catch(() => null);
-    if (!form) return refuse(c, 400, 'invalid');
-    const id = scanReportId.safeParse(form[SCAN_REPORT_FIELDS.id]);
+    if (!form) {
+      return refuse(c, {
+        status: 400,
+        error: 'invalid',
+        reason: 'form',
+        ...UNREAD,
+      });
+    }
+    const rawId = form[SCAN_REPORT_FIELDS.id];
+    const id = scanReportId.safeParse(rawId);
     const text = form[SCAN_REPORT_FIELDS.report];
     const comment = form[SCAN_REPORT_FIELDS.comment] ?? '';
     const image = form[SCAN_REPORT_FIELDS.image];
-    if (
-      !id.success ||
-      typeof text !== 'string' ||
-      typeof comment !== 'string' ||
-      !(image instanceof File)
-    ) {
-      return refuse(c, 400, 'invalid');
-    }
+    const seen = {
+      id: id.success ? id.data : null,
+      jsonBytes: typeof text === 'string' ? Buffer.byteLength(text) : null,
+      imageBytes: image instanceof File ? image.size : null,
+      imageType:
+        image instanceof File ? image.type.slice(0, 100) || null : null,
+    };
+    const invalid = (reason: string) =>
+      refuse(c, { status: 400, error: 'invalid', reason, ...seen });
+    if (!id.success) return invalid(rawId === undefined ? 'no id' : 'id');
+    if (typeof text !== 'string') return invalid('no report');
+    if (typeof comment !== 'string') return invalid('comment');
+    if (!(image instanceof File)) return invalid('no image');
     if (
       Buffer.byteLength(text) > SCAN_REPORT_JSON_MAX_BYTES ||
       image.size > SCAN_REPORT_IMAGE_MAX_BYTES
     ) {
-      return refuse(c, 413, 'too_large');
+      return refuse(c, { status: 413, error: 'too_large', ...seen });
     }
     // Postgres refuses the NUL character in `text` and `jsonb`: a 400, not a 500.
-    if (
-      comment.length > SCAN_REPORT_COMMENT_MAX_LENGTH ||
-      comment.includes('\0') ||
-      /\\u0000/i.test(text)
-    ) {
-      return refuse(c, 400, 'invalid');
+    if (comment.length > SCAN_REPORT_COMMENT_MAX_LENGTH) {
+      return invalid('comment too long');
     }
+    if (comment.includes('\0') || /\\u0000/i.test(text)) return invalid('nul');
     let parsed: unknown;
     try {
       parsed = JSON.parse(text);
     } catch {
-      return refuse(c, 400, 'invalid');
+      return invalid('json');
     }
     const report = scanReportBody.safeParse(parsed);
-    if (!report.success) return refuse(c, 400, 'invalid');
+    if (!report.success) return invalid('not an object');
 
     const outcome = await store.save({
       id: id.data,
@@ -156,7 +203,7 @@ export function scanReportsRoute({
       image: Buffer.from(await image.arrayBuffer()),
     });
     if (outcome === 'type' || outcome === 'full') {
-      return refuse(c, SAVED[outcome], outcome);
+      return refuse(c, { status: SAVED[outcome], error: outcome, ...seen });
     }
     const uploaded: ScanReportUploaded = { id: id.data };
     return c.json(uploaded, SAVED[outcome], NO_STORE);
@@ -167,22 +214,30 @@ export function scanReportsRoute({
     '/',
     bodyLimit({
       maxSize: SCAN_REPORT_BODY_MAX_BYTES,
-      onError: (c) => refuse(c, 413, 'too_large'),
+      onError: (c) => refuse(c, { status: 413, error: 'too_large', ...UNREAD }),
     }),
     async (c) => {
       const from = await sender(c.req.raw.headers);
-      if (!from) return refuse(c, 401, 'unauthorized');
+      if (!from) {
+        return refuse(c, { status: 401, error: 'unauthorized', ...UNREAD });
+      }
       if (from === 'suspended') {
-        return refuse(c, 403, 'suspended');
+        return refuse(c, { status: 403, error: 'suspended', ...UNREAD });
       }
       if (!allow(from.userId)) {
-        return refuse(c, 429, 'rate_limited', {
-          'Retry-After': String(SCAN_REPORT_RATE.windowMs / 1000),
-        });
+        return refuse(
+          c,
+          { status: 429, error: 'rate_limited', ...UNREAD },
+          { 'Retry-After': String(SCAN_REPORT_RATE.windowMs / 1000) },
+        );
       }
       // The VPS has no swap: a few images in memory at a time, whoever sends them.
       if (reading >= SCAN_REPORT_UPLOADS_AT_ONCE) {
-        return refuse(c, 503, 'busy', { 'Retry-After': '30' });
+        return refuse(
+          c,
+          { status: 503, error: 'busy', ...UNREAD },
+          { 'Retry-After': '30' },
+        );
       }
       reading += 1;
       try {

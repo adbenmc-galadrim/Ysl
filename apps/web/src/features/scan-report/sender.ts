@@ -3,8 +3,8 @@ import { db } from '#/features/db/database';
 import { hasPhotoStorage, photoFiles } from '#/features/photos/opfs';
 import {
   sendDueReports,
-  type ReportOutcome,
   type ReportPost,
+  type ReportSettled,
 } from '#/features/scan-report/outbox';
 
 const INTERVAL_MS = 60_000;
@@ -15,13 +15,17 @@ const postReport: ReportPost = async (body) => {
     body,
     credentials: 'include',
   });
+  const answer = response.ok
+    ? null
+    : ((await response.json().catch(() => null)) as { error?: unknown } | null);
   return {
     status: response.status,
     retryAfter: response.headers.get('Retry-After'),
+    error: typeof answer?.error === 'string' ? answer.error : null,
   };
 };
 
-type Listener = (outcome: ReportOutcome) => void;
+type Listener = (settled: ReportSettled) => void;
 
 const listeners = new Set<Listener>();
 
@@ -45,13 +49,13 @@ export function kickReports(): Promise<void> {
     do {
       again = false;
       if (typeof navigator !== 'undefined' && !navigator.onLine) return;
-      const outcomes = await sendDueReports(
+      const settled = await sendDueReports(
         db,
         hasPhotoStorage() ? photoFiles : null,
         postReport,
       ).catch(() => []);
-      for (const outcome of outcomes) {
-        for (const listener of listeners) listener(outcome);
+      for (const one of settled) {
+        for (const listener of listeners) listener(one);
       }
     } while (again);
   })().finally(() => {
