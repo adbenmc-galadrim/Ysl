@@ -179,18 +179,20 @@ const errorOf = (error: string | null | undefined): ScanReportError | null =>
   SCAN_REPORT_ERRORS.find((known) => known === error) ?? null;
 
 /**
- * The image's bytes, in memory: WebKit sends a file read from OPFS as an
- * empty body (Safari on iOS, the server answers 400), so it never goes as is.
+ * A file's bytes, in memory: WebKit sends a file read from OPFS as an empty
+ * body (Safari on iOS, the server answers 400), so it never goes as is.
+ * Null when the file is gone or empty.
  */
+export async function inMemory(file: Promise<Blob>, type: string) {
+  const bytes = await file.then((read) => read.arrayBuffer()).catch(() => null);
+  if (!bytes?.byteLength) return null;
+  return new Blob([bytes], { type });
+}
+
 async function imageOf(files: PhotoFiles | null, row: LocalScanReport) {
   if (row.image) return row.image;
   if (!row.imagePath || !files) return null;
-  const bytes = await files
-    .read(fileOf(row.imagePath))
-    .then((file) => file.arrayBuffer())
-    .catch(() => null);
-  if (!bytes?.byteLength) return null;
-  return new Blob([bytes], { type: row.imageType });
+  return inMemory(files.read(fileOf(row.imagePath)), row.imageType);
 }
 
 function formOf(row: LocalScanReport, image: Blob): FormData {

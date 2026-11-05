@@ -6,12 +6,17 @@ import {
 import type { CompanyReception } from '@repo/contract/company-settings';
 import type { OcrResult } from '@repo/ocr/worker';
 import type { ScanReading } from '@repo/ui';
+import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { isValidElement, type ReactNode } from 'react';
 import { extractionOf } from '#/features/batch/extraction';
 import { PHOTO_MAX_SIDE, PHOTO_QUALITY } from '#/features/camera/capture';
 import type { FrameVerdict } from '#/features/camera/quality';
 import type { DraftParcel } from '#/features/db/schema';
 import { deviceKind } from '#/features/devices/describe';
+import { annexText } from '#/features/review/actions';
+import type { AnnexField } from '#/features/review/model';
+import { annexOf } from '#/features/scan/annex';
+import { carrierName } from '#/features/scan/carriers';
 import { draftFields } from '#/features/scan/confidence';
 import type { DecodePass } from '#/features/scan/reader';
 
@@ -72,9 +77,46 @@ export function deviceOf(
   };
 }
 
-const json = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+export const json = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-/** What the user set by hand on the draft before the report left. */
+const t = createTranslator(DEFAULT_LOCALE);
+
+const ANNEX_FIELDS: readonly AnnexField[] = [
+  'pieces',
+  'weightKg',
+  'service',
+  'reference',
+];
+
+/**
+ * The carrier and the annex as the agent settled them in the batch review,
+ * against what the label alone gives: a value changed was typed, a doubt
+ * kept as is was confirmed.
+ */
+function reviewCorrections(draft: DraftParcel): ScanReportV1['corrections'] {
+  const out: ScanReportV1['corrections'] = [];
+  const read = draftFields(draft).extraction.carrier?.value;
+  const named = read ? carrierName(read, t) : null;
+  if (draft.trackingConfirmed && draft.carrier && draft.carrier !== named) {
+    out.push({ field: 'carrier', value: draft.carrier, how: 'chosen' });
+  }
+  if (!draft.annex) return out;
+  const label = annexOf(draft.symbols, draft.ocrLines);
+  for (const field of ANNEX_FIELDS) {
+    const now = annexText(field, draft.annex);
+    if (now !== annexText(field, label)) {
+      out.push({ field, value: now === '' ? null : now, how: 'typed' });
+    } else if (
+      draft.annex[field]?.level === 'sure' &&
+      label[field]?.level !== 'sure'
+    ) {
+      out.push({ field, value: now, how: 'confirmed' });
+    }
+  }
+  return out;
+}
+
+/** What the user set by hand on the draft before the report left, in the review too. */
 export function correctionsOf(
   draft: DraftParcel | undefined,
 ): ScanReportV1['corrections'] {
@@ -99,7 +141,7 @@ export function correctionsOf(
   if (draft.departmentId) {
     out.push({ field: 'department', value: draft.departmentId, how: 'chosen' });
   }
-  return out;
+  return [...out, ...reviewCorrections(draft)];
 }
 
 /** The words of a field as drawn: a node of the screen, flattened to its text. */
