@@ -324,7 +324,7 @@ pnpm reports:pull --watch --on-report 'pnpm -w reports:agent'
 `-w` est nécessaire : `reports:pull` lance l'accroche depuis `apps/server`. Options :
 `--no-pr` (tout sauf le push, la PR et le versement au corpus privé : démo, essai ; le
 worktree et sa branche restent sur le PC),
-`--headless` (l'agent en `claude -p` invisible, comme avant YSL-150), `--threads-dir`
+`--headless` (l'agent en `claude -p` invisible, sans fil T3), `--threads-dir`
 (dossier du projet T3 des fils, défaut `~/goinfre/ysl/fils-rapports-scan`),
 `--max-turns <n>` (150 par défaut, `--headless` seulement), `--timeout-min <n>` (60 par
 défaut), `--corpus` (sortie

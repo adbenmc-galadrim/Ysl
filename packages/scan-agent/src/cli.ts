@@ -20,11 +20,11 @@ Accroche de pnpm reports:pull --on-report : un agent ${MODEL} par rapport, dans 
 T3 visible, sur un worktree depuis origin/main, puis une PR draft si rien ne fuit et
 rien ne recule. Le rapport vient de SCAN_REPORT_ID et SCAN_REPORT_DIR (ou --id, --dir).
 --no-pr        s'arrête avant le push : ni PR ni versement au corpus privé (démo)
---headless     claude -p invisible au lieu d'un fil T3 (le mode de YSL-147)
+--headless     claude -p invisible, sans fil T3
 --threads-dir  dossier du projet T3 des fils (défaut ../fils-rapports-scan à côté du dépôt)
 --max-turns    tours de l'agent en --headless (défaut ${MAX_TURNS}) ; --timeout-min durée (défaut ${TIMEOUT_MIN} min)
---corpus     sortie du générateur (défaut ../tmp/corpus à côté du dépôt)
---private    corpus privé des vraies photos (défaut <corpus>/real)`;
+--corpus       sortie du générateur (défaut ../tmp/corpus à côté du dépôt)
+--private      corpus privé des vraies photos (défaut <corpus>/real)`;
 
 const run = promisify(execFile);
 

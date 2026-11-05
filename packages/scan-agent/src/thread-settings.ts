@@ -23,6 +23,7 @@ const ROOT_FILES = [
   'AGENTS.md',
 ];
 
+/** The MCP servers this PC declares, turned off by name. */
 const MCP_SERVERS = [
   'penpot',
   'claude.ai Claude Docs',
