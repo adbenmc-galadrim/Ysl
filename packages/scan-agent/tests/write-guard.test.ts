@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -38,12 +39,35 @@ describe('writeAllowed', () => {
     ).toBe(false);
   });
 
+  it('refuses a broken link of the worktree pointing out of it', async () => {
+    await symlink(join(root, 'dehors', 'neuf.sh'), join(worktree, 'lien'));
+    expect(writeAllowed(join(worktree, 'lien'), [worktree, work])).toBe(false);
+  });
+
   it('refuses a way out by `..` or a sibling sharing the prefix', () => {
     const roots = [worktree, work];
     expect(
       writeAllowed(join(worktree, '..', '.claude', 'settings.json'), roots),
     ).toBe(false);
     expect(writeAllowed(`${worktree}-autre/a.ts`, roots)).toBe(false);
+  });
+});
+
+describe('the hook', () => {
+  it('refuses the call when it fails, on a loop of links', async () => {
+    await symlink(join(worktree, 'boucle-b'), join(worktree, 'boucle-a'));
+    await symlink(join(worktree, 'boucle-a'), join(worktree, 'boucle-b'));
+    const hook = spawnSync(
+      process.execPath,
+      [join(import.meta.dirname, '..', 'src', 'write-guard.ts'), worktree],
+      {
+        input: JSON.stringify({
+          tool_input: { file_path: join(worktree, 'boucle-a') },
+        }),
+      },
+    );
+    expect(hook.status).toBe(2);
+    expect(hook.stderr.toString()).toContain('garde d’écriture en échec');
   });
 });
 

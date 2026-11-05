@@ -1,17 +1,32 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { lstatSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
  * The real path, links resolved, of a file that may not exist yet: its
- * deepest existing parent resolved, the rest appended.
+ * deepest existing parent resolved, the rest appended. A broken link counts
+ * as its target: writing through it creates the target.
  */
-export function realTarget(path: string): string {
+export function realTarget(path: string, hops = 0): string {
+  if (hops > 40) throw new Error(`trop de liens : ${path}`);
   const absolute = resolve(path);
-  if (existsSync(absolute)) return realpathSync(absolute);
+  const stat = (() => {
+    try {
+      return lstatSync(absolute);
+    } catch {
+      return null;
+    }
+  })();
   const parent = dirname(absolute);
+  if (stat?.isSymbolicLink()) {
+    return realTarget(
+      resolve(realTarget(parent, hops + 1), readlinkSync(absolute)),
+      hops + 1,
+    );
+  }
+  if (stat) return realpathSync(absolute);
   if (parent === absolute) return absolute;
-  return join(realTarget(parent), basename(absolute));
+  return join(realTarget(parent, hops + 1), basename(absolute));
 }
 
 const inside = (root: string, target: string) => {
@@ -52,7 +67,11 @@ export function verdict(
   };
 }
 
-/** `PreToolUse` hook: exit 2 refuses the call and shows the reason to the agent. */
+/**
+ * `PreToolUse` hook: exit 2 refuses the call and shows the reason to the
+ * agent. Any other exit lets the call through, so every failure exits 2.
+ * Run by node itself, which strips the types: no import but node's own.
+ */
 function main() {
   const roots = process.argv.slice(2);
   let input: HookInput;
@@ -62,9 +81,17 @@ function main() {
     process.stderr.write('entrée du hook illisible\n');
     process.exit(2);
   }
-  const { allowed, reason } = verdict(input, roots);
-  if (!allowed) {
-    process.stderr.write(`${reason}\n`);
+  let result: { allowed: boolean; reason: string };
+  try {
+    result = verdict(input, roots);
+  } catch (error) {
+    result = {
+      allowed: false,
+      reason: `garde d’écriture en échec : ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+  if (!result.allowed) {
+    process.stderr.write(`${result.reason}\n`);
     process.exit(2);
   }
 }
