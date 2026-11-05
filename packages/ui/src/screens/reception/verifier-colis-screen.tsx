@@ -51,6 +51,8 @@ export type VerifierColisScreenProps = {
   onSubmit?: () => void;
   /** Room under the question for « D’où vient cette valeur ? » (YSL-59). */
   source?: ReactNode;
+  /** « Signaler ce scan », over the button, test phase only (D32, YSL-151). */
+  report?: ReactNode;
 };
 
 /**
@@ -91,6 +93,7 @@ type VerifyFrameProps = Pick<
   | 'onZoom'
   | 'onSubmit'
   | 'source'
+  | 'report'
 > & {
   question: string;
   hint: string;
@@ -112,6 +115,7 @@ function VerifyFrame({
   question,
   hint,
   source,
+  report,
   submitLabel,
   submitDisabled = false,
   onBack,
@@ -123,18 +127,21 @@ function VerifyFrame({
   const zoom = <LabelZoomButton onClick={onZoom} />;
   return (
     <Screen
-      bottomInset={132}
+      bottomInset={report ? 172 : 132}
       bottom={
         <BottomBar surface="line">
-          {/* Penpot sets the label 1 px above the middle. */}
-          <Button
-            block
-            className="pb-0.5"
-            disabled={submitDisabled}
-            onClick={onSubmit}
-          >
-            {submitLabel}
-          </Button>
+          <div className="flex w-full flex-col">
+            {report && <div className="mb-2.5 flex">{report}</div>}
+            {/* Penpot sets the label 1 px above the middle. */}
+            <Button
+              block
+              className="pb-0.5"
+              disabled={submitDisabled}
+              onClick={onSubmit}
+            >
+              {submitLabel}
+            </Button>
+          </div>
         </BottomBar>
       }
     >
@@ -231,6 +238,7 @@ export type VerifierDepartementScreenProps = Pick<
   | 'onZoom'
   | 'onSubmit'
   | 'source'
+  | 'report'
 > & {
   /** The recipient's department, when they have one: a change is a choice. */
   recipientDepartment: string | null;
@@ -298,6 +306,7 @@ export type VerifierSuiviScreenProps = Pick<
   | 'onZoom'
   | 'onSubmit'
   | 'source'
+  | 'report'
 > & {
   /**
    * `to-verify`: the number read, offered first and chosen, so one tap
@@ -445,6 +454,7 @@ export type VerifierChampScreenProps = Pick<
   | 'onZoom'
   | 'onSubmit'
   | 'source'
+  | 'report'
 > & {
   /** « Le poids est-il juste ? » */
   question: string;

@@ -34,8 +34,14 @@ export function SignalerScanButton({
   );
 }
 
+/** What leaves from the scan screen: the frame itself. */
+const FRAME_SENT =
+  'La photo complète de l’étiquette et tout ce que l’app a lu partent avec le rapport, pour améliorer la lecture. Phase de test.';
+
 export type SignalerScanSheetProps = {
   comment: string;
+  /** What leaves with the report, said before it does. */
+  description?: string;
   onCommentChange: (comment: string) => void;
   /** The server's limit on the comment. */
   maxLength?: number;
@@ -53,6 +59,7 @@ export type SignalerScanSheetProps = {
  */
 export function SignalerScanSheet({
   comment,
+  description = FRAME_SENT,
   onCommentChange,
   maxLength = 2000,
   onSubmit,
@@ -64,7 +71,7 @@ export function SignalerScanSheet({
   return (
     <Sheet
       title="Signaler ce scan"
-      description="La photo complète de l’étiquette et tout ce que l’app a lu partent avec le rapport, pour améliorer la lecture. Phase de test."
+      description={description}
       scrimClassName="bg-black/35"
       fixed={fixed}
       behind={behind}

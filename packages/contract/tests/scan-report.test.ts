@@ -138,6 +138,53 @@ describe('scanReportV1', () => {
     ).toBe(false);
   });
 
+  it('reads a report sent before the origin existed as one from the scan', () => {
+    const parsed = scanReportV1.parse(report());
+    expect(parsed.origin).toBeUndefined();
+    expect(parsed.kept).toBeUndefined();
+  });
+
+  it('takes a report sent away from the scan screen, saying what it lacks', () => {
+    const away: ScanReportV1 = {
+      ...report(),
+      origin: 'revue',
+      shot: null,
+      image: {
+        type: 'image/jpeg',
+        width: 1200,
+        height: 1600,
+        bytes: 310_000,
+        quality: 0.8,
+      },
+      codes: { state: 'done', passes: [] },
+      ocr: { state: 'kept' },
+      missing: ['frame', 'shot', 'decodePasses'],
+      kept: {
+        from: 'draft',
+        readAt: '2026-11-04T09:12:03.000Z',
+        rules: null,
+        codes: [{ format: 'Code128', text: '1Z999AA10123456784' }],
+        ocrLines: [
+          {
+            text: 'LIGNE DE TEST',
+            box: { x: 10, y: 20, width: 300, height: 18 },
+            score: 0.93,
+          },
+        ],
+        ocrText: 'LIGNE DE TEST',
+        durations: { codesMs: 95, ocrMs: 900, fusionMs: null },
+      },
+      corrections: [{ field: 'weightKg', value: '2,4', how: 'typed' }],
+    };
+    expect(scanReportV1.parse(JSON.parse(JSON.stringify(away)))).toEqual(away);
+    expect(scanReportV1.safeParse({ ...away, origin: 'fiche' }).success).toBe(
+      false,
+    );
+    expect(
+      scanReportV1.safeParse({ ...away, missing: ['photo'] }).success,
+    ).toBe(false);
+  });
+
   it('keeps a crowded label under the size the server takes', () => {
     const bytes = new TextEncoder().encode(
       JSON.stringify(report(400)),

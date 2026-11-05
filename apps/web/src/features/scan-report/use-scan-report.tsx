@@ -1,13 +1,7 @@
-import { SCAN_REPORT_COMMENT_MAX_LENGTH } from '@repo/contract/scan-report';
 import { createTranslator, DEFAULT_LOCALE } from '@repo/shared/i18n';
 import { newId } from '@repo/shared/id';
-import {
-  SignalerScanButton,
-  SignalerScanSheet,
-  SignalerScanToast,
-  type ScanReading,
-} from '@repo/ui';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { SignalerScanButton, type ScanReading } from '@repo/ui';
+import { useEffect, useState, type ReactNode } from 'react';
 import { db } from '#/features/db/database';
 import type { DraftParcel } from '#/features/db/schema';
 import { displayVersion } from '#/features/install/app-host';
@@ -20,19 +14,17 @@ import { hasPhotoStorage, photoFiles } from '#/features/photos/opfs';
 import type { Reading } from '#/features/scan/reader';
 import type { ReadText } from '#/features/scan/text';
 import { encodeFrame, ShotKeeper } from '#/features/scan-report/keeper';
-import { reportMessage } from '#/features/scan-report/message';
 import { enqueueReport } from '#/features/scan-report/outbox';
 import {
   buildReport,
   deviceOf,
+  type ReportContext,
   type ShotReadings,
   type ShotText,
 } from '#/features/scan-report/report';
-import { kickReports, onReportOutcome } from '#/features/scan-report/sender';
+import { useReportSheet } from '#/features/scan-report/use-report-sheet';
 
 const t = createTranslator(DEFAULT_LOCALE);
-
-const TOAST_MS = 4_000;
 
 /** The states the button follows: a label shot, read or not. */
 const REPORTABLE = new Set<ScanReading['kind']>([
@@ -49,7 +41,8 @@ const textOf = (text: ReadText): ShotText =>
       ? { state: 'done', result: text.ocr }
       : { state: 'skipped' };
 
-function context(now: Date) {
+/** The app and the phone as the report describes them, at the tap. */
+export function reportContext(now: Date): ReportContext {
   const display = currentDisplayContext();
   return {
     app: { version: displayVersion(__APP_VERSION__), build: __APP_VERSION__ },
@@ -79,33 +72,7 @@ export function useScanReport(
 ) {
   const [keeper] = useState(() => new ShotKeeper());
   const [ready, setReady] = useState(false);
-  const [comment, setComment] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; at: number } | null>(
-    null,
-  );
-
-  /* Reports sent from this screen whose fate is not said yet: the minute's retries of older ones stay quiet. */
-  const awaiting = useRef(0);
-
-  const say = (message: string) => setToast({ message, at: Date.now() });
-
-  useEffect(
-    () =>
-      onReportOutcome((settled) => {
-        const message = reportMessage(settled);
-        if (!message || awaiting.current === 0) return;
-        awaiting.current =
-          settled.outcome === 'signed-out' ? 0 : awaiting.current - 1;
-        say(message);
-      }),
-    [],
-  );
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), TOAST_MS);
-    return () => clearTimeout(timer);
-  }, [toast]);
+  const report = useReportSheet();
 
   useEffect(() => () => keeper.drop(), [keeper]);
 
@@ -131,34 +98,34 @@ export function useScanReport(
     keeper.text(draftId, reading.then(textOf));
 
   const send = (shown: ScanReading) => {
-    const words = comment ?? '';
+    const words = report.take();
     const tapped = new Date();
-    setComment(null);
     setReady(false);
-    say(t(navigator.onLine ? 'scan.report.queued' : 'scan.report.offline'));
+    report.say(
+      t(navigator.onLine ? 'scan.report.queued' : 'scan.report.offline'),
+    );
     void (async () => {
       const shot = await keeper.take();
       if (!shot) return;
       try {
         const { blob, image } = await encodeFrame(shot.frame);
-        const report = buildReport(
+        const built = buildReport(
           shot,
           await draftOf(shot.draftId),
           shown,
           image,
-          context(tapped),
+          reportContext(tapped),
         );
         await enqueueReport(db, hasPhotoStorage() ? photoFiles : null, {
           id: newId(),
-          report,
+          report: built,
           comment: words,
           image: blob,
           imageType: image.type,
         });
-        awaiting.current += 1;
-        void kickReports();
+        report.queued();
       } catch {
-        say(t('scan.report.failed'));
+        report.say(t('scan.report.failed'));
       } finally {
         shot.frame.close();
       }
@@ -167,23 +134,13 @@ export function useScanReport(
 
   /** Above the bottom row: the word after a report, or the button on a shot. */
   const slot = (shown: ScanReading): ReactNode => {
-    if (toast)
-      return <SignalerScanToast className="w-full" message={toast.message} />;
+    if (report.word) return report.word;
     if (!ready || !REPORTABLE.has(shown.kind)) return undefined;
-    return <SignalerScanButton onClick={() => setComment('')} />;
+    return <SignalerScanButton onClick={report.openSheet} />;
   };
 
   const sheet = (shown: ScanReading): ReactNode =>
-    comment !== null && (
-      <SignalerScanSheet
-        fixed
-        comment={comment}
-        maxLength={SCAN_REPORT_COMMENT_MAX_LENGTH}
-        onCommentChange={setComment}
-        onSubmit={() => send(shown)}
-        onDismiss={() => setComment(null)}
-      />
-    );
+    report.sheet(() => send(shown));
 
-  return { keep, codes, text, slot, sheet, open: comment !== null };
+  return { keep, codes, text, slot, sheet, open: report.open };
 }

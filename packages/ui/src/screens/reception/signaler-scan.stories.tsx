@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
+import { LABEL_PHOTO_URL } from '#fixtures/label-photo';
 import { SCANNED_LABEL } from '#fixtures/reception';
+import { LectureScreen } from '#screens/colis/lecture-screen';
 import { ScanScreen, type ScanReading } from '#screens/reception/scan-screen';
 import {
   SignalerScanButton,
@@ -67,6 +69,29 @@ export const Commentaire: Story = {
         onCommentChange={setComment}
         behind={
           <ScanScreen {...args} reading={READ} controls={false} dim={0.4} />
+        }
+      />
+    );
+  },
+};
+
+/** Away from the scan screen, the sheet says what leaves instead (YSL-151). */
+export const CommentaireHorsScan: Story = {
+  name: 'Commentaire, hors Scan',
+  args: { reading: READ },
+  parameters: { device: { tone: 'light' } },
+  render: () => {
+    const [comment, setComment] = useState('');
+    return (
+      <SignalerScanSheet
+        comment={comment}
+        onCommentChange={setComment}
+        description="La photo enregistrée de l’étiquette (1 600 px) et ce que l’iPhone a gardé de sa lecture partent avec le rapport, pour améliorer la lecture. Phase de test."
+        behind={
+          <LectureScreen
+            subtitle="Lu le 20 oct. à 9 h 00 sur cet iPhone"
+            photo={{ src: LABEL_PHOTO_URL, alt: 'Photo de l’étiquette' }}
+          />
         }
       />
     );

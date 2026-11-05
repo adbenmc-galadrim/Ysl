@@ -88,7 +88,9 @@ export type ScanReportDetail = ScanReportSummary & {
 /**
  * The shape of `report` the phone sends (YSL-143). The server only checks
  * it is an object; the PC writes it as received and the agent replays the
- * image in the bench with it (YSL-147). A change of shape bumps the version.
+ * image in the bench with it (YSL-147). A change of shape bumps the version;
+ * YSL-151 only widened it (optional fields, `shot` nullable, new states), so
+ * every report sent before still reads.
  */
 export const SCAN_REPORT_VERSION = 1;
 
@@ -152,9 +154,10 @@ export const scanReportOcr = z.discriminatedUnion('state', [
   /**
    * `skipped`: models not on the device yet; `failed`: the engine failed;
    * `pending`: still reading 15 s after « Envoyer »; `none`: no text read
-   * for this shot (a piece joined to its parcel, a duplicate outside the batch).
+   * for this shot (a piece joined to its parcel, a duplicate outside the batch);
+   * `kept`: sent away from the scan screen, what the phone kept is in `kept`.
    */
-  z.object({ state: z.enum(['skipped', 'failed', 'pending', 'none']) }),
+  z.object({ state: z.enum(['skipped', 'failed', 'pending', 'none', 'kept']) }),
 ]);
 
 const fieldSource = z.object({
@@ -174,11 +177,67 @@ export const scanReportField = z.object({
   candidates: z.array(z.unknown()).optional(),
 });
 
-/** What the user set by hand before the report left. */
+/** What the user set by hand before the report left, in the batch review too. */
 export const scanReportCorrection = z.object({
-  field: z.enum(['tracking', 'recipient', 'sender', 'type', 'department']),
+  field: z.enum([
+    'tracking',
+    'recipient',
+    'sender',
+    'type',
+    'department',
+    'carrier',
+    'pieces',
+    'weightKg',
+    'service',
+    'reference',
+  ]),
   value: z.string().nullable(),
   how: z.enum(['typed', 'chosen', 'confirmed']),
+});
+
+/** The screen the report was sent from; absent on reports sent before YSL-151: the scan. */
+export const SCAN_REPORT_ORIGINS = ['scan', 'revue', 'lecture'] as const;
+
+export type ScanReportOrigin = (typeof SCAN_REPORT_ORIGINS)[number];
+
+/**
+ * What a report sent away from the scan screen lacks, the frame being gone:
+ * `frame`, the image is the stored 1 600 px photo; `shot`, the viewfinder's
+ * settings; `decodePasses`, zxing's passes (positions, steps, times);
+ * `ocrBoxes`, the OCR lines with their boxes and scores; `ocr`, any text;
+ * `extraction`, the fusion before corrections; `draft`, the batch's draft.
+ */
+export const SCAN_REPORT_MISSING = [
+  'frame',
+  'shot',
+  'decodePasses',
+  'ocrBoxes',
+  'ocr',
+  'extraction',
+  'draft',
+] as const;
+
+export type ScanReportMissing = (typeof SCAN_REPORT_MISSING)[number];
+
+/**
+ * The readings the phone kept for the parcel, as they were saved: a draft
+ * of the batch (`ocrLines` in the frame of the stored photo) or a parcel
+ * past « Terminer » (`ocrText` only).
+ */
+export const scanReportKept = z.object({
+  from: z.enum(['draft', 'stored']),
+  /** When the reading was saved, ISO. */
+  readAt: z.iso.datetime(),
+  /** The rules that scored the fields; null on a draft, scored on the spot. */
+  rules: z.number().nullable(),
+  codes: z.array(z.object({ format: z.string(), text: z.string() })),
+  ocrLines: z.array(scanReportOcrLine).nullable(),
+  ocrText: z.string().nullable(),
+  durations: z.object({
+    codesMs: z.number().nullable(),
+    ocrMs: z.number().nullable(),
+    fusionMs: z.number().nullable(),
+  }),
 });
 
 export const scanReportV1 = z.object({
@@ -197,15 +256,17 @@ export const scanReportV1 = z.object({
     screen: z.object({ ...size, pixelRatio: z.number() }),
     standalone: z.boolean(),
   }),
-  /** The frame the code readers had, as sent in `image`. */
-  shot: z.object({
-    source: z.enum(['camera', 'import']),
-    /** The zoom of the viewfinder (1 = none). */
-    zoom: z.number(),
-    torch: z.boolean(),
-    /** The sharpness check before reading, behind the « illisible » advice. */
-    quality: z.enum(['ok', 'blurry', 'glare']),
-  }),
+  /** The frame the code readers had, as sent in `image`; null away from the scan screen. */
+  shot: z
+    .object({
+      source: z.enum(['camera', 'import']),
+      /** The zoom of the viewfinder (1 = none). */
+      zoom: z.number(),
+      torch: z.boolean(),
+      /** The sharpness check before reading, behind the « illisible » advice. */
+      quality: z.enum(['ok', 'blurry', 'glare']),
+    })
+    .nullable(),
   /** The company's address the fusion weighed (« elsewhere » labels), when set. */
   reception: z.record(z.string(), z.unknown()).nullable(),
   image: z.object({
@@ -227,7 +288,7 @@ export const scanReportV1 = z.object({
   corrections: z.array(scanReportCorrection),
   /** The draft as it stood: reading state, carrier, tracking, recipient, sender, annex, pieces. */
   draft: z.looseObject({ id: z.string(), reading: z.string() }),
-  /** What the scan screen showed when the user reported. */
+  /** What the screen showed when the user reported. */
   screen: z.object({
     kind: z.string(),
     fields: z.array(
@@ -238,6 +299,11 @@ export const scanReportV1 = z.object({
       }),
     ),
   }),
+  origin: z.enum(SCAN_REPORT_ORIGINS).optional(),
+  missing: z.array(z.enum(SCAN_REPORT_MISSING)).optional(),
+  kept: scanReportKept.optional(),
+  /** The parcel as the phone keeps it, once past « Terminer ». */
+  parcel: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ScanReportV1 = z.infer<typeof scanReportV1>;

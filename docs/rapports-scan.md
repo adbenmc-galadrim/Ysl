@@ -3,7 +3,9 @@
 Pendant la phase de test, l'utilisateur peut signaler un scan raté. Le rapport part de
 l'iPhone avec l'image complète et toutes les lectures, attend sur le serveur, puis le PC
 d'Adam le récupère (`pnpm reports:pull`) et le supprime. Un agent s'en sert ensuite pour
-améliorer la lecture.
+améliorer la lecture. Depuis la vérification du lot et « Ce qui a été lu » (YSL-151), le
+cadre complet n'existe plus : le rapport part avec la photo enregistrée du colis et les
+lectures gardées sur l'iPhone (voir « Hors de l'écran Scan »).
 
 C'est une exception à D8 (les photos d'étiquettes ne quittent pas l'iPhone), décidée par
 Adam le 04/11/2026 (D32) **pour la phase de test seulement** : rien n'est masqué, l'envoi
@@ -93,9 +95,11 @@ au scan, « Signaler ce scan », « Envoyer le rapport » ; le journal du serveu
 ### Contenu du rapport
 
 Fixé par `scanReportV1` (`@repo/contract/scan-report`), version `SCAN_REPORT_VERSION` = 1 :
-toute forme nouvelle monte la version. Le serveur ne le vérifie pas, le PC l'écrit tel quel
-dans `rapport.json` ; c'est ce que l'agent lit pour rejouer l'image dans le banc
-(`packages/bench`, voir « Rejouer » plus bas).
+toute forme nouvelle monte la version. YSL-151 l'a seulement élargie (champs facultatifs,
+`shot` à `null`, nouvelles valeurs de `ocr.state` et de `corrections[].field`) : tout
+rapport envoyé avant reste un `scanReportV1`, et `reports:agent` les lit tous. Le serveur
+ne le vérifie pas, le PC l'écrit tel quel dans `rapport.json` ; c'est ce que l'agent lit
+pour rejouer l'image dans le banc (`packages/bench`, voir « Rejouer » plus bas).
 
 | Clé | Contenu |
 | --- | --- |
@@ -103,16 +107,20 @@ dans `rapport.json` ; c'est ce que l'agent lit pour rejouer l'image dans le banc
 | `shotAt`, `createdAt` | prise de la photo, appui sur « Envoyer le rapport » (ISO) |
 | `app` | `version` : `displayVersion` (AAAA.MM.JJ, celle des Réglages) ; `build` : l'horodatage du build (`__APP_VERSION__`) |
 | `device` | `kind` (`iphone`…), `userAgent`, `platform`, `language`, `screen` (`width`, `height`, `pixelRatio`), `standalone` (app installée) |
-| `shot` | `source` : `camera` (viseur) ou `import` (photothèque, appareil photo natif) ; `zoom` du viseur ; `torch` allumée ; `quality` : la mesure de netteté avant lecture (`ok`, `blurry`, `glare`), qui choisit le conseil sous « illisible » |
+| `origin` | facultatif : l'écran d'envoi, `scan`, `revue` (« Vérifier un colis »), `lecture` (« Ce qui a été lu ») ; absent, c'est `scan` (rapports d'avant YSL-151) |
+| `shot` | `null` hors de l'écran Scan ; sinon `source` : `camera` (viseur) ou `import` (photothèque, appareil photo natif) ; `zoom` du viseur ; `torch` allumée ; `quality` : la mesure de netteté avant lecture (`ok`, `blurry`, `glare`), qui choisit le conseil sous « illisible » |
 | `reception` | l'adresse de l'entreprise que la fusion a prise en compte (étiquettes « ailleurs »), ou `null` |
 | `image` | l'image envoyée : `type`, `width`, `height`, `bytes`, `quality` JPEG |
 | `codes` | `state` (`done`, `failed` si le Worker a échoué) et `passes` : chaque passe de la cascade zxing, la première puis celle qui cherche les formats manquants (`expect`, ex. `["MaxiCode"]`), avec ses `symbols` (`format`, `text` brut séparateurs compris, `isValid`, `position` en pixels du cadre de la passe (`width` × `height` de la passe), `orientation`), ses `steps` (`whole-1600`, `whole-2400`, `tiles`, `maxicode` : durée, nombre de symboles, taille lue) et sa durée |
-| `ocr` | `state` : `done`, `skipped` (modèles pas encore sur l'iPhone), `failed`, `pending` (pas fini 15 s après l'envoi), `none` (pas de lecture du texte pour cette prise : pièce rattachée à son colis, doublon hors du lot) ; si `done` : `engine` (`paddle`, `tesseract`), `lines` (`text`, `box` dans l'image du moteur `width` × `height`, `score`), `sourceWidth` × `sourceHeight` (l'image reçue par le moteur), `timings`, et `input` : l'OCR lit la photo stockée, soit l'image envoyée réduite à `maxSide` (1 600 px) et réenregistrée en JPEG `quality` 0,8 |
+| `ocr` | `state` : `done`, `skipped` (modèles pas encore sur l'iPhone), `failed`, `pending` (pas fini 15 s après l'envoi), `none` (pas de lecture du texte pour cette prise : pièce rattachée à son colis, doublon hors du lot), `kept` (hors Scan : le texte gardé est dans `kept`) ; si `done` : `engine` (`paddle`, `tesseract`), `lines` (`text`, `box` dans l'image du moteur `width` × `height`, `score`), `sourceWidth` × `sourceHeight` (l'image reçue par le moteur), `timings`, et `input` : l'OCR lit la photo stockée, soit l'image envoyée réduite à `maxSide` (1 600 px) et réenregistrée en JPEG `quality` 0,8 |
 | `fields` | chaque champ tel que le colis le garderait, corrections comprises : `value`, `confidence`, `level`, `flags`, `sources`, `candidates` |
 | `extraction` | la fusion des lectures avant toute correction (`extractFields`) : mêmes champs, plus `codes` (codes analysés), `accounts`, `recipientCard`, `senderId` |
-| `corrections` | ce que l'utilisateur a posé à la main avant l'envoi : `field` (`tracking`, `recipient`, `sender`, `type`, `department`), `value`, `how` (`typed`, `chosen`, `confirmed`) |
-| `draft` | le brouillon du colis tel quel au moment de l'envoi ; `{ id, reading: "gone" }` s'il a été annulé entre-temps |
-| `screen` | ce que l'écran de scan affichait : `kind` (`read`, `unreadable`, `duplicate`, `piece`) et, pour `read` seulement, ses lignes (`label`, `value`, `status`) ; vide pour les autres états |
+| `corrections` | ce que l'utilisateur a posé à la main avant l'envoi, revue du lot comprise : `field` (`tracking`, `recipient`, `sender`, `type`, `department`, et depuis YSL-151 `carrier`, `pieces`, `weightKg`, `service`, `reference`), `value`, `how` (`typed`, `chosen`, `confirmed`) |
+| `draft` | le brouillon du colis tel quel au moment de l'envoi ; `{ id, reading: "gone" }` s'il a été annulé entre-temps ; `{ id, reading: "stored" }` pour un colis enregistré (plus de brouillon) |
+| `screen` | ce que l'écran affichait : sur Scan, `kind` (`read`, `unreadable`, `duplicate`, `piece`) et, pour `read` seulement, ses lignes (`label`, `value`, `status`) ; hors Scan, `kind` `revue:<champ>` (le champ demandé) ou `lecture`, et les champs de « Ce qui a été lu » |
+| `missing` | facultatif, hors Scan : ce qui manque face à un rapport de Scan (voir plus bas) |
+| `kept` | facultatif, hors Scan : les lectures gardées sur l'iPhone ; `from` (`draft` : brouillon du lot, `stored` : colis enregistré), `readAt`, `rules` (version des règles, `null` pour un brouillon), `codes` (`format`, `text`), `ocrLines` (`text`, `box`, `score`, dans le repère de la photo enregistrée ; `null` pour un colis enregistré), `ocrText`, `durations` (`codesMs`, `ocrMs`, `fusionMs`) |
+| `parcel` | facultatif : la fiche du colis telle que l'iPhone la garde, pour un colis enregistré |
 
 **L'image** est le cadre complet que les lecteurs de codes ont lu (après le zoom du viseur,
 jusqu'à 12 Mpx), encodé en JPEG 0,92, ou moins (0,85, 0,75, 0,6) s'il dépasse 8 Mio ; encore
@@ -122,6 +130,28 @@ rejouer l'OCR au plus près, la réduire à 1 600 px de grand côté et l'encode
 La photo stockée de l'étiquette n'est pas touchée : le cadre est une copie gardée en mémoire
 pour la dernière prise seulement (la précédente est libérée), et n'est encodé qu'à l'envoi.
 
+**Hors de l'écran Scan** (revue du lot, « Ce qui a été lu »), le cadre complet a été
+libéré depuis longtemps : l'image est la **photo enregistrée** de l'étiquette, la copie de
+1 600 px de grand côté en JPEG 0,8 (D8 : elle n'est pas modifiée, elle est lue puis copiée
+dans la file). `missing` dit ce qui manque alors :
+
+| Valeur | Ce qui manque |
+| --- | --- |
+| `frame` | le cadre complet : `image` est la photo de 1 600 px |
+| `shot` | zoom, torche, netteté, source de la prise (`shot` vaut `null`) |
+| `decodePasses` | les passes de zxing (positions, étapes, durées) : `codes.passes` est vide, les codes lus sont dans `kept.codes` (`format`, `text`) |
+| `ocrBoxes` | les lignes de l'OCR avec leurs boîtes : un colis enregistré ne garde que le texte (`kept.ocrText`) |
+| `ocr` | aucun texte gardé |
+| `extraction` | la fusion avant correction : un colis enregistré n'a plus que ses champs (`fields`), corrections comprises |
+| `draft` | le brouillon : le colis est enregistré, sa fiche est dans `parcel` |
+
+Un brouillon du lot garde ses lignes d'OCR avec leurs boîtes, dans le repère de la photo
+enregistrée : `missing` ne porte alors que `frame`, `shot` et `decodePasses`. Les lectures
+d'un colis sont effacées de l'iPhone passé la durée de conservation de l'entreprise : le
+bouton dit alors « Lecture effacée de l'iPhone : rien à envoyer » et rien n'est mis en
+file ; de même sans photo (« Photo de l'étiquette absente »), pour un colis jamais lu ou
+lu sur un autre iPhone.
+
 **Rejouer.** Ouvrir l'image sans la repasser au format du viseur
 (`openImage(chemin, { viewfinder: false })`, ou `--raw` du banc), lire une première passe
 avec `decodeSource`, puis, pour chaque passe dont `expect` n'est pas nul, une seconde passe
@@ -129,18 +159,42 @@ avec `decodeSource`, puis, pour chaque passe dont `expect` n'est pas nul, une se
 MaxiCode d'UPS. Le rejeu reste une approximation : l'image a été recompressée (JPEG 0,92),
 et le banc réduit en lanczos3 là où le Worker de l'app réduit par un canvas.
 
+**Rejouer une image de 1 600 px** (rapport hors Scan, `missing` contient `frame`). Pas de
+passes à reproduire : `openImage(chemin, { viewfinder: false })` puis une passe
+`decodeSource`, et une seconde `decodeSource(source, { enough: enoughFormats(formats) })`
+pour les formats de `kept.codes` que la première n'a pas rendus (la MaxiCode d'UPS
+surtout). Comparer aux `kept.codes` : l'app les a lus sur le cadre complet, une passe sur
+1 600 px peut en rendre moins sans que ce soit une régression. L'OCR, lui, se rejoue au
+plus juste : l'image est exactement celle qu'il a lue (1 600 px, JPEG 0,8), sans
+réduction ni réencodage ; ses boîtes se comparent directement à `kept.ocrLines`.
+
 **Ce que le rapport ne dit pas.** La bonne réponse n'y est que pour ce que l'utilisateur a
 corrigé (`corrections`) et ce qu'il écrit dans le commentaire : le reste de `fields` est la
 lecture, non vérifiée. `app.build` est l'horodatage du build, pas un commit : retrouver le
 code lu par `app.version` (date) et l'historique de `prod`. L'annuaire n'y est pas
 (`extraction` est recalculée sans lui).
 
+Hors Scan, en plus : ni le cadre complet, ni les réglages du viseur, ni les passes de
+zxing (positions, durées), ni le moteur et les durées détaillées de l'OCR ; pour un colis
+enregistré, ni les boîtes de l'OCR ni la fusion avant correction. Ses `corrections` ne
+viennent que des sources `agent` de ses champs (suivi, destinataire, expéditeur) : les
+retouches faites ensuite sur la fiche du colis se lisent dans `parcel`, pas dans
+`corrections`. Dans la revue, une correction d'annexe se repère en comparant le brouillon
+à ce que l'étiquette seule donne : une valeur de l'annexe restée identique mais rendue
+sûre compte comme `confirmed`, même si l'étiquette la donnait déjà presque sûre.
+
 ### Côté iPhone
 
 Le bouton « Signaler ce scan » apparaît au-dessus des commandes du viseur, sur le résultat du
-dernier scan (lu, illisible, doublon, pièce). Il ouvre une feuille avec un commentaire
+dernier scan (lu, illisible, doublon, pièce), et depuis YSL-151 au-dessus du bouton
+principal de « Vérifier un colis » (le colis affiché, chaque étape de la revue du lot) et
+de « Ce qui a été lu » (au-dessus de « Copier le diagnostic », aussi dans la surcouche
+« D'où vient cette valeur ? » de la revue). Il ouvre une feuille avec un commentaire
 facultatif (2 000 caractères) ; « Envoyer le rapport » la ferme aussitôt, le rapport
 s'enregistre et l'écran le dit, sans bloquer le scan suivant. Rien ne part sans ce geste.
+Hors Scan, la feuille dit ce qui part (« La photo enregistrée de l'étiquette (1 600 px) et
+ce que l'iPhone a gardé de sa lecture… ») ; sans lecture gardée ou sans photo, le bouton
+dit pourquoi et n'ouvre pas la feuille.
 
 Le rapport attend dans la table Dexie `scan_report_outbox` (version 13), son image en OPFS à
 côté des photos (`photos/report-<id>.jpg`, épargnée par le balayage des photos orphelines),
@@ -152,7 +206,13 @@ Une déconnexion efface les rapports en attente avec le reste des données local
 Au retrait (YSL-148), côté iPhone :
 
 - le dossier `apps/web/src/features/scan-report/` (rapport, dernier cadre, file, envoi,
-  message, hook de l'écran) et ses tests `apps/web/tests/scan-report-*.test.ts` ;
+  message, hook de l'écran, feuille partagée `use-report-sheet.tsx`, rapport hors Scan
+  `kept.ts` et `use-kept-report.tsx`) et ses tests `apps/web/tests/scan-report-*.test.ts` ;
+- `apps/web/src/features/review/components/review-screen.tsx` : `useKeptReport`, la clé
+  `report` du cadre des étapes et `{reporting.sheet}` ; `report` dans le `Pick` de
+  `apps/web/src/features/review/components/step.ts` ;
+- `apps/web/src/features/diagnostic/components/reading-view.tsx` : `useKeptReport`, les
+  props `report` et le `reporting.sheet` de l'`overlay` ;
 - `apps/web/src/app/routes/_authenticated/scan.tsx` : `useScanReport`, ses appels
   (`report.keep`, `report.codes`, `report.text`, `report.slot`, `report.sheet`) et la
   condition `!report.open` sur les commandes ;
@@ -170,7 +230,10 @@ Au retrait (YSL-148), côté iPhone :
   `apps/web/src/features/auth/wipe.ts` (`stopReportSender`) ;
 - les libellés `scan.report.*` de `packages/shared/src/i18n/locales/fr.ts` ;
 - `packages/ui/src/screens/reception/signaler-scan.tsx`, ses stories, son export dans
-  `packages/ui/src/screens/index.ts`, et la prop `report` de `ScanScreen` ;
+  `packages/ui/src/screens/index.ts`, et la prop `report` de `ScanScreen` ; la prop
+  `report` de `VerifyFrame` et des écrans « Vérifier un colis »
+  (`verifier-colis-screen.tsx`) et de `LectureScreen` (`lecture-screen.tsx`), avec les
+  stories « signaler » de `reception-screens.stories.tsx` et `lecture-screen.stories.tsx` ;
 - dans le contrat, `scanReportV1` et ce qui l'accompagne, avec
   `packages/contract/tests/scan-report.test.ts`.
 

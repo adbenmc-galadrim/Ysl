@@ -5,6 +5,10 @@ import {
   LectureScreen,
   type LectureField,
 } from '#screens/colis/lecture-screen';
+import {
+  SignalerScanButton,
+  SignalerScanToast,
+} from '#screens/reception/signaler-scan';
 
 /**
  * No Penpot mockup for this screen (YSL-59): it follows the record and the
@@ -172,5 +176,25 @@ export const LuAilleurs: Story = {
       description:
         'La lecture reste sur l’iPhone qui a scanné ce colis : ouvrez ce diagnostic depuis celui-ci.',
     },
+  },
+};
+
+/** « Signaler ce scan » over the copy, test phase only (D32, YSL-151). */
+export const Signaler: Story = {
+  name: 'Lecture, signaler',
+  args: { ...Lecture.args, report: <SignalerScanButton /> },
+};
+
+/** The readings are gone: the button says why nothing leaves (YSL-151). */
+export const PurgeeSignaler: Story = {
+  name: 'Lecture purgée, signaler',
+  args: {
+    ...Purgee.args,
+    report: (
+      <SignalerScanToast
+        className="w-full"
+        message="Lecture effacée de l’iPhone : rien à envoyer"
+      />
+    ),
   },
 };
