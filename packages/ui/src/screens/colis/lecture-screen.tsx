@@ -89,6 +89,8 @@ export type LectureScreenProps = {
   onBack?: () => void;
   /** The photo viewer, drawn over the screen. */
   overlay?: ReactNode;
+  /** « Signaler ce scan », over the copy, test phase only (D32, YSL-151). */
+  report?: ReactNode;
 };
 
 const STATUS_ICON: Record<ScanFieldStatus, IconName> = {
@@ -239,6 +241,7 @@ export function LectureScreen({
   focus,
   onBack,
   overlay,
+  report,
 }: LectureScreenProps) {
   useEffect(() => {
     if (focus) document.getElementById(focus)?.scrollIntoView();
@@ -248,22 +251,29 @@ export function LectureScreen({
     <>
       <Screen
         tone="fill"
-        bottomInset={copy ? 128 : 0}
-        className={copy ? undefined : 'pb-[calc(var(--safe-bottom)+24px)]'}
+        bottomInset={copy ? (report ? 168 : 128) : report ? 88 : 0}
+        className={
+          copy || report ? undefined : 'pb-[calc(var(--safe-bottom)+24px)]'
+        }
         bottom={
-          copy && (
+          (copy || report) && (
             <BottomBar surface="line">
               <div className="flex w-full flex-col">
-                <Button
-                  block
-                  variant="secondary"
-                  icon={copy.done ? 'check' : 'copy'}
-                  onClick={copy.onClick}
-                  aria-live="polite"
-                >
-                  {copy.done ?? copy.label}
-                </Button>
-                {copy.failed && (
+                {report && (
+                  <div className={cn('flex', copy && 'mb-2.5')}>{report}</div>
+                )}
+                {copy && (
+                  <Button
+                    block
+                    variant="secondary"
+                    icon={copy.done ? 'check' : 'copy'}
+                    onClick={copy.onClick}
+                    aria-live="polite"
+                  >
+                    {copy.done ?? copy.label}
+                  </Button>
+                )}
+                {copy?.failed && (
                   <p role="alert" className="mt-2 text-center text-13 text-red">
                     {copy.failed}
                   </p>

@@ -12,6 +12,7 @@ import { HorsAnnuaireSheet } from '#screens/reception/hors-annuaire-sheet';
 import { TransporteurSheet } from '#screens/reception/transporteur-sheet';
 import { LotEnregistreScreen } from '#screens/reception/lot-enregistre-screen';
 import { RevueLotScreen } from '#screens/reception/revue-lot-screen';
+import { SignalerScanButton } from '#screens/reception/signaler-scan';
 import {
   type RecipientOption,
   VerifierChampScreen,
@@ -177,6 +178,27 @@ export const VerifierSuivi: Story = {
       choices={[{ value: '5413337112', carrier: 'DHL Express' }]}
       selected="5413337112"
       fields={SETTLED_FIELDS}
+    />
+  ),
+};
+
+/** « Signaler ce scan » over the button, test phase only (D32, YSL-151, no reference). */
+export const VerifierSuiviSignaler: Story = {
+  name: 'Vérifier un colis, signaler',
+  render: () => (
+    <VerifierSuiviScreen
+      step={{ index: 1, total: 2 }}
+      label={{
+        heading: 'WAYBILL',
+        name: '54 1333 7112',
+        address: UNCERTAIN_LABEL.address,
+      }}
+      level="to-verify"
+      choices={[{ value: '5413337112', carrier: 'DHL Express' }]}
+      selected="5413337112"
+      fields={SETTLED_FIELDS}
+      source={<VerifierSourceLink />}
+      report={<SignalerScanButton />}
     />
   ),
 };
